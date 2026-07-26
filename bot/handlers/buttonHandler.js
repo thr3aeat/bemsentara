@@ -2430,6 +2430,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavını başlat
   if (customId === "promotion_start_exam") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { sendPromotionExamQuestion } = require("../services/staffSystem");
       await sendPromotionExamQuestion(interaction, interaction.user.id);
@@ -2441,6 +2442,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavı — Sonraki soru
   if (customId === "promotion_exam_next") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { sendPromotionExamQuestion } = require("../services/staffSystem");
       await sendPromotionExamQuestion(interaction, interaction.user.id);
@@ -2452,6 +2454,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavı — Cevap butonları (promotion_exam_answer_{questionIndex}_{letter})
   if (customId.startsWith("promotion_exam_answer_")) {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const parts = customId.split("_"); // promotion_exam_answer_0_A
       const questionIndex = parseInt(parts[3], 10);
@@ -2466,6 +2469,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sözleşmesini göster
   if (customId === "promotion_show_contract") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { handlePromotionShowContract } = require("../services/staffSystem");
       await handlePromotionShowContract(interaction, interaction.user.id);
@@ -2477,6 +2481,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sözleşmesini imzala
   if (customId === "promotion_sign_contract") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { handlePromotionSignContract } = require("../services/staffSystem");
       await handlePromotionSignContract(interaction, interaction.user.id);
@@ -2488,6 +2493,7 @@ function renderEnergyBar(percent) {
 
   // Kuralları imzala → Güncelleme & Terfi ver
   if (customId === "promotion_sign_rules") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { handlePromotionSignRules } = require("../services/staffSystem");
       await handlePromotionSignRules(interaction, interaction.user.id, interaction.client);
@@ -2499,6 +2505,7 @@ function renderEnergyBar(percent) {
 
   // Bugünden başla
   if (customId === "promotion_start_today") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { handlePromotionStartChoice } = require("../services/staffSystem");
       await handlePromotionStartChoice(interaction, 'today');
@@ -2510,6 +2517,7 @@ function renderEnergyBar(percent) {
 
   // Yarından başla
   if (customId === "promotion_start_tomorrow") {
+    await interaction.deferUpdate().catch(() => {});
     try {
       const { handlePromotionStartChoice } = require("../services/staffSystem");
       await handlePromotionStartChoice(interaction, 'tomorrow');

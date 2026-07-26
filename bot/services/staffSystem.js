@@ -6011,6 +6011,29 @@ async function startPromotionCeremony(interaction, progress) {
 }
 
 /**
+ * Helper to update interaction message safely regardless of deferred/replied state
+ */
+async function updateInteractionMessage(interaction, options) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      return await interaction.editReply(options);
+    } else {
+      return await interaction.update(options);
+    }
+  } catch (err) {
+    try {
+      return await interaction.editReply(options);
+    } catch (_) {
+      try {
+        return await interaction.reply({ ...options, ephemeral: true });
+      } catch (e) {
+        console.error('[updateInteractionMessage] Error:', e.message);
+      }
+    }
+  }
+}
+
+/**
  * Terfi Sınavı — Soru gönder
  */
 async function sendPromotionExamQuestion(interaction, userId) {
@@ -6050,7 +6073,7 @@ async function sendPromotionExamQuestion(interaction, userId) {
   });
   optionRows.push(row);
 
-  await interaction.editReply({ embeds: [examEmbed], components: optionRows });
+  await updateInteractionMessage(interaction, { embeds: [examEmbed], components: optionRows });
 }
 
 /**
@@ -6090,7 +6113,7 @@ async function handlePromotionExamAnswer(interaction, userId, questionIndex, ans
         .setLabel(`▶️ Sonraki Soru (${state.currentQuestionIndex + 1}/5)`)
         .setStyle(ButtonStyle.Primary)
     );
-    await interaction.update({ embeds: [evalEmbed], components: [nextRow] });
+    await updateInteractionMessage(interaction, { embeds: [evalEmbed], components: [nextRow] });
   } else {
     // Sınav bitti
     const passEmbed = new EmbedBuilder()
@@ -6111,7 +6134,7 @@ async function handlePromotionExamAnswer(interaction, userId, questionIndex, ans
         .setStyle(ButtonStyle.Success)
     );
 
-    await interaction.update({ embeds: [passEmbed], components: [contractRow] });
+    await updateInteractionMessage(interaction, { embeds: [passEmbed], components: [contractRow] });
   }
 }
 
@@ -6160,7 +6183,7 @@ async function handlePromotionShowContract(interaction, userId) {
       .setStyle(ButtonStyle.Success)
   );
 
-  await interaction.update({ embeds: [contractEmbed], components: [signRow] });
+  await updateInteractionMessage(interaction, { embeds: [contractEmbed], components: [signRow] });
 }
 
 /**
@@ -6202,7 +6225,7 @@ async function handlePromotionSignContract(interaction, userId) {
       .setStyle(ButtonStyle.Success)
   );
 
-  await interaction.update({ embeds: [rulesEmbed], components: [signRulesRow] });
+  await updateInteractionMessage(interaction, { embeds: [rulesEmbed], components: [signRulesRow] });
 }
 
 /**
@@ -6230,7 +6253,7 @@ async function handlePromotionSignRules(interaction, userId, client) {
     .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi' })
     .setTimestamp();
 
-  await interaction.update({ embeds: [updatingEmbed], components: [] });
+  await updateInteractionMessage(interaction, { embeds: [updatingEmbed], components: [] });
 
   // Gerçek terfi işlemi
   try {
@@ -6242,7 +6265,7 @@ async function handlePromotionSignRules(interaction, userId, client) {
     console.error('[staffSystem] Promotion ceremony promote error:', err.message);
   }
 
-  // 2 saniye bekle
+  // 2.5 saniye bekle
   await new Promise(resolve => setTimeout(resolve, 2500));
 
   // Final — HAYIRLI UĞURLU OLSUN!
@@ -6275,16 +6298,7 @@ async function handlePromotionSignRules(interaction, userId, client) {
       .setStyle(ButtonStyle.Primary)
   );
 
-  // editReply ile güncellemek lazım çünkü önceki update yaptık
-  try {
-    await interaction.editReply({ embeds: [finalEmbed], components: [startRow] });
-  } catch {
-    // Eğer editReply çalışmazsa followUp dene
-    try {
-      const user = await client.users.fetch(userId);
-      await user.send({ embeds: [finalEmbed], components: [startRow] }).catch(() => {});
-    } catch (_) {}
-  }
+  await updateInteractionMessage(interaction, { embeds: [finalEmbed], components: [startRow] });
 
   // State temizle
   promotionCeremonyState.delete(userId);
@@ -6320,7 +6334,7 @@ async function handlePromotionStartChoice(interaction, choice) {
       .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Yarın Başlıyoruz' });
   }
 
-  await interaction.update({ embeds: [responseEmbed], components: [] });
+  await updateInteractionMessage(interaction, { embeds: [responseEmbed], components: [] });
 }
 
 module.exports = {
