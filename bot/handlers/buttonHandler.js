@@ -1509,6 +1509,9 @@ function renderEnergyBar(percent) {
         courtCase = await CourtCase.findOne({ caseCode: `DAVA-${caseCode}` });
       }
     }
+    if (!courtCase && interaction.channelId) {
+      courtCase = await CourtCase.findOne({ channelId: interaction.channelId });
+    }
 
     const userId = interaction.user.id;
     const member = interaction.member;

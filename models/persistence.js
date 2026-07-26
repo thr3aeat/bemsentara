@@ -79,6 +79,7 @@ function flushSave(collections) {
       users: serializeMap(collections.users.data),
       tickets: serializeMap(collections.tickets.data),
       economies: serializeMap(collections.economies.data),
+      courtCases: collections.courtCases ? serializeMap(collections.courtCases.data) : {},
       wikiArticles: serializeMap(collections.wikiArticles.data),
       errorReports: serializeMap(collections.errorReports.data),
       groupAdmins: serializeMap(collections.groupAdmins.data),
@@ -139,12 +140,13 @@ function migrateLegacyWikis(collections, saved) {
 
 function loadIntoCollections(collections) {
   const saved = loadStoreFromDisk();
-  if (!saved) return { users: 0, tickets: 0, economies: 0, wikiArticles: 0 };
+  if (!saved) return { users: 0, tickets: 0, economies: 0, wikiArticles: 0, courtCases: 0 };
 
   const counts = {
     users: hydrateCollection(collections.users, saved.users),
     tickets: hydrateCollection(collections.tickets, saved.tickets),
     economies: hydrateCollection(collections.economies, saved.economies),
+    courtCases: hydrateCollection(collections.courtCases, saved.courtCases),
     wikiArticles: hydrateCollection(
       collections.wikiArticles,
       saved.wikiArticles || saved.wikis

@@ -271,6 +271,9 @@ async function findCourtCase(caseCode) {
   if (!c && !raw.toUpperCase().startsWith('DAVA-')) {
     c = await CourtCase.findOne({ caseCode: `DAVA-${raw.toUpperCase()}` });
   }
+  if (!c) {
+    c = await CourtCase.findOne({ channelId: raw });
+  }
   return c;
 }
 

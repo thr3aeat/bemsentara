@@ -173,7 +173,7 @@ async function initStore() {
 
   if (mongoOk) {
     // MongoDB'den yükle
-    const colNames = ["users", "tickets", "economies", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
+    const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
     const counts = {};
 
     for (const name of colNames) {
@@ -217,7 +217,7 @@ async function initStore() {
 
 /** Dosyadaki tüm verileri MongoDB'ye toplu yazar */
 async function migrateFileToMongo() {
-  const colNames = ["users", "tickets", "economies", "wikiArticles", "groupAdmins", "rankMetadata", "appMeta"];
+  const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "appMeta"];
   for (const name of colNames) {
     await db.saveCollectionToMongo(name, collections[name].data);
   }
@@ -227,7 +227,7 @@ async function saveStoreNow() {
   // Her iki sisteme de yaz
   flushSave(collections);
   if (db.isMongoActive()) {
-    const colNames = ["users", "tickets", "economies", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
+    const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
     const promises = colNames.map(name => 
       db.saveCollectionToMongo(name, collections[name].data)
         .catch(err => console.error(`[Store] Toplu kayıt hatası (${name}):`, err.message))
@@ -237,7 +237,7 @@ async function saveStoreNow() {
 }
 
 // Tarih alanlarını string'den Date'e çevir
-const DATE_FIELDS = new Set(["createdAt", "updatedAt", "joinedAt", "closedAt", "jailedUntil", "lastMuteCountedAt"]);
+const DATE_FIELDS = new Set(["createdAt", "updatedAt", "joinedAt", "closedAt", "jailedUntil", "lastMuteCountedAt", "summonsSentAt", "lastMessageAt", "lastMentionAt", "lastMentionReminderAt"]);
 
 function reviveDates(record) {
   if (!record || typeof record !== "object") return record;
