@@ -135,31 +135,33 @@ function onStoreMutate() {
   scheduleSave(collections);
 }
 
-collections.courtCases  = new InMemoryCollection("courtCases",  onStoreMutate);
-collections.users       = new InMemoryCollection("users",       onStoreMutate);
-collections.tickets     = new InMemoryCollection("tickets",     onStoreMutate);
-collections.economies   = new InMemoryCollection("economies",   onStoreMutate);
-collections.wikiArticles = new InMemoryCollection("wikiArticles", onStoreMutate);
-collections.errorReports = new InMemoryCollection("errorReports", onStoreMutate);
-collections.groupAdmins  = new InMemoryCollection("groupAdmins",  onStoreMutate);
-collections.rankMetadata = new InMemoryCollection("rankMetadata", onStoreMutate);
-collections.posts        = new InMemoryCollection("posts",        onStoreMutate);
-collections.stories      = new InMemoryCollection("stories",      onStoreMutate);
-collections.liveStreams  = new InMemoryCollection("liveStreams",  onStoreMutate);
-collections.appMeta     = new InMemoryCollection("appMeta", onStoreMutate);
+collections.courtCases     = new InMemoryCollection("courtCases",     onStoreMutate);
+collections.investigations = new InMemoryCollection("investigations", onStoreMutate);
+collections.users          = new InMemoryCollection("users",          onStoreMutate);
+collections.tickets        = new InMemoryCollection("tickets",        onStoreMutate);
+collections.economies      = new InMemoryCollection("economies",      onStoreMutate);
+collections.wikiArticles   = new InMemoryCollection("wikiArticles",   onStoreMutate);
+collections.errorReports   = new InMemoryCollection("errorReports",   onStoreMutate);
+collections.groupAdmins    = new InMemoryCollection("groupAdmins",    onStoreMutate);
+collections.rankMetadata   = new InMemoryCollection("rankMetadata",   onStoreMutate);
+collections.posts          = new InMemoryCollection("posts",          onStoreMutate);
+collections.stories        = new InMemoryCollection("stories",        onStoreMutate);
+collections.liveStreams    = new InMemoryCollection("liveStreams",    onStoreMutate);
+collections.appMeta        = new InMemoryCollection("appMeta",        onStoreMutate);
 
-const courtCases  = collections.courtCases;
-const users       = collections.users;
-const tickets     = collections.tickets;
-const economies   = collections.economies;
-const wikiArticles = collections.wikiArticles;
-const errorReports = collections.errorReports;
-const groupAdmins  = collections.groupAdmins;
-const rankMetadata = collections.rankMetadata;
-const posts        = collections.posts;
-const stories      = collections.stories;
-const liveStreams  = collections.liveStreams;
-const appMeta = collections.appMeta;
+const courtCases     = collections.courtCases;
+const investigations = collections.investigations;
+const users          = collections.users;
+const tickets        = collections.tickets;
+const economies      = collections.economies;
+const wikiArticles   = collections.wikiArticles;
+const errorReports   = collections.errorReports;
+const groupAdmins    = collections.groupAdmins;
+const rankMetadata   = collections.rankMetadata;
+const posts          = collections.posts;
+const stories        = collections.stories;
+const liveStreams    = collections.liveStreams;
+const appMeta        = collections.appMeta;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -177,6 +179,7 @@ async function initStore() {
     const counts = {};
 
     for (const name of colNames) {
+      if (!collections[name]) continue;
       const records = await db.loadCollectionFromMongo(name);
       if (records) {
         let count = 0;
@@ -219,7 +222,9 @@ async function initStore() {
 async function migrateFileToMongo() {
   const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "appMeta"];
   for (const name of colNames) {
-    await db.saveCollectionToMongo(name, collections[name].data);
+    if (collections[name]?.data) {
+      await db.saveCollectionToMongo(name, collections[name].data);
+    }
   }
 }
 
@@ -228,10 +233,12 @@ async function saveStoreNow() {
   flushSave(collections);
   if (db.isMongoActive()) {
     const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
-    const promises = colNames.map(name => 
-      db.saveCollectionToMongo(name, collections[name].data)
-        .catch(err => console.error(`[Store] Toplu kayıt hatası (${name}):`, err.message))
-    );
+    const promises = colNames
+      .filter(name => collections[name]?.data)
+      .map(name => 
+        db.saveCollectionToMongo(name, collections[name].data)
+          .catch(err => console.error(`[Store] Toplu kayıt hatası (${name}):`, err.message))
+      );
     await Promise.all(promises);
   }
 }
@@ -268,6 +275,7 @@ function reviveDates(record) {
 
 module.exports = {
   courtCases,
+  investigations,
   users,
   tickets,
   economies,
