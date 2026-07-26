@@ -202,6 +202,45 @@ async function handleGeneralCommand(interaction) {
     }
   }
 
+  // ── uyar: Resmi Disiplin Uyarısı Verme ───────────────────────────
+  if (commandName === "uyar" || commandName === "warn") {
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      return interaction.reply({ content: "❌ Bu komutu kullanmak için üyeleri denetleme/yönetme yetkiniz olmalıdır.", ephemeral: true });
+    }
+    const targetUser = interaction.options.getUser("kullanici") || interaction.options.getUser("personel");
+    const reason = interaction.options.getString("sebep") || "Sunucu kural ihlali";
+
+    const { issueWarning } = require("../services/punishmentService");
+    await issueWarning(interaction, targetUser, reason, interaction.user);
+    return;
+  }
+
+  // ── hapis: Hapis Cezası Verme ────────────────────────────────────
+  if (commandName === "hapis" || commandName === "jail") {
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      return interaction.reply({ content: "❌ Bu komutu kullanmak için üyeleri denetleme/yönetme yetkiniz olmalıdır.", ephemeral: true });
+    }
+    const targetUser = interaction.options.getUser("kullanici");
+    const duration = interaction.options.getInteger("sure") || 60;
+    const reason = interaction.options.getString("sebep") || "Sunucu kural ihlali";
+
+    const { issueJail } = require("../services/punishmentService");
+    await issueJail(interaction, targetUser, duration, reason, interaction.user);
+    return;
+  }
+
+  // ── hapis-cikar: Hapisten Çıkarma ────────────────────────────────
+  if (commandName === "hapis-cikar" || commandName === "unkodos") {
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      return interaction.reply({ content: "❌ Bu komutu kullanmak için üyeleri denetleme/yönetme yetkiniz olmalıdır.", ephemeral: true });
+    }
+    const targetUser = interaction.options.getUser("kullanici");
+
+    const { issueUnjail } = require("../services/punishmentService");
+    await issueUnjail(interaction, targetUser, interaction.user);
+    return;
+  }
+
   // ── staff-commend: Teşekkür / Takdir verme komutu ─────────────────────────
   if (commandName === "staff-commend") {
     const targetUser = interaction.options.getUser("personel");

@@ -2076,6 +2076,95 @@ function renderEnergyBar(percent) {
     return interaction.reply({ embeds: [embed], components: [row] });
   }
 
+  if (customId.startsWith("warn_sign_contract_")) {
+    const parts = customId.replace("warn_sign_contract_", "").split("_");
+    const targetId = parts[0];
+    const warnId = parts[1];
+
+    if (interaction.user.id !== targetId) {
+      return interaction.reply({ content: "❌ Bu uyarı sözleşmesini sadece uyarının muhatabı olan üye imzalayabilir!", ephemeral: true });
+    }
+
+    const User = require("../../models/User");
+    const dbUser = await User.findOne({ discordId: targetId });
+    if (dbUser && dbUser.warnings) {
+      const warnRec = dbUser.warnings.find(w => w.warnId === warnId);
+      if (warnRec) warnRec.signed = true;
+      await dbUser.save();
+    }
+
+    const oldEmbed = interaction.message.embeds[0];
+    const embed = EmbedBuilder.from(oldEmbed)
+      .setColor(0x2ecc71)
+      .setTitle('📜 UYARI SÖZLEŞMESİ İMZALANDI VE KABUL EDİLDİ')
+      .setDescription(
+        (oldEmbed.description || '') +
+        `\n\n✅ **SÖZLEŞME İMZALANDI:** <@${targetId}> tarafından kural şartları dijital olarak İMZALANDI ve KABUL EDİLDİ.`
+      );
+
+    return interaction.update({ embeds: [embed], components: [] });
+  }
+
+  if (customId.startsWith("warn_appeal_")) {
+    const parts = customId.replace("warn_appeal_", "").split("_");
+    const targetId = parts[0];
+    const warnId = parts[1];
+
+    if (interaction.user.id !== targetId) {
+      return interaction.reply({ content: "❌ Bu uyarıya sadece muhatabı olan üye itiraz edebilir!", ephemeral: true });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(`warn_appeal_modal_${targetId}_${warnId}`)
+      .setTitle("🛡️ Uyarıya İtiraz Dilekçesi");
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId("appeal_reason")
+      .setLabel("İtiraz Gerekçeniz ve Açıklamanız")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Uyarının haksız olduğunu düşünme sebebiniz...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(reasonInput));
+    return interaction.showModal(modal);
+  }
+
+  if (customId.startsWith("jail_sign_contract_")) {
+    const targetId = customId.replace("jail_sign_contract_", "");
+
+    if (interaction.user.id !== targetId) {
+      return interaction.reply({ content: "❌ Bu hapis taahhütnamesini sadece cezalandırılan üye imzalayabilir!", ephemeral: true });
+    }
+
+    const oldEmbed = interaction.message.embeds[0];
+    const embed = EmbedBuilder.from(oldEmbed)
+      .setColor(0x2ecc71)
+      .setTitle('🔒 HAPİS TAAHHÜTNAMESİ İMZALANDI')
+      .setDescription(
+        (oldEmbed.description || '') +
+        `\n\n✅ **TAAHHÜTNAME İMZALANDI:** Mahkum <@${targetId}> ceza şartlarını ve infaz koşullarını resmen kabul ederek taahhütnameyi imzaladı.`
+      );
+
+    return interaction.update({ embeds: [embed], components: [] });
+  }
+
+  if (customId.startsWith("jail_request_lawyer_")) {
+    const targetId = customId.replace("jail_request_lawyer_", "");
+
+    if (interaction.user.id !== targetId) {
+      return interaction.reply({ content: "❌ Bu talebi sadece cezalandırılan üye yapabilir!", ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+    try {
+      const { startInvestigation } = require("../services/investigationService");
+      await startInvestigation(interaction, `hapis-itiraz-${targetId}`, targetId, "Hapis Cezasına İtiraz & Avukat Talep Dilekçesi");
+      return interaction.editReply({ content: "⚖️ Avukat ve mahkeme talebiniz alındı! Soruşturma kanalı açıldı ve baro avukatı atandı." });
+    } catch (err) {
+      return interaction.editReply({ content: `⚠️ Mahkeme kanalı açılırken hata oluştu: ${err.message}` });
+    }
+  }
+
   if (customId.startsWith("invest_addmember_")) {
     const channelId = customId.replace("invest_addmember_", "");
     const modal = new ModalBuilder()

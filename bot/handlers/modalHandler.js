@@ -1020,6 +1020,33 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
+  if (interaction.customId.startsWith('warn_appeal_modal_')) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const parts = interaction.customId.replace('warn_appeal_modal_', '').split('_');
+    const targetId = parts[0];
+    const warnId = parts[1];
+    const appealReason = interaction.fields.getTextInputValue('appeal_reason');
+
+    const embed = new EmbedBuilder()
+      .setTitle('🛡️ UYARIYA İTİRAZ DİLEKÇESİ ALINDI')
+      .setDescription(
+        `👤 **İtiraz Eden Üye:** <@${targetId}>\n` +
+        `🆔 **Uyarı Kod:** \`${warnId}\`\n\n` +
+        `📝 **İtiraz Gerekçesi:**\n\`\`\`${appealReason}\`\`\`\n` +
+        `*İtiraz dilekçeniz Üst Yönetim ve Disiplin Kuruluna iletilmiştir.*`
+      )
+      .setColor(0x3498db)
+      .setTimestamp();
+
+    const MOD_LOG_CHANNEL_ID = '1521502699324178492';
+    const modChannel = interaction.guild?.channels.cache.get(MOD_LOG_CHANNEL_ID);
+    if (modChannel && modChannel.isTextBased()) {
+      await modChannel.send({ embeds: [embed] }).catch(() => {});
+    }
+
+    return interaction.editReply({ content: '✅ İtiraz dilekçeniz başarıyla oluşturuldu ve Disiplin Kuruluna sevk edildi.' });
+  }
+
   // ── Soruşturma Sistemi Modalleri ───────────────────────────────────────────
   if (interaction.customId === 'investigation_start_modal') {
     await interaction.deferReply({ ephemeral: true }).catch(() => {});

@@ -1561,6 +1561,62 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Gelişmiş Uyarı & Hapis Komutları (!uyar, !hapis, !hapiscıkar, !unkodos) ──
+    if (message.guild && !message.author.bot && (content.startsWith('!') || content.startsWith('.'))) {
+      const args = content.slice(1).trim().split(/ +/);
+      const cmd = args.shift().toLowerCase();
+
+      if (['uyar', 'warn', 'hapis', 'jail', 'hapiscıkar', 'hapis-cikar', 'unkodos', 'uyari-sil', 'uyarı-sil'].includes(cmd)) {
+        const { PermissionFlagsBits } = require('discord.js');
+        const isMod = message.member?.permissions.has(PermissionFlagsBits.ModerateMembers) || message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        if (!isMod) {
+          return message.reply("❌ Bu komutu kullanmak için üyeleri denetleme/yönetme yetkiniz olmalıdır.");
+        }
+
+        const targetUser = message.mentions.users.first() || (args[0] ? await client.users.fetch(args[0]).catch(() => null) : null);
+        if (!targetUser) {
+          return message.reply(`❌ Lütfen geçerli bir üye etiketleyin veya ID girin. (Örnek: \`!${cmd} @kullanıcı [gerekçe]\`)`);
+        }
+
+        const { issueWarning, issueJail, issueUnjail } = require("../services/punishmentService");
+
+        if (cmd === 'uyar' || cmd === 'warn') {
+          const reason = args.slice(1).join(' ') || 'Sunucu kural ihlali';
+          await issueWarning(message, targetUser, reason, message.author);
+          return;
+        }
+
+        if (cmd === 'hapis' || cmd === 'jail') {
+          let duration = parseInt(args[1]);
+          let reason;
+          if (!isNaN(duration)) {
+            reason = args.slice(2).join(' ') || 'Sunucu kural ihlali';
+          } else {
+            duration = 60;
+            reason = args.slice(1).join(' ') || 'Sunucu kural ihlali';
+          }
+          await issueJail(message, targetUser, duration, reason, message.author);
+          return;
+        }
+
+        if (cmd === 'hapiscıkar' || cmd === 'hapis-cikar' || cmd === 'unkodos') {
+          await issueUnjail(message, targetUser, message.author);
+          return;
+        }
+
+        if (cmd === 'uyari-sil' || cmd === 'uyarı-sil') {
+          const User = require("../../models/User");
+          const dbUser = await User.findOne({ discordId: targetUser.id });
+          if (dbUser && dbUser.warnCount > 0) {
+            dbUser.warnCount = Math.max(0, dbUser.warnCount - 1);
+            await dbUser.save();
+            return message.reply(`✅ <@${targetUser.id}> kullanıcısının uyarı sayısı 1 azaltıldı. Güncel: **${dbUser.warnCount}/3**`);
+          }
+          return message.reply(`⚠️ <@${targetUser.id}> kullanıcısının aktif uyarısı bulunmamaktadır.`);
+        }
+      }
+    }
+
     // ── Yapay Zeka Sunucu Yönetim Sistemi (!botaiyaptırma) ──────────────────
     if (message.guild && !message.author.bot) {
       const content = message.content.trim();
