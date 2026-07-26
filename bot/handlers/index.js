@@ -1586,6 +1586,19 @@ function initializeDiscordHandlers(client) {
         return;
       }
 
+      // 1.5) Sıra Sistemi Kurulumu (s!sira-kur / !sira-kur / s!sira)
+      if (['sira-kur', 'sıra-kur', 'sira', 'sıra'].includes(cmd)) {
+        const { setupQueuePanel } = require("../services/voiceQueueService");
+        const fakeInteraction = {
+          guild: message.guild,
+          channel: message.channel,
+          member: message.member,
+          reply: (payload) => message.reply(payload)
+        };
+        await setupQueuePanel(fakeInteraction);
+        return;
+      }
+
       // 2) Disiplin & Hapis Komutları
       if (['uyar', 'warn', 'hapis', 'jail', 'hapiscıkar', 'hapis-cikar', 'unkodos', 'uyari-sil', 'uyarı-sil'].includes(cmd)) {
         const { PermissionFlagsBits } = require('discord.js');
