@@ -322,8 +322,16 @@ async function enforceFrogRoles(member) {
     if (member.user.bot) return;
     const currentRoles = member.roles.cache.map(r => r.id);
     const level0RoleId = '1518692402884378825';
+    // Hapisteki üyelerden Yavru Dinazor rolünü otomatik çıkar ve vermeyi engelle
+    const hasHapisRole = member.roles.cache.some(r => r.name.toLowerCase().includes('hapis'));
+    if (hasHapisRole) {
+      if (currentRoles.includes(level0RoleId)) {
+        await member.roles.remove(level0RoleId, 'Hapiste olduğu için Yavru Dinazor rolü otomatik alındı.').catch(() => {});
+      }
+      return;
+    }
 
-    // Yavru Dinazor rolünü herkeste zorunlu kıl
+    // Yavru Dinazor rolünü herkeste zorunlu kıl (Hapiste değilse)
     if (!currentRoles.includes(level0RoleId)) {
       await member.roles.add(level0RoleId, 'Zorunlu Yavru Dinazor Rolü').catch(() => {});
       currentRoles.push(level0RoleId);

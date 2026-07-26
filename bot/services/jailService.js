@@ -100,6 +100,12 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
     }
     await member.roles.add(hapisRole, `Hapis Cezası: ${reason}`).catch(() => {});
 
+    // Yavru Dinazor rolünü (1518692402884378825) otomatik çıkar
+    const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
+    if (member.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
+      await member.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis cezası sebebiyle Yavru Dinazor rolü otomatik alındı.').catch(() => {});
+    }
+
     // Send DM to target
     await member.send(
       `🔒 **Hapishaneye Gönderildiniz!**\n\n` +

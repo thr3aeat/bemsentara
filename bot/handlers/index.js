@@ -646,9 +646,10 @@ function initializeDiscordHandlers(client) {
       // 2. Normal Giriş İşlemleri
       const { GUILD2_ID } = require("../../config");
       if (member.guild.id === GUILD2_ID) {
-        // Sunucuya yeni giren herkese Yavru Dinazor rolünü ver (Zorunlu ilk rol)
+        // Sunucuya yeni giren herkese Yavru Dinazor rolünü ver (Zorunlu ilk rol - Hapistekiler Hariç)
         const level0Role = '1518692402884378825';
-        if (!member.roles.cache.has(level0Role)) {
+        const isJailedOnAdd = dbUser && dbUser.isJailed;
+        if (!isJailedOnAdd && !member.roles.cache.has(level0Role)) {
           await member.roles.add(level0Role, "Zorunlu Yavru Dinazor İlk Rolü").catch(err => {
             console.error("[guildMemberAdd] Yavru Dinazor rolü verilirken hata:", err.message);
           });
@@ -661,6 +662,13 @@ function initializeDiscordHandlers(client) {
 
   client.on("guildMemberUpdate", async (oldMember, newMember) => {
     try {
+      // ── HAPİS & YAVRU DİNAZOR ROL KONTROLÜ (Otomatik Çıkarma) ──
+      const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
+      const hasHapisRole = newMember.roles.cache.some(r => r.name.toLowerCase().includes('hapis'));
+      if (hasHapisRole && newMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
+        await newMember.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis rolü alındığı için Yavru Dinazor rolü otomatik çıkarıldı.').catch(() => {});
+        console.log(`[HapisAutoFilter] Removed Yavru Dinazor role from jailed user ${newMember.user.tag}`);
+      }
       // ── Mute Tracker (Susturma Takibi) ──
       const oldTimeout = oldMember.communicationDisabledUntil;
       const newTimeout = newMember.communicationDisabledUntil;

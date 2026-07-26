@@ -41,9 +41,14 @@ async function autoRestoreRoles(client) {
 
       let updated = false;
 
-      // 0. Yavru Dinazor Rolü (Herkeste olması zorunlu)
+      // 0. Yavru Dinazor Rolü (Herkeste olması zorunlu - Hapistekiler Hariç)
       const level0RoleId = '1518692402884378825';
-      if (!member.roles.cache.has(level0RoleId)) {
+      const hasHapis = member.roles.cache.some(r => r.name.toLowerCase().includes('hapis'));
+      if (hasHapis) {
+        if (member.roles.cache.has(level0RoleId)) {
+          await member.roles.remove(level0RoleId, "Hapiste olduğu için Yavru Dinazor Rolü otomatik alındı").catch(() => {});
+        }
+      } else if (!member.roles.cache.has(level0RoleId)) {
         await member.roles.add(level0RoleId, "Otomatik: Yavru Dinazor Rolü (Zorunlu)").catch(() => {});
         updated = true;
       }
