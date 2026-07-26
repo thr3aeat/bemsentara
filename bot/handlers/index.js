@@ -1579,6 +1579,18 @@ function initializeDiscordHandlers(client) {
       const args = content.slice(prefixLen).trim().split(/ +/);
       const cmd = args.shift().toLowerCase();
 
+      try {
+        const { recordCommand } = require("../services/usageTracker");
+        recordCommand(`s!${cmd}`, message.author.id, message.guild.id);
+      } catch (_) {}
+
+      // 0) s!grafikler / s!grafik / !grafikler (Canlı Kullanım Grafiği & İstatistik)
+      if (['grafikler', 'grafik', 'istatistik', 'stats', 'grafiklerim'].includes(cmd)) {
+        const { sendGrafiklerMenu } = require("../services/grafiklerService");
+        await sendGrafiklerMenu(message, 'trend');
+        return;
+      }
+
       // 1) s!yardım / s!help
       if (['yardım', 'yardim', 'help', 'komutlar', 'kategoriler'].includes(cmd)) {
         const { sendHelpMenu } = require("../services/helpService");
@@ -3454,6 +3466,41 @@ function initializeDiscordHandlers(client) {
     }
 
     try {
+      // ── ATOMIC INTERACTION LOCK (DOUBLE-CLICK / RACE CONDITION PREVENTION) ──
+      if (interaction.isButton() || interaction.isCommand()) {
+        const LockManager = require("../services/security/LockManager");
+        const actionKey = interaction.isButton() ? interaction.customId : interaction.commandName;
+        const acquired = LockManager.acquireLock(interaction.user.id, actionKey);
+        if (!acquired) {
+          if (interaction.isRepliable()) {
+            return interaction.reply({
+              content: "⏳ **İşleminiz şu anda işleniyor.** Lütfen çift tıklamadan veya spam yapmadan tamamlanmasını bekleyin.",
+              ephemeral: true
+            }).catch(() => {});
+          }
+          return;
+        }
+      }
+
+      // ── SYSTEM USAGE ANALYTICS METRIC TRACKING ──
+      try {
+        const { recordCommand, recordButtonClick, recordModalSubmit } = require("../services/usageTracker");
+        if (interaction.isCommand()) {
+          recordCommand(`/${interaction.commandName}`, interaction.user.id, interaction.guildId);
+        } else if (interaction.isButton()) {
+          recordButtonClick(interaction.customId, interaction.user.id, interaction.guildId);
+        } else if (interaction.isModalSubmit()) {
+          recordModalSubmit(interaction.customId, interaction.user.id, interaction.guildId);
+        }
+      } catch (_) {}
+
+      // ── MODULAR BUTTON ROUTER (DDD ROUTING) ──
+      if (interaction.isButton()) {
+        const { routeButtonInteraction } = require("./buttons");
+        const handledModular = await routeButtonInteraction(interaction);
+        if (handledModular) return;
+      }
+
       // ── Hata onay butonu (TAMAMDIR) ──────────────────────────────────────────
       if (interaction.isButton() && interaction.customId?.startsWith('error_ack_')) {
         await interaction.update({

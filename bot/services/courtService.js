@@ -1384,6 +1384,57 @@ async function showPersonalCourtPanel(interaction, caseCode) {
   return safeReply(interaction, { embeds: [embed], components, ephemeral: true });
 }
 
+/**
+ * Handles uzlaşma sözleşmesi imzalama (kabullenme/reddetme)
+ */
+async function handleContractSignature(interaction, caseCode, isAccept) {
+  const courtCase = await CourtCase.findOne({ caseCode });
+  if (!courtCase) {
+    if (interaction.update) {
+      return interaction.update({ content: "❌ Dava veya uzlaşma sözleşmesi bulunamadı.", embeds: [], components: [] });
+    }
+    return safeReply(interaction, { content: "❌ Dava veya uzlaşma sözleşmesi bulunamadı.", ephemeral: true });
+  }
+
+  if (!courtCase.contract) {
+    courtCase.contract = {};
+  }
+
+  if (isAccept) {
+    courtCase.contract.status = 'signed';
+    courtCase.contract.signedAt = new Date();
+    courtCase.status = 'closed';
+    courtCase.verdict = 'acquitted';
+    await courtCase.save();
+
+    const embed = new EmbedBuilder()
+      .setTitle("🤝 UZLAŞMA SÖZLEŞMESİ İMZALANDI")
+      .setDescription(`\`${caseCode}\` kodlu dava dosyasında uzlaşma şartları taraflarca kabul edilmiş ve imza altına alınmıştır.\n\n📌 **Dava Durumu:** Kapatıldı / Beraat (Uzlaşma Sağlandı)`)
+      .setColor(0x2ecc71)
+      .setTimestamp();
+
+    if (interaction.update) {
+      return interaction.update({ embeds: [embed], components: [] });
+    }
+    return safeReply(interaction, { embeds: [embed], ephemeral: true });
+  } else {
+    courtCase.contract.status = 'rejected';
+    await courtCase.save();
+
+    const embed = new EmbedBuilder()
+      .setTitle("❌ UZLAŞMA SÖZLEŞMESİ REDDEDİLDİ")
+      .setDescription(`\`${caseCode}\` kodlu uzlaşma teklifi reddedildi. Dava süreci kaldığı yerden yargılamaya devam edecektir.`)
+      .setColor(0xe74c3c)
+      .setTimestamp();
+
+    if (interaction.update) {
+      return interaction.update({ embeds: [embed], components: [] });
+    }
+    return safeReply(interaction, { embeds: [embed], ephemeral: true });
+  }
+}
+
+
 module.exports = {
   LAW_ARTICLES,
   ensureCourtRoles,

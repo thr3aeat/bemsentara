@@ -3,6 +3,11 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const generalCommands = [
   
   new SlashCommandBuilder()
+    .setName("grafikler")
+    .setDescription("📊 Bot kullanım istatistiklerini ve canlı grafiklerini görüntüle")
+    .setDMPermission(true),
+
+  new SlashCommandBuilder()
     .setName("kurallar-kabul")
     .setDescription("📋 Bot kurallarını oku ve kabul et")
     .setDMPermission(true),

@@ -6682,6 +6682,14 @@ const originalHandler = handleButtonInteraction;
 async function enhancedButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // Grafik & İstatistik Butonları
+  if (customId.startsWith('grafik_view_')) {
+    const viewType = customId.replace('grafik_view_', '');
+    const { sendGrafiklerMenu } = require('../services/grafiklerService');
+    const targetType = viewType === 'refresh' ? 'trend' : viewType;
+    return sendGrafiklerMenu(interaction, targetType);
+  }
+
   // Dashboard handlers
   if (customId.startsWith('mod_')) {
     return handleModeratorDashboard(interaction);

@@ -16,6 +16,11 @@ async function handleSlashCommand(interaction) {
     return showErrorWizardModal(interaction);
   }
 
+  if (commandName === "grafikler") {
+    const { sendGrafiklerMenu } = require("../services/grafiklerService");
+    return sendGrafiklerMenu(interaction, 'trend');
+  }
+
   await interaction.deferReply({ ephemeral: true });
 
   try {
