@@ -2409,30 +2409,15 @@ function renderEnergyBar(percent) {
     await interaction.deferReply({ ephemeral: true });
     try {
       const StaffProgress = require("../../models/StaffProgress");
-      const { isPromotionEligible, promote, checkPromotion, ROLE_NAMES } = require("../services/staffSystem");
+      const { isPromotionEligible, checkPromotion, startPromotionCeremony } = require("../services/staffSystem");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
 
       if (!p) return interaction.editReply({ content: "❌ Personel sisteminde kayıtlı bir profiliniz bulunamadı." });
 
       const eligible = isPromotionEligible(p);
       if (eligible) {
-        const targetLevel = (p.level || 1) + 1;
-        const targetRoleName = ROLE_NAMES[targetLevel] || `Seviye ${targetLevel}`;
-        await promote(p, interaction.client);
-
-        const embed = new EmbedBuilder()
-          .setColor(0x2ecc71)
-          .setTitle(`🎉 TEBRİKLER! TERFİİNİZ GERÇEKLEŞTİ!`)
-          .setDescription(
-            `Tebrikler <@${interaction.user.id}>!\n\n` +
-            `Tüm terfi şartlarını başarıyla tamamladınız ve **${targetRoleName}** rütbesine yükseldiniz! 🥳\n\n` +
-            `• **Yeni Rütbeniz:** \`${targetRoleName}\`\n` +
-            `• **Rol Yetkileri:** Otomatik olarak hesabınıza tanımlandı.`
-          )
-          .setFooter({ text: "Eko Yıldız • İnsan Kaynakları & Terfi Kurumu" })
-          .setTimestamp();
-
-        return interaction.editReply({ embeds: [embed] });
+        // 🏢 Terfi Alma Merkezi — Çok adımlı roleplay terfi süreci başlat
+        await startPromotionCeremony(interaction, p);
       } else {
         await checkPromotion(p, interaction.client);
         return interaction.editReply({ content: "ℹ️ Terfi durumunuz kontrol edildi. Şartlar tamamlandığında bu butondan terfinizi alabilirsiniz." });
@@ -2441,6 +2426,99 @@ function renderEnergyBar(percent) {
       console.error('[staff_claim_promotion] Hata:', err.message);
       return interaction.editReply({ content: `❌ Terfi işlemi sırasında bir hata oluştu: ${err.message}` });
     }
+  }
+
+  // ── TERFİ ALMA MERKEZİ — Seremoni Buton Handler'ları ──────────────────────
+
+  // Terfi sınavını başlat
+  if (customId === "promotion_start_exam") {
+    try {
+      const { sendPromotionExamQuestion } = require("../services/staffSystem");
+      await sendPromotionExamQuestion(interaction, interaction.user.id);
+    } catch (err) {
+      console.error('[promotion_start_exam] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Terfi sınavı — Sonraki soru
+  if (customId === "promotion_exam_next") {
+    try {
+      const { sendPromotionExamQuestion } = require("../services/staffSystem");
+      await sendPromotionExamQuestion(interaction, interaction.user.id);
+    } catch (err) {
+      console.error('[promotion_exam_next] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Terfi sınavı — Cevap butonları (promotion_exam_answer_{questionIndex}_{letter})
+  if (customId.startsWith("promotion_exam_answer_")) {
+    try {
+      const parts = customId.split("_"); // promotion_exam_answer_0_A
+      const questionIndex = parseInt(parts[3], 10);
+      const answer = parts[4];
+      const { handlePromotionExamAnswer } = require("../services/staffSystem");
+      await handlePromotionExamAnswer(interaction, interaction.user.id, questionIndex, answer);
+    } catch (err) {
+      console.error('[promotion_exam_answer] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Terfi sözleşmesini göster
+  if (customId === "promotion_show_contract") {
+    try {
+      const { handlePromotionShowContract } = require("../services/staffSystem");
+      await handlePromotionShowContract(interaction, interaction.user.id);
+    } catch (err) {
+      console.error('[promotion_show_contract] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Terfi sözleşmesini imzala
+  if (customId === "promotion_sign_contract") {
+    try {
+      const { handlePromotionSignContract } = require("../services/staffSystem");
+      await handlePromotionSignContract(interaction, interaction.user.id);
+    } catch (err) {
+      console.error('[promotion_sign_contract] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Kuralları imzala → Güncelleme & Terfi ver
+  if (customId === "promotion_sign_rules") {
+    try {
+      const { handlePromotionSignRules } = require("../services/staffSystem");
+      await handlePromotionSignRules(interaction, interaction.user.id, interaction.client);
+    } catch (err) {
+      console.error('[promotion_sign_rules] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Bugünden başla
+  if (customId === "promotion_start_today") {
+    try {
+      const { handlePromotionStartChoice } = require("../services/staffSystem");
+      await handlePromotionStartChoice(interaction, 'today');
+    } catch (err) {
+      console.error('[promotion_start_today] Hata:', err.message);
+    }
+    return;
+  }
+
+  // Yarından başla
+  if (customId === "promotion_start_tomorrow") {
+    try {
+      const { handlePromotionStartChoice } = require("../services/staffSystem");
+      await handlePromotionStartChoice(interaction, 'tomorrow');
+    } catch (err) {
+      console.error('[promotion_start_tomorrow] Hata:', err.message);
+    }
+    return;
   }
 
   if (customId === "tactical_alarm_all") {

@@ -214,65 +214,64 @@ async function checkLowActivityWarning(progress, client) {
 // ── Terfi gereksinimleri (ZOR) ─────────────────────────────────────────────
 const PROMOTION_REQUIREMENTS = {
   1: {
-    ticketsSolved: 10,
-    chatMessages: 50,
-    totalVoiceMinutes: 120,
-    activeDays: 10,
-    moderationActions: 10,
+    ticketsSolved: 15,
+    chatMessages: 100,
+    totalVoiceMinutes: 180,
+    activeDays: 5,
+    moderationActions: 5,
     weeklyReports: 0,
-    description: '10 ticket + 50 mesaj + 120 dk ses + 10 mod işlem + 10 gün aktif',
+    description: '15 Bilet + 100 Mesaj + 3 Saat Ses + 5 Mod İşlem + 5 Gün Aktiflik',
     promotionBonus: { points: 250, xp: 350 },
   },
   2: {
-    ticketsSolved: 50,
-    chatMessages: 200,
-    totalVoiceMinutes: 500,
-    activeDays: 25,
-    moderationActions: 30,
-    weeklyReports: 5,
-    description: '50 ticket + 200 mesaj + 500 dk ses + 30 mod işlem + 5 rapor + 25 gün aktif',
+    ticketsSolved: 60,
+    chatMessages: 400,
+    totalVoiceMinutes: 600,
+    activeDays: 14,
+    moderationActions: 25,
+    weeklyReports: 0,
+    description: '60 Bilet + 400 Mesaj + 10 Saat Ses + 25 Mod İşlem + 14 Gün Aktiflik',
     promotionBonus: { points: 500, xp: 750 },
   },
   3: {
-    ticketsSolved: 150,
-    chatMessages: 750,
-    totalVoiceMinutes: 1500,
-    activeDays: 45,
-    moderationActions: 80,
-    weeklyReports: 15,
-    description: '150 ticket + 750 mesaj + 1500 dk ses + 80 mod işlem + 15 rapor + 45 gün aktif',
-    promotionBonus: { points: 1000, xp: 1500 },
+    ticketsSolved: 180,
+    chatMessages: 1200,
+    totalVoiceMinutes: 1800,
+    activeDays: 30,
+    moderationActions: 75,
+    weeklyReports: 0,
+    description: '180 Bilet + 1200 Mesaj + 30 Saat Ses + 75 Mod İşlem + 30 Gün Aktiflik',
+    promotionBonus: { points: 1200, xp: 1800 },
   },
   4: {
-    ticketsSolved: 350,
-    chatMessages: 1500,
-    totalVoiceMinutes: 2500,
+    ticketsSolved: 450,
+    chatMessages: 3000,
+    totalVoiceMinutes: 4500,
     activeDays: 60,
-    moderationActions: 150,
-    weeklyReports: 30,
-    description: '350 ticket + 1500 mesaj + 2500 dk ses + 150 mod işlem + 30 rapor + 60 gün aktif',
-    promotionBonus: { points: 2000, xp: 3000 }
+    moderationActions: 180,
+    weeklyReports: 0,
+    description: '450 Bilet + 3000 Mesaj + 75 Saat Ses + 180 Mod İşlem + 60 Gün Aktiflik',
+    promotionBonus: { points: 2500, xp: 3500 }
   },
   5: {
-    ticketsSolved: 500,
-    chatMessages: 3000,
-    totalVoiceMinutes: 5000,
-    activeDays: 90,
-    moderationActions: 250,
-    weeklyReports: 45,
-    description: '500 ticket + 3000 mesaj + 5000 dk ses + 250 mod işlem + 45 rapor + 90 gün aktif',
-    promotionBonus: { points: 4000, xp: 5000 }
+    ticketsSolved: 1000,
+    chatMessages: 7500,
+    totalVoiceMinutes: 9000,
+    activeDays: 120,
+    moderationActions: 400,
+    weeklyReports: 0,
+    description: '1000 Bilet + 7500 Mesaj + 150 Saat Ses + 400 Mod İşlem + 120 Gün Aktiflik',
+    promotionBonus: { points: 6000, xp: 8000 }
   },
   6: {
-    ticketsSolved: 750,
-    chatMessages: 5000,
-    totalVoiceMinutes: 7500,
-    activeDays: 120,
-    moderationActions: 350,
-    // 🔧 FIX: İmkânsız matematik - 60 rapor (420 gün) yerine 30 rapor (210 gün) yla
-    weeklyReports: 30,
-    description: 'Maksimum Seviye Aylık Kotası: 750 ticket + 5000 mesaj + 7500 dk ses + 120 gün aktif (Aylık/Dönemlik)',
-    promotionBonus: { points: 6000, xp: 7500 }
+    ticketsSolved: 2000,
+    chatMessages: 15000,
+    totalVoiceMinutes: 18000,
+    activeDays: 240,
+    moderationActions: 800,
+    weeklyReports: 0,
+    description: 'Maksimum Unvan: Zirve Koordinatör Statüsü Koruma Kotası',
+    promotionBonus: { points: 10000, xp: 15000 }
   }
 };
 
@@ -292,6 +291,19 @@ function getCurrentWeekKey(date = new Date()) {
   return `${thursday.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
 
+function normalizeWarningCounters(progress) {
+  if (!progress.warnings) progress.warnings = { count: 0, inactivityCount: 0 };
+  if (progress.warnings.inactivityCount == null) {
+    progress.warnings.inactivityCount = progress.warnings.count || 0;
+  }
+  if (progress.warnings.count == null) {
+    progress.warnings.count = progress.warnings.inactivityCount || 0;
+  }
+  if (progress.warnings.count !== progress.warnings.inactivityCount) {
+    progress.warnings.count = progress.warnings.inactivityCount;
+  }
+}
+
 function ensureWeeklyReportReset(progress, now = new Date()) {
   if (!progress.stats) progress.stats = {};
   const currentWeek = getCurrentWeekKey(now);
@@ -306,36 +318,28 @@ function getTargetCheckDate() {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Istanbul',
     year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
     hour12: false
   }).formatToParts(now);
 
   const partValues = {};
   for (const part of parts) {
-    partValues[part.type] = part.value;
+    if (part.type) partValues[part.type] = part.value;
   }
 
-  const year = parseInt(partValues.year, 10);
-  const month = parseInt(partValues.month, 10) - 1; // 0-indexed
-  const day = parseInt(partValues.day, 10);
-  const hour = parseInt(partValues.hour, 10);
+  const year = Number(partValues.year || 0);
+  const month = Number(partValues.month || 1);
+  const day = Number(partValues.day || 1);
+  const hour = Number(partValues.hour || 0);
 
-  // Create a UTC date representation using Istanbul local numbers to avoid system timezone interference
-  const localDate = new Date(Date.UTC(year, month, day, hour, 0, 0, 0));
-
+  const referenceDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
   if (hour < 4) {
-    localDate.setUTCDate(localDate.getUTCDate() - 1);
+    referenceDate.setUTCDate(referenceDate.getUTCDate() - 1);
   }
 
-  const resYear = localDate.getUTCFullYear();
-  const resMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0');
-  const resDay = String(localDate.getUTCDate()).padStart(2, '0');
-
-  return `${resYear}-${resMonth}-${resDay}`;
+  return new Intl.DateTimeFormat('fr-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(referenceDate);
 }
 
 async function hasInactivityRole(userId, client) {
@@ -1023,6 +1027,9 @@ function resetDaily(progress) {
     progress.daily.transferToTomorrowGreets = 0;
 
     // İlerleme ve Takip Alanlarını Sıfırla
+    if (progress.daily.greetMessageId) {
+      clearGreetProgressMessage(progress, client).catch(() => { progress.daily.greetMessageId = ''; });
+    }
     progress.daily.greetMessageId = '';
     progress.daily.wordGamesPlayed = 0;
     progress.daily.bomGamesPlayed = 0;
@@ -1277,7 +1284,9 @@ async function addVoiceMinutes(userId, minutes, client) {
 // ── EkoCoin Ekleme ve Bildirim ─────────────────────────────────────────────
 async function addEkoCoin(progress, amount, client, reason) {
   progress.gamification = progress.gamification || {};
+
   // Apply today's theme multiplier if action matches theme
+  let reasonLabel;
   try {
     const theme = getTodayTheme();
     const lowerReason = (reason || '').toString().toLowerCase();
@@ -1296,10 +1305,13 @@ async function addEkoCoin(progress, amount, client, reason) {
     }
     const applied = Math.ceil(amount * multiplier);
     progress.gamification.ecoCoins = (progress.gamification.ecoCoins || 0) + applied;
-    // Adjust reason to include multiplier note
-    reason = reason ? `${reason} (x${multiplier})` : `Görev Ödülü (x${multiplier})`;
+    const cleanReason = reason ? reason.toString().replace(/\s*\(x\d+(?:\.\d+)?\)\s*$/, '') : '';
+    reasonLabel = cleanReason
+      ? `${cleanReason}${multiplier !== 1 ? ` (x${multiplier})` : ''}`
+      : `Görev Ödülü${multiplier !== 1 ? ` (x${multiplier})` : ''}`;
   } catch (err) {
     progress.gamification.ecoCoins = (progress.gamification.ecoCoins || 0) + amount;
+    reasonLabel = reason || 'Görev Ödülü';
   }
 
   if (client) {
@@ -1309,7 +1321,7 @@ async function addEkoCoin(progress, amount, client, reason) {
       const embed = new EmbedBuilder()
         .setColor(0x3498db)
         .setTitle('🎯 Görev Tamamlandı!')
-        .setDescription(`**${reason}** görevini başarıyla bitirdin. Diğer göreve başlamak için aşağıdaki butona tıklayabilirsin!`)
+        .setDescription(`**${reasonLabel}** görevini başarıyla bitirdin. Diğer göreve başlamak için aşağıdaki butona tıklayabilirsin!`)
         .setFooter({ text: 'Eko Yıldız • Personel Sistemi' });
 
       const row = new ActionRowBuilder().addComponents(
@@ -1492,7 +1504,7 @@ async function checkDailyCompletion(progress, client) {
   // 🔧 Güvenlik: Objeler tanımlı değilse oluştur
   if (!progress.stats) progress.stats = {};
   if (!progress.daily) progress.daily = { date: '', greeted: false, voiceMinutes: 0 };
-  if (!progress.warnings) progress.warnings = { count: 0 };
+  normalizeWarningCounters(progress);
 
   // 🔧 FIX: Moladayken DM göndermesini kapat (burnoutLeaveUntil check)
   const isOnBreak = progress.burnoutLeaveUntil && new Date(progress.burnoutLeaveUntil) > new Date();
@@ -1517,7 +1529,7 @@ async function checkDailyCompletion(progress, client) {
     progress.stats.activeDays = (progress.stats.activeDays || 0) + 1;
     progress.stats.consecutiveDays = (progress.stats.consecutiveDays || 0) + 1;
     progress.stats.lastCompleteDay = today;
-    progress.warnings.count = 0;
+    progress.warnings.inactivityCount = 0;
 
     // 🎮 Gamification: Günlük görev tamamlama ödülü
     if (!progress.gamification) {
@@ -1606,65 +1618,38 @@ async function checkChosenTaskCompletion(progress, client) {
 
     let completed = false;
     const task = progress.daily.chosenTask;
+    const chatCount = progress.daily.chatMessagesToday || 0;
 
     if (task === 'task_chat') {
-      if ((progress.daily.chatMessagesToday || 0) >= 15) {
-        completed = true;
-      }
+      completed = chatCount >= 15;
     } else if (task === 'task_double_chat') {
-      if ((progress.daily.chatMessagesToday || 0) >= 30) {
-        completed = true;
-      }
+      completed = chatCount >= 30;
     } else if (task === 'task_voice') {
       const req = getDailyRequirements(progress.level, progress.stats.consecutiveDays || 0);
-      if ((progress.daily.voiceMinutes || 0) >= req.voiceMinutes + 15) {
-        completed = true;
-      }
+      completed = (progress.daily.voiceMinutes || 0) >= req.voiceMinutes + 15;
     } else if (task === 'task_double_voice') {
       const req = getDailyRequirements(progress.level, progress.stats.consecutiveDays || 0);
-      if ((progress.daily.voiceMinutes || 0) >= req.voiceMinutes + 30) {
-        completed = true;
-      }
+      completed = (progress.daily.voiceMinutes || 0) >= req.voiceMinutes + 30;
     } else if (task === 'task_ticket') {
-      if ((progress.daily.ticketsSolvedToday || 0) >= 1) {
-        completed = true;
-      }
+      completed = (progress.daily.ticketsSolvedToday || 0) >= 1;
     } else if (task === 'task_mod') {
-      if ((progress.daily.moderationActionsToday || 0) >= 1) {
-        completed = true;
-      }
+      completed = (progress.daily.moderationActionsToday || 0) >= 1;
     } else if (task === 'task_greet') {
-      if ((progress.daily.greetCount || 0) >= 5) {
-        completed = true;
-      }
+      completed = (progress.daily.greetCount || 0) >= 5;
     } else if (task === 'task_double_greet') {
-      if ((progress.daily.greetCount || 0) >= 10) {
-        completed = true;
-      }
+      completed = (progress.daily.greetCount || 0) >= 10;
     } else if (task === 'task_word_game') {
-      if ((progress.daily.wordGamesPlayed || 0) >= 5) {
-        completed = true;
-      }
+      completed = (progress.daily.wordGamesPlayed || 0) >= 5;
     } else if (task === 'task_bom_game') {
-      if ((progress.daily.bomGamesPlayed || 0) >= 5) {
-        completed = true;
-      }
+      completed = (progress.daily.bomGamesPlayed || 0) >= 5;
     } else if (task === 'task_chat_with_people') {
-      if ((progress.daily.chatMessagesToday || 0) >= 20) {
-        completed = true;
-      }
+      completed = chatCount >= 20;
     } else if (task === 'task_practice_scenario') {
-      if ((progress.daily.practiceScenariosSolvedToday || 0) >= 1) {
-        completed = true;
-      }
+      completed = (progress.daily.practiceScenariosSolvedToday || 0) >= 1;
     } else if (task === 'task_incident_report') {
-      if ((progress.daily.incidentReportsToday || 0) >= 1) {
-        completed = true;
-      }
+      completed = (progress.daily.incidentReportsToday || 0) >= 1;
     } else if (task === 'task_duty_shift') {
-      if ((progress.daily.dutyMinutesToday || 0) >= 30) {
-        completed = true;
-      }
+      completed = (progress.daily.dutyMinutesToday || 0) >= 30;
     }
 
     if (completed) {
@@ -2495,7 +2480,9 @@ async function generateMorningBriefingEmbed(progress, client) {
       const endTime = Math.floor(progress.burnoutLeaveUntil.getTime() / 1000);
       statusText = `☕ **İsteğe Bağlı Kahve Molasında** (<t:${endTime}:R>)`;
     } else if (progress.duty?.isActive) {
-      const mins = Math.floor((Date.now() - new Date(progress.duty.startedAt)) / 1000 / 60);
+      const startedAt = new Date(progress.duty.startedAt);
+      const diffMs = Math.max(0, Date.now() - startedAt.getTime());
+      const mins = Math.floor(diffMs / 1000 / 60);
       const hrs = Math.floor(mins / 60);
       statusText = `🟢 **Aktif Nöbette** (${hrs}h ${mins % 60}m)`;
     } else {
@@ -2878,7 +2865,7 @@ async function sendWarningDM(progress, client) {
 
   const req = getDailyRequirements(progress.level, progress.stats?.consecutiveDays || 0);
   const maxLimit = getInactivityLimit(progress.level);
-  const warnCount = progress.warnings?.count || 1;
+  const warnCount = progress.warnings?.inactivityCount || progress.warnings?.count || 0;
   const warnLeft = Math.max(0, maxLimit - warnCount);
   const roleName = ROLE_NAMES[progress.level] || 'Moderatör';
 
@@ -2935,9 +2922,7 @@ async function sendWarningDM(progress, client) {
   // AI Koçu Duygusal Uyarı Mesajı
   let aiWarn = '';
   try {
-    const prompt = `Eko Yıldız personeli ${roleName} ${warnCount} gündür görev yapmadı (Limit: ${maxLimit} gün).
-Bu uyarının tonu: ${aiTonePrompt}.
-Kısa (max 120 karakter), bu tona uygun Türkçe uyarı cümlesi yaz!`;
+    const prompt = `Eko Yıldız personeli ${roleName} ${warnCount} gündür görev yapmıyor. Kullanıcıya kısa, net ve destekleyici bir Türkçe hatırlatma mesajı yaz.`;
     aiWarn = await chatWithAI([{ role: 'user', content: prompt }], '').catch(() => '');
     aiWarn = aiWarn?.replace(/<think>[\s\S]*?<\/think>/g, '').trim() || '';
   } catch (_) { }
@@ -3439,8 +3424,27 @@ async function requestLeave(userId, leaveDate, reason) {
       return { success: false, message: 'Aktif personel değilsin.' };
     }
 
+    if (!p.leaves) {
+      p.leaves = { weeklyLeaveUsed: 0, monthlyLeaveUsed: 0, totalCredits: 0, usedDays: [], lastLeaveDate: null };
+    }
+
     const monthlyLimit = 2; // Ayda maksimum 2 gün izin (sıkılaştırıldı)
     const weeklyLimit = 1;  // Haftada maksimum 1 gün izin
+
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+    if (p.leaves.lastLeaveDate) {
+      const lastLeaveDate = new Date(p.leaves.lastLeaveDate);
+      if (lastLeaveDate < startOfMonth) {
+        p.leaves.monthlyLeaveUsed = 0;
+      }
+      if (lastLeaveDate < startOfWeek) {
+        p.leaves.weeklyLeaveUsed = 0;
+      }
+    }
 
     if ((p.leaves.monthlyLeaveUsed || 0) >= monthlyLimit) {
       return { success: false, message: `Bu ayın izin hakkını kullandın (Limit: ${monthlyLimit} gün)` };
@@ -3460,6 +3464,7 @@ async function requestLeave(userId, leaveDate, reason) {
     p.leaves.monthlyLeaveUsed = (p.leaves.monthlyLeaveUsed || 0) + 1;
     p.leaves.weeklyLeaveUsed = (p.leaves.weeklyLeaveUsed || 0) + 1;
     p.leaves.lastLeaveDate = leaveDate;
+    p.leaves.reason = reason;
     p.leaves.totalCredits = (p.leaves.totalCredits || 0) + 1;
 
     await p.save();
@@ -3562,7 +3567,7 @@ async function removeRole(progress, client, reasonText = null) {
 
         for (const rId of rolesToRemove) {
           if (member.roles.cache.has(rId)) {
-            await member.roles.remove(rId, `${reasonHeader} - Sistemden atıldı`).catch(() => { });
+            await member.roles.remove(rId, `${reasonHeader} - Sistemden askıya alındı`).catch(() => { });
           }
         }
       }
@@ -3610,7 +3615,11 @@ async function removeRole(progress, client, reasonText = null) {
 
     const user = await client.users.fetch(progress.userId).catch(() => null);
     if (user) await user.send({ embeds: [embed] }).catch(() => { });
-    await StaffProgress.deleteOne({ userId: progress.userId });
+    if (progress.status === 'active') {
+      progress.status = 'paused';
+      progress.pausedAt = new Date();
+      await progress.save().catch(() => { });
+    }
     console.log(`[staffSystem] Rol alındı: ${progress.userId} (${reasonHeader})`);
   } catch (err) {
     console.error('[staffSystem] Rol alma hatası:', err.message);
@@ -3684,13 +3693,13 @@ async function sendEveningWarning(progress, client) {
   if (isGreetDone && voiceDone) return; // Tamamlamış
 
   const stats = getDailyTaskCompletionStats(progress);
-  const warnCount = progress.warnings?.count || 0;
+  const warnCount = progress.warnings?.inactivityCount || 0;
 
   // AI acil uyarı mesajı
   let aiMsg = '';
   try {
     const prompt = `Eko Yıldız personeli ${ROLE_NAMES[progress.level]} akşam 19:00'da hâlâ günlük görevini yapmamış.
-Bu kişinin ${warnCount} uyarısı var. Çok kısa (max 80 karakter), sakin ve anlayışlı Türkçe uyarı yaz.`;
+Bu kişinin ${warnCount} gündür görev yapmadığı kaydedildi. Çok kısa (max 80 karakter), sakin ve anlayışlı Türkçe uyarı yaz.`;
     aiMsg = await chatWithAI([{ role: 'user', content: prompt }], '').catch(() => '');
     aiMsg = aiMsg?.replace(/<think>[\s\S]*?<\/think>/g, '').trim() || '';
   } catch (_) { }
@@ -3812,6 +3821,7 @@ async function runDailyCheck(client) {
       if (!p.stats) p.stats = {};
       if (!p.daily) p.daily = { date: '', greeted: false, voiceMinutes: 0 };
       if (!p.warnings) p.warnings = { count: 0 };
+      normalizeWarningCounters(p);
       if (!p.leaves) p.leaves = { totalCredits: 0, usedDays: [], lastLeaveDate: null, monthlyLeaveUsed: 0, weeklyLeaveUsed: 0 };
       if (!p.gamification) p.gamification = { totalPoints: 0, level: 1, currentXP: 0, badges: {}, streak: { current: 0, longest: 0, brokenDays: 0 } };
       ensureWeeklyReportReset(p, new Date());
@@ -3834,20 +3844,20 @@ async function runDailyCheck(client) {
       const todayDate = new Date();
       const startOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
       const startOfWeek = new Date(todayDate);
-      startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
+    startOfWeek.setDate(todayDate.getDate() - ((todayDate.getDay() + 6) % 7));
 
-      // Aylık izin sayıldı mı kontrol et
-      if (p.leaves.lastLeaveDate) {
-        const lastLeaveDate = new Date(p.leaves.lastLeaveDate);
-        if (lastLeaveDate < startOfMonth) {
-          p.leaves.monthlyLeaveUsed = 0;
-        }
-        if (lastLeaveDate < startOfWeek) {
-          p.leaves.weeklyLeaveUsed = 0;
-        }
+    // Aylık/haftalık izin sayacı sıfırlaması
+    if (p.leaves.lastLeaveDate) {
+      const lastLeaveDate = new Date(p.leaves.lastLeaveDate);
+      if (lastLeaveDate < startOfMonth) {
+        p.leaves.monthlyLeaveUsed = 0;
       }
-
-      // PIP Kontrolü (Eğer aktif ise)
+      if (lastLeaveDate < startOfWeek) {
+        p.leaves.weeklyLeaveUsed = 0;
+      }
+    } else {
+      p.leaves.monthlyLeaveUsed = 0;
+      p.leaves.weeklyLeaveUsed = 0;
       if (p.pip?.isActive) {
         if (!p.pip.signed) {
           // Kontrat imzalanmamışsa otomatik demote / rol askı
@@ -3874,7 +3884,8 @@ async function runDailyCheck(client) {
           if (p.pip.consecutiveSuccessDays >= 3) {
             p.pip.isActive = false;
             p.pip.signed = false;
-            p.warnings.count = 0; // Reset warnings
+            p.warnings.inactivityCount = 0; // Reset inactivity warnings only
+            p.warnings.count = 0;
             await p.save();
             try {
               const user = await client.users.fetch(p.userId);
@@ -3906,36 +3917,32 @@ async function runDailyCheck(client) {
         }
         continue;
       }
+      } // close else of p.leaves.lastLeaveDate
 
       // Bugünü veya hedef günü kontrol et (görevi tamamladı mı?)
       const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
-      const targetVoice = req.voiceMinutes + (p.daily?.transferredVoiceMinutes || 0);
-      const greetDone = p.daily?.date === checkDate && p.daily?.greeted;
-      const voiceDone = p.daily?.date === checkDate && (p.daily?.voiceMinutes || 0) >= targetVoice;
-      const completedToday = (p.stats.lastCompleteDay === checkDate) || (greetDone && voiceDone);
+      const greetDone = p.daily?.date === checkDate && (p.daily?.greetCount || 0) >= req.greets;
+      const voiceDone = p.daily?.date === checkDate && (p.daily?.voiceMinutes || 0) >= req.voiceMinutes;
+      const completedToday = greetDone && voiceDone;
+      const activeDays = p.stats.activeDays || 0;
 
-      const activeDays = p.stats?.activeDays || 0;
       const isOnLeave = p.leaves?.usedDays?.includes(checkDate);
       const isUserInactive = isOnLeave || (await hasInactivityRole(p.userId, client));
 
-      if (isUserInactive) {
-        // İzinli/inaktif gün — uyarı veya ceza verilmez, streak sıfırlanmaz.
-        await p.save();
-      } else if (!completedToday) {
-        // Bugün görev yapılmadı ve izinli değil — uyarı ver
+      if (!completedToday && !isUserInactive) {
+        p.warnings.inactivityCount = (p.warnings.inactivityCount || 0) + 1;
+        p.warnings.count = p.warnings.inactivityCount;
         p.stats.consecutiveDays = 0;
-        p.warnings.count = (p.warnings.count || 0) + 1;
-        p.warnings.lowActivityNotified = false; // Aktif gün < 2 kontrolü için sıfırla
 
-        // Rütbeye özel inaktiflik sınırını kontrol et
         const maxLimit = getInactivityLimit(p.level);
-        if (p.warnings.count >= maxLimit) {
-          p.pip = {
-            isActive: true,
-            signed: false,
-            startedAt: null,
-            consecutiveSuccessDays: 0
-          };
+
+        if (p.warnings.inactivityCount >= maxLimit && !p.pip?.isActive) {
+          // PIP başlat
+          p.pip = p.pip || {};
+          p.pip.isActive = true;
+          p.pip.signed = false;
+          p.pip.startedAt = new Date();
+          p.pip.consecutiveSuccessDays = 0;
           await p.save();
 
           try {
@@ -3984,12 +3991,13 @@ async function runDailyCheck(client) {
     console.log(`[staffSystem] Tamamlandı — ${allProgress.length} personel kontrol edildi`);
 
     // Check for browser notification permission prompts for staff members
-    try {
-      const { sendNotificationPermissionPrompt } = require("../../utils/notification");
-      await sendNotificationPermissionPrompt(client);
-    } catch (promptErr) {
-      console.error("[NotificationPrompt] Daily scheduler check error:", promptErr.message);
-    }
+    // Disabled per requested change.
+    // try {
+    //   const { sendNotificationPermissionPrompt } = require("../../utils/notification");
+    //   await sendNotificationPermissionPrompt(client);
+    // } catch (promptErr) {
+    //   console.error("[NotificationPrompt] Daily scheduler check error:", promptErr.message);
+    // }
 
     // Save last run check date in database configuration to prevent duplicate runs and enable catch-up
     try {
@@ -4017,7 +4025,7 @@ function startStaffScheduler(client) {
       const pendingTickets = await Ticket.countDocuments({ status: { $ne: 'closed' } }).catch(() => 0);
       const activeStaff = await StaffProgress.countDocuments({ status: 'active' }).catch(() => 0);
       const staffRecords = await StaffProgress.find({ status: 'active' }).catch(() => []);
-      const warnings = staffRecords.reduce((sum, p) => sum + (p.warnings?.count || 0), 0);
+      const warnings = staffRecords.reduce((sum, p) => sum + (p.warnings?.inactivityCount || p.warnings?.count || 0), 0);
       const chatMessages = staffRecords.reduce((sum, p) => sum + (p.stats?.chatMessages || 0), 0);
 
       const snapshot = getMarketSnapshot({ pendingTickets, warnings, chatMessages, activeStaff });
@@ -4034,7 +4042,8 @@ function startStaffScheduler(client) {
             marketRiskScore: snapshot.riskScore,
             marketLastUpdatedAt: new Date()
           }
-        }
+        },
+        { strict: false }
       ).catch(() => { });
 
       console.log(`[staffSystem] Market snapshot refreshed: ${snapshot.state} x${snapshot.multiplier.toFixed(1)} | 1 💎 = ${snapshot.diamondRate} TL`);
@@ -4836,7 +4845,7 @@ async function checkAndUnlockBadges(progress, client) {
     newBadges.push('moderator');
   }
 
-  if (!badges.noMissWeek && progress.warnings?.count === 0 && stats.consecutiveDays >= 7) {
+  if (!badges.noMissWeek && progress.warnings?.inactivityCount === 0 && stats.consecutiveDays >= 7) {
     badges.noMissWeek = true;
     newBadges.push('noMissWeek');
   }
@@ -5869,8 +5878,454 @@ async function retireFromStaff(userId, reason = 'Sistem tarafından', client = n
   }
 }
 
+// ── TERFİ ALMA MERKEZİ — Roleplay Terfi Sistemi ──────────────────────────
+// Çok adımlı terfi süreci: Kontrol → Sınav → Sözleşme → Kurallar → Güncelleme
+
+// Terfi süreci state'i (kullanıcıya özel, memory-only)
+const promotionCeremonyState = new Map();
+
+// Rütbeye özel terfi sınavı soru havuzu
+const PROMOTION_EXAM_QUESTIONS = {
+  2: [
+    { q: 'Bir kullanıcı sohbette küfür ederse ne yaparsın?', options: ['A) Uyarı veririm', 'B) Görmezden gelirim', 'C) Ben de yazarım', 'D) Sunucudan atarım'] },
+    { q: 'Ticket çözerken kullanıcı sinirlenirse nasıl davranırsın?', options: ['A) Sakin kalır çözüm sunarım', 'B) Ben de sinirlenirim', 'C) Ticket\'ı kapatırım', 'D) Başka yetkiliyi çağırırım'] },
+    { q: 'Bir üye kurallara uymuyorsa ilk adımın ne olmalı?', options: ['A) Sözlü uyarı', 'B) Direkt ban', 'C) Timeout', 'D) Hiçbir şey yapmam'] },
+    { q: 'Ses kanalında spam yapan birisine ne yaparsın?', options: ['A) Uyarı + gerekirse mute', 'B) Hemen ban', 'C) Kanalı kapatırım', 'D) Görmezden gelirim'] },
+    { q: 'Yeni bir üye sunucuya katıldığında ne yapmalısın?', options: ['A) Hoş geldin derim', 'B) İlgilenmem', 'C) DM atarım', 'D) Rol veririm'] },
+  ],
+  3: [
+    { q: 'İki üye arasında tartışma çıkarsa ilk ne yaparsın?', options: ['A) İkisini de dinler arabuluculuk yaparım', 'B) Birisini banlarım', 'C) İkisini de susturorum', 'D) Yöneticiye haber veririm'] },
+    { q: 'Bir yetkili görevini kötüye kullanıyorsa ne yaparsın?', options: ['A) Kanıt toplar üst yöneticiye bildiririm', 'B) Kendim müdahale ederim', 'C) Görmezden gelirim', 'D) Herkese söylerim'] },
+    { q: 'Sunucu kurallarını güncellemen istense nereden başlarsın?', options: ['A) Mevcut kuralları analiz eder ekiple tartışırım', 'B) Tek başıma yazarım', 'C) Eski kuralları silerim', 'D) Yapmam'] },
+    { q: 'Raid saldırısı altındayken ilk adımın ne olmalı?', options: ['A) Doğrulama seviyesini yükseltir antiraid sistemi aktif ederim', 'B) Sunucuyu kapatırım', 'C) Herkesi banlarım', 'D) Beklerim geçer'] },
+    { q: 'Bir stajyer personele mentorluk yaparken en önemli şey nedir?', options: ['A) Sabırla öğretmek ve örnek olmak', 'B) Hatalarını eleştirmek', 'C) Kendi işimi yapmak', 'D) Sadece kuralları okutmak'] },
+  ],
+  4: [
+    { q: 'Haftalık personel raporu hazırlarken nelere dikkat edersin?', options: ['A) Performans metrikleri, aktiflik ve gelişim alanları', 'B) Sadece şikayetler', 'C) Kim daha çok konuşmuş', 'D) Rapor hazırlamam'] },
+    { q: 'Ekip motivasyonu düştüğünde lider olarak ne yaparsın?', options: ['A) Bireysel görüşme + takım etkinliği düzenlerim', 'B) Daha fazla görev veririm', 'C) Görmezden gelirim', 'D) Ceza sistemi uygularım'] },
+    { q: 'Kritik bir sunucu kararı alınırken nasıl yaklaşırsın?', options: ['A) Veri toplar, ekiple istişare eder, sonra karar veririm', 'B) Hemen karar veririm', 'C) Üst yönetime bırakırım', 'D) Oylama yaparım'] },
+    { q: 'Bir üye haksız yere ceza aldığını iddia ediyorsa?', options: ['A) Logları inceler, haklıysa düzeltirim', 'B) Reddederim', 'C) Cezayı kaldırırım', 'D) Şikayet eden yetkiliyi uyarırım'] },
+    { q: 'Sunucu güvenliğini nasıl aktif olarak izlersin?', options: ['A) Düzenli log kontrolü + audit trail + şüpheli aktivite takibi', 'B) Sadece şikayet gelince bakarım', 'C) Bot loglarını kontrol ederim', 'D) İzlemem, sorun olursa hallederim'] },
+  ],
+  5: [
+    { q: 'Tüm moderatör ekibini yönetirken önceliğin ne olmalı?', options: ['A) Adil görev dağılımı ve performans takibi', 'B) Herkesin mutlu olması', 'C) Sadece kuralları uygulatmak', 'D) En az işle en çok sonuç'] },
+    { q: 'Sunucu istatistiklerinde anormal bir düşüş görsen ne yaparsın?', options: ['A) Detaylı analiz yapar, nedenleri araştırır, eylem planı oluştururum', 'B) Beklerim, düzelir', 'C) Yöneticiye söylerim', 'D) Etkinlik düzenlerim'] },
+    { q: 'Yöneticilerle koordineli çalışmanın en önemli kuralı nedir?', options: ['A) Şeffaf iletişim ve düzenli raporlama', 'B) Her şeyi onlardan sormak', 'C) Kendi kararlarımı vermek', 'D) Toplantılara katılmak'] },
+    { q: 'Kriz anında (sunucu çökme, büyük tartışma) nasıl davranırsın?', options: ['A) Soğukkanlı kalır, protokolü uygular, ekibi koordine ederim', 'B) Panik yaparım', 'C) Üst yönetime haber verip beklerim', 'D) Herkesi susturorum'] },
+    { q: 'Bir alt kademe yetkiliye performans değerlendirmesi yaparken?', options: ['A) Güçlü yönlerini vurgular, gelişim alanlarını yapıcı şekilde sunarım', 'B) Sadece hataları söylerim', 'C) Puan veririm', 'D) Genel bir şey söylerim'] },
+  ],
+  6: [
+    { q: 'Genel Koordinatör olarak en büyük sorumluluğun nedir?', options: ['A) Tüm operasyonları koordine etmek ve stratejik kararlar almak', 'B) Herkesi yönetmek', 'C) Sunucuyu büyütmek', 'D) Kuralları yazmak'] },
+    { q: 'Sınav süreçlerini tasarlarken neyi gözetirsin?', options: ['A) Adalet, bilgi ölçümü ve pratik beceri değerlendirmesi', 'B) Zor sorular sormak', 'C) Kolay geçiş sağlamak', 'D) Herkesi geçirmek'] },
+    { q: 'Aylık genel denetim raporunda nelere bakarsın?', options: ['A) KPI, üye memnuniyeti, moderasyon kalitesi, büyüme verileri', 'B) Sadece aktif personel sayısı', 'C) Ticket istatistikleri', 'D) Şikayetler'] },
+    { q: 'Büyük bir yapısal değişiklik yapmak gerektiğinde?', options: ['A) Etki analizi yapar, tüm paydaşlarla istişare eder, aşamalı uygularım', 'B) Hemen uygularım', 'C) Oylama yaparım', 'D) Vazgeçerim'] },
+    { q: 'Ekibin tüm sorumluluğu senin omuzlarında. Bunu nasıl taşırsın?', options: ['A) Delege eder, güvenir, destekler ama takip ederim', 'B) Her şeyi kendim yaparım', 'C) Sorumluluk dağıtırım', 'D) Stresle baş ederim'] },
+  ],
+};
+
+// Roleplay cevap değerlendirme mesajları
+const EXAM_EVALUATION_RESPONSES = [
+  'Hmm... Bu soruya verdiğin cevabı inceliyorum... ✍️ **Güzel cevap!** Gerçekten iyi düşünmüşsün, tam da beklediğimiz yaklaşım bu. ✅',
+  'Bakıyorum cevabına... 🔍 **Harika bir analiz!** Bu tarz durumları bu şekilde ele alman çok doğru. Bravo! ✅',
+  'Cevabını değerlendiriyorum... 📋 **Mükemmel!** Bu yaklaşım tam da bir moderatörden beklenen profesyonel tutum. ✅',
+  'Hmm, bu zor bir soruydu... 🤔 Senin cevabını okudum ve... **Çok başarılı!** Bu konuda yetkin olduğun belli. ✅',
+  'Son olarak bu cevabını da inceliyorum... 📝 **Tam isabet!** Yetkinliğin şüphesiz. Bu cevap seni bir üst seviyeye taşıyacak nitelikte. ✅',
+];
+
+/**
+ * Terfi sınavı için soruları üret (rütbeye göre 5 soru seç)
+ */
+function generatePromotionExamQuestions(targetLevel) {
+  const pool = PROMOTION_EXAM_QUESTIONS[targetLevel] || PROMOTION_EXAM_QUESTIONS[2];
+  // Havuzdan 5 soru seç (shuffle)
+  const shuffled = [...pool].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 5);
+}
+
+/**
+ * Terfi Alma Merkezi — Ana Seremoni Başlatıcı
+ * Adım 1: Kontrol & Değerlendirme (roleplay)
+ */
+async function startPromotionCeremony(interaction, progress) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const currentLevel = progress.level || 1;
+  const targetLevel = currentLevel + 1;
+  const targetRoleName = ROLE_NAMES[targetLevel] || `Seviye ${targetLevel}`;
+  const currentRoleName = ROLE_NAMES[currentLevel] || `Seviye ${currentLevel}`;
+
+  // State başlat
+  const examQuestions = generatePromotionExamQuestions(targetLevel);
+  promotionCeremonyState.set(interaction.user.id, {
+    step: 'checking',
+    targetLevel,
+    currentLevel,
+    examQuestions,
+    currentQuestionIndex: 0,
+    answers: [],
+    startedAt: Date.now(),
+  });
+
+  // ADIM 1: Kontrol ediyorum... (roleplay)
+  const checkingEmbed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle('🏢 TERFİ ALMA MERKEZİ')
+    .setDescription(
+      `Hoş geldiniz **${currentRoleName}**! Terfi Alma Merkezi'ne başvurunuz alınmıştır.\n\n` +
+      `🔄 **Kontrol ediyorum...**\n` +
+      `📋 İstatistiklerinizi inceliyorum...\n` +
+      `🔍 Performans verilerinize bakıyorum...\n\n` +
+      `*Lütfen bekleyiniz...*`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi' })
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [checkingEmbed], components: [] });
+
+  // 2 saniye bekle (roleplay efekti)
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Kontrol tamamlandı, onay mesajı
+  const approvedEmbed = new EmbedBuilder()
+    .setColor(0x2ecc71)
+    .setTitle('🏢 TERFİ ALMA MERKEZİ — KONTROL TAMAMLANDI')
+    .setDescription(
+      `Ah! **Evet, tamamlamışsınız!** 🎉\n\n` +
+      `📊 Tüm terfi gereksinimleriniz kontrol edildi ve **başarıyla karşılandığı** onaylandı.\n\n` +
+      `**${currentRoleName}** → **${targetRoleName}** terfi sürecinizi başlatıyorum.\n\n` +
+      `Ancak önce bir **Terfi Yetkinlik Sınavı** geçmeniz gerekmektedir. Sınav 5 sorudan oluşmaktadır.\n\n` +
+      `Hazır olduğunuzda aşağıdaki butona basın.`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sınav Aşaması' })
+    .setTimestamp();
+
+  const startExamRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('promotion_start_exam')
+      .setLabel('📝 Terfi Sınavına Başla')
+      .setStyle(ButtonStyle.Success)
+  );
+
+  await interaction.editReply({ embeds: [approvedEmbed], components: [startExamRow] });
+}
+
+/**
+ * Terfi Sınavı — Soru gönder
+ */
+async function sendPromotionExamQuestion(interaction, userId) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const state = promotionCeremonyState.get(userId);
+  if (!state || !state.examQuestions) return;
+
+  const questionIndex = state.currentQuestionIndex;
+  const question = state.examQuestions[questionIndex];
+  if (!question) return;
+
+  const targetRoleName = ROLE_NAMES[state.targetLevel] || `Seviye ${state.targetLevel}`;
+
+  const examEmbed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle(`📝 TERFİ SINAVI — Soru ${questionIndex + 1}/5`)
+    .setDescription(
+      `**${targetRoleName}** rütbesi için terfi sınavı devam ediyor.\n\n` +
+      `**Soru ${questionIndex + 1}:**\n` +
+      `> ${question.q}\n\n` +
+      question.options.map(o => `${o}`).join('\n')
+    )
+    .setFooter({ text: `Eko Yıldız • Terfi Sınavı | Soru ${questionIndex + 1} / 5` })
+    .setTimestamp();
+
+  const optionRows = [];
+  const row = new ActionRowBuilder();
+  question.options.forEach((opt, i) => {
+    const letter = String.fromCharCode(65 + i); // A, B, C, D
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`promotion_exam_answer_${questionIndex}_${letter}`)
+        .setLabel(letter)
+        .setStyle(ButtonStyle.Primary)
+    );
+  });
+  optionRows.push(row);
+
+  await interaction.editReply({ embeds: [examEmbed], components: optionRows });
+}
+
+/**
+ * Terfi Sınavı — Cevap Değerlendirmesi (roleplay — tüm cevaplar doğru sayılır)
+ */
+async function handlePromotionExamAnswer(interaction, userId, questionIndex, answer) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const state = promotionCeremonyState.get(userId);
+  if (!state) return;
+
+  state.answers.push({ questionIndex, answer });
+
+  // Roleplay değerlendirme mesajı
+  const evalMessage = EXAM_EVALUATION_RESPONSES[questionIndex] || EXAM_EVALUATION_RESPONSES[0];
+  const question = state.examQuestions[questionIndex];
+
+  const evalEmbed = new EmbedBuilder()
+    .setColor(0x2ecc71)
+    .setTitle(`📝 TERFİ SINAVI — Cevap Değerlendirmesi`)
+    .setDescription(
+      `**Soru ${questionIndex + 1}:** ${question?.q || ''}\n\n` +
+      `**Senin cevabın:** ${answer}\n\n` +
+      `${evalMessage}`
+    )
+    .setFooter({ text: `Eko Yıldız • Terfi Sınavı | ${questionIndex + 1} / 5 Tamamlandı` })
+    .setTimestamp();
+
+  // Sonraki soruya geçiş butonu veya sınavı bitir
+  state.currentQuestionIndex = questionIndex + 1;
+  promotionCeremonyState.set(userId, state);
+
+  if (state.currentQuestionIndex < 5 && state.currentQuestionIndex < state.examQuestions.length) {
+    const nextRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('promotion_exam_next')
+        .setLabel(`▶️ Sonraki Soru (${state.currentQuestionIndex + 1}/5)`)
+        .setStyle(ButtonStyle.Primary)
+    );
+    await interaction.update({ embeds: [evalEmbed], components: [nextRow] });
+  } else {
+    // Sınav bitti
+    const passEmbed = new EmbedBuilder()
+      .setColor(0x2ecc71)
+      .setTitle('🎓 TERFİ SINAVI TAMAMLANDI!')
+      .setDescription(
+        `Tebrikler! 5/5 soruyu başarıyla cevapladınız ve sınavı **GEÇTİNİZ!** 🎉\n\n` +
+        `Şimdi terfi sürecine devam ediyoruz. Yeni rütbe sözleşmenizi imzalamanız gerekmektedir.\n\n` +
+        `📋 Aşağıdaki butona basarak **${ROLE_NAMES[state.targetLevel] || 'Üst Rütbe'}** sözleşmenizi görüntüleyin ve imzalayın.`
+      )
+      .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sözleşme Aşaması' })
+      .setTimestamp();
+
+    const contractRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('promotion_show_contract')
+        .setLabel('📜 Yeni Rütbe Sözleşmesini Görüntüle')
+        .setStyle(ButtonStyle.Success)
+    );
+
+    await interaction.update({ embeds: [passEmbed], components: [contractRow] });
+  }
+}
+
+/**
+ * Terfi Sözleşmesi — Göster & İmzala
+ */
+async function handlePromotionShowContract(interaction, userId) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const state = promotionCeremonyState.get(userId);
+  if (!state) return;
+
+  const targetRoleName = ROLE_NAMES[state.targetLevel] || `Seviye ${state.targetLevel}`;
+  const tasks = LEVEL_TASKS[state.targetLevel];
+
+  let taskList = '';
+  if (tasks && tasks.dailyTasks) {
+    taskList = tasks.dailyTasks.map(t => `  ${t}`).join('\n');
+  }
+
+  const contractEmbed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle(`📜 ${targetRoleName.toUpperCase()} — RESMİ RÜTBE SÖZLEŞMESİ`)
+    .setDescription(
+      `**Sözleşme No:** TRF-${Date.now().toString(36).toUpperCase()}\n` +
+      `**Tarih:** ${new Date().toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })}\n` +
+      `**Taraf:** <@${userId}>\n` +
+      `**Hedef Rütbe:** ${targetRoleName}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `**Madde 1 — Görev ve Sorumluluklar:**\n` +
+      `${taskList}\n\n` +
+      `**Madde 2 — Ödüller:**\n` +
+      `${tasks?.rewards || '✨ Rütbe avantajları geçerli olacaktır.'}\n\n` +
+      `**Madde 3 — Yaptırımlar:**\n` +
+      `${tasks?.penalties || '⏰ Görev ihmali durumunda rütbe geri alınabilir.'}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Bu sözleşmeyi imzalayarak yukarıdaki koşulları kabul etmiş olursunuz.`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sözleşme İmza Aşaması' })
+    .setTimestamp();
+
+  const signRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('promotion_sign_contract')
+      .setLabel('✍️ İMZALA')
+      .setStyle(ButtonStyle.Success)
+  );
+
+  await interaction.update({ embeds: [contractEmbed], components: [signRow] });
+}
+
+/**
+ * Terfi Sözleşmesi — İmzalandı → Kurallar Aşaması
+ */
+async function handlePromotionSignContract(interaction, userId) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const state = promotionCeremonyState.get(userId);
+  if (!state) return;
+
+  const targetRoleName = ROLE_NAMES[state.targetLevel] || `Seviye ${state.targetLevel}`;
+
+  const rulesEmbed = new EmbedBuilder()
+    .setColor(0x9b59b6)
+    .setTitle(`📋 ${targetRoleName} — MODERATÖR KURALLARI`)
+    .setDescription(
+      `✅ Sözleşmeniz başarıyla imzalandı!\n\n` +
+      `Şimdi **${targetRoleName}** rütbesinin gerektirdiği kuralları kabul etmeniz gerekmektedir.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `**📌 Moderatör Kuralları:**\n\n` +
+      `1️⃣ **Tarafsızlık:** Tüm üyelere eşit ve adil davranacağım.\n` +
+      `2️⃣ **Gizlilik:** Moderasyon bilgilerini dışarıya paylaşmayacağım.\n` +
+      `3️⃣ **Profesyonellik:** Görevimi kişisel çıkarlarım için kullanmayacağım.\n` +
+      `4️⃣ **Aktiflik:** Günlük görevlerimi düzenli olarak tamamlayacağım.\n` +
+      `5️⃣ **İletişim:** Ekip içi iletişimde saygılı ve yapıcı olacağım.\n` +
+      `6️⃣ **Raporlama:** Önemli olayları üst yönetime raporlayacağım.\n` +
+      `7️⃣ **Gelişim:** Kendimi sürekli geliştirmeye devam edeceğim.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Bu kuralları kabul edip imzalayarak yeni rütbenize geçiş sürecinizi tamamlayabilirsiniz.`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Kural Kabul Aşaması' })
+    .setTimestamp();
+
+  const signRulesRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('promotion_sign_rules')
+      .setLabel('✍️ İMZALA — Kuralları Kabul Ediyorum')
+      .setStyle(ButtonStyle.Success)
+  );
+
+  await interaction.update({ embeds: [rulesEmbed], components: [signRulesRow] });
+}
+
+/**
+ * Kurallar İmzalandı → Güncelleme & Rol Verme (roleplay)
+ */
+async function handlePromotionSignRules(interaction, userId, client) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  const state = promotionCeremonyState.get(userId);
+  if (!state) return;
+
+  const targetRoleName = ROLE_NAMES[state.targetLevel] || `Seviye ${state.targetLevel}`;
+
+  // Güncelleme süreci (roleplay)
+  const updatingEmbed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle('🏢 TERFİ ALMA MERKEZİ — GÜNCELLEME')
+    .setDescription(
+      `✅ Kurallar kabul edildi ve imzalandı!\n\n` +
+      `🔄 **Şu anda güncelliyorum...**\n` +
+      `📋 Rütbenizi veriyorum...\n` +
+      `👑 Rolünüzü veriyorum...\n\n` +
+      `*Lütfen bekleyiniz...*`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi' })
+    .setTimestamp();
+
+  await interaction.update({ embeds: [updatingEmbed], components: [] });
+
+  // Gerçek terfi işlemi
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (p) {
+      await promote(p, client);
+    }
+  } catch (err) {
+    console.error('[staffSystem] Promotion ceremony promote error:', err.message);
+  }
+
+  // 2 saniye bekle
+  await new Promise(resolve => setTimeout(resolve, 2500));
+
+  // Final — HAYIRLI UĞURLU OLSUN!
+  const finalEmbed = new EmbedBuilder()
+    .setColor(0x2ecc71)
+    .setTitle('🎉 HAYIRLI UĞURLU OLSUN!')
+    .setDescription(
+      `**Veee... VERDİM!** 🥳🎊\n\n` +
+      `Tebrikler <@${userId}>! **${targetRoleName}** rütbesi başarıyla verilmiştir!\n\n` +
+      `🏅 **Yeni Rütben:** ${targetRoleName}\n` +
+      `📜 **Sözleşme:** ✅ İmzalandı\n` +
+      `📋 **Kurallar:** ✅ Kabul Edildi\n` +
+      `🎓 **Sınav:** ✅ Geçildi\n` +
+      `👑 **Rol:** ✅ Verildi\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `🌟 Yeni görevlerine ne zaman başlamak istersin?`
+    )
+    .setThumbnail(interaction.user.displayAvatarURL({ size: 128 }))
+    .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | HAYIRLI UĞURLU OLSUN!' })
+    .setTimestamp();
+
+  const startRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('promotion_start_today')
+      .setLabel('☀️ Bugünden Başlamak İstiyorum!')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('promotion_start_tomorrow')
+      .setLabel('🌙 Yarından Başlamak İstiyorum')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  // editReply ile güncellemek lazım çünkü önceki update yaptık
+  try {
+    await interaction.editReply({ embeds: [finalEmbed], components: [startRow] });
+  } catch {
+    // Eğer editReply çalışmazsa followUp dene
+    try {
+      const user = await client.users.fetch(userId);
+      await user.send({ embeds: [finalEmbed], components: [startRow] }).catch(() => {});
+    } catch (_) {}
+  }
+
+  // State temizle
+  promotionCeremonyState.delete(userId);
+}
+
+/**
+ * Başlama zamanı seçimi
+ */
+async function handlePromotionStartChoice(interaction, choice) {
+  const { EmbedBuilder } = require('discord.js');
+
+  const responseEmbed = new EmbedBuilder()
+    .setColor(choice === 'today' ? 0x2ecc71 : 0x3498db)
+    .setTimestamp();
+
+  if (choice === 'today') {
+    responseEmbed
+      .setTitle('☀️ BUGÜNDEN BAŞLIYORUZ!')
+      .setDescription(
+        `Harika seçim! 💪\n\n` +
+        `Yeni görevlerin bugünden itibaren aktif! Moderatör Anasayfandan günlük görevlerini takip edebilirsin.\n\n` +
+        `Başarılar dileriz! Güçlü bir moderatör olarak yoluna devam et! 🚀`
+      )
+      .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Görev Başladı!' });
+  } else {
+    responseEmbed
+      .setTitle('🌙 YARINDA BAŞLIYORUZ!')
+      .setDescription(
+        `Tamam, yarından itibaren yeni görevlerin aktif olacak! 🌟\n\n` +
+        `Bugünü dinlenerek geçirebilirsin. Yarın sabah brifingin gelecek ve yeni görevlerin başlayacak.\n\n` +
+        `İyi dinlenmeler! Yarın yeni rütbenle güçlü bir başlangıç yap! 💤`
+      )
+      .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Yarın Başlıyoruz' });
+  }
+
+  await interaction.update({ embeds: [responseEmbed], components: [] });
+}
+
 module.exports = {
   getOrCreate,
+  isPromotionEligible,
+
   recordGreet,
   addVoiceMinutes,
   recordTicketSolved,
@@ -5956,4 +6411,13 @@ module.exports = {
   generateTutorialEmbed,
   getTutorialComponents,
   getInactivityLimit,
+  // Terfi Alma Merkezi (Promotion Ceremony System)
+  startPromotionCeremony,
+  sendPromotionExamQuestion,
+  handlePromotionExamAnswer,
+  handlePromotionShowContract,
+  handlePromotionSignContract,
+  handlePromotionSignRules,
+  handlePromotionStartChoice,
+  promotionCeremonyState,
 };

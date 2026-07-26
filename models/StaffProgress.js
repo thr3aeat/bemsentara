@@ -142,8 +142,10 @@ const staffProgressSchema = new mongoose.Schema({
   // Uyarı sistemi
   warnings: {
     count: { type: Number, default: 0 },    // Kaç gün üst üste görev yapılmadı
+    inactivityCount: { type: Number, default: 0 },
     lastWarned: { type: Date, default: null },
     warnedDays: { type: [String], default: [] }, // Uyarı atılan günler
+    lowActivityNotified: { type: Boolean, default: false },
     // Rehber (walkthrough) için son gönderilen adım (tarih bazlı kontrol için)
     lastWalkthroughStepDate: { type: String, default: '' }
   },
