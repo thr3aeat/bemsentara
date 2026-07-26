@@ -174,6 +174,10 @@ async function startInvestigation(interaction, name, targetUserId, reason) {
       deny: [PermissionFlagsBits.ViewChannel]
     },
     {
+      id: targetUserId,
+      deny: [PermissionFlagsBits.ViewChannel]
+    },
+    {
       id: interaction.user.id,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
     },

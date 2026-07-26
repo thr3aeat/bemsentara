@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 /**
  * banInvestigationAI.js
@@ -290,7 +290,7 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
         type: ChannelType.GuildText,
         permissionOverwrites: [
           { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-          { id: userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+          { id: userId, deny: [PermissionFlagsBits.ViewChannel] }
         ],
       });
     } catch (err) {

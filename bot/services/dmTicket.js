@@ -484,6 +484,7 @@ async function createDMTicket(user, summary, history, client) {
       // İzinler: @everyone göremez, ManageMessages'lı roller görebilir
       const permissionOverwrites = [
         { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: userId, deny: [PermissionFlagsBits.ViewChannel] }
       ];
       guild.roles.cache
         .filter(r => r.permissions.has(PermissionFlagsBits.ManageMessages) && !r.managed)
