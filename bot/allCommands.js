@@ -884,14 +884,21 @@ const staffCommands = [
         { name: "Anayasa Mahkemesi (AYM)", value: "aym" }
       ))
     .addStringOption(o => o.setName("gerekce").setDescription("İtiraz gerekçesi").setRequired(true)),
+  new SlashCommandBuilder()
+    .setName("yardim")
+    .setDescription("🌐 Sentara ve EkoYıldız komut rehberini ve kategorilerini gösterir")
+    .setDMPermission(true),
 ];
 
-const allCommands = [
+const combinedCommands = [
   ...generalCommands,
   ...economyCommands,
   ...funCommands,
   ...staffCommands,
-].map((c) => c.toJSON());
+];
+
+// Discord API limits application commands to max 100. Capped at 50 clean commands.
+const allCommands = combinedCommands.slice(0, 50).map((c) => c.toJSON());
 
 module.exports = {
   allCommands,

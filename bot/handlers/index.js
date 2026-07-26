@@ -1561,11 +1561,22 @@ function initializeDiscordHandlers(client) {
       }
     }
 
-    // ── Gelişmiş Uyarı & Hapis Komutları (!uyar, !hapis, !hapiscıkar, !unkodos) ──
-    if (message.guild && !message.author.bot && (content.startsWith('!') || content.startsWith('.'))) {
-      const args = content.slice(1).trim().split(/ +/);
+    // ── Gelişmiş s! ve ! Prefix Komut Sistemi ─────────────────────────────
+    if (message.guild && !message.author.bot && (content.startsWith('s!') || content.startsWith('S!') || content.startsWith('!') || content.startsWith('.'))) {
+      let prefixLen = 1;
+      if (content.toLowerCase().startsWith('s!')) prefixLen = 2;
+
+      const args = content.slice(prefixLen).trim().split(/ +/);
       const cmd = args.shift().toLowerCase();
 
+      // 1) s!yardım / s!help
+      if (['yardım', 'yardim', 'help', 'komutlar', 'kategoriler'].includes(cmd)) {
+        const { sendHelpMenu } = require("../services/helpService");
+        await sendHelpMenu(message);
+        return;
+      }
+
+      // 2) Disiplin & Hapis Komutları
       if (['uyar', 'warn', 'hapis', 'jail', 'hapiscıkar', 'hapis-cikar', 'unkodos', 'uyari-sil', 'uyarı-sil'].includes(cmd)) {
         const { PermissionFlagsBits } = require('discord.js');
         const isMod = message.member?.permissions.has(PermissionFlagsBits.ModerateMembers) || message.member?.permissions.has(PermissionFlagsBits.Administrator);
@@ -1575,7 +1586,7 @@ function initializeDiscordHandlers(client) {
 
         const targetUser = message.mentions.users.first() || (args[0] ? await client.users.fetch(args[0]).catch(() => null) : null);
         if (!targetUser) {
-          return message.reply(`❌ Lütfen geçerli bir üye etiketleyin veya ID girin. (Örnek: \`!${cmd} @kullanıcı [gerekçe]\`)`);
+          return message.reply(`❌ Lütfen geçerli bir üye etiketleyin veya ID girin. (Örnek: \`s!${cmd} @kullanıcı [gerekçe]\`)`);
         }
 
         const { issueWarning, issueJail, issueUnjail } = require("../services/punishmentService");
@@ -1614,6 +1625,19 @@ function initializeDiscordHandlers(client) {
           }
           return message.reply(`⚠️ <@${targetUser.id}> kullanıcısının aktif uyarısı bulunmamaktadır.`);
         }
+      }
+
+      // 3) Adli Sicil / Sabıka Sorgu
+      if (['adli-sicil', 'adlisicil', 'sabika', 'sicil'].includes(cmd)) {
+        const targetUser = message.mentions.users.first() || (args[0] ? await client.users.fetch(args[0]).catch(() => null) : message.author);
+        const { getSabikaKaydi } = require("../services/courtService");
+        const embed = await getSabikaKaydi(targetUser.id);
+        return message.reply({ embeds: [embed] });
+      }
+
+      // 4) Dava & Soruşturma
+      if (['dava-ac', 'davaac', 'dava'].includes(cmd)) {
+        return message.reply("⚖️ Dava açmak için lütfen tıklanabilir dava açma panelindeki **`[📜 Dava Dilekçesi Ver]`** butonunu kullanınız.");
       }
     }
 

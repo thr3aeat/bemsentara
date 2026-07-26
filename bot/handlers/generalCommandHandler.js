@@ -202,6 +202,13 @@ async function handleGeneralCommand(interaction) {
     }
   }
 
+  // ── yardim: Komut Rehberi ve Kategoriler ─────────────────────────
+  if (commandName === "yardim" || commandName === "help") {
+    const { sendHelpMenu } = require("../services/helpService");
+    await sendHelpMenu(interaction);
+    return;
+  }
+
   // ── uyar: Resmi Disiplin Uyarısı Verme ───────────────────────────
   if (commandName === "uyar" || commandName === "warn") {
     if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {

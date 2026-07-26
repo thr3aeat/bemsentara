@@ -9,6 +9,13 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
+  if (customId === "s_help_category_select") {
+    const selectedCategory = interaction.values[0];
+    const { createHelpPayload } = require("../services/helpService");
+    const payload = createHelpPayload(selectedCategory);
+    return interaction.update(payload).catch(() => {});
+  }
+
   if (customId.startsWith("mod_select_dropdown_")) {
     const type = customId.replace("mod_select_dropdown_", ""); // 'weekly' or 'monthly'
     const selectedUserId = interaction.values[0];
