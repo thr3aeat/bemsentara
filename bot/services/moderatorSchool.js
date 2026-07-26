@@ -430,7 +430,7 @@ async function massGraduateSchoolStudents(client) {
     for (const p of students) {
       try {
         if (p.schoolSystem?.status === 'graduated') continue;
-        await graduateStudent(p.userId, 'Kıyak Mezuniyet (Toplu)', client, { score: 100, reason: 'Toplu kıyak mezuniyeti uygulandı. EKO-MOD-KIYAĞI tagı verildi.' });
+        await graduateStudent(p.userId, 'Kıyak Mezuniyet (Toplu)', client, { score: 100, reason: 'Toplu kıyak mezuniyeti uygulandı.' });
       } catch (innerErr) {
         logger.error(`[ModeratorSchool] massGraduateSchoolStudents inner error for ${p.userId}:`, innerErr.message);
       }
@@ -1995,17 +1995,17 @@ async function touchSchoolActivity(userId) {
   }
 }
 
-async function applySchoolKiyakTag(member) {
+async function removeSchoolKiyakTag(member) {
   try {
     if (!member) return;
     const currentName = member.nickname || member.user?.username || '';
     if (!currentName) return;
     const tag = `[${SCHOOL_KICK_TAG_NAME}]`;
-    if (currentName.includes(tag)) return;
-    const cleaned = currentName.replace(/^\[[^\]]+\]\s*/, '');
-    await member.setNickname(`${tag} ${cleaned}`.trim()).catch(() => {});
+    if (!currentName.includes(tag)) return;
+    const cleaned = currentName.replace(tag, '').trim();
+    await member.setNickname(cleaned || null).catch(() => {});
   } catch (err) {
-    logger.error('[ModeratorSchool] applySchoolKiyakTag error:', err.message);
+    logger.error('[ModeratorSchool] removeSchoolKiyakTag error:', err.message);
   }
 }
 
@@ -2091,7 +2091,7 @@ async function graduateStudent(userId, adminName, client, evalResult = null) {
         const member = await mainGuild.members.fetch(userId).catch(() => null);
         if (member) {
           await member.roles.remove([MAIN_SCHOOL_ROLES.TRAINEE, MAIN_SCHOOL_ROLES.INFO_ROLE]).catch(() => { });
-          await applySchoolKiyakTag(member).catch(() => {});
+          await removeSchoolKiyakTag(member).catch(() => {});
           const savedRoles = p.schoolSystem.originalRoles || [];
           if (savedRoles.length > 0) {
             await member.roles.add(savedRoles).catch(() => { });
@@ -2115,7 +2115,7 @@ async function graduateStudent(userId, adminName, client, evalResult = null) {
         const schoolMember = await schoolGuild.members.fetch(userId).catch(() => null);
         if (schoolMember) {
           await schoolMember.roles.add(SCHOOL_ROLES.MOD_EKIBI).catch(() => { });
-          await applySchoolKiyakTag(schoolMember).catch(() => {});
+          await removeSchoolKiyakTag(schoolMember).catch(() => {});
           setTimeout(async () => {
             await schoolMember.kick('Mezun oldu!').catch(() => { });
           }, 5000);
