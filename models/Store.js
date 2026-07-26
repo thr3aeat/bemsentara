@@ -116,38 +116,30 @@ class InMemoryCollection {
   }
 }
 
-const collections = {
-  users: null,
-  tickets: null,
-  economies: null,
-  wikiArticles: null,
-  errorReports: null,
-  groupAdmins: null,
-  rankMetadata: null,
-  posts: null,
-  stories: null,
-  liveStreams: null,
-  appMeta: null,
-};
-
 function onStoreMutate() {
   // Dosya sistemi backup (MongoDB yoksa veya ek güvenlik için)
   scheduleSave(collections);
 }
 
-collections.courtCases     = new InMemoryCollection("courtCases",     onStoreMutate);
-collections.investigations = new InMemoryCollection("investigations", onStoreMutate);
-collections.users          = new InMemoryCollection("users",          onStoreMutate);
-collections.tickets        = new InMemoryCollection("tickets",        onStoreMutate);
-collections.economies      = new InMemoryCollection("economies",      onStoreMutate);
-collections.wikiArticles   = new InMemoryCollection("wikiArticles",   onStoreMutate);
-collections.errorReports   = new InMemoryCollection("errorReports",   onStoreMutate);
-collections.groupAdmins    = new InMemoryCollection("groupAdmins",    onStoreMutate);
-collections.rankMetadata   = new InMemoryCollection("rankMetadata",   onStoreMutate);
-collections.posts          = new InMemoryCollection("posts",          onStoreMutate);
-collections.stories        = new InMemoryCollection("stories",        onStoreMutate);
-collections.liveStreams    = new InMemoryCollection("liveStreams",    onStoreMutate);
-collections.appMeta        = new InMemoryCollection("appMeta",        onStoreMutate);
+const rawCollectionsMap = new Map();
+
+const collections = new Proxy({}, {
+  get(target, prop) {
+    if (typeof prop === 'symbol' || prop in Object.prototype || prop === 'then' || prop === 'toJSON') {
+      return target[prop];
+    }
+    if (!rawCollectionsMap.has(prop)) {
+      rawCollectionsMap.set(prop, new InMemoryCollection(String(prop), onStoreMutate));
+    }
+    return rawCollectionsMap.get(prop);
+  },
+  set(target, prop, value) {
+    if (value) {
+      rawCollectionsMap.set(prop, value);
+    }
+    return true;
+  }
+});
 
 const courtCases     = collections.courtCases;
 const investigations = collections.investigations;
@@ -274,6 +266,7 @@ function reviveDates(record) {
 }
 
 module.exports = {
+  collections,
   courtCases,
   investigations,
   users,
