@@ -5635,21 +5635,32 @@ function renderEnergyBar(percent) {
       resultText = `✅ **${targetUserObj?.tag || targetUserId}** için küfür ihlali yoksayıldı.` + resultText;
     } else if (action === "warn") {
       dbUser.warnCount = (dbUser.warnCount || 0) + 1;
+      const isThirdWarn = dbUser.warnCount >= 3;
+
+      if (isThirdWarn) {
+        dbUser.warnCount = 0; // 3/3 hapis cezasına ulaşıldıktan sonra uyarı sayısını sıfırla
+      }
       await dbUser.save();
 
-      resultText = `⚠️ **${targetUserObj?.tag || targetUserId}** uyarıldı. (Güncel Uyarı: **${dbUser.warnCount}/3**)` + resultText;
+      const displayWarnCount = isThirdWarn ? 3 : dbUser.warnCount;
+      resultText = `⚠️ **${targetUserObj?.tag || targetUserId}** uyarıldı. (Güncel Uyarı: **${displayWarnCount}/3**)` + resultText;
 
       // Send warning DM to target user
       if (targetUserObj) {
-        await targetUserObj.send(
-          `⚠️ **EkoYıldız Moderasyonu Tarafından Uyarıldınız!**\n\n` +
-          `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
-          `**Uyarı Sayınız:** ${dbUser.warnCount}/3\n` +
-          `Uyarı sayınız 3'ü geçerse otomatik olarak hapishaneye gönderileceksiniz.`
-        ).catch(() => { });
+        const dmText = isThirdWarn
+          ? `⚠️ **EkoYıldız Moderasyonu Tarafından Uyarıldınız!**\n\n` +
+            `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
+            `**Uyarı Sayınız:** 3/3\n` +
+            `3/3 uyarı sınırına ulaştığınız için otomatik olarak hapishaneye gönderiliyorsunuz.`
+          : `⚠️ **EkoYıldız Moderasyonu Tarafından Uyarıldınız!**\n\n` +
+            `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
+            `**Uyarı Sayınız:** ${displayWarnCount}/3\n` +
+            `Uyarı sayınız 3/3'e ulaştığında otomatik olarak hapishaneye gönderileceksiniz.`;
+
+        await targetUserObj.send(dmText).catch(() => { });
       }
 
-      if (dbUser.warnCount >= 3) {
+      if (isThirdWarn) {
         isJailAction = true;
         finalDuration = 30; // 30 minutes for 3 warnings
       }

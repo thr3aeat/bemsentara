@@ -2816,6 +2816,7 @@ async function getMorningBriefingComponents(progress) {
 
   // Row 3: Sistem Harekât Masası
   const combinedOptions = [
+    { label: '🚀 TERFİ ALMA MERKEZİ', description: 'Terfi başvurusunda bulunun, sınava girin ve terfi edin!', value: 'staff_claim_promotion', emoji: '🏢' },
     { label: '💬 Aktif Sohbetçi', description: 'Sohbette en az 15 mesaj gönder', value: 'task_chat' },
     { label: '🎤 Ses Meraklısı', description: 'Ses kanallarında fazladan 15 dakika geçir', value: 'task_voice' },
     { label: '🎫 Destekçi', description: 'Bugün en az 1 ticket çöz', value: 'task_ticket' },

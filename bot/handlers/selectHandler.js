@@ -524,6 +524,29 @@ async function handleSelectInteraction(interaction) {
   if (interaction.customId === 'staff_personal_actions') {
     const action = interaction.values[0];
     
+    if (action === 'staff_claim_promotion') {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const StaffProgress = require('../../models/StaffProgress');
+        const { isPromotionEligible, checkPromotion, startPromotionCeremony } = require('../services/staffSystem');
+        const p = await StaffProgress.findOne({ userId: interaction.user.id });
+
+        if (!p) return interaction.editReply({ content: "❌ Personel sisteminde kayıtlı bir profiliniz bulunamadı." });
+
+        const eligible = isPromotionEligible(p);
+        if (eligible) {
+          await startPromotionCeremony(interaction, p);
+        } else {
+          await checkPromotion(p, interaction.client);
+          return interaction.editReply({ content: "ℹ️ Terfi durumunuz kontrol edildi. Şartlar tamamlandığında Terfi Alma Merkezi'nden terfinizi alabilirsiniz." });
+        }
+      } catch (err) {
+        console.error('[staff_claim_promotion select] Hata:', err.message);
+        return interaction.editReply({ content: `❌ Terfi işlemi sırasında bir hata oluştu: ${err.message}` });
+      }
+      return;
+    }
+
     if (action === 'staff_action_use_leave') {
       await interaction.deferReply({ ephemeral: true });
       try {

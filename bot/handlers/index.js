@@ -1528,7 +1528,7 @@ function initializeDiscordHandlers(client) {
         }
 
         if (isUserJailed) {
-          const isJailCategory = message.channel.parentId === "1521501154339586078";
+          const isJailCategory = message.channel.parentId === "1521501154339586078" || message.channel.parent?.parentId === "1521501154339586078";
           const isCayOcagi = message.channel.name && (
             (message.channel.name.toLowerCase().includes("çay") || message.channel.name.toLowerCase().includes("cay")) &&
             (message.channel.name.toLowerCase().includes("ocak") || message.channel.name.toLowerCase().includes("ocağ") || message.channel.name.toLowerCase().includes("ocag"))

@@ -18,20 +18,26 @@ async function setupHapisRoleOverwrites(guild, hapisRole) {
   for (const channel of guild.channels.cache.values()) {
     try {
       const isJailCategory = channel.id === "1521501154339586078";
-      const isJailChannel = channel.parentId === "1521501154339586078";
+      const isJailChannel = channel.parentId === "1521501154339586078" || channel.parent?.parentId === "1521501154339586078";
       
       if (isJailCategory || isJailChannel) {
         // Allow View and Send in jail category/channel
         await channel.permissionOverwrites.edit(hapisRole, {
           ViewChannel: true,
           SendMessages: true,
+          SendMessagesInThreads: true,
           ReadMessageHistory: true
         }).catch(() => {});
       } else {
-        // Deny ViewChannel on all other channels/categories
+        // Deny ViewChannel, SendMessages, SendMessagesInThreads, Thread Creation, Reactions, etc. on all other channels/categories
         await channel.permissionOverwrites.edit(hapisRole, {
           ViewChannel: false,
           SendMessages: false,
+          SendMessagesInThreads: false,
+          CreatePublicThreads: false,
+          CreatePrivateThreads: false,
+          SendTTSMessages: false,
+          AddReactions: false,
           Connect: false,
           Speak: false
         }).catch(() => {});
