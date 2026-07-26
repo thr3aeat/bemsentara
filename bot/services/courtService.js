@@ -518,6 +518,36 @@ async function filePetition(interaction, { defendantInput, articleKey, details, 
     `Aşağıdaki **"📂 Soruşturma Kanalına Git"** butonuna tıklayarak kanala ulaşabilirsiniz.`,
     channelLink
   );
+
+  // DM Notification to Assigned Moderator
+  if (assignedModId) {
+    await notifyPartyWithChannelLink(
+      interaction.client,
+      assignedModId,
+      '👮 RESMİ SORUŞTURMA MODERATÖR GÖREVLENDİRMESİ',
+      `Sayın Moderatör,\n\nHakkında soruşturma başlatılan **${investigationNo}** (\`${caseCode}\`) dosyasına **Soruşturmacı Moderatör** olarak atandınız.\n\n` +
+      `👤 **Sanık (Şüpheli):** <@${targetUserId}>\n` +
+      `👤 **Müşteki (Davacı):** <@${interaction.user.id}>\n` +
+      `📖 **Suçlama:** ${article.code} - ${article.title}\n\n` +
+      `Aşağıdaki **"📂 Soruşturma Kanalına Git"** butonuna tıklayarak kanala ulaşabilir, ifade alabilir ve kararı verebilirsiniz.`,
+      channelLink
+    );
+  }
+
+  // DM Notification to Assigned Lawyer
+  if (assignedLawyerId) {
+    await notifyPartyWithChannelLink(
+      interaction.client,
+      assignedLawyerId,
+      '⚖️ RESMİ SAVUNMA AVUKATI GÖREVLENDİRMESİ',
+      `Sayın Avukat,\n\n**${investigationNo}** (\`${caseCode}\`) soruşturma dosyasına **Sanık Savunma Avukatı** olarak atandınız.\n\n` +
+      `👤 **Müvekkiliniz (Sanık):** <@${targetUserId}>\n` +
+      `👤 **Müşteki (Davacı):** <@${interaction.user.id}>\n` +
+      `📖 **Suçlama:** ${article.code} - ${article.title}\n\n` +
+      `Aşağıdaki **"📂 Soruşturma Kanalına Git"** butonuna tıklayarak kanala erişebilir ve müvekkilinizin savunmasını hazırlayabilirsiniz.`,
+      channelLink
+    );
+  }
 }
 
 /**
@@ -880,8 +910,22 @@ async function hireLawyer(interaction, caseCode, targetLawyerId, isBlackmarket =
 
   const channel = interaction.guild.channels.cache.get(courtCase.channelId);
   if (channel) {
-    await channel.permissionOverwrites.edit(targetLawyerId, { ViewChannel: true, SendMessages: true }).catch(() => {});
+    await channel.permissionOverwrites.edit(targetLawyerId, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true }).catch(() => {});
   }
+
+  const channelLink = channel ? `https://discord.com/channels/${interaction.guild.id}/${channel.id}` : '';
+
+  // DM Notification to Hired Lawyer
+  await notifyPartyWithChannelLink(
+    interaction.client,
+    targetLawyerId,
+    isBlackmarket ? '🕵️ KARABORSA AVUKAT GÖREVLENDİRMESİ' : '💼 RESMİ AVUKAT GÖREVLENDİRMESİ',
+    `Sayın Avukat,\n\n**${courtCase.investigationNo}** (\`${caseCode}\`) dosyasına **Sanık Savunma Avukatı** olarak atandınız.\n\n` +
+    `👤 **Müvekkiliniz (Sanık):** <@${courtCase.defendantId}>\n` +
+    `👤 **Davacı:** <@${courtCase.plaintiffId}>\n\n` +
+    `Aşağıdaki **"📂 Soruşturma / Dava Kanalına Git"** butonuna tıklayarak kanala katılabilirsiniz.`,
+    channelLink
+  );
 
   const title = isBlackmarket ? '🕵️ Karaborsa Avukat Savunmaya Katıldı!' : '💼 Resmi Avukat Duruşmaya Katıldı!';
   const embed = new EmbedBuilder()

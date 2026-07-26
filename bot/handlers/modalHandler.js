@@ -1032,6 +1032,24 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
+  if (interaction.customId.startsWith('invest_statement_modal_')) {
+    await interaction.deferReply().catch(() => {});
+    const channelId = interaction.customId.replace('invest_statement_modal_', '');
+    const statementText = interaction.fields.getTextInputValue('invest_statement_text');
+
+    const embed = new EmbedBuilder()
+      .setTitle("📜 RESMİ SORGU TUTANAĞI & YEMİNLİ İFADE")
+      .setDescription(
+        `👤 **İfadeyi Kaydeden / Veren:** <@${interaction.user.id}>\n\n` +
+        `📝 **Sorgu Beyanı Detayı:**\n\`\`\`${statementText}\`\`\`\n` +
+        `*İşbu sorgu tutanağı soruşturma dosyasına resmi delil olarak eklenmiştir.*`
+      )
+      .setColor(0x2ecc71)
+      .setTimestamp();
+
+    return interaction.editReply({ embeds: [embed] });
+  }
+
   if (interaction.customId.startsWith('invest_addmember_modal_')) {
     const channelId = interaction.customId.replace('invest_addmember_modal_', '');
     const userId = interaction.fields.getTextInputValue('member_id');

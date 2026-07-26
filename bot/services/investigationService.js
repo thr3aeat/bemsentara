@@ -452,7 +452,9 @@ async function assignRandomJudge(guild, invest, channel) {
       }).catch(() => {});
     }
 
-    // Notify judge in DM with premium embed
+    const channelLink = `https://discord.com/channels/${guild.id}/${channel.id}`;
+
+    // Notify judge in DM with premium embed and clickable channel button
     const judgeEmbed = new EmbedBuilder()
       .setTitle("⚖️ SORUŞTURMA HAKİMİ ATANDINIZ!")
       .setColor(0x3498db)
@@ -463,12 +465,16 @@ async function assignRandomJudge(guild, invest, channel) {
         `👤 **Soruşturulan Kullanıcı:** <@${invest.targetUserId}>\n` +
         `🛡️ **Başlatan Yetkili:** <@${invest.creatorId}>\n` +
         `📋 **Gerekçe/Neden:** *"${invest.reason}"*\n\n` +
-        `Lütfen soruşturma kanalına giderek adil ve tarafsız bir şekilde süreci yönetin: ${channel.toString()}`
+        `Aşağıdaki **"📂 Soruşturma Kanalına Git"** butonuna tıklayarak kanala erişebilir ve soruşturmayı yönetebilirsiniz.`
       )
       .setTimestamp();
-    await selectedJudge.send({ embeds: [judgeEmbed] }).catch(() => {});
+    
+    const judgeRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setLabel('📂 Soruşturma Kanalına Git').setStyle(ButtonStyle.Link).setURL(channelLink)
+    );
+    await selectedJudge.send({ embeds: [judgeEmbed], components: [judgeRow] }).catch(() => {});
 
-    // Notify lawyer in DM
+    // Notify lawyer in DM with clickable channel button
     if (selectedLawyer) {
       const lawyerEmbed = new EmbedBuilder()
         .setTitle("⚖️ SORUŞTURMA AVUKATI ATANDINIZ!")
@@ -479,10 +485,14 @@ async function assignRandomJudge(guild, invest, channel) {
           `📂 **Soruşturma Başlığı:** \`${invest.name}\`\n` +
           `👤 **Soruşturulan Kullanıcı:** <@${invest.targetUserId}>\n` +
           `⚖️ **Hakim:** <@${selectedJudge.id}>\n\n` +
-          `Lütfen soruşturma kanalına giderek savunma sürecini başlatın: ${channel.toString()}`
+          `Aşağıdaki **"📂 Soruşturma Kanalına Git"** butonuna tıklayarak kanala erişebilir ve savunma sürecini başlatabilirsiniz.`
         )
         .setTimestamp();
-      await selectedLawyer.send({ embeds: [lawyerEmbed] }).catch(() => {});
+      
+      const lawyerRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setLabel('📂 Soruşturma Kanalına Git').setStyle(ButtonStyle.Link).setURL(channelLink)
+      );
+      await selectedLawyer.send({ embeds: [lawyerEmbed], components: [lawyerRow] }).catch(() => {});
     }
 
     // Alert in channel
@@ -496,11 +506,30 @@ async function assignRandomJudge(guild, invest, channel) {
       .setTimestamp();
     await channel.send({ embeds: [alertEmbed] });
 
-    // Update controls row in the channel to show management options
-    const controlRow = new ActionRowBuilder().addComponents(
+    // Roleplay & Management Control Rows
+    const rpRow1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`invest_statement_${channel.id}`)
+        .setLabel("✍️ Sorgu Tutanağı / Yeminli İfade")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`invest_sabika_${channel.id}`)
+        .setLabel("📑 Adli Sicil Sorgula")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`invest_precaution_${channel.id}`)
+        .setLabel("🚨 İhtiyati Tedbir")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(`invest_settlement_${channel.id}`)
+        .setLabel("🤝 Uzlaşma Protokolü")
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    const rpRow2 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`invest_resolve_${channel.id}`)
-        .setLabel("⚖️ Çözüme Kavuştur")
+        .setLabel("⚖️ Çözüme Kavuştur / Karar Ver")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`invest_addmember_${channel.id}`)
@@ -512,10 +541,11 @@ async function assignRandomJudge(guild, invest, channel) {
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId(`invest_close_${channel.id}`)
-        .setLabel("❌ Kapat")
+        .setLabel("❌ Soruşturmayı Kapat")
         .setStyle(ButtonStyle.Secondary)
     );
-    await channel.send({ content: "💬 **Soruşturma Yönetim Butonları:**", components: [controlRow] });
+
+    await channel.send({ content: "💬 **GERÇEKÇİ ROLEPLAY & SORUŞTURMA YÖNETİM PANELLERİ:**", components: [rpRow1, rpRow2] });
 
   } catch (err) {
     console.error("[investigationService] assignRandomJudge error:", err.message);

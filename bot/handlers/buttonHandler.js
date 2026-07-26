@@ -1999,6 +1999,83 @@ function renderEnergyBar(percent) {
     }
   }
 
+  if (customId.startsWith("invest_sabika_")) {
+    const channelId = customId.replace("invest_sabika_", "");
+    const Investigation = require("../../models/Investigation");
+    const { getSabikaKaydi } = require("../services/courtService");
+    const invest = await Investigation.findOne({ channelId });
+    if (!invest) return interaction.reply({ content: "❌ Soruşturma bulunamadı.", ephemeral: true });
+
+    const embed = await getSabikaKaydi(invest.targetUserId);
+    return interaction.reply({ embeds: [embed] });
+  }
+
+  if (customId.startsWith("invest_statement_")) {
+    const channelId = customId.replace("invest_statement_", "");
+    const modal = new ModalBuilder()
+      .setCustomId(`invest_statement_modal_${channelId}`)
+      .setTitle("✍️ Sorgu Tutanağı / Yeminli İfade");
+
+    const statementInput = new TextInputBuilder()
+      .setCustomId("invest_statement_text")
+      .setLabel("Sorgu Tutanağı Metni & İfade Beyanı")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Yetkili soruları, şüphelinin beyanları ve resmi sorgu tutanağı...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(statementInput));
+    return interaction.showModal(modal);
+  }
+
+  if (customId.startsWith("invest_precaution_")) {
+    const channelId = customId.replace("invest_precaution_", "");
+    const Investigation = require("../../models/Investigation");
+    const invest = await Investigation.findOne({ channelId });
+    if (!invest) return interaction.reply({ content: "❌ Soruşturma bulunamadı.", ephemeral: true });
+
+    const targetMember = await interaction.guild.members.fetch(invest.targetUserId).catch(() => null);
+    if (!targetMember) return interaction.reply({ content: "❌ Soruşturulan kullanıcı bulunamadı.", ephemeral: true });
+
+    const { ensureCourtRoles } = require("../services/courtService");
+    const roles = await ensureCourtRoles(interaction.guild);
+
+    if (roles['İhtiyati Tedbir']) {
+      const hasRole = targetMember.roles.cache.has(roles['İhtiyati Tedbir']);
+      if (hasRole) {
+        await targetMember.roles.remove(roles['İhtiyati Tedbir']).catch(() => {});
+        return interaction.reply({ content: `✅ Soruşturulan <@${invest.targetUserId}> üzerindeki İhtiyati Tedbir (Sohbet Kısıtlaması) kaldırıldı.` });
+      } else {
+        await targetMember.roles.add(roles['İhtiyati Tedbir']).catch(() => {});
+        return interaction.reply({ content: `🚨 Soruşturulan <@${invest.targetUserId}> hakkında **İhtiyati Tedbir (Sohbet Kısıtlaması)** uygulandı. Soruşturma tamamlanana kadar sohbet kanallarına yazamaz!` });
+      }
+    }
+    return interaction.reply({ content: "⚠️ İhtiyati Tedbir rolü tanımlanamadı.", ephemeral: true });
+  }
+
+  if (customId.startsWith("invest_settlement_")) {
+    const channelId = customId.replace("invest_settlement_", "");
+    const Investigation = require("../../models/Investigation");
+    const invest = await Investigation.findOne({ channelId });
+    if (!invest) return interaction.reply({ content: "❌ Soruşturma bulunamadı.", ephemeral: true });
+
+    const embed = new EmbedBuilder()
+      .setTitle("🤝 RESMİ UZLAŞMA PROTOKOLÜ TEKLİF EDİLDİ")
+      .setDescription(
+        `🛡️ **Soruşturulan Kullanıcı:** <@${invest.targetUserId}>\n` +
+        `⚖️ **Görevli Yetkili / Hakim:** <@${interaction.user.id}>\n\n` +
+        `Taraflar arasında resmi uzlaşma protokolü teklif edilmiştir.\n` +
+        `Soruşturulan kullanıcı **özür beyanı**, **kural kabulü** veya sembolik **kamu tazminatı** şartlarıyla soruşturmanın düşürülmesini kabul edebilir.`
+      )
+      .setColor(0x3498db);
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`invest_agree_${channelId}`).setLabel('🤝 Uzlaşmayı Kabul Et (Soruşturma Düşsün)').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`invest_reject_${channelId}`).setLabel('❌ Uzlaşmayı Reddet').setStyle(ButtonStyle.Danger)
+    );
+
+    return interaction.reply({ embeds: [embed], components: [row] });
+  }
+
   if (customId.startsWith("invest_addmember_")) {
     const channelId = customId.replace("invest_addmember_", "");
     const modal = new ModalBuilder()
