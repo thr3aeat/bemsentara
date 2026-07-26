@@ -1097,7 +1097,7 @@ async function handleModalSubmit(interaction) {
     const reason = interaction.fields.getTextInputValue('investigation_reason');
 
     const { startInvestigation } = require('../services/investigationService');
-dfyz cfghzstartInvestigation(interaction, name, targetUserId, reason);
+    await startInvestigation(interaction, name, targetUserId, reason);
     return;
   }
 
