@@ -1020,6 +1020,13 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
+  if (interaction.customId === 'queue_add_member_modal') {
+    const userIdsInput = interaction.fields.getTextInputValue('queue_user_ids');
+    const { addMembersToQueue } = require('../services/voiceQueueService');
+    await addMembersToQueue(interaction, userIdsInput);
+    return;
+  }
+
   if (interaction.customId.startsWith('court_warn_modal_')) {
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
     const caseCode = interaction.customId.replace('court_warn_modal_', '');

@@ -178,7 +178,7 @@ async function handleButtonInteraction(interaction) {
     // Send a new fresh message with the channel link
     await interaction.user.send({
       content: `✅ **Destek talebini başarıyla üstlendiniz!** Kanala gitmek için: <#${ticket.channelId}>`
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Notify ticket channel
     try {
@@ -225,7 +225,7 @@ async function handleButtonInteraction(interaction) {
 
   // Walkthrough: start interactive help from morning briefing
   if (customId === 'staff_help_walkthrough') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const { startWalkthrough } = require('../services/staffSystem');
       await startWalkthrough(interaction.user.id, interaction.client);
@@ -237,7 +237,7 @@ async function handleButtonInteraction(interaction) {
   }
 
   if (customId.startsWith('walkthrough_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const parts = customId.split('_');
       const action = parts[1]; // prev,next,done,accept,complete
@@ -260,7 +260,7 @@ async function handleButtonInteraction(interaction) {
 
   // App Drawer handlers (Sentara OS)
   if (customId.startsWith('app_open_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const which = customId.replace('app_open_', '');
       if (which === 'vardiya') {
@@ -345,7 +345,7 @@ async function handleButtonInteraction(interaction) {
           new ButtonBuilder().setCustomId('staff_vip_store').setLabel('💎 VIP Mağaza').setStyle(ButtonStyle.Secondary),
           new ButtonBuilder().setCustomId('staff_settings').setLabel('⚙️ Cihaz Ayarları').setStyle(ButtonStyle.Secondary)
         );
-        
+
         await interaction.editReply({ embeds: [embed], components: [row] });
       } else if (which === 'home') {
         const { generateMorningBriefingEmbed, getMorningBriefingComponents } = require('../services/staffSystem');
@@ -363,16 +363,16 @@ async function handleButtonInteraction(interaction) {
     }
   }
 
-// Helper: render energy bar
-function renderEnergyBar(percent) {
-  const full = Math.floor(percent / 10);
-  const empty = 10 - full;
-  return '[' + '█'.repeat(full) + '░'.repeat(empty) + ']';
-}
+  // Helper: render energy bar
+  function renderEnergyBar(percent) {
+    const full = Math.floor(percent / 10);
+    const empty = 10 - full;
+    return '[' + '█'.repeat(full) + '░'.repeat(empty) + ']';
+  }
 
   // ── Real Estate Buttons ─────────────────────────────────────────────
   if (customId.startsWith('realestate_buy_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const propertyId = customId.replace('realestate_buy_', '');
       const { buyProperty, computePrice } = require('../services/marketPropertyService');
@@ -401,7 +401,7 @@ function renderEnergyBar(percent) {
 
   // ── Eko-Borsa Trade Handlers ───────────────────────────────────────
   if (customId === 'exchange_buy_diamond') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const StaffProgress = require('../../models/StaffProgress');
       const Ticket = require('../../models/Ticket');
@@ -429,12 +429,14 @@ function renderEnergyBar(percent) {
       // Deduct and add diamond
       p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) - price;
       p.gamification.diamonds = (p.gamification.diamonds || 0) + 1;
-      await p.save().catch(() => {});
+      await p.save().catch(() => { });
 
-      return interaction.editReply({ content: `✅ Başarılı: 1 💎 satın alındı.
+      return interaction.editReply({
+        content: `✅ Başarılı: 1 💎 satın alındı.
 • Satın alma fiyatı: ${price} TL
 • Kalan bakiye: ${p.gamification.ecoCoins} TL
-• Elmas bakiyesi: ${p.gamification.diamonds} 💎` });
+• Elmas bakiyesi: ${p.gamification.diamonds} 💎`
+      });
     } catch (err) {
       console.error('[exchange_buy] Error:', err.message);
       return interaction.editReply({ content: `❌ Hata: ${err.message}` });
@@ -442,7 +444,7 @@ function renderEnergyBar(percent) {
   }
 
   if (customId === 'exchange_sell_diamond') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const StaffProgress = require('../../models/StaffProgress');
       const Ticket = require('../../models/Ticket');
@@ -466,11 +468,13 @@ function renderEnergyBar(percent) {
 
       p.gamification.diamonds = (p.gamification.diamonds || 0) - 1;
       p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + sellFor;
-      await p.save().catch(() => {});
+      await p.save().catch(() => { });
 
-      return interaction.editReply({ content: `✅ Tebrikler! 1 💎 satıldı ve ${sellFor} TL hesabınıza aktarıldı.
+      return interaction.editReply({
+        content: `✅ Tebrikler! 1 💎 satıldı ve ${sellFor} TL hesabınıza aktarıldı.
 • Güncel bakiye: ${p.gamification.ecoCoins} TL
-• Kalan elmas: ${p.gamification.diamonds} 💎` });
+• Kalan elmas: ${p.gamification.diamonds} 💎`
+      });
     } catch (err) {
       console.error('[exchange_sell] Error:', err.message);
       return interaction.editReply({ content: `❌ Hata: ${err.message}` });
@@ -558,15 +562,15 @@ function renderEnergyBar(percent) {
     } catch (err) {
       console.error('[exchange_leverage] Error:', err.message);
       if (interaction.replied || interaction.deferred) {
-        return interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => {});
+        return interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => { });
       } else {
-        return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => {});
+        return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => { });
       }
     }
   }
 
   if (customId === 'realestate_portfolio') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const StaffProgress = require('../../models/StaffProgress');
       const Property = require('../../models/Property');
@@ -598,7 +602,7 @@ function renderEnergyBar(percent) {
   }
 
   if (customId.startsWith('realestate_sell_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const propertyId = customId.replace('realestate_sell_', '');
       const { sellProperty, computePrice } = require('../services/marketPropertyService');
@@ -916,7 +920,7 @@ function renderEnergyBar(percent) {
             }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     if (violations.length === 0) {
@@ -1140,7 +1144,7 @@ function renderEnergyBar(percent) {
           clearTimeout(pendingUserReplyTimers.get(ticketId));
           pendingUserReplyTimers.delete(ticketId);
         }
-      } catch (_) {}
+      } catch (_) { }
       await archiveEkoYildizTicket(ticket, interaction, "Kullanıcı: Sorunum çözüldü");
     } catch (err) {
       console.error("[user_dm_close] Error:", err.message);
@@ -1262,7 +1266,7 @@ function renderEnergyBar(percent) {
       const { activeTicketClaims, deleteActiveClaimDmMessage } = require("../services/reklamTicketService");
       await deleteActiveClaimDmMessage(ticketId);
       activeTicketClaims.delete(ticketId);
-    } catch (_) {}
+    } catch (_) { }
 
     await interaction.reply({
       content: `🙋‍♂️ **Destek talebi başarıyla üstlenildi!** Bu taleple <@${interaction.user.id}> ilgileniyor.`
@@ -2045,10 +2049,10 @@ function renderEnergyBar(percent) {
     if (roles['İhtiyati Tedbir']) {
       const hasRole = targetMember.roles.cache.has(roles['İhtiyati Tedbir']);
       if (hasRole) {
-        await targetMember.roles.remove(roles['İhtiyati Tedbir']).catch(() => {});
+        await targetMember.roles.remove(roles['İhtiyati Tedbir']).catch(() => { });
         return interaction.reply({ content: `✅ Soruşturulan <@${invest.targetUserId}> üzerindeki İhtiyati Tedbir (Sohbet Kısıtlaması) kaldırıldı.` });
       } else {
-        await targetMember.roles.add(roles['İhtiyati Tedbir']).catch(() => {});
+        await targetMember.roles.add(roles['İhtiyati Tedbir']).catch(() => { });
         return interaction.reply({ content: `🚨 Soruşturulan <@${invest.targetUserId}> hakkında **İhtiyati Tedbir (Sohbet Kısıtlaması)** uygulandı. Soruşturma tamamlanana kadar sohbet kanallarına yazamaz!` });
       }
     }
@@ -2343,13 +2347,13 @@ function renderEnergyBar(percent) {
   // ── Mod Anasayfası (Erişim Butonu) ─────────────────────────────────────────
   if (customId === "talk_to_coach") {
     await interaction.deferReply({ ephemeral: true }).catch(async () => {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
     });
-    
+
     const StaffProgress = require("../../models/StaffProgress");
     const p = await StaffProgress.findOne({ userId: interaction.user.id });
     if (!p) {
-      return interaction.editReply({ content: "❌ Personel kaydınız bulunamadı." }).catch(() => {});
+      return interaction.editReply({ content: "❌ Personel kaydınız bulunamadı." }).catch(() => { });
     }
 
     const { generateMorningBriefingEmbed, getMorningBriefingComponents } = require("../services/staffSystem");
@@ -2357,13 +2361,13 @@ function renderEnergyBar(percent) {
     const components = await getMorningBriefingComponents(p);
 
     await interaction.editReply({ embeds: [embed], components }).catch(async () => {
-      await interaction.followUp({ embeds: [embed], components, ephemeral: true }).catch(() => {});
+      await interaction.followUp({ embeds: [embed], components, ephemeral: true }).catch(() => { });
     });
     return;
   }
 
   if (customId === "staff_claim_salary_transfer") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
@@ -2379,7 +2383,7 @@ function renderEnergyBar(percent) {
       const moderationActions = p.weeklyStats?.moderationActions || 0;
       const marketMultiplier = Number(p.marketMultiplier || 2.5);
       const crisisTaxRate = Number(p.crisisTaxRate || 0.1);
-      
+
       const baseVoice = Math.floor(voiceMinutes * 1.4);
       const baseTickets = Math.floor(ticketsSolved * 85);
       const baseMod = Math.floor(moderationActions * 60);
@@ -2409,7 +2413,7 @@ function renderEnergyBar(percent) {
       p.gamification = p.gamification || {};
       p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + netPay;
       p.lastSalaryClaimedAt = new Date();
-      
+
       // Reset weekly statistics
       p.weeklyStats = { voiceMinutes: 0, ticketsSolved: 0, moderationActions: 0 };
       await p.save();
@@ -2428,10 +2432,10 @@ function renderEnergyBar(percent) {
         .setFooter({ text: 'Eko Yıldız • Finansal Yönetim Departmanı | Sürüm: v0.7' })
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [successEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [successEmbed], components: [] }).catch(() => { });
     } catch (err) {
       console.error('[Salary-Transfer] Hata:', err.message);
-      await interaction.followUp({ content: `❌ İşlem sırasında bir hata oluştu: ${err.message}`, ephemeral: true }).catch(() => {});
+      await interaction.followUp({ content: `❌ İşlem sırasında bir hata oluştu: ${err.message}`, ephemeral: true }).catch(() => { });
     }
     return;
   }
@@ -2446,19 +2450,19 @@ function renderEnergyBar(percent) {
 
     const isApprove = customId.startsWith("staff_resign_approve_");
     const targetUserId = customId.replace(isApprove ? "staff_resign_approve_" : "staff_resign_reject_", "");
-    
-    await interaction.deferUpdate().catch(() => {});
+
+    await interaction.deferUpdate().catch(() => { });
 
     const p = await StaffProgress.findOne({ userId: targetUserId });
     if (!p) {
-      return interaction.followUp({ content: "❌ İlgili personelin kaydı veritabanında bulunamadı.", ephemeral: true }).catch(() => {});
+      return interaction.followUp({ content: "❌ İlgili personelin kaydı veritabanında bulunamadı.", ephemeral: true }).catch(() => { });
     }
 
     if (isApprove) {
       const activeDays = p.stats?.activeDays || 0;
       const hasSeverance = activeDays >= 60;
       const severancePay = hasSeverance ? Math.floor((p.gamification?.totalPoints || 0) * 0.5 + (p.gamification?.currentXP || 0) * 0.2) : 0;
-      
+
       const finalCoins = (p.gamification?.ecoCoins || 0) + severancePay;
       if (finalCoins > 0) {
         try {
@@ -2497,7 +2501,7 @@ function renderEnergyBar(percent) {
             )
             .setFooter({ text: "Eko Yıldız • Üst Yönetim Kurulu" })
             .setTimestamp();
-          await targetUser.send({ embeds: [dmEmbed] }).catch(() => {});
+          await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
         }
       } catch (dmErr) {
         console.warn(`[Resign-Approve] DM send error to ${targetUserId}:`, dmErr.message);
@@ -2514,7 +2518,7 @@ function renderEnergyBar(percent) {
           `**Cüzdana Aktarılan Toplam:** ${finalCoins} TL`
         )
         .setTimestamp();
-      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
 
     } else {
       p.status = 'active';
@@ -2535,16 +2539,16 @@ function renderEnergyBar(percent) {
             )
             .setFooter({ text: "Eko Yıldız • Üst Yönetim Kurulu" })
             .setTimestamp();
-          await targetUser.send({ embeds: [dmEmbed] }).catch(() => {});
+          await targetUser.send({ embeds: [dmEmbed] }).catch(() => { });
         }
-      } catch (_) {}
+      } catch (_) { }
 
       const rejEmbed = new EmbedBuilder()
         .setColor(0xe74c3c)
         .setTitle('❌ İstifa Talebi Görüşülmek Üzere Reddedildi')
         .setDescription(`**Personel:** <@${targetUserId}>\n**Reddeden/Görüşen Yönetici:** <@${interaction.user.id}>\n*Yetkili aktif göreve iade edildi.*`)
         .setTimestamp();
-      await interaction.editReply({ embeds: [rejEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [rejEmbed], components: [] }).catch(() => { });
     }
     return;
   }
@@ -2566,7 +2570,7 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: `📂 **${caseId}** numaralı dosya şu anda yetkilimiz <@${interaction.user.id}> tarafından inceleniyor.`, ephemeral: false });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     if (action === "approve") {
       const reporterProgress = await StaffProgress.findOne({ userId: reporterId });
@@ -2589,9 +2593,9 @@ function renderEnergyBar(percent) {
                 `• **+100 Elmas (💎)**`
               )
               .setTimestamp();
-            await reporterUser.send({ embeds: [reportEmbed] }).catch(() => {});
+            await reporterUser.send({ embeds: [reportEmbed] }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const originalEmbed = interaction.message.embeds[0];
@@ -2600,7 +2604,7 @@ function renderEnergyBar(percent) {
         .setTitle(`⚖️ Vaka Onaylandı (${caseId})`)
         .setDescription(`**Onaylayan Koordinatör:** <@${interaction.user.id}>\n*Yetkiliye +50 TL ve +100 Elmas (💎) ödülü verildi.*`);
 
-      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
     } else if (action === "reject") {
       const originalEmbed = interaction.message.embeds[0];
       const doneEmbed = EmbedBuilder.from(originalEmbed)
@@ -2608,7 +2612,7 @@ function renderEnergyBar(percent) {
         .setTitle(`❌ Vaka Kapatıldı - Yetersiz Delil (${caseId})`)
         .setDescription(`**Kapatan Koordinatör:** <@${interaction.user.id}>\n*Delil yetersizliği veya geçersiz rapor nedeniyle dosya arşive kaldırıldı.*`);
 
-      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
     }
     return;
   }
@@ -2659,7 +2663,7 @@ function renderEnergyBar(percent) {
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-      
+
       const targetUserId = interaction.user.id;
       const p = await StaffProgress.findOne({ userId: targetUserId });
       if (!p) return interaction.editReply({ content: "❌ Personel kaydınız bulunamadı." });
@@ -2675,7 +2679,7 @@ function renderEnergyBar(percent) {
         // Nöbeti tekrar başlat (opsiyonel)
         if (!p.duty?.isActive) {
           const { startDuty } = require("../services/staffDutyService");
-          await startDuty(targetUserId, interaction.client).catch(() => {});
+          await startDuty(targetUserId, interaction.client).catch(() => { });
         }
 
         const embed = new EmbedBuilder()
@@ -2699,7 +2703,7 @@ function renderEnergyBar(percent) {
 
       if (p.duty?.isActive) {
         const { endDuty } = require("../services/staffDutyService");
-        await endDuty(interaction, interaction.client, 'Burnout nedeniyle zorunlu kahve izni başlatıldı.').catch(() => {});
+        await endDuty(interaction, interaction.client, 'Burnout nedeniyle zorunlu kahve izni başlatıldı.').catch(() => { });
       }
 
       const embed = new EmbedBuilder()
@@ -2750,7 +2754,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavını başlat
   if (customId === "promotion_start_exam") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { sendPromotionExamQuestion } = require("../services/staffSystem");
       await sendPromotionExamQuestion(interaction, interaction.user.id);
@@ -2762,7 +2766,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavı — Sonraki soru
   if (customId === "promotion_exam_next") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { sendPromotionExamQuestion } = require("../services/staffSystem");
       await sendPromotionExamQuestion(interaction, interaction.user.id);
@@ -2774,7 +2778,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sınavı — Cevap butonları (promotion_exam_answer_{questionIndex}_{letter})
   if (customId.startsWith("promotion_exam_answer_")) {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const parts = customId.split("_"); // promotion_exam_answer_0_A
       const questionIndex = parseInt(parts[3], 10);
@@ -2789,7 +2793,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sözleşmesini göster
   if (customId === "promotion_show_contract") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { handlePromotionShowContract } = require("../services/staffSystem");
       await handlePromotionShowContract(interaction, interaction.user.id);
@@ -2801,7 +2805,7 @@ function renderEnergyBar(percent) {
 
   // Terfi sözleşmesini imzala
   if (customId === "promotion_sign_contract") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { handlePromotionSignContract } = require("../services/staffSystem");
       await handlePromotionSignContract(interaction, interaction.user.id);
@@ -2813,7 +2817,7 @@ function renderEnergyBar(percent) {
 
   // Kuralları imzala → Güncelleme & Terfi ver
   if (customId === "promotion_sign_rules") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { handlePromotionSignRules } = require("../services/staffSystem");
       await handlePromotionSignRules(interaction, interaction.user.id, interaction.client);
@@ -2825,7 +2829,7 @@ function renderEnergyBar(percent) {
 
   // Bugünden başla
   if (customId === "promotion_start_today") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { handlePromotionStartChoice } = require("../services/staffSystem");
       await handlePromotionStartChoice(interaction, 'today');
@@ -2837,7 +2841,7 @@ function renderEnergyBar(percent) {
 
   // Yarından başla
   if (customId === "promotion_start_tomorrow") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const { handlePromotionStartChoice } = require("../services/staffSystem");
       await handlePromotionStartChoice(interaction, 'tomorrow');
@@ -2878,7 +2882,7 @@ function renderEnergyBar(percent) {
             await user.send({ embeds: [alarmEmbed] });
             sentCount++;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       return interaction.editReply({ content: `🚨 **Telsiz çağrısı tamamlandı.** Toplam **${sentCount}** aktif olmayan yetkiliye acil nöbet çağrısı gönderildi.` });
@@ -2935,7 +2939,7 @@ function renderEnergyBar(percent) {
     }
   }
 
-    if (customId === "tactical_change_radio") {
+  if (customId === "tactical_change_radio") {
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const managerProgress = await StaffProgress.findOne({ userId: interaction.user.id });
@@ -2961,9 +2965,9 @@ function renderEnergyBar(percent) {
     } catch (err) {
       console.error('[Tactical-Radio] Hata:', err.message);
       if (interaction.replied || interaction.deferred) {
-        return interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => {});
+        return interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => { });
       } else {
-        return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => {});
+        return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => { });
       }
     }
   }
@@ -2978,7 +2982,7 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: "❌ Bu doğrulama ekranı size ait değildir.", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     const StaffProgress = require("../../models/StaffProgress");
     const p = await StaffProgress.findOne({ userId: targetUserId });
@@ -3011,7 +3015,7 @@ function renderEnergyBar(percent) {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [successEmbed], components: disabledRows }).catch(() => {});
+      await interaction.editReply({ embeds: [successEmbed], components: disabledRows }).catch(() => { });
     } else {
       // Reduce KPI by -5
       const { calculateKpi } = require("../services/staffDutyService");
@@ -3037,7 +3041,7 @@ function renderEnergyBar(percent) {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [failEmbed], components: disabledRows }).catch(() => {});
+      await interaction.editReply({ embeds: [failEmbed], components: disabledRows }).catch(() => { });
 
       // Log security incident to CEZA_LOG
       try {
@@ -3066,12 +3070,12 @@ function renderEnergyBar(percent) {
   }
 
   if (customId === "staff_pip_sign") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
       if (!p || !p.pip?.isActive) {
-        return interaction.followUp({ content: "❌ Aktif bir PIP kontratınız bulunmamaktadır.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Aktif bir PIP kontratınız bulunmamaktadır.", ephemeral: true }).catch(() => { });
       }
 
       p.pip.signed = true;
@@ -3091,7 +3095,7 @@ function renderEnergyBar(percent) {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [signEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [signEmbed], components: [] }).catch(() => { });
     } catch (err) {
       console.error('[PIP-Sign] Hata:', err.message);
     }
@@ -3117,7 +3121,7 @@ function renderEnergyBar(percent) {
         )
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [statusEmbed] }).catch(() => {});
+      await interaction.editReply({ embeds: [statusEmbed] }).catch(() => { });
     } catch (err) {
       console.error('[PIP-Status] Hata:', err.message);
       await interaction.editReply({ content: `❌ Hata: ${err.message}` });
@@ -3131,7 +3135,7 @@ function renderEnergyBar(percent) {
       const StaffUnit = require("../../models/StaffUnit");
       const UnitBudget = require("../../models/UnitBudget");
       const userUnit = await StaffUnit.findOne({ userId: interaction.user.id });
-      
+
       if (!userUnit || !userUnit.unitName || userUnit.rank !== 3) {
         return interaction.editReply({ content: "❌ Bu paneli görüntüleme yetkiniz yoktur. Sadece Birim Liderleri lojistiği yönetebilir." });
       }
@@ -3171,10 +3175,10 @@ function renderEnergyBar(percent) {
           .setStyle(ButtonStyle.Primary)
       );
 
-      await interaction.editReply({ embeds: [logisticsEmbed], components: [row] }).catch(() => {});
+      await interaction.editReply({ embeds: [logisticsEmbed], components: [row] }).catch(() => { });
     } catch (err) {
       console.error('[Unit-Logistics] Hata:', err.message);
-      await interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => {});
+      await interaction.editReply({ content: `❌ Hata: ${err.message}` }).catch(() => { });
     }
     return;
   }
@@ -3210,7 +3214,7 @@ function renderEnergyBar(percent) {
         new ActionRowBuilder().addComponents(targetInput),
         new ActionRowBuilder().addComponents(amountInput)
       );
-      return interaction.showModal(modal).catch(() => {});
+      return interaction.showModal(modal).catch(() => { });
     } else {
       const modal = new ModalBuilder()
         .setCustomId('modal_unit_logistics_leave')
@@ -3224,7 +3228,7 @@ function renderEnergyBar(percent) {
         .setRequired(true);
 
       modal.addComponents(new ActionRowBuilder().addComponents(targetInput));
-      return interaction.showModal(modal).catch(() => {});
+      return interaction.showModal(modal).catch(() => { });
     }
   }
 
@@ -3283,17 +3287,17 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId.startsWith("hearing_accept_btn_")) {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const hearingId = customId.replace("hearing_accept_btn_", "");
       const DisciplinaryHearing = require("../../models/DisciplinaryHearing");
       const hearing = await DisciplinaryHearing.findOne({ hearingId });
       if (!hearing || hearing.status !== "pending_defense") {
-        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => { });
       }
 
       hearing.status = 'accepted';
@@ -3308,7 +3312,7 @@ function renderEnergyBar(percent) {
         .setDescription("Suçlamayı kabul ettiniz ve disiplin uyarısı sicilinize işlendi. KPI puanınız düşürülmüştür.")
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
     } catch (err) {
       console.error('[Hearing-Accept] Hata:', err.message);
     }
@@ -3323,16 +3327,16 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: "❌ Soruşturmaları değerlendirmek için **Genel Koordinatör** (Level >= 5) yetkisine sahip olmalısınız!", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     const isApprove = customId.startsWith("hearing_coord_approve_");
     const hearingId = customId.replace(isApprove ? "hearing_coord_approve_" : "hearing_coord_reject_", "");
-    
+
     try {
       const DisciplinaryHearing = require("../../models/DisciplinaryHearing");
       const hearing = await DisciplinaryHearing.findOne({ hearingId });
       if (!hearing || hearing.status !== "submitted_defense") {
-        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya savunması henüz gönderilmemiş.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya savunması henüz gönderilmemiş.", ephemeral: true }).catch(() => { });
       }
 
       if (isApprove) {
@@ -3348,16 +3352,16 @@ function renderEnergyBar(percent) {
               .setTitle("⚖️ Disiplin Soruşturması Sonucu: İPTAL")
               .setDescription(`Yapılan inceleme ve savunmanız sonucunda, hakkınızdaki disiplin uyarısı talebi **iptal edilmiştir**.\n\n*Sicilinize herhangi bir ceza işlenmemiştir.*`)
               .setTimestamp();
-            await targetUser.send({ embeds: [okEmbed] }).catch(() => {});
+            await targetUser.send({ embeds: [okEmbed] }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         const doneEmbed = new EmbedBuilder()
           .setColor(0x2ecc71)
           .setTitle("⚖️ Savunma Haklı Bulundu ve Ceza İptal Edildi")
           .setDescription(`**Değerlendiren Koordinatör:** <@${interaction.user.id}>\n*Soruşturma kapatıldı ve disiplin uyarısı iptal edildi.*`)
           .setTimestamp();
-        await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
       } else {
         // Defense rejected -> Warn applied
         hearing.status = 'accepted';
@@ -3374,16 +3378,16 @@ function renderEnergyBar(percent) {
               .setTitle("🔨 Disiplin Soruşturması Sonucu: RED")
               .setDescription(`Savunmanız kurul tarafından yetersiz bulunmuş ve disiplin uyarısı sicilinize **işlenmiştir** (-10 KPI).\n\n📝 **Gerekçe:** ${hearing.reason}`)
               .setTimestamp();
-            await targetUser.send({ embeds: [failEmbed] }).catch(() => {});
+            await targetUser.send({ embeds: [failEmbed] }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         const doneEmbed = new EmbedBuilder()
           .setColor(0xe74c3c)
           .setTitle("🔨 Savunma Reddedildi ve Ceza Kesildi")
           .setDescription(`**Değerlendiren Koordinatör:** <@${interaction.user.id}>\n*Savunma reddedildi ve disiplin uyarısı sicile işlendi.*`)
           .setTimestamp();
-        await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
       }
     } catch (err) {
       console.error('[Hearing-Coord] Hata:', err.message);
@@ -3405,12 +3409,12 @@ function renderEnergyBar(percent) {
       if (!isLevel5) return interaction.reply({ content: "❌ Bu işlem için **Genel Koordinatör** (Level >= 5) yetkisine sahip olmalısınız!", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     const is1st = customId.startsWith("signoff_1st_");
     const is2nd = customId.startsWith("signoff_2nd_");
     const isVeto = customId.startsWith("signoff_veto_");
-    
+
     let requestId = "";
     if (is1st) requestId = customId.replace("signoff_1st_", "");
     else if (is2nd) requestId = customId.replace("signoff_2nd_", "");
@@ -3419,7 +3423,7 @@ function renderEnergyBar(percent) {
     try {
       const request = await SignOffRequest.findOne({ requestId });
       if (!request || request.status !== "pending") {
-        return interaction.followUp({ content: "❌ Evrak bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Evrak bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => { });
       }
 
       if (isVeto) {
@@ -3432,7 +3436,7 @@ function renderEnergyBar(percent) {
           .setTitle(`❌ Evrak Veto Edildi - #${requestId}`)
           .setDescription(`Evrak **${interaction.user.tag}** tarafından veto edilerek iptal edilmiştir.`)
           .setTimestamp();
-        return interaction.editReply({ embeds: [vetoEmbed], components: [] }).catch(() => {});
+        return interaction.editReply({ embeds: [vetoEmbed], components: [] }).catch(() => { });
       }
 
       const sigLabel = is1st ? `1st:${interaction.user.tag}` : `2nd:${interaction.user.tag}`;
@@ -3441,7 +3445,7 @@ function renderEnergyBar(percent) {
       // Check if signature type already exists
       const prefix = is1st ? "1st:" : "2nd:";
       if (request.signatures.some(s => s.startsWith(prefix))) {
-        return interaction.followUp({ content: `❌ Bu evrakta zaten ${shortLabel} imzası mevcuttur!`, ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: `❌ Bu evrakta zaten ${shortLabel} imzası mevcuttur!`, ephemeral: true }).catch(() => { });
       }
 
       request.signatures.push(sigLabel);
@@ -3460,7 +3464,7 @@ function renderEnergyBar(percent) {
           // Details: { targetUserId, reason }
           const target = request.details?.targetUserId;
           if (target) {
-            await interaction.guild.members.unban(target, `Evrak #${requestId} - ${request.reason}`).catch(() => {});
+            await interaction.guild.members.unban(target, `Evrak #${requestId} - ${request.reason}`).catch(() => { });
           }
         } else if (request.actionType === "BUDGET_SPEND") {
           // Details: { amount, unitName, reason }
@@ -3481,7 +3485,7 @@ function renderEnergyBar(percent) {
           .addFields({ name: '✍️ İmza Sahipleri', value: request.signatures.map(s => `• ${s}`).join('\n'), inline: false })
           .setTimestamp();
 
-        return interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => {});
+        return interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => { });
       } else {
         // Just update embed signatures list
         const progressEmbed = EmbedBuilder.from(interaction.message.embeds[0])
@@ -3493,7 +3497,7 @@ function renderEnergyBar(percent) {
           )
           .setTimestamp();
 
-        return interaction.editReply({ embeds: [progressEmbed] }).catch(() => {});
+        return interaction.editReply({ embeds: [progressEmbed] }).catch(() => { });
       }
     } catch (err) {
       console.error('[Sign-Off-Button] Hata:', err.message);
@@ -3511,7 +3515,7 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: "❌ Performans İnceleme Kurulu onay yetkisi için **Yönetici** (Level >= 3) olmalısınız!", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     const is1 = customId.startsWith("audit_committee_1_");
     const caseId = customId.replace(is1 ? "audit_committee_1_" : "audit_committee_2_", "");
@@ -3519,15 +3523,15 @@ function renderEnergyBar(percent) {
     try {
       const audit = await AuditCase.findOne({ caseId });
       if (!audit || audit.status !== "pending") {
-        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Soruşturma bulunamadı veya zaten sonuçlandırıldı.", ephemeral: true }).catch(() => { });
       }
 
       if (interaction.user.id === audit.issuedBy) {
-        return interaction.followUp({ content: "❌ Kendi oluşturduğunuz ceza talebini onaylayamazsınız!", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Kendi oluşturduğunuz ceza talebini onaylayamazsınız!", ephemeral: true }).catch(() => { });
       }
 
       if (audit.approvals.includes(interaction.user.id)) {
-        return interaction.followUp({ content: "❌ Bu davayı zaten onayladınız!", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Bu davayı zaten onayladınız!", ephemeral: true }).catch(() => { });
       }
 
       audit.approvals.push(interaction.user.id);
@@ -3577,7 +3581,7 @@ function renderEnergyBar(percent) {
               );
               await targetUser.send({ embeds: [okEmbed], components: [row] });
             }
-          } catch (_) {}
+          } catch (_) { }
         } else if (audit.actionType === "DISMISS") {
           // Execute dismissal
           const { dismissStaff } = require("../services/staffSystem");
@@ -3591,7 +3595,7 @@ function renderEnergyBar(percent) {
           .addFields({ name: '👥 Onaylayanlar', value: audit.approvals.map(a => `<@${a}>`).join('\n'), inline: false })
           .setTimestamp();
 
-        return interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => {});
+        return interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => { });
       } else {
         const progressEmbed = EmbedBuilder.from(interaction.message.embeds[0])
           .setDescription(`Karar askıdadır. 2. Onay bekleniyor.`)
@@ -3602,7 +3606,7 @@ function renderEnergyBar(percent) {
           )
           .setTimestamp();
 
-        return interaction.editReply({ embeds: [progressEmbed] }).catch(() => {});
+        return interaction.editReply({ embeds: [progressEmbed] }).catch(() => { });
       }
     } catch (err) {
       console.error('[Audit-Committee-Button] Hata:', err.message);
@@ -3614,13 +3618,13 @@ function renderEnergyBar(percent) {
     const isProb = customId === "probation_rules_read";
     const text = isProb
       ? "📝 **İK Gelişim Sözleşmesi (PIP) Şartları:**\n\n" +
-        "1. 7 gün boyunca gerçekleştirdiğiniz tüm moderasyon işlemleri ve biletler denetime düşer.\n" +
-        "2. Bu süre zarfında aldığınız uyarılar PIP başarısızlığına yol açar.\n" +
-        "3. Lütfen kontratı imzalayarak görev bilinciyle hedefleri yerine getirin."
+      "1. 7 gün boyunca gerçekleştirdiğiniz tüm moderasyon işlemleri ve biletler denetime düşer.\n" +
+      "2. Bu süre zarfında aldığınız uyarılar PIP başarısızlığına yol açar.\n" +
+      "3. Lütfen kontratı imzalayarak görev bilinciyle hedefleri yerine getirin."
       : "📝 **Kurumsal Yemin ve Sözleşme Şartları:**\n\n" +
-        "1. Sentara sunucu düzenini, adaletini ve gizliliğini koruyacağıma yemin ederim.\n" +
-        "2. Üst yönetim direktiflerine ve kurallara riayet edeceğimi taahhüt ederim.\n" +
-        "3. Görev sürem boyunca adil, aktif ve dürüst bir duruş sergileyeceğimi kabul ederim.";
+      "1. Sentara sunucu düzenini, adaletini ve gizliliğini koruyacağıma yemin ederim.\n" +
+      "2. Üst yönetim direktiflerine ve kurallara riayet edeceğimi taahhüt ederim.\n" +
+      "3. Görev sürem boyunca adil, aktif ve dürüst bir duruş sergileyeceğimi kabul ederim.";
 
     return interaction.reply({ content: text, ephemeral: true });
   }
@@ -3640,11 +3644,11 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId === "contract_final_sign") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
@@ -3661,7 +3665,7 @@ function renderEnergyBar(percent) {
         .setDescription("Yıllık/Aylık kurumsal sözleşmeniz başarıyla yenilenmiştir. Panel yetkileriniz aktif edilmiştir.")
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => {});
+      await interaction.editReply({ embeds: [doneEmbed], components: [] }).catch(() => { });
     } catch (err) {
       console.error('[Contract-Final-Sign] Hata:', err.message);
     }
@@ -3676,7 +3680,7 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: "❌ İK denetim onayları için **En Yüksek Rütbe** (Level 6) yetkisine sahip olmalısınız!", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     const isApprove = customId.startsWith("probation_approve_");
     const parts = customId.replace(isApprove ? "probation_approve_" : "probation_reject_", "").split("_");
@@ -3705,7 +3709,7 @@ function renderEnergyBar(percent) {
           .setDescription(`**Onaylayan Yönetici:** <@${interaction.user.id}>\n*Yetkili işlem istatistikleri başarıyla yansıtıldı.*`)
           .setTimestamp();
 
-        await interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [approvedEmbed], components: [] }).catch(() => { });
       } else {
         const rejectedEmbed = EmbedBuilder.from(interaction.message.embeds[0])
           .setColor(0xe74c3c)
@@ -3713,7 +3717,7 @@ function renderEnergyBar(percent) {
           .setDescription(`**Reddeden Yönetici:** <@${interaction.user.id}>\n*İşlem iptal edildi, performansa eklenmedi.*`)
           .setTimestamp();
 
-        await interaction.editReply({ embeds: [rejectedEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [rejectedEmbed], components: [] }).catch(() => { });
       }
     } catch (err) {
       console.error('[Probation-Approve] Hata:', err.message);
@@ -3740,7 +3744,7 @@ function renderEnergyBar(percent) {
         new ButtonBuilder().setCustomId('career_rotate_SOHBET').setLabel('💼 İdari/Sohbet Birimi').setStyle(ButtonStyle.Primary)
       );
 
-      await interaction.editReply({ embeds: [rotationEmbed], components: [row] }).catch(() => {});
+      await interaction.editReply({ embeds: [rotationEmbed], components: [row] }).catch(() => { });
     } catch (err) {
       console.error('[Career-Rotate-Trigger] Hata:', err.message);
     }
@@ -3846,12 +3850,12 @@ function renderEnergyBar(percent) {
   }
 
   if (customId === "duty_fiscal_transfer") {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
       if (!p || !p.duty?.isActive) {
-        return interaction.followUp({ content: "❌ Aktif nöbetiniz bulunamadı.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Aktif nöbetiniz bulunamadı.", ephemeral: true }).catch(() => { });
       }
 
       const { endDuty } = require("../services/staffDutyService");
@@ -3869,11 +3873,11 @@ function renderEnergyBar(percent) {
       const state = createAuctionState({});
       const status = getAuctionStatus(state);
       const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-      
+
       const StaffProgress = require('../../models/StaffProgress');
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
       const myBid = p?.auctionBid || 0;
-      
+
       const embed = new EmbedBuilder()
         .setColor(0x8e44ad)
         .setTitle('💸 Haftalık Personel İhalesi')
@@ -3900,19 +3904,19 @@ function renderEnergyBar(percent) {
       const StaffProgress = require('../../models/StaffProgress');
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
       if (!p) return interaction.editReply({ content: '❌ Kayıt bulunamadı.' });
-      
+
       const wallet = p.gamification?.ecoCoins || 0;
       if (wallet < 500) return interaction.editReply({ content: '❌ En az 500 TL cüzdan bakiyeniz olmalıdır.' });
-      
+
       // İhale teklifi için ayrı alan kullan
       p.gamification.ecoCoins = wallet - 500;
       p.auctionBid = (p.auctionBid || 0) + 500;  // Ayrı ihale havuzu
-      
+
       await p.save();
-      
+
       const totalBid = p.auctionBid || 500;
-      return interaction.editReply({ 
-        content: `✅ **Teklifiniz alındı!** 500 TL ihale havuzuna aktarılmıştır.\n\n📊 **İhale Durumu:**\n• **Cüzdanınız:** \`${p.gamification.ecoCoins} TL\`\n• **Toplam Teklif:** \`${totalBid} TL\`` 
+      return interaction.editReply({
+        content: `✅ **Teklifiniz alındı!** 500 TL ihale havuzuna aktarılmıştır.\n\n📊 **İhale Durumu:**\n• **Cüzdanınız:** \`${p.gamification.ecoCoins} TL\`\n• **Toplam Teklif:** \`${totalBid} TL\``
       });
     } catch (err) {
       console.error('[Auction-Bid] Hata:', err.message);
@@ -3921,7 +3925,7 @@ function renderEnergyBar(percent) {
   }
 
   if (customId === "sponsorship_transfer") {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
     const modal = new ModalBuilder().setCustomId('modal_sponsorship_transfer').setTitle('🏢 Birim Kasasına TL Aktar');
     const amount = new TextInputBuilder().setCustomId('sponsorship_amount').setLabel('Aktarılacak TL').setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder('Örn: 1000');
@@ -3929,7 +3933,7 @@ function renderEnergyBar(percent) {
     modal.addComponents(new ActionRowBuilder().addComponents(amount), new ActionRowBuilder().addComponents(unit));
     await interaction.showModal(modal).catch(err => {
       console.error('[sponsorship_transfer] Modal gösterilemedi:', err.message);
-      interaction.editReply({ content: '❌ Modal açılırken hata oluştu!' }).catch(() => {});
+      interaction.editReply({ content: '❌ Modal açılırken hata oluştu!' }).catch(() => { });
     });
     return;
   }
@@ -3980,7 +3984,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId === "finance_buy_leave") {
@@ -4109,7 +4113,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId.startsWith("malpractice_settle_btn_")) {
@@ -4158,7 +4162,7 @@ function renderEnergyBar(percent) {
 
   if (customId.startsWith("malpractice_court_won_") || customId.startsWith("malpractice_court_lost_")) {
     // Fetch case and allow AI fallback if no higher-ranked reviewer exists
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     const isWon = customId.startsWith("malpractice_court_won_");
     const caseId = customId.replace(isWon ? "malpractice_court_won_" : "malpractice_court_lost_", "");
 
@@ -4166,7 +4170,7 @@ function renderEnergyBar(percent) {
       const MalpracticeCase = require("../../models/MalpracticeCase");
       const c = await MalpracticeCase.findOne({ caseId });
       if (!c || c.status !== "submitted") {
-        return interaction.followUp({ content: "❌ Dava dosyası bulunamadı veya zaten karara bağlandı.", ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: "❌ Dava dosyası bulunamadı veya zaten karara bağlandı.", ephemeral: true }).catch(() => { });
       }
 
       const p = await StaffProgress.findOne({ userId: c.targetUserId });
@@ -4202,7 +4206,7 @@ function renderEnergyBar(percent) {
               .setTitle(`✅ Mahkeme Kararı (AI Hakem): Davalı Suçsuz Bulundu - #${caseId}`)
               .setDescription(`AI hakem kararı: Davalı yetkili <@${c.targetUserId}> suçsuz bulundu.\n\n**Gerekçe:** ${aiText}`)
               .setTimestamp();
-            await interaction.editReply({ embeds: [wonEmbed], components: [] }).catch(() => {});
+            await interaction.editReply({ embeds: [wonEmbed], components: [] }).catch(() => { });
           } else {
             c.status = 'lost';
             const fine = fineAmount || (c.fineAmount || 100);
@@ -4230,7 +4234,7 @@ function renderEnergyBar(percent) {
               )
               .setTimestamp();
 
-            await interaction.editReply({ embeds: [lostEmbed], components: [] }).catch(() => {});
+            await interaction.editReply({ embeds: [lostEmbed], components: [] }).catch(() => { });
           }
         } catch (aiErr) {
           console.error('[Malpractice-AI-Fallback] Hata:', aiErr.message);
@@ -4251,11 +4255,11 @@ function renderEnergyBar(percent) {
           .setDescription(`Davalı yetkili <@${c.targetUserId}> tarafından yapılan savunma haklı bulunmuş ve dava tamamen düşürülmüştür.`)
           .setTimestamp();
 
-        await interaction.editReply({ embeds: [wonEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [wonEmbed], components: [] }).catch(() => { });
       } else {
         c.status = "lost";
         const fine = c.fineAmount || 100;
-        
+
         let finalPaid = 0;
         if (p.insuranceActive) {
           finalPaid = 0;
@@ -4280,7 +4284,7 @@ function renderEnergyBar(percent) {
           )
           .setTimestamp();
 
-        await interaction.editReply({ embeds: [lostEmbed], components: [] }).catch(() => {});
+        await interaction.editReply({ embeds: [lostEmbed], components: [] }).catch(() => { });
       }
     } catch (err) {
       console.error('[Mahkeme-Court-Judge] Hata:', err.message);
@@ -4296,7 +4300,7 @@ function renderEnergyBar(percent) {
       return interaction.reply({ content: "❌ Global risk kontrol yetkisi için **En Yüksek Rütbe** (Level 6) yetkisine sahip olmalısınız!", ephemeral: true });
     }
 
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
 
     try {
       const ServerConfig = require("../../models/ServerConfig");
@@ -4340,7 +4344,7 @@ function renderEnergyBar(percent) {
           .setStyle(sConf.isOhalActive ? ButtonStyle.Success : ButtonStyle.Danger)
       );
 
-      await interaction.editReply({ embeds: [newEmbed], components: [row] }).catch(() => {});
+      await interaction.editReply({ embeds: [newEmbed], components: [row] }).catch(() => { });
     } catch (err) {
       console.error('[Risk-Toggle] Hata:', err.message);
     }
@@ -4362,7 +4366,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId.startsWith("redacted_report_trigger_")) {
@@ -4380,7 +4384,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   if (customId === "grid_request_sector") {
@@ -4427,7 +4431,7 @@ function renderEnergyBar(percent) {
           )
           .setTimestamp();
         await interaction.user.send({ embeds: [embed1] });
-      } catch (_) {}
+      } catch (_) { }
 
       return interaction.editReply({ content: "🛬 **Sektöre Ulaştınız!**\n\nVarışınız veritabanına işlendi ve canlı log akışı tüneli DM kutunuza yönlendirildi." });
     } catch (err) {
@@ -4473,7 +4477,7 @@ function renderEnergyBar(percent) {
 
       const { CHANNELS } = require("../services/staffAutomation");
       const logChan = await interaction.client.channels.fetch(CHANNELS.TERFI_LOG).catch(() => null);
-      
+
       if (logChan && logChan.isTextBased()) {
         const misconductEmbed = new EmbedBuilder()
           .setColor(0xe74c3c)
@@ -4502,12 +4506,12 @@ function renderEnergyBar(percent) {
       await interaction.followUp({
         content: `⚡ **Gece Mesaisi Başlatıldı!** ${result.description} Ödül: ${result.reward}`,
         ephemeral: true
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       await interaction.followUp({
         content: `❌ Gece mesaisi başlatılamadı: ${result.message}`,
         ephemeral: true
-      }).catch(() => {});
+      }).catch(() => { });
     }
     return;
   }
@@ -4517,7 +4521,7 @@ function renderEnergyBar(percent) {
     await interaction.followUp({
       content: '✅ Bu gece dinlenme seçildi. Sabah tekrar göz atabilirsin.',
       ephemeral: true
-    }).catch(() => {});
+    }).catch(() => { });
     return;
   }
 
@@ -4555,7 +4559,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   // ── AI Senaryo Cevaplama butonu ────────────────────────────────────────────
@@ -4574,7 +4578,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   // ── AI Asistanı butonu ──────────────────────────────────────────────────────
@@ -4592,7 +4596,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   // ── Vaka Raporu butonu ─────────────────────────────────────────────────────
@@ -4628,7 +4632,7 @@ function renderEnergyBar(percent) {
       new ActionRowBuilder().addComponents(suspectsInput),
       new ActionRowBuilder().addComponents(proofsInput)
     );
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   // ── Günlük Rapor Gir butonu ────────────────────────────────────────────────
@@ -4646,7 +4650,7 @@ function renderEnergyBar(percent) {
       .setRequired(true);
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
-    return interaction.showModal(modal).catch(() => {});
+    return interaction.showModal(modal).catch(() => { });
   }
 
   // ── Abuse Appeal Butonu ─────────────────────────────────────────────────────
@@ -4655,7 +4659,7 @@ function renderEnergyBar(percent) {
     try {
       const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
       const { abuseLog } = require('../services/abuseLogService');
-      
+
       const userId = interaction.user.id;
       const abuses = abuseLog.getUserAbuses(userId);
       const active = abuses.filter(r => r.status === 'ACTIVE');
@@ -4681,7 +4685,7 @@ function renderEnergyBar(percent) {
         .setRequired(true);
 
       modal.addComponents(new ActionRowBuilder().addComponents(messageInput));
-      
+
       return interaction.showModal(modal);
     } catch (err) {
       console.error('[abuse_appeal] Error:', err.message);
@@ -4793,7 +4797,7 @@ function renderEnergyBar(percent) {
   // ── Kahve Molası Başlat/Bitir butonu ───────────────────────────────────────
   if (customId === "staff_duty_break_start" || customId === "staff_duty_break_end") {
     await interaction.deferUpdate().catch(() => { });
-    
+
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
@@ -4857,7 +4861,7 @@ function renderEnergyBar(percent) {
             .setColor(0xe67e22)
             .setDescription(`☕ **${interaction.user.tag}** (\`${interaction.user.id}\`) kahve molasına çıktı.`)
             .setTimestamp();
-          await logChan.send({ embeds: [embed] }).catch(() => {});
+          await logChan.send({ embeds: [embed] }).catch(() => { });
         }
       } else {
         const breakStarted = p.duty.breakStartedAt ? new Date(p.duty.breakStartedAt).getTime() : Date.now();
@@ -4886,7 +4890,7 @@ function renderEnergyBar(percent) {
             .setColor(0x2ecc71)
             .setDescription(`🟢 **${interaction.user.tag}** (\`${interaction.user.id}\`) kahve molasından döndü. (Mola Süresi: \`${breakMins} dakika\`)`)
             .setTimestamp();
-          await logChan.send({ embeds: [embed] }).catch(() => {});
+          await logChan.send({ embeds: [embed] }).catch(() => { });
         }
       }
 
@@ -5975,13 +5979,13 @@ function renderEnergyBar(percent) {
       if (targetUserObj) {
         const dmText = isThirdWarn
           ? `⚠️ **EkoYıldız Moderasyonu Tarafından Uyarıldınız!**\n\n` +
-            `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
-            `**Uyarı Sayınız:** 3/3\n` +
-            `3/3 uyarı sınırına ulaştığınız için otomatik olarak hapishaneye gönderiliyorsunuz.`
+          `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
+          `**Uyarı Sayınız:** 3/3\n` +
+          `3/3 uyarı sınırına ulaştığınız için otomatik olarak hapishaneye gönderiliyorsunuz.`
           : `⚠️ **EkoYıldız Moderasyonu Tarafından Uyarıldınız!**\n\n` +
-            `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
-            `**Uyarı Sayınız:** ${displayWarnCount}/3\n` +
-            `Uyarı sayınız 3/3'e ulaştığında otomatik olarak hapishaneye gönderileceksiniz.`;
+          `**Sebep:** Küfür / Uygunsuz içerik tespiti.\n` +
+          `**Uyarı Sayınız:** ${displayWarnCount}/3\n` +
+          `Uyarı sayınız 3/3'e ulaştığında otomatik olarak hapishaneye gönderileceksiniz.`;
 
         await targetUserObj.send(dmText).catch(() => { });
       }
@@ -6508,10 +6512,10 @@ async function renderRoleCustomizationPanel(interaction, setupDoc) {
 async function handleModeratorDashboard(interaction) {
   const { customId } = interaction;
   const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-  const { 
-    generateModeratorDashboard, 
-    getSubcategoryEmbed, 
-    getActionEmbed, 
+  const {
+    generateModeratorDashboard,
+    getSubcategoryEmbed,
+    getActionEmbed,
     createActionButtons,
     setNavState,
     getNavState
@@ -6520,7 +6524,7 @@ async function handleModeratorDashboard(interaction) {
   try {
     // Level 1: Ana Kategoriler
     if (customId === 'mod_dashboard_open') {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       const { embed, components } = generateModeratorDashboard();
       setNavState(interaction.user.id, { level: 1, category: null, subcategory: null });
       return interaction.message.edit({ embeds: [embed], components });
@@ -6528,21 +6532,21 @@ async function handleModeratorDashboard(interaction) {
 
     // Category → Subcategory Navigation
     if (customId.startsWith('mod_cat_')) {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       const category = customId.replace('mod_cat_', '');
       const result = getSubcategoryEmbed(category);
-      
+
       if (!result) {
         return interaction.editReply({ content: '❌ Kategori bulunamadı.', ephemeral: true });
       }
 
       const { embed, subcategories } = result;
-      
+
       // Create subcategory buttons
       const rows = [];
       for (let i = 0; i < subcategories.length; i += 2) {
         const row = new ActionRowBuilder();
-        
+
         row.addComponents(
           new ButtonBuilder()
             .setCustomId(`mod_subcat_${subcategories[i].id}`)
@@ -6577,26 +6581,26 @@ async function handleModeratorDashboard(interaction) {
 
     // Subcategory → Actions Navigation
     if (customId.startsWith('mod_subcat_')) {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       const subcategoryId = customId.replace('mod_subcat_', '');
       const result = getActionEmbed(subcategoryId);
-      
+
       if (!result) {
         return interaction.editReply({ content: '❌ Alt-kategori bulunamadı.', ephemeral: true });
       }
 
       const { embed, actions } = result;
       const buttons = createActionButtons(actions);
-      
+
       setNavState(interaction.user.id, { level: 3, subcategory: subcategoryId });
       return interaction.message.edit({ embeds: [embed], components: buttons });
     }
 
     // Action Button Handling (Level 4)
     if (customId.startsWith('mod_action_')) {
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
       const actionId = customId.replace('mod_action_', '');
-      
+
       // Simulate action execution
       const actionEmbed = new EmbedBuilder()
         .setTitle('✅ İşlem Başlatıldı')
@@ -6612,9 +6616,9 @@ async function handleModeratorDashboard(interaction) {
 
     // Navigation: Back
     if (customId === 'mod_nav_back') {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       const state = getNavState(interaction.user.id);
-      
+
       if (state.level === 3 || state.level === 2) {
         // Go back to category
         const result = getSubcategoryEmbed(state.category);
@@ -6626,7 +6630,7 @@ async function handleModeratorDashboard(interaction) {
         const rows = [];
         for (let i = 0; i < subcategories.length; i += 2) {
           const row = new ActionRowBuilder();
-          
+
           row.addComponents(
             new ButtonBuilder()
               .setCustomId(`mod_subcat_${subcategories[i].id}`)
@@ -6661,7 +6665,7 @@ async function handleModeratorDashboard(interaction) {
 
     // Navigation: Home
     if (customId === 'mod_nav_home') {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       const { embed, components } = generateModeratorDashboard();
       setNavState(interaction.user.id, { level: 1, category: null, subcategory: null });
       return interaction.message.edit({ embeds: [embed], components });

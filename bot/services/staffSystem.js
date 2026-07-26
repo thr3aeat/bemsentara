@@ -352,7 +352,7 @@ async function hasInactivityRole(userId, client) {
       } else {
         // 🔧 FIX: Mola süresi dolmuşsa otomatik temizle
         p.burnoutLeaveUntil = null;
-        await p.save().catch(() => {});
+        await p.save().catch(() => { });
         return false;
       }
     }
@@ -782,7 +782,7 @@ function createActionButtons(actions) {
   // Her 2 butona 1 row
   for (let i = 0; i < actions.length; i += 2) {
     const row = new ActionRowBuilder();
-    
+
     row.addComponents(
       new ButtonBuilder()
         .setCustomId(`mod_action_${actions[i].id}`)
@@ -1193,12 +1193,12 @@ async function addVoiceMinutes(userId, minutes, client) {
         // FIX: Saatlik limit (60 dakika = 5 TL / 10 Elmas) ve günlük cap (50 TL / 100 Elmas)
         const dailyBudgetCap = 50;
         const dailyDiamondsCap = 100;
-        const minuteRate = 1/12; // 60 dakika = 5 TL (0.083 TL per dakika)
-        const diamondRate = 1/6;  // 60 dakika = 10 Elmas (0.167 Elmas per dakika)
-        
+        const minuteRate = 1 / 12; // 60 dakika = 5 TL (0.083 TL per dakika)
+        const diamondRate = 1 / 6;  // 60 dakika = 10 Elmas (0.167 Elmas per dakika)
+
         const budgetGain = Math.min(minutes * minuteRate, dailyBudgetCap - (ub.budget || 0));
         const diamondsGain = Math.min(minutes * diamondRate, dailyDiamondsCap - (ub.diamonds || 0));
-        
+
         ub.budget = (ub.budget || 0) + budgetGain;
         ub.diamonds = (ub.diamonds || 0) + diamondsGain;
         await ub.save();
@@ -1508,7 +1508,7 @@ async function checkDailyCompletion(progress, client) {
 
   // 🔧 FIX: Moladayken DM göndermesini kapat (burnoutLeaveUntil check)
   const isOnBreak = progress.burnoutLeaveUntil && new Date(progress.burnoutLeaveUntil) > new Date();
-  
+
   // 🔧 FIX: Mola süresi dolduysa otomatik sıfırla (kapanmayan mola sorunu)
   if (progress.burnoutLeaveUntil && new Date(progress.burnoutLeaveUntil) <= new Date()) {
     progress.burnoutLeaveUntil = null;
@@ -2028,14 +2028,14 @@ async function checkPromotion(progress, client) {
     }
 
     const stats = progress.stats;
-    
+
     // 🔧 FIX: Bilet kontrolü eklendi - bedava terfi açığı kapatıldı
     // Ticket çözmek terfi şartı ama bilet sayısı kontrolü yapılmıyordu
     const hasEnoughTickets = (stats.ticketsSolved || 0) >= req.ticketsSolved;
-    
+
     // 🔧 FIX: Ses süresi kontrolü eklendi - seste 1 dk durmayan adama terfi butonu çıkıyor
     const hasEnoughVoice = (stats.totalVoiceMinutes || 0) >= req.totalVoiceMinutes;
-    
+
     const ok =
       hasEnoughTickets &&
       hasEnoughVoice &&
@@ -2053,12 +2053,12 @@ async function checkPromotion(progress, client) {
       if (progress.exam && progress.exam.status === 'scheduled' && progress.exam.scheduledAt) {
         const scheduledDate = new Date(progress.exam.scheduledAt);
         const now = new Date();
-        
+
         // 🔧 FIX: Saat uyuşmazlığı — sadece en az 1 saat geçmişse catch-up yap
         // "Yeni planlandı" durumundan ayırt etmek için 1 saat tampon kullan
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         const isGenuinelyPast = scheduledDate <= oneHourAgo;
-        
+
         if (isGenuinelyPast) {
           try {
             const { checkActiveExams } = require('./aiExamService');
@@ -2076,7 +2076,7 @@ async function checkPromotion(progress, client) {
       // Seviye 6'da ise başarılı tamamlama mesajı gönder
       if (currentLevel >= 6) {
         console.log(`[staffSystem] ${progress.userId} Seviye 6 (Genel Koordinatör) maksimum seviyede. Tebrikler!`);
-        
+
         try {
           const user = await client.users.fetch(progress.userId).catch(() => null);
           if (user) {
@@ -2088,9 +2088,9 @@ async function checkPromotion(progress, client) {
                 `🏅 Bu sunucunun en yüksek rütbesine ulaştın. Ekibi yönet, sunucuyu büyüt!`
               )
               .setTimestamp();
-            await user.send({ embeds: [maxLevelEmbed] }).catch(() => {});
+            await user.send({ embeds: [maxLevelEmbed] }).catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
         return;
       }
       // Her rütbe geçişinde terfi yerine sınav sürecini başlat
@@ -2385,7 +2385,7 @@ async function sendMorningBriefing(progress, client) {
   // Aksi halde briefingi kapatan yetkililere görev tanımlanmıyor → terfi yavaşlıyor
   if (!progress.daily.chosenTask || !allowedTasks.includes(progress.daily.chosenTask)) {
     const prevTask = progress.daily.chosenTask;
-    
+
     let filteredTasks = allowedTasks;
     if (prevTask && allowedTasks.includes(prevTask)) {
       const differentTasks = allowedTasks.filter(t => t !== prevTask);
@@ -3201,13 +3201,13 @@ async function handleInactivityProofModal(interaction, client) {
     if (!request) {
       return interaction.editReply({ content: 'Gönderilecek bekleyen bir inaktiflik talebin yok.' });
     }
-    
+
     // 🔧 FIX: Kanıt kaydedildikten sonra durumu under_review yap
     // Aksi halde her buton basımında tekrar kanıt isteniyor
     request.evidence = evidence?.trim() || request.evidence;
     request.status = 'under_review'; // Döngüyü kıran bayrak
     request.evidenceSubmittedAt = new Date();
-    
+
     await progress.save();
     const result = await submitInactivityRequest(interaction.user.id, request.reason, request.evidence, client);
     await interaction.editReply({ content: result.message });
@@ -3845,79 +3845,79 @@ async function runDailyCheck(client) {
       const todayDate = new Date();
       const startOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
       const startOfWeek = new Date(todayDate);
-    startOfWeek.setDate(todayDate.getDate() - ((todayDate.getDay() + 6) % 7));
+      startOfWeek.setDate(todayDate.getDate() - ((todayDate.getDay() + 6) % 7));
 
-    // Aylık/haftalık izin sayacı sıfırlaması
-    if (p.leaves.lastLeaveDate) {
-      const lastLeaveDate = new Date(p.leaves.lastLeaveDate);
-      if (lastLeaveDate < startOfMonth) {
-        p.leaves.monthlyLeaveUsed = 0;
-      }
-      if (lastLeaveDate < startOfWeek) {
-        p.leaves.weeklyLeaveUsed = 0;
-      }
-    } else {
-      p.leaves.monthlyLeaveUsed = 0;
-      p.leaves.weeklyLeaveUsed = 0;
-      if (p.pip?.isActive) {
-        if (!p.pip.signed) {
-          // Kontrat imzalanmamışsa otomatik demote / rol askı
-          p.pip.isActive = false;
-          await p.save();
-          await removeRole(p, client, 'Performans İyileştirme Planı (PIP) Kontratını imzalamadığınız');
-          continue;
+      // Aylık/haftalık izin sayacı sıfırlaması
+      if (p.leaves.lastLeaveDate) {
+        const lastLeaveDate = new Date(p.leaves.lastLeaveDate);
+        if (lastLeaveDate < startOfMonth) {
+          p.leaves.monthlyLeaveUsed = 0;
         }
+        if (lastLeaveDate < startOfWeek) {
+          p.leaves.weeklyLeaveUsed = 0;
+        }
+      } else {
+        p.leaves.monthlyLeaveUsed = 0;
+        p.leaves.weeklyLeaveUsed = 0;
+        if (p.pip?.isActive) {
+          if (!p.pip.signed) {
+            // Kontrat imzalanmamışsa otomatik demote / rol askı
+            p.pip.isActive = false;
+            await p.save();
+            await removeRole(p, client, 'Performans İyileştirme Planı (PIP) Kontratını imzalamadığınız');
+            continue;
+          }
 
-        const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
-        const targetVoice = Math.min(req.voiceMinutes * 2, 180) + (p.daily?.transferredVoiceMinutes || 0);
-        const targetGreets = Math.min(req.greets * 2, 20);
-        const greetDone = p.daily?.date === checkDate && (p.daily?.greetCount || 0) >= targetGreets;
-        const voiceDone = p.daily?.date === checkDate && (p.daily?.voiceMinutes || 0) >= targetVoice;
-        const completedToday = greetDone && voiceDone;
+          const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
+          const targetVoice = Math.min(req.voiceMinutes * 2, 180) + (p.daily?.transferredVoiceMinutes || 0);
+          const targetGreets = Math.min(req.greets * 2, 20);
+          const greetDone = p.daily?.date === checkDate && (p.daily?.greetCount || 0) >= targetGreets;
+          const voiceDone = p.daily?.date === checkDate && (p.daily?.voiceMinutes || 0) >= targetVoice;
+          const completedToday = greetDone && voiceDone;
 
-        const isOnLeave = p.leaves?.usedDays?.includes(checkDate);
-        const isUserInactive = isOnLeave || (await hasInactivityRole(p.userId, client));
+          const isOnLeave = p.leaves?.usedDays?.includes(checkDate);
+          const isUserInactive = isOnLeave || (await hasInactivityRole(p.userId, client));
 
-        if (isUserInactive) {
-          await p.save();
-        } else if (completedToday) {
-          p.pip.consecutiveSuccessDays = (p.pip.consecutiveSuccessDays || 0) + 1;
-          if (p.pip.consecutiveSuccessDays >= 3) {
+          if (isUserInactive) {
+            await p.save();
+          } else if (completedToday) {
+            p.pip.consecutiveSuccessDays = (p.pip.consecutiveSuccessDays || 0) + 1;
+            if (p.pip.consecutiveSuccessDays >= 3) {
+              p.pip.isActive = false;
+              p.pip.signed = false;
+              p.warnings.inactivityCount = 0; // Reset inactivity warnings only
+              p.warnings.count = 0;
+              await p.save();
+              try {
+                const user = await client.users.fetch(p.userId);
+                const successEmbed = new EmbedBuilder()
+                  .setColor(0x2ecc71)
+                  .setTitle('🎉 PIP BAŞARIYLA TAMAMLANDI!')
+                  .setDescription(`Tebrikler! 3 günlük PIP (Performans İyileştirme Planı) sürecini başarıyla tamamladınız ve yetkilerinizi korudunuz. Görevinize normal hedeflerle devam edebilirsiniz.`)
+                  .setTimestamp();
+                await user.send({ embeds: [successEmbed] }).catch(() => { });
+              } catch (_) { }
+            } else {
+              await p.save();
+            }
+          } else {
+            // Failed to complete PIP target
             p.pip.isActive = false;
             p.pip.signed = false;
-            p.warnings.inactivityCount = 0; // Reset inactivity warnings only
-            p.warnings.count = 0;
             await p.save();
             try {
               const user = await client.users.fetch(p.userId);
-              const successEmbed = new EmbedBuilder()
-                .setColor(0x2ecc71)
-                .setTitle('🎉 PIP BAŞARIYLA TAMAMLANDI!')
-                .setDescription(`Tebrikler! 3 günlük PIP (Performans İyileştirme Planı) sürecini başarıyla tamamladınız ve yetkilerinizi korudunuz. Görevinize normal hedeflerle devam edebilirsiniz.`)
+              const failEmbed = new EmbedBuilder()
+                .setColor(0xe74c3c)
+                .setTitle('❌ PIP BAŞARISIZ OLDU')
+                .setDescription(`Performans İyileştirme Planı (PIP) hedeflerini tamamlayamadığınız için rütbeniz düşürülmüştür.`)
                 .setTimestamp();
-              await user.send({ embeds: [successEmbed] }).catch(() => { });
+              await user.send({ embeds: [failEmbed] }).catch(() => { });
             } catch (_) { }
-          } else {
-            await p.save();
+            await removeRole(p, client);
           }
-        } else {
-          // Failed to complete PIP target
-          p.pip.isActive = false;
-          p.pip.signed = false;
-          await p.save();
-          try {
-            const user = await client.users.fetch(p.userId);
-            const failEmbed = new EmbedBuilder()
-              .setColor(0xe74c3c)
-              .setTitle('❌ PIP BAŞARISIZ OLDU')
-              .setDescription(`Performans İyileştirme Planı (PIP) hedeflerini tamamlayamadığınız için rütbeniz düşürülmüştür.`)
-              .setTimestamp();
-            await user.send({ embeds: [failEmbed] }).catch(() => { });
-          } catch (_) { }
-          await removeRole(p, client);
+          continue;
         }
-        continue;
-      }
       } // close else of p.leaves.lastLeaveDate
 
       // Bugünü veya hedef günü kontrol et (görevi tamamladı mı?)
