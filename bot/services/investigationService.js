@@ -536,17 +536,17 @@ async function assignRandomJudge(guild, invest, channel) {
         .setLabel("⚖️ Çözüme Kavuştur / Karar Ver")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId(`invest_addmember_${channel.id}`)
-        .setLabel("👥 Kişi Ekle")
+        .setCustomId(`invest_warn_${channel.id}`)
+        .setLabel("⚠️ Resmi Uyarı Ver")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId(`invest_removemember_${channel.id}`)
-        .setLabel("👤 Kişi Çıkar")
-        .setStyle(ButtonStyle.Danger),
+        .setCustomId(`invest_addmember_${channel.id}`)
+        .setLabel("👥 Kişi Ekle")
+        .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(`invest_close_${channel.id}`)
         .setLabel("❌ Soruşturmayı Kapat")
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Danger)
     );
 
     await channel.send({ content: "💬 **GERÇEKÇİ ROLEPLAY & SORUŞTURMA YÖNETİM PANELLERİ:**", components: [rpRow1, rpRow2] });

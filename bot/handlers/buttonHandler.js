@@ -2076,6 +2076,40 @@ function renderEnergyBar(percent) {
     return interaction.reply({ embeds: [embed], components: [row] });
   }
 
+  if (customId.startsWith("court_warn_")) {
+    const caseCode = customId.replace("court_warn_", "");
+    const modal = new ModalBuilder()
+      .setCustomId(`court_warn_modal_${caseCode}`)
+      .setTitle("⚠️ Şüpheliye Resmi Uyarı Ver");
+
+    const input = new TextInputBuilder()
+      .setCustomId("warn_reason")
+      .setLabel("Resmi Uyarı Gerekçesi")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Sunucu kural ihlali detayları ve disiplin uyarısı sebebi...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    return interaction.showModal(modal);
+  }
+
+  if (customId.startsWith("invest_warn_")) {
+    const channelId = customId.replace("invest_warn_", "");
+    const modal = new ModalBuilder()
+      .setCustomId(`invest_warn_modal_${channelId}`)
+      .setTitle("⚠️ Şüpheliye Resmi Uyarı Ver");
+
+    const input = new TextInputBuilder()
+      .setCustomId("warn_reason")
+      .setLabel("Resmi Uyarı Gerekçesi")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Soruşturma kural ihlali ve disiplin uyarısı nedeni...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    return interaction.showModal(modal);
+  }
+
   if (customId.startsWith("warn_sign_contract_")) {
     const parts = customId.replace("warn_sign_contract_", "").split("_");
     const targetId = parts[0];

@@ -1020,6 +1020,40 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
+  if (interaction.customId.startsWith('court_warn_modal_')) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const caseCode = interaction.customId.replace('court_warn_modal_', '');
+    const reason = interaction.fields.getTextInputValue('warn_reason');
+
+    const CourtCase = require('../../models/CourtCase');
+    const courtCase = await CourtCase.findOne({ caseCode });
+    if (!courtCase) return interaction.editReply({ content: '❌ Dava dosyası bulunamadı.' });
+
+    const targetUser = await interaction.client.users.fetch(courtCase.defendantId).catch(() => null);
+    if (!targetUser) return interaction.editReply({ content: '❌ Sanık kullanıcı bulunamadı.' });
+
+    const { issueWarning } = require('../services/punishmentService');
+    await issueWarning(interaction, targetUser, reason, interaction.user);
+    return interaction.editReply({ content: `✅ <@${targetUser.id}> sanığına resmi uyarı verildi ve kural sözleşmesi iletildi.` });
+  }
+
+  if (interaction.customId.startsWith('invest_warn_modal_')) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const channelId = interaction.customId.replace('invest_warn_modal_', '');
+    const reason = interaction.fields.getTextInputValue('warn_reason');
+
+    const Investigation = require('../../models/Investigation');
+    const invest = await Investigation.findOne({ channelId });
+    if (!invest) return interaction.editReply({ content: '❌ Soruşturma kaydı bulunamadı.' });
+
+    const targetUser = await interaction.client.users.fetch(invest.targetUserId).catch(() => null);
+    if (!targetUser) return interaction.editReply({ content: '❌ Şüpheli kullanıcı bulunamadı.' });
+
+    const { issueWarning } = require('../services/punishmentService');
+    await issueWarning(interaction, targetUser, reason, interaction.user);
+    return interaction.editReply({ content: `✅ <@${targetUser.id}> şüphelisine resmi uyarı verildi ve kural sözleşmesi iletildi.` });
+  }
+
   if (interaction.customId.startsWith('warn_appeal_modal_')) {
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
     const parts = interaction.customId.replace('warn_appeal_modal_', '').split('_');

@@ -472,6 +472,7 @@ async function filePetition(interaction, { defendantInput, articleKey, details, 
 
   const staffRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`court_indictment_start_${caseCode}`).setLabel('📋 İddianame Hazırla').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`court_warn_${caseCode}`).setLabel('⚠️ Resmi Uyarı Ver').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId(`court_verdict_${caseCode}`).setLabel('⚖️ Karar Ver & Ceza Kes').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId(`court_kyok_${caseCode}`).setLabel('❌ KYOK (Düşür)').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`court_precaution_toggle_${caseCode}`).setLabel('🚨 İhtiyati Tedbir').setStyle(ButtonStyle.Danger)
@@ -1351,6 +1352,7 @@ async function showPersonalCourtPanel(interaction, caseCode) {
     embed.addFields({ name: '👮 Moderasyon & Savcılık Kararları', value: 'İddianame hazırlayabilir, KYOK kararı verebilir veya cezayı kesinleştirebilirsiniz.' });
     const staffRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`court_indictment_start_${caseCode}`).setLabel('📋 İddianame Hazırla').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`court_warn_${caseCode}`).setLabel('⚠️ Resmi Uyarı Ver').setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId(`court_verdict_${caseCode}`).setLabel('⚖️ Karar Ver & Ceza Kes').setStyle(ButtonStyle.Danger),
       new ButtonBuilder().setCustomId(`court_kyok_${caseCode}`).setLabel('❌ KYOK (Düşür)').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId(`court_precaution_toggle_${caseCode}`).setLabel('🚨 İhtiyati Tedbir').setStyle(ButtonStyle.Danger)
