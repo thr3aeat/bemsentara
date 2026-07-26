@@ -325,6 +325,68 @@ async function stopQueue(interaction) {
   return interaction.reply({ content: '🛑 Canlı ses sırası sonlandırıldı ve sıfırlandı.', ephemeral: true });
 }
 
+/**
+ * Handles chat messages matching "sesimi aç", "bende sıra", "sıra bende", "sıram geldi" etc.
+ */
+async function handleVoiceQueueChatMessage(message) {
+  if (!message || message.author.bot || !message.guild) return;
+
+  const content = message.content.toLowerCase();
+  const triggerRegex = /(?:bende\s*s[ıi]ra|s[ıi]ra\s*bende|s[ıi]ram\s*geldi|benim\s*s[ıi]ram|sesimi\s*a[çc]|ses\s*a[çc]|muta\s*a[çc]|mute\s*a[çc])/i;
+
+  if (!triggerRegex.test(content)) return;
+
+  const userId = message.author.id;
+
+  // 1) Is user the CURRENT active speaker?
+  if (activeQueue.active && activeQueue.currentIndex >= 0 && activeQueue.queue[activeQueue.currentIndex]?.userId === userId) {
+    const member = await message.guild.members.fetch(userId).catch(() => null);
+    if (member && member.voice && member.voice.channelId) {
+      await member.voice.setMute(false, 'Chat talebi üzerine ses açıldı').catch(() => {});
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('🎙️ SESİNİZ AÇILDI!')
+      .setDescription(`Sayın <@${userId}>, konuşma sırası sizdedir! Ses muteniz açıldı, mikrofonunuzu kullanabilirsiniz.`)
+      .setColor(0x2ecc71)
+      .setTimestamp();
+
+    return message.reply({ embeds: [embed] }).catch(() => {});
+  }
+
+  // 2) Is user in waiting queue list?
+  if (activeQueue.active && activeQueue.queue.length > 0) {
+    const queueIndex = activeQueue.queue.findIndex(item => item.userId === userId);
+    if (queueIndex !== -1) {
+      const pos = queueIndex + 1;
+      const embed = new EmbedBuilder()
+        .setTitle('⏳ SES SIRANIZ BEKLEMEDE')
+        .setDescription(
+          `Sayın <@${userId}>,\n\n` +
+          `Ses sırası listesindesiniz. Şu an **${pos}. sıradasınız**.\n` +
+          `Sıranız geldiğinde DM kutunuza özel bildirim gönderilecek ve ses muteniz otomatik olarak açılacaktır!`
+        )
+        .setColor(0xf1c40f)
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] }).catch(() => {});
+    }
+  }
+
+  // 3) User is not in queue
+  const embed = new EmbedBuilder()
+    .setTitle('⚠️ SIRA LİSTESİNDE BULUNAMADINIZ')
+    .setDescription(
+      `Sayın <@${userId}>,\n\n` +
+      `Henüz aktif canlı ses sırasına eklenmemiş görünüyorsunuz.\n` +
+      `Sıraya girmek için yetkiliye başvurabilir veya paneldeki **\`[➕ Sıraya Kişi Ekle]\`** butonunu kullanabilirsiniz.`
+    )
+    .setColor(0xe67e22)
+    .setTimestamp();
+
+  return message.reply({ embeds: [embed] }).catch(() => {});
+}
+
 module.exports = {
   activeQueue,
   renderQueuePanelPayload,
@@ -334,5 +396,6 @@ module.exports = {
   handleDMAccept,
   handleDMReject,
   unmuteAllQueue,
-  stopQueue
+  stopQueue,
+  handleVoiceQueueChatMessage
 };

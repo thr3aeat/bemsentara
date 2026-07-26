@@ -1480,6 +1480,16 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Ses Sıra Sistemi Chat Yanıtlayıcı ("bende sıra", "sesimi aç" vb.) ───
+    if (message.guild && !message.author.bot) {
+      try {
+        const { handleVoiceQueueChatMessage } = require("../services/voiceQueueService");
+        await handleVoiceQueueChatMessage(message);
+      } catch (err) {
+        console.error("[messageCreate] Voice queue chat trigger error:", err.message);
+      }
+    }
+
     // Whistleblower Thread-to-DM tüneli
     if (message.guild && !message.author.bot && message.channel.isThread()) {
       try {
