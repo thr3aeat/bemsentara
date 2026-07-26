@@ -462,6 +462,7 @@ async function initializeModeratorSchool(client) {
     // accidental bulk graduations. If bulk graduation is needed, trigger it via
     // an admin-only command or run the helper manually.
 
+    await cleanupAllKiyakTags(client).catch(() => {});
     await reviewInactiveSchoolStudents(client).catch(() => {});
 
     setInterval(() => {
@@ -2002,10 +2003,31 @@ async function removeSchoolKiyakTag(member) {
     if (!currentName) return;
     const tag = `[${SCHOOL_KICK_TAG_NAME}]`;
     if (!currentName.includes(tag)) return;
-    const cleaned = currentName.replace(tag, '').trim();
+    const cleaned = currentName.replace(/\[?EKO-MOD-KIYAĞI\]?\s*/gi, '').trim();
     await member.setNickname(cleaned || null).catch(() => {});
   } catch (err) {
     logger.error('[ModeratorSchool] removeSchoolKiyakTag error:', err.message);
+  }
+}
+
+async function cleanupAllKiyakTags(client) {
+  try {
+    if (!client) return;
+    for (const guild of client.guilds.cache.values()) {
+      const members = await guild.members.fetch().catch(() => null);
+      if (!members) continue;
+      for (const member of members.values()) {
+        const currentName = member.nickname || '';
+        if (currentName.includes('EKO-MOD-KIYAĞI')) {
+          const cleaned = currentName.replace(/\[?EKO-MOD-KIYAĞI\]?\s*/gi, '').trim();
+          await member.setNickname(cleaned || null).catch(err => {
+            logger.warn(`[ModeratorSchool] Could not reset nickname for ${member.user?.tag || member.id}: ${err.message}`);
+          });
+        }
+      }
+    }
+  } catch (err) {
+    logger.error('[ModeratorSchool] cleanupAllKiyakTags error:', err.message);
   }
 }
 

@@ -528,18 +528,16 @@ async function handleSelectInteraction(interaction) {
       await interaction.deferReply({ ephemeral: true });
       try {
         const StaffProgress = require('../../models/StaffProgress');
-        const { isPromotionEligible, checkPromotion, startPromotionCeremony } = require('../services/staffSystem');
-        const p = await StaffProgress.findOne({ userId: interaction.user.id });
+        const { startPromotionCeremony, getOrCreate } = require('../services/staffSystem');
+        let p = await StaffProgress.findOne({ userId: interaction.user.id });
+
+        if (!p) {
+          p = await getOrCreate(interaction.user.id, interaction.guildId, interaction.client);
+        }
 
         if (!p) return interaction.editReply({ content: "❌ Personel sisteminde kayıtlı bir profiliniz bulunamadı." });
 
-        const eligible = isPromotionEligible(p);
-        if (eligible) {
-          await startPromotionCeremony(interaction, p);
-        } else {
-          await checkPromotion(p, interaction.client);
-          return interaction.editReply({ content: "ℹ️ Terfi durumunuz kontrol edildi. Şartlar tamamlandığında Terfi Alma Merkezi'nden terfinizi alabilirsiniz." });
-        }
+        await startPromotionCeremony(interaction, p);
       } catch (err) {
         console.error('[staff_claim_promotion select] Hata:', err.message);
         return interaction.editReply({ content: `❌ Terfi işlemi sırasında bir hata oluştu: ${err.message}` });
