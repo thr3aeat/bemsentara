@@ -90,6 +90,10 @@ async function setupQueuePanel(interaction) {
  * Add members to queue
  */
 async function addMembersToQueue(interaction, userIdsInput) {
+  if (interaction.isRepliable && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  }
+
   const guild = interaction.guild;
   const rawIds = userIdsInput.split(/[\s,;\n]+/);
 
@@ -118,7 +122,12 @@ async function addMembersToQueue(interaction, userIdsInput) {
 
   const payload = renderQueuePanelPayload();
   await interaction.channel.send(payload).catch(() => {});
-  return interaction.reply({ content: `✅ ${addedCount} üye başarıyla sıraya eklendi ve ilk mutesi kapatıldı.`, ephemeral: true });
+
+  if (interaction.deferred || interaction.replied) {
+    return interaction.editReply({ content: `✅ ${addedCount} üye başarıyla sıraya eklendi ve ilk mutesi kapatıldı.` }).catch(() => {});
+  } else {
+    return interaction.reply({ content: `✅ ${addedCount} üye başarıyla sıraya eklendi ve ilk mutesi kapatıldı.`, ephemeral: true }).catch(() => {});
+  }
 }
 
 /**

@@ -34,7 +34,7 @@ async function resolveUserFromInput(input, interaction) {
     if (member) {
       return member.user.id;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const { findOne } = require("../../models/User");
@@ -42,7 +42,7 @@ async function resolveUserFromInput(input, interaction) {
     if (dbUser) {
       return dbUser.discordId;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const StaffProgress = require("../../models/StaffProgress");
@@ -50,7 +50,7 @@ async function resolveUserFromInput(input, interaction) {
     if (staff) {
       return staff.userId;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   return null;
 }
@@ -71,7 +71,7 @@ function ensureStaffProgressShape(progress) {
 async function handleModalSubmit(interaction) {
   // Moderatör Kahve İzni Yönetimi
   if (interaction.customId === 'modal_mod_coffee_break') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
       const StaffProgress = require('../../models/StaffProgress');
       const { EmbedBuilder } = require('discord.js');
@@ -112,8 +112,8 @@ async function handleModalSubmit(interaction) {
       if (actionInput === 'BAŞLAT') {
         if (isBreakActive) {
           const endTime = Math.floor(targetProgress.burnoutLeaveUntil.getTime() / 1000);
-          return interaction.editReply({ 
-            content: `⚠️ Kullanıcının kahve izni zaten aktif!\n\nBitiş: <t:${endTime}:R>` 
+          return interaction.editReply({
+            content: `⚠️ Kullanıcının kahve izni zaten aktif!\n\nBitiş: <t:${endTime}:R>`
           });
         }
 
@@ -189,10 +189,10 @@ async function handleModalSubmit(interaction) {
               )
               .setFooter({ text: 'Eko Yıldız • Komuta Merkezi' })
               .setTimestamp();
-            await user.send({ embeds: [radioEmbed] }).catch(() => {});
+            await user.send({ embeds: [radioEmbed] }).catch(() => { });
             sentCount++;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       const logEmbed = new EmbedBuilder()
@@ -260,8 +260,8 @@ async function handleModalSubmit(interaction) {
           .setTitle('💸 Birim Primi Hesabınıza Yatırıldı!')
           .setDescription(`Lideriniz tarafından **${userUnit.unitName}** ortak bütçesinden cüzdanınıza **${amount} TL** prim aktarılmıştır.`)
           .setTimestamp();
-        await targetUser.send({ embeds: [bonusEmbed] }).catch(() => {});
-      } catch (_) {}
+        await targetUser.send({ embeds: [bonusEmbed] }).catch(() => { });
+      } catch (_) { }
 
       return interaction.editReply({ content: `✅ **${amount} TL** tutarındaki prim başarıyla <@${targetId}> yetkilisine gönderildi ve bütçeden düşüldü.` });
     } catch (err) {
@@ -310,8 +310,8 @@ async function handleModalSubmit(interaction) {
           .setTitle('🎫 Ekstra İzin Kredisi Tanımlandı!')
           .setDescription(`Lideriniz tarafından birim bütçesi kullanılarak size **+1 gün ekstra izin kredisi** fonlanmıştır.`)
           .setTimestamp();
-        await targetUser.send({ embeds: [leaveEmbed] }).catch(() => {});
-      } catch (_) {}
+        await targetUser.send({ embeds: [leaveEmbed] }).catch(() => { });
+      } catch (_) { }
 
       return interaction.editReply({ content: `✅ <@${targetId}> yetkilisi için **+1 gün ekstra izin kredisi** fonlandı ve bütçeden 200 TL düşüldü.` });
     } catch (err) {
@@ -408,8 +408,8 @@ async function handleModalSubmit(interaction) {
 
       console.log('[Sponsorship-Modal] Transfer başarılı:', { unitName, amount, oldBudget, newBudget: ub.budget });
 
-      return interaction.editReply({ 
-        content: `✅ **${amount} TL** ${unitName} birim bütçesine aktarılmıştır!\n\n📊 **Birim Kasası Güncellenmesi:**\n• Eski Bakiye: \`${oldBudget} TL\`\n• Yeni Bakiye: \`${ub.budget} TL\`\n💰 **Kalan Cüzdanınız:** \`${p.gamification.ecoCoins} TL\`` 
+      return interaction.editReply({
+        content: `✅ **${amount} TL** ${unitName} birim bütçesine aktarılmıştır!\n\n📊 **Birim Kasası Güncellenmesi:**\n• Eski Bakiye: \`${oldBudget} TL\`\n• Yeni Bakiye: \`${ub.budget} TL\`\n💰 **Kalan Cüzdanınız:** \`${p.gamification.ecoCoins} TL\``
       });
     } catch (err) {
       console.error('[Sponsorship-Modal] Hata:', err.message, err.stack);
@@ -470,7 +470,7 @@ async function handleModalSubmit(interaction) {
       // AI ile yemek tarifi/açıklaması oluştur
       const { chatWithAI } = require('../services/aiService');
       const aiPrompt = `${dish} için tatlı ve ilginç bir restoran menü açıklaması yaz. 1-2 cümle, Türkçe, samimi ve reklam tarzında olsun. Örn: "Usta şefimiz tarafından özel olarak hazırlanan Adana Kebabı, bahar baharat karışımı ile hazırlanmıştır..."`;
-      
+
       let dishDescription = '';
       try {
         dishDescription = await chatWithAI([{ role: 'user', content: aiPrompt }]).catch(() => '');
@@ -580,7 +580,7 @@ async function handleModalSubmit(interaction) {
 
       const { CHANNELS } = require('../services/staffAutomation');
       const logChan = await interaction.client.channels.fetch(CHANNELS.TERFI_LOG).catch(() => null);
-      
+
       let threadId = null;
       if (logChan && typeof logChan.threads?.create === 'function') {
         const thread = await logChan.threads.create({
@@ -633,7 +633,7 @@ async function handleModalSubmit(interaction) {
       }
 
       c.decrypted = true;
-      
+
       // Save current roles and hide them (ensure member is fetched and present)
       let member = interaction.member;
       if (!member || !member.roles) {
@@ -648,7 +648,7 @@ async function handleModalSubmit(interaction) {
 
       for (const roleId of rolesToHide) {
         if (roleId !== interaction.guild.id) {
-          await member.roles.remove(roleId).catch(() => {});
+          await member.roles.remove(roleId).catch(() => { });
         }
       }
 
@@ -685,7 +685,7 @@ async function handleModalSubmit(interaction) {
       if (c.rolesBefore && c.rolesBefore.length > 0) {
         for (const roleId of c.rolesBefore) {
           if (roleId !== interaction.guild.id) {
-            await member.roles.add(roleId).catch(() => {});
+            await member.roles.add(roleId).catch(() => { });
           }
         }
       }
@@ -734,7 +734,7 @@ async function handleModalSubmit(interaction) {
       const { CHANNELS } = require('../services/staffAutomation');
       const adminLogChanId = CHANNELS.CEZA_LOG || CHANNELS.TERFI_LOG;
       const adminLogChan = await interaction.client.channels.fetch(adminLogChanId).catch(() => null);
-      
+
       if (adminLogChan && adminLogChan.isTextBased()) {
         const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
         const embed = new EmbedBuilder()
@@ -773,7 +773,7 @@ async function handleModalSubmit(interaction) {
   // ── Kurallar Kabul Modal ───────────────────────────────────────────────────
   if (interaction.customId === 'rules_acceptance_modal') {
     const confirmation = interaction.fields.getTextInputValue('rules_confirm').toLowerCase().trim();
-    
+
     if (confirmation !== 'evet' && confirmation !== 'yes') {
       return interaction.reply({
         content: '❌ Kuralları kabul etmek için "evet" yazmalısınız.',
@@ -824,7 +824,7 @@ async function handleModalSubmit(interaction) {
 
   // ── Mahkeme & Dava Sistemi Modalleri ──────────────────────────────────────────
   if (interaction.customId === 'court_petition_modal') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const defendantInput = interaction.fields.getTextInputValue('court_defendant');
     const articleKey = interaction.fields.getTextInputValue('court_article');
     const details = interaction.fields.getTextInputValue('court_details');
@@ -837,7 +837,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId === 'court_staff_petition_modal') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const defendantInput = interaction.fields.getTextInputValue('court_defendant');
     const articleKey = interaction.fields.getTextInputValue('court_article');
     const details = interaction.fields.getTextInputValue('court_details');
@@ -849,7 +849,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_statement_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_statement_modal_', '');
     const statement = interaction.fields.getTextInputValue('court_statement_text');
 
@@ -867,13 +867,13 @@ async function handleModalSubmit(interaction) {
       .setTimestamp();
 
     if (interaction.channel && interaction.channel.isTextBased()) {
-      await interaction.channel.send({ embeds: [embed] }).catch(() => {});
+      await interaction.channel.send({ embeds: [embed] }).catch(() => { });
     }
     return interaction.editReply({ content: '✅ İfadeniz soruşturma dosyasına ve kanala resmi olarak kaydedildi!' });
   }
 
   if (interaction.customId.startsWith('court_evidence_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_evidence_modal_', '');
     const evidenceText = interaction.fields.getTextInputValue('court_evidence_text');
 
@@ -891,13 +891,13 @@ async function handleModalSubmit(interaction) {
       .setTimestamp();
 
     if (interaction.channel && interaction.channel.isTextBased()) {
-      await interaction.channel.send({ embeds: [embed] }).catch(() => {});
+      await interaction.channel.send({ embeds: [embed] }).catch(() => { });
     }
     return interaction.editReply({ content: '✅ Ek delil soruşturma dosyasına başarıyla eklendi!' });
   }
 
   if (interaction.customId.startsWith('court_hire_lawyer_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_hire_lawyer_modal_', '');
     const lawyerIdInput = interaction.fields.getTextInputValue('court_lawyer_id');
     const typeInput = interaction.fields.getTextInputValue('court_lawyer_type').toLowerCase();
@@ -909,7 +909,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_witness_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_witness_modal_', '');
     const witnessId = interaction.fields.getTextInputValue('court_witness_id').replace(/[<@!>]/g, '').trim();
     const statement = interaction.fields.getTextInputValue('court_witness_statement');
@@ -931,8 +931,8 @@ async function handleModalSubmit(interaction) {
 
       const channel = interaction.guild.channels.cache.get(courtCase.channelId);
       if (channel) {
-        await channel.send({ embeds: [embed] }).catch(() => {});
-        await channel.permissionOverwrites.edit(witnessId, { ViewChannel: true, SendMessages: true }).catch(() => {});
+        await channel.send({ embeds: [embed] }).catch(() => { });
+        await channel.permissionOverwrites.edit(witnessId, { ViewChannel: true, SendMessages: true }).catch(() => { });
       }
     } else {
       await interaction.editReply({ content: '❌ Dava bulunamadı.' });
@@ -941,7 +941,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_bribe_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_bribe_modal_', '');
     const amount = interaction.fields.getTextInputValue('court_bribe_amount');
 
@@ -951,7 +951,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_verdict_modal_')) {
-    await interaction.deferReply().catch(() => {});
+    await interaction.deferReply().catch(() => { });
     const caseCode = interaction.customId.replace('court_verdict_modal_', '');
     const verdictType = interaction.fields.getTextInputValue('court_verdict_type').trim();
     const note = interaction.fields.getTextInputValue('court_verdict_note');
@@ -962,7 +962,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_indictment_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_indictment_modal_', '');
     const indictmentText = interaction.fields.getTextInputValue('court_indictment_text');
 
@@ -972,7 +972,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_appeal_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const isAYM = interaction.customId.includes('_aym_');
     const level = isAYM ? 'aym' : 'istinaf';
     const caseCode = interaction.customId.replace(`court_appeal_modal_${level}_`, '');
@@ -984,7 +984,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_contract_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_contract_modal_', '');
     const terms = interaction.fields.getTextInputValue('court_contract_terms');
 
@@ -1021,6 +1021,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId === 'queue_add_member_modal') {
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const userIdsInput = interaction.fields.getTextInputValue('queue_user_ids');
     const { addMembersToQueue } = require('../services/voiceQueueService');
     await addMembersToQueue(interaction, userIdsInput);
@@ -1028,7 +1029,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('court_warn_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const caseCode = interaction.customId.replace('court_warn_modal_', '');
     const reason = interaction.fields.getTextInputValue('warn_reason');
 
@@ -1045,7 +1046,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('invest_warn_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const channelId = interaction.customId.replace('invest_warn_modal_', '');
     const reason = interaction.fields.getTextInputValue('warn_reason');
 
@@ -1062,7 +1063,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('warn_appeal_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const parts = interaction.customId.replace('warn_appeal_modal_', '').split('_');
     const targetId = parts[0];
     const warnId = parts[1];
@@ -1082,7 +1083,7 @@ async function handleModalSubmit(interaction) {
     const MOD_LOG_CHANNEL_ID = '1521502699324178492';
     const modChannel = interaction.guild?.channels.cache.get(MOD_LOG_CHANNEL_ID);
     if (modChannel && modChannel.isTextBased()) {
-      await modChannel.send({ embeds: [embed] }).catch(() => {});
+      await modChannel.send({ embeds: [embed] }).catch(() => { });
     }
 
     return interaction.editReply({ content: '✅ İtiraz dilekçeniz başarıyla oluşturuldu ve Disiplin Kuruluna sevk edildi.' });
@@ -1090,18 +1091,18 @@ async function handleModalSubmit(interaction) {
 
   // ── Soruşturma Sistemi Modalleri ───────────────────────────────────────────
   if (interaction.customId === 'investigation_start_modal') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const name = interaction.fields.getTextInputValue('investigation_name');
     const targetUserId = interaction.fields.getTextInputValue('investigation_target_id');
     const reason = interaction.fields.getTextInputValue('investigation_reason');
 
     const { startInvestigation } = require('../services/investigationService');
-    await startInvestigation(interaction, name, targetUserId, reason);
+dfyz cfghzstartInvestigation(interaction, name, targetUserId, reason);
     return;
   }
 
   if (interaction.customId.startsWith('invest_statement_modal_')) {
-    await interaction.deferReply().catch(() => {});
+    await interaction.deferReply().catch(() => { });
     const channelId = interaction.customId.replace('invest_statement_modal_', '');
     const statementText = interaction.fields.getTextInputValue('invest_statement_text');
 
@@ -1135,7 +1136,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId.startsWith('invest_penalty_detail_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const parts = interaction.customId.replace('invest_penalty_detail_modal_', '').split('_');
     const channelId = parts[0];
     const penaltyType = parts[1];
@@ -1147,7 +1148,7 @@ async function handleModalSubmit(interaction) {
   }
 
   if (interaction.customId === 'modal_answer_coach') {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     const answer = interaction.fields.getTextInputValue('coach_answer_input');
 
     const StaffProgress = require("../../models/StaffProgress");
@@ -1169,10 +1170,10 @@ async function handleModalSubmit(interaction) {
     const components = await getMorningBriefingComponents(p);
 
     // Edit message in-place
-    await interaction.editReply({ embeds: [embed], components }).catch(() => {});
+    await interaction.editReply({ embeds: [embed], components }).catch(() => { });
 
     // Send DM confirmation from coach
-    await interaction.user.send(`🤖 **Koç:** *"Cevabını hafızama kaydettim: **${answer}**. Seni daha yakından tanımak güzel, moderatör efendi!"*`).catch(() => {});
+    await interaction.user.send(`🤖 **Koç:** *"Cevabını hafızama kaydettim: **${answer}**. Seni daha yakından tanımak güzel, moderatör efendi!"*`).catch(() => { });
     return;
   }
 
@@ -1261,7 +1262,7 @@ Lütfen değerlendirmeni en sonunda tam olarak şu formatta bitir:
           await p.save();
 
           const { checkChosenTaskCompletion } = require('../services/staffSystem');
-          await checkChosenTaskCompletion(p, interaction.client).catch(() => {});
+          await checkChosenTaskCompletion(p, interaction.client).catch(() => { });
 
           rewardText = `\n\n🎉 **Tebrikler!** Senaryodan geçer not aldınız! \`+15 XP\` ve \`+5 EkoCoin\` hesabınıza eklendi.`;
         }
@@ -1366,7 +1367,7 @@ Lütfen değerlendirmeni en sonunda tam olarak şu formatta bitir:
   if (interaction.customId === 'modal_staff_ai_assistant') {
     const query = interaction.fields.getTextInputValue('assistant_query');
     await interaction.deferReply({ ephemeral: true });
-    
+
     try {
       const { chatWithAI } = require('../services/staffSystem');
       const systemPrompt = `Sen EkoYıldız sunucusunun AI Moderasyon Asistanısın. Sunucu kuralları ve moderasyon politikası dahilinde moderatörlerimize rehberlik ediyorsun.
@@ -1419,7 +1420,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
             topic: 'Yetkililerin vaka ve durum raporları.'
           }).catch(() => null);
         }
-        
+
         if (logChan) {
           const embed = new EmbedBuilder()
             .setColor(0xe74c3c)
@@ -1462,7 +1463,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
         await p.save();
 
         const { checkChosenTaskCompletion } = require('../services/staffSystem');
-        await checkChosenTaskCompletion(p, interaction.client).catch(() => {});
+        await checkChosenTaskCompletion(p, interaction.client).catch(() => { });
       }
 
       return interaction.editReply({ content: `✅ **Vaka raporunuz (${caseId}) başarıyla adli sisteme eklenmiş ve üst yönetimin log kanallarına iletilmiştir!** Geri bildiriminiz için teşekkürler. 🫡` });
@@ -1476,13 +1477,13 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
   if (interaction.customId === 'modal_staff_daily_report') {
     const reportContent = interaction.fields.getTextInputValue('report_content');
     await interaction.deferReply({ ephemeral: true });
-    
+
     const StaffProgress = require('../../models/StaffProgress');
     let p = await StaffProgress.findOne({ userId: interaction.user.id });
     if (!p) return interaction.editReply({ content: '❌ Personel kaydınız bulunamadı.' });
 
     p = ensureStaffProgressShape(p);
-    await p.save().catch(() => {});
+    await p.save().catch(() => { });
 
     const { getDailyTaskCompletionStats, chatWithAI, PERSONAL_ASSISTANT_SYSTEM_PROMPT, todayStr } = require('../services/staffSystem');
     const stats = getDailyTaskCompletionStats(p);
@@ -1501,7 +1502,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
 
     p.stats.weeklyReports = (p.stats.weeklyReports || 0) + 1;
     p.stats.lastCompleteDay = todayStr();
-    await p.save().catch(() => {});
+    await p.save().catch(() => { });
 
     try {
       const { GUILD2_ID } = require('../../config');
@@ -1533,7 +1534,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
           await reportChan.send({ embeds: [embed] });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     return interaction.editReply({
       content: `📝 **Günlük Görev Raporunuz Gönderildi!**\n\n🤖 **AI Koç Değerlendirmesi:**\n${cleanedResponse}`
@@ -1694,9 +1695,9 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
             )
             .setFooter({ text: "Eko Yıldız • Personel Teşvik Kurulu" })
             .setTimestamp();
-          await targetUser.send({ embeds: [embed] }).catch(() => {});
+          await targetUser.send({ embeds: [embed] }).catch(() => { });
         }
-      } catch (_) {}
+      } catch (_) { }
 
       return interaction.editReply({ content: `✅ **Takdir/Teşekkür Belgesi Eklendi!**\n👤 **Hedef Yetkili:** <@${targetUserId}>\n📝 **Gerekçe:** \`${reason}\`\n📊 **Yeni Performans KPI:** \`${result.newKpi}/100\`` });
     } catch (err) {
@@ -1842,7 +1843,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
 
       let oldValue = '';
       let newValue = '';
-      
+
       if (parameter === 'tickets') {
         oldValue = `${p.stats.ticketsSolved || 0} bilet`;
         p.stats.ticketsSolved = val;
@@ -1877,7 +1878,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
   }
 
   if (interaction.customId.startsWith('setup_branch_modal_')) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const targetGuildId = interaction.customId.replace('setup_branch_modal_', '');
 
     const chefVal = interaction.fields.getTextInputValue('branch_chef_input');
@@ -1894,7 +1895,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
     await setupDoc.save();
 
     const client = interaction.client;
-    
+
     // Update branch rules message
     try {
       const targetGuild = client.guilds.cache.get(targetGuildId)
@@ -1921,9 +1922,9 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
           const msgs = await rulesChan.messages.fetch({ limit: 50 }).catch(() => []);
           const botMsg = msgs.find(m => m.author.id === client.user.id && m.embeds[0]?.title?.includes("TMT SUNUCU KURALLARI"));
           if (botMsg) {
-            await botMsg.edit({ embeds: [rulesEmbed] }).catch(() => {});
+            await botMsg.edit({ embeds: [rulesEmbed] }).catch(() => { });
           } else {
-            await rulesChan.send({ embeds: [rulesEmbed] }).catch(() => {});
+            await rulesChan.send({ embeds: [rulesEmbed] }).catch(() => { });
           }
         }
       }
@@ -1948,7 +1949,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
               activeSetups.map(s => `• **${s.guildName}** (Grup: \`${s.robloxGroupName}\`)\n  > Şef: ${s.branchChef ? (s.branchChef.match(/^\d+$/) ? `<@${s.branchChef}>` : s.branchChef) : "Yok"}\n  > Yardımcı: ${s.branchChefAssistant ? (s.branchChefAssistant.match(/^\d+$/) ? `<@${s.branchChefAssistant}>` : s.branchChefAssistant) : "Yok"}`).join("\n\n")
             )
             .setTimestamp();
-            
+
           const msgs = await listChan.messages.fetch({ limit: 50 }).catch(() => []);
           const botMsg = msgs.find(m => m.author.id === client.user.id && m.embeds[0]?.title?.includes("KURULAN BRANŞ SUNUCULARI"));
           if (botMsg) {
@@ -1958,7 +1959,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
               description: `${s.robloxGroupName} Grubu Sunucusu`,
               value: s.guildId
             })).slice(0, 25);
-            
+
             const listComponents = [];
             if (options.length > 0) {
               listComponents.push(
@@ -1970,7 +1971,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
                 )
               );
             }
-            await botMsg.edit({ embeds: [listEmbed], components: listComponents }).catch(() => {});
+            await botMsg.edit({ embeds: [listEmbed], components: listComponents }).catch(() => { });
           }
         }
       }
@@ -1982,42 +1983,42 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
   }
 
   if (interaction.customId === 'ekocoin_convert_xp_modal') {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
-    
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
     const amountStr = interaction.fields.getTextInputValue('convert_amount');
     const amount = parseInt(amountStr, 10);
-    
+
     if (isNaN(amount) || amount <= 0) {
       return interaction.editReply({ content: '❌ Geçersiz miktar! Lütfen pozitif bir sayı girin.' });
     }
-    
+
     const StaffProgress = require('../../models/StaffProgress');
     const p = await StaffProgress.findOne({ userId: interaction.user.id });
     if (!p) {
       return interaction.editReply({ content: '❌ Personel kaydınız bulunamadı.' });
     }
-    
+
     const currentCoins = p.gamification?.ecoCoins || 0;
     if (currentCoins < amount) {
       return interaction.editReply({ content: `❌ Yetersiz EkoCoin! Mevcut bakiyeniz: \`${currentCoins} E.C.\`` });
     }
-    
+
     const xpReward = Math.floor(amount * 0.25);
     if (xpReward <= 0) {
       return interaction.editReply({ content: `❌ Bu miktardaki EkoCoin sıfır XP ediyor. Lütfen en az 4 EkoCoin girin (1 EkoCoin = 0.25 XP).` });
     }
-    
+
     // Deduct EkoCoins
     p.gamification.ecoCoins -= amount;
     await p.save();
-    
+
     // Add XP
     const { addXPDirectly } = require('../services/frogLevel');
     const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
     if (member) {
       await addXPDirectly(member, xpReward, interaction.client);
     }
-    
+
     return interaction.editReply({
       content: `✅ **Başarı!** \`${amount} E.C.\` bozdurularak **${xpReward} XP** elde edildi!\nGüncel Bakiyeniz: \`${p.gamification.ecoCoins} E.C.\``
     });
@@ -2167,7 +2168,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
         await sendErrorReplyWithButton(interaction, err, "modalHandler photoVerification");
       } catch (reporterErr) {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => {});
+          await interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => { });
         }
       }
     }
@@ -2186,7 +2187,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
         await sendErrorReplyWithButton(interaction, err, "modalHandler AdminForm");
       } catch (reporterErr) {
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => {});
+          await interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => { });
         }
       }
     }
@@ -2214,11 +2215,11 @@ async function handleSupportModal(interaction) {
   try {
     const { StaffProgress } = require('../services/staffSystem');
     const StaffModel = require('../../models/StaffProgress');
-    
+
     const staff = await StaffModel.findOne({ userId: interaction.user.id });
     const joinedAt = staff?.joinedAt || new Date();
     const hoursWorked = (Date.now() - new Date(joinedAt).getTime()) / (1000 * 60 * 60);
-    
+
     // Yeni stajyer (< 24 saat)
     if (hoursWorked < 24 && staff?.level === 1) {
       // Bugünkü ticket sayısını kontrol et
@@ -2227,7 +2228,7 @@ async function handleSupportModal(interaction) {
         userId: interaction.user.id,
         createdAt: { $gte: new Date(today) },
       });
-      
+
       if (todayTickets.length >= 2) {
         await interaction.reply({
           content: `❌ **Stajyer Güvenlik:** Günde maksimum 2 ticket açabilirsin (açılmış: ${todayTickets.length}/2)\n\nSunucuyu spamdan korumak için bu kuralımız var. Lütfen sonra tekrar dene!`,
@@ -2242,14 +2243,14 @@ async function handleSupportModal(interaction) {
 
   // Kategori bazlı otomatik öncelik
   const autoPriority = {
-    ban:       'high',
-    report:    'high',
-    reklam:    'medium',
-    billing:   'high',
+    ban: 'high',
+    report: 'high',
+    reklam: 'medium',
+    billing: 'high',
     technical: 'medium',
-    account:   'medium',
-    genel:     'low',
-    other:     'low',
+    account: 'medium',
+    genel: 'low',
+    other: 'low',
   };
   const priority = autoPriority[category] || 'medium';
 
@@ -2289,7 +2290,7 @@ async function handleSupportModal(interaction) {
     try {
       const { ROLES } = require("../services/staffSystem");
       const STAFF_ROLES = ROLES;
-      
+
       for (const roleId of Object.values(STAFF_ROLES)) {
         if (roleId && targetGuild.roles.cache.has(roleId)) {
           permissionOverwrites.push({
@@ -2302,7 +2303,7 @@ async function handleSupportModal(interaction) {
           });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Geçersiz ID'leri filtrele
     const validOverwrites = permissionOverwrites.filter(o => o.id);
@@ -2461,13 +2462,13 @@ async function handleCloseReasonModal(interaction) {
       message: `\`${ticket.ticketId}\` numaralı ticket'ınız kapatıldı. Sebep: ${reason || 'Belirtilmedi'}`,
       icon: "🔒"
     });
-  } catch (_) {}
+  } catch (_) { }
 
   // AI durumunu temizle
   try {
     const { cleanupTicketAI } = require('../services/ticketAI');
     cleanupTicketAI(ticketId);
-  } catch (_) {}
+  } catch (_) { }
 
   // Personel istatistiği — ticket'ı üstlenen yetkili ise ona, yoksa kapatan yetkiliye kaydet
   try {
@@ -2476,7 +2477,7 @@ async function handleCloseReasonModal(interaction) {
     if (targetUserIdForCredit) {
       await recordTicketSolved(targetUserIdForCredit, interaction.client);
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // Önce etkileşimi onayla
   await interaction.reply({ content: "✅ Ticket kapatılıyor...", ephemeral: true });
@@ -2486,7 +2487,7 @@ async function handleCloseReasonModal(interaction) {
     const { activeTicketClaims, deleteActiveClaimDmMessage } = require("../services/reklamTicketService");
     await deleteActiveClaimDmMessage(ticket.ticketId);
     activeTicketClaims.delete(ticket.ticketId);
-  } catch (_) {}
+  } catch (_) { }
 
   const { GUILD2_ID } = require("../../config");
   const isGuild2 = ticket.guildId === GUILD2_ID;
@@ -2545,8 +2546,8 @@ async function handleCloseReasonModal(interaction) {
         .setTitle("🔒 Ticket'ınız Kapatıldı")
         .setDescription(
           `Ticket'ınız **${interaction.user.username}** adlı kişi tarafından kapatıldı.\n\n` +
-            `**Sebep:** ${reason}\n\n` +
-            `Ticket'ı yeniden açmak veya destek ekibini değerlendirmek için aşağıdaki butonları kullanabilirsiniz.`
+          `**Sebep:** ${reason}\n\n` +
+          `Ticket'ı yeniden açmak veya destek ekibini değerlendirmek için aşağıdaki butonları kullanabilirsiniz.`
         )
         .addFields(
           { name: "🎫 Ticket ID", value: `\`${ticket.ticketId}\``, inline: true },
@@ -2652,7 +2653,7 @@ async function handleRatingModal(interaction) {
           message: `\`${ticket.ticketId}\` numaralı ticket için ${score} yıldız aldınız ve coin ödülünüz eklendi.`,
           icon: "⭐"
         });
-      } catch (_) {}
+      } catch (_) { }
     } catch (ecoErr) {
       console.warn("[rating] Bakiye eklenemedi:", ecoErr.message);
     }
@@ -2667,10 +2668,10 @@ async function handleRatingModal(interaction) {
         .setTitle("⭐ Yeni Bir Değerlendirme Aldınız!")
         .setDescription(
           `**Ticket:** \`${ticket.ticketId}\`\n` +
-            `**Konu:** ${ticket.subject}\n\n` +
-            `**Puan:** ${stars} (${score}/5)\n` +
-            `**Kazanılan:** 💰 +${earned} coin\n` +
-            (note ? `**Değerlendirme Notu:** ${note}` : "")
+          `**Konu:** ${ticket.subject}\n\n` +
+          `**Puan:** ${stars} (${score}/5)\n` +
+          `**Kazanılan:** 💰 +${earned} coin\n` +
+          (note ? `**Değerlendirme Notu:** ${note}` : "")
         )
         .setFooter({
           text: "Sentara Support • Gizlilik politikamız gereği puan veren kişinin adı paylaşılmaz.",
