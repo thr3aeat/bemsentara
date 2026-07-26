@@ -848,6 +848,54 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
+  if (interaction.customId.startsWith('court_statement_modal_')) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const caseCode = interaction.customId.replace('court_statement_modal_', '');
+    const statement = interaction.fields.getTextInputValue('court_statement_text');
+
+    const CourtCase = require('../../models/CourtCase');
+    const courtCase = await CourtCase.findOne({ caseCode });
+    if (!courtCase) return interaction.editReply({ content: '❌ Dava/Soruşturma bulunamadı.' });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`✍️ RESMİ BEYAN / İFADE VERİLDİ — ${caseCode}`)
+      .setDescription(
+        `👤 **İfade Veren:** <@${interaction.user.id}>\n\n` +
+        `📝 **İfade Detayı:**\n${statement}`
+      )
+      .setColor(0x2ecc71)
+      .setTimestamp();
+
+    if (interaction.channel && interaction.channel.isTextBased()) {
+      await interaction.channel.send({ embeds: [embed] }).catch(() => {});
+    }
+    return interaction.editReply({ content: '✅ İfadeniz soruşturma dosyasına ve kanala resmi olarak kaydedildi!' });
+  }
+
+  if (interaction.customId.startsWith('court_evidence_modal_')) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const caseCode = interaction.customId.replace('court_evidence_modal_', '');
+    const evidenceText = interaction.fields.getTextInputValue('court_evidence_text');
+
+    const CourtCase = require('../../models/CourtCase');
+    const courtCase = await CourtCase.findOne({ caseCode });
+    if (!courtCase) return interaction.editReply({ content: '❌ Dava/Soruşturma bulunamadı.' });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📸 EK DELİL SUNULDU — ${caseCode}`)
+      .setDescription(
+        `👤 **Delil Sunan:** <@${interaction.user.id}>\n\n` +
+        `🔍 **Ek Delil:**\n${evidenceText}`
+      )
+      .setColor(0x3498db)
+      .setTimestamp();
+
+    if (interaction.channel && interaction.channel.isTextBased()) {
+      await interaction.channel.send({ embeds: [embed] }).catch(() => {});
+    }
+    return interaction.editReply({ content: '✅ Ek delil soruşturma dosyasına başarıyla eklendi!' });
+  }
+
   if (interaction.customId.startsWith('court_hire_lawyer_modal_')) {
     await interaction.deferReply({ ephemeral: true }).catch(() => {});
     const caseCode = interaction.customId.replace('court_hire_lawyer_modal_', '');

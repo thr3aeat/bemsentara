@@ -1495,6 +1495,123 @@ function renderEnergyBar(percent) {
     return interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
+  // ── COURT & SORUŞTURMA SYSTEM AUTHORIZATION CHECK ──────────────────────
+  if (customId.startsWith("court_")) {
+    const { PermissionFlagsBits } = require("discord.js");
+    const CourtCase = require("../../models/CourtCase");
+    const match = customId.match(/court_[a_z_]+_(DAVA-\d+|[A-Z0-9]+)/i);
+    const caseCode = match ? match[1] : null;
+
+    let courtCase = null;
+    if (caseCode) {
+      courtCase = await CourtCase.findOne({ caseCode });
+      if (!courtCase) {
+        courtCase = await CourtCase.findOne({ caseCode: `DAVA-${caseCode}` });
+      }
+    }
+
+    const userId = interaction.user.id;
+    const member = interaction.member;
+
+    const isStaff = member && (
+      (courtCase && (courtCase.moderatorId === userId || courtCase.judgeId === userId)) ||
+      member.roles.cache.has("1518692384035311707") || // Eko
+      member.roles.cache.has("1518692386836971610") || // Modizm
+      member.roles.cache.has("1521508588135387166") || // Moderatör
+      member.permissions?.has(PermissionFlagsBits.ModerateMembers) ||
+      member.permissions?.has(PermissionFlagsBits.Administrator)
+    );
+
+    const isParty = courtCase && (
+      courtCase.defendantId === userId ||
+      courtCase.plaintiffId === userId ||
+      courtCase.lawyerId === userId ||
+      isStaff
+    );
+
+    // Staff-only judicial buttons (Sanık/Davalı & Yetkisiz kişiler TIKLAYAMAZ!)
+    const staffOnlyButtons = [
+      "court_indictment_start_",
+      "court_verdict_",
+      "court_kyok_",
+      "court_precaution_toggle_",
+      "court_send_contract_",
+      "court_jury_start_",
+      "court_accept_",
+      "court_reject_",
+      "court_bribe_accept_",
+      "court_bribe_expose_"
+    ];
+
+    if (staffOnlyButtons.some(b => customId.startsWith(b))) {
+      if (!isStaff) {
+        return interaction.reply({
+          content: "❌ **Erişim Engellendi:** Bu yetkili/savcılık karar butonunu sadece soruşturmacı Moderatör veya yetkililer kullanabilir! Sanık (Davalı) veya yetkisiz kullanıcılar bu butona basamaz.",
+          ephemeral: true
+        });
+      }
+    }
+
+    // Party-only action buttons (Sadece dava tarafları veya yetkililer basabilir)
+    const partyOnlyButtons = [
+      "court_statement_",
+      "court_add_evidence_",
+      "court_hire_lawyer_",
+      "court_settlement_start_",
+      "court_bribe_",
+      "court_witness_"
+    ];
+
+    if (partyOnlyButtons.some(b => customId.startsWith(b))) {
+      if (courtCase && !isParty) {
+        return interaction.reply({
+          content: "❌ **Erişim Engellendi:** Bu buton sadece bu soruşturmanın/davanın tarafları (Sanık, Davacı, Avukat) veya görevli yetkili tarafından kullanılabilir.",
+          ephemeral: true
+        });
+      }
+    }
+  }
+
+  if (customId.startsWith("court_my_panel_")) {
+    const caseCode = customId.replace("court_my_panel_", "");
+    const { showPersonalCourtPanel } = require("../services/courtService");
+    return showPersonalCourtPanel(interaction, caseCode);
+  }
+
+  if (customId.startsWith("court_statement_")) {
+    const caseCode = customId.replace("court_statement_", "");
+    const modal = new ModalBuilder()
+      .setCustomId(`court_statement_modal_${caseCode}`)
+      .setTitle("✍️ Soruşturma İfadesi & Savunma");
+
+    const statementInput = new TextInputBuilder()
+      .setCustomId("court_statement_text")
+      .setLabel("İfade / Savunma Detayınız")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Olay günü yaşananlar, beyanınız ve savunmanız...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(statementInput));
+    return interaction.showModal(modal);
+  }
+
+  if (customId.startsWith("court_add_evidence_")) {
+    const caseCode = customId.replace("court_add_evidence_", "");
+    const modal = new ModalBuilder()
+      .setCustomId(`court_evidence_modal_${caseCode}`)
+      .setTitle("📸 Ek Delil Sunma");
+
+    const evidenceInput = new TextInputBuilder()
+      .setCustomId("court_evidence_text")
+      .setLabel("Ek Delil Linki / Açıklama")
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder("Ek delil açıklaması, ekran görüntüsü linki veya mesaj linki...")
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(evidenceInput));
+    return interaction.showModal(modal);
+  }
+
   if (customId.startsWith("court_indictment_start_")) {
     const caseCode = customId.replace("court_indictment_start_", "");
     const modal = new ModalBuilder()
