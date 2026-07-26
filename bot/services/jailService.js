@@ -61,8 +61,12 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
     const member = await guild.members.fetch(userId).catch(() => null);
     if (!member) return false;
 
-    // Find or create Hapis role
-    let hapisRole = guild.roles.cache.find(r => r.name.toLowerCase() === "hapis");
+    // Find existing Hapis role on EkoYıldız server
+    let hapisRole = guild.roles.cache.find(r => r.name.toLowerCase() === "hapis" || r.name.toLowerCase().includes("hapis"));
+    if (!hapisRole) {
+      await guild.roles.fetch().catch(() => {});
+      hapisRole = guild.roles.cache.find(r => r.name.toLowerCase().includes("hapis"));
+    }
     if (!hapisRole) {
       hapisRole = await guild.roles.create({
         name: "Hapis",

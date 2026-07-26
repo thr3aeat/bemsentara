@@ -16,6 +16,14 @@ const Economy = require('../../models/Economy');
 const DAVA_TRIGGER_CHANNEL_ID = '1523809094249746492';
 const KODOS_CHANNEL_ID = '1521501154339586078';
 
+// EkoYıldız Sunucusu Dava / Mahkeme Rol ID Yapılandırması
+const COURT_ROLES_CONFIG = {
+  EKO: '1518692384035311707',
+  MODIZM: '1518692386836971610',
+  AVUKAT: '1523819093948633288',
+  MODERATOR: '1521508588135387166'
+};
+
 // Sunucu Ceza Kanunu (Yasa Kitabı)
 const LAW_ARTICLES = {
   '101': {
@@ -72,10 +80,13 @@ const LAW_ARTICLES = {
  * Ensures Mahkeme & RP Roles exist in guild
  */
 async function ensureCourtRoles(guild) {
-  const roleNames = [
+  const roleDefs = [
     { name: 'Başhakim / Yargıç', color: '#f1c40f' },
     { name: 'Savcı', color: '#e67e22' },
-    { name: 'Avukat', color: '#3498db' },
+    { name: 'Avukat', color: '#3498db', id: COURT_ROLES_CONFIG.AVUKAT },
+    { name: 'Moderatör', color: '#2ecc71', id: COURT_ROLES_CONFIG.MODERATOR },
+    { name: 'Modizm', color: '#9b59b6', id: COURT_ROLES_CONFIG.MODIZM },
+    { name: 'Eko', color: '#1abc9c', id: COURT_ROLES_CONFIG.EKO },
     { name: 'Polis / Kolluk', color: '#e74c3c' },
     { name: 'Jüri', color: '#9b59b6' },
     { name: 'Sokak Süpürgesi', color: '#95a5a6' },
@@ -85,9 +96,15 @@ async function ensureCourtRoles(guild) {
   ];
 
   const createdRoles = {};
-  for (const rDef of roleNames) {
-    let role = guild.roles.cache.find(r => r.name.toLowerCase() === rDef.name.toLowerCase());
+  for (const rDef of roleDefs) {
+    let role = null;
+    if (rDef.id) {
+      role = guild.roles.cache.get(rDef.id);
+    }
     if (!role) {
+      role = guild.roles.cache.find(r => r.name.toLowerCase() === rDef.name.toLowerCase());
+    }
+    if (!role && !rDef.id) {
       role = await guild.roles.create({
         name: rDef.name,
         color: rDef.color,
@@ -337,7 +354,11 @@ async function filePetition(interaction, { defendantInput, articleKey, details, 
     const roles = await ensureCourtRoles(guild);
     const overwrites = [
       { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      { id: courtCase.plaintiffId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }
+      { id: courtCase.plaintiffId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+      { id: COURT_ROLES_CONFIG.EKO, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+      { id: COURT_ROLES_CONFIG.MODIZM, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+      { id: COURT_ROLES_CONFIG.AVUKAT, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+      { id: COURT_ROLES_CONFIG.MODERATOR, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }
     ];
     if (roles['Savcı']) overwrites.push({ id: roles['Savcı'], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
     if (roles['Başhakim / Yargıç']) overwrites.push({ id: roles['Başhakim / Yargıç'], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
@@ -475,7 +496,11 @@ async function issueIndictment(interaction, caseCode, indictmentText) {
   const overwrites = [
     { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
     { id: courtCase.plaintiffId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-    { id: courtCase.defendantId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }
+    { id: courtCase.defendantId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+    { id: COURT_ROLES_CONFIG.EKO, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+    { id: COURT_ROLES_CONFIG.MODIZM, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+    { id: COURT_ROLES_CONFIG.AVUKAT, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+    { id: COURT_ROLES_CONFIG.MODERATOR, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] }
   ];
   if (roles['Başhakim / Yargıç']) overwrites.push({ id: roles['Başhakim / Yargıç'], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.ReadMessageHistory] });
   if (roles['Savcı']) overwrites.push({ id: roles['Savcı'], allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
