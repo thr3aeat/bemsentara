@@ -13,6 +13,7 @@ const moderationConfirmSchema = new mongoose.Schema(
     acceptedAt: { type: Date, default: null },
     rejectedBy: { type: String, default: null },
     rejectedAt: { type: Date, default: null },
+    modChannelId: { type: String, default: null }, // Moderatör DM'i için channel ID
     
     createdAt: { type: Date, default: Date.now, index: true },
   },

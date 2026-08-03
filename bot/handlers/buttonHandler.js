@@ -16,6 +16,7 @@ const {
 } = require("discord.js");
 
 const Ticket = require("../../models/Ticket");
+const Mutation = require("../../models/Mutation");
 const {
   getSupportMenuEmbed,
   getCategorySelectMenu,
