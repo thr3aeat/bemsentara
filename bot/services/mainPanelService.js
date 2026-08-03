@@ -610,7 +610,7 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("panel_units_coach")
-        .setLabel("👨‍🏫 Birim Koçu")
+        .setLabel("🏫 Birim Koçu")
         .setStyle(ButtonStyle.Secondary),
     );
     components.push(row);
