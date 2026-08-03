@@ -105,10 +105,11 @@ async function editApproverMsg(client, req, embed) {
 }
 
 // ── Ortak: Callback'i çalıştır ────────────────────────────────────────────────
-async function runCallback(req) {
+// approverUser: butona basan Discord User nesnesi (log embed'ine eklenir)
+async function runCallback(req, approverUser) {
   if (typeof req.executeCallback !== 'function') return { success: true, errMsg: null };
   try {
-    const result = await req.executeCallback();
+    const result = await req.executeCallback(approverUser);
     console.log(`[robloxApprovalGateway] Callback completed for #${req.reqId}:`, result);
     return { success: true, errMsg: null };
   } catch (err) {
@@ -146,7 +147,8 @@ async function requestRobloxCookieApproval(client, { action, targetUser, reason,
     console.log(`[robloxApprovalGateway] Auto-${currentAuto.mode} mode active — processing #${reqId} automatically.`);
 
     if (isAutoAccept) {
-      const { success, errMsg } = await runCallback(reqObj);
+      // Otomatik modda approverUser yok; null geçilir, callback kendi içinde kontrol eder
+      const { success, errMsg } = await runCallback(reqObj, null);
       return {
         success: true,
         pending: false,
@@ -289,7 +291,7 @@ async function handleApprovalButton(interaction) {
         .setTimestamp();
       await interaction.update({ embeds: [processingEmbed], components: [] });
 
-      const { success, errMsg } = await runCallback(reqObj);
+      const { success, errMsg } = await runCallback(reqObj, user);
 
       const autoAcceptEmbed = new EmbedBuilder()
         .setColor(success ? 0x2ecc71 : 0xe67e22)
@@ -402,7 +404,7 @@ async function handleApprovalButton(interaction) {
 
     await interaction.update({ embeds: [processingEmbed], components: [] });
 
-    const { success, errMsg } = await runCallback(reqObj);
+    const { success, errMsg } = await runCallback(reqObj, user);
 
     const finalEmbed = new EmbedBuilder()
       .setColor(success ? 0x2ecc71 : 0xe67e22)

@@ -332,7 +332,7 @@ async function handleRobloxInteractions(interaction) {
           targetUser: `**${username}** (ID: \`${userId}\`)`,
           reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Eski Rütbe: ${oldRoleName} -> Yeni Rank ID: ${newRankId}`,
           requesterId: interaction.user.id,
-          executeCallback: async () => {
+          executeCallback: async (approverUser) => {
             const newRole = await noblox.setRank({ group: parseInt(groupId), target: userId, rank: newRankId });
 
             try {
@@ -340,8 +340,9 @@ async function handleRobloxInteractions(interaction) {
                 .setTitle("🪖 Roblox Rütbe Değişikliği")
                 .setColor(0x2ECC71)
                 .addFields(
-                  { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
-                  { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "👤 İsteği Yapan", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
+                  { name: "🆔 İsteği Yapan ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "✅ Onaylayan", value: approverUser ? `${approverUser.toString()}\n\`${approverUser.tag}\`` : 'Otomatik Onay', inline: true },
                   { name: "🏢 Grup", value: `**${groupName}**\nID: \`${groupId}\``, inline: true },
                   { name: "👤 Hedef Kullanıcı", value: `**${username}**\nID: \`${userId}\``, inline: true },
                   { name: "⏪ Eski Rütbe", value: `**${oldRoleName}**`, inline: true },
@@ -644,7 +645,7 @@ async function handleRobloxInteractions(interaction) {
           targetUser: `**${username}** (ID: \`${userId}\`)`,
           reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Grup ID: ${groupId}`,
           requesterId: interaction.user.id,
-          executeCallback: async () => {
+          executeCallback: async (approverUser) => {
             await noblox.handleJoinRequest(parseInt(groupId), userId, isAccept);
 
             try {
@@ -652,8 +653,9 @@ async function handleRobloxInteractions(interaction) {
                 .setTitle(isAccept ? "✅ Manuel Katılım İsteği Onaylandı" : "❌ Manuel Katılım İsteği Reddedildi")
                 .setColor(isAccept ? 0x2ECC71 : 0xE74C3C)
                 .addFields(
-                  { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
-                  { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "👤 İsteği Yapan", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
+                  { name: "🆔 İsteği Yapan ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "✅ Onaylayan", value: approverUser ? `${approverUser.toString()}\n\`${approverUser.tag}\`` : 'Otomatik Onay', inline: true },
                   { name: "🏢 Grup", value: `**${manualGroupName}**\nID: \`${groupId}\``, inline: true },
                   { name: "👤 Hedef Roblox Kullanıcısı", value: `**${username}**\nID: \`${userId}\``, inline: true },
                   { name: "📋 İşlem", value: isAccept ? "Gruba Katılım Onaylandı" : "Gruba Katılım Reddedildi", inline: true }
