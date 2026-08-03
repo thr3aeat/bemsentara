@@ -3,7 +3,7 @@
 const { EmbedBuilder, AuditLogEvent } = require('discord.js');
 const {
   initForumLogService,
-  ensureGuildForumAndThreads,
+  ensureGuildForumAndThreadsSafe,
   sendForumLog,
   handleGhostPingAndDelete,
   handleMessageEdit,
@@ -31,7 +31,7 @@ function setupForumLogHandlers(client) {
       const centralGuild = client.guilds.cache.get(CENTRAL_GUILD_ID) ||
         await client.guilds.fetch(CENTRAL_GUILD_ID).catch(() => null);
       if (centralGuild) {
-        await ensureGuildForumAndThreads(centralGuild, guild);
+        await ensureGuildForumAndThreadsSafe(centralGuild, guild);
       }
     } catch (err) {
       console.error(`[ForumLogHandler] guildCreate error for ${guild.name}:`, err.message);

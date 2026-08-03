@@ -3,7 +3,8 @@
 const {
   EmbedBuilder,
   ChannelType,
-  AuditLogEvent
+  AuditLogEvent,
+  PermissionFlagsBits
 } = require('discord.js');
 
 // ── Konfigürasyon ──────────────────────────────────────────────────────────
@@ -68,9 +69,29 @@ const LOG_TOPICS = {
 
 // Memory Caches & Trackers
 const forumThreadsCache = new Map(); // `${guildId}_${topicKey}` -> threadId
+const pendingThreadLogs = new Map(); // threadId -> { embeds: [] }
+const threadFlushTimers = new Map(); // threadId -> Timeout
 const userMessageStats  = new Map(); // userId -> { timestamps: [], capsBurstCount: 0 }
 const voiceStateTracker  = new Map(); // userId -> { joinedAt, deafSince, muteSince, streamStartedAt, hops: [] }
 const antiNukeTracker   = new Map(); // `${guildId}_${executorId}_${type}` -> timestamps
+
+const LOG_FLUSH_DELAY_MS = 5000;
+const MAX_EMBEDS_PER_MESSAGE = 8;
+
+function isPrivilegedTarget(member) {
+  if (!member) return false;
+  return member.permissions?.has(PermissionFlagsBits.Administrator) ||
+    member.permissions?.has(PermissionFlagsBits.ManageGuild) ||
+    member.permissions?.has(PermissionFlagsBits.ManageRoles) ||
+    member.permissions?.has(PermissionFlagsBits.ManageChannels);
+}
+
+function buildMentionDetails(message) {
+  const mentionedUsers = message.mentions.users?.map(u => `<@${u.id}> (${u.tag})`).join(', ') || 'Yok';
+  const mentionedRoles = message.mentions.roles?.map(r => `<@&${r.id}>`).join(', ') || 'Yok';
+  const privilegedUserPing = message.mentions.members?.some(isPrivilegedTarget) || false;
+  return { mentionedUsers, mentionedRoles, privilegedUserPing };
+}
 
 /**
  * Format clean forum channel name for each guild
@@ -142,21 +163,40 @@ async function initForumLogService(client) {
       return;
     }
 
-    console.log(`📋 [ForumLogService] Rate-limit safe initializing multi-server log system...`);
-
-    const guilds = Array.from(client.guilds.cache.values());
-
-    for (const guild of guilds) {
-      await ensureGuildForumAndThreadsSafe(centralGuild, guild).catch(err => {
-        console.error(`⚠️ [ForumLogService] Error setting up forum for guild ${guild.name} (${guild.id}):`, err.message);
-      });
-      // 1.5s delay between guilds to prevent Discord API Rate Limits (HTTP 429)
-      await wait(1500);
-    }
-
-    console.log(`🚀 [ForumLogService] Multi-server system ready. Cached ${forumThreadsCache.size} threads.`);
+    console.log(`📋 [ForumLogService] Initializing forum thread cache without eager channel creation...`);
+    await cacheExistingForumThreads(centralGuild);
+    console.log(`🚀 [ForumLogService] Cache primed. ${forumThreadsCache.size} forum threads cached.`);
   } catch (err) {
     console.error('[ForumLogService] Startup initialization error:', err.message);
+  }
+}
+
+async function cacheExistingForumThreads(centralGuild) {
+  const forumChannels = centralGuild.channels.cache.filter(c => c.type === ChannelType.GuildForum);
+
+  for (const forumChannel of forumChannels.values()) {
+    try {
+      const topicMatch = forumChannel.topic?.match(/ID: (\d{17,19})/);
+      if (!topicMatch) continue;
+
+      const guildId = topicMatch[1];
+
+      const active = await forumChannel.threads.fetchActive().catch(() => null);
+      const archived = await forumChannel.threads.fetchArchived().catch(() => null);
+      const allThreads = new Map();
+
+      if (active?.threads) for (const thread of active.threads.values()) allThreads.set(thread.id, thread);
+      if (archived?.threads) for (const thread of archived.threads.values()) allThreads.set(thread.id, thread);
+
+      for (const thread of allThreads.values()) {
+        const topicKey = Object.keys(LOG_TOPICS).find(key => LOG_TOPICS[key].name === thread.name);
+        if (topicKey) {
+          forumThreadsCache.set(`${guildId}_${topicKey}`, thread.id);
+        }
+      }
+    } catch (err) {
+      console.warn('[ForumLogService] cacheExistingForumThreads error:', err.message);
+    }
   }
 }
 
@@ -235,6 +275,43 @@ async function ensureGuildForumAndThreadsSafe(centralGuild, guild) {
   }
 }
 
+async function flushThreadBuffer(client, threadId) {
+  const buffer = pendingThreadLogs.get(threadId);
+  if (!buffer || buffer.embeds.length === 0) {
+    threadFlushTimers.delete(threadId);
+    return;
+  }
+
+  pendingThreadLogs.delete(threadId);
+  threadFlushTimers.delete(threadId);
+
+  const centralGuild = client.guilds.cache.get(CENTRAL_GUILD_ID) ||
+    await client.guilds.fetch(CENTRAL_GUILD_ID).catch(() => null);
+  if (!centralGuild) return;
+
+  const thread = centralGuild.channels.cache.get(threadId) ||
+    await centralGuild.channels.fetch(threadId).catch(() => null);
+  if (!thread) return;
+
+  if (thread.archived) {
+    await thread.setArchived(false).catch(() => {});
+  }
+
+  const allEmbeds = buffer.embeds.slice();
+  while (allEmbeds.length > 0) {
+    const chunk = allEmbeds.splice(0, MAX_EMBEDS_PER_MESSAGE);
+    await thread.send({ embeds: chunk }).catch(err => {
+      console.warn(`[ForumLogService] Error flushing buffered logs to thread ${threadId}:`, err.message);
+    });
+  }
+}
+
+function scheduleThreadFlush(client, threadId) {
+  if (threadFlushTimers.has(threadId)) return;
+  const timeout = setTimeout(() => flushThreadBuffer(client, threadId), LOG_FLUSH_DELAY_MS);
+  threadFlushTimers.set(threadId, timeout);
+}
+
 /**
  * Send a log payload to the specific forum thread of a guild (with auto-unarchive)
  */
@@ -255,17 +332,15 @@ async function sendForumLog(client, guild, topicKey, embedPayload) {
 
     if (!threadId) return;
 
-    const thread = centralGuild.channels.cache.get(threadId) ||
-      await centralGuild.channels.fetch(threadId).catch(() => null);
+    const embeds = Array.isArray(embedPayload) ? embedPayload : [embedPayload];
+    const buffer = pendingThreadLogs.get(threadId) || { embeds: [] };
+    buffer.embeds.push(...embeds);
+    pendingThreadLogs.set(threadId, buffer);
 
-    if (thread) {
-      if (thread.archived) {
-        await thread.setArchived(false).catch(() => {});
-      }
-      const embeds = Array.isArray(embedPayload) ? embedPayload : [embedPayload];
-      await thread.send({ embeds }).catch(err => {
-        console.warn(`[ForumLogService] Error sending to thread ${thread.name}:`, err.message);
-      });
+    if (buffer.embeds.length >= MAX_EMBEDS_PER_MESSAGE) {
+      await flushThreadBuffer(client, threadId);
+    } else {
+      scheduleThreadFlush(client, threadId);
     }
   } catch (err) {
     console.error('[ForumLogService] sendForumLog error:', err.message);
@@ -338,28 +413,37 @@ async function handleMessageEdit(client, oldMessage, newMessage) {
   const elapsedSeconds = Math.floor((now - createdTime) / 1000);
 
   // Check if old message had user mentions removed in edit (Edit Ghost Ping)
-  if (oldMessage.mentions?.users?.size > 0) {
-    const oldMentions = oldMessage.mentions.users.map(u => u.id);
-    const newMentions = newMessage.mentions?.users?.map(u => u.id) || [];
-    const removedMentions = oldMentions.filter(id => !newMentions.includes(id));
+  const oldRolePings = oldMessage.mentions?.roles?.size > 0;
+  const removedUserMentions = (oldMessage.mentions?.users?.map(u => u.id) || []).filter(id => !(newMessage.mentions?.users?.map(u => u.id) || []).includes(id));
+  const removedRoleMentions = (oldMessage.mentions?.roles?.map(r => r.id) || []).filter(id => !(newMessage.mentions?.roles?.map(r => r.id) || []).includes(id));
+  const removedEveryone = oldMessage.mentions?.everyone && !newMessage.mentions?.everyone;
+  const removedHere = oldMessage.mentions?.here && !newMessage.mentions?.here;
 
-    if (removedMentions.length > 0) {
-      const removedText = removedMentions.map(id => `<@${id}>`).join(', ');
-      const editGhostEmbed = new EmbedBuilder()
-        .setTitle('👻 DÜZENLEMEDE GHOST PING YAKALANDI!')
-        .setColor(0xE67E22)
-        .setDescription(
-          `**Üye:** ${newMessage.author.toString()}\n` +
-          `**Kanal:** ${newMessage.channel.toString()}\n` +
-          `**Kaldırılan Etiketler:** ${removedText}\n` +
-          `**Düzenleme Süresi:** \`${elapsedSeconds} saniye\` içinde etiket silindi!\n\n` +
-          `**Eski İçerik:**\n\`\`\`${(oldMessage.content || '').slice(0, 500)}\`\`\`\n` +
-          `**Yeni İçerik:**\n\`\`\`${(newMessage.content || '').slice(0, 500)}\`\`\``
-        )
-        .setTimestamp();
+  if (removedUserMentions.length > 0 || removedRoleMentions.length > 0 || removedEveryone || removedHere) {
+    const removedText = [
+      ...removedUserMentions.map(id => `<@${id}>`),
+      ...removedRoleMentions.map(id => `<@&${id}>`),
+      ...(removedEveryone ? ['@everyone'] : []),
+      ...(removedHere ? ['@here'] : [])
+    ].join(', ');
 
-      await sendForumLog(client, newMessage.guild, 'BEHAVIOR_PSYCHOLOGY', editGhostEmbed);
-    }
+    const privilegedUserPing = newMessage.mentions?.members?.some(isPrivilegedTarget) || false;
+    const isCritical = removedRoleMentions.length > 0 || removedEveryone || removedHere || privilegedUserPing;
+
+    const editGhostEmbed = new EmbedBuilder()
+      .setTitle(isCritical ? '🚨 KRİTİK DÜZENLEME GHOST PING YAKALANDI!' : '👻 DÜZENLEMEDE GHOST PING YAKALANDI!')
+      .setColor(isCritical ? 0xFF0000 : 0xE67E22)
+      .setDescription(
+        `**Üye:** ${newMessage.author.toString()}\n` +
+        `**Kanal:** ${newMessage.channel.toString()}\n` +
+        `**Kaldırılan Etiketler:** ${removedText}\n` +
+        `**Düzenleme Süresi:** \`${elapsedSeconds} saniye\` içinde etiket silindi!\n\n` +
+        `**Eski İçerik:**\n\`\`\`${(oldMessage.content || '').slice(0, 500)}\`\`\`\n` +
+        `**Yeni İçerik:**\n\`\`\`${(newMessage.content || '').slice(0, 500)}\`\`\``
+      )
+      .setTimestamp();
+
+    await sendForumLog(client, newMessage.guild, 'BEHAVIOR_PSYCHOLOGY', editGhostEmbed);
   }
 
   // Standard Edit Log
