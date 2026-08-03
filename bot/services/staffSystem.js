@@ -2094,15 +2094,13 @@ async function checkPromotion(progress, client, autoSave = true) {
 
     if (ok) {
       // Sınav zaten planlanmış ve tarihi geçmişse anında tetikle (catch-up)
-      if (progress.exam && progress.exam.status === 'scheduled' && progress.exam.scheduledAt) {
+      if (progress.exam?.scheduledAt && progress.exam?.status === 'scheduled') {
         const scheduledDate = new Date(progress.exam.scheduledAt);
         const now = new Date();
 
-        // 🔧 FIX: Saat uyuşmazlığı — sadece en az 1 saat geçmişse catch-up yap
+        // 🔧 FIX: Saat uyuşmazlığı ve geçersiz Date kontrolü — sadece geçerli ve en az 1 saat geçmişse catch-up yap
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-        const isGenuinelyPast = scheduledDate <= oneHourAgo;
-
-        if (isGenuinelyPast) {
+        if (!isNaN(scheduledDate.getTime()) && scheduledDate <= oneHourAgo) {
           try {
             const { checkActiveExams } = require('./aiExamService');
             if (client) {
@@ -4108,14 +4106,9 @@ function startStaffScheduler(client) {
         return;
       }
       const now = new Date();
-      // Turkey is permanently UTC+3. Get current date components in Turkey timezone:
-      const trNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-      const currentYear = trNow.getUTCFullYear();
-      const currentMonth = trNow.getUTCMonth();
-      const currentDate = trNow.getUTCDate();
-
-      // Target hour:minute in Turkey time (UTC+3) corresponds to (hour - 3) in UTC
-      let targetUtc = new Date(Date.UTC(currentYear, currentMonth, currentDate, hour - 3, minute, 0, 0));
+      // Türkiye saati UTC+3 olduğu için, TR saati ile 'hour' zamanı UTC'de 'hour - 3' saatine denk gelir.
+      const targetUtc = new Date(now);
+      targetUtc.setUTCHours(hour - 3, minute, 0, 0);
       if (targetUtc <= now) {
         targetUtc.setUTCDate(targetUtc.getUTCDate() + 1);
       }

@@ -135,6 +135,8 @@ async function investInStock(userId, amount) {
   const isWin = Math.random() < winChance;
 
   let netChange = 0;
+  let insuranceGranted = false;
+
   if (isWin) {
     const profitRate = 0.20 + (Math.random() * 0.30); // %20 ile %50 arası kâr
     netChange = Math.round(amount * profitRate);
@@ -143,6 +145,13 @@ async function investInStock(userId, amount) {
     const lossRate = 0.15 + (Math.random() * 0.25); // %15 ile %40 arası zarar
     netChange = -Math.round(amount * lossRate);
     p.gamification.ecoCoins = Math.max(0, p.gamification.ecoCoins + netChange);
+
+    // 🛡️ Borsa Sigortası / Mola Tesellisi Mekanizması:
+    // Personel para kaybettiğinde motivasyonu kırılmasın diye +1 İzin Kredisi ve +50 Elmas teselli verilir
+    p.stats = p.stats || {};
+    p.stats.breakCredits = (p.stats.breakCredits || 0) + 1;
+    p.gamification.diamonds = (p.gamification.diamonds || 0) + 50;
+    insuranceGranted = true;
   }
 
   await p.save();
@@ -152,7 +161,8 @@ async function investInStock(userId, amount) {
     isWin,
     netChange,
     newBalance: p.gamification.ecoCoins,
-    marketTrend: market.trend
+    marketTrend: market.trend,
+    insuranceGranted
   };
 }
 

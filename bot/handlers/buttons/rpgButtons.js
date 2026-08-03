@@ -66,12 +66,13 @@ async function handleRpgButton(interaction) {
 
     if (res.isWin) {
       return interaction.reply({
-        content: `📈 **BORSA KÂRI!** $EKO Piyasası (${res.marketTrend}) yükseldi! +${res.netChange} E.C. kazandınız! Güncel Bakiye: \`${res.newBalance} E.C.\``,
+        content: `📈 **BORSA KÂRI!** $EKO Piyasası (${res.marketTrend}) yükseldi! **+${res.netChange} E.C.** kazandınız! Güncel Bakiye: \`${res.newBalance} E.C.\``,
         ephemeral: true
       });
     } else {
       return interaction.reply({
-        content: `📉 **BORSA ZARARI!** $EKO Piyasası (${res.marketTrend}) düştü. ${res.netChange} E.C. kaybettiniz. Güncel Bakiye: \`${res.newBalance} E.C.\``,
+        content: `📉 **BORSA DÜŞÜŞÜ!** $EKO Piyasası (${res.marketTrend}) düştü. **${res.netChange} E.C.** değer kaybı yaşandı.\n` +
+                 `🛡️ **Yatırım Sigortası Devrede:** Üzülmeyin! Hesabınıza **+1 İzin Kredisi** ve **+50 Elmas (💎)** teselli ödülü tanımlandı! Güncel Bakiye: \`${res.newBalance} E.C.\``,
         ephemeral: true
       });
     }

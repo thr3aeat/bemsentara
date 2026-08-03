@@ -275,13 +275,36 @@ const DIFFICULTY_INFO = {
   6: { difficulty: 'Uzman / En Üst Düzey', focus: 'En üst düzey kriz yönetimi, sunucu baskınları (raid), güvenlik açıkları, kurallar arası çelişkiler ve ciddi yönetim krizlerinde stratejik kriz yönetimi kararları.' }
 };
 
+/**
+ * Şıkları ve doğru cevabın indeksini her sınavda dinamik karıştırır (Shuffle)
+ */
+function shuffleQuestionOptions(q) {
+  if (!q || !Array.isArray(q.options) || q.options.length === 0) return q;
+
+  const originalCorrectIndex = typeof q.correctIndex === 'number' ? q.correctIndex : 0;
+  const originalCorrectText = q.options[originalCorrectIndex] || q.options[0];
+
+  const shuffled = [...q.options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  const newCorrectIndex = shuffled.indexOf(originalCorrectText);
+  return {
+    question: q.question,
+    options: shuffled,
+    correctIndex: newCorrectIndex >= 0 ? newCorrectIndex : 0
+  };
+}
+
 async function generateExamQuestions(targetLevel = 6) {
   const diff = DIFFICULTY_INFO[targetLevel] || DIFFICULTY_INFO[6];
   const prompt = [
     {
       role: 'user',
       content: `Sen EkoYıldız Moderatör Ekibi eğitim sorumlusu bir yapay zekasın. Seviye ${targetLevel} rütbesine terfi edecek yetkililer için 10 soruluk çoktan seçmeli bir sınav hazırlaman gerekiyor.
-Sınavın Zorluk Derecesi: ${diff.difficulty}
+Zorluk Derecesi: ${diff.difficulty}
 Konu Odakları (Mutlaka Kriz Yönetimi odaklı olmalı): ${diff.focus}
 
 Sınavdaki tüm 10 soru mutlaka kriz yönetimi (crisis management), gergin üyeleri sakinleştirme, sunucu baskınları (raid), kaos, provokasyon ve manipülasyon anlarında doğru kararlar verme ve yetkili/üye arasındaki krizleri yönetme konularında olmalıdır.
@@ -305,13 +328,14 @@ JSON formatı:
     const cleaned = aiResponse.replace(/```json|```/gi, '').trim();
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed) && parsed.length === 10) {
-      return parsed;
+      return parsed.map(shuffleQuestionOptions);
     }
     console.warn('[aiExamService] AI did not return exactly 10 questions, falling back.');
   } catch (err) {
     console.error('[aiExamService] Failed to generate AI questions, using fallback:', err.message);
   }
-  return FALLBACK_QUESTIONS_BY_LEVEL[targetLevel] || FALLBACK_QUESTIONS_BY_LEVEL[6];
+  const fallback = FALLBACK_QUESTIONS_BY_LEVEL[targetLevel] || FALLBACK_QUESTIONS_BY_LEVEL[6];
+  return fallback.map(shuffleQuestionOptions);
 }
 
 async function sendQuestion(user, progress) {
