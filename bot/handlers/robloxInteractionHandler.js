@@ -324,32 +324,41 @@ async function handleRobloxInteractions(interaction) {
           oldRoleName = await noblox.getRankNameInGroup(parseInt(groupId), userId);
         } catch (_) {}
 
-        const newRole = await noblox.setRank({ group: parseInt(groupId), target: userId, rank: newRankId });
+        const groupName = ROBLOX_GROUPS[groupId] || `Grup ID: ${groupId}`;
+        const { requestRobloxCookieApproval } = require("../services/robloxApprovalGateway");
 
-        // Ayrıntılı Loglama → TMT + Müttefik kanallarına
-        try {
-          const groupName = ROBLOX_GROUPS[groupId] || `Grup ID: ${groupId}`;
-          const logEmbed = new EmbedBuilder()
-            .setTitle("🪖 Roblox Rütbe Değişikliği")
-            .setColor(0x2ECC71)
-            .addFields(
-              { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
-              { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
-              { name: "🏢 Grup", value: `**${groupName}**\nID: \`${groupId}\``, inline: true },
-              { name: "👤 Hedef Kullanıcı", value: `**${username}**\nID: \`${userId}\``, inline: true },
-              { name: "⏪ Eski Rütbe", value: `**${oldRoleName}**`, inline: true },
-              { name: "🆕 Yeni Rütbe", value: `**${newRole.name}**\nRank ID: \`${newRankId}\``, inline: true }
-            )
-            .setThumbnail(`https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`)
-            .setTimestamp()
-            .setFooter({ text: "Roblox Grup Yönetim Sistemi", iconURL: interaction.client.user.displayAvatarURL() });
+        const approvalRes = await requestRobloxCookieApproval(interaction.client, {
+          action: `Roblox Rütbe Değiştirme (${groupName})`,
+          targetUser: `**${username}** (ID: \`${userId}\`)`,
+          reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Eski Rütbe: ${oldRoleName} -> Yeni Rank ID: ${newRankId}`,
+          executeCallback: async () => {
+            const newRole = await noblox.setRank({ group: parseInt(groupId), target: userId, rank: newRankId });
 
-          await sendRobloxLog(interaction, logEmbed);
-        } catch (logErr) {
-          console.error("[Roblox Rank Select Log Error]", logErr);
-        }
+            try {
+              const logEmbed = new EmbedBuilder()
+                .setTitle("🪖 Roblox Rütbe Değişikliği")
+                .setColor(0x2ECC71)
+                .addFields(
+                  { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
+                  { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "🏢 Grup", value: `**${groupName}**\nID: \`${groupId}\``, inline: true },
+                  { name: "👤 Hedef Kullanıcı", value: `**${username}**\nID: \`${userId}\``, inline: true },
+                  { name: "⏪ Eski Rütbe", value: `**${oldRoleName}**`, inline: true },
+                  { name: "🆕 Yeni Rütbe", value: `**${newRole.name}**\nRank ID: \`${newRankId}\``, inline: true }
+                )
+                .setThumbnail(`https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`)
+                .setTimestamp()
+                .setFooter({ text: "Roblox Grup Yönetim Sistemi", iconURL: interaction.client.user.displayAvatarURL() });
 
-        return interaction.editReply({ content: `✅ İşlem Başarılı!\n**${username}** kullanıcısının rütbesi başarıyla **${newRole.name}** yapıldı.` });
+              await sendRobloxLog(interaction, logEmbed);
+            } catch (logErr) {
+              console.error("[Roblox Rank Select Log Error]", logErr);
+            }
+            return newRole;
+          }
+        });
+
+        return interaction.editReply({ content: approvalRes.message });
       } catch (err) {
         console.error("[Roblox Rank Select Error]", err);
         const detailedError = getDetailedRobloxError(err);
@@ -626,31 +635,39 @@ async function handleRobloxInteractions(interaction) {
           return interaction.editReply({ content: `❌ **${username}** adında bir Roblox kullanıcısı bulunamadı.` });
         }
 
-        await noblox.handleJoinRequest(parseInt(groupId), userId, isAccept);
+        const manualGroupName = ROBLOX_GROUPS[groupId] || `Grup ID: ${groupId}`;
+        const { requestRobloxCookieApproval } = require("../services/robloxApprovalGateway");
 
-        // Log → TMT + Müttefik kanallarına
-        try {
-          const manualGroupName = ROBLOX_GROUPS[groupId] || `Grup ID: ${groupId}`;
-          const logEmbed = new EmbedBuilder()
-            .setTitle(isAccept ? "✅ Manuel Katılım İsteği Onaylandı" : "❌ Manuel Katılım İsteği Reddedildi")
-            .setColor(isAccept ? 0x2ECC71 : 0xE74C3C)
-            .addFields(
-              { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
-              { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
-              { name: "🏢 Grup", value: `**${manualGroupName}**\nID: \`${groupId}\``, inline: true },
-              { name: "👤 Hedef Roblox Kullanıcısı", value: `**${username}**\nID: \`${userId}\``, inline: true },
-              { name: "📋 İşlem", value: isAccept ? "Gruba Katılım Onaylandı" : "Gruba Katılım Reddedildi", inline: true }
-            )
-            .setThumbnail(`https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`)
-            .setTimestamp()
-            .setFooter({ text: "Roblox Grup Yönetim Sistemi", iconURL: interaction.client.user.displayAvatarURL() });
+        const approvalRes = await requestRobloxCookieApproval(interaction.client, {
+          action: `Roblox Gruba Katılım ${isAccept ? 'Onayı' : 'Reddi'} (${manualGroupName})`,
+          targetUser: `**${username}** (ID: \`${userId}\`)`,
+          reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Grup ID: ${groupId}`,
+          executeCallback: async () => {
+            await noblox.handleJoinRequest(parseInt(groupId), userId, isAccept);
 
-          await sendRobloxLog(interaction, logEmbed);
-        } catch (logErr) {
-          console.error("[Roblox Manual Join Log Error]", logErr);
-        }
+            try {
+              const logEmbed = new EmbedBuilder()
+                .setTitle(isAccept ? "✅ Manuel Katılım İsteği Onaylandı" : "❌ Manuel Katılım İsteği Reddedildi")
+                .setColor(isAccept ? 0x2ECC71 : 0xE74C3C)
+                .addFields(
+                  { name: "👤 Yetkili", value: `${interaction.user.toString()}\n\`${interaction.user.tag}\``, inline: true },
+                  { name: "🆔 Yetkili ID", value: `\`${interaction.user.id}\``, inline: true },
+                  { name: "🏢 Grup", value: `**${manualGroupName}**\nID: \`${groupId}\``, inline: true },
+                  { name: "👤 Hedef Roblox Kullanıcısı", value: `**${username}**\nID: \`${userId}\``, inline: true },
+                  { name: "📋 İşlem", value: isAccept ? "Gruba Katılım Onaylandı" : "Gruba Katılım Reddedildi", inline: true }
+                )
+                .setThumbnail(`https://www.roblox.com/headshot-thumbnail/image?userId=${userId}&width=150&height=150&format=png`)
+                .setTimestamp()
+                .setFooter({ text: "Roblox Grup Yönetim Sistemi", iconURL: interaction.client.user.displayAvatarURL() });
 
-        return interaction.editReply({ content: `✅ İşlem Başarılı!\n**${username}** kullanıcısının gruba katılma isteği başarıyla **${isAccept ? "Onaylandı" : "Reddedildi"}**.` });
+              await sendRobloxLog(interaction, logEmbed);
+            } catch (logErr) {
+              console.error("[Roblox Manual Join Log Error]", logErr);
+            }
+          }
+        });
+
+        return interaction.editReply({ content: approvalRes.message });
       }
     } catch (err) {
       console.error("[Roblox Interaction Error]", err);
