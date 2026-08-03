@@ -3853,7 +3853,7 @@ function initializeDiscordHandlers(client) {
       try {
         const { sendErrorReplyWithButton } = require("../services/errorReporter");
         if (interaction.isRepliable()) {
-          await sendErrorReplyWithButton(interaction, err, "interactionCreate Central Catch");
+          await sendErrorReplyWithButton(interaction, err, interaction);
         }
       } catch (reporterErr) {
         console.error("[interactionCreate] Reporter error:", reporterErr.message);
