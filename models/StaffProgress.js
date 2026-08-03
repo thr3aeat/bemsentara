@@ -121,6 +121,24 @@ const staffProgressSchema = new mongoose.Schema({
     versionRewardClaimedV6: { type: Boolean, default: false }, // V6.0 ödülü alındı mı?
   },
 
+  // Endless Engagement Loop (RPG & Prestij & Peer Recognition)
+  prestige: {
+    level: { type: Number, default: 0 },
+    title: { type: String, default: '' },
+    multiplier: { type: Number, default: 1.0 },
+    rebirthCount: { type: Number, default: 0 }
+  },
+  rpgClass: {
+    type: { type: String, default: 'none', enum: ['none', 'guardian', 'guide', 'solver'] },
+    chosenAt: { type: Date, default: null },
+    lastSwitchedAt: { type: Date, default: null }
+  },
+  peerRecognition: {
+    dailyCardsLeft: { type: Number, default: 1 },
+    receivedCardsThisWeek: { type: Number, default: 0 },
+    totalTippedCoins: { type: Number, default: 0 }
+  },
+
   // Moderasyon Rapor Takip Sistemi
   modReports: {
     unloggedCount: { type: Number, default: 0 },     // Loglanmamış işlem sayısı

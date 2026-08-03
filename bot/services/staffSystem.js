@@ -1079,7 +1079,6 @@ async function recordGreet(userId, client, guildId = null) {
       const greetCoins = Math.floor(baseGreetCoins * streakMultiplier);
       p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + greetCoins;
 
-      // 🔧 FIX: checkDailyCompletion içinde save() yapılacak. Burada save() yapmıyoruz (race condition)
       // DM Bildirimi gönder
       try {
         const discordUser = await client.users.fetch(userId).catch(() => null);
@@ -1117,40 +1116,37 @@ async function recordGreet(userId, client, guildId = null) {
         await checkEcoMillionaire(userId, p.gamification.ecoCoins, client).catch(() => { });
       } catch (_) { }
 
-      // 🔧 FIX: Burada checkDailyCompletion çağrısı tek save() yapacak
-      await checkDailyCompletion(p, client).catch(err => {
+      // 🔧 FIX: Race Condition önleme — autoSave = false ile in-memory güncelleme
+      await checkDailyCompletion(p, client, false).catch(err => {
         console.error('[staffSystem] checkDailyCompletion failed:', err.message);
       });
     } else {
-      // Selamlaşma henüz bitmedi - sadece kuru kayıt yap
-      await p.save().catch(err => {
-        console.error('[staffSystem] Save failed in recordGreet progress:', err.message);
-      });
-
       if (p.daily.greetMessageId) {
         const refreshed = await updateGreetProgressMessage(p, client).catch(() => false);
-        if (refreshed) {
-          return;
-        }
-      }
-
-      // Send a DM notification updating the user on their greet progress
-      try {
-        const discordUser = await client.users.fetch(userId).catch(() => null);
-        if (discordUser) {
-          const embed = generateGreetProgressEmbed(p);
-          const components = getGreetProgressComponents();
-          const sentMsg = await discordUser.send({ embeds: [embed], components }).catch(() => null);
-          if (sentMsg) {
-            p.daily.greetMessageId = sentMsg.id;
-            await p.save().catch(() => { });
+        if (!refreshed) {
+          // Send a DM notification updating the user on their greet progress
+          try {
+            const discordUser = await client.users.fetch(userId).catch(() => null);
+            if (discordUser) {
+              const embed = generateGreetProgressEmbed(p);
+              const components = getGreetProgressComponents();
+              const sentMsg = await discordUser.send({ embeds: [embed], components }).catch(() => null);
+              if (sentMsg) {
+                p.daily.greetMessageId = sentMsg.id;
+              }
+            }
+          } catch (dmErr) {
+            console.warn(`[staffSystem] Greet progress DM error:`, dmErr.message);
           }
         }
-      } catch (dmErr) {
-        console.warn(`[staffSystem] Greet progress DM error:`, dmErr.message);
       }
     }
-    await checkChosenTaskCompletion(p, client).catch(() => { });
+    await checkChosenTaskCompletion(p, client, false).catch(() => { });
+    
+    // 🔧 FIX: Tekil Atomik Save (Race condition çözümü)
+    await p.save().catch(err => {
+      console.error('[staffSystem] Save failed in recordGreet progress:', err.message);
+    });
   } catch (err) {
     console.error('[staffSystem] recordGreet error:', err.message);
   }
@@ -1254,8 +1250,6 @@ async function addVoiceMinutes(userId, minutes, client) {
     }
 
     // YENİ: Ses aktifliği için E.C. kazanımı (Saatte 15 E.C. -> Dakikada 0.25 E.C.)
-    // Bunu sadece 60'ın katlarında veya saat başı hesaplayabiliriz ya da küsüratlı verip gösterebiliriz.
-    // Şimdilik 60 dakikada bir toplu ödül verelim:
     const oldHours = Math.floor((p.stats.totalVoiceMinutes - minutes) / 60);
     const newHours = Math.floor(p.stats.totalVoiceMinutes / 60);
     if (newHours > oldHours) {
@@ -1264,14 +1258,17 @@ async function addVoiceMinutes(userId, minutes, client) {
       await addEkoCoin(p, ecGained, client, 'Sesli Kanal Aktifliği');
     }
 
+    // 🔧 FIX: Single Atomic Save (Race Condition önleme)
+    await checkChosenTaskCompletion(p, client, false).catch(() => { });
+    await checkDailyCompletion(p, client, false).catch(err => {
+      console.error('[staffSystem] checkDailyCompletion failed in addVoiceMinutes:', err.message);
+    });
+
     await p.save().catch(err => {
       console.error('[staffSystem] Save failed in addVoiceMinutes:', err.message);
       return;
     });
-    await checkChosenTaskCompletion(p, client).catch(() => { });
-    await checkDailyCompletion(p, client).catch(err => {
-      console.error('[staffSystem] checkDailyCompletion failed:', err.message);
-    });
+
     try {
       const { checkAutoPromotion } = require('./unitService');
       await checkAutoPromotion(userId, client, 'voice').catch(() => { });
@@ -1500,7 +1497,7 @@ function addChatMessage(p) {
   }
 }
 
-async function checkDailyCompletion(progress, client) {
+async function checkDailyCompletion(progress, client, autoSave = true) {
   // 🔧 Güvenlik: Objeler tanımlı değilse oluştur
   if (!progress.stats) progress.stats = {};
   if (!progress.daily) progress.daily = { date: '', greeted: false, voiceMinutes: 0 };
@@ -1510,8 +1507,14 @@ async function checkDailyCompletion(progress, client) {
   const isOnBreak = progress.burnoutLeaveUntil && new Date(progress.burnoutLeaveUntil) > new Date();
 
   // 🔧 FIX: Mola süresi dolduysa otomatik sıfırla (kapanmayan mola sorunu)
+  let restedBonus = false;
   if (progress.burnoutLeaveUntil && new Date(progress.burnoutLeaveUntil) <= new Date()) {
     progress.burnoutLeaveUntil = null;
+    restedBonus = true; // İzin dönüşü Rested XP hakkı
+  }
+  if (progress.restedBonusActive) {
+    restedBonus = true;
+    progress.restedBonusActive = false;
   }
 
   const today = todayStr();
@@ -1536,13 +1539,15 @@ async function checkDailyCompletion(progress, client) {
       progress.gamification = { totalPoints: 0, ecoCoins: 0, level: 1, currentXP: 0, badges: {}, streak: { current: 0, longest: 0, brokenDays: 0 }, lastDailyClaim: '' };
     }
     const levelMultiplier = 1 + (progress.level * 0.25); // Seviye arttıkça daha fazla ödül
-    progress.gamification.totalPoints = (progress.gamification.totalPoints || 0) + Math.floor(25 * levelMultiplier); // Günlük 25+ puan
-    progress.gamification.currentXP = (progress.gamification.currentXP || 0) + Math.floor(100 * levelMultiplier); // Günlük 100+ XP
+    const restedMultiplier = restedBonus ? 2.0 : 1.0;
+    
+    progress.gamification.totalPoints = (progress.gamification.totalPoints || 0) + Math.floor(25 * levelMultiplier * restedMultiplier); // Günlük 25+ puan
+    progress.gamification.currentXP = (progress.gamification.currentXP || 0) + Math.floor(100 * levelMultiplier * restedMultiplier); // Günlük 100+ XP
 
     // EkoCoin İyileştirmesi: Tüm görevlerin tamamlanması halinde EkoCoin ödülü (Seri çarpanı ile!)
     const consecutiveDays = progress.stats?.consecutiveDays || 0;
     const streakMultiplier = consecutiveDays >= 30 ? 2.0 : (consecutiveDays >= 15 ? 1.5 : (consecutiveDays >= 5 ? 1.2 : 1.0));
-    const baseCoinReward = Math.floor(40 * levelMultiplier);
+    const baseCoinReward = Math.floor(40 * levelMultiplier * restedMultiplier);
     const coinReward = Math.floor(baseCoinReward * streakMultiplier);
     progress.gamification.ecoCoins = (progress.gamification.ecoCoins || 0) + coinReward;
 
@@ -1554,7 +1559,8 @@ async function checkDailyCompletion(progress, client) {
         .setTitle('🎉 GÜNLÜK GÖREVLER TAMAMLANDI!')
         .setDescription(
           `Tebrikler <@${progress.userId}>, bugünün tüm günlük görevlerini (Selamlaşma + Ses Aktifliği) başarıyla tamamladın!\n\n` +
-          `✨ **+${Math.floor(100 * levelMultiplier)} XP** kazanıldı!\n` +
+          (restedBonus ? `⚡ **RESTED XP (DİNLENME BONUSU) AKTİF!** İzin dönüşü x2.0 Çifte Ödül Kazandın! 🎉\n\n` : "") +
+          `✨ **+${Math.floor(100 * levelMultiplier * restedMultiplier)} XP** kazanıldı!\n` +
           (streakMultiplier > 1.0 ? `🔥 **Seri Çarpanı Aktif:** \`${consecutiveDays} Gün\` ardışık aktifliğin sayesinde **x${streakMultiplier}** ödül kazandın!\n\n` : "") +
           `💰 **+${coinReward} EkoCoin (E.C.)** kazanıldı!\n` +
           `💳 Güncel Bakiyen: \`${progress.gamification.ecoCoins} E.C.\``
@@ -1603,12 +1609,14 @@ async function checkDailyCompletion(progress, client) {
       }
     }
 
-    await progress.save().catch(err => {
-      console.error('[staffSystem] Save failed in checkDailyCompletion:', err.message);
-    });
+    if (autoSave) {
+      await progress.save().catch(err => {
+        console.error('[staffSystem] Save failed in checkDailyCompletion:', err.message);
+      });
+    }
 
     console.log(`[staffSystem] ${progress.userId} günlük görev tamamlandı — ${progress.stats.activeDays} gün`);
-    await checkPromotion(progress, client);
+    await checkPromotion(progress, client, autoSave);
   }
 }
 
@@ -2013,7 +2021,7 @@ async function recordChatMessage(userId, client, guildId = null) {
   }
 }
 
-async function checkPromotion(progress, client) {
+async function checkPromotion(progress, client, autoSave = true) {
   try {
     if (!progress || !progress.stats) {
       console.warn('[staffSystem] checkPromotion: Invalid progress object');
@@ -2021,6 +2029,11 @@ async function checkPromotion(progress, client) {
     }
 
     const currentLevel = progress.level || 1;
+    // 🔧 FIX: Guard Clause — Seviye 6 (Genel Koordinatör) son rütbedir. Aşağıya akıp ROLE_NAMES[7] hatasına neden olmasın!
+    if (currentLevel >= 6) {
+      return;
+    }
+
     const req = PROMOTION_REQUIREMENTS[currentLevel];
     if (!req) {
       console.debug(`[staffSystem] No promotion requirements for level ${currentLevel}`);
@@ -2030,7 +2043,6 @@ async function checkPromotion(progress, client) {
     const stats = progress.stats;
 
     // 🔧 FIX: Bilet kontrolü eklendi - bedava terfi açığı kapatıldı
-    // Ticket çözmek terfi şartı ama bilet sayısı kontrolü yapılmıyordu
     const hasEnoughTickets = (stats.ticketsSolved || 0) >= req.ticketsSolved;
 
     // 🔧 FIX: Ses süresi kontrolü eklendi - seste 1 dk durmayan adama terfi butonu çıkıyor
@@ -2045,17 +2057,12 @@ async function checkPromotion(progress, client) {
       (stats.weeklyReports || 0) >= req.weeklyReports;
 
     if (ok) {
-      // 🔧 FIX: Seviye 6 şartları tanımlandı ama currentLevel >= 6 return'ü vardı
-      // Seviye 6'dan sonra terfi sınavı açılmayacağı için kontrol kalkalıldı
-      // if (currentLevel >= 6) { return; } <- BU SATIR HATALI
-
       // Sınav zaten planlanmış ve tarihi geçmişse anında tetikle (catch-up)
       if (progress.exam && progress.exam.status === 'scheduled' && progress.exam.scheduledAt) {
         const scheduledDate = new Date(progress.exam.scheduledAt);
         const now = new Date();
 
         // 🔧 FIX: Saat uyuşmazlığı — sadece en az 1 saat geçmişse catch-up yap
-        // "Yeni planlandı" durumundan ayırt etmek için 1 saat tampon kullan
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         const isGenuinelyPast = scheduledDate <= oneHourAgo;
 
@@ -2073,26 +2080,6 @@ async function checkPromotion(progress, client) {
         return; // Zaten sınav planlanmış, yeniden planlama yapma
       }
 
-      // Seviye 6'da ise başarılı tamamlama mesajı gönder
-      if (currentLevel >= 6) {
-        console.log(`[staffSystem] ${progress.userId} Seviye 6 (Genel Koordinatör) maksimum seviyede. Tebrikler!`);
-
-        try {
-          const user = await client.users.fetch(progress.userId).catch(() => null);
-          if (user) {
-            const maxLevelEmbed = new EmbedBuilder()
-              .setColor(0xffd700)
-              .setTitle('🏆 MAKSİMUM SEVİYE ULAŞILDI!')
-              .setDescription(
-                `Tebrikler! Seviye 6 (Genel Koordinatör) rütbesinin tüm şartlarını karşıladın!\n\n` +
-                `🏅 Bu sunucunun en yüksek rütbesine ulaştın. Ekibi yönet, sunucuyu büyüt!`
-              )
-              .setTimestamp();
-            await user.send({ embeds: [maxLevelEmbed] }).catch(() => { });
-          }
-        } catch (_) { }
-        return;
-      }
       // Her rütbe geçişinde terfi yerine sınav sürecini başlat
       if (!progress.exam || progress.exam.status === 'none') {
         try {
@@ -2114,7 +2101,10 @@ async function checkPromotion(progress, client) {
             answers: [],
             lastExamAttempt: null
           };
-          await progress.save();
+          
+          if (autoSave) {
+            await progress.save();
+          }
 
           try {
             const { addNotification } = require("../../utils/notification");
@@ -2889,25 +2879,25 @@ async function sendWarningDM(progress, client) {
   let aiTonePrompt = 'nazik, anlayışlı ve dostça';
 
   if (ratio > 0.8) {
-    title = `🔥 ÖFKELİ MUHTIRA & SON İHTAR (${warnCount}/${maxLimit} Gün)`;
+    title = `🚨 ACİL KURTARMA PROTOKOLÜ: Rütben Tehlikede! (${warnCount}/${maxLimit} Gün)`;
     color = 0xe74c3c; // Red
     toneHeader =
-      `⚠️ **SON İHTAR! SİSTEM VE YÖNETİM ÇILDIRMAK ÜZERE!** 🔥\n` +
-      `Tam **${warnCount} gündür** hiçbir görev yapmadın! **${roleName}** RÜTBENİ VE TÜM YETKİLERİNİ KAYBETMENE SADECE **${warnLeft} GÜN** KALDI!\n` +
-      `Bugün nöbete başlamazsan rütben düşürülecek ve yetkilerin tamamen askıya alınacak! 🔥`;
-    aiTonePrompt = 'SON DERECE ÖFKELİ, SERT VE TEHDİTKAR (RÜTBE GİDİYOR!)';
+      `🚨 **RÜTBEN TEHLİKEDE! AMA PES ETMEK YOK!** 💪\n` +
+      `Son günlerde yoğun olduğunu biliyoruz. **${warnCount} gündür** dinleniyorsun ama **${roleName}** rütbeni korumak için harekete geçme zamanı geldi!\n` +
+      `Bugün tek bir 15 dakikalık ses görevi veya selamlaşma yaparak durumunu **'Kritik'ten 'Güvenli'ye** çekebilirsin! Pes etme, ekibin seninle! 🚀`;
+    aiTonePrompt = 'teşvik edici, pes etmeyen, motivasyon verici ve destekleyici';
   } else if (ratio > 0.55) {
-    title = `😠 SERT UYARI: Görev İhmali Devam Ediyor (${warnCount}/${maxLimit} Gün)`;
+    title = `⚠️ HAREKETE GEÇME ZAMANI: Görev Durumu (${warnCount}/${maxLimit} Gün)`;
     color = 0xe67e22; // Orange
     toneHeader =
-      `Bu tutum kabul edilemez! 😠 Rütben yükseldikçe alt kademedeki personele örnek olman gerekirken **${warnCount} gündür** ortalarda yoksun!\n` +
-      `Yöneticilerin ve Sentara'nın sabrı tükenmeye başladı.`;
-    aiTonePrompt = 'KIZGIN, TEPKİLİ VE CİDDİ';
+      `Hey ${roleName}! 🌟 Bir süredir aramızda yoktun, seni özledik! Ekip arkadaşlarının desteğine ihtiyacı var.\n` +
+      `Bugün ufak bir katkı sunarak ritmini tekrar yakalayabilirsin! 💪`;
+    aiTonePrompt = 'samimi, teşvik edici ve motive edici';
   } else if (ratio > 0.25) {
-    title = `⚠️ Görev İhmali Uyarısı (${warnCount}/${maxLimit} Gün)`;
+    title = `💬 Tatlı Hatırlatma (${warnCount}/${maxLimit} Gün)`;
     color = 0xf1c40f; // Yellow
-    toneHeader = `Bayağıdır görev yapmıyorsun! 🧐 **${roleName}** rütbesinin getirdiği sorumlulukları unutma. Ekip arkadaşların senin aktifliğini bekliyor!`;
-    aiTonePrompt = 'CİDDİ VE DİKKAT ÇEKİCİ UYARI';
+    toneHeader = `Bayağıdır sohbet etmedik! 🧐 **${roleName}** olarak enerjini sunucuya katmayı unutma. Kısa bir selam bile fark yaratır!`;
+    aiTonePrompt = 'dostça, yapıcı ve nazik';
   }
 
   // System Notification
@@ -4060,19 +4050,19 @@ function startStaffScheduler(client) {
         return;
       }
       const now = new Date();
-      // Turkey is permanently UTC+3
-      const nowGmt3 = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-      const currentYear = nowGmt3.getUTCFullYear();
-      const currentMonth = nowGmt3.getUTCMonth();
-      const currentDate = nowGmt3.getUTCDate();
+      // Turkey is permanently UTC+3. Get current date components in Turkey timezone:
+      const trNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+      const currentYear = trNow.getUTCFullYear();
+      const currentMonth = trNow.getUTCMonth();
+      const currentDate = trNow.getUTCDate();
 
-      // Target time in Turkey timezone (using UTC methods on GMT+3 shifted date)
-      const targetGmt3 = new Date(Date.UTC(currentYear, currentMonth, currentDate, hour, minute, 0, 0));
-      if (targetGmt3 <= nowGmt3) {
-        targetGmt3.setUTCDate(targetGmt3.getUTCDate() + 1);
+      // Target hour:minute in Turkey time (UTC+3) corresponds to (hour - 3) in UTC
+      let targetUtc = new Date(Date.UTC(currentYear, currentMonth, currentDate, hour - 3, minute, 0, 0));
+      if (targetUtc <= now) {
+        targetUtc.setUTCDate(targetUtc.getUTCDate() + 1);
       }
 
-      const delay = targetGmt3.getTime() - nowGmt3.getTime();
+      const delay = targetUtc.getTime() - now.getTime();
 
       console.log(`[staffSystem] Scheduled task for ${hour}:${minute} (Istanbul time). Real execution in ${Math.round(delay / 1000 / 60)} minutes.`);
 
@@ -5613,26 +5603,6 @@ const WALK_PLANS = {
   }
 };
 
-async function startWalkthrough(userId, client) {
-  try {
-    const p = await getOrCreate(userId, GUILD_ID, client);
-    const plan = WALK_PLANS.default;
-    p.walkthrough = {
-      active: true,
-      step: 0,
-      planId: plan.id,
-      plan: plan,
-      accepted: false,
-      completedSteps: [],
-      schedule: {}
-    };
-    await p.save().catch(() => { });
-    await sendWalkthroughStep(p, client);
-  } catch (err) {
-    console.error('[staffSystem] startWalkthrough error:', err.message);
-  }
-}
-
 function formatStepIndex(progress) {
   const plan = progress.walkthrough?.plan || WALK_PLANS.default;
   const max = (plan.steps || []).length;
@@ -5658,12 +5628,10 @@ async function sendWalkthroughStep(progress, client) {
     if (idx > 0) row.addComponents(new ButtonBuilder().setCustomId(`walkthrough_prev_${progress.userId}`).setLabel('◀️ Geri').setStyle(ButtonStyle.Secondary));
     if (idx < max - 1) row.addComponents(new ButtonBuilder().setCustomId(`walkthrough_next_${progress.userId}`).setLabel('İleri ▶️').setStyle(ButtonStyle.Primary));
 
-    // Action button for steps that are actionable
     if (step.action && !progress.walkthrough.completedSteps?.includes(step.id)) {
       row.addComponents(new ButtonBuilder().setCustomId(`walkthrough_complete_${progress.userId}_${step.id}`).setLabel('✔️ Yapıldı').setStyle(ButtonStyle.Success));
     }
 
-    // Accept plan (only shown on first step and not yet accepted)
     if (idx === 0 && !progress.walkthrough.accepted) {
       row.addComponents(new ButtonBuilder().setCustomId(`walkthrough_accept_${progress.userId}`).setLabel('Planı Kabul Et').setStyle(ButtonStyle.Primary));
     }
@@ -5704,7 +5672,6 @@ async function handleWalkthroughAction(userId, action, client, extra) {
       if (user) await user.send('✅ Rehberi tamamladın! Tekrar başlatmak istersen her zaman "Ne yapacağımı bilmiyorum?" butonuna tıklayabilirsin.').catch(() => { });
       return;
     } else if (action === 'accept') {
-      // Accept plan: generate a simple schedule mapping each step to consecutive days starting today
       p.walkthrough.accepted = true;
       p.walkthrough.acceptedAt = new Date();
       p.walkthrough.schedule = {};
@@ -5713,15 +5680,12 @@ async function handleWalkthroughAction(userId, action, client, extra) {
         p.walkthrough.schedule[day] = p.walkthrough.schedule[day] || [];
         p.walkthrough.schedule[day].push(plan.steps[i].id);
       }
-      // Notify user
       const user = await client.users.fetch(userId).catch(() => null);
       if (user) await user.send(`✅ Plan kabul edildi. Adımlar bugün ve sonraki günlere dağıtıldı. Takibini panelden yapabilirsin.`).catch(() => { });
     } else if (action === 'complete' && extra) {
-      // extra expected as step id
       const stepId = extra;
       p.walkthrough.completedSteps = p.walkthrough.completedSteps || [];
       if (!p.walkthrough.completedSteps.includes(stepId)) p.walkthrough.completedSteps.push(stepId);
-      // auto-advance if current step
       if (plan.steps[idx] && plan.steps[idx].id === stepId) {
         p.walkthrough.step = Math.min(idx + 1, max - 1);
       }
@@ -5736,60 +5700,47 @@ async function handleWalkthroughAction(userId, action, client, extra) {
   }
 }
 
-// ╔─ 🔧 ANKET SİSTEMİ FİX ────────────────────────────────────────────────╗
-// ║ surveysCompleted sayacı hiç artırılmıyordu. Bunları arttıran fonksiyon  ║
-// ╚─────────────────────────────────────────────────────────────────────────╝
+async function startWalkthrough(userId, client) {
+  try {
+    const p = await getOrCreate(userId, GUILD_ID, client);
+    const plan = WALK_PLANS.default;
+    p.walkthrough = {
+      active: true,
+      step: 0,
+      planId: plan.id,
+      plan: plan,
+      accepted: false,
+      completedSteps: [],
+      schedule: {}
+    };
+    await p.save().catch(() => { });
+    await sendWalkthroughStep(p, client);
+  } catch (err) {
+    console.error('[staffSystem] startWalkthrough error:', err.message);
+  }
+}
 
-/**
- * Yetkili anket yönetimi kaydeder
- * @param {string} userId - Kullanıcı ID
- * @param {string} surveyTitle - Anket başlığı
- * @param {Object} client - Discord client
- */
+// ── ANKET, İSTİFA & EMEKLİLİK İŞLEMLERİ ──────────────────────────────────
 async function recordSurvey(userId, surveyTitle = 'Anket', client = null) {
   try {
     if (!userId) {
       console.warn('[staffSystem] recordSurvey: Invalid userId');
       return;
     }
-
     const p = await getOrCreate(userId, GUILD_ID, client);
-    if (!p || p.status !== 'active') {
-      return;
-    }
-
+    if (!p || p.status !== 'active') return;
     resetDaily(p);
-
-    // surveysCompleted sayacını arttır
     p.stats.surveysCompleted = (p.stats.surveysCompleted || 0) + 1;
-
-    // Badge kontrolü yapılacak
     await p.save().catch(err => {
       console.error('[staffSystem] recordSurvey save error:', err.message);
     });
-
     console.log(`[staffSystem] ${userId} anket yönetimini tamamladı: "${surveyTitle}"`);
-
-    // Badge kontrolü (socialButterfly badge'i için)
     await checkAndUnlockBadges(p, client).catch(() => { });
-
   } catch (err) {
     console.error('[staffSystem] recordSurvey error:', err.message);
   }
 }
 
-// ╔─────────────────────────────────────────────────────────────────────────╗
-
-
-// ║ resign ve retire fonksiyonları dışa export ediliyordu ama gövde yoktu  ║
-// ╚─────────────────────────────────────────────────────────────────────────╝
-
-/**
- * Yetkiliyi istifa ettir
- * @param {string} userId - Kullanıcı ID
- * @param {string} reason - İstifa nedeni
- * @param {Object} client - Discord client
- */
 async function resignFromStaff(userId, reason = 'Kişisel sebepler', client = null) {
   try {
     const p = await StaffProgress.findOne({ userId });
@@ -5797,21 +5748,14 @@ async function resignFromStaff(userId, reason = 'Kişisel sebepler', client = nu
       console.warn(`[staffSystem] resignFromStaff: User ${userId} not found in staff system`);
       return false;
     }
-
     const prevLevel = p.level || 1;
     const prevRole = ROLE_NAMES[prevLevel] || 'Bilinmiyor';
-
-    // İstifa işaretle
     p.status = 'resigned';
     p.resignedAt = new Date();
     p.resignReason = reason;
-    p.level = 0; // Aktif değil
-
+    p.level = 0;
     await p.save();
-
-    // Yöneticilere bildir
     console.log(`[staffSystem] ${userId} ${prevRole} rütbesinden istifa etti: "${reason}"`);
-
     if (client) {
       try {
         const user = await client.users.fetch(userId);
@@ -5823,7 +5767,6 @@ async function resignFromStaff(userId, reason = 'Kişisel sebepler', client = nu
         ).catch(() => { });
       } catch (_) { }
     }
-
     return true;
   } catch (err) {
     console.error('[staffSystem] resignFromStaff error:', err.message);
@@ -5831,12 +5774,6 @@ async function resignFromStaff(userId, reason = 'Kişisel sebepler', client = nu
   }
 }
 
-/**
- * Yetkiliyi emekliye çıkar (sistem tarafından)
- * @param {string} userId - Kullanıcı ID
- * @param {string} reason - Emeklilik nedeni
- * @param {Object} client - Discord client
- */
 async function retireFromStaff(userId, reason = 'Sistem tarafından', client = null) {
   try {
     const p = await StaffProgress.findOne({ userId });
@@ -5844,21 +5781,15 @@ async function retireFromStaff(userId, reason = 'Sistem tarafından', client = n
       console.warn(`[staffSystem] retireFromStaff: User ${userId} not found in staff system`);
       return false;
     }
-
     const prevLevel = p.level || 1;
     const prevRole = ROLE_NAMES[prevLevel] || 'Bilinmiyor';
     const activeDays = p.stats?.activeDays || 0;
-
-    // Emeklilik işaretle
     p.status = 'retired';
     p.retiredAt = new Date();
     p.retirementReason = reason;
-    p.level = 0; // Aktif değil
-
+    p.level = 0;
     await p.save();
-
     console.log(`[staffSystem] ${userId} emekliye çıkarıldı. Rütbe: ${prevRole}, Aktif Gün: ${activeDays}`);
-
     if (client) {
       try {
         const user = await client.users.fetch(userId);
@@ -5871,7 +5802,6 @@ async function retireFromStaff(userId, reason = 'Sistem tarafından', client = n
         ).catch(() => { });
       } catch (_) { }
     }
-
     return true;
   } catch (err) {
     console.error('[staffSystem] retireFromStaff error:', err.message);
@@ -5879,48 +5809,45 @@ async function retireFromStaff(userId, reason = 'Sistem tarafından', client = n
   }
 }
 
-// ── TERFİ ALMA MERKEZİ — Roleplay Terfi Sistemi ──────────────────────────
-// Çok adımlı terfi süreci: Kontrol → Sınav → Sözleşme → Kurallar → Güncelleme
-
 // Terfi süreci state'i (kullanıcıya özel, memory-only)
 const promotionCeremonyState = new Map();
 
 // Rütbeye özel terfi sınavı soru havuzu
 const PROMOTION_EXAM_QUESTIONS = {
   2: [
-    { q: 'Bir kullanıcı sohbette küfür ederse ne yaparsın?', options: ['A) Uyarı veririm', 'B) Görmezden gelirim', 'C) Ben de yazarım', 'D) Sunucudan atarım'] },
-    { q: 'Ticket çözerken kullanıcı sinirlenirse nasıl davranırsın?', options: ['A) Sakin kalır çözüm sunarım', 'B) Ben de sinirlenirim', 'C) Ticket\'ı kapatırım', 'D) Başka yetkiliyi çağırırım'] },
-    { q: 'Bir üye kurallara uymuyorsa ilk adımın ne olmalı?', options: ['A) Sözlü uyarı', 'B) Direkt ban', 'C) Timeout', 'D) Hiçbir şey yapmam'] },
-    { q: 'Ses kanalında spam yapan birisine ne yaparsın?', options: ['A) Uyarı + gerekirse mute', 'B) Hemen ban', 'C) Kanalı kapatırım', 'D) Görmezden gelirim'] },
-    { q: 'Yeni bir üye sunucuya katıldığında ne yapmalısın?', options: ['A) Hoş geldin derim', 'B) İlgilenmem', 'C) DM atarım', 'D) Rol veririm'] },
+    { q: 'Bir kullanıcı sohbette küfür ederse ne yaparsın?', options: ['A) Uyarı veririm', 'B) Görmezden gelirim', 'C) Ben de yazarım', 'D) Sunucudan atarım'], correctAnswer: 'A' },
+    { q: 'Ticket çözerken kullanıcı sinirlenirse nasıl davranırsın?', options: ['A) Sakin kalır çözüm sunarım', 'B) Ben de sinirlenirim', 'C) Ticket\'ı kapatırım', 'D) Başka yetkiliyi çağırırım'], correctAnswer: 'A' },
+    { q: 'Bir üye kurallara uymuyorsa ilk adımın ne olmalı?', options: ['A) Sözlü uyarı', 'B) Direkt ban', 'C) Timeout', 'D) Hiçbir şey yapmam'], correctAnswer: 'A' },
+    { q: 'Ses kanalında spam yapan birisine ne yaparsın?', options: ['A) Uyarı + gerekirse mute', 'B) Hemen ban', 'C) Kanalı kapatırım', 'D) Görmezden gelirim'], correctAnswer: 'A' },
+    { q: 'Yeni bir üye sunucuya katıldığında ne yapmalısın?', options: ['A) Hoş geldin derim', 'B) İlgilenmem', 'C) DM atarım', 'D) Rol veririm'], correctAnswer: 'A' },
   ],
   3: [
-    { q: 'İki üye arasında tartışma çıkarsa ilk ne yaparsın?', options: ['A) İkisini de dinler arabuluculuk yaparım', 'B) Birisini banlarım', 'C) İkisini de susturorum', 'D) Yöneticiye haber veririm'] },
-    { q: 'Bir yetkili görevini kötüye kullanıyorsa ne yaparsın?', options: ['A) Kanıt toplar üst yöneticiye bildiririm', 'B) Kendim müdahale ederim', 'C) Görmezden gelirim', 'D) Herkese söylerim'] },
-    { q: 'Sunucu kurallarını güncellemen istense nereden başlarsın?', options: ['A) Mevcut kuralları analiz eder ekiple tartışırım', 'B) Tek başıma yazarım', 'C) Eski kuralları silerim', 'D) Yapmam'] },
-    { q: 'Raid saldırısı altındayken ilk adımın ne olmalı?', options: ['A) Doğrulama seviyesini yükseltir antiraid sistemi aktif ederim', 'B) Sunucuyu kapatırım', 'C) Herkesi banlarım', 'D) Beklerim geçer'] },
-    { q: 'Bir stajyer personele mentorluk yaparken en önemli şey nedir?', options: ['A) Sabırla öğretmek ve örnek olmak', 'B) Hatalarını eleştirmek', 'C) Kendi işimi yapmak', 'D) Sadece kuralları okutmak'] },
+    { q: 'İki üye arasında tartışma çıkarsa ilk ne yaparsın?', options: ['A) İkisini de dinler arabuluculuk yaparım', 'B) Birisini banlarım', 'C) İkisini de susturorum', 'D) Yöneticiye haber veririm'], correctAnswer: 'A' },
+    { q: 'Bir yetkili görevini kötüye kullanıyorsa ne yaparsın?', options: ['A) Kanıt toplar üst yöneticiye bildiririm', 'B) Kendim müdahale ederim', 'C) Görmezden gelirim', 'D) Herkese söylerim'], correctAnswer: 'A' },
+    { q: 'Sunucu kurallarını güncellemen istense nereden başlarsın?', options: ['A) Mevcut kuralları analiz eder ekiple tartışırım', 'B) Tek başıma yazarım', 'C) Eski kuralları silerim', 'D) Yapmam'], correctAnswer: 'A' },
+    { q: 'Raid saldırısı altındayken ilk adımın ne olmalı?', options: ['A) Doğrulama seviyesini yükseltir antiraid sistemi aktif ederim', 'B) Sunucuyu kapatırım', 'C) Herkesi banlarım', 'D) Beklerim geçer'], correctAnswer: 'A' },
+    { q: 'Bir stajyer personele mentorluk yaparken en önemli şey nedir?', options: ['A) Sabırla öğretmek ve örnek olmak', 'B) Hatalarını eleştirmek', 'C) Kendi işimi yapmak', 'D) Sadece kuralları okutmak'], correctAnswer: 'A' },
   ],
   4: [
-    { q: 'Haftalık personel raporu hazırlarken nelere dikkat edersin?', options: ['A) Performans metrikleri, aktiflik ve gelişim alanları', 'B) Sadece şikayetler', 'C) Kim daha çok konuşmuş', 'D) Rapor hazırlamam'] },
-    { q: 'Ekip motivasyonu düştüğünde lider olarak ne yaparsın?', options: ['A) Bireysel görüşme + takım etkinliği düzenlerim', 'B) Daha fazla görev veririm', 'C) Görmezden gelirim', 'D) Ceza sistemi uygularım'] },
-    { q: 'Kritik bir sunucu kararı alınırken nasıl yaklaşırsın?', options: ['A) Veri toplar, ekiple istişare eder, sonra karar veririm', 'B) Hemen karar veririm', 'C) Üst yönetime bırakırım', 'D) Oylama yaparım'] },
-    { q: 'Bir üye haksız yere ceza aldığını iddia ediyorsa?', options: ['A) Logları inceler, haklıysa düzeltirim', 'B) Reddederim', 'C) Cezayı kaldırırım', 'D) Şikayet eden yetkiliyi uyarırım'] },
-    { q: 'Sunucu güvenliğini nasıl aktif olarak izlersin?', options: ['A) Düzenli log kontrolü + audit trail + şüpheli aktivite takibi', 'B) Sadece şikayet gelince bakarım', 'C) Bot loglarını kontrol ederim', 'D) İzlemem, sorun olursa hallederim'] },
+    { q: 'Haftalık personel raporu hazırlarken nelere dikkat edersin?', options: ['A) Performans metrikleri, aktiflik ve gelişim alanları', 'B) Sadece şikayetler', 'C) Kim daha çok konuşmuş', 'D) Rapor hazırlamam'], correctAnswer: 'A' },
+    { q: 'Ekip motivasyonu düştüğünde lider olarak ne yaparsın?', options: ['A) Bireysel görüşme + takım etkinliği düzenlerim', 'B) Daha fazla görev veririm', 'C) Görmezden gelirim', 'D) Ceza sistemi uygularım'], correctAnswer: 'A' },
+    { q: 'Kritik bir sunucu kararı alınırken nasıl yaklaşırsın?', options: ['A) Veri toplar, ekiple istişare eder, sonra karar veririm', 'B) Hemen karar veririm', 'C) Üst yönetime bırakırım', 'D) Oylama yaparım'], correctAnswer: 'A' },
+    { q: 'Bir üye haksız yere ceza aldığını iddia ediyorsa?', options: ['A) Logları inceler, haklıysa düzeltirim', 'B) Reddederim', 'C) Cezayı kaldırırım', 'D) Şikayet eden yetkiliyi uyarırım'], correctAnswer: 'A' },
+    { q: 'Sunucu güvenliğini nasıl aktif olarak izlersin?', options: ['A) Düzenli log kontrolü + audit trail + şüpheli aktivite takibi', 'B) Sadece şikayet gelince bakarım', 'C) Bot loglarını kontrol ederim', 'D) İzlemem, sorun olursa hallederim'], correctAnswer: 'A' },
   ],
   5: [
-    { q: 'Tüm moderatör ekibini yönetirken önceliğin ne olmalı?', options: ['A) Adil görev dağılımı ve performans takibi', 'B) Herkesin mutlu olması', 'C) Sadece kuralları uygulatmak', 'D) En az işle en çok sonuç'] },
-    { q: 'Sunucu istatistiklerinde anormal bir düşüş görsen ne yaparsın?', options: ['A) Detaylı analiz yapar, nedenleri araştırır, eylem planı oluştururum', 'B) Beklerim, düzelir', 'C) Yöneticiye söylerim', 'D) Etkinlik düzenlerim'] },
-    { q: 'Yöneticilerle koordineli çalışmanın en önemli kuralı nedir?', options: ['A) Şeffaf iletişim ve düzenli raporlama', 'B) Her şeyi onlardan sormak', 'C) Kendi kararlarımı vermek', 'D) Toplantılara katılmak'] },
-    { q: 'Kriz anında (sunucu çökme, büyük tartışma) nasıl davranırsın?', options: ['A) Soğukkanlı kalır, protokolü uygular, ekibi koordine ederim', 'B) Panik yaparım', 'C) Üst yönetime haber verip beklerim', 'D) Herkesi susturorum'] },
-    { q: 'Bir alt kademe yetkiliye performans değerlendirmesi yaparken?', options: ['A) Güçlü yönlerini vurgular, gelişim alanlarını yapıcı şekilde sunarım', 'B) Sadece hataları söylerim', 'C) Puan veririm', 'D) Genel bir şey söylerim'] },
+    { q: 'Tüm moderatör ekibini yönetirken önceliğin ne olmalı?', options: ['A) Adil görev dağılımı ve performans takibi', 'B) Herkesin mutlu olması', 'C) Sadece kuralları uygulatmak', 'D) En az işle en çok sonuç'], correctAnswer: 'A' },
+    { q: 'Sunucu istatistiklerinde anormal bir düşüş görsen ne yaparsın?', options: ['A) Detaylı analiz yapar, nedenleri araştırır, eylem planı oluştururum', 'B) Beklerim, düzelir', 'C) Yöneticiye söylerim', 'D) Etkinlik düzenlerim'], correctAnswer: 'A' },
+    { q: 'Yöneticilerle koordineli çalışmanın en önemli kuralı nedir?', options: ['A) Şeffaf iletişim ve düzenli raporlama', 'B) Her şeyi onlardan sormak', 'C) Kendi kararlarımı vermek', 'D) Toplantılara katılmak'], correctAnswer: 'A' },
+    { q: 'Kriz anında (sunucu çökme, büyük tartışma) nasıl davranırsın?', options: ['A) Soğukkanlı kalır, protokolü uygular, ekibi koordine ederim', 'B) Panik yaparım', 'C) Üst yönetime haber verip beklerim', 'D) Herkesi susturorum'], correctAnswer: 'A' },
+    { q: 'Bir alt kademe yetkiliye performans değerlendirmesi yaparken?', options: ['A) Güçlü yönlerini vurgular, gelişim alanlarını yapıcı şekilde sunarım', 'B) Sadece hataları söylerim', 'C) Puan veririm', 'D) Genel bir şey söylerim'], correctAnswer: 'A' },
   ],
   6: [
-    { q: 'Genel Koordinatör olarak en büyük sorumluluğun nedir?', options: ['A) Tüm operasyonları koordine etmek ve stratejik kararlar almak', 'B) Herkesi yönetmek', 'C) Sunucuyu büyütmek', 'D) Kuralları yazmak'] },
-    { q: 'Sınav süreçlerini tasarlarken neyi gözetirsin?', options: ['A) Adalet, bilgi ölçümü ve pratik beceri değerlendirmesi', 'B) Zor sorular sormak', 'C) Kolay geçiş sağlamak', 'D) Herkesi geçirmek'] },
-    { q: 'Aylık genel denetim raporunda nelere bakarsın?', options: ['A) KPI, üye memnuniyeti, moderasyon kalitesi, büyüme verileri', 'B) Sadece aktif personel sayısı', 'C) Ticket istatistikleri', 'D) Şikayetler'] },
-    { q: 'Büyük bir yapısal değişiklik yapmak gerektiğinde?', options: ['A) Etki analizi yapar, tüm paydaşlarla istişare eder, aşamalı uygularım', 'B) Hemen uygularım', 'C) Oylama yaparım', 'D) Vazgeçerim'] },
-    { q: 'Ekibin tüm sorumluluğu senin omuzlarında. Bunu nasıl taşırsın?', options: ['A) Delege eder, güvenir, destekler ama takip ederim', 'B) Her şeyi kendim yaparım', 'C) Sorumluluk dağıtırım', 'D) Stresle baş ederim'] },
+    { q: 'Genel Koordinatör olarak en büyük sorumluluğun nedir?', options: ['A) Tüm operasyonları koordine etmek ve stratejik kararlar almak', 'B) Herkesi yönetmek', 'C) Sunucuyu büyütmek', 'D) Kuralları yazmak'], correctAnswer: 'A' },
+    { q: 'Sınav süreçlerini tasarlarken neyi gözetirsin?', options: ['A) Adalet, bilgi ölçümü ve pratik beceri değerlendirmesi', 'B) Zor sorular sormak', 'C) Kolay geçiş sağlamak', 'D) Herkesi geçirmek'], correctAnswer: 'A' },
+    { q: 'Aylık genel denetim raporunda nelere bakarsın?', options: ['A) KPI, üye memnuniyeti, moderasyon kalitesi, büyüme verileri', 'B) Sadece aktif personel sayısı', 'C) Ticket istatistikleri', 'D) Şikayetler'], correctAnswer: 'A' },
+    { q: 'Büyük bir yapısal değişiklik yapmak gerektiğinde?', options: ['A) Etki analizi yapar, tüm paydaşlarla istişare eder, aşamalı uygularım', 'B) Hemen uygularım', 'C) Oylama yaparım', 'D) Vazgeçerim'], correctAnswer: 'A' },
+    { q: 'Ekibin tüm sorumluluğu senin omuzlarında. Bunu nasıl taşırsın?', options: ['A) Delege eder, güvenir, destekler ama takip ederim', 'B) Her şeyi kendim yaparım', 'C) Sorumluluk dağıtırım', 'D) Stresle baş ederim'], correctAnswer: 'A' },
   ],
 };
 
@@ -5964,6 +5891,7 @@ async function startPromotionCeremony(interaction, progress) {
     examQuestions,
     currentQuestionIndex: 0,
     answers: [],
+    correctCount: 0,
     startedAt: Date.now(),
   });
 
@@ -5994,7 +5922,7 @@ async function startPromotionCeremony(interaction, progress) {
       `Ah! **Evet, tamamlamışsınız!** 🎉\n\n` +
       `📊 Tüm terfi gereksinimleriniz kontrol edildi ve **başarıyla karşılandığı** onaylandı.\n\n` +
       `**${currentRoleName}** → **${targetRoleName}** terfi sürecinizi başlatıyorum.\n\n` +
-      `Ancak önce bir **Terfi Yetkinlik Sınavı** geçmeniz gerekmektedir. Sınav 5 sorudan oluşmaktadır.\n\n` +
+      `Ancak önce bir **Terfi Yetkinlik Sınavı** geçmeniz gerekmektedir. Sınav 5 sorudan oluşmaktadır (Geçme şartı: En az 4 doğru).\n\n` +
       `Hazır olduğunuzda aşağıdaki butona basın.`
     )
     .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sınav Aşaması' })
@@ -6077,7 +6005,7 @@ async function sendPromotionExamQuestion(interaction, userId) {
 }
 
 /**
- * Terfi Sınavı — Cevap Değerlendirmesi (roleplay — tüm cevaplar doğru sayılır)
+ * Terfi Sınavı — Cevap Değerlendirmesi ve Puanlama
  */
 async function handlePromotionExamAnswer(interaction, userId, questionIndex, answer) {
   const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -6085,24 +6013,31 @@ async function handlePromotionExamAnswer(interaction, userId, questionIndex, ans
   const state = promotionCeremonyState.get(userId);
   if (!state) return;
 
-  state.answers.push({ questionIndex, answer });
-
-  // Roleplay değerlendirme mesajı
-  const evalMessage = EXAM_EVALUATION_RESPONSES[questionIndex] || EXAM_EVALUATION_RESPONSES[0];
   const question = state.examQuestions[questionIndex];
+  const isCorrect = (answer === (question?.correctAnswer || 'A'));
+
+  if (isCorrect) {
+    state.correctCount = (state.correctCount || 0) + 1;
+  }
+  state.answers.push({ questionIndex, answer, isCorrect });
+
+  // Evaluation response
+  const evalMessage = isCorrect
+    ? (EXAM_EVALUATION_RESPONSES[questionIndex] || EXAM_EVALUATION_RESPONSES[0])
+    : `🤔 Bu soruya verdiğin cevap (**${answer}**) maalesef **yanlış**. Doğru cevap: **${question?.correctAnswer || 'A'}**. ❌`;
 
   const evalEmbed = new EmbedBuilder()
-    .setColor(0x2ecc71)
-    .setTitle(`📝 TERFİ SINAVI — Cevap Değerlendirmesi`)
+    .setColor(isCorrect ? 0x2ecc71 : 0xe74c3c)
+    .setTitle(`📝 TERFİ SINAVI — Cevap Değerlendirmesi (${isCorrect ? '✅ Doğru' : '❌ Yanlış'})`)
     .setDescription(
       `**Soru ${questionIndex + 1}:** ${question?.q || ''}\n\n` +
       `**Senin cevabın:** ${answer}\n\n` +
       `${evalMessage}`
     )
-    .setFooter({ text: `Eko Yıldız • Terfi Sınavı | ${questionIndex + 1} / 5 Tamamlandı` })
+    .setFooter({ text: `Eko Yıldız • Terfi Sınavı | ${questionIndex + 1} / 5 Tamamlandı (Doğru: ${state.correctCount || 0}/5)` })
     .setTimestamp();
 
-  // Sonraki soruya geçiş butonu veya sınavı bitir
+  // Sonraki soruya geçiş veya sınavı bitir
   state.currentQuestionIndex = questionIndex + 1;
   promotionCeremonyState.set(userId, state);
 
@@ -6115,28 +6050,48 @@ async function handlePromotionExamAnswer(interaction, userId, questionIndex, ans
     );
     await updateInteractionMessage(interaction, { embeds: [evalEmbed], components: [nextRow] });
   } else {
-    // Sınav bitti
-    const passEmbed = new EmbedBuilder()
-      .setColor(0x2ecc71)
-      .setTitle('🎓 TERFİ SINAVI TAMAMLANDI!')
-      .setDescription(
-        `Tebrikler! 5/5 soruyu başarıyla cevapladınız ve sınavı **GEÇTİNİZ!** 🎉\n\n` +
-        `Şimdi terfi sürecine devam ediyoruz. Yeni rütbe sözleşmenizi imzalamanız gerekmektedir.\n\n` +
-        `📋 Aşağıdaki butona basarak **${ROLE_NAMES[state.targetLevel] || 'Üst Rütbe'}** sözleşmenizi görüntüleyin ve imzalayın.`
-      )
-      .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sözleşme Aşaması' })
-      .setTimestamp();
+    // Sınav bitti — Puan kontrolü (%80 = en az 4/5 doğru)
+    const passed = (state.correctCount || 0) >= 4;
 
-    const contractRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('promotion_show_contract')
-        .setLabel('📜 Yeni Rütbe Sözleşmesini Görüntüle')
-        .setStyle(ButtonStyle.Success)
-    );
+    if (passed) {
+      const passEmbed = new EmbedBuilder()
+        .setColor(0x2ecc71)
+        .setTitle('🎓 TERFİ SINAVI BAŞARIYLA TAMAMLANDI!')
+        .setDescription(
+          `Tebrikler! 5 sorudan **${state.correctCount}/5** tanesini doğru cevapladınız ve sınavı **BAŞARIYLA GEÇTİNİZ!** 🎉\n\n` +
+          `Şimdi terfi sürecine devam ediyoruz. Yeni rütbe sözleşmenizi imzalamanız gerekmektedir.\n\n` +
+          `📋 Aşağıdaki butona basarak **${ROLE_NAMES[state.targetLevel] || 'Üst Rütbe'}** sözleşmenizi görüntüleyin ve imzalayın.`
+        )
+        .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Sözleşme Aşaması' })
+        .setTimestamp();
 
-    await updateInteractionMessage(interaction, { embeds: [passEmbed], components: [contractRow] });
+      const contractRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('promotion_show_contract')
+          .setLabel('📜 Yeni Rütbe Sözleşmesini Görüntüle')
+          .setStyle(ButtonStyle.Success)
+      );
+
+      await updateInteractionMessage(interaction, { embeds: [passEmbed], components: [contractRow] });
+    } else {
+      // Başarısız
+      const failEmbed = new EmbedBuilder()
+        .setColor(0xe74c3c)
+        .setTitle('❌ TERFİ SINAVI BAŞARISIZ OLDU')
+        .setDescription(
+          `Maalesef 5 sorudan sadece **${state.correctCount || 0}/5** tanesini doğru cevaplayabildiniz.\n\n` +
+          `**Terfi Geçme Barajı:** En az 4 doğru (%80 başarım).\n\n` +
+          `Sınavı geçemediğiniz için terfi süreciniz bu aşamada durdurulmuştur. Kuralları ve yönetim rehberini gözden geçirip daha sonra tekrar başvurabilirsiniz. 💪`
+        )
+        .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi' })
+        .setTimestamp();
+
+      promotionCeremonyState.delete(userId);
+      await updateInteractionMessage(interaction, { embeds: [failEmbed], components: [] });
+    }
   }
 }
+
 
 /**
  * Terfi Sözleşmesi — Göster & İmzala
@@ -6337,6 +6292,53 @@ async function handlePromotionStartChoice(interaction, choice) {
   await updateInteractionMessage(interaction, { embeds: [responseEmbed], components: [] });
 }
 
+// ── SÜRPRIZ ETKİNLİKLER (FLASH QUESTS) & HAFTALIK LİG ──────────────────
+let activeFlashQuest = null;
+
+function getActiveFlashQuest() {
+  if (activeFlashQuest && activeFlashQuest.expiresAt > Date.now()) {
+    return activeFlashQuest;
+  }
+  return null;
+}
+
+function startFlashQuest(questType = 'voice_race', durationMinutes = 60) {
+  const quests = {
+    voice_race: {
+      type: 'voice_race',
+      title: '⚡ FLASH GÖREV: Ses Kanalı Şampiyonları!',
+      desc: 'Önümüzdeki 1 saat boyunca Ses Kanalında en çok kalan 2 yetkiliye ekstra +100 Elmas (💎) ve +50 E.C.!',
+      rewardDiamonds: 100,
+      rewardCoins: 50,
+    },
+    word_game_host: {
+      type: 'word_game_host',
+      title: '⚡ FLASH GÖREV: Sohbet Kelime Oyunu!',
+      desc: 'Sohbet kanalında üyelerle Kelime Oyunu başlatan yetkiliye Havuz Bonusu (+80 E.C.)!',
+      rewardCoins: 80,
+    }
+  };
+  const selected = quests[questType] || quests.voice_race;
+  activeFlashQuest = {
+    ...selected,
+    startedAt: Date.now(),
+    expiresAt: Date.now() + durationMinutes * 60 * 1000
+  };
+  return activeFlashQuest;
+}
+
+async function getWeeklyUnitLeaderboard() {
+  try {
+    const StaffUnit = require('../../models/StaffUnit');
+    const UnitBudget = require('../../models/UnitBudget');
+    const units = await UnitBudget.find({});
+    return units.sort((a, b) => ((b.budget || 0) + (b.diamonds || 0)) - ((a.budget || 0) + (a.diamonds || 0)));
+  } catch (err) {
+    console.error('[staffSystem] getWeeklyUnitLeaderboard error:', err.message);
+    return [];
+  }
+}
+
 module.exports = {
   getOrCreate,
   isPromotionEligible,
@@ -6435,4 +6437,8 @@ module.exports = {
   handlePromotionSignRules,
   handlePromotionStartChoice,
   promotionCeremonyState,
+  // Retention & Flash Quests
+  getActiveFlashQuest,
+  startFlashQuest,
+  getWeeklyUnitLeaderboard,
 };

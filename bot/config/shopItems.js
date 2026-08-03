@@ -157,6 +157,32 @@ const SHOP_ITEMS = [
     price: 1000,
     value: "#10b981",
   },
+
+  // ── Personel Retention & Özel Ürünler ────────────────────────────────────
+  {
+    id: "item_quest_skip",
+    name: "Görev Pası Kartı (Quest Skip)",
+    desc: "Sevmediğin veya vaktinin olmadığı 1 günlük görevi tek tıkla başarmış sayılma kartı.",
+    icon: "🎫",
+    type: "consumable",
+    price: 1200,
+  },
+  {
+    id: "item_custom_voice_channel",
+    name: "Geçici Özel Ses Kanalı İzni",
+    desc: "Sunucuda kendi belirleyeceğin isimle geçici özel ses kanalı açma hakkı.",
+    icon: "🎙️",
+    type: "perk",
+    price: 2500,
+  },
+  {
+    id: "item_custom_nick_color",
+    name: "Özel Nickname Rengi & Rol Rozeti",
+    desc: "Sunucu içi prestijli nickname rengi ve isminin yanına özel rol rozeti simgesi.",
+    icon: "✨",
+    type: "color",
+    price: 3000,
+  },
 ];
 
 /** itemId'ye göre ürün bul */
