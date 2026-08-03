@@ -477,7 +477,11 @@ async function checkActiveExams(client) {
           new ButtonBuilder()
             .setCustomId('exam_start_trigger')
             .setLabel('▶️ Sınavı Başlat')
-            .setStyle(ButtonStyle.Success)
+            .setStyle(ButtonStyle.Success),
+          new ButtonBuilder()
+            .setCustomId('exam_delay_1h')
+            .setLabel('⏰ 1 Saat Sonra Sınava Gir')
+            .setStyle(ButtonStyle.Secondary)
         );
 
         await user.send({ embeds: [startEmbed], components: [startRow] }).catch(err => {
@@ -496,9 +500,12 @@ async function handleStartTrigger(interaction) {
 
   const userId = interaction.user.id;
   const progress = await StaffProgress.findOne({ userId });
-  if (!progress || progress.exam.status !== 'ongoing') {
-    return interaction.followUp({ content: '❌ Aktif sınavınız bulunamadı veya süre dolmuş.', ephemeral: true }).catch(() => { });
+  if (!progress || !progress.exam || (progress.exam.status !== 'ongoing' && progress.exam.status !== 'scheduled')) {
+    return interaction.followUp({ content: '❌ Aktif veya planlanmış sınavınız bulunamadı.', ephemeral: true }).catch(() => { });
   }
+
+  progress.exam.status = 'ongoing';
+  await progress.save();
 
   // "Sınavı Başlat" butonunu kaldırarak tekrar tıklanmasını önle
   await interaction.editReply({ components: [] }).catch(() => { });
@@ -507,10 +514,43 @@ async function handleStartTrigger(interaction) {
   await sendQuestion(interaction.user, progress);
 }
 
+async function handleDelayExam1h(interaction) {
+  if (interaction.customId !== 'exam_delay_1h') return;
+  await interaction.deferUpdate().catch(() => { });
+
+  const userId = interaction.user.id;
+  const progress = await StaffProgress.findOne({ userId });
+  if (!progress || !progress.exam) {
+    return interaction.followUp({ content: '❌ Sınav kaydınız bulunamadı.', ephemeral: true }).catch(() => { });
+  }
+
+  // 1 saat sonraya ertele
+  const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
+  progress.exam.scheduledAt = oneHourLater;
+  progress.exam.status = 'scheduled';
+  await progress.save();
+
+  const timeStr = oneHourLater.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' });
+
+  const delayEmbed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle('⏰ Terfi Sınavınız 1 Saat Ertelendi!')
+    .setDescription(
+      `Talebiniz üzerine Terfi Sınavınız **1 saat sonraya** ertelenmiştir.\n\n` +
+      `📅 **Yeni Sınav Saatiniz:** \`${timeStr}\`\n\n` +
+      `Saat geldiğinde bot size yeni bir sınav başlatma bildirimi gönderilecektir. Hazır olduğunuzda sınavınızı başlatabilirsiniz! 💪`
+    )
+    .setFooter({ text: 'Eko Yıldız • Terfi Sınav Erteleme Sistemi' })
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [delayEmbed], components: [] }).catch(() => { });
+}
+
 module.exports = {
   generateExamQuestions,
   sendQuestion,
   handleAnswerInteraction,
   checkActiveExams,
-  handleStartTrigger
+  handleStartTrigger,
+  handleDelayExam1h
 };

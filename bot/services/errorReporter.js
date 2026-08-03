@@ -126,9 +126,11 @@ async function saveErrorAndGetButton(error, contextOrInteraction, guildId, userI
     } catch (_) {}
 
     // Send DM to developer (1031620522406072350)
+    // 🔧 Unknown interaction (10062 - 3s Discord timeout) hataları için DM gönderme
+    const isUnknownInteraction = error?.code === 10062 || errorMsg.includes('Unknown interaction');
     const { getDiscordClient } = require("../discordClient");
     const client = getDiscordClient();
-    if (client) {
+    if (client && !isUnknownInteraction) {
       try {
         const devUser = await client.users.fetch("1031620522406072350").catch(() => null);
         if (devUser) {

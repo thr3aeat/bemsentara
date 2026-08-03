@@ -2435,16 +2435,19 @@ async function handleSupportModal(interaction) {
 // Ticket kapatma sebebi işleme
 // ─────────────────────────────────────────────────────────────────────────────
 async function handleCloseReasonModal(interaction) {
+  // Önce etkileşimi hemen defer et (3 saniye zaman aşımını ve Unknown Interaction 10062 hatasını engelle)
+  await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
   const ticketId = interaction.customId.replace("close_reason_modal_", "");
   const reason = interaction.fields.getTextInputValue("close_reason");
 
   const ticket = await Ticket.findOne({ ticketId });
   if (!ticket) {
-    return interaction.reply({ content: "❌ Ticket bulunamadı", ephemeral: true });
+    return interaction.editReply({ content: "❌ Ticket bulunamadı" }).catch(() => { });
   }
 
   if (ticket.status === "closed") {
-    return interaction.reply({ content: "❌ Bu ticket zaten kapalı", ephemeral: true });
+    return interaction.editReply({ content: "❌ Bu ticket zaten kapalı" }).catch(() => { });
   }
 
   // Ticket'ı kapat
@@ -2479,8 +2482,8 @@ async function handleCloseReasonModal(interaction) {
     }
   } catch (_) { }
 
-  // Önce etkileşimi onayla
-  await interaction.reply({ content: "✅ Ticket kapatılıyor...", ephemeral: true });
+  // Etkileşimi güncelle
+  await interaction.editReply({ content: "✅ Ticket kapatılıyor..." }).catch(() => { });
 
   // Clean up active claim routing and delete DM message if any
   try {

@@ -18,7 +18,7 @@ const { handleNightUnbanButton } = require("../services/discordAbuseDetector");
 const { handleAbuseButton, handleRobloxInteractions } = require("./robloxInteractionHandler");
 const { handleAppealButton, handleAppealDecisionButton, handleAppealModalSubmit } = require('../services/banAppeal');
 const { handleModActionApproval } = require("../services/modActionService");
-const { handleStartTrigger, handleAnswerInteraction } = require('../services/aiExamService');
+const { handleStartTrigger, handleAnswerInteraction, handleDelayExam1h } = require('../services/aiExamService');
 const { handleVoiceButton, handleVoiceSelect, handleVoiceModal } = require("./voiceButtonHandler");
 const StaffProgress = require("../../models/StaffProgress");
 const logger = require("../../utils/logger");
@@ -3739,6 +3739,10 @@ function initializeDiscordHandlers(client) {
       // ── Yetkililik Sınavı Butonları ─────────────────────────────────────────
       if (interaction.isButton() && interaction.customId === 'exam_start_trigger') {
         await handleStartTrigger(interaction);
+        return;
+      }
+      if (interaction.isButton() && interaction.customId === 'exam_delay_1h') {
+        await handleDelayExam1h(interaction);
         return;
       }
       if (interaction.isButton() && interaction.customId?.startsWith('exam_ans_')) {

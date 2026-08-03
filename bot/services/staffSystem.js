@@ -2162,16 +2162,27 @@ async function checkPromotion(progress, client, autoSave = true) {
               .setDescription(
                 `Merhaba <@${progress.userId}>, **${targetRoleName}** rütbesine terfi etmek için gerekli tüm koşulları başarıyla tamamladın!\n\n` +
                 `Bu yeni rütbeye ulaşabilmen için **10 soruluk çoktan seçmeli bir Yapay Zeka Sınavı**'nı başarıyla geçmen gerekiyor.\n\n` +
-                `📅 **Sınav Tarihi:** ${scheduled.toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })} (Öğlen 12:00)\n\n` +
+                `📅 **Varsayılan Sınav Tarihi:** ${scheduled.toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}\n\n` +
                 `📋 **Sınav İpuçları & Bilgileri:**\n` +
                 `• Sınavda en az **8 doğru** yapman gerekmektedir.\n` +
-                `• Konular: Yetki düzeyinize uygun moderasyon standartları, sunucu kuralları ve yönetim rehberi.\n` +
-                `• Sınav saati geldiğinde bot sana otomatik olarak bir DM gönderecektir.\n\n` +
-                `Hazırlanmak için 2 günün var, bol şans! 💪`
+                `• İstersen hemen sınava girebilir veya **1 saat sonraya** erteleyebilirsin!\n\n` +
+                `Aşağıdaki butonları kullanarak sınav zamanını yönlendirebilirsin. Bol şans! 💪`
               )
               .setFooter({ text: 'Eko Yıldız • Sınav ve Eğitim Sistemi' })
               .setTimestamp();
-            await user.send({ embeds: [infoEmbed] }).catch(() => { });
+
+            const examRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('exam_start_trigger')
+                .setLabel('▶️ Hemen Sınava Başla')
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId('exam_delay_1h')
+                .setLabel('⏰ 1 Saat Sonra Sınava Gir')
+                .setStyle(ButtonStyle.Secondary)
+            );
+
+            await user.send({ embeds: [infoEmbed], components: [examRow] }).catch(() => { });
           }
           console.log(`[staffSystem] ${progress.userId} has qualified for Level ${targetLevel} exam. Scheduled at: ${scheduled}`);
         } catch (e) {
