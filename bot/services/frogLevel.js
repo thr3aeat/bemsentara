@@ -3,8 +3,9 @@
 const { EmbedBuilder } = require('discord.js');
 const FrogLevel = require('../../models/FrogLevel');
 
-// ── EkoYıldız sunucu ID ─────────────────────────────────────────────────────
+// ── EkoYıldız sunucu ID & Seviye Log Kanalı ──────────────────────────────
 const FROG_GUILD_ID = process.env.FROG_GUILD_ID || '1367646464804655104';
+const LEVEL_LOG_CHANNEL_ID = '1518724304533979278';
 
 // ── Kurbağa rol hiyerarşisi (küçükten büyüğe) ──────────────────────────────
 const FROG_ROLES = [
@@ -454,12 +455,12 @@ async function levelUp(p, member, client) {
   if (isMilestone) {
     try {
       const guild = member.guild;
-      const channel = guild.channels.cache.find(c =>
-        c.isTextBased?.() &&
-        (c.name.includes('genel') || c.name.includes('sohbet') || c.name.includes('general'))
-      ) || guild.systemChannel;
+      const channel = await guild.channels.fetch(LEVEL_LOG_CHANNEL_ID).catch(() => null) ||
+        guild.channels.cache.get(LEVEL_LOG_CHANNEL_ID) ||
+        guild.channels.cache.find(c => c.isTextBased?.() && (c.name.includes('seviye') || c.name.includes('genel'))) ||
+        guild.systemChannel;
 
-      if (channel) {
+      if (channel && channel.isTextBased()) {
         const embed = new EmbedBuilder()
           .setColor(isFinal ? 0xFFD700 : (isSeason2Transition ? 0xE67E22 : 0x2ECC71))
           .setTitle(isFinal ? '🏆 EFSANEVİ UNVAN KAZANILDI!' : (isSeason2Transition ? '🐧 2. SEZONA GEÇİŞ YAPILDI!' : '🎉 MİLESTONE SEVİYE ATLADI!'))
@@ -471,13 +472,13 @@ async function levelUp(p, member, client) {
             { name: '✨ Toplam XP', value: `\`${p.xp.toLocaleString()} XP\``, inline: true }
           )
           .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-          .setFooter({ text: 'Eko Yıldız • Seviye Sistemi', iconURL: guild.iconURL() })
+          .setFooter({ text: 'Eko Yıldız • Seviye Log Sistemi', iconURL: guild.iconURL() })
           .setTimestamp();
 
         await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
       }
     } catch (err) {
-      console.warn('[frogLevel] Kanal mesajı gönderilemedi:', err.message);
+      console.warn('[frogLevel] Seviye log kanalına mesaj gönderilemedi:', err.message);
     }
   }
 
