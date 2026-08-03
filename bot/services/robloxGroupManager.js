@@ -43,7 +43,7 @@ const ROBLOX_GROUPS = {
 };
 
 const ROBLOX_MENU_CHANNEL_ID = "1514659720751874150";
-const EKOYILDIZ_MENU_CHANNEL_ID = "1514673268085227550";
+const EKOYILDIZ_MENU_CHANNEL_ID = "1533833217671430315";
 const ALLIED_MENU_CHANNEL_ID = "1514676815489138789";
 const BEM_MENU_CHANNEL_ID = "1514678279087587440";
 
@@ -70,7 +70,7 @@ async function unfriendUser(targetUserId) {
     console.warn("⚠️ [unfriendUser] friendCookie (TOKENFRIEND) is not set.");
     return false;
   }
-  
+
   const formattedCookie = friendCookie.includes(".ROBLOSECURITY=")
     ? friendCookie
     : `.ROBLOSECURITY=${friendCookie};`;
@@ -304,7 +304,7 @@ async function ensureAlliedRobloxMenu(client, force = false) {
 
     if (force && botMessages.size > 0) {
       for (const m of botMessages.values()) {
-        await m.delete().catch(() => {});
+        await m.delete().catch(() => { });
       }
     }
 

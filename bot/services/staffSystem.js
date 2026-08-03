@@ -6381,6 +6381,116 @@ async function getWeeklyUnitLeaderboard() {
   }
 }
 
+/**
+ * YANLIZCA TEK SEFERLİK V7.0 (Endless Loop & Sanal Şehir) Tanıtım & Ödül Bildirimi
+ */
+async function sendV7WelcomeNotification(userId, client) {
+  try {
+    const p = await getOrCreate(userId, GUILD_ID, client);
+    if (!p) return false;
+
+    p.gamification = p.gamification || {};
+    // 🔧 TEK SEFERLİK KONTROL: Daha önce tanıtım yapıldıysa tekrar gönderme!
+    if (p.gamification.systemIntroducedV7) {
+      return false;
+    }
+
+    p.gamification.systemIntroducedV7 = true;
+    await p.save().catch(() => {});
+
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (!user) return false;
+
+    const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+    const v7Embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle('🚀 BEMSENTARA V7.0 — SONSUZ ETKİLEŞİM DÖNGÜSÜ & SANAL ŞEHİR DEV GÜNCELLEMESİ!')
+      .setDescription(
+        `Merhaba **<@${userId}>**, ekibimizin yeni dönemine hoş geldin! 🎉\n\n` +
+        `Sistemi sadece bir denetleyici olmaktan çıkarıp, girmekten keyif alacağın **Sanal Bir Yaşam Alanı ve RPG Simülasyonuna** dönüştürdük!\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `🌟 **YENİ EKLENEN DEV ÖZELLİKLER:**\n\n` +
+        `👑 **1. Sonsuz Sezon & Prestij (Rebirth):** Seviye 6 olduğunda prestij yap, \`[P-1]\` unvanını al ve kalıcı +%10 bonus çarpan kazan!\n` +
+        `🎭 **2. Karakter Sınıfları:** 🛡️ Muhafız, 🎧 Rehber veya 🎫 Çözücü sınıfını seç, ilgi alanında **x2 Puan** kazan!\n` +
+        `🏛️ **3. Lonca Savaşları & Klanlar:** 3-5 kişilik ekibinle klanını kur, haftalık ligde **"Şehrin Hakimi"** ol!\n` +
+        `🏙️ **4. Sanal Şehir & Emlak:** Kahve Dükkanı, Penthouse veya Holding satın alarak pasif gelir elde et!\n` +
+        `📈 **5. $EKO Index Borsası:** EkoCoin bakiyeni borsada yatırıma dönüştürüp katla!\n` +
+        `⚖️ **6. Yapay Zeka Mahkemesi:** İtirazlarda jüri ol, oy kullan, Adalet Elçisi ödüllerini topla!\n` +
+        `💖 **7. Takdir & Bahşiş:** Ekip arkadaşlarına Elmas/E.C. ve günlük Takdir Kartı gönder!\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `🎁 **SÜRÜM YÜKSELTME HEDİYESİ (TEK SEFERLİK):**\n` +
+        `Aşağıdaki buton ile **+500 EkoCoin**, **+200 Elmas (💎)** ve **+1 İzin Kredisi** hediyeni hemen alabilirsin!`
+      )
+      .setThumbnail('https://cdn.discordapp.com/app-assets/discord.png')
+      .setFooter({ text: 'Eko Yıldız • V7.0 Sonsuz Etkileşim Döngüsü | Tek Seferlik Bildirim' })
+      .setTimestamp();
+
+    const row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('v7_claim_version_reward')
+        .setLabel('🎁 Versiyon Hediye Ödülünü Al (+500 E.C. / +200 💎)')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('staff_update_progress')
+        .setLabel('👤 Moderatör Anasayfası')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('v7_nav_rpg')
+        .setLabel('👑 Prestij & RPG Menüsü')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('v7_nav_city')
+        .setLabel('🏙️ Sanal Şehir & Emlak')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('v7_nav_guild')
+        .setLabel('🏛️ Lonca Savaşları')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await user.send({ embeds: [v7Embed], components: [row1, row2] }).catch(() => {});
+    return true;
+  } catch (err) {
+    console.error('[staffSystem] sendV7WelcomeNotification error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Tek Seferlik V7.0 Versiyon Hediye Ödülünü Hak Etme
+ */
+async function claimV7VersionReward(userId) {
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p) return { success: false, message: 'Personel kaydı bulunamadı.' };
+
+    p.gamification = p.gamification || {};
+    if (p.gamification.versionRewardClaimedV7) {
+      return { success: false, message: 'V7.0 Sürüm Yükseltme Ödülünü daha önce zaten aldınız!' };
+    }
+
+    p.gamification.versionRewardClaimedV7 = true;
+    p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + 500;
+    p.gamification.diamonds = (p.gamification.diamonds || 0) + 200;
+    p.leaves = p.leaves || {};
+    p.leaves.totalCredits = (p.leaves.totalCredits || 0) + 1;
+
+    await p.save();
+
+    return {
+      success: true,
+      message: '🎉 V7.0 Sürüm Yükseltme Ödülü hesaba tanımlandı! (+500 E.C., +200 Elmas, +1 İzin Kredisi)'
+    };
+  } catch (err) {
+    console.error('[staffSystem] claimV7VersionReward error:', err.message);
+    return { success: false, message: 'Ödül tanımlanırken bir sorun oluştu.' };
+  }
+}
+
 module.exports = {
   getOrCreate,
   isPromotionEligible,
@@ -6404,9 +6514,10 @@ module.exports = {
   requestLeave,
   getLeaveStatus,
   useLeaveCredit,
-  notifyAllStaffAboutUpdate,
   sendSystemUpdateNotification,
   sendV6WelcomeNotification,
+  sendV7WelcomeNotification,
+  claimV7VersionReward,
   notifyStaff,
   // Gamification
   checkAndUnlockBadges,

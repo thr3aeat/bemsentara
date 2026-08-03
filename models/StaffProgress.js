@@ -119,6 +119,8 @@ const staffProgressSchema = new mongoose.Schema({
     versionRewardClaimedV5: { type: Boolean, default: false }, // V5.0 ödülü alındı mı?
     systemIntroducedV6: { type: Boolean, default: false },   // V6.0 tanıtımı yapıldı mı?
     versionRewardClaimedV6: { type: Boolean, default: false }, // V6.0 ödülü alındı mı?
+    systemIntroducedV7: { type: Boolean, default: false },   // V7.0 (Endless Loop) tanıtımı yapıldı mı?
+    versionRewardClaimedV7: { type: Boolean, default: false }, // V7.0 ödülü alındı mı?
   },
 
   // Endless Engagement Loop (RPG & Prestij & Peer Recognition)

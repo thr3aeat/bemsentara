@@ -8,6 +8,42 @@ const realEstateService = require('../../services/realEstateService');
  */
 async function handleRpgButton(interaction) {
   const { customId, user } = interaction;
+  const staffSystem = require('../../services/staffSystem');
+
+  if (customId === 'v7_claim_version_reward') {
+    const res = await staffSystem.claimV7VersionReward(user.id);
+    if (!res.success) {
+      return interaction.reply({ content: `❌ ${res.message}`, ephemeral: true });
+    }
+    return interaction.reply({ content: res.message, ephemeral: true });
+  }
+
+  if (customId === 'v7_nav_rpg') {
+    const data = staffSystem.getSubcategoryEmbed('rpg_prestige');
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('rpg_prestige_rebirth').setLabel('👑 Prestij Yap').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('rpg_classes_select').setLabel('🎭 Sınıf Seç').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('rpg_p2p_tip').setLabel('💖 Takdir Gönder').setStyle(ButtonStyle.Secondary)
+    );
+    return interaction.reply({ embeds: [data.embed], components: [row], ephemeral: true });
+  }
+
+  if (customId === 'v7_nav_city') {
+    const data = staffSystem.getSubcategoryEmbed('real_estate');
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('buy_prop_coffee_shop').setLabel('☕ Kahve Dükkanı (300 EC)').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('buy_prop_penthouse').setLabel('🏙️ Penthouse (2000 EC)').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('invest_stock_100').setLabel('📈 Borsaya 100 EC Yatır').setStyle(ButtonStyle.Secondary)
+    );
+    return interaction.reply({ embeds: [data.embed], components: [row], ephemeral: true });
+  }
+
+  if (customId === 'v7_nav_guild') {
+    const data = staffSystem.getSubcategoryEmbed('guild_wars');
+    return interaction.reply({ embeds: [data.embed], ephemeral: true });
+  }
 
   if (customId.startsWith('rpg_select_')) {
     const classType = customId.replace('rpg_select_', '');
