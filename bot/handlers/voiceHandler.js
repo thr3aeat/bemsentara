@@ -134,13 +134,13 @@ function initializeVoiceAndBanHandlers(client) {
 
             // ❌ SELF-ACTION: Kendi kendini susturmuş → ignore et
             if (moderatorObj?.id === newState.member.id) {
-              console.log(`[voiceStateUpdate] Self-mute detected: ${newState.member.tag} kendini susturdu, DM gönderilmedi`);
+              console.log(`[voiceStateUpdate] Self-mute detected: ${newState.member?.user?.tag || newState.member?.id} kendini susturdu, DM gönderilmedi`);
               return;
             }
 
             // Eğer moderator bulunamamışsa → ignore et (bot işlemi olabilir)
             if (!moderatorObj) {
-              console.warn(`[voiceStateUpdate] Mute yapan moderator bulunamadı: ${newState.member.tag}`);
+              console.warn(`[voiceStateUpdate] Mute yapan moderator bulunamadı: ${newState.member?.user?.tag || newState.member?.id}`);
               return;
             }
 
@@ -208,12 +208,12 @@ function initializeVoiceAndBanHandlers(client) {
 
             // ❌ SELF-ACTION: Kendi kendini sağırlaştırmış → ignore et
             if (moderatorObj?.id === newState.member.id) {
-              console.log(`[voiceStateUpdate] Self-deafen detected: ${newState.member.tag} kendini sağırlaştırdı`);
+              console.log(`[voiceStateUpdate] Self-deafen detected: ${newState.member?.user?.tag || newState.member?.id} kendini sağırlaştırdı`);
               return;
             }
 
             if (!moderatorObj) {
-              console.warn(`[voiceStateUpdate] Deafen yapan moderator bulunamadı: ${newState.member.tag}`);
+              console.warn(`[voiceStateUpdate] Deafen yapan moderator bulunamadı: ${newState.member?.user?.tag || newState.member?.id}`);
               return;
             }
 
@@ -270,7 +270,7 @@ function initializeVoiceAndBanHandlers(client) {
 
             // ❌ SELF-ACTION: Kendi kendini çıkarmış → ignore et (normal çıkış)
             if (moderatorObj?.id === newState.member.id || !moderatorObj) {
-              console.log(`[voiceStateUpdate] Self-leave detected: ${newState.member.tag}`);
+              console.log(`[voiceStateUpdate] Self-leave detected: ${newState.member?.user?.tag || newState.member?.id}`);
               return;
             }
 
