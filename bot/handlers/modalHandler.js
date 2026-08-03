@@ -1080,8 +1080,9 @@ async function handleModalSubmit(interaction) {
       .setColor(0x3498db)
       .setTimestamp();
 
-    const MOD_LOG_CHANNEL_ID = '1521502699324178492';
-    const modChannel = interaction.guild?.channels.cache.get(MOD_LOG_CHANNEL_ID);
+    const MOD_CEZA_LOG_CHANNEL_ID = '1518693023934844959';
+    const modChannel = interaction.guild?.channels.cache.get(MOD_CEZA_LOG_CHANNEL_ID)
+      || await interaction.guild?.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null);
     if (modChannel && modChannel.isTextBased()) {
       await modChannel.send({ embeds: [embed] }).catch(() => { });
     }

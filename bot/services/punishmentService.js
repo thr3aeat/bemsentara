@@ -12,16 +12,17 @@ const User = require('../../models/User');
 const { jailUser, releaseUser } = require('./jailService');
 
 const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
-const MOD_LOG_CHANNEL_ID = '1521502699324178492';
+const MOD_CEZA_LOG_CHANNEL_ID = '1518693023934844959';
 
 /**
- * Log action to Moderation Log channel
+ * Log action to Moderator Punishment Log channel (1518693023934844959)
  */
 async function sendModLog(guild, embed) {
   try {
     if (!guild) return;
-    const channel = guild.channels.cache.get(MOD_LOG_CHANNEL_ID)
-      || guild.channels.cache.find(c => c.name.includes('mod-log') || c.name.includes('cezalar'));
+    const channel = await guild.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null)
+      || guild.channels.cache.get(MOD_CEZA_LOG_CHANNEL_ID)
+      || guild.channels.cache.find(c => c.name.includes('ceza') || c.name.includes('mod-log'));
     if (channel && channel.isTextBased()) {
       await channel.send({ embeds: [embed] }).catch(() => {});
     }

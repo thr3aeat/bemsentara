@@ -93,6 +93,10 @@ function initializeDiscordHandlers(client) {
   // Merkezi Denetim Günlüğü Handler'ını başlat
   setupCentralAuditHandler(client);
 
+  // Çoklu Sunucu Forum Log Sistemini başlat (Category: 1533849612945719296)
+  const { setupForumLogHandlers } = require("./forumLogHandler");
+  setupForumLogHandlers(client);
+
   client.once("ready", async () => {
     logger.section("READY INITIALIZATION");
     logger.info("Bot hazır, servisler başlatılıyor...");
@@ -692,11 +696,11 @@ function initializeDiscordHandlers(client) {
 
             console.log(`[MuteTracker] ${newMember.user.tag} susturuldu. Ceza sayısı: ${dbUser.muteCount}`);
 
-            // Log this to the log channel
-            const { EKOYILDIZ_MOD_LOG_CHANNEL_ID } = require("../../config");
-            const logChannel = newMember.guild.channels.cache.get(EKOYILDIZ_MOD_LOG_CHANNEL_ID || "1521502699324178492")
-              || newMember.guild.channels.cache.get("1521502699324178492")
-              || newMember.guild.channels.cache.get("1504201531551907941");
+            // Log this to the moderation punishment log channel (1518693023934844959)
+            const { EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID } = require("../../config");
+            const cezaChannelId = EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
+            const logChannel = newMember.guild.channels.cache.get(cezaChannelId)
+              || await newMember.guild.channels.fetch(cezaChannelId).catch(() => null);
               
             if (logChannel && logChannel.isTextBased()) {
               const { EmbedBuilder } = require("discord.js");
