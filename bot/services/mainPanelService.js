@@ -154,6 +154,7 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
     );
 
     const footerRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('panel_changelog_page_0').setLabel('📋 Versiyon Notları').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('panel_close').setLabel('❌ Kapat').setStyle(ButtonStyle.Secondary)
     );
 
@@ -609,25 +610,229 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("panel_units_coach")
-        .setLabel("👨‍🏫 Birim Koçu")
+        .setLabel("👨‍�  // ── CHANGELOG (Versiyon Notları) ─────────────────────────────────────────────
+  else if (tabName === "changelog") {
+    // Versiyon notları — yeni sürümler BAŞA eklenir
+    // Etiketler: [YENİ] [FİX] [UI] [BUTON] [EMBED] [CMD] [GÜVENLİK] [SİLİNDİ]
+    const VERSIONS = [
+      {
+        version: 'v7.4',
+        date: '2026-08-03',
+        emoji: '🆕',
+        label: 'Hotfix + UI Güncellemesi',
+        color: 0x7052FF,
+        changes: [
+          '[FİX] 🛡️ Forum Log — "Bilinmeyen rol" hatası: `r.toString()` yerine `r.name` direkt okunuyor',
+          '[FİX] 🛡️ Forum Log — Audit log\'dan rol değişikliğini yapan yetkili embed\'e eklendi',
+          '[YENİ] 🔐 Roblox Cookie — ✅ Kabul Et / ❌ Reddet / 🟢 1 Saat Kabul / 🔴 1 Saat Reddet (4 buton)',
+          '[YENİ] 🔐 Roblox Cookie — Otomatik mod: 1 saat boyunca gelen tüm istekleri otomatik işler',
+          '[YENİ] 🔐 Roblox Cookie — 1 saatlik timeout: Süre dolunca DM mesajı düzenlenir, butonlar kapanır',
+          '[EMBED] 🔐 Roblox Log — Log embed\'ine "İsteği Yapan" + "Onaylayan" alanları eklendi',
+          '[BUTON] 📋 Ana Panel — Ana menü altına 📋 Versiyon Notları butonu eklendi',
+          '[YENİ] ⚡ buttonLoadingService — Önemli butonlara basınca anlık log + loading embed gösterimi',
+          '[YENİ] 📋 Versiyon Notları — Sayfalı geçmiş sürüm görüntüleme sistemi (bu ekran)',
+        ]
+      },
+      {
+        version: 'v7.3',
+        date: '2026-07-15',
+        emoji: '⚡',
+        label: 'Forum Log Sistemi',
+        color: 0xF1C40F,
+        changes: [
+          '[YENİ] 📋 forumLogService — 10 kategorili merkezi forum thread log sistemi',
+          '[YENİ] 🎙️ Sesli kanal: AFK dedektörü (30+ dk kulaklık/mikrofon kapalı uyarısı)',
+          '[YENİ] 🎙️ Sesli kanal: Ekran paylaşımı başlangıç/bitiş logu',
+          '[YENİ] ⚡ Sesli kanal: 30 saniyede 4+ kanal değiştirme (hop) dedektörü',
+          '[YENİ] 🛡️ Anti-Nuke — 1 dakikada eşik sayısı aşılan işlemlerde alarm',
+          '[YENİ] 👥 Üye katılım: 7 günden yeni hesap → yan hesap (alt-account) uyarısı',
+          '[YENİ] 👻 Ghost Ping dedektörü — silinen mesajda mention tespiti',
+          '[YENİ] 👻 Düzenleme ghost ping — etiket kaldırılan mesaj tespiti',
+          '[EMBED] 💬 Mesaj silme/düzenleme logları — içerik + yazar bilgisi ile',
+          '[YENİ] 📊 Sunucu Sağlığı & Ekonomi kategorisi eklendi',
+        ]
+      },
+      {
+        version: 'v7.2',
+        date: '2026-06-28',
+        emoji: '🔐',
+        label: 'Roblox Onay Sistemi',
+        color: 0xE74C3C,
+        changes: [
+          '[YENİ] 🔐 robloxApprovalGateway — Cookie işlemleri için güvenlik onay kapısı',
+          '[BUTON] ✅ Kabul Et / ❌ Reddet butonları — onaylayıcı DM\'ine gönderilir',
+          '[YENİ] 🎮 Roblox rütbe değiştirme select menu paneli',
+          '[YENİ] 🎮 Manuel grup katılım onay/ret sistemi',
+          '[EMBED] 📝 Roblox log embed\'i — Grup, hedef kullanıcı, eski/yeni rütbe alanları',
+          '[BUTON] 🤖 rbx_abuse_demote / rbx_abuse_ignore butonları eklendi',
+          '[YENİ] 🔗 Audit log poller — Roblox grup değişikliklerini izleme',
+        ]
+      },
+      {
+        version: 'v7.1',
+        date: '2026-06-10',
+        emoji: '🏆',
+        label: 'Birim Sistemi',
+        color: 0x9B59B6,
+        changes: [
+          '[YENİ] 🏆 Birim sistemi — XP bazlı liderbordu',
+          '[BUTON] 📊 Liderbordu / 👨‍🏫 Birim Koçu / 🎖️ Rol Yönetimi / 💬 Birim İçi İletişim butonları',
+          '[YENİ] 👨‍🏫 Birim Koçu atama ve bilgi görüntüleme modülü',
+          '[YENİ] 💬 Birim içi iletişim — başkan/yardımcı/koç ile özel DM sohbeti',
+          '[YENİ] 📊 Birim XP sistemi ve aylık sıralama',
+          '[CMD] `/birim` komut grubu — listele, bilgi, atama',
+          '[EMBED] 🎖️ Birim kartı embed\'i — üye sayısı, XP, lider bilgisi',
+        ]
+      },
+      {
+        version: 'v7.0',
+        date: '2026-05-20',
+        emoji: '🚀',
+        label: 'Panel V7 — Tam Yenileme',
+        color: 0x10B981,
+        changes: [
+          '[UI] 🚀 Ana panel V7: Harekât Kontrol Merkezi tasarımı',
+          '[UI] 🎨 Premium Mor (#7052FF) + Zümrüt (#10B981) renk paleti',
+          '[BUTON] 🛡️ Moderasyon / 👥 Personel / ⚙️ Sistem / 🏆 Birimler — ana sekme butonları',
+          '[BUTON] 🔇 Sustur / 🔊 Aç / 🚷 Ceza / 🗑️ Sil — moderasyon row\'u',
+          '[BUTON] ⛔ Tam Ban / ✅ Ban Aç / 🚫 Karaliste — ban işlemleri row\'u',
+          '[BUTON] 🛡️ MOD-ALIM — Mülakat gönder / Direkt Mod Alım',
+          '[BUTON] 🔄 Restart butonu eklendi (Admin)',
+          '[UI] StringSelectMenu — hızlı sekme geçişi menüsü',
+          '[EMBED] Ana panel — Aktif personel, bekleyen ihbar, sistem durumu alanları',
+        ]
+      },
+      {
+        version: 'v6.5',
+        date: '2026-04-15',
+        emoji: '🎓',
+        label: 'Moderatör Okulu & İzin',
+        color: 0x3498DB,
+        changes: [
+          '[YENİ] 🎓 Moderatör Okulu — eğitim talepleri ve sınav sistemi',
+          '[BUTON] school_confirm_req_ / school_* buton grubu',
+          '[YENİ] 🏖️ İzin günü yönetim sistemi — tanımla/görüntüle',
+          '[BUTON] 📋 Yoklama Başlat / Yoklamayı Bitir & Sonuçlar butonları',
+          '[YENİ] 📋 Personel yoklama ve sayım sistemi',
+          '[EMBED] Yoklama sonuç embed\'i — katılan/katılmayan listesi',
+          '[CMD] Okul komutları: eğitim oluştur, sınav gönder, sonuçları gör',
+        ]
+      },
+      {
+        version: 'v6.0',
+        date: '2026-03-01',
+        emoji: '⭐',
+        label: 'İlk Stabil Sürüm',
+        color: 0xF39C12,
+        changes: [
+          '[YENİ] ⭐ İlk stabil sürüm yayınlandı',
+          '[YENİ] 🎫 Ticket sistemi — oluştur, üstlen, kapat, değerlendir',
+          '[BUTON] ticket_close / ticket_claim / ticket_escalate buton grubu',
+          '[YENİ] 🔨 Moderasyon komutları: ban, kick, mute, unmute, warn',
+          '[YENİ] 📊 Personel istatistik sistemi — ilerleme raporu',
+          '[BUTON] panel_staff_report / panel_staff_setstats butonları',
+          '[YENİ] 🤖 AI entegrasyonu — destek ticket AI özeti',
+          '[YENİ] 🚫 Karaliste sistemi — kişi/grup kayıt ve yönetim',
+          '[EMBED] Personel kartı embed\'i — görev sayısı, çevrimiçi süre',
+        ]
+      }
+    ];
+
+    const page = interaction._changelogPage ?? 0;
+    const totalPages = VERSIONS.length;
+    const safeIdx = Math.max(0, Math.min(page, totalPages - 1));
+    const ver = VERSIONS[safeIdx];
+
+    // Kategoriye göre emoji prefix haritası (görsel ayrım için)
+    const tagColors = {
+      '[YENİ]':     '🟢',
+      '[FİX]':      '🔴',
+      '[BUTON]':    '🔵',
+      '[UI]':       '🟣',
+      '[EMBED]':    '🟡',
+      '[CMD]':      '🟠',
+      '[GÜVENLİK]':'🔐',
+      '[SİLİNDİ]': '⚫',
+    };
+
+    const formattedChanges = ver.changes.map(c => {
+      let line = c;
+      for (const [tag, dot] of Object.entries(tagColors)) {
+        if (c.startsWith(tag)) {
+          line = `${dot} \`${tag}\` ${c.slice(tag.length).trim()}`;
+          break;
+        }
+      }
+      return `> ${line}`;
+    }).join('\n');
+
+    embed
+      .setTitle(`${ver.emoji}  ${ver.version} — ${ver.label}`)
+      .setColor(ver.color)
+      .setDescription(
+        `📅 **Yayın Tarihi:** \`${ver.date}\`\n` +
+        `📄 **${ver.changes.length} değişiklik**\n\n` +
+        `**Etiket Rehberi:**\n` +
+        `🟢\`[YENİ]\` 🔴\`[FİX]\` 🔵\`[BUTON]\` 🟣\`[UI]\` 🟡\`[EMBED]\` 🟠\`[CMD]\`\n\n` +
+        `**Değişiklikler:**\n${formattedChanges}`
+      )
+      .setFooter({ text: `Sayfa ${safeIdx + 1} / ${totalPages} • ⬅️ ➡️ ile sürümler arasında gezin` });
+
+    const navRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`panel_changelog_page_${safeIdx - 1}`)
+        .setLabel('⬅️ Önceki')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safeIdx === 0),
+      new ButtonBuilder()
+        .setCustomId(`panel_changelog_page_${safeIdx + 1}`)
+        .setLabel('Sonraki ➡️')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safeIdx >= totalPages - 1),
+      new ButtonBuilder()
+        .setCustomId(`panel_changelog_page_0`)
+        .setLabel('🆕 En Son')
         .setStyle(ButtonStyle.Success)
-        .setDisabled(!auth.isManager),
+        .setDisabled(safeIdx === 0),
       new ButtonBuilder()
-        .setCustomId("panel_units_roles")
-        .setLabel("🎖️ Rol Yönetimi")
+        .setCustomId(`panel_changelog_page_${totalPages - 1}`)
+        .setLabel('📜 En Eski')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(!auth.isAdmin),
+        .setDisabled(safeIdx >= totalPages - 1),
       new ButtonBuilder()
-        .setCustomId("panel_units_chat_menu")
-        .setLabel("💬 Birim İçi İletişim")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId("panel_tab_home")
-        .setLabel("⬅️ Ana Menü")
-        .setStyle(ButtonStyle.Secondary)
+        .setCustomId('panel_tab_home')
+        .setLabel('🏠 Ana Menü')
+        .setStyle(ButtonStyle.Primary)
     );
 
-    components.push(row);
+    components.push(navRow);
+  }
+olor(COLOR_PREMIUM)
+      .setDescription(
+        `📅 **Yayın Tarihi:** \`${ver.date}\`\n\n` +
+        `**Değişiklikler:**\n` +
+        ver.changes.map(c => `• ${c}`).join('\n')
+      )
+      .setFooter({ text: `Sayfa ${safeIdx + 1} / ${totalPages} • Gezinmek için butonları kullanın` });
+
+    const navRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`panel_changelog_page_${safeIdx - 1}`)
+        .setLabel('⬅️ Önceki Sürüm')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safeIdx === 0),
+      new ButtonBuilder()
+        .setCustomId(`panel_changelog_page_${safeIdx + 1}`)
+        .setLabel('Sonraki Sürüm ➡️')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safeIdx >= totalPages - 1),
+      new ButtonBuilder()
+        .setCustomId('panel_tab_home')
+        .setLabel('🏠 Ana Menü')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    components.push(navRow);
   }
 
   await interaction.editReply({
@@ -698,6 +903,15 @@ async function handlePanelButton(interaction) {
     return;
   }
 
+  // ── Versiyon Notları Sayfa Gezinme ──────────────────────────────────────────
+  if (customId.startsWith('panel_changelog_page_')) {
+    const pageStr = customId.replace('panel_changelog_page_', '');
+    const page = Math.max(0, parseInt(pageStr) || 0);
+    await interaction.deferUpdate().catch(() => {});
+    interaction._changelogPage = page;
+    return renderPanel(interaction, 'changelog');
+  }
+
   if (customId === "panel_close") {
     return interaction.update({
       content: "🔒 Kontrol paneli kapatıldı.",
@@ -705,6 +919,7 @@ async function handlePanelButton(interaction) {
       components: []
     });
   }
+
 
   // Close whistleblower report (user-owned or admin)
   if (customId.startsWith('whistle_close_')) {
