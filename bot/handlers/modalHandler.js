@@ -75,6 +75,19 @@ async function handleModalSubmit(interaction) {
     return handleMutationAppealModalSubmit(interaction, interaction.client);
   }
 
+  // ── Moderatör Mutual Confirmation Mesaj Modal ────────────────────────────────
+  if (interaction.customId.startsWith('mod_confirm_msg_modal_')) {
+    const confirmId = interaction.customId.replace('mod_confirm_msg_modal_', '');
+    const { handleConfirmMessageSubmit } = require("../services/modMutualConfirmService");
+    return handleConfirmMessageSubmit(interaction, interaction.client, confirmId);
+  }
+
+  if (interaction.customId.startsWith('mod_confirm_reply_modal_')) {
+    const confirmId = interaction.customId.replace('mod_confirm_reply_modal_', '');
+    const { handleConfirmReplySubmit } = require("../services/modMutualConfirmService");
+    return handleConfirmReplySubmit(interaction, interaction.client, confirmId);
+  }
+
   // Moderatör Kahve İzni Yönetimi
   if (interaction.customId === 'modal_mod_coffee_break') {
     await interaction.deferReply({ ephemeral: true }).catch(() => { });

@@ -108,6 +108,31 @@ async function handleButtonInteraction(interaction) {
     return handleMutationAppealDecision(interaction, interaction.client);
   }
 
+  // ── Moderatör Arası Mutual Confirmation Butonları ────────────────────────────
+  if (customId.startsWith("mod_confirm_accept_")) {
+    const confirmId = customId.replace("mod_confirm_accept_", "");
+    const { handleConfirmAccept } = require("../services/modMutualConfirmService");
+    return handleConfirmAccept(interaction, confirmId);
+  }
+
+  if (customId.startsWith("mod_confirm_reject_")) {
+    const confirmId = customId.replace("mod_confirm_reject_", "");
+    const { handleConfirmReject } = require("../services/modMutualConfirmService");
+    return handleConfirmReject(interaction, interaction.client, confirmId);
+  }
+
+  if (customId.startsWith("mod_confirm_message_")) {
+    const confirmId = customId.replace("mod_confirm_message_", "");
+    const { handleConfirmMessage } = require("../services/modMutualConfirmService");
+    return handleConfirmMessage(interaction, confirmId);
+  }
+
+  if (customId.startsWith("mod_confirm_reply_")) {
+    const confirmId = customId.replace("mod_confirm_reply_", "");
+    const { handleConfirmReply } = require("../services/modMutualConfirmService");
+    return handleConfirmReply(interaction, confirmId);
+  }
+
   // ── Mutation'dan Destek Talebi Açma ──────────────────────────────────────────
   if (customId.startsWith("create_support_ticket_from_mutation_")) {
     const guildId = customId.replace("create_support_ticket_from_mutation_", "");
