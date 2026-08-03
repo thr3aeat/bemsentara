@@ -68,10 +68,18 @@ function getTicketModeButtons(ticketId) {
  * TEK TARAFLI: Eposta + Ticket kanallarını oluştur
  */
 async function createSingleModeTicket(interaction, ticketId, ticket) {
-  const guild = interaction.guild;
-  const user = interaction.user;
-
   try {
+    // Guild null kontrolü
+    let guild = interaction.guild;
+    if (!guild && interaction.client) {
+      guild = await interaction.client.guilds.fetch(ticket.guildId).catch(() => null);
+    }
+    
+    if (!guild) {
+      throw new Error('Sunucu bulunamadı');
+    }
+
+    const user = interaction.user;
     // 1. Kategori bul (ya da oluştur)
     let category = guild.channels.cache.find(c => 
       c.type === ChannelType.GuildCategory && 
@@ -209,10 +217,18 @@ async function createSingleModeTicket(interaction, ticketId, ticket) {
  * ÇİFT TARAFLI: Tek kanal (herkes aynı yerde)
  */
 async function createDualModeTicket(interaction, ticketId, ticket) {
-  const guild = interaction.guild;
-  const user = interaction.user;
-
   try {
+    // Guild null kontrolü
+    let guild = interaction.guild;
+    if (!guild && interaction.client) {
+      guild = await interaction.client.guilds.fetch(ticket.guildId).catch(() => null);
+    }
+    
+    if (!guild) {
+      throw new Error('Sunucu bulunamadı');
+    }
+
+    const user = interaction.user;
     // 1. Kategori bul/oluştur
     let category = guild.channels.cache.find(c => 
       c.type === ChannelType.GuildCategory && 

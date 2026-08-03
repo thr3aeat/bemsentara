@@ -6705,20 +6705,9 @@ async function handleModeratorDashboard(interaction) {
 
     // Action Button Handling (Level 4)
     if (customId.startsWith('mod_action_')) {
-      await interaction.deferReply({ ephemeral: true }).catch(() => { });
       const actionId = customId.replace('mod_action_', '');
-
-      // Simulate action execution
-      const actionEmbed = new EmbedBuilder()
-        .setTitle('✅ İşlem Başlatıldı')
-        .setDescription(`**İşlem:** ${actionId}\n\n` +
-          `Bu işlem henüz tam olarak uygulanmadığı için simülasyon modunda çalışıyor.\n` +
-          `Gerçek implementasyon için her işlem için özel handler eklenmelidir.`)
-        .setColor(0x2ecc71)
-        .setFooter({ text: 'Eko Yıldız • Moderatör Sistemi' })
-        .setTimestamp();
-
-      return interaction.editReply({ embeds: [actionEmbed], ephemeral: true });
+      const { handleModDashboardAction } = require('../services/modDashboardActionHandler');
+      return handleModDashboardAction(interaction, actionId);
     }
 
     // Navigation: Back
