@@ -610,7 +610,13 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("panel_units_coach")
-        .setLabel("👨‍�  // ── CHANGELOG (Versiyon Notları) ─────────────────────────────────────────────
+        .setLabel("👨‍🏫 Birim Koçu")
+        .setStyle(ButtonStyle.Secondary),
+    );
+    components.push(row);
+  }
+
+  // ── CHANGELOG (Versiyon Notları) ─────────────────────────────────────────────
   else if (tabName === "changelog") {
     // Versiyon notları — yeni sürümler BAŞA eklenir
     // Etiketler: [YENİ] [FİX] [UI] [BUTON] [EMBED] [CMD] [GÜVENLİK] [SİLİNDİ]

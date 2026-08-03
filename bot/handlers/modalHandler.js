@@ -69,6 +69,12 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Mutation (Mute/Deafen/Kick) İtiraz Modal ────────────────────────────────
+  if (interaction.customId.startsWith('mutation_appeal_modal_')) {
+    const { handleMutationAppealModalSubmit } = require("../services/mutationAppealService");
+    return handleMutationAppealModalSubmit(interaction, interaction.client);
+  }
+
   // Moderatör Kahve İzni Yönetimi
   if (interaction.customId === 'modal_mod_coffee_break') {
     await interaction.deferReply({ ephemeral: true }).catch(() => { });

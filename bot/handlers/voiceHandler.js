@@ -101,6 +101,116 @@ function initializeVoiceAndBanHandlers(client) {
     try {
       if (newState.guild.id !== oldState.guild.id) return;
 
+      // ── Mute/Deafen/Kick İtiraz Sistemi ───────────────────────────────────────
+      if (newState.member && !newState.member.user.bot) {
+        const oldMuted = oldState.mute ?? false;
+        const newMuted = newState.mute ?? false;
+        const oldDeafened = oldState.selfDeaf ?? false;
+        const newDeafened = newState.selfDeaf ?? false;
+        const oldChannelId = oldState.channelId;
+        const newChannelId = newState.channelId;
+
+        // Mute durumu değişti
+        if (oldMuted !== newMuted && newMuted && newChannelId) {
+          try {
+            const { sendMutationAppealDM } = require("../services/mutationAppealService");
+            const Mutation = require("../../models/Mutation");
+            const auditLogs = await newState.guild.fetchAuditLogs({
+              type: 'MemberUpdate',
+              limit: 5,
+            }).catch(() => null);
+            
+            let moderator = 'Bilinmeyen';
+            if (auditLogs) {
+              const entry = auditLogs.entries.find(e => 
+                e.target?.id === newState.member.id && 
+                Date.now() - e.createdTimestamp < 5000
+              );
+              moderator = entry?.executor?.tag || 'Bilinmeyen';
+            }
+
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'mute',
+              moderator,
+              'Ses kanalında susturuldunuz'
+            );
+
+            // DB'ye kaydet
+            new Mutation({
+              guildId: newState.guild.id,
+              targetUserId: newState.member.id,
+              moderatorUserId: newState.member.id, // Audit log'tan çekilecek
+              actionType: 'mute',
+              reason: 'Ses kanalında susturuldu',
+            }).save().catch(() => {});
+          } catch (err) {
+            console.warn("[voiceStateUpdate] Mute appeal DM hatası:", err.message);
+          }
+        }
+
+        // Deafen durumu değişti
+        if (oldDeafened !== newDeafened && newDeafened && newChannelId) {
+          try {
+            const { sendMutationAppealDM } = require("../services/mutationAppealService");
+            const auditLogs = await newState.guild.fetchAuditLogs({
+              type: 'MemberUpdate',
+              limit: 5,
+            }).catch(() => null);
+            
+            let moderator = 'Bilinmeyen';
+            if (auditLogs) {
+              const entry = auditLogs.entries.find(e => 
+                e.target?.id === newState.member.id && 
+                Date.now() - e.createdTimestamp < 5000
+              );
+              moderator = entry?.executor?.tag || 'Bilinmeyen';
+            }
+
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'deafen',
+              moderator,
+              'Ses kanalında sağırlaştırıldınız'
+            );
+          } catch (err) {
+            console.warn("[voiceStateUpdate] Deafen appeal DM hatası:", err.message);
+          }
+        }
+
+        // Kick: Ses kanalından çıkarıldı
+        if (oldChannelId && !newChannelId && oldChannelId !== newChannelId) {
+          try {
+            const { sendMutationAppealDM } = require("../services/mutationAppealService");
+            const auditLogs = await newState.guild.fetchAuditLogs({
+              type: 'MemberUpdate',
+              limit: 5,
+            }).catch(() => null);
+            
+            let moderator = 'Bilinmeyen';
+            if (auditLogs) {
+              const entry = auditLogs.entries.find(e => 
+                e.target?.id === newState.member.id && 
+                Date.now() - e.createdTimestamp < 5000
+              );
+              moderator = entry?.executor?.tag || 'Bilinmeyen';
+            }
+
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'kick',
+              moderator,
+              'Ses kanalından çıkarıldınız'
+            );
+          } catch (err) {
+            console.warn("[voiceStateUpdate] Kick appeal DM hatası:", err.message);
+          }
+        }
+      }
+
       // ── Hapis Ses Kanalı Engelleme Kontrolü ─────────────────────────────────
       if (newState.channelId && newState.member && !newState.member.user.bot) {
         const hasHapisRole = newState.member.roles.cache.some(r => r.name.toLowerCase() === "hapis");

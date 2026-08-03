@@ -97,6 +97,87 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── Mutation (Mute/Deafen/Kick) İtiraz Butonları ──────────────────────────────
+  if (customId.startsWith("mutation_appeal_")) {
+    const { handleMutationAppealButton } = require("../services/mutationAppealService");
+    return handleMutationAppealButton(interaction, interaction.client);
+  }
+
+  if (customId.startsWith("mutation_appeal_accept_") || customId.startsWith("mutation_appeal_reject_")) {
+    const { handleMutationAppealDecision } = require("../services/mutationAppealService");
+    return handleMutationAppealDecision(interaction, interaction.client);
+  }
+
+  // ── Mutation'dan Destek Talebi Açma ──────────────────────────────────────────
+  if (customId.startsWith("create_support_ticket_from_mutation_")) {
+    const guildId = customId.replace("create_support_ticket_from_mutation_", "");
+    const guild = interaction.client.guilds.cache.get(guildId) || await interaction.client.guilds.fetch(guildId).catch(() => null);
+    
+    if (!guild) {
+      return interaction.reply({ content: "❌ Sunucu bulunamadı.", ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    const { getTicketModeSelectionEmbed, getTicketModeButtons } = require("../services/ticketModeService");
+    const { generateTicketId } = require("../../utils/ticketId");
+    const Ticket = require("../../models/Ticket");
+
+    const ticketId = generateTicketId();
+    const ticket = new Ticket({
+      ticketId,
+      userId: interaction.user.id,
+      guildId,
+      description: `Mutation (İşlem) İtirazından açılan destek talebi`,
+      status: 'mode_selection',
+      createdAt: new Date(),
+    });
+    await ticket.save();
+
+    const embed = getTicketModeSelectionEmbed();
+    const buttons = getTicketModeButtons(ticketId);
+
+    return interaction.editReply({ embeds: [embed], components: [buttons] });
+  }
+
+  // ── Destek Talebi Mod Seçim Butonları ──────────────────────────────────────────
+  if (customId.startsWith("ticket_mode_single_") || customId.startsWith("ticket_mode_dual_")) {
+    const ticketId = customId.replace(customId.startsWith("ticket_mode_single_") ? "ticket_mode_single_" : "ticket_mode_dual_", "");
+    const mode = customId.startsWith("ticket_mode_single_") ? "single" : "dual";
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const Ticket = require("../../models/Ticket");
+      const ticket = await Ticket.findOne({ ticketId });
+
+      if (!ticket) {
+        return interaction.editReply({ content: "❌ Destek talebi kaydı bulunamadı." });
+      }
+
+      const { createSingleModeTicket, createDualModeTicket } = require("../services/ticketModeService");
+
+      let result;
+      if (mode === "single") {
+        result = await createSingleModeTicket(interaction, ticketId, ticket);
+      } else {
+        result = await createDualModeTicket(interaction, ticketId, ticket);
+      }
+
+      if (!result.success) {
+        return interaction.editReply({ content: `❌ Kanal oluşturma hatası: ${result.error}` });
+      }
+
+      const channelRef = mode === "single" ? result.epostaChannel : result.ticketChannel;
+      return interaction.editReply({
+        content: `✅ Destek talebiniz başarıyla açıldı!\n\n📋 **Talep No:** ${ticketId}\n🔗 **Kanal:** ${channelRef.toString()}\n\n📝 Detaylı açıklamanızı kanalda yazabilirsiniz.`,
+      });
+    } catch (err) {
+      console.error('[ticket_mode_selection] Error:', err.message);
+      return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+    }
+  }
+
   // ── Moderatör Seçim Onay Butonları ──────────────────────────────────────────
   if (customId.startsWith("mod_confirm_weekly_") || customId.startsWith("mod_confirm_monthly_")) {
     const isWeekly = customId.startsWith("mod_confirm_weekly_");

@@ -299,14 +299,13 @@ async function handleSelectInteraction(interaction) {
         }
       }
 
+      // idx'i filtrelemeden ÖNCE al — sonra additionalUsers dizisi değiştiği için indexOf -1 döner
+      const channelIdx = ticket.additionalUsers ? ticket.additionalUsers.indexOf(targetUserId) : -1;
       if (ticket.additionalUsers) {
         ticket.additionalUsers = ticket.additionalUsers.filter(id => id !== targetUserId);
       }
-      if (ticket.additionalChannels) {
-        const idx = ticket.additionalUsers.indexOf(targetUserId);
-        if (idx !== -1) {
-          ticket.additionalChannels.splice(idx, 1);
-        }
+      if (ticket.additionalChannels && channelIdx !== -1) {
+        ticket.additionalChannels.splice(channelIdx, 1);
       }
       await ticket.save();
 
