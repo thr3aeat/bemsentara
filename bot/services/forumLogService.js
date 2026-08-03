@@ -3,20 +3,21 @@
 const {
   EmbedBuilder,
   ChannelType,
-  AuditLogEvent,
-  PermissionFlagsBits
+  AuditLogEvent
 } = require('discord.js');
 
 // ── Konfigürasyon ──────────────────────────────────────────────────────────
-const CENTRAL_GUILD_ID = '1483482948320891074';
-const LOG_CATEGORY_ID  = '1533849612945719296';
+const CENTRAL_GUILD_ID    = '1483482948320891074';
+const PRIMARY_CATEGORY_ID = '1533849612945719296';
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ── 10 Temel Forum Log Konusu ─────────────────────────────────────────────
 const LOG_TOPICS = {
   BEHAVIOR_PSYCHOLOGY: {
     key: 'BEHAVIOR_PSYCHOLOGY',
     name: '🧠 Davranış & Psikoloji Logları',
-    description: 'Ghost ping, toxic/öfke patlamaları ve DM reklam şüphelisi takipleri'
+    description: 'Ghost ping, öfke/toxic patlamaları ve DM reklam şüphelisi takipleri'
   },
   VOICE_MEDIA_ADVANCED: {
     key: 'VOICE_MEDIA_ADVANCED',
@@ -65,14 +66,14 @@ const LOG_TOPICS = {
   }
 };
 
-// Memory Caches
+// Memory Caches & Trackers
 const forumThreadsCache = new Map(); // `${guildId}_${topicKey}` -> threadId
-const userMessageStats  = new Map(); // userId -> { timestamps: [], capsCount: 0 }
+const userMessageStats  = new Map(); // userId -> { timestamps: [], capsBurstCount: 0 }
 const voiceStateTracker  = new Map(); // userId -> { joinedAt, deafSince, muteSince, streamStartedAt, hops: [] }
 const antiNukeTracker   = new Map(); // `${guildId}_${executorId}_${type}` -> timestamps
 
 /**
- * Clean & sanitize guild name for Discord forum channel naming
+ * Format clean forum channel name for each guild
  */
 function formatForumName(guild) {
   const cleanName = guild.name
@@ -84,7 +85,52 @@ function formatForumName(guild) {
 }
 
 /**
- * Initialize / ensure Forum Channels and Threads exist for all servers on startup
+ * Dynamic Category Overflow Manager (50 channel limit protection)
+ * Finds or creates a category with available channel capacity in central guild.
+ */
+async function getAvailableCategory(centralGuild) {
+  try {
+    let primaryCategory = centralGuild.channels.cache.get(PRIMARY_CATEGORY_ID) ||
+      await centralGuild.channels.fetch(PRIMARY_CATEGORY_ID).catch(() => null);
+
+    if (!primaryCategory) return null;
+
+    // Check how many channels are currently in primary category
+    const childrenCount = centralGuild.channels.cache.filter(c => c.parentId === PRIMARY_CATEGORY_ID).size;
+    if (childrenCount < 48) {
+      return primaryCategory;
+    }
+
+    // If primary category is near max capacity (50 limit), look for an overflow category
+    let overflowCategory = centralGuild.channels.cache.find(c =>
+      c.type === ChannelType.GuildCategory &&
+      c.name.startsWith('📋 | Sunucu Logları') &&
+      centralGuild.channels.cache.filter(child => child.parentId === c.id).size < 48
+    );
+
+    if (!overflowCategory) {
+      const existingOverflows = centralGuild.channels.cache.filter(c =>
+        c.type === ChannelType.GuildCategory && c.name.startsWith('📋 | Sunucu Logları')
+      ).size;
+      const newCategoryName = `📋 | Sunucu Logları ${existingOverflows + 2}`;
+
+      overflowCategory = await centralGuild.channels.create({
+        name: newCategoryName,
+        type: ChannelType.GuildCategory,
+        reason: '50 kanal sınırı aşıldığı için otomatik dinamik log kategorisi açıldı'
+      });
+      console.log(`[ForumLogService] Created dynamic overflow category: ${newCategoryName}`);
+    }
+
+    return overflowCategory;
+  } catch (err) {
+    console.error('[ForumLogService] Dynamic category lookup error:', err.message);
+    return centralGuild.channels.cache.get(PRIMARY_CATEGORY_ID) || null;
+  }
+}
+
+/**
+ * Safe, Queued and Rate-Limit Free Forum & Thread Initializer
  */
 async function initForumLogService(client) {
   try {
@@ -96,29 +142,34 @@ async function initForumLogService(client) {
       return;
     }
 
-    console.log(`[ForumLogService] Initializing multi-server forum log system in category ${LOG_CATEGORY_ID}...`);
+    console.log(`📋 [ForumLogService] Rate-limit safe initializing multi-server log system...`);
 
-    for (const guild of client.guilds.cache.values()) {
-      await ensureGuildForumAndThreads(centralGuild, guild).catch(err => {
-        console.error(`[ForumLogService] Error setting up forum for guild ${guild.name} (${guild.id}):`, err.message);
+    const guilds = Array.from(client.guilds.cache.values());
+
+    for (const guild of guilds) {
+      await ensureGuildForumAndThreadsSafe(centralGuild, guild).catch(err => {
+        console.error(`⚠️ [ForumLogService] Error setting up forum for guild ${guild.name} (${guild.id}):`, err.message);
       });
+      // 1.5s delay between guilds to prevent Discord API Rate Limits (HTTP 429)
+      await wait(1500);
     }
 
-    console.log(`[ForumLogService] Multi-server forum log system ready. Cached ${forumThreadsCache.size} threads.`);
+    console.log(`🚀 [ForumLogService] Multi-server system ready. Cached ${forumThreadsCache.size} threads.`);
   } catch (err) {
     console.error('[ForumLogService] Startup initialization error:', err.message);
   }
 }
 
 /**
- * Ensures a Forum Channel exists under category 1533849612945719296 for a given guild
+ * Ensures a Forum Channel and its 10 Threads exist with proper queue and message payloads
  */
-async function ensureGuildForumAndThreads(centralGuild, guild) {
+async function ensureGuildForumAndThreadsSafe(centralGuild, guild) {
   const desiredName = formatForumName(guild);
+  const targetCategory = await getAvailableCategory(centralGuild);
+  if (!targetCategory) return;
 
-  // Search existing channels under category 1533849612945719296
+  // 1. Check if Forum Channel exists in Central Guild
   let forumChannel = centralGuild.channels.cache.find(c =>
-    c.parentId === LOG_CATEGORY_ID &&
     c.type === ChannelType.GuildForum &&
     (c.name === desiredName || c.topic?.includes(guild.id))
   );
@@ -128,45 +179,49 @@ async function ensureGuildForumAndThreads(centralGuild, guild) {
       forumChannel = await centralGuild.channels.create({
         name: desiredName,
         type: ChannelType.GuildForum,
-        parent: LOG_CATEGORY_ID,
+        parent: targetCategory.id,
         topic: `Log Hub for Server: ${guild.name} (ID: ${guild.id})`,
         reason: `Automated Log Forum Channel for ${guild.name}`
       });
-      console.log(`[ForumLogService] Created Forum channel ${desiredName} for server ${guild.name}`);
+      console.log(`[ForumLogService] Created Forum channel ${desiredName} for ${guild.name}`);
+      await wait(2000); // 2s pause after creating channel
     } catch (err) {
-      console.error(`[ForumLogService] Failed to create Forum channel for ${guild.name}:`, err.message);
+      console.error(`❌ [ForumLogService] Failed to create Forum channel for ${guild.name}:`, err.message);
       return;
     }
   }
 
-  // Fetch active & archived threads in this forum channel
-  const activeThreads = await forumChannel.threads.fetchActive().catch(() => ({ threads: new Map() }));
-  const archivedThreads = await forumChannel.threads.fetchArchived().catch(() => ({ threads: new Map() }));
-  const allThreads = new Map([...activeThreads.threads, ...archivedThreads.threads]);
+  // 2. Fetch existing active & archived threads in this forum channel
+  let activeThreads = new Map();
+  let archivedThreads = new Map();
+  try {
+    const act = await forumChannel.threads.fetchActive().catch(() => null);
+    if (act?.threads) activeThreads = act.threads;
+    const arc = await forumChannel.threads.fetchArchived().catch(() => null);
+    if (arc?.threads) archivedThreads = arc.threads;
+  } catch (_) {}
 
-  // Ensure each of the 10 log topic threads exist
+  const allThreads = new Map([...activeThreads, ...archivedThreads]);
+
+  // 3. Sequentially ensure each of the 10 log topic threads exist with 1.5s delay
   for (const [topicKey, topicInfo] of Object.entries(LOG_TOPICS)) {
     const cacheKey = `${guild.id}_${topicKey}`;
     let thread = Array.from(allThreads.values()).find(t => t.name === topicInfo.name);
 
     if (!thread) {
       try {
+        // Discord API requires 'message' object when creating thread in a Forum channel!
         thread = await forumChannel.threads.create({
           name: topicInfo.name,
+          autoArchiveDuration: 10080, // 7 Gün auto-archive
           message: {
-            embeds: [
-              new EmbedBuilder()
-                .setTitle(topicInfo.name)
-                .setDescription(`📌 **${guild.name}** sunucusu için **${topicInfo.name}** kanalı başlatıldı.\n\n*${topicInfo.description}*`)
-                .setColor(0x2b2d31)
-                .setFooter({ text: `EkoYıldız Forum Log • Sunucu: ${guild.name}` })
-                .setTimestamp()
-            ]
+            content: `📌 **${topicInfo.name}** kanalı başlatıldı.\n*Açıklama:* ${topicInfo.description}`
           }
         });
-        console.log(`[ForumLogService] Created thread "${topicInfo.name}" in forum for ${guild.name}`);
+        console.log(`✅ [ForumLogService] Created thread "${topicInfo.name}" (${guild.name})`);
+        await wait(1500); // Safe 1.5s delay between thread creations
       } catch (err) {
-        console.error(`[ForumLogService] Thread creation failed for ${topicInfo.name} (${guild.name}):`, err.message);
+        console.error(`❌ [ForumLogService] Thread creation failed for ${topicInfo.name} (${guild.name}):`, err.message);
         continue;
       }
     }
@@ -181,7 +236,7 @@ async function ensureGuildForumAndThreads(centralGuild, guild) {
 }
 
 /**
- * Send a log payload to the specific forum thread of a guild
+ * Send a log payload to the specific forum thread of a guild (with auto-unarchive)
  */
 async function sendForumLog(client, guild, topicKey, embedPayload) {
   if (!guild || !topicKey) return;
@@ -194,7 +249,7 @@ async function sendForumLog(client, guild, topicKey, embedPayload) {
     if (!centralGuild) return;
 
     if (!threadId) {
-      await ensureGuildForumAndThreads(centralGuild, guild);
+      await ensureGuildForumAndThreadsSafe(centralGuild, guild);
       threadId = forumThreadsCache.get(cacheKey);
     }
 
@@ -229,17 +284,24 @@ async function handleGhostPingAndDelete(client, message) {
   const createdTime = message.createdTimestamp || now;
   const elapsedSeconds = Math.floor((now - createdTime) / 1000);
 
-  // Check if message had user mentions (Ghost Ping)
-  if (message.mentions?.users?.size > 0) {
-    const mentionedUsers = message.mentions.users.map(u => `<@${u.id}> (\`${u.tag}\`)`).join(', ');
+  // Check if message had user/role/everyone mentions (Ghost Ping)
+  const hasUserPings = message.mentions?.users?.size > 0;
+  const hasRolePings = message.mentions?.roles?.size > 0;
+  const hasEveryonePings = message.mentions?.everyone || false;
+
+  if (hasUserPings || hasRolePings || hasEveryonePings) {
+    const mentionedUsers = message.mentions.users?.map(u => `<@${u.id}> (\`${u.tag}\`)`).join(', ') || 'Yok';
+    const mentionedRoles = message.mentions.roles?.map(r => `<@&${r.id}>`).join(', ') || 'Yok';
+    const isCritical = hasEveryonePings || hasRolePings;
 
     const ghostEmbed = new EmbedBuilder()
-      .setTitle('👻 GHOST PING (HAYALET ETİKET) YAKALANDI!')
-      .setColor(0xE74C3C)
+      .setTitle(isCritical ? '🚨 KRİTİK GHOST PING (ROLE/EVERYONE) YAKALANDI!' : '👻 GHOST PING (HAYALET ETİKET) YAKALANDI!')
+      .setColor(isCritical ? 0xFF0000 : 0xE74C3C)
       .setDescription(
         `**Yazan Üye:** ${message.author.toString()} (\`${message.author.id}\`)\n` +
         `**Kanal:** ${message.channel.toString()}\n` +
         `**Etiketlenen Üyeler:** ${mentionedUsers}\n` +
+        `**Etiketlenen Roller:** ${mentionedRoles}\n` +
         `**Silinme Süresi:** \`${elapsedSeconds} saniye\` içinde silindi!\n\n` +
         `📝 **Silinen Mesaj İçeriği:**\n\`\`\`${(message.content || 'Görsel / Eklenti').slice(0, 1500)}\`\`\``
       )
@@ -593,7 +655,7 @@ async function handleAntiNukeAndHierarchy(client, guild, executor, type) {
 module.exports = {
   LOG_TOPICS,
   initForumLogService,
-  ensureGuildForumAndThreads,
+  ensureGuildForumAndThreadsSafe,
   sendForumLog,
   handleGhostPingAndDelete,
   handleMessageEdit,
