@@ -78,11 +78,23 @@ async function processPassiveIncome(p) {
   }
 
   if (totalHourlyIncome > 0) {
-    p.savingsFund = (p.savingsFund || 0) + totalHourlyIncome;
+    p.daily = p.daily || {};
+    const MAX_DAILY_ESTATE_INCOME = 500;
+    const currentEstateIncome = p.daily.estateIncomeToday || 0;
+
+    if (currentEstateIncome >= MAX_DAILY_ESTATE_INCOME) {
+      return 0; // Günlük 500 E.C. tavan sınırına ulaşıldı
+    }
+
+    const allowableIncome = Math.min(totalHourlyIncome, MAX_DAILY_ESTATE_INCOME - currentEstateIncome);
+    p.daily.estateIncomeToday = currentEstateIncome + allowableIncome;
+
+    p.savingsFund = (p.savingsFund || 0) + allowableIncome;
     p.gamification = p.gamification || {};
-    p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + totalHourlyIncome;
+    p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + allowableIncome;
+    return allowableIncome;
   }
-  return totalHourlyIncome;
+  return 0;
 }
 
 /**

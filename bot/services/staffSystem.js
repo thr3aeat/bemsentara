@@ -1037,9 +1037,9 @@ function resetDaily(progress) {
     if (filteredKeys.length === 0) filteredKeys = taskKeys;
     const randomTask = filteredKeys[Math.floor(Math.random() * filteredKeys.length)];
 
-    // Dünün ertelenen hedeflerini bugüne aktar
-    const nextTransferredVoice = progress.daily.transferToTomorrowVoice || 0;
-    const nextTransferredGreets = progress.daily.transferToTomorrowGreets || 0;
+    // Dünün ertelenen hedeflerini bugüne aktar (Üst Limit Cap: Maks 20 dk ses, Maks 2 selam)
+    const nextTransferredVoice = Math.min(20, progress.daily.transferToTomorrowVoice || 0);
+    const nextTransferredGreets = Math.min(2, progress.daily.transferToTomorrowGreets || 0);
 
     progress.daily.date = today;
     progress.daily.startedToday = false;
@@ -1494,12 +1494,11 @@ async function recordModerationAction(userId, client, targetUserId = null, actio
     // YENİ: E.C. Kazandır
     await addEkoCoin(p, 10, client, 'Moderasyon İşlemi');
 
+    await checkChosenTaskCompletion(p, client, false).catch(() => { });
+    await checkPromotion(p, client, false).catch(() => { });
+
     await p.save().catch(err => {
-      console.error('[staffSystem] Save failed:', err.message);
-    });
-    await checkChosenTaskCompletion(p, client).catch(() => { });
-    await checkPromotion(p, client).catch(err => {
-      console.error('[staffSystem] checkPromotion failed:', err.message);
+      console.error('[staffSystem] Atomic save failed in recordModerationAction:', err.message);
     });
   } catch (err) {
     console.error('[staffSystem] recordModerationAction error:', err.message);
@@ -1995,27 +1994,22 @@ async function sendTicketTaskProgressDM(p, client) {
         `\`[${bar}] ${pct}%\`\n` +
         `🎯 Toplam: **${solved}/${required}** ticket\n\n` +
         `🎁 **EK GÖREV TAMAMLADIN!**\n` +
-        `1 tane daha ek görev yaparsan **dilediğin rütbe terfi alma görevin** yapılmış olarak sayılacak!\n\n` +
-        `> 💡 **%30 bonus** - Bu extra görevi tamamladığında terfi gereksinimlerinin **%30'u** otomatik olarak doldurulur.`
+        `Hesabınıza **+50 Elmas (💎)**, **+100 EkoCoin** ve **+1 Görev Pası** tanımlandı!`
       )
       .setFooter({ text: 'Eko Yıldız • Personel Sistemi — Ek Görev Sistemi' })
       .setTimestamp();
 
     await discordUser.send({ embeds: [embed] }).catch(() => { });
 
-    // %30 bonus ekle (extra görev ödülü olarak işaretle)
+    // Sabit Ek Görev Ödülü Ekle
     if (!p.daily) p.daily = {};
     if (!p.daily.extraTicketBonusGiven) {
       p.daily.extraTicketBonusGiven = true;
-      // Terfi istatistiklerine %30 katkı
-      if (nextReq) {
-        const bonus30 = (val, req) => Math.ceil((req || 0) * 0.30);
-        p.stats.ticketsSolved = (p.stats.ticketsSolved || 0) + bonus30(null, nextReq.ticketsSolved);
-        p.stats.chatMessages = (p.stats.chatMessages || 0) + bonus30(null, nextReq.chatMessages);
-        p.stats.totalVoiceMinutes = (p.stats.totalVoiceMinutes || 0) + bonus30(null, nextReq.totalVoiceMinutes);
-        p.stats.activeDays = (p.stats.activeDays || 0) + bonus30(null, nextReq.activeDays);
-        p.stats.moderationActions = (p.stats.moderationActions || 0) + bonus30(null, nextReq.moderationActions);
-      }
+      p.gamification = p.gamification || {};
+      p.gamification.diamonds = (p.gamification.diamonds || 0) + 50;
+      p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + 100;
+      p.stats = p.stats || {};
+      p.stats.extraTaskPasses = (p.stats.extraTaskPasses || 0) + 1;
       await p.save().catch(() => { });
     }
   }
@@ -2046,18 +2040,18 @@ async function recordChatMessage(userId, client, guildId = null) {
       }
     }
 
+    await checkAndUnlockBadges(p, client, false).catch(() => { });
+    await checkChosenTaskCompletion(p, client, false).catch(() => { });
+    await checkPromotion(p, client, false).catch(() => { });
+
     await p.save().catch(err => {
-      console.error('[staffSystem] Save failed:', err.message);
+      console.error('[staffSystem] Atomic save failed in recordChatMessage:', err.message);
     });
-    await checkAndUnlockBadges(p, client).catch(() => { });
-    await checkChosenTaskCompletion(p, client).catch(() => { });
+
     try {
       const { checkAutoPromotion } = require('./unitService');
       await checkAutoPromotion(userId, client, 'chat').catch(() => { });
     } catch (_) { }
-    await checkPromotion(p, client).catch(err => {
-      console.error('[staffSystem] checkPromotion failed:', err.message);
-    });
   } catch (err) {
     console.error('[staffSystem] recordChatMessage error:', err.message);
   }
@@ -4050,6 +4044,17 @@ async function runDailyCheck(client) {
   }
 }
 
+async function sendStaffChannelNotification(client, embed) {
+  try {
+    const channel = await client.channels.fetch('1518684031275761719').catch(() => null);
+    if (channel && channel.isTextBased()) {
+      await channel.send({ embeds: [embed] }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[staffSystem] sendStaffChannelNotification error:', err.message);
+  }
+}
+
 // ── Scheduler — sabah brifing + gün içi hatırlatmalar ──────────────────────
 function startStaffScheduler(client) {
   async function refreshMarketState() {
@@ -4165,27 +4170,21 @@ function startStaffScheduler(client) {
     }
   });
 
-  // 13:00 — Öğlen hatırlatma (görevi tamamlamamış olanlara)
+  // 13:00 — Öğlen hatırlatması (Sunucu Yetkili Kanalına)
   scheduleAt(13, 0, async () => {
-    console.log('[staffSystem] 13:00 öğlen hatırlatması...');
-    const today = todayStr();
-    const rawProgress = await StaffProgress.find({ level: { $gte: 1, $lte: 4 }, status: 'active' });
-    const allProgress = await syncAndFilterActiveStaff(rawProgress, client);
-    for (const p of allProgress) {
-      const isOnLeave = p.leaves?.usedDays?.includes(today) || (await hasInactivityRole(p.userId, client));
-      if (isOnLeave) continue;
-      const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
-      const targetVoice = req.voiceMinutes + (p.daily?.transferredVoiceMinutes || 0);
-      const isComplete = p.daily?.date === today && p.daily?.greeted && p.daily?.voiceMinutes >= targetVoice;
-      if (!isComplete) {
-        await sendMidDayReminder(p, client).catch(() => { });
-      }
-    }
+    console.log('[staffSystem] 13:00 öğlen hatırlatması (Kanal Bildirimi)...');
+    const embed = new EmbedBuilder()
+      .setColor(0x3498db)
+      .setTitle('☀️ ÖĞLEN GÖREV VE PERFORMANS HATIRLATMASI')
+      .setDescription('Sevgili ekibimiz! Günün yarısı geride kaldı. Günlük ses ve bilet görevlerinizi tamamlamayı unutmayın! 🚀')
+      .setFooter({ text: 'Eko Yıldız • Personel Sistemi' })
+      .setTimestamp();
+    await sendStaffChannelNotification(client, embed);
   });
 
-  // 19:00 — Akşam uyarısı (hâlâ tamamlamamışlara)
+  // 19:00 — Akşam uyarısı (DM #2: Hâllâ tamamlamamış yetkililere son DM uyarısı)
   scheduleAt(19, 0, async () => {
-    console.log('[staffSystem] 19:00 akşam uyarısı...');
+    console.log('[staffSystem] 19:00 akşam uyarısı (DM)...');
     const today = todayStr();
     const rawProgress = await StaffProgress.find({ level: { $gte: 1, $lte: 4 }, status: 'active' });
     const allProgress = await syncAndFilterActiveStaff(rawProgress, client);
@@ -4201,114 +4200,40 @@ function startStaffScheduler(client) {
     }
   });
 
-  // 15:00 — Öğleden sonra motivasyon mesajı (aktif olan personele)
+  // 15:00 — Öğleden sonra motivasyon mesajı (Sunucu Yetkili Kanalına)
   scheduleAt(15, 0, async () => {
-    console.log('[staffSystem] 15:00 motivasyon mesajları gönderiliyor...');
-    const today = todayStr();
-    const rawProgress = await StaffProgress.find({ level: { $gte: 1, $lte: 4 }, status: 'active' });
-    const allProgress = await syncAndFilterActiveStaff(rawProgress, client);
-    const shouldSendMotivation = Math.random() > 0.5;
-    if (!shouldSendMotivation) {
-      console.log('[staffSystem] 15:00 motivasyon: bugün tüm personele mesaj gönderilmeyecek.');
-      return;
-    }
-
-    for (const p of allProgress) {
-      const isOnLeave = p.leaves?.usedDays?.includes(today) || (await hasInactivityRole(p.userId, client));
-      if (isOnLeave) continue;
-      await sendRandomMotivationDM(p, client).catch(() => { });
-    }
+    console.log('[staffSystem] 15:00 motivasyon mesajı (Kanal Bildirimi)...');
+    const embed = new EmbedBuilder()
+      .setColor(0xe74c3c)
+      .setTitle('🔥 GÜN ORTASI MOTİVASYON VE EFSANE PERFORMANS!')
+      .setDescription('Topluluğumuza katkı sağlayan tüm yetkililerimize teşekkürler! Harika iş çıkarıyorsunuz! 💪✨')
+      .setFooter({ text: 'Eko Yıldız • Personel Motivasyon' })
+      .setTimestamp();
+    await sendStaffChannelNotification(client, embed);
   });
 
-  // 18:00 — Akşam eğlenceleri (gamification fun message'ları)
+  // 18:00 — Akşam eğlenceleri (Sunucu Yetkili Kanalına)
   scheduleAt(18, 0, async () => {
-    console.log('[staffSystem] 18:00 eğlenceli mesajları gönderiliyor...');
-    const today = todayStr();
-    const rawProgress = await StaffProgress.find({ level: { $gte: 1, $lte: 4 }, status: 'active' });
-    const allProgress = await syncAndFilterActiveStaff(rawProgress, client);
-    for (const p of allProgress) {
-      const isOnLeave = p.leaves?.usedDays?.includes(today) || (await hasInactivityRole(p.userId, client));
-      if (isOnLeave) continue;
-      // %60 şansla eğlenceli mesaj gönder
-      if (Math.random() > 0.4) {
-        await sendFunMessage(p.userId, client).catch(() => { });
-      }
-    }
+    console.log('[staffSystem] 18:00 eğlenceli mesaj (Kanal Bildirimi)...');
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle('🎉 AKŞAM EĞLENCESİ VE MOLA ZAMANI!')
+      .setDescription('Akşam vardiyası başladı! Molanızı verin, sohbetin tadını çıkarın ve ekibimizle sosyalleşin! ☕🎈')
+      .setFooter({ text: 'Eko Yıldız • Gamification' })
+      .setTimestamp();
+    await sendStaffChannelNotification(client, embed);
   });
 
-  // 21:00 — Akşam geç saatlerde teşvik mesajı
+  // 21:00 — Akşam geç saatlerde teşvik mesajı (Sunucu Yetkili Kanalına)
   scheduleAt(21, 0, async () => {
-    console.log('[staffSystem] 21:00 gece motivasyonu...');
-    const today = todayStr();
-    const rawProgress = await StaffProgress.find({ level: { $gte: 1, $lte: 4 }, status: 'active' });
-    const allProgress = await syncAndFilterActiveStaff(rawProgress, client);
-    const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
-    const activeVoice = new Set();
-    if (guild) {
-      guild.voiceStates.cache.forEach((voiceState, userId) => {
-        if (voiceState.channelId && !voiceState.member?.user.bot) {
-          activeVoice.add(userId);
-        }
-      });
-    }
-
-    for (const p of allProgress) {
-      const isOnLeave = p.leaves?.usedDays?.includes(today) || (await hasInactivityRole(p.userId, client));
-      if (isOnLeave) continue;
-      const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
-      const targetVoice = req.voiceMinutes + (p.daily?.transferredVoiceMinutes || 0);
-      const isComplete = p.daily?.date === today && p.daily?.greeted && (p.daily?.voiceMinutes || 0) >= targetVoice;
-
-      // Gece aktif olanlara önce gece mesaisi teklifi gönder
-      if (!isComplete && activeVoice.has(p.userId) && !p.daily?.overtimeActive) {
-        await sendNightShiftOffer(p, client).catch(() => { });
-        continue;
-      }
-
-      // Tamamlayanları tebrik et, tamamlayamayanlara son çağrı yap
-      if (isComplete) {
-        const embed = new EmbedBuilder()
-          .setColor(0x4ade80)
-          .setTitle('✅ Günlük Görevleri Tamamladın!')
-          .setDescription(`Muhteşem! Bugünün görevlerini başarıyla tamamladın! 🌟\n\nYarın da bu tempoyu koruyabilirsin. İyi geceler!`)
-          .setFooter({ text: 'Eko Yıldız • Personel Sistemi' })
-          .setTimestamp();
-        try {
-          const user = await client.users.fetch(p.userId);
-          await user.send({ embeds: [embed] });
-        } catch (_) { }
-      } else {
-        const today = todayStr();
-        const stats = getDailyTaskCompletionStats(p);
-        const targetVoice = req.voiceMinutes + (p.daily?.date === today ? (p.daily?.transferredVoiceMinutes || 0) : 0);
-        const targetGreets = req.greets + (p.daily?.date === today ? (p.daily?.transferredGreets || 0) : 0);
-
-        const isGreetDone = p.daily?.date === today && p.daily?.greeted;
-        const greetsSent = p.daily?.date === today ? (p.daily?.greetCount || 0) : 0;
-        const voiceMinutes = p.daily?.date === today ? (p.daily?.voiceMinutes || 0) : 0;
-
-        const embed = new EmbedBuilder()
-          .setColor(0xff3333)
-          .setTitle('🚨 SON ÇAĞRI: Günlük Görevler İçin Son 2.5 Saat!')
-          .setDescription(
-            `Hey <@${p.userId}>, bugünün günlük görevlerini tamamlaman için **son 2.5 saat** kaldı! ⏰\n\n` +
-            `Görevin gece **23:30'da** sıfırlanacak ve kontrol edilecektir. Haklarının yanmaması için lütfen kalan hedeflerini tamamla!\n\n` +
-            `📊 **Mevcut İlerlemen:** \`[${stats.progressBar}]\` **%${stats.totalPercent}**\n\n` +
-            `📋 **Kalan Görevlerin:**\n` +
-            (!isGreetDone ? `• 👋 **${targetGreets - greetsSent}x** daha yeni üyeye hoş geldin de (Gereken: ${targetGreets}x)\n` : '') +
-            (voiceMinutes < targetVoice ? `• 🎤 **${targetVoice - voiceMinutes} dk** daha ses kanalında kal (Gereken: ${targetVoice} dk)\n` : '') +
-            (p.daily?.chosenTask && !p.daily?.chosenTaskCompleted ? `• 🎯 Seçmeli Görev: **${CHOSEN_TASKS[p.daily.chosenTask] || p.daily.chosenTask}**\n` : '') +
-            `\n⚠️ **Unutma:** Görevleri tamamlamazsan uyarı alabilirsin. Şu anki ardışık günlerin: **${p.stats?.consecutiveDays || 0} gün**.`
-          )
-          .setFooter({ text: 'Eko Yıldız • Son Hatırlatma Sistemi' })
-          .setTimestamp();
-
-        try {
-          const user = await client.users.fetch(p.userId);
-          await user.send({ embeds: [embed] });
-        } catch (_) { }
-      }
-    }
+    console.log('[staffSystem] 21:00 gece motivasyonu (Kanal Bildirimi)...');
+    const embed = new EmbedBuilder()
+      .setColor(0x1abc9c)
+      .setTitle('🌙 GECE DEVRİYESİ VE TEŞEKKÜRLER!')
+      .setDescription('Gece devriyesinde ses kanallarında ve destekte kalan tüm personelimize minnettarız! 🌟')
+      .setFooter({ text: 'Eko Yıldız • Gece Devriyesi' })
+      .setTimestamp();
+    await sendStaffChannelNotification(client, embed);
   });
 
   // 23:30 — Günlük kapanış kontrol + uyarı
@@ -5309,10 +5234,10 @@ async function applyNightShiftMorningCarryover(progress) {
   const remainingGreets = progress.daily.greeted ? 0 : req.greets;
 
   if (remainingVoice > 0) {
-    progress.daily.transferToTomorrowVoice = (progress.daily.transferToTomorrowVoice || 0) + remainingVoice;
+    progress.daily.transferToTomorrowVoice = Math.min(20, (progress.daily.transferToTomorrowVoice || 0) + remainingVoice);
   }
   if (remainingGreets > 0) {
-    progress.daily.transferToTomorrowGreets = (progress.daily.transferToTomorrowGreets || 0) + remainingGreets;
+    progress.daily.transferToTomorrowGreets = Math.min(2, (progress.daily.transferToTomorrowGreets || 0) + remainingGreets);
   }
 
   progress.daily.nightShiftActive = false;
