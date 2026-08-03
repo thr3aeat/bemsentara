@@ -1,6 +1,6 @@
 'use strict';
 
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { EmbedBuilder, AuditLogEvent, PermissionFlagsBits } = require('discord.js');
 const {
   initForumLogService,
   ensureGuildForumAndThreadsSafe,
@@ -113,17 +113,46 @@ function setupForumLogHandlers(client) {
       const removedRoles = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id));
 
       if (addedRoles.size > 0 || removedRoles.size > 0) {
+        // Rol adını güvenli biçimde formatla — silinmiş/önbelleksiz roller için isim + ID fallback
+        const formatRole = (r) => {
+          const name = r.name && r.name !== '@everyone' ? r.name : null;
+          return name
+            ? `**${name}** (\`${r.id}\`)`
+            : `**Silinmiş Rol** (\`${r.id}\`)`;
+        };
+
+        // Audit log'dan işlemi yapan yetkiliyi çek
+        let executorText = 'Bilinmiyor';
+        try {
+          const audit = await guild.fetchAuditLogs({ type: AuditLogEvent.MemberRoleUpdate, limit: 5 }).catch(() => null);
+          const entry = audit?.entries?.find(e => e.target?.id === newMember.id && (Date.now() - e.createdTimestamp) < 10000);
+          if (entry?.executor) {
+            executorText = `${entry.executor.toString()} (\`${entry.executor.tag}\`)`;
+          }
+        } catch (_) {}
+
         const roleEmbed = new EmbedBuilder()
           .setTitle('🛡️ ÜYE ROL DEĞİŞİKLİĞİ')
           .setColor(0x9B59B6)
-          .setDescription(`**Kullanıcı:** ${newMember.toString()} (\`${newMember.id}\`)`)
+          .setDescription(
+            `**Kullanıcı:** ${newMember.toString()} (\`${newMember.id}\`)\n` +
+            `**İşlemi Yapan:** ${executorText}`
+          )
           .setTimestamp();
 
         if (addedRoles.size > 0) {
-          roleEmbed.addFields({ name: '➕ Eklenen Roller', value: addedRoles.map(r => r.toString()).join(', '), inline: false });
+          roleEmbed.addFields({
+            name: '➕ Eklenen Roller',
+            value: addedRoles.map(formatRole).join('\n') || '—',
+            inline: false
+          });
         }
         if (removedRoles.size > 0) {
-          roleEmbed.addFields({ name: '➖ Çıkarılan Roller', value: removedRoles.map(r => r.toString()).join(', '), inline: false });
+          roleEmbed.addFields({
+            name: '➖ Çıkarılan Roller',
+            value: removedRoles.map(formatRole).join('\n') || '—',
+            inline: false
+          });
         }
 
         await sendForumLog(client, guild, 'USER_MEMBER_LOGS', roleEmbed);

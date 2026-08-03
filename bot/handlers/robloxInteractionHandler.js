@@ -331,6 +331,7 @@ async function handleRobloxInteractions(interaction) {
           action: `Roblox Rütbe Değiştirme (${groupName})`,
           targetUser: `**${username}** (ID: \`${userId}\`)`,
           reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Eski Rütbe: ${oldRoleName} -> Yeni Rank ID: ${newRankId}`,
+          requesterId: interaction.user.id,
           executeCallback: async () => {
             const newRole = await noblox.setRank({ group: parseInt(groupId), target: userId, rank: newRankId });
 
@@ -642,6 +643,7 @@ async function handleRobloxInteractions(interaction) {
           action: `Roblox Gruba Katılım ${isAccept ? 'Onayı' : 'Reddi'} (${manualGroupName})`,
           targetUser: `**${username}** (ID: \`${userId}\`)`,
           reason: `Yetkili: ${interaction.user.tag} (${interaction.user.id}) | Grup ID: ${groupId}`,
+          requesterId: interaction.user.id,
           executeCallback: async () => {
             await noblox.handleJoinRequest(parseInt(groupId), userId, isAccept);
 
