@@ -845,7 +845,7 @@ olor(COLOR_PREMIUM)
     embeds: [embed],
     components
   });
-}
+
 
 /**
  * Catches button interactions prefixed with panel_
