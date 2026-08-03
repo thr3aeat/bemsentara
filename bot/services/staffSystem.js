@@ -549,15 +549,28 @@ function generateModeratorDashboard() {
       .setCustomId('mod_cat_reporting')
       .setLabel('📊 Raporlama')
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('📊'),
-    new ButtonBuilder()
-      .setCustomId('mod_cat_settings')
-      .setLabel('🔧 Ayarlar')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🔧')
+      .setEmoji('📊')
   );
 
-  return { embed, components: [row1, row2] };
+  const row3 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('mod_cat_rpg_prestige')
+      .setLabel('👑 Prestij & RPG')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('👑'),
+    new ButtonBuilder()
+      .setCustomId('mod_cat_real_estate')
+      .setLabel('🏙️ Sanal Şehir & Borsa')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🏙️'),
+    new ButtonBuilder()
+      .setCustomId('mod_cat_guild_wars')
+      .setLabel('🏛️ Lonca Savaşları')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🏛️')
+  );
+
+  return { embed, components: [row1, row2, row3] };
 }
 
 /**
@@ -567,6 +580,35 @@ function getSubcategoryEmbed(category) {
   const { EmbedBuilder } = require('discord.js');
 
   const categories = {
+    rpg_prestige: {
+      title: '👑 SONSUS SEZON, PRESTİJ & RPG SINIFLARI',
+      description: 'Prestij yapma (Rebirth), Karakter Sınıfı Seçimi, Jüri Mahkemesi ve Takdir işlemleri',
+      color: 0x9b59b6,
+      subcategories: [
+        { id: 'rpg_prestige_rebirth', name: '👑 Prestij Yap (Rebirth)', description: 'Seviye 6 rütbesinde sıfırlanarak kalıcı [P-1] bonusları kazan' },
+        { id: 'rpg_classes_select', name: '🎭 Karakter Sınıfı Seç', description: 'Muhafız, Rehber veya Çözücü sınıfını seçerek x2 bonus al' },
+        { id: 'rpg_jury_duty', name: '⚖️ Jüri Mahkemesi', description: 'Disiplin cezaları itirazlarını oylayarak Adalet Elçisi ödülü kazan' },
+        { id: 'rpg_p2p_tip', name: '💖 Takdir Kartı & Bahşiş', description: 'Ekip arkadaşına Elmas veya Takdir Kartı gönder' }
+      ]
+    },
+    real_estate: {
+      title: '🏙️ SANAL ŞEHİR, EMLAK & BORSA',
+      description: 'Sanal mülk satın al, pasif gelir elde et ve $EKO Index borsasında oyna',
+      color: 0x2ecc71,
+      subcategories: [
+        { id: 'city_real_estate_shop', name: '🏢 Emlak Mağazası', description: 'Kahve Dükkanı, Tactic Ofis, Penthouse al' },
+        { id: 'city_stock_market', name: '📈 $EKO Index Borsası', description: 'Piyasa yükselişinde parana kâr kat' }
+      ]
+    },
+    guild_wars: {
+      title: '🏛️ LONCA SAVAŞLARI & KULÜPLER',
+      description: '3-5 kişilik ekibinle Lonca kur, haftalık ligde Şehrin Hakimi ol',
+      color: 0xf1c40f,
+      subcategories: [
+        { id: 'guild_my_guild', name: '🏛️ Lonca Bilgilerim', description: 'Mevcut loncanın kasası ve seviyesini gör' },
+        { id: 'guild_leaderboard', name: '🏆 Lonca Ligi Sıralaması', description: 'Haftanın en güçlü 10 loncasını incele' }
+      ]
+    },
     personnel: {
       title: '👥 PERSONEL YÖNETİMİ',
       description: 'Personel bilgileri, arama, rol atama ve görev yönetimi işlemleri',
