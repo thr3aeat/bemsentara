@@ -116,20 +116,35 @@ function initializeVoiceAndBanHandlers(client) {
             const { sendMutationAppealDM } = require("../services/mutationAppealService");
             const { sendMutualConfirmationDM } = require("../services/modMutualConfirmService");
             const Mutation = require("../../models/Mutation");
-            const auditLogs = await newState.guild.fetchAuditLogs({
-              type: 'MemberUpdate',
-              limit: 5,
-            }).catch(() => null);
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs && auditLogs.entries.size > 0) {
-              const entry = auditLogs.entries.find(e => 
-                e.target?.id === newState.member.id && 
-                Date.now() - e.createdTimestamp < 5000
-              );
-              moderator = entry?.executor?.tag || 'Bilinmeyen';
-              moderatorObj = entry?.executor;
+            
+            // Audit log lookup - try to find who performed the mute
+            try {
+              const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 'MemberUpdate',
+                limit: 10,
+              }).catch(() => null);
+              
+              if (auditLogs && auditLogs.entries.size > 0) {
+                // Daha geniş zaman penceresi: 10 saniye
+                const entry = auditLogs.entries.find(e => 
+                  e.target?.id === newState.member.id && 
+                  Date.now() - e.createdTimestamp < 10000 &&
+                  (e.changes?.some(c => c.key === 'mute' && c.new === true) || // Discord.js v13
+                   (e.changes?.some(c => c.key === 'communication_disabled_until')) || // Discord.js v14+
+                   true) // Fallback: any recent update
+                );
+                
+                if (entry && entry.executor) {
+                  moderator = entry.executor.tag;
+                  moderatorObj = entry.executor;
+                }
+              }
+            } catch (auditErr) {
+              console.warn(`[voiceStateUpdate] Audit log fetch failed: ${auditErr.message}`);
+              // Devam et - moderator bilinmeyen olarak gönder
             }
 
             // ❌ SELF-ACTION: Kendi kendini susturmuş → ignore et
@@ -138,45 +153,42 @@ function initializeVoiceAndBanHandlers(client) {
               return;
             }
 
-            // Eğer moderator bulunamamışsa → ignore et (bot işlemi olabilir)
-            if (!moderatorObj) {
-              console.warn(`[voiceStateUpdate] Mute yapan moderator bulunamadı: ${newState.member?.user?.tag || newState.member?.id}`);
-              return;
+            // Eğer hedef moderatör ise → mutual confirmation DM (moderator bilinse)
+            if (moderatorObj) {
+              const isModerator = newState.member.roles.cache.some(r => 
+                r.name.toLowerCase().includes('mod') ||
+                r.name.toLowerCase().includes('staff') ||
+                r.name.toLowerCase().includes('yetkili')
+              );
+
+              if (isModerator && moderatorObj.id !== newState.member.id) {
+                // Moderatör arası işlem → confirmation
+                await sendMutualConfirmationDM(
+                  newState.client,
+                  moderatorObj,
+                  newState.member.user,
+                  newState.guild,
+                  'mute',
+                  'Ses kanalında susturuldu'
+                );
+                return;
+              }
             }
 
-            // Eğer hedef moderatör ise → mutual confirmation DM
-            const isModerator = newState.member.roles.cache.some(r => 
-              r.name.toLowerCase().includes('mod') ||
-              r.name.toLowerCase().includes('staff') ||
-              r.name.toLowerCase().includes('yetkili')
+            // Normal kullanıcı → appeal DM (her durumda gönder)
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'mute',
+              moderator,
+              'Ses kanalında susturuldunuz'
             );
 
-            if (isModerator && moderatorObj.id !== newState.member.id) {
-              // Moderatör arası işlem → confirmation
-              await sendMutualConfirmationDM(
-                newState.client,
-                moderatorObj,
-                newState.member.user,
-                newState.guild,
-                'mute',
-                'Ses kanalında susturuldu'
-              );
-            } else {
-              // Normal kullanıcı → appeal DM
-              await sendMutationAppealDM(
-                newState.member.user,
-                newState.guild,
-                'mute',
-                moderator,
-                'Ses kanalında susturuldunuz'
-              );
-            }
-
-            // DB'ye kaydet
+            // DB'ye kaydet (moderatorUserId bilinmeyen olsa da kaydet)
             new Mutation({
               guildId: newState.guild.id,
               targetUserId: newState.member.id,
-              moderatorUserId: moderatorObj.id,
+              moderatorUserId: moderatorObj?.id || 'bilinmeyen',
               actionType: 'mute',
               reason: 'Ses kanalında susturuldu',
             }).save().catch(() => {});
@@ -190,20 +202,31 @@ function initializeVoiceAndBanHandlers(client) {
           try {
             const { sendMutationAppealDM } = require("../services/mutationAppealService");
             const { sendMutualConfirmationDM } = require("../services/modMutualConfirmService");
-            const auditLogs = await newState.guild.fetchAuditLogs({
-              type: 'MemberUpdate',
-              limit: 5,
-            }).catch(() => null);
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs && auditLogs.entries.size > 0) {
-              const entry = auditLogs.entries.find(e => 
-                e.target?.id === newState.member.id && 
-                Date.now() - e.createdTimestamp < 5000
-              );
-              moderator = entry?.executor?.tag || 'Bilinmeyen';
-              moderatorObj = entry?.executor;
+            
+            // Audit log lookup
+            try {
+              const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 'MemberUpdate',
+                limit: 10,
+              }).catch(() => null);
+              
+              if (auditLogs && auditLogs.entries.size > 0) {
+                // Daha geniş zaman penceresi: 10 saniye
+                const entry = auditLogs.entries.find(e => 
+                  e.target?.id === newState.member.id && 
+                  Date.now() - e.createdTimestamp < 10000
+                );
+                
+                if (entry && entry.executor) {
+                  moderator = entry.executor.tag;
+                  moderatorObj = entry.executor;
+                }
+              }
+            } catch (auditErr) {
+              console.warn(`[voiceStateUpdate] Audit log fetch failed: ${auditErr.message}`);
             }
 
             // ❌ SELF-ACTION: Kendi kendini sağırlaştırmış → ignore et
@@ -212,36 +235,36 @@ function initializeVoiceAndBanHandlers(client) {
               return;
             }
 
-            if (!moderatorObj) {
-              console.warn(`[voiceStateUpdate] Deafen yapan moderator bulunamadı: ${newState.member?.user?.tag || newState.member?.id}`);
-              return;
+            // Eğer hedef moderatör ise → mutual confirmation DM (moderator bilinse)
+            if (moderatorObj) {
+              const isModerator = newState.member.roles.cache.some(r => 
+                r.name.toLowerCase().includes('mod') ||
+                r.name.toLowerCase().includes('staff') ||
+                r.name.toLowerCase().includes('yetkili')
+              );
+
+              if (isModerator && moderatorObj.id !== newState.member.id) {
+                await sendMutualConfirmationDM(
+                  newState.client,
+                  moderatorObj,
+                  newState.member.user,
+                  newState.guild,
+                  'deafen',
+                  'Ses kanalında sağırlaştırıldı'
+                );
+                return;
+              }
             }
 
-            // Eğer hedef moderatör ise → mutual confirmation DM
-            const isModerator = newState.member.roles.cache.some(r => 
-              r.name.toLowerCase().includes('mod') ||
-              r.name.toLowerCase().includes('staff') ||
-              r.name.toLowerCase().includes('yetkili')
+            // Normal kullanıcı → appeal DM (her durumda gönder)
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'deafen',
+              moderator,
+              'Ses kanalında sağırlaştırıldınız'
             );
 
-            if (isModerator && moderatorObj.id !== newState.member.id) {
-              await sendMutualConfirmationDM(
-                newState.client,
-                moderatorObj,
-                newState.member.user,
-                newState.guild,
-                'deafen',
-                'Ses kanalında sağırlaştırıldı'
-              );
-            } else {
-              await sendMutationAppealDM(
-                newState.member.user,
-                newState.guild,
-                'deafen',
-                moderator,
-                'Ses kanalında sağırlaştırıldınız'
-              );
-            }
           } catch (err) {
             console.warn("[voiceStateUpdate] Deafen appeal DM hatası:", err.message);
           }
@@ -252,53 +275,77 @@ function initializeVoiceAndBanHandlers(client) {
           try {
             const { sendMutationAppealDM } = require("../services/mutationAppealService");
             const { sendMutualConfirmationDM } = require("../services/modMutualConfirmService");
-            const auditLogs = await newState.guild.fetchAuditLogs({
-              type: 'MemberUpdate',
-              limit: 5,
-            }).catch(() => null);
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs && auditLogs.entries.size > 0) {
-              const entry = auditLogs.entries.find(e => 
-                e.target?.id === newState.member.id && 
-                Date.now() - e.createdTimestamp < 5000
-              );
-              moderator = entry?.executor?.tag || 'Bilinmeyen';
-              moderatorObj = entry?.executor;
+            
+            // Audit log lookup
+            try {
+              const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 'MemberUpdate',
+                limit: 10,
+              }).catch(() => null);
+              
+              if (auditLogs && auditLogs.entries.size > 0) {
+                // Daha geniş zaman penceresi: 10 saniye
+                const entry = auditLogs.entries.find(e => 
+                  e.target?.id === newState.member.id && 
+                  Date.now() - e.createdTimestamp < 10000
+                );
+                
+                if (entry && entry.executor) {
+                  moderator = entry.executor.tag;
+                  moderatorObj = entry.executor;
+                }
+              }
+            } catch (auditErr) {
+              console.warn(`[voiceStateUpdate] Audit log fetch failed: ${auditErr.message}`);
             }
 
             // ❌ SELF-ACTION: Kendi kendini çıkarmış → ignore et (normal çıkış)
-            if (moderatorObj?.id === newState.member.id || !moderatorObj) {
+            if (moderatorObj?.id === newState.member.id) {
               console.log(`[voiceStateUpdate] Self-leave detected: ${newState.member?.user?.tag || newState.member?.id}`);
               return;
             }
 
-            // Eğer hedef moderatör ise → mutual confirmation DM
-            const isModerator = newState.member.roles.cache.some(r => 
-              r.name.toLowerCase().includes('mod') ||
-              r.name.toLowerCase().includes('staff') ||
-              r.name.toLowerCase().includes('yetkili')
+            // Eğer hedef moderatör ise → mutual confirmation DM (moderator bilinse)
+            if (moderatorObj) {
+              const isModerator = newState.member.roles.cache.some(r => 
+                r.name.toLowerCase().includes('mod') ||
+                r.name.toLowerCase().includes('staff') ||
+                r.name.toLowerCase().includes('yetkili')
+              );
+
+              if (isModerator && moderatorObj.id !== newState.member.id) {
+                await sendMutualConfirmationDM(
+                  newState.client,
+                  moderatorObj,
+                  newState.member.user,
+                  newState.guild,
+                  'kick',
+                  'Ses kanalından çıkarıldı'
+                );
+                return;
+              }
+            }
+
+            // Normal kullanıcı → appeal DM (her durumda gönder)
+            await sendMutationAppealDM(
+              newState.member.user,
+              newState.guild,
+              'kick',
+              moderator,
+              'Ses kanalından çıkarıldınız'
             );
 
-            if (isModerator && moderatorObj.id !== newState.member.id) {
-              await sendMutualConfirmationDM(
-                newState.client,
-                moderatorObj,
-                newState.member.user,
-                newState.guild,
-                'kick',
-                'Ses kanalından çıkarıldı'
-              );
-            } else {
-              await sendMutationAppealDM(
-                newState.member.user,
-                newState.guild,
-                'kick',
-                moderator,
-                'Ses kanalından çıkarıldınız'
-              );
-            }
+            // DB'ye kaydet
+            new Mutation({
+              guildId: newState.guild.id,
+              targetUserId: newState.member.id,
+              moderatorUserId: moderatorObj?.id || 'bilinmeyen',
+              actionType: 'kick',
+              reason: 'Ses kanalından çıkarıldı',
+            }).save().catch(() => {});
           } catch (err) {
             console.warn("[voiceStateUpdate] Kick appeal DM hatası:", err.message);
           }
