@@ -320,7 +320,7 @@ function initializeVoiceAndBanHandlers(client) {
             );
 
             // DB'ye kaydet
-            Mutation({
+            new Mutation({
               guildId: newState.guild.id,
               targetUserId: newState.member.id,
               moderatorUserId: moderatorObj?.id || 'bilinmeyen',

@@ -17,7 +17,6 @@ const { createDiscordClient } = require("./bot/client");
 const { initializeDiscordHandlers } = require("./bot/handlers");
 const { registerAllCommands } = require("./bot/registerCommands");
 const { PORT, BASE_URL, TOKEN } = require("./config");
-const path = require("path");
 const cron = require("node-cron");
 const axios = require("axios");
 
@@ -61,13 +60,12 @@ discordBot.once("ready", async () => {
   
     // --- v7.0 one-time release announcement and small reward ---
     try {
-      const { appMeta, users } = require("./models/Store");
+      const { appMeta } = require("./models/Store");
       const Economy = require("./models/Economy");
       const { LOG_CHANNEL_ID, EKOYILDIZ_MOD_LOG_CHANNEL_ID } = require("./config");
 
       const flag = appMeta.findOne({ key: "release_v7_0_announced" });
       if (!flag) {
-        let sentAny = false;
         const channelsToNotify = [LOG_CHANNEL_ID, EKOYILDIZ_MOD_LOG_CHANNEL_ID];
 
         for (const chanId of channelsToNotify) {
@@ -100,7 +98,6 @@ discordBot.once("ready", async () => {
               );
 
               await ch.send({ embeds: [embed], components: [row] });
-              sentAny = true;
             } catch (err) {
               logger.error(`[Release v7.0] Channel ${chanId} send error:`, err.message);
             }
@@ -155,7 +152,6 @@ discordBot.once("ready", async () => {
               const discordUser = await discordBot.users.fetch(u.userId).catch(() => null);
               if (discordUser) {
                 await discordUser.send({ embeds: [dmEmbed], components: [dmRow] }).catch(() => {});
-                sentAny = true;
               }
             } catch (dmErr) {
               console.warn(`Could not send release announcement DM to ${u.userId}:`, dmErr.message);
