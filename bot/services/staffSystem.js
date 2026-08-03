@@ -6395,9 +6395,6 @@ async function sendV7WelcomeNotification(userId, client) {
       return false;
     }
 
-    p.gamification.systemIntroducedV7 = true;
-    await p.save().catch(() => {});
-
     const user = await client.users.fetch(userId).catch(() => null);
     if (!user) return false;
 
@@ -6452,11 +6449,33 @@ async function sendV7WelcomeNotification(userId, client) {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    await user.send({ embeds: [v7Embed], components: [row1, row2] }).catch(() => {});
+    await user.send({ embeds: [v7Embed], components: [row1, row2] });
+    p.gamification.systemIntroducedV7 = true;
+    await p.save().catch(() => {});
+    console.log(`[staffSystem] ✉️ V7 Welcome DM successfully delivered to ${userId}`);
     return true;
   } catch (err) {
     console.error('[staffSystem] sendV7WelcomeNotification error:', err.message);
     return false;
+  }
+}
+
+/**
+ * Otomatik olarak tüm aktif personellere V7.0 bildirimlerini gönderir
+ */
+async function notifyAllStaffAboutV7(client) {
+  try {
+    const activeStaff = await StaffProgress.find({});
+    console.log(`[staffSystem] Checking V7 welcome notification for ${activeStaff.length} staff records...`);
+    let sentCount = 0;
+    for (const p of activeStaff) {
+      if (p.gamification && p.gamification.systemIntroducedV7) continue;
+      const res = await sendV7WelcomeNotification(p.userId, client);
+      if (res) sentCount++;
+    }
+    console.log(`[staffSystem] V7 welcome notification run complete. Total delivered: ${sentCount}`);
+  } catch (err) {
+    console.error('[staffSystem] notifyAllStaffAboutV7 error:', err.message);
   }
 }
 
@@ -6517,6 +6536,7 @@ module.exports = {
   sendSystemUpdateNotification,
   sendV6WelcomeNotification,
   sendV7WelcomeNotification,
+  notifyAllStaffAboutV7,
   claimV7VersionReward,
   notifyStaff,
   // Gamification

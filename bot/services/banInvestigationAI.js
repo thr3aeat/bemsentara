@@ -125,9 +125,14 @@ async function initVeryBot(mainClient) {
     await onInvestigationGuildJoin(member, session, mainClient);
   });
 
-  await bot.login(VERY_TOKEN);
-  veryBot = bot;
-  return bot;
+  try {
+    await bot.login(VERY_TOKEN);
+    veryBot = bot;
+    return bot;
+  } catch (err) {
+    console.warn(`[banInvestigationAI] Aras bot login skipped (${err.message}).`);
+    return null;
+  }
 }
 
 async function handleVeryBotMessage(message, session, mainClient) {

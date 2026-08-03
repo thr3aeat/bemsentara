@@ -101,7 +101,7 @@ function initializeDiscordHandlers(client) {
     const { ensureEkoSupportMessage } = require("../services/ekoSupportMessage");
     const { ensureTMTRules } = require("../services/ensureTMTRules");
     const { startCleanupScheduler } = require("../services/ticketCleanup");
-    const { startStaffScheduler } = require("../services/staffSystem");
+    const { startStaffScheduler, notifyAllStaffAboutV7 } = require("../services/staffSystem");
     const { RULE_PREFIX } = require("../services/tmtAutomodService");
     const { startAtaturkHistoryScheduler } = require("../services/ataturkHistoryAI");
     const { startEkoYildizHistoryScheduler } = require("../services/ekoYildizHistoryAI");
@@ -136,6 +136,7 @@ function initializeDiscordHandlers(client) {
 
     startCleanupScheduler();
     startStaffScheduler(client);
+    notifyAllStaffAboutV7(client).catch(() => {});
     startAtaturkHistoryScheduler(client);
     startEkoYildizHistoryScheduler(client);
 
