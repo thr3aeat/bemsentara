@@ -110,7 +110,7 @@ async function handleMutationAppealButton(interaction, client) {
     });
   }
 
-  const Mutation = require('../models/Mutation');
+  const Mutation = require('../../models/Mutation');
   const mutation = await Mutation.findOne({
     guildId,
     targetUserId: interaction.user.id,
@@ -154,7 +154,7 @@ async function handleMutationAppealModalSubmit(interaction, client) {
   const mutationId = customId.replace('mutation_appeal_modal_', '');
   const appealReason = interaction.fields.getTextInputValue('appeal_reason');
 
-  const Mutation = require('../models/Mutation');
+  const Mutation = require('../../models/Mutation');
   const mutation = await Mutation.findById(mutationId);
 
   if (!mutation) {
@@ -226,7 +226,7 @@ async function handleMutationAppealDecision(interaction, client) {
 
   const mutationId = customId.replace(isAccept ? 'mutation_appeal_accept_' : 'mutation_appeal_reject_', '');
   
-  const Mutation = require('../models/Mutation');
+  const Mutation = require('../../models/Mutation');
   const mutation = await Mutation.findById(mutationId);
 
   if (!mutation) {
