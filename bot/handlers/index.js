@@ -90,6 +90,12 @@ function initializeDiscordHandlers(client) {
   const { initializeVoiceAndBanHandlers } = require("./voiceHandler");
   initializeVoiceAndBanHandlers(client);
 
+  // Yeni Hesap Güvenlik Sistemi
+  const { initializeNewAccountHandler } = require("./newAccountHandler");
+  const { initializeNewAccountMessageHandler } = require("./newAccountMessageHandler");
+  initializeNewAccountHandler(client);
+  initializeNewAccountMessageHandler(client);
+
   // Merkezi Denetim Günlüğü Handler'ını başlat
   setupCentralAuditHandler(client);
 
