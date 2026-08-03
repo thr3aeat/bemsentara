@@ -1,6 +1,7 @@
 const { logBanAdd, logBanRemove } = require("../services/banLog");
 const { handleJoinToCreate, handleVoiceLeave } = require("../services/voiceManager");
 const { TMT_GUILD_ID } = require("../../config");
+const Mutation = require("../../models/Mutation");
 
 function initializeVoiceAndBanHandlers(client) {
   client.on("guildBanAdd", async (ban) => {
@@ -275,61 +276,41 @@ function initializeVoiceAndBanHandlers(client) {
           try {
             const { sendMutationAppealDM } = require("../services/mutationAppealService");
             const { sendMutualConfirmationDM } = require("../services/modMutualConfirmService");
+            const { detectVoiceKick } = require("../services/voiceKickDetector");
             
-            let moderator = 'Bilinmeyen';
-            let moderatorObj = null;
+            // Gerçek moderator kick'ini tespit et (self-leave vs moderator action ayırt et)
+            const kickInfo = await detectVoiceKick(newState, newState.guild);
             
-            // Audit log lookup
-            try {
-              const auditLogs = await newState.guild.fetchAuditLogs({
-                type: 'MemberUpdate',
-                limit: 10,
-              }).catch(() => null);
-              
-              if (auditLogs && auditLogs.entries.size > 0) {
-                // Daha geniş zaman penceresi: 10 saniye
-                const entry = auditLogs.entries.find(e => 
-                  e.target?.id === newState.member.id && 
-                  Date.now() - e.createdTimestamp < 10000
-                );
-                
-                if (entry && entry.executor) {
-                  moderator = entry.executor.tag;
-                  moderatorObj = entry.executor;
-                }
-              }
-            } catch (auditErr) {
-              console.warn(`[voiceStateUpdate] Audit log fetch failed: ${auditErr.message}`);
-            }
-
-            // ❌ SELF-ACTION: Kendi kendini çıkarmış → ignore et (normal çıkış)
-            if (moderatorObj?.id === newState.member.id) {
-              console.log(`[voiceStateUpdate] Self-leave detected: ${newState.member?.user?.tag || newState.member?.id}`);
+            // Eğer kick değilse = gönüllü ayrılış → hiçbir şey yapma
+            if (!kickInfo.isKicked) {
+              console.log(`[voiceStateUpdate] User ${newState.member?.user?.tag || newState.member?.id} voluntarily left voice channel`);
               return;
             }
 
-            // Eğer hedef moderatör ise → mutual confirmation DM (moderator bilinse)
-            if (moderatorObj) {
-              const isModerator = newState.member.roles.cache.some(r => 
-                r.name.toLowerCase().includes('mod') ||
-                r.name.toLowerCase().includes('staff') ||
-                r.name.toLowerCase().includes('yetkili')
-              );
+            const { moderator, moderatorObj } = kickInfo;
 
-              if (isModerator && moderatorObj.id !== newState.member.id) {
-                await sendMutualConfirmationDM(
-                  newState.client,
-                  moderatorObj,
-                  newState.member.user,
-                  newState.guild,
-                  'kick',
-                  'Ses kanalından çıkarıldı'
-                );
-                return;
-              }
+            // ✅ GERÇEK KICK TESPIT EDILDI - Appeal DM gönder
+            
+            // Eğer hedef moderatör ise → mutual confirmation DM
+            const isModerator = newState.member.roles.cache.some(r => 
+              r.name.toLowerCase().includes('mod') ||
+              r.name.toLowerCase().includes('staff') ||
+              r.name.toLowerCase().includes('yetkili')
+            );
+
+            if (isModerator && moderatorObj?.id !== newState.member.id) {
+              await sendMutualConfirmationDM(
+                newState.client,
+                moderatorObj,
+                newState.member.user,
+                newState.guild,
+                'kick',
+                'Ses kanalından çıkarıldı'
+              );
+              return;
             }
 
-            // Normal kullanıcı → appeal DM (her durumda gönder)
+            // Normal kullanıcı → appeal DM
             await sendMutationAppealDM(
               newState.member.user,
               newState.guild,
@@ -339,7 +320,7 @@ function initializeVoiceAndBanHandlers(client) {
             );
 
             // DB'ye kaydet
-            new Mutation({
+            Mutation({
               guildId: newState.guild.id,
               targetUserId: newState.member.id,
               moderatorUserId: moderatorObj?.id || 'bilinmeyen',
