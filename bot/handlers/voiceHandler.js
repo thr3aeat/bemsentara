@@ -123,13 +123,25 @@ function initializeVoiceAndBanHandlers(client) {
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs) {
+            if (auditLogs && auditLogs.entries.size > 0) {
               const entry = auditLogs.entries.find(e => 
                 e.target?.id === newState.member.id && 
                 Date.now() - e.createdTimestamp < 5000
               );
               moderator = entry?.executor?.tag || 'Bilinmeyen';
               moderatorObj = entry?.executor;
+            }
+
+            // ❌ SELF-ACTION: Kendi kendini susturmuş → ignore et
+            if (moderatorObj?.id === newState.member.id) {
+              console.log(`[voiceStateUpdate] Self-mute detected: ${newState.member.tag} kendini susturdu, DM gönderilmedi`);
+              return;
+            }
+
+            // Eğer moderator bulunamamışsa → ignore et (bot işlemi olabilir)
+            if (!moderatorObj) {
+              console.warn(`[voiceStateUpdate] Mute yapan moderator bulunamadı: ${newState.member.tag}`);
+              return;
             }
 
             // Eğer hedef moderatör ise → mutual confirmation DM
@@ -139,7 +151,7 @@ function initializeVoiceAndBanHandlers(client) {
               r.name.toLowerCase().includes('yetkili')
             );
 
-            if (isModerator && moderatorObj && moderatorObj.id !== newState.member.id) {
+            if (isModerator && moderatorObj.id !== newState.member.id) {
               // Moderatör arası işlem → confirmation
               await sendMutualConfirmationDM(
                 newState.client,
@@ -164,7 +176,7 @@ function initializeVoiceAndBanHandlers(client) {
             new Mutation({
               guildId: newState.guild.id,
               targetUserId: newState.member.id,
-              moderatorUserId: moderatorObj?.id || 'unknown',
+              moderatorUserId: moderatorObj.id,
               actionType: 'mute',
               reason: 'Ses kanalında susturuldu',
             }).save().catch(() => {});
@@ -185,13 +197,24 @@ function initializeVoiceAndBanHandlers(client) {
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs) {
+            if (auditLogs && auditLogs.entries.size > 0) {
               const entry = auditLogs.entries.find(e => 
                 e.target?.id === newState.member.id && 
                 Date.now() - e.createdTimestamp < 5000
               );
               moderator = entry?.executor?.tag || 'Bilinmeyen';
               moderatorObj = entry?.executor;
+            }
+
+            // ❌ SELF-ACTION: Kendi kendini sağırlaştırmış → ignore et
+            if (moderatorObj?.id === newState.member.id) {
+              console.log(`[voiceStateUpdate] Self-deafen detected: ${newState.member.tag} kendini sağırlaştırdı`);
+              return;
+            }
+
+            if (!moderatorObj) {
+              console.warn(`[voiceStateUpdate] Deafen yapan moderator bulunamadı: ${newState.member.tag}`);
+              return;
             }
 
             // Eğer hedef moderatör ise → mutual confirmation DM
@@ -201,7 +224,7 @@ function initializeVoiceAndBanHandlers(client) {
               r.name.toLowerCase().includes('yetkili')
             );
 
-            if (isModerator && moderatorObj && moderatorObj.id !== newState.member.id) {
+            if (isModerator && moderatorObj.id !== newState.member.id) {
               await sendMutualConfirmationDM(
                 newState.client,
                 moderatorObj,
@@ -236,13 +259,19 @@ function initializeVoiceAndBanHandlers(client) {
             
             let moderator = 'Bilinmeyen';
             let moderatorObj = null;
-            if (auditLogs) {
+            if (auditLogs && auditLogs.entries.size > 0) {
               const entry = auditLogs.entries.find(e => 
                 e.target?.id === newState.member.id && 
                 Date.now() - e.createdTimestamp < 5000
               );
               moderator = entry?.executor?.tag || 'Bilinmeyen';
               moderatorObj = entry?.executor;
+            }
+
+            // ❌ SELF-ACTION: Kendi kendini çıkarmış → ignore et (normal çıkış)
+            if (moderatorObj?.id === newState.member.id || !moderatorObj) {
+              console.log(`[voiceStateUpdate] Self-leave detected: ${newState.member.tag}`);
+              return;
             }
 
             // Eğer hedef moderatör ise → mutual confirmation DM
@@ -252,7 +281,7 @@ function initializeVoiceAndBanHandlers(client) {
               r.name.toLowerCase().includes('yetkili')
             );
 
-            if (isModerator && moderatorObj && moderatorObj.id !== newState.member.id) {
+            if (isModerator && moderatorObj.id !== newState.member.id) {
               await sendMutualConfirmationDM(
                 newState.client,
                 moderatorObj,
