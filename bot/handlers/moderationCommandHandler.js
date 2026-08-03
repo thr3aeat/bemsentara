@@ -115,49 +115,56 @@ async function handleModerationCommand(interaction) {
       const kullanici = interaction.options.getUser("kullanici");
       const sebep = interaction.options.getString("sebep") || "Belirtilmedi";
 
-      try {
-        await interaction.guild.members.ban(kullanici.id, { reason: sebep });
+      const { processModActionWithApproval } = require("../services/modApprovalGateway");
 
-        const { TMT_GUILD_ID } = require("../../config");
-        if (interaction.guild.id === TMT_GUILD_ID) {
-          const { logTMTModAction } = require("../services/tmtLogger");
-          await logTMTModAction(interaction, commandName, kullanici, `Sebep: ${sebep}`);
-        } else if (interaction.guild.id === "1483482948320891074") {
-          const { logAlliedModAction } = require("../services/alliedRoleSyncService");
-          await logAlliedModAction(interaction, commandName, kullanici, `Sebep: ${sebep}`);
-        }
+      const approvalRes = await processModActionWithApproval(interaction, {
+        actionType: 'Sunucudan Yasaklama (Ban)',
+        targetUser: kullanici,
+        reason: sebep,
+        executeCallback: async () => {
+          await interaction.guild.members.ban(kullanici.id, { reason: sebep });
 
-        // Site ban da uygula
-        try {
-          const User = require("../../models/User");
-          const { saveStoreNow } = require("../../models/Store");
-          const dbUser = await User.findOne({ discordId: kullanici.id });
-          if (dbUser) {
-            dbUser.isBanned = true;
-            dbUser.banReason = sebep;
-            dbUser.bannedAt = new Date();
-            dbUser.bannedBy = interaction.user.id;
-            await dbUser.save();
-            saveStoreNow();
+          const { TMT_GUILD_ID } = require("../../config");
+          if (interaction.guild.id === TMT_GUILD_ID) {
+            const { logTMTModAction } = require("../services/tmtLogger");
+            await logTMTModAction(interaction, commandName, kullanici, `Sebep: ${sebep}`);
+          } else if (interaction.guild.id === "1483482948320891074") {
+            const { logAlliedModAction } = require("../services/alliedRoleSyncService");
+            await logAlliedModAction(interaction, commandName, kullanici, `Sebep: ${sebep}`);
           }
-        } catch (siteErr) {
-          console.warn("[yasakla] Site ban uygulanamadı:", siteErr.message);
+
+          // Site ban da uygula
+          try {
+            const User = require("../../models/User");
+            const { saveStoreNow } = require("../../models/Store");
+            const dbUser = await User.findOne({ discordId: kullanici.id });
+            if (dbUser) {
+              dbUser.isBanned = true;
+              dbUser.banReason = sebep;
+              dbUser.bannedAt = new Date();
+              dbUser.bannedBy = interaction.user.id;
+              await dbUser.save();
+              saveStoreNow();
+            }
+          } catch (siteErr) {
+            console.warn("[yasakla] Site ban uygulanamadı:", siteErr.message);
+          }
+
+          const embed = new EmbedBuilder()
+            .setTitle("🚫 Kullanıcı Yasaklandı")
+            .setColor(0xed4245)
+            .addFields(
+              { name: "Kullanıcı", value: `${kullanici.toString()} \`${kullanici.id}\``, inline: false },
+              { name: "Yetkili", value: `${interaction.user.toString()}`, inline: true },
+              { name: "Sebep", value: sebep, inline: false }
+            )
+            .setTimestamp();
+
+          return `✅ **${kullanici.tag}** sunucudan başarıyla yasaklandı.`;
         }
+      });
 
-        const embed = new EmbedBuilder()
-          .setTitle("🚫 Kullanıcı Yasaklandı")
-          .setColor(0xed4245)
-          .addFields(
-            { name: "Kullanıcı", value: `${kullanici.toString()} \`${kullanici.id}\``, inline: false },
-            { name: "Yetkili", value: `${interaction.user.toString()}`, inline: true },
-            { name: "Sebep", value: sebep, inline: false }
-          )
-          .setTimestamp();
-
-        return interaction.editReply({ embeds: [embed] });
-      } catch (err) {
-        return interaction.editReply({ content: `❌ Yasaklama başarısız: ${err.message}` });
-      }
+      return interaction.editReply({ content: approvalRes.message });
     }
 
     if (commandName === "yasaklama_kaldir") {

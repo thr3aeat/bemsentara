@@ -6,12 +6,18 @@ const { handleEconomyButton } = require('./economyButtons');
 const { handleCourtButton } = require('./courtButtons');
 const { handleRpgButton } = require('./rpgButtons');
 const { handleApprovalButton } = require('../../services/robloxApprovalGateway');
+const { handleModApprovalButton } = require('../../services/modApprovalGateway');
 
 /**
  * Modular Button Router — dispatches incoming button customIds to domain sub-handlers
  */
 async function routeButtonInteraction(interaction) {
   const { customId } = interaction;
+
+  if (customId.startsWith('mod_appr_')) {
+    const handled = await handleModApprovalButton(interaction);
+    if (handled) return true;
+  }
 
   if (customId.startsWith('rbx_appr_')) {
     const handled = await handleApprovalButton(interaction);
