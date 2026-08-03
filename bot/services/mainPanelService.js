@@ -866,20 +866,26 @@ async function handlePanelButton(interaction) {
         return await interaction.reply({ content: '⚠️ Kritik personel işlemleri şu anda devre dışı bırakılmıştır. Lütfen yönetim ile iletişime geçin.', ephemeral: true });
       }
 
-      if (!interaction.replied && !interaction.deferred) {
-        return await interaction.showModal(modal);
-      } else {
-        // Eğer deferReply yapıldıysa, modal gösteremeyiz
-        // Bu durumda kullanıcıya uyarı ver
+      // CRITICAL FIX: Ensure interaction is not deferred before showing modal
+      if (interaction.deferred || interaction.replied) {
+        // If already deferred, we CANNOT show modal - must error
         return await interaction.editReply({
-          content: "❌ Modal gösterilirken bir hata oluştu. Lütfen tekrar deneyin.",
+          content: "❌ Modal gösterilemiyor - tekrar deneyin",
           ephemeral: true
         });
       }
+
+      // Safe to show modal
+      return await interaction.showModal(modal);
     } catch (err) {
       console.error('[handlePanelButton] Modal göstermek hatası:', err.message);
       if (!interaction.replied && !interaction.deferred) {
         return await interaction.reply({
+          content: `❌ Modal: ${err.message}`,
+          ephemeral: true
+        });
+      } else {
+        return await interaction.editReply({
           content: `❌ Modal: ${err.message}`,
           ephemeral: true
         });
@@ -2222,9 +2228,17 @@ async function handlePanelModal(interaction) {
 
     try {
       const { handleModerationCommand } = require("../handlers/moderationCommandHandler");
+      
+      // Fetch user object for proper getUser() support
+      const userObj = await interaction.client.users.fetch(kullanici_id).catch(() => null);
+      
       const proxy = buildProxy(interaction, "tamban", {
+        getUser: (name) => {
+          if (name === "kullanici" || name === "kullanici_id") return userObj;
+          return null;
+        },
         getString: (name) => {
-          if (name === "kullanici_id") return kullanici_id;
+          if (name === "kullanici_id" || name === "kullanici") return kullanici_id;
           if (name === "seviye") return seviye;
           if (name === "sebep") return sebep;
           return null;
@@ -2244,9 +2258,17 @@ async function handlePanelModal(interaction) {
 
     try {
       const { handleModerationCommand } = require("../handlers/moderationCommandHandler");
+      
+      // Fetch user object
+      const userObj = await interaction.client.users.fetch(kullanici_id).catch(() => null);
+      
       const proxy = buildProxy(interaction, "tamban_kaldir", {
+        getUser: (name) => {
+          if (name === "kullanici" || name === "kullanici_id") return userObj;
+          return null;
+        },
         getString: (name) => {
-          if (name === "kullanici_id") return kullanici_id;
+          if (name === "kullanici_id" || name === "kullanici") return kullanici_id;
           if (name === "sebep") return sebep;
           return null;
         }

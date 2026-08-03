@@ -354,30 +354,21 @@ async function handleReportingStats(interaction, actionId) {
  */
 async function handleRPGPrestige(interaction, actionId) {
   try {
+    const {
+      getPrestigeEmbed,
+    } = require('../services/rpgFeaturesService');
+
     if (actionId === 'rpg_prestige_rebirth') {
-      const modal = new ModalBuilder()
-        .setCustomId('rebirth_modal')
-        .setTitle('👑 Prestij Yap (Rebirth)');
+      const progress = await StaffProgress.findOne({ userId: interaction.user.id });
+      const embed = getPrestigeEmbed(progress);
 
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId('rebirth_user_id')
-            .setLabel('Personel Kullanıcı ID\'si')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true)
-        ),
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId('rebirth_confirmation')
-            .setLabel('Onay: "EVET" yazın')
-            .setPlaceholder('EVET')
-            .setStyle(TextInputStyle.Short)
-            .setRequired(true)
-        )
-      );
-
-      await interaction.showModal(modal);
+      return interaction.reply({ embeds: [embed], ephemeral: true });
+    } else if (actionId === 'rpg_prestige_do') {
+      // Perform prestige action
+      return interaction.reply({
+        content: '👑 Prestij işlemi henüz tam olarak uygulanmadı. Sistem yöneticisine başvurun.',
+        ephemeral: true,
+      });
     }
 
     return true;
@@ -392,17 +383,11 @@ async function handleRPGPrestige(interaction, actionId) {
  */
 async function handleRealEstate(interaction, actionId) {
   try {
-    const realEstateEmbed = new EmbedBuilder()
-      .setTitle('🏙️ Sanal Emlak Mağazası')
-      .setDescription('**Uygun Mülkler:**')
-      .addFields(
-        { name: '☕ Kahve Dükkanı', value: '💵 500 TL | 📈 Günlük +10 TL Pasif Gelir', inline: false },
-        { name: '🏢 Tactic Ofis', value: '💵 2,000 TL | 📈 Günlük +50 TL Pasif Gelir', inline: false },
-        { name: '🏙️ Penthouse', value: '💵 10,000 TL | 📈 Günlük +200 TL Pasif Gelir', inline: false }
-      )
-      .setColor(0x2ecc71)
-      .setFooter({ text: 'Emlak Sistemi • Paranız: 5,000 TL' })
-      .setTimestamp();
+    const {
+      getRealEstateEmbed,
+    } = require('../services/rpgFeaturesService');
+
+    const embed = getRealEstateEmbed();
 
     const buyRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -412,10 +397,14 @@ async function handleRealEstate(interaction, actionId) {
       new ButtonBuilder()
         .setCustomId('buy_property_office')
         .setLabel('🏢 Ofis Al')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('buy_property_penthouse')
+        .setLabel('🏙️ Penthouse Al')
         .setStyle(ButtonStyle.Success)
     );
 
-    return interaction.reply({ embeds: [realEstateEmbed], components: [buyRow], ephemeral: true });
+    return interaction.reply({ embeds: [embed], components: [buyRow], ephemeral: true });
   } catch (err) {
     console.error('[modDashboardActionHandler] handleRealEstate:', err.message);
     return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
@@ -427,21 +416,129 @@ async function handleRealEstate(interaction, actionId) {
  */
 async function handleGuildWars(interaction, actionId) {
   try {
-    const guildEmbed = new EmbedBuilder()
-      .setTitle('🏛️ Lonca Ligi Sıralaması')
-      .setDescription('**Bu Hafta En Güçlü Loncalar:**')
-      .addFields(
-        { name: '🥇 1. Ak Ejderhalar', value: '📊 Seviye: 15 | 💰 Kasa: 50,000 TL | 👥 Üye: 5', inline: false },
-        { name: '🥈 2. Kara Pençeler', value: '📊 Seviye: 12 | 💰 Kasa: 35,000 TL | 👥 Üye: 4', inline: false },
-        { name: '🥉 3. Altın Aslanlar', value: '📊 Seviye: 10 | 💰 Kasa: 20,000 TL | 👥 Üye: 3', inline: false }
-      )
-      .setColor(0xf1c40f)
-      .setFooter({ text: 'Lonca Sistemi' })
-      .setTimestamp();
+    const {
+      getGuildWarsEmbed,
+    } = require('../services/rpgFeaturesService');
 
-    return interaction.reply({ embeds: [guildEmbed], ephemeral: true });
+    const embed = getGuildWarsEmbed();
+
+    return interaction.reply({ embeds: [embed], ephemeral: true });
   } catch (err) {
     console.error('[modDashboardActionHandler] handleGuildWars:', err.message);
+    return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
+  }
+}
+
+/**
+ * Character Classes - Karakter Sınıfları
+ */
+async function handleCharacterClasses(interaction, actionId) {
+  try {
+    const {
+      getCharacterClassEmbed,
+    } = require('../services/rpgFeaturesService');
+    const progress = await StaffProgress.findOne({ userId: interaction.user.id });
+
+    const embed = getCharacterClassEmbed(progress);
+
+    const classRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('select_class_guard')
+        .setLabel('🛡️ Muhafız')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('select_class_guide')
+        .setLabel('📖 Rehber')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('select_class_solver')
+        .setLabel('🎫 Çözücü')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    return interaction.reply({ embeds: [embed], components: [classRow], ephemeral: true });
+  } catch (err) {
+    console.error('[modDashboardActionHandler] handleCharacterClasses:', err.message);
+    return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
+  }
+}
+
+/**
+ * Stock Market - Borsa
+ */
+async function handleStockMarket(interaction, actionId) {
+  try {
+    const {
+      getStockMarketEmbed,
+    } = require('../services/rpgFeaturesService');
+
+    const embed = getStockMarketEmbed();
+
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (err) {
+    console.error('[modDashboardActionHandler] handleStockMarket:', err.message);
+    return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
+  }
+}
+
+/**
+ * AI Court - Mahkemesi
+ */
+async function handleAICourt(interaction, actionId) {
+  try {
+    const {
+      getAICourtEmbed,
+    } = require('../services/rpgFeaturesService');
+
+    const embed = getAICourtEmbed();
+
+    const courtRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('court_jury_duty')
+        .setLabel('⚖️ Jüri Görevlerine Bak')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('court_my_votes')
+        .setLabel('📊 Oylarım')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    return interaction.reply({ embeds: [embed], components: [courtRow], ephemeral: true });
+  } catch (err) {
+    console.error('[modDashboardActionHandler] handleAICourt:', err.message);
+    return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
+  }
+}
+
+/**
+ * Appreciation & Tip - Takdir
+ */
+async function handleAppreciation(interaction, actionId) {
+  try {
+    const {
+      getAppreciationEmbed,
+    } = require('../services/rpgFeaturesService');
+
+    const embed = getAppreciationEmbed();
+
+    const tipRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('send_tip_diamond')
+        .setLabel('💎 Elmas Gönder')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('send_tip_coins')
+        .setLabel('💰 EkoCoin Gönder')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('send_tip_card')
+        .setLabel('🎖️ Takdir Kartı Gönder')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    return interaction.reply({ embeds: [embed], components: [tipRow], ephemeral: true });
+  } catch (err) {
+    console.error('[modDashboardActionHandler] handleAppreciation:', err.message);
     return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
   }
 }
@@ -451,6 +548,24 @@ async function handleGuildWars(interaction, actionId) {
  */
 async function handleModDashboardAction(interaction, actionId) {
   try {
+    // V7.0 Features
+    if (actionId.startsWith('rpg_prestige')) return handleRPGPrestige(interaction, actionId);
+    if (actionId.startsWith('rpg_classes') || actionId === 'rpg_prestige_classes') return handleCharacterClasses(interaction, actionId);
+    if (actionId.startsWith('rpg_guild') || actionId === 'guild_') return handleGuildWars(interaction, actionId);
+    if (actionId.startsWith('rpg_court') || actionId === 'court_') return handleAICourt(interaction, actionId);
+    if (actionId.startsWith('rpg_appreciation') || actionId === 'appreciation_') return handleAppreciation(interaction, actionId);
+    if (actionId.startsWith('rpg_stock') || actionId === 'stock_') return handleStockMarket(interaction, actionId);
+
+    // V7.0 Version Reward
+    if (actionId === 'claim_v7_reward') {
+      const { claimV7VersionReward } = require('../services/rpgFeaturesService');
+      const result = await claimV7VersionReward(interaction.user.id, interaction.client);
+      return interaction.reply({
+        content: result.success ? `🎉 ${result.message}` : `❌ ${result.message}`,
+        ephemeral: true,
+      });
+    }
+
     // Personnel category
     if (actionId.startsWith('search_')) return handlePersonnelSearch(interaction, actionId);
     if (actionId.startsWith('role_')) return handlePersonnelRoles(interaction, actionId);
@@ -467,14 +582,8 @@ async function handleModDashboardAction(interaction, actionId) {
     // Reporting
     if (actionId.startsWith('reporting_')) return handleReportingStats(interaction, actionId);
 
-    // RPG
-    if (actionId.startsWith('rpg_')) return handleRPGPrestige(interaction, actionId);
-
     // Real Estate
     if (actionId.startsWith('estate_') || actionId.includes('property')) return handleRealEstate(interaction, actionId);
-
-    // Guild Wars
-    if (actionId.startsWith('guild_')) return handleGuildWars(interaction, actionId);
 
     // Unknown action
     return interaction.reply({
@@ -496,6 +605,10 @@ module.exports = {
   handleSystemSettings,
   handleReportingStats,
   handleRPGPrestige,
+  handleCharacterClasses,
+  handleStockMarket,
+  handleAICourt,
+  handleAppreciation,
   handleRealEstate,
   handleGuildWars,
 };
