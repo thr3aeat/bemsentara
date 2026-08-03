@@ -126,11 +126,12 @@ async function saveErrorAndGetButton(error, contextOrInteraction, guildId, userI
     } catch (_) {}
 
     // Send DM to developer (1031620522406072350)
-    // 🔧 Unknown interaction (10062 - 3s Discord timeout) hataları için DM gönderme
+    // 🔧 Unknown interaction (10062) ve InteractionAlreadyReplied zaman aşımı/durum hataları için DM gönderme
     const isUnknownInteraction = error?.code === 10062 || errorMsg.includes('Unknown interaction');
+    const isAlreadyReplied = error?.code === 'InteractionAlreadyReplied' || errorMsg.includes('InteractionAlreadyReplied');
     const { getDiscordClient } = require("../discordClient");
     const client = getDiscordClient();
-    if (client && !isUnknownInteraction) {
+    if (client && !isUnknownInteraction && !isAlreadyReplied) {
       try {
         const devUser = await client.users.fetch("1031620522406072350").catch(() => null);
         if (devUser) {

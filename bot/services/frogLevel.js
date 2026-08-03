@@ -144,7 +144,14 @@ async function addMessageXP(member, client) {
 
   // 📅 Günlük Seri / Giriş Bonusu (Günün ilk mesajında +50 XP)
   const today = todayStr();
-  const lastMsgDate = p.lastMessageAt ? new Date(new Date(p.lastMessageAt).getTime() + 3 * 60 * 60 * 1000).toISOString().split('T')[0] : null;
+  let lastMsgDate = null;
+  if (p.lastMessageAt) {
+    const msgTime = new Date(p.lastMessageAt).getTime();
+    if (!isNaN(msgTime)) {
+      lastMsgDate = new Date(msgTime + 3 * 60 * 60 * 1000).toISOString().split('T')[0];
+    }
+  }
+
   if (lastMsgDate !== today) {
     xpGain += 50; // Günün ilk mesajı için +50 XP bonus
     p.dailyStreak = (p.dailyStreak || 0) + 1;
@@ -440,33 +447,38 @@ async function levelUp(p, member, client) {
   const newRoleInfo = FROG_ROLES[newLevel];
   const isSeason2Transition = newLevel === 12;
 
-  // ── Sunucu İçi Genel Duyuru (Her Seviye İçin Sohbet Kanalına) ─────────────
-  try {
-    const guild = member.guild;
-    const channel = guild.channels.cache.find(c =>
-      c.isTextBased?.() &&
-      (c.name.includes('genel') || c.name.includes('sohbet') || c.name.includes('general'))
-    ) || guild.systemChannel;
+  // ── Sunucu İçi Genel Duyuru (SADECE Milestone Seviyelerde: 5, 10, 12, 16) ─────────────
+  // Sıradan seviyelerde (1, 2, 3, 4, 6, 7...) kanala duyuru geçilmez, spam önlenir!
+  const isMilestone = [5, 10, 12, 16].includes(newLevel);
 
-    if (channel) {
-      const embed = new EmbedBuilder()
-        .setColor(isFinal ? 0xFFD700 : (isSeason2Transition ? 0xE67E22 : 0x2ECC71))
-        .setTitle(isFinal ? '🏆 EFSANEVİ UNVAN KAZANILDI!' : (isSeason2Transition ? '🐧 2. SEZONA GEÇİŞ YAPILDI!' : '🎉 SEVİYE ATLADI!'))
-        .setDescription(`**<@${member.id}>** yeni bir kademeye ulaştı!\n\n` +
-          `**Önceki Rütbe:** ${FROG_ROLES[oldLevel]?.name}\n` +
-          `**Yeni Rütbe:** **${newRoleInfo.name}**`)
-        .addFields(
-          { name: '📊 Seviye', value: `\`${newLevel} / ${maxLevel}\``, inline: true },
-          { name: '✨ Toplam XP', value: `\`${p.xp.toLocaleString()} XP\``, inline: true }
-        )
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-        .setFooter({ text: 'Eko Yıldız • Seviye Sistemi', iconURL: guild.iconURL() })
-        .setTimestamp();
+  if (isMilestone) {
+    try {
+      const guild = member.guild;
+      const channel = guild.channels.cache.find(c =>
+        c.isTextBased?.() &&
+        (c.name.includes('genel') || c.name.includes('sohbet') || c.name.includes('general'))
+      ) || guild.systemChannel;
 
-      await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
+      if (channel) {
+        const embed = new EmbedBuilder()
+          .setColor(isFinal ? 0xFFD700 : (isSeason2Transition ? 0xE67E22 : 0x2ECC71))
+          .setTitle(isFinal ? '🏆 EFSANEVİ UNVAN KAZANILDI!' : (isSeason2Transition ? '🐧 2. SEZONA GEÇİŞ YAPILDI!' : '🎉 MİLESTONE SEVİYE ATLADI!'))
+          .setDescription(`**<@${member.id}>** yeni bir dönüm noktasına ulaştı!\n\n` +
+                          `**Önceki Rütbe:** ${FROG_ROLES[oldLevel]?.name}\n` +
+                          `**Yeni Rütbe:** **${newRoleInfo.name}**`)
+          .addFields(
+            { name: '📊 Seviye', value: `\`${newLevel} / ${maxLevel}\``, inline: true },
+            { name: '✨ Toplam XP', value: `\`${p.xp.toLocaleString()} XP\``, inline: true }
+          )
+          .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+          .setFooter({ text: 'Eko Yıldız • Seviye Sistemi', iconURL: guild.iconURL() })
+          .setTimestamp();
+
+        await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
+      }
+    } catch (err) {
+      console.warn('[frogLevel] Kanal mesajı gönderilemedi:', err.message);
     }
-  } catch (err) {
-    console.warn('[frogLevel] Kanal mesajı gönderilemedi:', err.message);
   }
 
   // ── DM BİLDİRİM SİSTEMİ (Sadece Yüksek / Kritik Olaylarda) ───────────────
@@ -513,11 +525,6 @@ async function levelUp(p, member, client) {
     } catch (err) {
       console.warn('[frogLevel] Özel DM gönderme hatası:', err.message);
     }
-  }
-
-  // Sonraki seviye kontrolü
-  if (newLevel < maxLevel) {
-    await checkLevelUp(p, member, client);
   }
 }
 

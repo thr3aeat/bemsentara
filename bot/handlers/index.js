@@ -63,6 +63,9 @@ function initializeDiscordHandlers(client) {
         const origDeferReply = cls.prototype.deferReply;
         if (origDeferReply) {
           cls.prototype.deferReply = function (options) {
+            if (this.deferred || this.replied) {
+              return Promise.resolve(null);
+            }
             patchInteractionOptions(options);
             return origDeferReply.call(this, options);
           };

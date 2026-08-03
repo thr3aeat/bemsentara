@@ -21,7 +21,9 @@ async function handleSlashCommand(interaction) {
     return sendGrafiklerMenu(interaction, 'trend');
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
+  }
 
   try {
     const user = await User.findOne({ discordId: interaction.user.id }).catch(err => {
