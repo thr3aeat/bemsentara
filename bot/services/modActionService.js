@@ -522,6 +522,25 @@ async function handleModActionApproval(interaction) {
       });
       await dbUser.save();
       saveStoreNow();
+
+      // Güven ve Performans Puanı Güncelleme (Onaylanan Ağır Cezalar)
+      try {
+        const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
+        let userPenaltyPoints = -5.0;
+        if (reason.penalties.includes("ban")) {
+          userPenaltyPoints = -30.0;
+        } else if (reason.penalties.includes("mute") || reason.penalties.includes("yazma_engeli") || reason.penalties.includes("foto_engeli")) {
+          userPenaltyPoints = -15.0;
+        }
+        
+        const targetUser = await interaction.client.users.fetch(pending.targetUserId).catch(() => null);
+        const targetUsername = targetUser ? targetUser.username : pending.targetUserTag;
+
+        await updateTrustScore(pending.targetUserId, userPenaltyPoints, `Onaylanan Ceza: ${reason.label}`, pending.moderatorId, interaction.client);
+        await addModPoints(pending.moderatorId, 2.5, `Onaylanan Modislem: ${reason.label} (${targetUsername})`);
+      } catch (errScore) {
+        console.error("[approval] Puan güncelleme hatası:", errScore.message);
+      }
     } catch (err) {
       console.error("[modAction] DB kayıt hatası:", err.message);
     }
@@ -725,6 +744,21 @@ async function applyPenalties(interaction, guild, member, targetUser, reasonKey,
     });
     await dbUser.save();
     saveStoreNow();
+
+    // Güven ve Performans Puanı Güncelleme
+    try {
+      const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
+      let userPenaltyPoints = -5.0; // Default warning
+      if (reason.penalties.includes("ban")) {
+        userPenaltyPoints = -30.0;
+      } else if (reason.penalties.includes("mute") || reason.penalties.includes("yazma_engeli") || reason.penalties.includes("foto_engeli")) {
+        userPenaltyPoints = -15.0;
+      }
+      await updateTrustScore(targetUser.id, userPenaltyPoints, `Modİşlem Cezası: ${reason.label}`, interaction.user.id, interaction.client);
+      await addModPoints(interaction.user.id, 2.5, `Modislem: ${reason.label} (${targetUser.username})`);
+    } catch (errScore) {
+      console.error("[applyPenalties] Puan güncelleme hatası:", errScore.message);
+    }
   } catch (err) {
     console.error("[modAction] DB kayıt hatası:", err.message);
   }

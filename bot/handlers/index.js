@@ -103,6 +103,10 @@ function initializeDiscordHandlers(client) {
   const { setupForumLogHandlers } = require("./forumLogHandler");
   setupForumLogHandlers(client);
 
+  // Çift Yönlü Güven ve Performans Puanı Sistemi
+  const { initializeTrustScoreHandlers } = require("./trustScoreHandler");
+  initializeTrustScoreHandlers(client);
+
   client.once("ready", async () => {
     logger.section("READY INITIALIZATION");
     logger.info("Bot hazır, servisler başlatılıyor...");
@@ -126,6 +130,20 @@ function initializeDiscordHandlers(client) {
     const { startJailScheduler } = require("../services/jailService");
 
     startJailScheduler(client);
+
+    // Start Voice Scan Scheduler for Trust Score System
+    try {
+      const { scanVoiceChannels } = require("../services/security/trustScoreService");
+      // Run once on startup after a delay
+      setTimeout(() => scanVoiceChannels(client).catch(() => {}), 15000);
+      // Run every 30 minutes
+      setInterval(() => {
+        scanVoiceChannels(client).catch(err => console.error("[scanVoiceChannels Interval] Error:", err.message));
+      }, 30 * 60 * 1000);
+      console.log("✅ Güven Puanı Ses Kanalı Tarayıcısı başlatıldı.");
+    } catch (trustErr) {
+      console.error("[TrustScore] Ses tarayıcı başlatılamadı:", trustErr.message);
+    }
 
     await ensureVerifyHelpMessage(client);
     await ensureVoicePanelMessage(client);

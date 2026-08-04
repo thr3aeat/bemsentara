@@ -98,6 +98,11 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  if (customId.startsWith("trust_")) {
+    const { handleTrustButtons } = require("../services/security/trustScoreService");
+    return handleTrustButtons(interaction);
+  }
+
   // ── Yeni Hesap Güvenlik Sistemi Butonları ──────────────────────────────────
   if (customId.startsWith("survey_") || customId.startsWith("investigate_") || customId.startsWith("tempjail_duration_")) {
     const { handleNewAccountButtons } = require("./newAccountButtonHandler");

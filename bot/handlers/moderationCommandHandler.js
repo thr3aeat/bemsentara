@@ -61,6 +61,15 @@ async function handleModerationCommand(interaction) {
       const duration = parseDuration(sure || "10m");
       await member.timeout(duration, `Sebep: ${sebep}`);
 
+      // Güven ve Performans Puanı Güncelleme
+      try {
+        const { updateTrustScore, addModPoints } = require("../services/security/trustScoreService");
+        await updateTrustScore(kullanici.id, -15.0, `Susturuldu (Süre: ${sure || "10 dakika"}, Sebep: ${sebep})`, interaction.user.id, interaction.client);
+        await addModPoints(interaction.user.id, 2.5, `Mod İşlem: Kullanıcı Susturma (${kullanici.username})`);
+      } catch (errScore) {
+        console.error("[sustur] Puan güncelleme hatası:", errScore.message);
+      }
+
       const { TMT_GUILD_ID } = require("../../config");
       if (interaction.guild.id === TMT_GUILD_ID) {
         const { logTMTModAction } = require("../services/tmtLogger");
@@ -123,6 +132,15 @@ async function handleModerationCommand(interaction) {
         reason: sebep,
         executeCallback: async () => {
           await interaction.guild.members.ban(kullanici.id, { reason: sebep });
+
+          // Güven ve Performans Puanı Güncelleme
+          try {
+            const { updateTrustScore, addModPoints } = require("../services/security/trustScoreService");
+            await updateTrustScore(kullanici.id, -30.0, `Yasaklandı (Sebep: ${sebep})`, interaction.user.id, interaction.client);
+            await addModPoints(interaction.user.id, 2.5, `Mod İşlem: Kullanıcı Yasaklama (${kullanici.username})`);
+          } catch (errScore) {
+            console.error("[yasakla] Puan güncelleme hatası:", errScore.message);
+          }
 
           const { TMT_GUILD_ID } = require("../../config");
           if (interaction.guild.id === TMT_GUILD_ID) {

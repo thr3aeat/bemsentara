@@ -60,6 +60,15 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
 
   await dbUser.save();
 
+  // Güven ve Performans Puanı Güncelleme (Uyarı)
+  try {
+    const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
+    await updateTrustScore(targetUser.id, -5.0, `Disiplin Uyarısı Alındı (${reason})`, executorUser.id, interactionOrMessage.client);
+    await addModPoints(executorUser.id, 2.5, `Mod İşlem: Kullanıcı Uyarısı (${targetUser.username})`);
+  } catch (errScore) {
+    console.error("[issueWarning] Puan güncelleme hatası:", errScore.message);
+  }
+
   const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
 
   // 3/3 Warning Threshold -> Auto Jail!
@@ -166,6 +175,15 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
   const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
   if (targetMember && targetMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
     await targetMember.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis cezası sebebiyle Yavru Dinazor rolü alındı.').catch(() => {});
+  }
+
+  // Güven ve Performans Puanı Güncelleme (Hapis)
+  try {
+    const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
+    await updateTrustScore(targetUser.id, -30.0, `Hapse Atıldı (Süre: ${durationMinutes} Dk, Sebep: ${reason})`, executorUser.id, interactionOrMessage.client);
+    await addModPoints(executorUser.id, 2.5, `Mod İşlem: Hapis İnfazı (${targetUser.username})`);
+  } catch (errScore) {
+    console.error("[issueJail] Puan güncelleme hatası:", errScore.message);
   }
 
   const jailEmbed = new EmbedBuilder()

@@ -69,6 +69,12 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Güven Puanı Manuel Değişim Modalleri ────────────────────────────────────
+  if (interaction.customId.startsWith('trust_modal_')) {
+    const { handleTrustModals } = require("../services/security/trustScoreService");
+    return handleTrustModals(interaction);
+  }
+
   // ── Mutation (Mute/Deafen/Kick) İtiraz Modal ────────────────────────────────
   if (interaction.customId.startsWith('mutation_appeal_modal_')) {
     const { handleMutationAppealModalSubmit } = require("../services/mutationAppealService");
@@ -2477,6 +2483,14 @@ async function handleCloseReasonModal(interaction) {
   ticket.closedBy = interaction.user.id;
   ticket.closedByName = interaction.user.username;
   await ticket.save();
+
+  // Güven ve Performans Puanı Güncelleme (Ticket Kapatma)
+  try {
+    const { addModPoints } = require("../services/security/trustScoreService");
+    await addModPoints(interaction.user.id, 1.5, `Destek Bileti Çözüldü (#${ticketId})`);
+  } catch (errScore) {
+    console.error("[ticketClose] Mod puanı güncelleme hatası:", errScore.message);
+  }
 
   try {
     const { addNotification } = require("../../utils/notification");
