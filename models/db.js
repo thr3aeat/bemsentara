@@ -15,7 +15,7 @@ const MONGODB_URI = process.env.MONGODB_URI || null;
 
 const recordSchema = new mongoose.Schema(
   {
-    _storeId: { type: String, required: true, index: true }, // InMemoryCollection'daki _id
+    _storeId: { type: String, required: true }, // InMemoryCollection'daki _id
     collection: { type: String, required: true, index: true },
     data: { type: mongoose.Schema.Types.Mixed, required: true },
   },
@@ -35,11 +35,33 @@ async function connectMongo() {
     });
     Record = mongoose.model("StoreRecord", recordSchema);
     
-    // Drop the old global unique index on _storeId to allow same _storeId in different collections
-    try {
-      await Record.collection.dropIndex("_storeId_1");
-      console.log("[db] Eski global unique _storeId_1 indeksi başarıyla silindi.");
-    } catch (_) {}
+    const checkAndDropUniqueIndex = async () => {
+      try {
+        const db = mongoose.connection.db;
+        if (!db) return;
+        
+        const collections = await db.listCollections({ name: "storerecords" }).toArray();
+        if (collections.length === 0) return;
+
+        const collection = db.collection("storerecords");
+        const indexes = await collection.indexes();
+        const storeIdIndex = indexes.find(idx => idx.name === "_storeId_1");
+        if (storeIdIndex) {
+          console.log("[db] Eski tekil _storeId_1 indeksi bulundu, siliniyor...");
+          await collection.dropIndex("_storeId_1");
+          console.log("[db] Eski tekil _storeId_1 indeksi başarıyla silindi!");
+          await Record.createIndexes();
+        }
+      } catch (err) {
+        console.error("[db] İndeks kontrol/silme hatası:", err.message);
+      }
+    };
+
+    if (mongoose.connection.readyState === 1) {
+      checkAndDropUniqueIndex();
+    } else {
+      mongoose.connection.once("open", checkAndDropUniqueIndex);
+    }
 
     connected = true;
     usesMongo = true;
