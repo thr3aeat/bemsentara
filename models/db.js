@@ -15,7 +15,7 @@ const MONGODB_URI = process.env.MONGODB_URI || null;
 
 const recordSchema = new mongoose.Schema(
   {
-    _storeId: { type: String, required: true, unique: true }, // InMemoryCollection'daki _id
+    _storeId: { type: String, required: true, index: true }, // InMemoryCollection'daki _id
     collection: { type: String, required: true, index: true },
     data: { type: mongoose.Schema.Types.Mixed, required: true },
   },
@@ -34,6 +34,13 @@ async function connectMongo() {
       serverSelectionTimeoutMS: 8000,
     });
     Record = mongoose.model("StoreRecord", recordSchema);
+    
+    // Drop the old global unique index on _storeId to allow same _storeId in different collections
+    try {
+      await Record.collection.dropIndex("_storeId_1");
+      console.log("[db] Eski global unique _storeId_1 indeksi başarıyla silindi.");
+    } catch (_) {}
+
     connected = true;
     usesMongo = true;
     console.log("[db] MongoDB bağlantısı kuruldu.");
@@ -74,15 +81,27 @@ async function loadCollectionFromMongo(collectionName) {
 async function upsertRecord(collectionName, storeId, data) {
   if (!isMongoActive()) return;
   try {
-    // _id gibi mongoose özel alanlarını temizle
     const clean = JSON.parse(JSON.stringify(data));
     delete clean.save;
 
-    await Record.findOneAndUpdate(
-      { collection: collectionName, _storeId: storeId },
-      { $set: { data: clean } },
-      { upsert: true, new: true, session: null }
-    );
+    try {
+      await Record.findOneAndUpdate(
+        { collection: collectionName, _storeId: storeId },
+        { $set: { data: clean } },
+        { upsert: true, new: true, session: null }
+      );
+    } catch (err) {
+      if (err.code === 11000) {
+        // Concurrency retry
+        await Record.findOneAndUpdate(
+          { collection: collectionName, _storeId: storeId },
+          { $set: { data: clean } },
+          { upsert: true, new: true, session: null }
+        );
+      } else {
+        throw err;
+      }
+    }
   } catch (err) {
     console.error(`[db] Kayıt güncellenemedi (${collectionName}/${storeId}):`, err.message);
   }

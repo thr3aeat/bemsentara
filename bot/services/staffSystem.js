@@ -1096,7 +1096,7 @@ async function recordGreet(userId, client, guildId = null) {
       return;
     }
 
-    resetDaily(p);
+    resetDaily(p, client);
     if (p.daily.greetMessageId) {
       await updateGreetProgressMessage(p, client).catch(() => { p.daily.greetMessageId = ''; });
     }
@@ -1212,7 +1212,7 @@ async function addVoiceMinutes(userId, minutes, client) {
       return;
     }
 
-    resetDaily(p);
+    resetDaily(p, client);
     const req = getDailyRequirements(p.level, p.stats.consecutiveDays || 0);
     const targetVoice = req.voiceMinutes + (p.daily.transferredVoiceMinutes || 0);
     const wasVoiceDoneBefore = (p.daily.voiceMinutes || 0) >= targetVoice;
@@ -1455,7 +1455,7 @@ async function recordModerationAction(userId, client, targetUserId = null, actio
     }
 
     // 🔧 Günü sıfırla (gün değişmişse günlük görevler sıfırlanır)
-    resetDaily(p);
+    resetDaily(p, client);
 
     p.stats.moderationActions = (p.stats.moderationActions || 0) + 1;
     p.daily.moderationActionsToday = (p.daily.moderationActionsToday || 0) + 1;
@@ -1804,7 +1804,7 @@ async function recordTicketSolved(userId, client) {
     }
 
     // 🔧 Günü sıfırla (gün değişmişse günlük görevler sıfırlanır)
-    resetDaily(p);
+    resetDaily(p, client);
 
     p.stats.ticketsSolved = (p.stats.ticketsSolved || 0) + 1;
     p.daily.ticketsSolvedToday = (p.daily.ticketsSolvedToday || 0) + 1;
@@ -2409,7 +2409,7 @@ async function sendMorningBriefing(progress, client) {
     console.error('[staffSystem] sendMorningBriefing unit fetch error:', err.message);
   }
 
-  resetDaily(progress);
+  resetDaily(progress, client);
 
   let allowedTasks = ['task_chat', 'task_double_chat', 'task_voice', 'task_double_voice', 'task_ticket', 'task_mod', 'task_greet', 'task_double_greet', 'task_word_game', 'task_bom_game', 'task_chat_with_people'];
   if (userUnit && userUnit.unitName) {
@@ -2477,7 +2477,7 @@ function isPromotionEligible(progress) {
 }
 
 async function generateMorningBriefingEmbed(progress, client) {
-  resetDaily(progress);
+  resetDaily(progress, client);
 
   // Initialize briefing settings if missing
   if (!progress.briefingSettings) {
@@ -5359,7 +5359,7 @@ async function postponeDailyTask(userId, client) {
       return { success: false, message: 'Aktif personel bulunamadı.' };
     }
 
-    resetDaily(p);
+    resetDaily(p, client);
 
     if (p.postponeBlocked) {
       return { success: false, message: 'Görev eksiltme yetkiniz AI Koç tarafından askıya alınmıştır!' };
@@ -5471,6 +5471,7 @@ async function updateGreetProgressMessage(progress, client) {
 
 async function clearGreetProgressMessage(progress, client) {
   if (!progress.daily?.greetMessageId) return false;
+  if (!client) return false;
   const discordUser = await client.users.fetch(progress.userId).catch(() => null);
   if (!discordUser) return false;
 
@@ -5706,7 +5707,7 @@ async function recordSurvey(userId, surveyTitle = 'Anket', client = null) {
     }
     const p = await getOrCreate(userId, GUILD_ID, client);
     if (!p || p.status !== 'active') return;
-    resetDaily(p);
+    resetDaily(p, client);
     p.stats.surveysCompleted = (p.stats.surveysCompleted || 0) + 1;
     await p.save().catch(err => {
       console.error('[staffSystem] recordSurvey save error:', err.message);
