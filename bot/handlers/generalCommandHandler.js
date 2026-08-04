@@ -2227,6 +2227,84 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
       return interaction.editReply({ embeds: [embed] });
     }
 
+    if (commandName === "yardim-onayla") {
+      const targetUser = interaction.options.getUser("kullanici");
+      const { updateTrustScore } = require("../services/security/trustScoreService");
+      await updateTrustScore(targetUser.id, 1.5, "Yetkili Onaylı Destek Yardımı", interaction.user.id, interaction.client);
+      return interaction.editReply({ content: `✅ <@${targetUser.id}> kullanıcısına yardım ettiği onaylandığı için **+1.5** TS eklendi.` });
+    }
+
+    if (commandName === "rehber-onayla") {
+      const targetUser = interaction.options.getUser("kullanici");
+      const { updateTrustScore } = require("../services/security/trustScoreService");
+      await updateTrustScore(targetUser.id, 3.0, "Onaylanan Rehber / Forum Paylaşımı", interaction.user.id, interaction.client);
+      return interaction.editReply({ content: `✅ <@${targetUser.id}> kullanıcısına rehber paylaşımı onaylandığı için **+3.0** TS eklendi.` });
+    }
+
+    if (commandName === "hata-onayla") {
+      const targetUser = interaction.options.getUser("kullanici");
+      const puan = interaction.options.getNumber("puan");
+      if (puan < 10.0 || puan > 25.0) {
+        return interaction.editReply({ content: "❌ Puan 10.0 ile 25.0 arasında olmalıdır." });
+      }
+      const { updateTrustScore } = require("../services/security/trustScoreService");
+      await updateTrustScore(targetUser.id, puan, "Onaylanan Hata / Açık Bildirimi (Bug Bounty)", interaction.user.id, interaction.client);
+      return interaction.editReply({ content: `✅ <@${targetUser.id}> kullanıcısına bug bounty ödülü olarak **+${puan.toFixed(1)}** TS eklendi.` });
+    }
+
+    if (commandName === "ts-ceza") {
+      const targetUser = interaction.options.getUser("kullanici");
+      const tip = interaction.options.getString("tip");
+      const { updateTrustScore } = require("../services/security/trustScoreService");
+      
+      let puan = 0;
+      let sebep = "";
+      let isQuarantine = false;
+
+      if (tip === "misleading") {
+        puan = -5.0;
+        sebep = "Yanıltıcı / Yanlış Bilgi Yayma";
+      } else if (tip === "busy_staff") {
+        puan = -3.0;
+        sebep = "Yetkiliyi Gereksiz Meşgul Etme";
+      } else if (tip === "toxic") {
+        puan = -5.0;
+        sebep = "Tartışma Çıkarma / Toksik Tutum";
+      } else if (tip === "light_swear") {
+        puan = -3.0;
+        sebep = "Argolu / Hakaret İçerikli Dil (Hafif)";
+      } else if (tip === "direct_swear") {
+        puan = -10.0;
+        sebep = "Doğrudan Şahsa Hakaret / Küfür";
+      } else if (tip === "hate_speech") {
+        puan = -50.0;
+        sebep = "Nefret Söylemi / Ayrımcılık";
+        isQuarantine = true;
+      }
+
+      await updateTrustScore(targetUser.id, puan, `Ceza: ${sebep}`, interaction.user.id, interaction.client);
+
+      if (isQuarantine) {
+        const member = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
+        if (member) {
+          const highRiskRole = interaction.guild.roles.cache.find(r => r.name === "Yüksek Risk") || 
+                               await interaction.guild.roles.create({
+                                 name: "Yüksek Risk",
+                                 color: "#ff0000",
+                                 reason: "Güvenlik Sistemi: Yüksek Risk Seviyesi (Nefret Söylemi)"
+                               }).catch(() => null);
+          if (highRiskRole) {
+            await member.roles.add(highRiskRole).catch(() => {});
+          }
+          await member.timeout(7 * 24 * 60 * 60 * 1000, `Otonom Ceza: ${sebep} (10.0)`).catch(() => {});
+        }
+      }
+
+      return interaction.editReply({ 
+        content: `✅ <@${targetUser.id}> kullanıcısına **${sebep}** nedeniyle **${puan.toFixed(1)}** TS cezası uygulandı.${isQuarantine ? " (Kullanıcı otomatik olarak karantinaya alındı)" : ""}` 
+      });
+    }
+
     if (commandName === "closeticket") {
       const reason = interaction.options.getString("reason") || "Belirtilmedi";
       const ticket = await Ticket.findOne({ userId: interaction.user.id, status: "open" });

@@ -283,6 +283,40 @@ const generalCommands = [
     .setDescription("Roblox hesabınızı doğrulamak için kullanılır.")
     .setDMPermission(true),
 
+  new SlashCommandBuilder()
+    .setName("yardim-onayla")
+    .setDescription("🤝 Bir kullanıcının başkasına yardım ettiğini onaylar (+1.5 TS)")
+    .addUserOption(o => o.setName("kullanici").setDescription("Yardım eden kullanıcı").setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  new SlashCommandBuilder()
+    .setName("rehber-onayla")
+    .setDescription("📚 Bir kullanıcının rehber/forum paylaşımını onaylar (+3.0 TS)")
+    .addUserOption(o => o.setName("kullanici").setDescription("Paylaşım yapan kullanıcı").setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  new SlashCommandBuilder()
+    .setName("hata-onayla")
+    .setDescription("🐛 Bir kullanıcının hata/açık bildirimini onaylar (+10.0 ila +25.0 TS)")
+    .addUserOption(o => o.setName("kullanici").setDescription("Bildirim yapan kullanıcı").setRequired(true))
+    .addNumberOption(o => o.setName("puan").setDescription("Verilecek puan (10.0 - 25.0)").setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  new SlashCommandBuilder()
+    .setName("ts-ceza")
+    .setDescription("🔴 Kullanıcıya standart bir güven puanı cezası uygular")
+    .addUserOption(o => o.setName("kullanici").setDescription("Ceza verilecek kullanıcı").setRequired(true))
+    .addStringOption(o => o.setName("tip").setDescription("Ceza tipi").setRequired(true)
+      .addChoices(
+        { name: "Yanıltıcı/Yanlış Bilgi Yayma (-5.0 TS)", value: "misleading" },
+        { name: "Yetkiliyi Gereksiz Meşgul Etme (-3.0 TS)", value: "busy_staff" },
+        { name: "Tartışma Çıkarma / Toksik Tutum (-5.0 TS)", value: "toxic" },
+        { name: "Hafif Argo / Küfür (-3.0 TS)", value: "light_swear" },
+        { name: "Doğrudan Hakaret / Ağır Küfür (-10.0 TS)", value: "direct_swear" },
+        { name: "Nefret Söylemi / Ayrımcılık (-50.0 TS & Karantina)", value: "hate_speech" }
+      ))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
   // ── MODERASYON KOMUTLARI ──────────────────────────────────────────────────
 
   new SlashCommandBuilder()

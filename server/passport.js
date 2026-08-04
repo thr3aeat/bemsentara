@@ -84,6 +84,9 @@ passport.use(
 
         let user = await User.findOne({ discordId });
 
+        const mfaEnabled = profile._json ? !!profile._json.mfa_enabled : false;
+        const phoneVerified = profile._json ? !!profile._json.verified : false;
+
         if (!user) {
           user = new User({
             discordId,
@@ -93,12 +96,16 @@ passport.use(
             discordBanner: bannerUrl,
             isAdmin: envAdmin,
             isStaff: envAdmin,
+            mfaEnabled,
+            phoneVerified,
           });
         } else {
           user.discordUsername = profile.username;
           user.discordEmail = profile.email;
           user.discordAvatar = avatarUrl;
           if (bannerUrl) user.discordBanner = bannerUrl;
+          user.mfaEnabled = mfaEnabled;
+          user.phoneVerified = phoneVerified;
           if (envAdmin) {
             user.isAdmin = true;
             user.isStaff = true;

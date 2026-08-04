@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 
 const UserTrustScore = require('../models/UserTrustScore');
 const ModPerformance = require('../models/ModPerformance');
-const { updateTrustScore, addModPoints, checkModAbuseLimit } = require('../bot/services/security/trustScoreService');
+const { updateTrustScore, addModPoints, checkModAbuseLimit, incrementAfProgress, scanVoiceChannels } = require('../bot/services/security/trustScoreService');
 
 // Mock client
 const fakeClient = {
@@ -42,6 +42,9 @@ const fakeClient = {
         })
       },
       channels: {
+        cache: {
+          values: () => []
+        },
         create: async () => ({
           id: "chan_999",
           send: async () => ({
@@ -51,6 +54,10 @@ const fakeClient = {
         }),
         fetch: async () => ({
           id: "chan_999",
+          send: async () => ({
+            id: "msg_999",
+            pin: async () => {}
+          }),
           messages: {
             fetch: async () => ({
               id: "msg_999",
@@ -98,4 +105,42 @@ test('checkModAbuseLimit detects rapid manual changes', async () => {
   await updateTrustScore(userId, 5.0, "Manuel Düzenleme: Test 2", modId, fakeClient);
   isExceeded = await checkModAbuseLimit(modId, userId);
   assert.equal(isExceeded, true, 'Abuse limit should be reached on 2nd change within 1 hour');
+});
+
+test('Ceza Bitirme Görevi (Af Progress) increments correctly', async () => {
+  const userId = `user_${Math.floor(Math.random() * 1000000)}`;
+
+  // Set score < 50 to activate Af mission
+  await updateTrustScore(userId, -70.0, "Büyük Ceza", "SYSTEM", fakeClient);
+
+  let doc = await UserTrustScore.findOne({ userId });
+  assert.equal(doc.afProgress.active, true, 'Af mission should be active when score < 50');
+
+  // Send 20 messages to complete Day 1
+  for (let i = 0; i < 20; i++) {
+    await incrementAfProgress(userId, fakeClient);
+  }
+
+  doc = await UserTrustScore.findOne({ userId });
+  assert.equal(doc.afProgress.daysCompleted, 1, 'Days completed should increment to 1 after 20 messages');
+});
+
+test('Inactivity decay deductions are applied', async () => {
+  const userId = `user_${Math.floor(Math.random() * 1000000)}`;
+
+  // Set score high
+  await updateTrustScore(userId, 50.0, "Giriş Puanı", "SYSTEM", fakeClient);
+
+  let doc = await UserTrustScore.findOne({ userId });
+  assert.ok(doc.trustScore > 100.0);
+
+  // Manipulate last active time to be 31 days ago
+  doc.lastActiveTimestamp = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000);
+  await doc.save();
+
+  // Run scan voice channels which initiates decay checks
+  await scanVoiceChannels(fakeClient);
+
+  doc = await UserTrustScore.findOne({ userId });
+  assert.ok(doc.trustScore < 165.0, 'Inactivity decay should reduce the trust score');
 });

@@ -17,6 +17,32 @@ const UserTrustScore = {
       lastPointsResetDate: new Date().toISOString().split('T')[0],
       messageCount: 0,
       lastMessageTimestamp: null,
+      
+      // New specifications
+      dailyStreak: 0,
+      lastMessageDate: null,
+      streakLastBonusDate: null,
+      helpedUsersCount: 0,
+      forumSharesCount: 0,
+      bugReportsCount: 0,
+      weeklyDecayLastChecked: null,
+      lastActiveTimestamp: new Date(),
+      bonus2FA: false,
+      bonusPhone: false,
+      bonusAccountAge: 0, // 0, 5, 10
+      bonusJoinAge: 0, // 0, 5, 15
+      capsViolationsCount: 0,
+      lastCapsViolationReset: new Date().toISOString().split('T')[0],
+      afProgress: {
+        active: false,
+        daysCompleted: 0,
+        messagesToday: 0,
+        lastMessageDay: null,
+        lastPenaltyDate: null
+      },
+      
+      profileChannelId: null,
+      profileMessageId: null,
       createdAt: new Date(),
     };
     return Promise.resolve(userTrustScores.create({ ...defaults, ...data }));
@@ -32,6 +58,32 @@ function UserTrustScoreConstructor(data) {
     lastPointsResetDate: new Date().toISOString().split('T')[0],
     messageCount: 0,
     lastMessageTimestamp: null,
+    
+    // New specifications
+    dailyStreak: 0,
+    lastMessageDate: null,
+    streakLastBonusDate: null,
+    helpedUsersCount: 0,
+    forumSharesCount: 0,
+    bugReportsCount: 0,
+    weeklyDecayLastChecked: null,
+    lastActiveTimestamp: new Date(),
+    bonus2FA: false,
+    bonusPhone: false,
+    bonusAccountAge: 0,
+    bonusJoinAge: 0,
+    capsViolationsCount: 0,
+    lastCapsViolationReset: new Date().toISOString().split('T')[0],
+    afProgress: {
+      active: false,
+      daysCompleted: 0,
+      messagesToday: 0,
+      lastMessageDay: null,
+      lastPenaltyDate: null
+    },
+    
+    profileChannelId: null,
+    profileMessageId: null,
     createdAt: new Date(),
   };
   const merged = { ...defaults, ...data };

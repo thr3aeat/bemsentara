@@ -19,45 +19,106 @@ async function ensureUserTrustScore(userId, guildId, client) {
       const user = await client.users.fetch(userId).catch(() => null);
       if (!user) return null;
 
-      let score = 100.0;
-      const ageMs = Date.now() - user.createdTimestamp;
-      const ageMonths = ageMs / (1000 * 60 * 60 * 24 * 30.44);
-      const scoreLogs = [];
+      record = await UserTrustScore.create({
+        userId,
+        username: user.username,
+        trustScore: 100.0,
+        scoreLogs: [],
+        createdAt: new Date(),
+        lastActiveTimestamp: new Date(),
+      });
+    }
 
-      // Account age bonus
-      if (ageMonths > 6) {
-        score += 5.0;
-        scoreLogs.push({
-          amount: 5.0,
-          reason: "Bonus: Hesap Yaşı > 6 Ay",
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Check Discord account age kıdem
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (user) {
+      const ageYears = (Date.now() - user.createdTimestamp) / (1000 * 60 * 60 * 24 * 365.25);
+      if (ageYears >= 3 && record.bonusAccountAge < 10) {
+        const diff = 10.0 - record.bonusAccountAge;
+        record.bonusAccountAge = 10;
+        record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
+        record.scoreLogs.push({
+          amount: diff,
+          reason: "Kıdem: 3 Yıldan Eski Discord Hesabı",
+          operatorId: "SYSTEM",
+          timestamp: new Date()
+        });
+      } else if (ageYears >= 1 && ageYears < 3 && record.bonusAccountAge < 5) {
+        const diff = 5.0 - record.bonusAccountAge;
+        record.bonusAccountAge = 5;
+        record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
+        record.scoreLogs.push({
+          amount: diff,
+          reason: "Kıdem: 1 Yıldan Eski Discord Hesabı",
           operatorId: "SYSTEM",
           timestamp: new Date()
         });
       }
+    }
 
-      // Booster check
-      const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
-      if (activeGuild) {
-        const member = await activeGuild.members.fetch(userId).catch(() => null);
-        if (member && member.premiumSince) {
-          score += 10.0;
-          scoreLogs.push({
-            amount: 10.0,
-            reason: "Bonus: Sunucu Takviyesi (Booster)",
+    // Check Eko Yıldız sunucu katılım süresi kıdem
+    const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
+    if (activeGuild) {
+      const member = await activeGuild.members.fetch(userId).catch(() => null);
+      if (member && member.joinedTimestamp) {
+        const joinMonths = (Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24 * 30.44);
+        if (joinMonths >= 6 && record.bonusJoinAge < 15) {
+          const diff = 15.0 - record.bonusJoinAge;
+          record.bonusJoinAge = 15;
+          record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
+          record.scoreLogs.push({
+            amount: diff,
+            reason: "Kıdem: Sunucuda 6. Ayını Doldurma",
+            operatorId: "SYSTEM",
+            timestamp: new Date()
+          });
+        } else if (joinMonths >= 1 && joinMonths < 6 && record.bonusJoinAge < 5) {
+          const diff = 5.0 - record.bonusJoinAge;
+          record.bonusJoinAge = 5;
+          record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
+          record.scoreLogs.push({
+            amount: diff,
+            reason: "Kıdem: Sunucuda 1. Ayını Doldurma",
             operatorId: "SYSTEM",
             timestamp: new Date()
           });
         }
       }
-
-      record = await UserTrustScore.create({
-        userId,
-        username: user.username,
-        trustScore: score,
-        scoreLogs,
-        createdAt: new Date(),
-      });
     }
+
+    // Check 2FA bonus from web DB User
+    if (!record.bonus2FA) {
+      const dbUser = await require("../../../models/User").findOne({ discordId: userId });
+      if (dbUser && dbUser.mfaEnabled) {
+        record.bonus2FA = true;
+        record.trustScore = parseFloat((record.trustScore + 5.0).toFixed(2));
+        record.scoreLogs.push({
+          amount: 5.0,
+          reason: "Bonus: İki Faktörlü Doğrulama (2FA) Aktif",
+          operatorId: "SYSTEM",
+          timestamp: new Date()
+        });
+      }
+    }
+
+    // Check Phone verification bonus from web DB User
+    if (!record.bonusPhone) {
+      const dbUser = await require("../../../models/User").findOne({ discordId: userId });
+      if (dbUser && dbUser.phoneVerified) {
+        record.bonusPhone = true;
+        record.trustScore = parseFloat((record.trustScore + 10.0).toFixed(2));
+        record.scoreLogs.push({
+          amount: 10.0,
+          reason: "Bonus: Telefon Numarası Doğrulanmış",
+          operatorId: "SYSTEM",
+          timestamp: new Date()
+        });
+      }
+    }
+
+    await record.save();
 
     // Check if channel exists on logging guild
     const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
@@ -136,6 +197,13 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       }
     }
 
+    // Reset af progress if they get penalized
+    if (amount < 0 && record.afProgress && record.afProgress.active) {
+      record.afProgress.daysCompleted = 0;
+      record.afProgress.messagesToday = 0;
+      record.afProgress.lastPenaltyDate = new Date();
+    }
+
     // Calculate new score
     const oldScore = record.trustScore;
     let newScore = parseFloat((oldScore + amount).toFixed(2));
@@ -149,7 +217,31 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       timestamp: new Date()
     });
 
+    // Check if score falls below 50.0 to trigger Af task
+    if (newScore < 50.0 && (!record.afProgress || !record.afProgress.active)) {
+      record.afProgress = {
+        active: true,
+        daysCompleted: 0,
+        messagesToday: 0,
+        lastMessageDay: todayStr,
+        lastPenaltyDate: null
+      };
+    }
+
     await record.save();
+
+    // Log to their profile channel
+    if (record.profileChannelId) {
+      const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+      if (recordGuild) {
+        const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+        if (channel) {
+          const operatorMention = operatorId === "SYSTEM" ? "SYSTEM" : `<@${operatorId}>`;
+          const prefix = amount >= 0 ? "🟢 **[Puan Ekleme]**" : "🔴 **[Puan Düşürme]**";
+          await channel.send(`${prefix}\n**İşlem Yapan:** ${operatorMention}\n**Sebep:** ${reason}\n**Miktar:** ${amount >= 0 ? "+" : ""}${amount.toFixed(1)} TS`).catch(() => {});
+        }
+      }
+    }
 
     // Trigger role updates on EKO YILDIZ
     const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
@@ -165,6 +257,57 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
 
   } catch (err) {
     console.error("[TrustScore] updateTrustScore error:", err);
+  }
+}
+
+/**
+ * Increments messages for the Af Mission (Ceza Bitirme Görevi).
+ */
+async function incrementAfProgress(userId, client) {
+  try {
+    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
+    if (!record || !record.afProgress || !record.afProgress.active) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Reset messages if new day
+    if (record.afProgress.lastMessageDay !== todayStr) {
+      record.afProgress.messagesToday = 0;
+    }
+
+    record.afProgress.messagesToday = (record.afProgress.messagesToday || 0) + 1;
+    record.afProgress.lastMessageDay = todayStr;
+
+    if (record.afProgress.messagesToday === 20) {
+      record.afProgress.daysCompleted = (record.afProgress.daysCompleted || 0) + 1;
+      
+      // Log to their channel
+      if (record.profileChannelId) {
+        const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+        if (recordGuild) {
+          const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+          if (channel) {
+            await channel.send(`📈 **[Ceza Bitirme Görevi]** <@${userId}> bugünün görevini tamamladı (20 mesaj). **Gün: ${record.afProgress.daysCompleted}/3**`).catch(() => {});
+          }
+        }
+      }
+
+      if (record.afProgress.daysCompleted >= 3) {
+        record.afProgress.active = false;
+        record.afProgress.daysCompleted = 0;
+        record.afProgress.messagesToday = 0;
+        record.afProgress.lastMessageDay = null;
+        
+        await record.save();
+        await updateTrustScore(userId, 10.0, "Görev Tamamlandı: Ceza Bitirme Görevi (+10.0)", "SYSTEM", client);
+      } else {
+        await record.save();
+      }
+    } else {
+      await record.save();
+    }
+  } catch (err) {
+    console.error("[TrustScore] incrementAfProgress error:", err);
   }
 }
 
@@ -248,9 +391,17 @@ async function buildProfileEmbed(record, client) {
       { name: "⚖️ Seviye / Durum", value: `**${status.name}**`, inline: true },
       { name: "💬 Sohbet İlerlemesi", value: `\`${record.messageCount} / 50\` mesaj`, inline: true },
       { name: "📅 Günlük Puanlar", value: `Chat: \`${record.dailyChatPoints.toFixed(1)}/5.0\`\nVoice: \`${record.dailyVoicePoints.toFixed(1)}/5.0\``, inline: true },
-      { name: "📝 Son Güncelleme", value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true }
+      { name: "🔥 Daily Streak", value: `\`${record.dailyStreak || 0}\` gün`, inline: true }
     )
     .setTimestamp();
+
+  if (record.afProgress && record.afProgress.active) {
+    embed.addFields({
+      name: "🛡️ Ceza Bitirme Görevi (Af)",
+      value: `• **Durum:** Aktif\n• **Günler:** \`${record.afProgress.daysCompleted || 0} / 3\` gün\n• **Bugün gönderilen:** \`${record.afProgress.messagesToday || 0} / 20\` mesaj`,
+      inline: false
+    });
+  }
 
   // Add last 10 logs
   const logs = record.scoreLogs.slice(-10).reverse();
@@ -345,7 +496,6 @@ async function updateMemberRoles(member, score) {
     if (score < 50.0) {
       if (highRiskRole && !member.roles.cache.has(highRiskRole.id)) {
         await member.roles.add(highRiskRole).catch(() => {});
-        // Restrict channel overrides dynamically if needed, or simply role settings deny EmbedLinks/AttachFiles.
       }
     } else {
       if (highRiskRole && member.roles.cache.has(highRiskRole.id)) {
@@ -414,7 +564,6 @@ async function handleTrustButtons(interaction) {
     }
 
     if (action === "reset") {
-      // High-rank check (Administrator permission)
       if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
         return interaction.reply({ content: "❌ Skoru sıfırlamak için Yönetici yetkisine sahip olmalısınız!", ephemeral: true });
       }
@@ -484,7 +633,6 @@ async function handleTrustModals(interaction) {
       return interaction.editReply("❌ Lütfen geçerli bir pozitif sayı girin.");
     }
 
-    // Abuse protection check
     const isLimitExceeded = await checkModAbuseLimit(interaction.user.id, targetUserId);
     if (isLimitExceeded) {
       return interaction.editReply("❌ Bir kullanıcıya 1 saat içinde en fazla 2 kez manuel puan işlemi uygulayabilirsiniz! Suistimal engellendi.");
@@ -505,9 +653,14 @@ async function handleTrustModals(interaction) {
 
 /**
  * Periodically scans voice channels to award points (every 30 mins -> +0.5).
+ * Also runs weekly inactivity decay check.
  */
 async function scanVoiceChannels(client) {
   try {
+    // ── 1. Weekly Decay Scan ──
+    await runInactivityDecay(client);
+
+    // ── 2. Voice Channels scan ──
     const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
     if (!activeGuild) return;
 
@@ -515,11 +668,23 @@ async function scanVoiceChannels(client) {
 
     for (const channel of activeGuild.channels.cache.values()) {
       if (channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice) {
+        // Check if there is an active screen share/stream with at least 2 viewers
+        // In discord.js voice state, screen share is newState.streaming
         for (const member of channel.members.values()) {
           if (member.user.bot) continue;
 
-          // Award +0.5 voice points (checking caps inside updateTrustScore)
+          // Standard voice points
           await updateTrustScore(member.id, 0.5, "Sesli Kanal Aktifliği (30 Dk)", "SYSTEM", client);
+
+          // Stream checks: streaming to 2+ viewers
+          const voiceState = member.voice;
+          if (voiceState && voiceState.streaming) {
+            // Count viewers (other voice members who are not bots)
+            const viewers = channel.members.filter(m => m.id !== member.id && !m.user.bot).size;
+            if (viewers >= 2) {
+              await updateTrustScore(member.id, 1.0, "Sesli Kanal Ekran Paylaşımı / Yayın (30 Dk, 2+ İzleyici)", "SYSTEM", client);
+            }
+          }
         }
       }
     }
@@ -528,9 +693,74 @@ async function scanVoiceChannels(client) {
   }
 }
 
+/**
+ * Runs weekly inactivity decay check.
+ */
+async function runInactivityDecay(client) {
+  try {
+    const records = await UserTrustScore.find({});
+    const now = new Date();
+
+    for (const record of records) {
+      if (!record.lastActiveTimestamp) continue;
+
+      const inactiveMs = now.getTime() - new Date(record.lastActiveTimestamp).getTime();
+      const inactiveDays = inactiveMs / (1000 * 60 * 60 * 24);
+
+      if (inactiveDays >= 30) {
+        let shouldDecay = false;
+        if (!record.weeklyDecayLastChecked) {
+          shouldDecay = true;
+        } else {
+          const lastCheckedMs = now.getTime() - new Date(record.weeklyDecayLastChecked).getTime();
+          const lastCheckedDays = lastCheckedMs / (1000 * 60 * 60 * 24);
+          if (lastCheckedDays >= 7) {
+            shouldDecay = true;
+          }
+        }
+
+        if (shouldDecay) {
+          if (record.trustScore > 100.0) {
+            const oldScore = record.trustScore;
+            let newScore = Math.max(100.0, parseFloat((oldScore - 2.0).toFixed(2)));
+            const diff = parseFloat((newScore - oldScore).toFixed(2));
+            
+            if (diff !== 0) {
+              record.trustScore = newScore;
+              record.weeklyDecayLastChecked = now;
+              record.scoreLogs.push({
+                amount: diff,
+                reason: "Uzun Süreli İnaktiflik Erimesi (-2.0)",
+                operatorId: "SYSTEM",
+                timestamp: now
+              });
+              await record.save();
+              
+              if (record.profileChannelId) {
+                const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+                if (recordGuild) {
+                  const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+                  if (channel) {
+                    await channel.send(`📉 **[Aktiflik Erimesi]** 30 gündür inaktif olunduğu için haftalık erime uygulandı: **${diff.toFixed(1)}** TS`).catch(() => {});
+                  }
+                }
+              }
+              
+              await updateProfileEmbed(record, client);
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[TrustScore] runInactivityDecay error:", err);
+  }
+}
+
 module.exports = {
   ensureUserTrustScore,
   updateTrustScore,
+  incrementAfProgress,
   addModPoints,
   checkModAbuseLimit,
   handleTrustButtons,

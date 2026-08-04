@@ -129,7 +129,7 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         { name: 'Bekleyen İhbarlar', value: `\`${pendingReports || 0}\``, inline: true },
         { name: 'Sistem Durumu', value: 'Çevrimiçi', inline: true }
       );
-    } catch (_) {}
+    } catch (_) { }
 
     // Compact select menu for navigation
     const select = new StringSelectMenuBuilder()
@@ -610,13 +610,25 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("panel_units_coach")
-        .setLabel("🏫 Birim Koçu")
-        .setStyle(ButtonStyle.Secondary),
+        .setLabel("👨‍🏫 Birim Koçu")
+        .setDisabled(!auth.isManager),
+      new ButtonBuilder()
+        .setCustomId("panel_units_roles")
+        .setLabel("🎖️ Birim Rolleri")
+        .setDisabled(!auth.isManager),
+      new ButtonBuilder()
+        .setCustomId("panel_units_chat")
+        .setLabel("💬 Birim İçi İletişim")
+        .setDisabled(!auth.isAdmin),
+      new ButtonBuilder()
+        .setCustomId("panel_tab_system")
+        .setLabel("⬅️ Geri Dön")
+        .setStyle(ButtonStyle.Secondary)
     );
+
     components.push(row);
   }
 
-  // ── CHANGELOG (Versiyon Notları) ─────────────────────────────────────────────
   else if (tabName === "changelog") {
     // Versiyon notları — yeni sürümler BAŞA eklenir
     // Etiketler: [YENİ] [FİX] [UI] [BUTON] [EMBED] [CMD] [GÜVENLİK] [SİLİNDİ]
@@ -751,13 +763,13 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
 
     // Kategoriye göre emoji prefix haritası (görsel ayrım için)
     const tagColors = {
-      '[YENİ]':     '🟢',
-      '[FİX]':      '🔴',
-      '[BUTON]':    '🔵',
-      '[UI]':       '🟣',
-      '[EMBED]':    '🟡',
-      '[CMD]':      '🟠',
-      '[GÜVENLİK]':'🔐',
+      '[YENİ]': '🟢',
+      '[FİX]': '🔴',
+      '[BUTON]': '🔵',
+      '[UI]': '🟣',
+      '[EMBED]': '🟡',
+      '[CMD]': '🟠',
+      '[GÜVENLİK]': '🔐',
       '[SİLİNDİ]': '⚫',
     };
 
@@ -813,12 +825,39 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
 
     components.push(navRow);
   }
+  olor(COLOR_PREMIUM)
+    .setDescription(
+      `📅 **Yayın Tarihi:** \`${ver.date}\`\n\n` +
+      `**Değişiklikler:**\n` +
+      ver.changes.map(c => `• ${c}`).join('\n')
+    )
+    .setFooter({ text: `Sayfa ${safeIdx + 1} / ${totalPages} • Gezinmek için butonları kullanın` });
 
-  await interaction.editReply({
-    embeds: [embed],
-    components
-  });
+  const navRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`panel_changelog_page_${safeIdx - 1}`)
+      .setLabel('⬅️ Önceki Sürüm')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(safeIdx === 0),
+    new ButtonBuilder()
+      .setCustomId(`panel_changelog_page_${safeIdx + 1}`)
+      .setLabel('Sonraki Sürüm ➡️')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(safeIdx >= totalPages - 1),
+    new ButtonBuilder()
+      .setCustomId('panel_tab_home')
+      .setLabel('🏠 Ana Menü')
+      .setStyle(ButtonStyle.Primary)
+  );
 
+  components.push(navRow);
+}
+
+await interaction.editReply({
+  embeds: [embed],
+  components
+});
+}
 
 /**
  * Catches button interactions prefixed with panel_
@@ -839,26 +878,20 @@ async function handlePanelButton(interaction) {
         return await interaction.reply({ content: '⚠️ Kritik personel işlemleri şu anda devre dışı bırakılmıştır. Lütfen yönetim ile iletişime geçin.', ephemeral: true });
       }
 
-      // CRITICAL FIX: Ensure interaction is not deferred before showing modal
-      if (interaction.deferred || interaction.replied) {
-        // If already deferred, we CANNOT show modal - must error
+      if (!interaction.replied && !interaction.deferred) {
+        return await interaction.showModal(modal);
+      } else {
+        // Eğer deferReply yapıldıysa, modal gösteremeyiz
+        // Bu durumda kullanıcıya uyarı ver
         return await interaction.editReply({
-          content: "❌ Modal gösterilemiyor - tekrar deneyin",
+          content: "❌ Modal gösterilirken bir hata oluştu. Lütfen tekrar deneyin.",
           ephemeral: true
         });
       }
-
-      // Safe to show modal
-      return await interaction.showModal(modal);
     } catch (err) {
       console.error('[handlePanelButton] Modal göstermek hatası:', err.message);
       if (!interaction.replied && !interaction.deferred) {
         return await interaction.reply({
-          content: `❌ Modal: ${err.message}`,
-          ephemeral: true
-        });
-      } else {
-        return await interaction.editReply({
           content: `❌ Modal: ${err.message}`,
           ephemeral: true
         });
@@ -881,7 +914,7 @@ async function handlePanelButton(interaction) {
     });
 
     console.log(`[restart] Bot is being restarted by admin ${interaction.user.tag} (ID: ${interaction.user.id})`);
-    
+
     setTimeout(() => {
       process.exit(0);
     }, 1500);
@@ -892,7 +925,7 @@ async function handlePanelButton(interaction) {
   if (customId.startsWith('panel_changelog_page_')) {
     const pageStr = customId.replace('panel_changelog_page_', '');
     const page = Math.max(0, parseInt(pageStr) || 0);
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     interaction._changelogPage = page;
     return renderPanel(interaction, 'changelog');
   }
@@ -908,33 +941,33 @@ async function handlePanelButton(interaction) {
 
   // Close whistleblower report (user-owned or admin)
   if (customId.startsWith('whistle_close_')) {
-    await interaction.deferUpdate().catch(() => {});
+    await interaction.deferUpdate().catch(() => { });
     try {
       const reportId = customId.replace('whistle_close_', '');
       const AnonymousReport = require('../../models/AnonymousReport');
       const rpt = await AnonymousReport.findOne({ reportId });
       if (!rpt) {
-        return interaction.followUp({ content: '❌ İlgili ihbar raporu bulunamadı.', ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: '❌ İlgili ihbar raporu bulunamadı.', ephemeral: true }).catch(() => { });
       }
 
       const auth = await getAuth(interaction.member);
       if (rpt.realUserId !== interaction.user.id && !auth.isAdmin) {
-        return interaction.followUp({ content: '❌ Bu raporu kapatmaya yetkiniz yok.', ephemeral: true }).catch(() => {});
+        return interaction.followUp({ content: '❌ Bu raporu kapatmaya yetkiniz yok.', ephemeral: true }).catch(() => { });
       }
 
       // Notify thread if exists
       if (rpt.threadId) {
         const thread = await interaction.client.channels.fetch(rpt.threadId).catch(() => null);
         if (thread && thread.isTextBased()) {
-          await thread.send({ content: `🗑️ Bu ihbar raporu **${interaction.user.tag}** veya yönetim tarafından kapatıldı. (Dosya: #${rpt.reportId})` }).catch(() => {});
+          await thread.send({ content: `🗑️ Bu ihbar raporu **${interaction.user.tag}** veya yönetim tarafından kapatıldı. (Dosya: #${rpt.reportId})` }).catch(() => { });
         }
       }
 
-      await rpt.deleteOne().catch(() => {});
-      return interaction.followUp({ content: `✅ İhbarınız (#${reportId}) başarıyla kapatıldı.`, ephemeral: true }).catch(() => {});
+      await rpt.deleteOne().catch(() => { });
+      return interaction.followUp({ content: `✅ İhbarınız (#${reportId}) başarıyla kapatıldı.`, ephemeral: true }).catch(() => { });
     } catch (err) {
       console.error('[Whistle-Close] Hata:', err.message);
-      return interaction.followUp({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => {});
+      return interaction.followUp({ content: `❌ Hata: ${err.message}`, ephemeral: true }).catch(() => { });
     }
   }
 
@@ -978,7 +1011,7 @@ async function handlePanelButton(interaction) {
       const verifyModal = new ModalBuilder()
         .setCustomId(`panel_modal_mod_verify_groups_${targetUserId}`)
         .setTitle("🔗 Roblox Grup Doğrulama");
-      
+
       verifyModal.addComponents(
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
@@ -1589,7 +1622,7 @@ async function handlePanelButton(interaction) {
           .setValue("SOHBET_BIRIMI")
           .setDescription("Metin kanalı yönetimi"),
       ]);
-    
+
     const row = new ActionRowBuilder().addComponents(birimSelect);
     return interaction.reply({ content: "📢 Lütfen bir birim seçin:", components: [row], ephemeral: true });
   }
@@ -1773,7 +1806,7 @@ async function handlePanelButton(interaction) {
       const modal = new ModalBuilder()
         .setCustomId("panel_modal_mod_alim")
         .setTitle("🛡️ MOD-ALIM: Mülakat Gönder");
-      
+
       modal.addComponents(
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
@@ -1784,7 +1817,7 @@ async function handlePanelButton(interaction) {
             .setPlaceholder("Örn: @kullanici veya 1234567890")
         )
       );
-      
+
       return showModalSafely(modal);
     } catch (err) {
       console.error("[panel_mod_alim_search]", err);
@@ -1801,7 +1834,7 @@ async function handlePanelButton(interaction) {
       const modal = new ModalBuilder()
         .setCustomId("panel_modal_mod_alim_direct")
         .setTitle("⚡ Direkt Moderatör Alımı");
-      
+
       modal.addComponents(
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
@@ -1812,7 +1845,7 @@ async function handlePanelButton(interaction) {
             .setPlaceholder("Örn: @kullanici veya 1234567890")
         )
       );
-      
+
       return showModalSafely(modal);
     } catch (err) {
       console.error("[panel_mod_alim_direct]", err);
@@ -1825,7 +1858,7 @@ async function handlePanelButton(interaction) {
 
   // ── UNITS: Leaderboard Görüntüle ────────────────────────────────────────────
   if (customId === "panel_units_leaderboard") {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
     try {
       const { createLeaderboardEmbed } = require("./unitLeaderboardService");
@@ -1844,7 +1877,7 @@ async function handlePanelButton(interaction) {
 
   // ── UNITS: Birim Koçu Bilgisi ───────────────────────────────────────────────
   if (customId === "panel_units_coach") {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
     try {
       const { createCoachInfoEmbed } = require("./coachManagementService");
@@ -1863,7 +1896,7 @@ async function handlePanelButton(interaction) {
 
   // ── UNITS: Birim Rolleri Yönetimi ───────────────────────────────────────────
   if (customId === "panel_units_roles") {
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
     try {
       const { ensureUnitRolesExist } = require("./unitRoleSyncService");
@@ -1925,7 +1958,7 @@ async function handlePanelSelect(interaction) {
   // Birim alımı seçim menüsü
   if (interaction.customId === "panel_birim_select_menu") {
     const birimKey = interaction.values[0];
-    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
     try {
       const { startBirimAlimi } = require("./unitService");
@@ -1951,7 +1984,7 @@ async function handlePanelSelect(interaction) {
  */
 async function handlePanelModal(interaction) {
   // Defer first to guarantee it is deferred within the 3-second limit
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
   const customId = interaction.customId;
   const client = interaction.client;
@@ -2201,17 +2234,9 @@ async function handlePanelModal(interaction) {
 
     try {
       const { handleModerationCommand } = require("../handlers/moderationCommandHandler");
-      
-      // Fetch user object for proper getUser() support
-      const userObj = await interaction.client.users.fetch(kullanici_id).catch(() => null);
-      
       const proxy = buildProxy(interaction, "tamban", {
-        getUser: (name) => {
-          if (name === "kullanici" || name === "kullanici_id") return userObj;
-          return null;
-        },
         getString: (name) => {
-          if (name === "kullanici_id" || name === "kullanici") return kullanici_id;
+          if (name === "kullanici_id") return kullanici_id;
           if (name === "seviye") return seviye;
           if (name === "sebep") return sebep;
           return null;
@@ -2231,17 +2256,9 @@ async function handlePanelModal(interaction) {
 
     try {
       const { handleModerationCommand } = require("../handlers/moderationCommandHandler");
-      
-      // Fetch user object
-      const userObj = await interaction.client.users.fetch(kullanici_id).catch(() => null);
-      
       const proxy = buildProxy(interaction, "tamban_kaldir", {
-        getUser: (name) => {
-          if (name === "kullanici" || name === "kullanici_id") return userObj;
-          return null;
-        },
         getString: (name) => {
-          if (name === "kullanici_id" || name === "kullanici") return kullanici_id;
+          if (name === "kullanici_id") return kullanici_id;
           if (name === "sebep") return sebep;
           return null;
         }
@@ -2265,8 +2282,8 @@ async function handlePanelModal(interaction) {
 
     try {
       // Defer the reply immediately to prevent "thinking..." timeout
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
-      
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
       const { handleGeneralCommand } = require("../handlers/generalCommandHandler");
       const proxy = buildProxy(interaction, "personelayarla", {
         getUser: () => targetUser,
@@ -2294,8 +2311,8 @@ async function handlePanelModal(interaction) {
 
     try {
       // Defer the reply immediately to prevent "thinking..." timeout
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
-      
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
       const { handleGeneralCommand } = require("../handlers/generalCommandHandler");
       const proxy = buildProxy(interaction, "personelkov", {
         getUser: () => targetUser,
@@ -2388,7 +2405,7 @@ async function handlePanelModal(interaction) {
               `📋 **Sebep:** ${reason}`
             )
             .setTimestamp();
-          await logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+          await logChannel.send({ embeds: [logEmbed] }).catch(() => { });
         }
       } catch (logErr) {
         console.error('[skip_exam_promote] Log error:', logErr.message);
@@ -2413,8 +2430,8 @@ async function handlePanelModal(interaction) {
 
     try {
       // Defer the reply immediately to prevent "thinking..." timeout
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
-      
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
       const { handleGeneralCommand } = require("../handlers/generalCommandHandler");
 
       if (operation === "terfi") {
@@ -2537,8 +2554,8 @@ async function handlePanelModal(interaction) {
 
     try {
       // Defer the reply immediately to prevent "thinking..." timeout
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
-      
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
       const { handleGeneralCommand } = require("../handlers/generalCommandHandler");
       const proxy = buildProxy(interaction, "birimalimi", {
         getString: () => unitName
@@ -2635,7 +2652,7 @@ async function handlePanelModal(interaction) {
   if (customId === "panel_modal_mod_alim") {
     const userVal = interaction.fields.getTextInputValue("mod_alim_user").trim();
     const targetUserId = userVal.replace(/[<@!>]/g, "");
-    
+
     const targetUser = await client.users.fetch(targetUserId).catch(() => null);
     if (!targetUser) {
       return interaction.editReply({ content: "❌ Kullanıcı bulunamadı. Geçerli bir ID veya etiket gir." });
@@ -2667,8 +2684,8 @@ async function handlePanelModal(interaction) {
 
         return interaction.editReply({ embeds: [successEmbed] });
       } else {
-        return interaction.editReply({ 
-          content: `❌ **${targetUser.username}** kullanıcısına DM gönderilemedi.\n\n💡 *Kullanıcı DM'lerini kapamış olabilir.*` 
+        return interaction.editReply({
+          content: `❌ **${targetUser.username}** kullanıcısına DM gönderilemedi.\n\n💡 *Kullanıcı DM'lerini kapamış olabilir.*`
         });
       }
     } catch (err) {
@@ -2681,7 +2698,7 @@ async function handlePanelModal(interaction) {
   if (customId === "panel_modal_mod_alim_direct") {
     const userVal = interaction.fields.getTextInputValue("direct_mod_user").trim();
     const targetUserId = userVal.replace(/[<@!>]/g, "");
-    
+
     const targetUser = await client.users.fetch(targetUserId).catch(() => null);
     if (!targetUser) {
       return interaction.editReply({ content: "❌ Kullanıcı bulunamadı." });
@@ -2729,13 +2746,13 @@ async function handlePanelModal(interaction) {
 
       // Moderatör yönetim sunucusunda değilse davet linki gönder
       const { ensureAdminGuildMembership } = require('./staffAutomation');
-      await ensureAdminGuildMembership(client, targetUserId).catch(() => {});
+      await ensureAdminGuildMembership(client, targetUserId).catch(() => { });
 
       // 3. Grup doğrula - API çağrısı için modal göster
       const verifyModal = new ModalBuilder()
         .setCustomId(`panel_modal_mod_verify_groups_${targetUserId}`)
         .setTitle("🔗 Roblox Grup Doğrulama");
-      
+
       verifyModal.addComponents(
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
@@ -2800,10 +2817,10 @@ async function handlePanelModal(interaction) {
       // 1. Veritabanına kaydet
       const { saveStoreNow } = require('../../models/Store');
       const targetUser = await client.users.fetch(targetUserId).catch(() => null);
-      
+
       let dbUser = await User.findOne({ discordId: targetUserId });
       if (!dbUser) {
-        dbUser = new User({ 
+        dbUser = new User({
           discordId: targetUserId,
           discordUsername: targetUser ? targetUser.username : "Bilinmeyen Kullanıcı"
         });
@@ -2822,7 +2839,7 @@ async function handlePanelModal(interaction) {
       // 3. Ana sunucuda rolleri senkronize et
       const { syncMemberRoles } = require('./roleSyncService');
       const { TARGET_GUILD_ID, VERIFY_CHANNEL_ID } = require('../../config');
-      
+
       const mainGuild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
       if (mainGuild) {
         const mainMember = await mainGuild.members.fetch(targetUserId).catch(() => null);
