@@ -28,6 +28,11 @@ async function handleSelectInteraction(interaction) {
     return handlePurchaseSelection(interaction);
   }
 
+  if (customId.startsWith("survey_select_")) {
+    const { handleNewAccountSelect } = require("./newAccountButtonHandler");
+    return handleNewAccountSelect(interaction);
+  }
+
   // ── Mahkeme 3-Kademeli Hiyerarşik Kategori Menüsü
   if (customId === 'court_main_category_select') {
     const selected = interaction.values[0];

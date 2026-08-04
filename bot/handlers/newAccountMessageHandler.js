@@ -89,114 +89,23 @@ async function handleSurveyTextAnswer(client, message) {
     if (!investigation) return;
     
     const currentStep = investigation.surveyAnswers._currentStep;
+    const { saveSurveyAnswer, askSurveyQuestion, completeSurvey } = require("./newAccountButtonHandler");
     
     // Cevabı kaydet
-    const fieldMap = {
-      "1": "username",
-      "2": "howFound",
-      "3": "joinPurpose",
-      "4": "wasHereBefore",
-      "5": "hasAltAccounts",
-      "6": "rulesAccepted",
-      "7": "additionalInfo",
-      "8": "whyNewAccount",
-      "9": "hasMicrophone"
-    };
-    
-    const field = fieldMap[currentStep];
-    if (field) {
-      investigation.surveyAnswers[field] = message.content;
-      await investigation.save();
-    }
+    await saveSurveyAnswer(investigation, currentStep, message.content, message.author);
     
     // Bir sonraki soruya geç
     const questionData = await sendSurveyStep(message.author, null, currentStep);
     const nextStep = questionData?.nextStep;
     
     if (nextStep === 'complete') {
-      await completeSurveyFromMessage(client, message.author, investigation);
+      await completeSurvey(client, message.author, investigation);
     } else if (nextStep) {
-      await askSurveyQuestionFromMessage(message.author, investigation, nextStep);
+      await askSurveyQuestion(message.author, investigation, nextStep);
     }
     
   } catch (err) {
     console.error("[NewAccountMessageHandler] Survey text answer error:", err);
-  }
-}
-
-/**
- * Anket sorusunu sorar (message context'ten)
- */
-async function askSurveyQuestionFromMessage(user, investigation, step) {
-  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
-  
-  const questionData = await sendSurveyStep(user, null, step);
-  
-  if (!questionData) return;
-  
-  const embed = new EmbedBuilder()
-    .setColor(0x0099FF)
-    .setTitle("📝 Güvenlik Anketi")
-    .setDescription(questionData.question)
-    .setFooter({ text: questionData.optional ? "İsteğe bağlı - 'Yok' yazarak geçebilirsin" : "Lütfen cevapla" });
-  
-  let components = [];
-  
-  if (questionData.type === 'buttons') {
-    const row = new ActionRowBuilder();
-    for (const option of questionData.options) {
-      row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`survey_answer_${step}_${option.value}`)
-          .setLabel(option.label)
-          .setStyle(option.style)
-      );
-    }
-    components.push(row);
-  }
-  
-  await user.send({ embeds: [embed], components: components });
-  
-  // Store beklenen cevap tipini
-  investigation.surveyAnswers._currentStep = step;
-  investigation.surveyAnswers._currentType = questionData.type;
-  await investigation.save();
-}
-
-/**
- * Anketi tamamla (message context'ten)
- */
-async function completeSurveyFromMessage(client, user, investigation) {
-  try {
-    const { sendSurveyCompleteMessage } = require("../services/security/newAccountSurvey");
-    const { selectBestModerator } = require("../services/security/moderatorSelector");
-    const { notifyModeratorAboutNewAccount } = require("../services/security/accountInvestigation");
-    
-    investigation.status = 'survey_completed';
-    investigation.surveyCompletedAt = new Date();
-    await investigation.save();
-    
-    await sendSurveyCompleteMessage(user, client.guilds.cache.get(investigation.guildId));
-    
-    // Moderatör seç ve bildir
-    const guild = client.guilds.cache.get(investigation.guildId);
-    if (!guild) return;
-    
-    const member = await guild.members.fetch(investigation.userId).catch(() => null);
-    if (!member) return;
-    
-    const moderator = await selectBestModerator(guild);
-    if (moderator) {
-      investigation.assignedModeratorId = moderator.id;
-      investigation.assignedAt = new Date();
-      investigation.status = 'assigned';
-      await investigation.save();
-      
-      await notifyModeratorAboutNewAccount(client, member, investigation, investigation.riskScore);
-    }
-    
-  } catch (err) {
-    console.error("[NewAccountMessageHandler] Complete survey error:", err);
   }
 }
 

@@ -4,7 +4,7 @@
  * Yeni hesap güvenlik sistemi için button etkileşimlerini yönetir
  */
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require("discord.js");
 const { sendSurveyStep } = require("../services/security/newAccountSurvey");
 const { startInvestigationChat, completeInvestigation } = require("../services/security/accountInvestigation");
 const AccountInvestigation = require("../../models/AccountInvestigation");
@@ -21,7 +21,7 @@ async function handleNewAccountButtons(interaction) {
     await handleSurveyStart(interaction);
   }
   
-  // Survey cevap (yes/no butonları)
+  // Survey cevap (yes/no/quick reply butonları)
   else if (customId.startsWith('survey_answer_')) {
     await handleSurveyAnswer(interaction);
   }
@@ -58,16 +58,34 @@ async function handleSurveyStart(interaction) {
     
     const guildId = interaction.customId.split('_')[2];
     
-    // Investigation kaydını bul
-    const investigation = await AccountInvestigation.findOne({
+    // Investigation kaydını bul veya oluştur
+    let investigation = await AccountInvestigation.findOne({
       userId: interaction.user.id,
       guildId: guildId,
       status: 'survey_sent'
     });
     
     if (!investigation) {
-      await interaction.editReply({ content: "❌ Anket kaydın bulunamadı. Lütfen yetkililere ulaş." });
-      return;
+      // Eğer yoksa (örneğin DM kapalıyken manuel tetiklendiyse) yeni bir tane oluştur
+      const { calculateRiskScore, getAccountAgeInHours } = require("../services/security/newAccountDetector");
+      const member = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
+      if (!member) {
+        await interaction.editReply({ content: "❌ Sunucu üyeliğiniz bulunamadı." });
+        return;
+      }
+      
+      const riskScore = await calculateRiskScore(member);
+      const accountAge = getAccountAgeInHours(interaction.user);
+      
+      investigation = new AccountInvestigation({
+        userId: interaction.user.id,
+        guildId: guildId,
+        accountAge: accountAge,
+        riskScore: riskScore,
+        status: 'survey_sent',
+        createdAt: new Date(),
+      });
+      await investigation.save();
     }
     
     // İlk soruyu gönder
@@ -86,11 +104,11 @@ async function handleSurveyStart(interaction) {
     // İlk soruyu sor
     await askSurveyQuestion(interaction.user, investigation, "1");
     
-    await interaction.editReply({ content: "✅ Anket başladı! Lütfen DM'ine bak." });
+    await interaction.editReply({ content: "✅ Anket başladı! Lütfen DM kutunuzu kontrol edin." });
     
   } catch (err) {
     console.error("[NewAccountButton] Survey start error:", err);
-    await interaction.editReply({ content: "❌ Bir hata oluştu." }).catch(() => {});
+    await interaction.editReply({ content: "❌ Anket başlatılırken bir hata oluştu. DM kutunuz kapalı olabilir." }).catch(() => {});
   }
 }
 
@@ -106,7 +124,7 @@ async function askSurveyQuestion(user, investigation, step) {
     .setColor(0x0099FF)
     .setTitle("📝 Güvenlik Anketi")
     .setDescription(questionData.question)
-    .setFooter({ text: "Lütfen aşağıdaki seçeneklerden birini seç veya mesaj olarak cevapla" });
+    .setFooter({ text: "Lütfen aşağıdaki seçenekleri kullanın veya doğrudan mesaj yazarak yanıtlayın." });
   
   let components = [];
   
@@ -121,11 +139,51 @@ async function askSurveyQuestion(user, investigation, step) {
       );
     }
     components.push(row);
+  } else if (questionData.type === 'select') {
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`survey_select_${step}`)
+      .setPlaceholder(questionData.placeholder || "Lütfen bir seçenek seçin...")
+      .addOptions(
+        questionData.options.map(opt => 
+          new StringSelectMenuOptionBuilder()
+            .setLabel(opt.label)
+            .setValue(opt.value)
+        )
+      );
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+    components.push(row);
+  } else if (questionData.type === 'text') {
+    const row = new ActionRowBuilder();
+    
+    if (questionData.quickReplies) {
+      for (const reply of questionData.quickReplies) {
+        row.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`survey_answer_${step}_${reply.value}`)
+            .setLabel(reply.label)
+            .setStyle(ButtonStyle.Secondary)
+        );
+      }
+    }
+    
+    if (questionData.optional) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`survey_answer_${step}_none`)
+          .setLabel("⏭️ Geç / Yok")
+          .setStyle(ButtonStyle.Secondary)
+      );
+    }
+    
+    if (row.components.length > 0) {
+      components.push(row);
+    }
   }
   
   await user.send({ embeds: [embed], components: components });
   
   // Store beklenen cevap tipini
+  investigation.surveyAnswers = investigation.surveyAnswers || {};
   investigation.surveyAnswers._currentStep = step;
   investigation.surveyAnswers._currentType = questionData.type;
   await investigation.save();
@@ -140,7 +198,7 @@ async function handleSurveyAnswer(interaction) {
     
     const parts = interaction.customId.split('_');
     const step = parts[2];
-    const answer = parts[3];
+    const answer = interaction.customId.slice(`survey_answer_${step}_`.length);
     
     // Investigation kaydını bul
     const investigation = await AccountInvestigation.findOne({
@@ -154,7 +212,7 @@ async function handleSurveyAnswer(interaction) {
     }
     
     // Cevabı kaydet
-    await saveSurveyAnswer(investigation, step, answer);
+    await saveSurveyAnswer(investigation, step, answer, interaction.user);
     
     // Bir sonraki soruya geç
     const questionData = await sendSurveyStep(interaction.user, null, step);
@@ -172,9 +230,49 @@ async function handleSurveyAnswer(interaction) {
 }
 
 /**
+ * Anket select menu cevabı
+ */
+async function handleNewAccountSelect(interaction) {
+  try {
+    await interaction.deferUpdate();
+    
+    const parts = interaction.customId.split('_');
+    const step = parts[2];
+    const answer = interaction.values[0];
+    
+    // Investigation kaydını bul
+    const investigation = await AccountInvestigation.findOne({
+      userId: interaction.user.id,
+      status: { $in: ['survey_sent', 'survey_completed'] }
+    }).sort({ createdAt: -1 });
+    
+    if (!investigation) {
+      await interaction.followUp({ content: "❌ Anket kaydın bulunamadı.", ephemeral: true });
+      return;
+    }
+    
+    // Cevabı kaydet
+    await saveSurveyAnswer(investigation, step, answer, interaction.user);
+    
+    // Bir sonraki soruya geç
+    const questionData = await sendSurveyStep(interaction.user, null, step);
+    const nextStep = questionData?.nextStep;
+    
+    if (nextStep === 'complete') {
+      await completeSurvey(interaction.client, interaction.user, investigation);
+    } else {
+      await askSurveyQuestion(interaction.user, investigation, nextStep);
+    }
+    
+  } catch (err) {
+    console.error("[NewAccountButton] Survey select error:", err);
+  }
+}
+
+/**
  * Cevabı kaydet
  */
-async function saveSurveyAnswer(investigation, step, answer) {
+async function saveSurveyAnswer(investigation, step, answer, user) {
   const fieldMap = {
     "1": "username",
     "2": "howFound",
@@ -189,11 +287,19 @@ async function saveSurveyAnswer(investigation, step, answer) {
   
   const field = fieldMap[step];
   if (field) {
+    let finalAnswer = answer;
+    
+    if (step === "1" && answer === "currentuser" && user) {
+      finalAnswer = user.tag;
+    } else if (answer === "none") {
+      finalAnswer = "Yok";
+    }
+    
     // Boolean dönüşümü
     if (['wasHereBefore', 'hasAltAccounts', 'rulesAccepted'].includes(field)) {
-      investigation.surveyAnswers[field] = (answer === 'yes');
+      investigation.surveyAnswers[field] = (finalAnswer === 'yes');
     } else {
-      investigation.surveyAnswers[field] = answer;
+      investigation.surveyAnswers[field] = finalAnswer;
     }
     
     await investigation.save();
@@ -409,4 +515,10 @@ async function handleInvestigationBan(interaction) {
   }
 }
 
-module.exports = { handleNewAccountButtons };
+module.exports = {
+  handleNewAccountButtons,
+  handleNewAccountSelect,
+  askSurveyQuestion,
+  completeSurvey,
+  saveSurveyAnswer
+};

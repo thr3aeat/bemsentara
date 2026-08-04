@@ -18,9 +18,11 @@ async function sendSurveyDM(user, guild) {
       .setColor(0xFFA500)
       .setTitle("👋 Güvenlik Doğrulaması")
       .setDescription(
-        `Merhaba! Görüyorum ki hesabın son 24 saat içinde oluşturulmuş ve **${guild.name}** sunucumuza katılmışsın.\n\n` +
-        `Güvenlik amacıyla senden kısa bir doğrulama anketini doldurmanı rica ediyoruz.\n\n` +
-        `Lütfen aşağıdaki **"Anketi Başlat"** butonuna basarak devam et. Yetkililer en kısa sürede inceleyecektir.`
+        `Merhaba **${user.username}**!\n\n` +
+        `Hesabınızın son 24 saat içinde oluşturulduğunu ve **${guild.name}** sunucumuza katıldığını tespit ettik.\n\n` +
+        `Sunucu güvenliğini ve düzenini korumak amacıyla, yeni üyelerimizin kısa bir güvenlik anketini doldurmalarını rica ediyoruz.\n\n` +
+        `> 📝 **Ankete başlamak için aşağıdaki butona tıklayın.**\n` +
+        `> Yanıtlarınız yetkililerimizce en kısa sürede incelenecektir.`
       )
       .setFooter({ text: `${guild.name} • Güvenlik Sistemi` })
       .setTimestamp();
@@ -50,75 +52,84 @@ async function sendSurveyDM(user, guild) {
 async function sendSurveyStep(user, guild, step = "1") {
   const questions = {
     "1": {
-      question: "**Soru 1/9:** Discord kullanıcı adın nedir?",
+      question: "📝 **Soru 1/9:** Discord kullanıcı adınız nedir?\n\n*Aşağıdaki butona tıklayarak mevcut adınızı otomatik doldurabilir veya farklı bir isim/Roblox adı yazabilirsiniz.*",
       type: "text",
-      placeholder: "Örnek: Ahmet#1234",
+      placeholder: "İsim veya kullanıcı adı yazın...",
+      quickReplies: [
+        { label: "👤 Mevcut Kullanıcı Adımı Kullan", value: "currentuser" }
+      ],
       nextStep: "2"
     },
     "2": {
-      question: "**Soru 2/9:** Sunucumuza nasıl ulaştın?",
+      question: "📝 **Soru 2/9:** Sunucumuza nasıl ulaştınız?\n\n*Lütfen aşağıdaki açılır menüden size en uygun seçeneği seçin.*",
       type: "select",
+      placeholder: "Bir seçenek seçiniz...",
       options: [
-        { label: "Davet linki", value: "invite_link" },
-        { label: "Arkadaş tavsiyesi", value: "friend" },
-        { label: "Sosyal medya", value: "social_media" },
-        { label: "Diğer", value: "other" }
+        { label: "🔗 Davet Linki", value: "Davet Linki" },
+        { label: "👥 Arkadaş Tavsiyesi", value: "Arkadaş Tavsiyesi" },
+        { label: "📱 Sosyal Medya", value: "Sosyal Medya" },
+        { label: "🔍 İnternet / Arama", value: "İnternet / Arama" },
+        { label: "📝 Diğer", value: "Diğer" }
       ],
       nextStep: "3"
     },
     "3": {
-      question: "**Soru 3/9:** Sunucuya katılma amacın nedir?",
+      question: "📝 **Soru 3/9:** Sunucuya katılma amacınız nedir?\n\n*Aşağıdaki hızlı cevap butonlarını kullanabilir veya kendi yanıtınızı yazabilirsiniz.*",
       type: "text",
-      placeholder: "Örnek: Oyun oynamak, sohbet etmek...",
+      placeholder: "Oyun oynamak, sohbet etmek vb...",
+      quickReplies: [
+        { label: "🎮 Oyun & Sohbet", value: "Oyun oynamak ve sohbet etmek" },
+        { label: "👥 Topluluk & Sosyal", value: "Topluluğa katılmak" }
+      ],
       nextStep: "4"
     },
     "4": {
-      question: "**Soru 4/9:** Daha önce bu sunucuda bulundun mu?",
+      question: "📝 **Soru 4/9:** Daha önce bu sunucuda bulundunuz mu?",
       type: "buttons",
       options: [
-        { label: "Evet", value: "yes", style: ButtonStyle.Danger },
-        { label: "Hayır", value: "no", style: ButtonStyle.Success }
+        { label: "Evet, bulundum", value: "yes", style: ButtonStyle.Danger },
+        { label: "Hayır, ilk defa geliyorum", value: "no", style: ButtonStyle.Success }
       ],
       nextStep: "5"
     },
     "5": {
-      question: "**Soru 5/9:** Herhangi bir alternatif (alt) hesabın var mı?",
+      question: "📝 **Soru 5/9:** Herhangi bir alternatif (alt) hesabınız var mı?",
       type: "buttons",
       options: [
-        { label: "Evet", value: "yes", style: ButtonStyle.Danger },
-        { label: "Hayır", value: "no", style: ButtonStyle.Success }
+        { label: "Evet, var", value: "yes", style: ButtonStyle.Danger },
+        { label: "Hayır, yok", value: "no", style: ButtonStyle.Success }
       ],
       nextStep: "6"
     },
     "6": {
-      question: "**Soru 6/9:** Kuralları okudun ve kabul ediyor musun?",
+      question: "📝 **Soru 6/9:** Kuralları okudunuz ve kabul ediyor musunuz?",
       type: "buttons",
       options: [
-        { label: "Evet", value: "yes", style: ButtonStyle.Success },
-        { label: "Hayır", value: "no", style: ButtonStyle.Danger }
+        { label: "Kabul Ediyorum", value: "yes", style: ButtonStyle.Success },
+        { label: "Kabul Etmiyorum", value: "no", style: ButtonStyle.Danger }
       ],
       nextStep: "7"
     },
     "7": {
-      question: "**Soru 7/9:** Eklemek istediğin bir şey var mı? (İsteğe bağlı)\n\n`Yoksa 'Yok' yazabilirsin.`",
+      question: "📝 **Soru 7/9:** Eklemek istediğiniz bir şey var mı? (İsteğe bağlı)\n\n*Aşağıdaki butona basarak bu adımı geçebilirsiniz.*",
       type: "text",
-      placeholder: "İsteğe bağlı açıklama...",
-      nextStep: "8",
-      optional: true
+      placeholder: "Eklemek istediğiniz bir şey varsa yazın...",
+      optional: true,
+      nextStep: "8"
     },
     "8": {
-      question: "**Soru 8/9:** Hesabını neden yeni oluşturdun? (İsteğe bağlı)\n\n`Yoksa 'Yok' yazabilirsin.`",
+      question: "📝 **Soru 8/9:** Hesabınızı neden yeni oluşturdunuz? (İsteğe bağlı)\n\n*Aşağıdaki butona basarak bu adımı geçebilirsiniz.*",
       type: "text",
       placeholder: "Örnek: Eski hesabıma erişemiyorum...",
-      nextStep: "9",
-      optional: true
+      optional: true,
+      nextStep: "9"
     },
     "9": {
-      question: "**Soru 9/9:** Mikrofonun var mı?",
+      question: "📝 **Soru 9/9:** Mikrofonunuz var mı?",
       type: "buttons",
       options: [
-        { label: "Evet", value: "yes", style: ButtonStyle.Success },
-        { label: "Hayır", value: "no", style: ButtonStyle.Secondary }
+        { label: "Evet, var", value: "yes", style: ButtonStyle.Success },
+        { label: "Hayır, yok", value: "no", style: ButtonStyle.Secondary }
       ],
       nextStep: "complete"
     }
@@ -136,13 +147,16 @@ async function sendSurveyCompleteMessage(user, guild) {
   try {
     const embed = new EmbedBuilder()
       .setColor(0x00FF00)
-      .setTitle("✅ Anket Tamamlandı")
+      .setTitle("✅ Doğrulama Anketi Tamamlandı")
       .setDescription(
-        `Teşekkürler! Anketin başarıyla tamamlandı.\n\n` +
-        `Cevapların yetkililerimize iletildi. En kısa sürede incelenecek ve sana geri dönüş yapılacak.\n\n` +
-        `Bu süre zarfında lütfen sabırlı ol. Şüpheli bir durum yoksa kısa sürede onaylanacaksın.`
+        `Teşekkürler! Güvenlik anketiniz başarıyla sisteme iletildi.\n\n` +
+        `**Sonraki Adımlar:**\n` +
+        `• Yanıtlarınız yetkililerimiz tarafından incelenmektedir.\n` +
+        `• Şüpheli bir durum görülmediğinde hesabınız otomatik olarak onaylanacaktır.\n` +
+        `• Gerekli görülürse bir yetkili bu DM üzerinden sizinle iletişime geçebilir.\n\n` +
+        `_Lütfen bu süreçte sabırlı olun ve DM kutunuzu açık tutun._`
       )
-      .setFooter({ text: `${guild.name} • Güvenlik Sistemi` })
+      .setFooter({ text: `${guild ? guild.name : "Güvenlik"} • Güvenlik Sistemi` })
       .setTimestamp();
     
     await user.send({ embeds: [embed] });

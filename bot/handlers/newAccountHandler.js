@@ -68,7 +68,7 @@ function initializeNewAccountHandler(client) {
       const surveyResult = await sendSurveyDM(member.user, member.guild);
       
       if (!surveyResult) {
-        console.error(`[NewAccountHandler] Anket DM'i gönderilemedi, direkt moderatör bildirimi yapılacak.`);
+        console.error(`[NewAccountHandler] Anket DM'i gönderilemedi, doğrulama kanalına bildirim gönderilip direkt moderatör bildirimi yapılacak.`);
         
         // DM gönderilemezse direkt moderatöre bildir
         const moderator = await selectBestModerator(member.guild);
@@ -79,6 +79,54 @@ function initializeNewAccountHandler(client) {
           await investigation.save();
           
           await notifyModeratorAboutNewAccount(client, member, investigation, riskScore);
+        }
+
+        // Doğrulama kanalına bildirim gönder
+        try {
+          const { VERIFY_CHANNEL_ID } = require("../../config");
+          const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+          
+          if (VERIFY_CHANNEL_ID) {
+            const verifyChannel = member.guild.channels.cache.get(VERIFY_CHANNEL_ID) || 
+                                  await member.guild.channels.fetch(VERIFY_CHANNEL_ID).catch(() => null);
+            
+            if (verifyChannel) {
+              const dmFailedEmbed = new EmbedBuilder()
+                .setColor(0xFF0000)
+                .setTitle("⚠️ Güvenlik Doğrulaması Başlatılamadı")
+                .setDescription(
+                  `Merhaba <@${member.id}>!\n\n` +
+                  `Hesabınız son 24 saat içinde oluşturulduğu için güvenlik protokolü gereği doğrulama anketi doldurmanız gerekmektedir.\n\n` +
+                  `**Direkt Mesaj (DM) alımınız kapalı olduğu için size anket gönderemedik.**\n\n` +
+                  `**Süreci başlatmak için:**\n` +
+                  `1️⃣ Sunucu ayarlarınızdan **"Gizlilik ve Güvenlik"** kısmına gidin.\n` +
+                  `2️⃣ **"Sunucu üyelerinden gelen direkt mesajlara izin ver"** seçeneğini aktif edin.\n` +
+                  `3️⃣ Aşağıdaki **"Anketi Başlat"** butonuna basarak süreci başlatın.`
+                )
+                .setFooter({ text: `${member.guild.name} • Güvenlik Sistemi` })
+                .setTimestamp();
+
+              const dmFailedRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`survey_start_${member.guild.id}`)
+                  .setLabel("📝 Anketi Başlat")
+                  .setStyle(ButtonStyle.Primary)
+              );
+
+              const noticeMsg = await verifyChannel.send({
+                content: `<@${member.id}>`,
+                embeds: [dmFailedEmbed],
+                components: [dmFailedRow]
+              });
+
+              // 5 dakika sonra mesajı otomatik silelim
+              setTimeout(() => {
+                noticeMsg.delete().catch(() => {});
+              }, 5 * 60 * 1000);
+            }
+          }
+        } catch (errNotice) {
+          console.error(`[NewAccountHandler] Doğrulama kanalına bildirim gönderilemedi:`, errNotice.message);
         }
       }
       
