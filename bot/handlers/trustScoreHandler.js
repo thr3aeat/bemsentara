@@ -42,9 +42,10 @@ function initializeTrustScoreHandlers(client) {
 
       const now = Date.now();
       const contentLower = message.content.toLowerCase();
+      const isTargetCategory = message.channel.parentId === "1521539351031578684" || message.channel.parent?.parentId === "1521539351031578684";
 
       // ── A. Automod Checks: Suspicious Link / Ad ──
-      if (SUSPICIOUS_LINK_REGEX.test(message.content)) {
+      if (!isTargetCategory && SUSPICIOUS_LINK_REGEX.test(message.content)) {
         await message.delete().catch(() => {});
         await updateTrustScore(userId, -25.0, "Automod: Şüpheli Link / Sunucu Tanıtımı Reklamı", "SYSTEM", client);
         
@@ -135,7 +136,7 @@ function initializeTrustScoreHandlers(client) {
       }
 
       // Normal link check
-      if (!hasViolated && LINK_REGEX.test(message.content)) {
+      if (!isTargetCategory && !hasViolated && LINK_REGEX.test(message.content)) {
         if (record.trustScore < 50.0) {
           hasViolated = true;
           await message.delete().catch(() => {});

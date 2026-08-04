@@ -795,10 +795,11 @@ async function handleMessageCreateAbuse(client, message) {
   }
 
   // 2. Reklam/Invite Link Check
-  // EXCEPTION: Forum kanallarında (isThread) link paylaşımını izin ver
+  // EXCEPTION: Forum kanallarında (isThread) ve özel kategoride (1521539351031578684) link paylaşımını izin ver
   const isForumChannel = message.channel.isThread?.() || false;
+  const isTargetCategory = message.channel.parentId === "1521539351031578684" || message.channel.parent?.parentId === "1521539351031578684";
   const hasInviteLink = /(discord\.(gg|io|me|li)\/.+|discord(app)?\.com\/invite\/.+)/i.test(message.content);
-  if (hasInviteLink && !isForumChannel) {
+  if (hasInviteLink && !isForumChannel && !isTargetCategory) {
     try {
       await message.delete().catch(() => {});
       if (message.member && message.member.moderatable) {
@@ -811,8 +812,8 @@ async function handleMessageCreateAbuse(client, message) {
     } catch (err) {
       console.error("[discordAbuseDetector] Reklam timeout error:", err.message);
     }
-  } else if (hasInviteLink && isForumChannel) {
-    console.log(`[discordAbuseDetector] Forum kanalında link paylaşımı izin verildi: ${message.author.tag}`);
+  } else if (hasInviteLink && (isForumChannel || isTargetCategory)) {
+    console.log(`[discordAbuseDetector] Forum kanalında veya izinli kategoride link paylaşımı izin verildi: ${message.author.tag}`);
   }
 
   if (!isAbuse) return;
