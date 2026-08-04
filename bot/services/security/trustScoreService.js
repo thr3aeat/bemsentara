@@ -129,17 +129,46 @@ async function ensureUserTrustScore(userId, guildId, client) {
       }
 
       if (!channel) {
+        const permissionOverwrites = [
+          {
+            id: recordGuild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          }
+        ];
+
+        let modRoles = [];
+        if (recordGuild.roles && recordGuild.roles.cache && typeof recordGuild.roles.cache.filter === 'function') {
+          modRoles = recordGuild.roles.cache.filter(r => 
+            (r.permissions && typeof r.permissions.has === 'function' && 
+             (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
+            (r.name && (
+              r.name.toLowerCase().includes("mod") ||
+              r.name.toLowerCase().includes("yetkili") ||
+              r.name.toLowerCase().includes("staff") ||
+              r.name.toLowerCase().includes("admin")
+            ))
+          );
+        }
+
+        for (const role of modRoles.values()) {
+          permissionOverwrites.push({
+            id: role.id,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory
+            ]
+          });
+        }
+
+        const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
+
         // Create dynamic channel
         channel = await recordGuild.channels.create({
-          name: `${record.userId}-${record.username.slice(0, 20)}`,
+          name: cleanName,
           type: ChannelType.GuildText,
           parent: RECORD_CATEGORY_ID,
-          permissionOverwrites: [
-            {
-              id: recordGuild.roles.everyone.id,
-              deny: [PermissionFlagsBits.ViewChannel]
-            }
-          ],
+          permissionOverwrites,
           reason: `Güvenlik Profili: ${record.username}`
         }).catch((err) => {
           console.error("[TrustScore] Channel creation failed:", err.message);
@@ -374,6 +403,13 @@ function getTrustStatus(score) {
   return { name: "👑 Topluluk VIP", color: 0x7c6af7 };
 }
 
+function getProgressBar(pct) {
+  const totalBlocks = 10;
+  const filledBlocks = Math.max(0, Math.min(totalBlocks, Math.round((pct / 100) * totalBlocks)));
+  const emptyBlocks = totalBlocks - filledBlocks;
+  return `\`[${"█".repeat(filledBlocks)}${"░".repeat(emptyBlocks)}]\` **${pct.toFixed(0)}%**`;
+}
+
 /**
  * Builds the profile embed message.
  */
@@ -381,17 +417,35 @@ async function buildProfileEmbed(record, client) {
   const status = getTrustStatus(record.trustScore);
   const user = await client.users.fetch(record.userId).catch(() => null);
 
+  const pct = (record.trustScore / 500) * 100;
+  const progressBar = getProgressBar(pct);
+
   const embed = new EmbedBuilder()
-    .setTitle(`👤 Güvenlik Sicil & Profil Kartı: ${record.username}`)
+    .setTitle(`🛡️ Güvenlik Sicili ve Profil Analizi: ${record.username}`)
+    .setDescription(
+      `Bu kanal, **${record.username}** kullanıcısının sunucu içerisindeki davranışsal güvenliğini ve sicil geçmişini izlemek amacıyla otonom olarak oluşturulmuştur.\n\n` +
+      `**Skor İlerleme Çubuğu:**\n${progressBar}\n`
+    )
     .setColor(status.color)
     .setThumbnail(user ? user.displayAvatarURL({ dynamic: true }) : null)
     .addFields(
-      { name: "👤 Kullanıcı", value: `<@${record.userId}> (\`${record.userId}\`)`, inline: true },
-      { name: "📊 Güven Skoru", value: `**${record.trustScore.toFixed(1)} / 500**`, inline: true },
-      { name: "⚖️ Seviye / Durum", value: `**${status.name}**`, inline: true },
+      { name: "👤 Kullanıcı", value: `<@${record.userId}>`, inline: true },
+      { name: "📊 Güven Skoru", value: `\`${record.trustScore.toFixed(1)} / 500.0\``, inline: true },
+      { name: "⚖️ Güvenlik Kademesi", value: `**${status.name}**`, inline: true },
       { name: "💬 Sohbet İlerlemesi", value: `\`${record.messageCount} / 50\` mesaj`, inline: true },
-      { name: "📅 Günlük Puanlar", value: `Chat: \`${record.dailyChatPoints.toFixed(1)}/5.0\`\nVoice: \`${record.dailyVoicePoints.toFixed(1)}/5.0\``, inline: true },
-      { name: "🔥 Daily Streak", value: `\`${record.dailyStreak || 0}\` gün`, inline: true }
+      { name: "📅 Günlük Limitler", value: `💬 Chat: \`${record.dailyChatPoints.toFixed(1)}/5.0\`\n🎤 Voice: \`${record.dailyVoicePoints.toFixed(1)}/5.0\``, inline: true },
+      { name: "🔥 Günlük Streak", value: `\`${record.dailyStreak || 0}\` gün`, inline: true }
+    )
+    .addFields(
+      {
+        name: "🔑 Güvenlik & Doğrulama Rozetleri",
+        value: 
+          `• **İki Faktörlü Doğrulama (2FA):** ${record.bonus2FA ? "✅ Aktif (+5.0 TS)" : "❌ Pasif"}\n` +
+          `• 📱 **Telefon Numarası:** ${record.bonusPhone ? "✅ Doğrulanmış (+10.0 TS)" : "❌ Doğrulanmamış"}\n` +
+          `• 🚀 **Discord Hesap Yaşı:** ${record.bonusAccountAge > 0 ? `✅ ${record.bonusAccountAge === 10 ? "3+ Yıl (+10.0 TS)" : "1+ Yıl (+5.0 TS)"}` : "❌ Kriter Dışı"}\n` +
+          `• 📅 **Sunucu Katılım Süresi:** ${record.bonusJoinAge > 0 ? `✅ ${record.bonusJoinAge === 15 ? "6+ Ay (+15.0 TS)" : "1+ Ay (+5.0 TS)"}` : "❌ Kriter Dışı"}`,
+        inline: false
+      }
     )
     .setTimestamp();
 
@@ -663,8 +717,6 @@ async function scanVoiceChannels(client) {
     // ── 2. Voice Channels scan ──
     const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
     if (!activeGuild) return;
-
-    console.log("[TrustScore] Ses kanalları taranıyor...");
 
     for (const channel of activeGuild.channels.cache.values()) {
       if (channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice) {

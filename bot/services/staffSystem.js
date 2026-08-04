@@ -984,7 +984,13 @@ async function getOrCreate(userId, guildId, client) {
   return p;
 }
 
-function resetDaily(progress) {
+function resetDaily(progress, client = null) {
+  if (!client) {
+    try {
+      const { getDiscordClient } = require('../discordClient');
+      client = getDiscordClient();
+    } catch (_) { }
+  }
   const today = todayStr();
 
   // 🔧 Güvenlik: daily objesi tanımlı değilse oluştur
