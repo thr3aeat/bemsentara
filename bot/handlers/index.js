@@ -133,7 +133,7 @@ function initializeDiscordHandlers(client) {
 
     // Start Voice Scan Scheduler for Trust Score System
     try {
-      const { scanVoiceChannels } = require("../services/security/trustScoreService");
+      const { scanVoiceChannels, startTrustScoreDecayScheduler } = require("../services/security/trustScoreService");
       // Run once on startup after a delay
       setTimeout(() => scanVoiceChannels(client).catch(() => {}), 15000);
       // Run every 30 minutes
@@ -141,8 +141,10 @@ function initializeDiscordHandlers(client) {
         scanVoiceChannels(client).catch(err => console.error("[scanVoiceChannels Interval] Error:", err.message));
       }, 30 * 60 * 1000);
       console.log("✅ Güven Puanı Ses Kanalı Tarayıcısı başlatıldı.");
+      
+      startTrustScoreDecayScheduler(client);
     } catch (trustErr) {
-      console.error("[TrustScore] Ses tarayıcı başlatılamadı:", trustErr.message);
+      console.error("[TrustScore] Ses tarayıcı/decay başlatılamadı:", trustErr.message);
     }
 
     await ensureVerifyHelpMessage(client);

@@ -247,14 +247,26 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
     });
 
     // Check if score falls below 50.0 to trigger Af task
-    if (newScore < 50.0 && (!record.afProgress || !record.afProgress.active)) {
-      record.afProgress = {
-        active: true,
-        daysCompleted: 0,
-        messagesToday: 0,
-        lastMessageDay: todayStr,
-        lastPenaltyDate: null
-      };
+    if (newScore >= 50.0 && record.afProgress) {
+      record.afProgress.status = null;
+      record.afProgress.completedAt = null;
+    }
+
+    if (newScore < 50.0) {
+      const isAlreadyActive = record.afProgress && record.afProgress.active;
+      const isRecentlyCompleted = record.afProgress && record.afProgress.status === 'completed';
+      
+      if (!isAlreadyActive && !isRecentlyCompleted) {
+        record.afProgress = {
+          active: true,
+          daysCompleted: 0,
+          messagesToday: 0,
+          lastMessageDay: todayStr,
+          lastPenaltyDate: null,
+          status: 'active',
+          completedAt: null
+        };
+      }
     }
 
     await record.save();
@@ -326,6 +338,8 @@ async function incrementAfProgress(userId, client) {
         record.afProgress.daysCompleted = 0;
         record.afProgress.messagesToday = 0;
         record.afProgress.lastMessageDay = null;
+        record.afProgress.status = 'completed';
+        record.afProgress.completedAt = new Date();
         
         await record.save();
         await updateTrustScore(userId, 10.0, "Görev Tamamlandı: Ceza Bitirme Görevi (+10.0)", "SYSTEM", client);
@@ -711,10 +725,7 @@ async function handleTrustModals(interaction) {
  */
 async function scanVoiceChannels(client) {
   try {
-    // ── 1. Weekly Decay Scan ──
-    await runInactivityDecay(client);
-
-    // ── 2. Voice Channels scan ──
+    // ── 1. Voice Channels scan ──
     const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
     if (!activeGuild) return;
 
@@ -809,6 +820,26 @@ async function runInactivityDecay(client) {
   }
 }
 
+let lastDecayRunDay = null;
+
+function startTrustScoreDecayScheduler(client) {
+  // Check once every 15 minutes to guarantee we run precisely during the 4 AM hour
+  setInterval(() => {
+    try {
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      if (now.getHours() === 4 && lastDecayRunDay !== todayStr) {
+        lastDecayRunDay = todayStr;
+        console.log("[TrustScore] Günlük inaktiflik erime taraması başlatılıyor...");
+        runInactivityDecay(client).catch(err => console.error("[TrustScore] Decay error:", err));
+      }
+    } catch (e) {
+      console.error("[TrustScore] startTrustScoreDecayScheduler interval error:", e.message);
+    }
+  }, 15 * 60 * 1000);
+  console.log("✅ Güven Puanı İnaktiflik Erime Zamanlayıcısı başlatıldı (Her gün 04:00).");
+}
+
 module.exports = {
   ensureUserTrustScore,
   updateTrustScore,
@@ -818,4 +849,5 @@ module.exports = {
   handleTrustButtons,
   handleTrustModals,
   scanVoiceChannels,
+  startTrustScoreDecayScheduler,
 };

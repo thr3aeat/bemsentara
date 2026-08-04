@@ -44,19 +44,64 @@ const shouldSuppressConsoleMessage = (args) => {
   return NOISY_PATTERNS.some((pattern) => pattern.test(text));
 };
 
+const emojiMap = {
+  db: { emoji: "💾 DB", color: chalk.cyan },
+  mutetracker: { emoji: "🔇 MUTE-TRACK", color: chalk.red },
+  voicekickdetector: { emoji: "🥾 VOICE-KICK", color: chalk.yellow },
+  voicestateupdate: { emoji: "🔊 VOICE-STATE", color: chalk.magenta },
+  aiservice: { emoji: "🤖 AI-SERVICE", color: chalk.green },
+  discordlogger: { emoji: "📢 DISCORD-LOG", color: chalk.blue },
+  modselectionservice: { emoji: "🗳️ MOD-SELECT", color: chalk.magenta },
+  baninvestigationai: { emoji: "🕵️ BAN-INVEST", color: chalk.red },
+  banbirimranks: { emoji: "🛡️ BAN-RANKS", color: chalk.green },
+  moderatorschool: { emoji: "🏫 MOD-SCHOOL", color: chalk.blue },
+  selfping: { emoji: "🌐 PING", color: chalk.cyan },
+};
+
+function formatStyledConsoleMessage(args) {
+  const text = args
+    .map((arg) => (typeof arg === "string" ? arg : String(arg)))
+    .join(" ");
+
+  const now = new Date();
+  const timeStr = chalk.gray(`[${now.toLocaleTimeString()}]`);
+
+  // Extract prefix like [db] or [voiceStateUpdate]
+  const prefixMatch = text.match(/^\[([^\]]+)\]\s*(.*)/s);
+  if (prefixMatch) {
+    const rawPrefix = prefixMatch[1];
+    const rest = prefixMatch[2];
+    const key = rawPrefix.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (emojiMap[key]) {
+      const config = emojiMap[key];
+      return `${timeStr} ${config.color.bold(`[${config.emoji}]`)} ${rest}`;
+    } else {
+      return `${timeStr} ${chalk.cyan(`[${rawPrefix}]`)} ${rest}`;
+    }
+  }
+
+  // Already formatted logger prefixes
+  if (text.startsWith("ℹ INFO") || text.startsWith("✅ SUCCESS") || text.startsWith("⚠ WARN") || text.startsWith("❌ ERROR") || text.startsWith("• STEP")) {
+    return `${timeStr} ${text}`;
+  }
+
+  return `${timeStr} ${chalk.white(text)}`;
+}
+
 console.log = (...args) => {
   if (shouldSuppressConsoleMessage(args)) return;
-  originalConsoleLog(...args);
+  originalConsoleLog(formatStyledConsoleMessage(args));
 };
 
 console.warn = (...args) => {
   if (shouldSuppressConsoleMessage(args)) return;
-  originalConsoleWarn(...args);
+  originalConsoleWarn(formatStyledConsoleMessage(args));
 };
 
 console.error = (...args) => {
   if (shouldSuppressConsoleMessage(args)) return;
-  originalConsoleError(...args);
+  originalConsoleError(formatStyledConsoleMessage(args));
 };
 
 const addLog = (type, msg, details) => {
@@ -130,10 +175,8 @@ const logger = {
     }
   },
   log: (msg, type = "INFO", details = "") => {
-    // Custom internal routing method
     addLog(type, msg, details);
     printWithDetails(`[${type}]`, chalk.magenta, msg, details);
-    // Route to discordLogger based on type
     let system = "bot";
     if (type === "admin") system = "admin";
     if (type === "web" || type === "auth") system = type;

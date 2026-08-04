@@ -1,3 +1,4 @@
+const { AuditLogEvent } = require("discord.js");
 const { updateTrustScore, ensureUserTrustScore, incrementAfProgress } = require("../services/security/trustScoreService");
 const UserTrustScore = require("../../models/UserTrustScore");
 
@@ -225,6 +226,23 @@ function initializeTrustScoreHandlers(client) {
 
       const elapsed = Date.now() - msgData.createdTimestamp;
       if (elapsed < 15000 && msgData.hasMentions) {
+        // Fetch audit logs to see if a moderator/staff member deleted it
+        const fetchedLogs = await message.guild.fetchAuditLogs({
+          limit: 1,
+          type: AuditLogEvent.MessageDelete,
+        }).catch(() => null);
+
+        const deletionLog = fetchedLogs?.entries.first();
+        if (deletionLog) {
+          const { executor, target } = deletionLog;
+          const logAge = Date.now() - deletionLog.createdTimestamp;
+          
+          if (target && target.id === msgData.authorId && executor && executor.id !== msgData.authorId && logAge < 5000) {
+            // Deleted by a moderator/someone else. Skip ghost ping penalty.
+            return;
+          }
+        }
+
         // Ghost ping detected!
         await updateTrustScore(msgData.authorId, -3.0, "Automod: Ghost Ping (Etiketleyip Silme)", "SYSTEM", client);
         await message.channel.send(`⚠️ <@${msgData.authorId}> Ghost Ping (Etiketleyip silme) ihlali nedeniyle **-3.0** TS cezası aldınız.`).then(msg => {
