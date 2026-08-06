@@ -39,6 +39,12 @@ async function routeButtonInteraction(interaction) {
     return true;
   }
 
+  if (customId.startsWith('trust_')) {
+    const { handleTrustButtons } = require('../../services/security/trustScoreService');
+    await handleTrustButtons(interaction);
+    return true;
+  }
+
   if (customId.startsWith('btn_security_')) {
     const AltRaidGuardService = require('../../services/security/altRaidGuardService');
     if (customId.startsWith('btn_security_release_')) {

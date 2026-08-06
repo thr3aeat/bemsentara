@@ -9,13 +9,31 @@ const messageCounts = new Map(); // userId -> { count, lastTimestamp }
 const voiceSessions = new Map(); // userId -> joinTime
 const userTimestamps = new Map(); // userId -> Array of message timestamps (for flood check)
 const recentMessages = new Map(); // messageId -> { authorId, createdTimestamp, hasMentions }
+const userLastMessages = new Map(); // userId -> [{ content, timestamp }]
 const awardedReactionMessages = new Set(); // messageId -> Boolean (to prevent double reaction points)
 
 const LINK_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
 const SUSPICIOUS_LINK_REGEX = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/gi;
 const SWEAR_WORDS = ["amk", "aq", "amq", "piç", "göt", "sik", "orospu", "yarrak", "siktir", "oç", "amcık", "gavat", "puşt"];
 
-// Clean up recent messages mapping every 60 seconds to avoid memory leaks
+/**
+ * 🎯 3. Normalizes text for Leet-speak and obfuscation swear detection
+ */
+function normalizeTextForSwearCheck(str) {
+  if (!str) return "";
+  let s = str.toLowerCase();
+  s = s.replace(/@/g, "a")
+       .replace(/[1!]/g, "i")
+       .replace(/0/g, "o")
+       .replace(/3/g, "e")
+       .replace(/[5$]/g, "s")
+       .replace(/7/g, "t");
+  s = s.replace(/[\._\-*+~#=|\/]/g, "");
+  s = s.replace(/\b([a-zğüşıöç])\s+(?=[a-zğüşıöç]\b)/gi, "$1");
+  return s;
+}
+
+// ⚡ 2. Memory Leak Cleanup interval (every 5 minutes)
 setInterval(() => {
   const now = Date.now();
   for (const [msgId, data] of recentMessages.entries()) {
@@ -23,7 +41,17 @@ setInterval(() => {
       recentMessages.delete(msgId);
     }
   }
-}, 60000);
+  for (const [userId, history] of userLastMessages.entries()) {
+    const valid = history.filter(m => now - m.timestamp < 15000);
+    if (valid.length === 0) userLastMessages.delete(userId);
+    else userLastMessages.set(userId, valid);
+  }
+  for (const [userId, timestamps] of userTimestamps.entries()) {
+    const valid = timestamps.filter(t => now - t < 10000);
+    if (valid.length === 0) userTimestamps.delete(userId);
+    else userTimestamps.set(userId, valid);
+  }
+}, 5 * 60 * 1000);
 
 function initializeTrustScoreHandlers(client) {
   // ── 1. Message Event Handler (Sohbet, Automod, Streaks, Flood, Caps Lock) ──
@@ -70,13 +98,32 @@ function initializeTrustScoreHandlers(client) {
         return;
       }
 
-      // ── B. Automod Checks: Flood (Hızlı Mesaj) ──
+      // ── 7. Duplicate Message Spam Check ──
+      const userHistory = userLastMessages.get(userId) || [];
+      const currentContent = message.content.trim().toLowerCase();
+      userHistory.push({ content: currentContent, timestamp: now });
+      const recentDuplicates = userHistory.filter(m => now - m.timestamp < 10000 && m.content === currentContent);
+      userLastMessages.set(userId, userHistory.filter(m => now - m.timestamp < 10000));
+
+      if (recentDuplicates.length >= 3) {
+        await message.delete().catch(() => {});
+        await updateTrustScore(userId, -3.0, "Automod: Tekrarlanan Mesaj Spamı (Duplicate Spam)", "SYSTEM", client);
+        await message.channel.send(`⚠️ <@${userId}> Aynı mesajı 10 saniye içinde tekrarladığınız için **-3.0** TS cezası aldınız.`).then(msg => {
+          setTimeout(() => msg.delete().catch(() => {}), 5000);
+        }).catch(() => {});
+        return;
+      }
+
+      // ── B. Automod Checks: Flood (Hızlı Mesaj - Kanal Bazlı Esnek Limit) ──
+      const isBotOrGameChannel = message.channel.name.includes("komut") || message.channel.name.includes("bot") || message.channel.name.includes("oyun") || message.channel.name.includes("spam");
+      const maxFloodLimit = isBotOrGameChannel ? 10 : 5;
+
       const timestamps = userTimestamps.get(userId) || [];
       timestamps.push(now);
       const recentTimestamps = timestamps.filter(t => now - t < 3000);
       userTimestamps.set(userId, recentTimestamps);
 
-      if (recentTimestamps.length > 5) {
+      if (recentTimestamps.length > maxFloodLimit) {
         userTimestamps.set(userId, []); // Reset timestamps
         await updateTrustScore(userId, -2.0, "Automod: Hızlı Mesaj / Flood İhlali", "SYSTEM", client);
         await message.reply({ content: "⚠️ **[Güvenlik]** Lütfen bu kadar hızlı mesaj yazmayın! Flood ihlali nedeniyle puan kaybettiniz." }).then(msg => {
@@ -118,13 +165,13 @@ function initializeTrustScoreHandlers(client) {
         hasMentions
       });
 
-      // ── E. Automod Checks: Swears & Normal Links ──
+      // ── E. Automod Checks: Swears (Gelişmiş Leet-speak Bypass Kalkanı) & Normal Links ──
       let hasViolated = false;
 
-      // Swear check
+      const normalizedText = normalizeTextForSwearCheck(message.content);
       const hasSwear = SWEAR_WORDS.some(word => {
         const regex = new RegExp(`\\b${word}\\b|${word}`, 'i');
-        return regex.test(contentLower);
+        return regex.test(contentLower) || regex.test(normalizedText);
       });
 
       if (hasSwear) {
@@ -352,11 +399,32 @@ function initializeTrustScoreHandlers(client) {
     }
   });
 
-  // ── 5. Member Join Event Handler (Kanal Oluşturma & Başlangıç) ─────────────
+  // ── 5. Member Join Event Handler (Yan Hesap & Hesap Yaşı Kalkanı) ─────────────
   client.on("guildMemberAdd", async (member) => {
     try {
-      if (member.guild.id !== ACTIVE_GUILD_ID) return;
-      await ensureUserTrustScore(member.id, ACTIVE_GUILD_ID, client);
+      if (member.guild.id !== ACTIVE_GUILD_ID || member.user.bot) return;
+      const record = await ensureUserTrustScore(member.id, ACTIVE_GUILD_ID, client);
+      if (!record) return;
+
+      if (!record.altAccountChecked) {
+        const createdTimestamp = member.user.createdTimestamp;
+        const accountAgeDays = (Date.now() - createdTimestamp) / (1000 * 60 * 60 * 24);
+
+        if (accountAgeDays < 7) {
+          // Account < 7 days: Apply starter penalty / flag
+          record.altAccountChecked = true;
+          await record.save();
+          await updateTrustScore(member.id, -15.0, `Güvenlik Kalkanı: Şüpheli Yeni Hesap (${Math.floor(accountAgeDays)} Günlük)`, "SYSTEM", client);
+        } else if (accountAgeDays > 365) {
+          // Account > 1 year: Apply tenure bonus
+          record.altAccountChecked = true;
+          await record.save();
+          await updateTrustScore(member.id, 5.0, "Güvenlik Kalkanı: Kıdemli Discord Hesabı (>1 Yıllık)", "SYSTEM", client);
+        } else {
+          record.altAccountChecked = true;
+          await record.save();
+        }
+      }
     } catch (err) {
       console.error("[TrustScoreHandler] guildMemberAdd error:", err);
     }

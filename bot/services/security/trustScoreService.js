@@ -1,15 +1,30 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
 const UserTrustScore = require("../../../models/UserTrustScore");
 const ModPerformance = require("../../../models/ModPerformance");
+const User = require("../../../models/User");
 
 const ACTIVE_GUILD_ID = "1367646464804655104"; // EKO YILDIZ
 const RECORD_GUILD_ID = "1466927911364726845"; // Profile Channels Guild
 const RECORD_CATEGORY_ID = "1533884763507789965"; // Category ID
 
+// In-memory mutex/lock set to prevent race condition channel creation
+const activeChannelCreationLocks = new Set();
+
+/**
+ * Safely pushes a log entry and caps scoreLogs array to 100 items max.
+ */
+function pushScoreLog(record, logEntry) {
+  if (!record.scoreLogs) record.scoreLogs = [];
+  record.scoreLogs.push(logEntry);
+  if (record.scoreLogs.length > 100) {
+    record.scoreLogs = record.scoreLogs.slice(-100);
+  }
+}
+
 /**
  * Ensures user has a trust score record and a dynamic log channel.
  */
-async function ensureUserTrustScore(userId, guildId, client) {
+async function ensureUserTrustScore(userId, guildId, client, forceCreate = false) {
   try {
     let record = await UserTrustScore.findOne({ userId });
     let isNew = false;
@@ -39,7 +54,7 @@ async function ensureUserTrustScore(userId, guildId, client) {
         const diff = 10.0 - record.bonusAccountAge;
         record.bonusAccountAge = 10;
         record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
-        record.scoreLogs.push({
+        pushScoreLog(record, {
           amount: diff,
           reason: "Kıdem: 3 Yıldan Eski Discord Hesabı",
           operatorId: "SYSTEM",
@@ -49,7 +64,7 @@ async function ensureUserTrustScore(userId, guildId, client) {
         const diff = 5.0 - record.bonusAccountAge;
         record.bonusAccountAge = 5;
         record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
-        record.scoreLogs.push({
+        pushScoreLog(record, {
           amount: diff,
           reason: "Kıdem: 1 Yıldan Eski Discord Hesabı",
           operatorId: "SYSTEM",
@@ -68,7 +83,7 @@ async function ensureUserTrustScore(userId, guildId, client) {
           const diff = 15.0 - record.bonusJoinAge;
           record.bonusJoinAge = 15;
           record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
-          record.scoreLogs.push({
+          pushScoreLog(record, {
             amount: diff,
             reason: "Kıdem: Sunucuda 6. Ayını Doldurma",
             operatorId: "SYSTEM",
@@ -78,7 +93,7 @@ async function ensureUserTrustScore(userId, guildId, client) {
           const diff = 5.0 - record.bonusJoinAge;
           record.bonusJoinAge = 5;
           record.trustScore = parseFloat((record.trustScore + diff).toFixed(2));
-          record.scoreLogs.push({
+          pushScoreLog(record, {
             amount: diff,
             reason: "Kıdem: Sunucuda 1. Ayını Doldurma",
             operatorId: "SYSTEM",
@@ -90,11 +105,11 @@ async function ensureUserTrustScore(userId, guildId, client) {
 
     // Check 2FA bonus from web DB User
     if (!record.bonus2FA) {
-      const dbUser = await require("../../../models/User").findOne({ discordId: userId });
+      const dbUser = await User.findOne({ discordId: userId });
       if (dbUser && dbUser.mfaEnabled) {
         record.bonus2FA = true;
         record.trustScore = parseFloat((record.trustScore + 5.0).toFixed(2));
-        record.scoreLogs.push({
+        pushScoreLog(record, {
           amount: 5.0,
           reason: "Bonus: İki Faktörlü Doğrulama (2FA) Aktif",
           operatorId: "SYSTEM",
@@ -105,11 +120,11 @@ async function ensureUserTrustScore(userId, guildId, client) {
 
     // Check Phone verification bonus from web DB User
     if (!record.bonusPhone) {
-      const dbUser = await require("../../../models/User").findOne({ discordId: userId });
+      const dbUser = await User.findOne({ discordId: userId });
       if (dbUser && dbUser.phoneVerified) {
         record.bonusPhone = true;
         record.trustScore = parseFloat((record.trustScore + 10.0).toFixed(2));
-        record.scoreLogs.push({
+        pushScoreLog(record, {
           amount: 10.0,
           reason: "Bonus: Telefon Numarası Doğrulanmış",
           operatorId: "SYSTEM",
@@ -141,69 +156,81 @@ async function ensureUserTrustScore(userId, guildId, client) {
       const shouldCreate = forceCreate || (record.trustScore < 50.0 && !record.profileChannelClosed && !record.profileChannelId);
 
       if (!channel && shouldCreate) {
-        const permissionOverwrites = [
-          {
-            id: recordGuild.roles.everyone.id,
-            deny: [PermissionFlagsBits.ViewChannel]
-          }
-        ];
-
-        let modRoles = [];
-        if (recordGuild.roles && recordGuild.roles.cache && typeof recordGuild.roles.cache.filter === 'function') {
-          modRoles = recordGuild.roles.cache.filter(r => 
-            (r.permissions && typeof r.permissions.has === 'function' && 
-             (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
-            (r.name && (
-              r.name.toLowerCase().includes("mod") ||
-              r.name.toLowerCase().includes("yetkili") ||
-              r.name.toLowerCase().includes("staff") ||
-              r.name.toLowerCase().includes("admin")
-            ))
-          );
+        // Prevent race condition duplicate channel creation via in-memory lock
+        if (activeChannelCreationLocks.has(userId)) {
+          return record;
         }
+        activeChannelCreationLocks.add(userId);
 
-        for (const role of modRoles.values()) {
-          permissionOverwrites.push({
-            id: role.id,
-            allow: [
-              PermissionFlagsBits.ViewChannel,
-              PermissionFlagsBits.SendMessages,
-              PermissionFlagsBits.ReadMessageHistory
-            ]
+        try {
+          const permissionOverwrites = [
+            {
+              id: recordGuild.roles.everyone.id,
+              deny: [PermissionFlagsBits.ViewChannel]
+            }
+          ];
+
+          let modRoles = [];
+          if (recordGuild.roles && recordGuild.roles.cache && typeof recordGuild.roles.cache.filter === 'function') {
+            modRoles = recordGuild.roles.cache.filter(r => 
+              (r.permissions && typeof r.permissions.has === 'function' && 
+               (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
+              (r.name && (
+                r.name.toLowerCase().includes("mod") ||
+                r.name.toLowerCase().includes("yetkili") ||
+                r.name.toLowerCase().includes("staff") ||
+                r.name.toLowerCase().includes("admin")
+              ))
+            );
+          }
+
+          for (const role of modRoles.values()) {
+            permissionOverwrites.push({
+              id: role.id,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory
+              ]
+            });
+          }
+
+          const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
+
+          // Create dynamic channel
+          channel = await recordGuild.channels.create({
+            name: cleanName,
+            type: ChannelType.GuildText,
+            parent: RECORD_CATEGORY_ID,
+            permissionOverwrites,
+            reason: `Güvenlik Profili: ${record.username}`
+          }).catch((err) => {
+            console.error("[TrustScore] Channel creation failed:", err.message);
+            return null;
           });
-        }
 
-        const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
-
-        // Create dynamic channel
-        channel = await recordGuild.channels.create({
-          name: cleanName,
-          type: ChannelType.GuildText,
-          parent: RECORD_CATEGORY_ID,
-          permissionOverwrites,
-          reason: `Güvenlik Profili: ${record.username}`
-        }).catch((err) => {
-          console.error("[TrustScore] Channel creation failed:", err.message);
-          return null;
-        });
-
-        if (channel) {
-          record.profileChannelId = channel.id;
-          record.profileChannelClosed = false;
-          await record.save();
-
-          // Send initial embed message
-          const embed = await buildProfileEmbed(record, client);
-          const buttons = buildActionButtons(record.userId);
-          const msg = await channel.send({ embeds: [embed], components: [buttons] }).catch(() => null);
-          if (msg) {
-            await msg.pin().catch(() => {});
-            record.profileMessageId = msg.id;
+          if (channel) {
+            record.profileChannelId = channel.id;
+            record.profileChannelClosed = false;
             await record.save();
+
+            // Send initial embed message
+            const embed = await buildProfileEmbed(record, client);
+            const buttons = buildActionButtons(record.userId);
+            const msg = await channel.send({ embeds: [embed], components: [buttons] }).catch(() => null);
+            if (msg) {
+              await msg.pin().catch(() => {});
+              record.profileMessageId = msg.id;
+              await record.save();
+            }
           }
+        } finally {
+          activeChannelCreationLocks.delete(userId);
         }
       }
     }
+
+    return record;
 
     return record;
   } catch (err) {
@@ -239,8 +266,21 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       }
     }
 
+    // ── 6. Dinamik Ceza Katlayıcısı (Risk Scaled Penalty) ──
+    let finalAmount = amount;
+    if (finalAmount < 0 && operatorId === "SYSTEM") {
+      record.lastViolationDate = new Date();
+      if (record.trustScore < 30.0) {
+        // Yüksek Risk (< 30 TS): 1.5x ceza katlayıcısı
+        finalAmount = parseFloat((finalAmount * 1.5).toFixed(2));
+      } else if (record.trustScore >= 80.0) {
+        // Güvenilir Üye (>= 80 TS): İlk ihlallerde 0.8x yumuşatma
+        finalAmount = parseFloat((finalAmount * 0.8).toFixed(2));
+      }
+    }
+
     // Reset af progress if they get penalized
-    if (amount < 0 && record.afProgress && record.afProgress.active) {
+    if (finalAmount < 0 && record.afProgress && record.afProgress.active) {
       record.afProgress.daysCompleted = 0;
       record.afProgress.messagesToday = 0;
       record.afProgress.lastPenaltyDate = new Date();
@@ -248,12 +288,12 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
 
     // Calculate new score
     const oldScore = record.trustScore;
-    let newScore = parseFloat((oldScore + amount).toFixed(2));
+    let newScore = parseFloat((oldScore + finalAmount).toFixed(2));
     newScore = Math.max(0.0, Math.min(newScore, 500.0)); // Constraint: 0 to 500
 
     record.trustScore = newScore;
-    record.scoreLogs.push({
-      amount,
+    pushScoreLog(record, {
+      amount: finalAmount,
       reason,
       operatorId,
       timestamp: new Date()
@@ -730,6 +770,10 @@ async function handleTrustModals(interaction) {
       return interaction.editReply("❌ Lütfen geçerli bir pozitif sayı girin.");
     }
 
+    if (amountVal > 50.0) {
+      return interaction.editReply("❌ Tek seferde en fazla **50.0 TS** puan ekleyebilir veya düşürebilirsiniz (Güvenlik Sınırı: Max 50.0 TS).");
+    }
+
     const isLimitExceeded = await checkModAbuseLimit(interaction.user.id, targetUserId);
     if (isLimitExceeded) {
       return interaction.editReply("❌ Bir kullanıcıya 1 saat içinde en fazla 2 kez manuel puan işlemi uygulayabilirsiniz! Suistimal engellendi.");
@@ -760,19 +804,27 @@ async function scanVoiceChannels(client) {
 
     for (const channel of activeGuild.channels.cache.values()) {
       if (channel.type === ChannelType.GuildVoice || channel.type === ChannelType.GuildStageVoice) {
-        // Check if there is an active screen share/stream with at least 2 viewers
-        // In discord.js voice state, screen share is newState.streaming
-        for (const member of channel.members.values()) {
-          if (member.user.bot) continue;
+        const isAFKChannel = channel.id === activeGuild.afkChannelId || channel.name.toLowerCase().includes("afk");
+        if (isAFKChannel) continue; // Skip AFK channels completely
 
-          // Standard voice points
-          await updateTrustScore(member.id, 0.5, "Sesli Kanal Aktifliği (30 Dk)", "SYSTEM", client);
+        const nonBotMembers = channel.members.filter(m => !m.user.bot);
+        if (nonBotMembers.size === 0) continue;
+
+        for (const member of nonBotMembers.values()) {
+          const voiceState = member.voice;
+          
+          // ── 4. AFK & Self-Mute / Self-Deafen Protection ──
+          if (voiceState && voiceState.selfMute && voiceState.selfDeafen) {
+            continue; // Skip users who are self-muted and self-deafened (AFK farming)
+          }
+
+          // Award full +0.5 TS if 2+ users in channel, or +0.25 TS if alone
+          const pointsToAward = nonBotMembers.size >= 2 ? 0.5 : 0.25;
+          await updateTrustScore(member.id, pointsToAward, `Sesli Kanal Aktifliği (${nonBotMembers.size >= 2 ? "Birlikte" : "Yalnız"} 30 Dk)`, "SYSTEM", client);
 
           // Stream checks: streaming to 2+ viewers
-          const voiceState = member.voice;
           if (voiceState && voiceState.streaming) {
-            // Count viewers (other voice members who are not bots)
-            const viewers = channel.members.filter(m => m.id !== member.id && !m.user.bot).size;
+            const viewers = nonBotMembers.filter(m => m.id !== member.id).size;
             if (viewers >= 2) {
               await updateTrustScore(member.id, 1.0, "Sesli Kanal Ekran Paylaşımı / Yayın (30 Dk, 2+ İzleyici)", "SYSTEM", client);
             }
@@ -786,14 +838,28 @@ async function scanVoiceChannels(client) {
 }
 
 /**
- * Runs weekly inactivity decay check.
+ * Runs weekly inactivity decay & passive trust recovery checks.
  */
 async function runInactivityDecay(client) {
   try {
     const records = await UserTrustScore.find({});
     const now = new Date();
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     for (const record of records) {
+      // ── 8. Pasif Güven Puanı İyileşme Oranı (Passive Trust Recovery Rate) ──
+      const isRecentlyActive = record.lastActiveTimestamp && new Date(record.lastActiveTimestamp) >= sevenDaysAgo;
+      const hasRecentViolation = record.lastViolationDate && new Date(record.lastViolationDate) > fourteenDaysAgo;
+      const alreadyRecoveredRecently = record.lastRecoveryDate && new Date(record.lastRecoveryDate) > fourteenDaysAgo;
+
+      if (isRecentlyActive && !hasRecentViolation && !alreadyRecoveredRecently && record.trustScore < 150.0) {
+        record.lastRecoveryDate = now;
+        await record.save();
+        await updateTrustScore(record.userId, 2.0, "Güvenlik Kalkanı: 14 Günlük İhlalsiz Temiz Sicil İyileşme Bonusu (+2.0 TS)", "SYSTEM", client);
+      }
+
+      // ── İnaktiflik Erimesi Check ──
       if (!record.lastActiveTimestamp) continue;
 
       const inactiveMs = now.getTime() - new Date(record.lastActiveTimestamp).getTime();
