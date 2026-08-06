@@ -183,7 +183,7 @@ function drawHeader(ctx, width, headerHeight, category) {
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "left";
   ctx.font = "bold 40px Arial";
-  ctx.fillText("🏆  Leaderboard", 32, 62);
+  ctx.fillText("Leaderboard", 32, 62);
 
   // Kategori pill
   ctx.font = "22px Arial";
@@ -234,16 +234,16 @@ function drawLeaderboardItem(ctx, item, x, y, w, h) {
   if (item.isPremium) {
     ctx.fillStyle = THEME.gold;
     ctx.font = "600 15px Arial";
-    ctx.fillText("⭐ Premium", nameX, centerY + 16);
+    ctx.fillText("★ Premium", nameX, centerY + 16);
   }
 
   // İstatistik sütunları (sağa hizalı, eşit aralıklı)
   const stats = [
     { value: item.points?.toLocaleString?.() ?? item.points, label: "Puan", color: THEME.green },
     { value: `Lv ${item.xpLevel}`, label: "Seviye", color: THEME.purple },
-    { value: `🎫 ${item.tickets}`, label: "Ticket", color: THEME.orange },
+    { value: `${item.tickets}`, label: "Ticket", color: THEME.orange },
   ];
-  if (item.badges > 0) stats.push({ value: `🏅 ${item.badges}`, label: "Rozet", color: THEME.gold });
+  if (item.badges > 0) stats.push({ value: `${item.badges}`, label: "Rozet", color: THEME.gold });
 
   const statsAreaX = x + w - 24;
   const colWidth = 130;
@@ -276,7 +276,7 @@ function drawUserRankFooter(ctx, userRank, x, y, w, h) {
   ctx.fillStyle = THEME.accent;
   ctx.font = "bold 15px Arial";
   ctx.textAlign = "left";
-  ctx.fillText("📍 SENİN POZİSYONUN", x + 24, y + 30);
+  ctx.fillText("SENİN POZİSYONUN", x + 24, y + 30);
 
   ctx.fillStyle = THEME.text;
   ctx.font = "bold 30px Arial";
@@ -295,11 +295,11 @@ function drawUserRankFooter(ctx, userRank, x, y, w, h) {
   ctx.fillText(`Level: ${userRank.xpLevel}`, statsX, y + 75);
 
   ctx.fillStyle = THEME.orange;
-  ctx.fillText(`🎫 ${userRank.tickets}`, statsX + 180, y + 45);
+  ctx.fillText(`Ticket: ${userRank.tickets}`, statsX + 180, y + 45);
 
   if (userRank.badges > 0) {
     ctx.fillStyle = THEME.gold;
-    ctx.fillText(`🏅 ${userRank.badges}`, statsX + 180, y + 75);
+    ctx.fillText(`Rozet: ${userRank.badges}`, statsX + 180, y + 75);
   }
 }
 
@@ -319,7 +319,7 @@ async function createMiniLeaderboardCard(top3) {
   ctx.fillStyle = THEME.text;
   ctx.font = "bold 32px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("🏆 Top 3", width / 2, 50);
+  ctx.fillText("Top 3", width / 2, 50);
 
   const positions = [
     { rank: 2, x: 190, baseY: 340, h: 130, color: THEME.silver },
@@ -404,8 +404,8 @@ async function createUserStatCard(userData) {
   const stats = [
     { label: "Puan", value: userData.points?.toLocaleString?.() ?? userData.points, color: THEME.green },
     { label: "Seviye", value: `Lv ${userData.xpLevel}`, color: THEME.purple },
-    { label: "Ticket", value: `🎫 ${userData.tickets}`, color: THEME.orange },
-    { label: "Rozet", value: `🏅 ${userData.badges}`, color: THEME.gold },
+    { label: "Ticket", value: `${userData.tickets}`, color: THEME.orange },
+    { label: "Rozet", value: `${userData.badges}`, color: THEME.gold },
   ];
 
   const gridX = 60;
