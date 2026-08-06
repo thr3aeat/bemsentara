@@ -943,6 +943,18 @@ router.get("/api/admin/users", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   const q = (req.query.q || "").trim().toLowerCase();
+  const { users } = require("../../models/Store");
+  let list = users.find({});
+
+  if (q) {
+    list = list.filter(
+      (u) =>
+        String(u.discordId).includes(q) ||
+        (u.discordUsername || "").toLowerCase().includes(q) ||
+        (u.robloxUsername || "").toLowerCase().includes(q)
+    );
+  }
+
   const StaffProgress = require("../../models/StaffProgress");
   const staffRecords = await StaffProgress.find({}).catch(() => []);
   const staffMap = new Map();
