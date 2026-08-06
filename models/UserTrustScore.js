@@ -43,6 +43,7 @@ const UserTrustScore = {
       
       profileChannelId: null,
       profileMessageId: null,
+      profileChannelClosed: false,
       createdAt: new Date(),
     };
     return Promise.resolve(userTrustScores.create({ ...defaults, ...data }));
@@ -84,6 +85,7 @@ function UserTrustScoreConstructor(data) {
     
     profileChannelId: null,
     profileMessageId: null,
+    profileChannelClosed: false,
     createdAt: new Date(),
   };
   const merged = { ...defaults, ...data };

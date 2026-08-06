@@ -126,9 +126,21 @@ async function ensureUserTrustScore(userId, guildId, client) {
       let channel = null;
       if (record.profileChannelId) {
         channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+        if (!channel) {
+          // Channel was previously recorded but deleted/closed!
+          record.profileChannelClosed = true;
+          record.profileChannelId = null;
+          record.profileMessageId = null;
+          await record.save();
+        }
       }
 
-      if (!channel) {
+      // ONLY create a new channel IF:
+      // 1) forceCreate === true (e.g. explicitly requested by mod/command), OR
+      // 2) User is in High Risk (< 50.0) AND profileChannelClosed is NOT true
+      const shouldCreate = forceCreate || (record.trustScore < 50.0 && !record.profileChannelClosed && !record.profileChannelId);
+
+      if (!channel && shouldCreate) {
         const permissionOverwrites = [
           {
             id: recordGuild.roles.everyone.id,
@@ -177,6 +189,7 @@ async function ensureUserTrustScore(userId, guildId, client) {
 
         if (channel) {
           record.profileChannelId = channel.id;
+          record.profileChannelClosed = false;
           await record.save();
 
           // Send initial embed message
@@ -525,8 +538,8 @@ function buildActionButtons(userId) {
       .setLabel("📜 Geçmiş Sicil")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId(`trust_reset_${userId}`)
-      .setLabel("🔄 Skoru Sıfırla")
+      .setCustomId(`trust_close_${userId}`)
+      .setLabel("🔒 Kanalı Kapat & Sil")
       .setStyle(ButtonStyle.Secondary)
   );
 }
@@ -602,8 +615,24 @@ async function handleTrustButtons(interaction) {
   try {
     const customId = interaction.customId;
     const parts = customId.split("_");
-    const action = parts[1]; // add, sub, logs, reset
+    const action = parts[1]; // add, sub, logs, reset, close
     const targetUserId = parts[2];
+    
+    if (action === "close") {
+      const record = await UserTrustScore.findOne({ userId: targetUserId });
+      if (record) {
+        record.profileChannelClosed = true;
+        record.profileChannelId = null;
+        record.profileMessageId = null;
+        await record.save();
+      }
+
+      await interaction.reply({ content: "🔒 Güvenlik profili kanalı başarıyla kapatıldı. Kanal siliniyor...", ephemeral: true });
+      if (interaction.channel) {
+        setTimeout(() => interaction.channel.delete().catch(() => {}), 1500);
+      }
+      return;
+    }
     
     if (action === "logs") {
       await interaction.deferReply({ ephemeral: true });
@@ -840,6 +869,95 @@ function startTrustScoreDecayScheduler(client) {
   console.log("✅ Güven Puanı İnaktiflik Erime Zamanlayıcısı başlatıldı (Her gün 04:00).");
 }
 
+/**
+ * Scans RECORD_GUILD_ID on startup to detect duplicate trust score channels.
+ * If 2 or more channels exist for the same username/person, deletes the older duplicates
+ * and keeps the newest valid channel, syncing any missing profile embeds & DB linkage.
+ */
+async function cleanupDuplicateTrustChannels(client) {
+  try {
+    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    if (!recordGuild) return;
+
+    console.log("[TrustScore] Bot Başlangıcı: Çift Kanal Teşhis & Temizlik Taraması...");
+
+    const channels = await recordGuild.channels.fetch().catch(() => null);
+    if (!channels) return;
+
+    const categoryChannels = channels.filter(c => 
+      c.type === ChannelType.GuildText && (c.parentId === RECORD_CATEGORY_ID || !c.parentId)
+    );
+
+    const groupedByName = new Map();
+    for (const channel of categoryChannels.values()) {
+      const name = channel.name.toLowerCase();
+      if (!groupedByName.has(name)) {
+        groupedByName.set(name, []);
+      }
+      groupedByName.get(name).push(channel);
+    }
+
+    let deletedCount = 0;
+    let syncedCount = 0;
+
+    for (const [name, channelList] of groupedByName.entries()) {
+      channelList.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+      if (channelList.length >= 2) {
+        console.log(`[TrustScore] ⚠️ Mükerrer kanal tespit edildi: "${name}" (${channelList.length} adet)`);
+
+        // Keep the newest channel
+        const keepChannel = channelList[channelList.length - 1];
+        const duplicateChannels = channelList.slice(0, channelList.length - 1);
+
+        for (const dupChan of duplicateChannels) {
+          await dupChan.delete("Tek seferlik mükerrer güvenlik kanalı temizliği").catch(() => {});
+          deletedCount++;
+        }
+
+        const record = await UserTrustScore.findOne({ 
+          $or: [
+            { profileChannelId: keepChannel.id },
+            { username: { $regex: new RegExp(`^${name}$`, 'i') } }
+          ]
+        });
+
+        if (record) {
+          record.profileChannelId = keepChannel.id;
+          record.profileChannelClosed = false;
+          await record.save();
+
+          await updateProfileEmbed(record, client);
+          syncedCount++;
+        }
+      } else if (channelList.length === 1) {
+        const channel = channelList[0];
+        const record = await UserTrustScore.findOne({ 
+          $or: [
+            { profileChannelId: channel.id },
+            { username: { $regex: new RegExp(`^${name}$`, 'i') } }
+          ]
+        });
+
+        if (record && !record.profileChannelClosed) {
+          if (record.profileChannelId !== channel.id) {
+            record.profileChannelId = channel.id;
+            await record.save();
+          }
+          await updateProfileEmbed(record, client);
+          syncedCount++;
+        }
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`[TrustScore] ✅ Tek seferlik temizlik tamamlandı: ${deletedCount} fazla mükerrer kanal kapatıldı, ${syncedCount} profil senkronize edildi.`);
+    }
+  } catch (err) {
+    console.error("[TrustScore] cleanupDuplicateTrustChannels hatası:", err.message);
+  }
+}
+
 module.exports = {
   ensureUserTrustScore,
   updateTrustScore,
@@ -850,4 +968,5 @@ module.exports = {
   handleTrustModals,
   scanVoiceChannels,
   startTrustScoreDecayScheduler,
+  cleanupDuplicateTrustChannels,
 };

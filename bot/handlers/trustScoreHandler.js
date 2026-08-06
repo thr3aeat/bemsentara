@@ -398,6 +398,9 @@ function initializeTrustScoreHandlers(client) {
           }
         }
       }
+      // Bot Başlangıcı: Çift Kanal Temizliği ve Profil Senkronizasyonu
+      const { cleanupDuplicateTrustChannels } = require("../services/security/trustScoreService");
+      await cleanupDuplicateTrustChannels(client).catch(e => console.warn("[TrustScoreHandler] Cleanup error:", e.message));
     } catch (err) {
       console.error("[TrustScoreHandler] Startup voice caching error:", err.message);
     }
