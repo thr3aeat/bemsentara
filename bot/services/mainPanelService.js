@@ -825,38 +825,11 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
 
     components.push(navRow);
   }
-  olor(COLOR_PREMIUM)
-    .setDescription(
-      `📅 **Yayın Tarihi:** \`${ver.date}\`\n\n` +
-      `**Değişiklikler:**\n` +
-      ver.changes.map(c => `• ${c}`).join('\n')
-    )
-    .setFooter({ text: `Sayfa ${safeIdx + 1} / ${totalPages} • Gezinmek için butonları kullanın` });
 
-  const navRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`panel_changelog_page_${safeIdx - 1}`)
-      .setLabel('⬅️ Önceki Sürüm')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(safeIdx === 0),
-    new ButtonBuilder()
-      .setCustomId(`panel_changelog_page_${safeIdx + 1}`)
-      .setLabel('Sonraki Sürüm ➡️')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(safeIdx >= totalPages - 1),
-    new ButtonBuilder()
-      .setCustomId('panel_tab_home')
-      .setLabel('🏠 Ana Menü')
-      .setStyle(ButtonStyle.Primary)
-  );
-
-  components.push(navRow);
-}
-
-await interaction.editReply({
-  embeds: [embed],
-  components
-});
+  await interaction.editReply({
+    embeds: [embed],
+    components
+  });
 }
 
 /**
