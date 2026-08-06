@@ -104,10 +104,10 @@ function initializeVoiceAndBanHandlers(client) {
 
       // ── Mute/Deafen/Kick İtiraz Sistemi ───────────────────────────────────────
       if (newState.member && !newState.member.user.bot) {
-        const oldMuted = oldState.mute ?? false;
-        const newMuted = newState.mute ?? false;
-        const oldDeafened = oldState.selfDeaf ?? false;
-        const newDeafened = newState.selfDeaf ?? false;
+        const oldMuted = oldState.serverMute ?? false;
+        const newMuted = newState.serverMute ?? false;
+        const oldDeafened = oldState.serverDeaf ?? false;
+        const newDeafened = newState.serverDeaf ?? false;
         const oldChannelId = oldState.channelId;
         const newChannelId = newState.channelId;
 
