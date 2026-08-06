@@ -141,13 +141,63 @@ function buildRatingModal(ticketId) {
   return modal;
 }
 
+/** Components V2 Destek Menüsü Payload'ı */
+function getSupportMenuV2() {
+  const ComponentsV2Factory = require("./utils/componentsV2Factory");
+  const TypographyHelper = require("./utils/typographyHelper");
+
+  return ComponentsV2Factory.buildPayload(0x7c6af7, [
+    ComponentsV2Factory.section(
+      `${TypographyHelper.h2("🛟 Destek Sistemi / Support System")}\n` +
+      "Lütfen aşağıdan bir kategori seçin.\nPlease select a category below.\n\n" +
+      `${TypographyHelper.quote("Hızlı ve 7/24 kesintisiz destek için doğru kategoriyi seçin.")}`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(
+      `${TypographyHelper.subtext("Sentara Support • Eko tarafından tasarlandı • ") + TypographyHelper.timestamp(new Date(), "R")}`
+    ),
+  ]);
+}
+
+/** Components V2 Ticket Detay Payload'ı */
+function buildTicketV2(ticket) {
+  const ComponentsV2Factory = require("./utils/componentsV2Factory");
+  const TypographyHelper = require("./utils/typographyHelper");
+  const categoryInfo = SUPPORT_CATEGORIES[ticket.category] || SUPPORT_CATEGORIES.other;
+
+  return ComponentsV2Factory.buildPayload(categoryInfo.color || 0x5865F2, [
+    ComponentsV2Factory.section(
+      `${TypographyHelper.h2(`🎫 Destek Talebi: ${ticket.ticketId}`)}\n` +
+      `${TypographyHelper.quote(ticket.subject)}`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(
+      `📝 **Açıklama:**\n${ticket.description}\n\n` +
+      `🎯 **Öncelik:** \`${ticket.priority.toUpperCase()}\`\n` +
+      `👤 **Açan:** <@${ticket.userId}>\n` +
+      `⏰ **Tarih:** ${TypographyHelper.timestamp(ticket.createdAt, "F")} (${TypographyHelper.timestamp(ticket.createdAt, "R")})`
+    ),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      TypographyHelper.subtext(`Sentara Automated Ticket Service • ID: ${ticket.ticketId}`)
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: `close_ticket_${ticket.ticketId}`, label: "🔒 Ticket'ı Kapat", style: ButtonStyle.Danger },
+      { custom_id: `claim_ticket_${ticket.ticketId}`, label: "🙋‍♂️ Üstlen", style: ButtonStyle.Success }
+    ])
+  ]);
+}
+
 module.exports = {
   getSupportMenuEmbed,
+  getSupportMenuV2,
   getCategorySelectMenu,
   getSupportButton,
   buildTicketEmbed,
+  buildTicketV2,
   buildCloseButton,
   buildCloseReasonModal,
   buildReopenAndRateRow,
   buildRatingModal,
 };
+
