@@ -3902,11 +3902,44 @@ async function runDailyCheck(client) {
         p.leaves.weeklyLeaveUsed = 0;
         if (p.pip?.isActive) {
           if (!p.pip.signed) {
-            // Kontrat imzalanmamışsa otomatik demote / rol askı
-            p.pip.isActive = false;
-            await p.save();
-            await removeRole(p, client, 'Performans İyileştirme Planı (PIP) Kontratını imzalamadığınız');
-            continue;
+            // Check 24-hour grace period tolerance!
+            const gracePeriodEnd = p.pip.gracePeriodEnd ? new Date(p.pip.gracePeriodEnd).getTime() : 0;
+            const isWithinGracePeriod = gracePeriodEnd > Date.now();
+
+            if (isWithinGracePeriod) {
+              // Tolerans süresi devam ediyor — uyarı DM'si at ve rolü henüz alma!
+              try {
+                const user = await client.users.fetch(p.userId);
+                const hoursLeft = Math.ceil((gracePeriodEnd - Date.now()) / (1000 * 60 * 60));
+                const graceEmbed = new EmbedBuilder()
+                  .setColor(0xf39c12)
+                  .setTitle("⏳ PIP Kontratı İmzalanması Bekleniyor")
+                  .setDescription(
+                    `Sayın Yetkili <@${p.userId}>,\n\n` +
+                    `PIP Kontratınızı imzalamanız için kalan süreniz: **${hoursLeft} saat**.\n\n` +
+                    `Lütfen **[📋 PIP Kontratını İmzala]** butonuna tıklayarak kontratı onaylayın, aksi takdirde rolünüz geçici olarak duraklatılacaktır (Paused status).`
+                  )
+                  .setTimestamp();
+
+                const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+                const pipRow = new ActionRowBuilder().addComponents(
+                  new ButtonBuilder()
+                    .setCustomId('staff_pip_sign')
+                    .setLabel('📋 PIP Kontratını İmzala')
+                    .setStyle(ButtonStyle.Primary)
+                );
+                await user.send({ embeds: [graceEmbed], components: [pipRow] }).catch(() => {});
+              } catch (_) {}
+              await p.save();
+              continue;
+            } else {
+              // 24 saatlik tolerans süresi doldu — Rolü geçici olarak duraklat (Paused)
+              p.pip.isActive = false;
+              p.status = 'paused';
+              await p.save();
+              await removeRole(p, client, '24 saatlik PIP Kontratını imzalamama nedeniyle rol geçici olarak duraklatıldı');
+              continue;
+            }
           }
 
           const req = getDailyRequirements(p.level, p.stats?.consecutiveDays || 0);
@@ -3979,39 +4012,75 @@ async function runDailyCheck(client) {
         const maxLimit = getInactivityLimit(p.level);
 
         if (p.warnings.inactivityCount >= maxLimit && !p.pip?.isActive) {
-          // PIP başlat
-          p.pip = p.pip || {};
-          p.pip.isActive = true;
-          p.pip.signed = false;
-          p.pip.startedAt = new Date();
-          p.pip.consecutiveSuccessDays = 0;
-          await p.save();
+          // ── A. Otomatik İzin (Mazeret) Algoritması (Auto-Leave Catch) ──
+          const totalLeaveCredits = (p.stats?.breakCredits || 0) + (p.leaves?.remainingDays || 0);
 
-          try {
-            const user = await client.users.fetch(p.userId);
-            const pipNotifyEmbed = new EmbedBuilder()
-              .setColor(0xe67e22)
-              .setTitle("⚠️ Performans İyileştirme Planı (PIP) Kontratı")
-              .setDescription(
-                `Sayın Yetkili <@${p.userId}>,\n\n` +
-                `Günlük hedeflerinizi ${maxLimit} gün boyunca aksattığınız tespit edilmiştir. Sistem tarafından kadrodan ihraç edilmek veya tenzilat (demote) almak üzeresiniz.\n\n` +
-                `Ancak İnsan Kaynakları politikalarımız gereği size son bir şans tanınarak **Performans İyileştirme Planı (PIP)** başlatılmıştır.\n\n` +
-                `• **Ne Yapmalısınız?** Panelinizdeki **[📋 PIP Kontratını İmzala]** butonuna tıklayarak kontratı imzalamalı ve 3 gün boyunca iki katı olan hedefleri başarıyla tamamlamalısınız.\n` +
-                `• **İmzalamazsanız?** Görevinize son verilecektir.`
-              )
-              .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları' })
-              .setTimestamp();
+          if (totalLeaveCredits > 0) {
+            // İzin kredisini harca ve rol almayı / PIP'i engelle
+            if ((p.stats?.breakCredits || 0) > 0) {
+              p.stats.breakCredits -= 1;
+            } else if ((p.leaves?.remainingDays || 0) > 0) {
+              p.leaves.remainingDays -= 1;
+            }
 
-            const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-            const pipRow = new ActionRowBuilder().addComponents(
-              new ButtonBuilder()
-                .setCustomId('staff_pip_sign')
-                .setLabel('📋 PIP Kontratını İmzala')
-                .setStyle(ButtonStyle.Primary)
-            );
+            p.warnings.inactivityCount = Math.max(0, p.warnings.inactivityCount - 1);
+            p.warnings.count = p.warnings.inactivityCount;
+            p.leaves.usedDays = p.leaves.usedDays || [];
+            p.leaves.usedDays.push(checkDate);
+            await p.save();
 
-            await user.send({ embeds: [pipNotifyEmbed], components: [pipRow] }).catch(() => { });
-          } catch (_) { }
+            try {
+              const user = await client.users.fetch(p.userId);
+              const autoLeaveEmbed = new EmbedBuilder()
+                .setColor(0x3498db)
+                .setTitle("🛡️ Otomatik İzin Kredisi Kullanıldı (Auto-Leave Catch)")
+                .setDescription(
+                  `Sayın Yetkili <@${p.userId}>,\n\n` +
+                  `Üst üste görevlerinizi aksattığınız tespit edildi. Ancak hesabınızda **İzin Kredisi** bulunduğu için **1 günlük İzin Krediniz otomatik harcandı** ve ceza almanız / PIP kontratına girmeniz engellendi!\n\n` +
+                  `• **Kalan İzin Krediniz:** \`${totalLeaveCredits - 1} gün\`\n` +
+                  `• **İzin / Mazeret Bildirimi:** Panel üzerinden resmi inaktiflik talebi açabilirsiniz.\n` +
+                  `• **Görev Erteleme:** Yoğun olduğunuz günlerde uyarılardaki **[⏩ Görevi Ertele]** butonunu kullanabilirsiniz.`
+                )
+                .setFooter({ text: "Eko Yıldız • İnsan Kaynakları Otomasyonu" })
+                .setTimestamp();
+              await user.send({ embeds: [autoLeaveEmbed] }).catch(() => {});
+            } catch (_) {}
+          } else {
+            // PIP başlat — 24 Saatlik Grace Period toleransı ver
+            p.pip = p.pip || {};
+            p.pip.isActive = true;
+            p.pip.signed = false;
+            p.pip.startedAt = new Date();
+            p.pip.gracePeriodEnd = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat tolerans
+            p.pip.consecutiveSuccessDays = 0;
+            await p.save();
+
+            try {
+              const user = await client.users.fetch(p.userId);
+              const pipNotifyEmbed = new EmbedBuilder()
+                .setColor(0xe67e22)
+                .setTitle("⚠️ Performans İyileştirme Planı (PIP) Kontratı")
+                .setDescription(
+                  `Sayın Yetkili <@${p.userId}>,\n\n` +
+                  `Günlük hedeflerinizi ${maxLimit} gün boyunca aksattığınız tespit edilmiştir. Sistem tarafından kadronuzun duraklatılması üzeresiniz.\n\n` +
+                  `İnsan Kaynakları politikalarımız gereği size **24 saatlik tolerans süresi** verilerek **Performans İyileştirme Planı (PIP)** başlatılmıştır.\n\n` +
+                  `• **Ne Yapmalısınız?** 24 saat içinde panelinizdeki **[📋 PIP Kontratını İmzala]** butonuna tıklayarak kontratı imzalamalı ve 3 gün boyunca hedefleri başarmalısınız.\n` +
+                  `• **İmzalamazsanız?** Rolünüz geçici olarak duraklatılacaktır (Paused status).`
+                )
+                .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları' })
+                .setTimestamp();
+
+              const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+              const pipRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                  .setCustomId('staff_pip_sign')
+                  .setLabel('📋 PIP Kontratını İmzala')
+                  .setStyle(ButtonStyle.Primary)
+              );
+
+              await user.send({ embeds: [pipNotifyEmbed], components: [pipRow] }).catch(() => { });
+            } catch (_) { }
+          }
         } else {
           await sendWarningDM(p, client);
           await p.save();
