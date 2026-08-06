@@ -102,6 +102,50 @@ async function routeButtonInteraction(interaction) {
     if (handled) return true;
   }
 
+  if (customId.startsWith('btn_rollcall_')) {
+    const { handleRollCallButton } = require('../../services/rollCallService');
+    await handleRollCallButton(interaction);
+    return true;
+  }
+
+  if (customId.startsWith('apply_unit_')) {
+    const { handleApplyClick } = require('../../services/unitService');
+    const target = customId.replace('apply_unit_', '');
+    await handleApplyClick(interaction, target);
+    return true;
+  }
+
+  if (customId.startsWith('unit_exam_ans_')) {
+    const { handleAnswerClick } = require('../../services/unitService');
+    const parts = customId.split('_');
+    const qIndex = parts[3];
+    const optIndex = parts[4];
+    await handleAnswerClick(interaction, qIndex, optIndex);
+    return true;
+  }
+
+  if (customId === 'staff_units_request_menu' || customId.startsWith('unit_req_') || customId.startsWith('unit_cmd_')) {
+    const { handleRequestButton } = require('../../services/unitRequestService');
+    await handleRequestButton(interaction);
+    return true;
+  }
+
+  if (customId.startsWith('unit_chat_')) {
+    const { handleChatButton } = require('../../services/unitChatService');
+    await handleChatButton(interaction);
+    return true;
+  }
+
+  if (customId.startsWith('unit_quest_')) {
+    const { showUnitQuestPanel, claimUnitQuestRewards } = require('../../services/unitQuestService');
+    if (customId === 'unit_quest_claim_all') {
+      await claimUnitQuestRewards(interaction);
+    } else {
+      await showUnitQuestPanel(interaction);
+    }
+    return true;
+  }
+
   if (customId.startsWith('ticket_')) {
     const handled = await handleTicketButton(interaction);
     if (handled) return true;

@@ -69,6 +69,12 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Birim İçi Talep / Emir Modalleri ──────────────────────────────────────
+  if (interaction.customId.startsWith('modal_unit_')) {
+    const { handleRequestModal } = require("../services/unitRequestService");
+    return handleRequestModal(interaction);
+  }
+
   // ── Güven Puanı Manuel Değişim Modalleri ────────────────────────────────────
   if (interaction.customId.startsWith('trust_modal_')) {
     const { handleTrustModals } = require("../services/security/trustScoreService");

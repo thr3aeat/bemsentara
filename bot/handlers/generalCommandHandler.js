@@ -60,9 +60,13 @@ const GENERAL_COMMANDS = new Set([
   "gunluk-odul",
   "zenginler",
   "birimalimi",
+  "birim-alimi",
   "birimterfi",
   "birimistifa",
   "birimtanitim",
+  "birim-tanitim",
+  "birim-gorevleri",
+  "birimgorevleri",
   "abusetest",
   "rowifi",
   // Panel command versions
@@ -3212,9 +3216,13 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
       if (!interaction.deferred && !interaction.replied) {
         await interaction.deferReply({ ephemeral: true }).catch(() => { });
       }
-      const { postUnitIntroductions } = require("../services/unitService");
       await postUnitIntroductions(interaction.client);
       return interaction.editReply({ content: '✅ Birim tanıtım mesajları başarıyla gönderildi.' });
+    }
+
+    if (commandName === "birim-gorevleri" || commandName === "birimgorevleri") {
+      const { showUnitQuestPanel } = require("../services/unitQuestService");
+      return showUnitQuestPanel(interaction);
     }
 
     if (commandName === "renk") {

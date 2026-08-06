@@ -924,6 +924,53 @@ const staffCommands = [
       ))
     .addStringOption(o => o.setName("gerekce").setDescription("İtiraz gerekçesi").setRequired(true)),
   new SlashCommandBuilder()
+    .setName("sayim")
+    .setDescription("📋 Aylık personel sayımını ve yoklamasını yönetir (Yöneticiler)")
+    .addSubcommand((sub) =>
+      sub.setName("baslat").setDescription("Yeni personel sayımını ve duyurusunu başlatır")
+    )
+    .addSubcommand((sub) =>
+      sub.setName("bitir").setDescription("Aktif personel sayımını sonlandırır ve katılım raporunu sunar")
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName("birim-alimi")
+    .setDescription("🛡️ Seçilen birim için AI sınavlı alım sürecini başlatır")
+    .addStringOption((o) =>
+      o.setName("birim")
+        .setDescription("Alım yapılacak birim")
+        .setRequired(true)
+        .addChoices(
+          { name: "🛡️ BAN BİRİMİ", value: "BAN_BIRIMI" },
+          { name: "🎤 SES BİRİMİ", value: "SES_BIRIMI" },
+          { name: "💬 SOHBET BİRİMİ", value: "SOHBET_BIRIMI" }
+        )
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName("birimterfi")
+    .setDescription("⭐ Birim üyesinin rütbesini manuel olarak terfi ettirir")
+    .addUserOption((o) => o.setName("kullanici").setDescription("Terfi ettirilecek üye").setRequired(true))
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName("birimistifa")
+    .setDescription("🚪 Mevcut biriminizden istifa edersiniz")
+    .setDMPermission(true),
+
+  new SlashCommandBuilder()
+    .setName("birimtanitim")
+    .setDescription("📢 Birimlerin tanıtım ve bilgilendirme kartlarını kanala gönderir")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+
+  new SlashCommandBuilder()
+    .setName("birim-gorevleri")
+    .setDescription("🎯 Günlük birim görev ağacını ve ortak birim kasasını görüntüler")
+    .setDMPermission(true),
+
+  new SlashCommandBuilder()
     .setName("yardim")
     .setDescription("🌐 Sentara ve EkoYıldız komut rehberini ve kategorilerini gösterir")
     .setDMPermission(true),
