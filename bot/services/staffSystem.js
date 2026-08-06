@@ -4139,8 +4139,94 @@ async function sendStaffChannelNotification(client, embed) {
   }
 }
 
+/**
+ * Bot yeniden başlatıldığında, geçmişteki hatalı/erken terfileri tespit edip hak edilen gerçek seviyeye geri çeker.
+ */
+async function syncInvalidPromotionsOnStartup(client) {
+  try {
+    console.log('[staffSystem] 🔄 Bot başlatma denetimi: Hatalı/Erken terfiler kontrol ediliyor...');
+    const allStaff = await StaffProgress.find({ level: { $gt: 1 } });
+    const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
+
+    for (const p of allStaff) {
+      const currentLvl = p.level || 1;
+      const stats = p.stats || {};
+      const ticketsDone = stats.ticketsSolved || 0;
+      const msgsDone = stats.chatMessages || 0;
+      const voiceDone = stats.totalVoiceMinutes || 0;
+      const daysDone = stats.activeDays || 0;
+      const modsDone = stats.moderationActions || 0;
+
+      // Seviye hesapla: Hangi seviyenin giriş şartını (L-1 requirements) tam karşılıyor?
+      let validLevel = 1;
+      for (let lvl = 1; lvl < currentLvl; lvl++) {
+        const req = PROMOTION_REQUIREMENTS[lvl];
+        if (!req) break;
+
+        const passes =
+          ticketsDone >= (req.ticketsSolved || 0) &&
+          msgsDone >= (req.chatMessages || 0) &&
+          voiceDone >= (req.totalVoiceMinutes || 0) &&
+          daysDone >= (req.activeDays || 0) &&
+          modsDone >= (req.moderationActions || 0);
+
+        if (passes) {
+          validLevel = lvl + 1;
+        } else {
+          break; // Bu seviyenin şartı sağlanmadıysa daha üstüne çıkamaz
+        }
+      }
+
+      // Eğer mevcut level, istatistiklerin karşıladığı seviyeden yüksekse -> GERİ AL / DÜZELT!
+      if (validLevel < currentLvl) {
+        console.log(`[staffSystem] ⚠️ Hatalı terfi tespit edildi: ${p.userId} (${currentLvl} -> ${validLevel})`);
+        const oldLevel = p.level;
+        p.level = validLevel;
+        p.promotedAt = new Date();
+        await p.save();
+
+        if (guild) {
+          const member = await guild.members.fetch(p.userId).catch(() => null);
+          if (member) {
+            const oldRoleId = ROLES[oldLevel];
+            const validRoleId = ROLES[validLevel];
+
+            if (oldRoleId) await member.roles.remove(oldRoleId, 'Bot Başlatma Düzeltmesi: Erken Terfi Geri Alma').catch(() => {});
+            if (validRoleId) await member.roles.add(validRoleId, 'Bot Başlatma Düzeltmesi: Hak Edilen Seviye').catch(() => {});
+          }
+        }
+
+        // Kullanıcıya bilgilendirme DM'si at
+        try {
+          const user = await client.users.fetch(p.userId).catch(() => null);
+          if (user) {
+            const revertEmbed = new EmbedBuilder()
+              .setColor(0x3498db)
+              .setTitle("🛡️ Sistem Güvenlik & Düzeltme Bildirimi")
+              .setDescription(
+                `Sayın Yetkili <@${p.userId}>,\n\n` +
+                `Bot yeniden başlatma denetiminde premature (erken) terfi tespiti yapılmış ve rütbeniz hak ettiğiniz **${ROLE_NAMES[validLevel]}** seviyesine düzeltilmiştir.\n\n` +
+                `• **Eski Statü:** ${ROLE_NAMES[oldLevel]}\n` +
+                `• **Düzeltilen Statü:** ${ROLE_NAMES[validLevel]}\n\n` +
+                `Gerekli terfi hedeflerini tamamladığınızda terfi sınavınız ve terfi süreciniz sorunsuz açılacaktır.`
+              )
+              .setFooter({ text: "Eko Yıldız • İnsan Kaynakları Denetimi" })
+              .setTimestamp();
+            await user.send({ embeds: [revertEmbed] }).catch(() => {});
+          }
+        } catch (_) {}
+      }
+    }
+    console.log('[staffSystem] ✅ Bot başlatma terfi denetimi tamamlandı.');
+  } catch (err) {
+    console.error('[staffSystem] syncInvalidPromotionsOnStartup hatası:', err.message);
+  }
+}
+
 // ── Scheduler — sabah brifing + gün içi hatırlatmalar ──────────────────────
 function startStaffScheduler(client) {
+  // Bot başlatıldığında hatalı/erken terfileri otomatik denetle ve düzelt
+  syncInvalidPromotionsOnStartup(client).catch(() => {});
   async function refreshMarketState() {
     try {
       const Ticket = require('../../models/Ticket');
@@ -5918,6 +6004,58 @@ function generatePromotionExamQuestions(targetLevel) {
 }
 
 /**
+ * Checks if a staff member meets all cumulative requirements for promotion to the next level
+ */
+function checkPromotionEligibility(progress) {
+  const currentLevel = progress.level || 1;
+  if (currentLevel >= 6) {
+    return { canPromote: false, reason: "Zaten en üst unvan (Genel Koordinatör) seviyesindesiniz!", missing: [] };
+  }
+
+  const req = PROMOTION_REQUIREMENTS[currentLevel];
+  if (!req) {
+    return { canPromote: false, reason: "Terfi gereksinimleri tanımlanmamış.", missing: [] };
+  }
+
+  const stats = progress.stats || {};
+  const ticketsDone = stats.ticketsSolved || 0;
+  const msgsDone = stats.chatMessages || 0;
+  const voiceDone = stats.totalVoiceMinutes || 0;
+  const daysDone = stats.activeDays || 0;
+  const modsDone = stats.moderationActions || 0;
+
+  const ticketsNeeded = req.ticketsSolved || 0;
+  const msgsNeeded = req.chatMessages || 0;
+  const voiceNeeded = req.totalVoiceMinutes || 0;
+  const daysNeeded = req.activeDays || 0;
+  const modsNeeded = req.moderationActions || 0;
+
+  const passesTickets = ticketsDone >= ticketsNeeded;
+  const passesMsgs = msgsDone >= msgsNeeded;
+  const passesVoice = voiceDone >= voiceNeeded;
+  const passesDays = daysDone >= daysNeeded;
+  const passesMods = modsDone >= modsNeeded;
+
+  const canPromote = passesTickets && passesMsgs && passesVoice && passesDays && passesMods;
+
+  const missing = [];
+  if (!passesTickets) missing.push(`🎫 Ticket: ${ticketsDone}/${ticketsNeeded}`);
+  if (!passesMsgs) missing.push(`💬 Mesaj: ${msgsDone}/${msgsNeeded}`);
+  if (!passesVoice) missing.push(`🎤 Ses Süresi: ${voiceDone}/${voiceNeeded} dk`);
+  if (!passesDays) missing.push(`📅 Aktif Gün: ${daysDone}/${daysNeeded} gün`);
+  if (!passesMods) missing.push(`🛡️ Mod İşlemi: ${modsDone}/${modsNeeded}`);
+
+  return {
+    canPromote,
+    currentLevel,
+    targetLevel: currentLevel + 1,
+    requirements: req,
+    missing,
+    progressData: { ticketsDone, msgsDone, voiceDone, daysDone, modsDone }
+  };
+}
+
+/**
  * Terfi Alma Merkezi — Ana Seremoni Başlatıcı
  * Adım 1: Kontrol & Değerlendirme (roleplay)
  */
@@ -5928,6 +6066,25 @@ async function startPromotionCeremony(interaction, progress) {
   const targetLevel = currentLevel + 1;
   const targetRoleName = ROLE_NAMES[targetLevel] || `Seviye ${targetLevel}`;
   const currentRoleName = ROLE_NAMES[currentLevel] || `Seviye ${currentLevel}`;
+
+  // 🛡️ TERFİ UYGUNLUK KONTROLÜ (Gereksinimler tamamlanmadan sınav başlatılmaz!)
+  const check = checkPromotionEligibility(progress);
+  if (!check.canPromote) {
+    const notReadyEmbed = new EmbedBuilder()
+      .setColor(0xe74c3c)
+      .setTitle('🏢 TERFİ ALMA MERKEZİ — GEREKSİNİMLER EKSİK')
+      .setDescription(
+        `Sayın **${currentRoleName}** <@${interaction.user.id}>,\n\n` +
+        `**${targetRoleName}** unvanına terfi başvurunuz incelendi ancak henüz bazı hedefleri tamamlamadığınız tespit edildi.\n\n` +
+        `📊 **Terfi İçin Eksik Kalan Hedefleriniz:**\n` +
+        (check.missing.length > 0 ? check.missing.map(m => `• ${m}`).join('\n') : `• ${check.reason}`) + '\n\n' +
+        `💪 Görevlerinizi yapmaya devam edin! Tüm hedefleri tamamladığınızda terfi sınavı otomatik olarak açılacaktır.`
+      )
+      .setFooter({ text: 'Eko Yıldız • Terfi Alma Merkezi | Eksik Hedef Bildirimi' })
+      .setTimestamp();
+
+    return await interaction.editReply({ embeds: [notReadyEmbed], components: [] });
+  }
 
   // State başlat
   const examQuestions = generatePromotionExamQuestions(targetLevel);
@@ -6558,6 +6715,7 @@ module.exports = {
   ROLE_NAMES,
   LEVEL_TASKS,
   PROMOTION_REQUIREMENTS,
+  checkPromotionEligibility,
   getDailyRequirements,
   getNextRequirementsText,
   GUILD_ID,
