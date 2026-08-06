@@ -278,14 +278,152 @@ Not: "${handoverNotes}"
 }
 
 /**
- * Handles duty buttons click
+ * Gets live duty status for a staff member and shows currently active guards
+ */
+async function getDutyStatus(interaction) {
+  const isDeferred = interaction.deferred || interaction.replied;
+  if (!isDeferred) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  }
+  try {
+    const userId = interaction.user.id;
+    const p = await StaffProgress.findOne({ userId });
+    
+    // Find all currently active duty guards
+    const activeStaffList = await StaffProgress.find({ 'duty.isActive': true });
+
+    const activeGuardsStr = activeStaffList.length > 0
+      ? activeStaffList.map(s => `<@${s.userId}> (Seviye ${s.level || 1})`).join('\n')
+      : '_Şu anda aktif nöbette yetkili bulunmuyor._';
+
+    if (!p || !p.duty?.isActive) {
+      const embed = new EmbedBuilder()
+        .setTitle('🛡️ Canlı Nöbet Durum Paneli')
+        .setColor(0xE67E22)
+        .setDescription(
+          `**Kullanıcı:** <@${userId}>\n` +
+          `🔴 **Nöbet Durumunuz:** Inaktif (Nöbette değilsiniz)\n\n` +
+          `🟢 **ŞU ANDA NÖBETTE OLAN YETKİLİLER (${activeStaffList.length}):**\n${activeGuardsStr}`
+        )
+        .setFooter({ text: 'EkoYıldız Akıllı Nöbet Sistemi V2.0' })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('btn_duty_start').setLabel('⚡ Nöbet Başlat').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId('btn_duty_leaderboard').setLabel('🏆 Nöbet Sıralaması').setStyle(ButtonStyle.Primary)
+      );
+
+      return interaction.editReply({ embeds: [embed], components: [row] });
+    }
+
+    const startedAt = new Date(p.duty.startedAt);
+    const durationMs = Date.now() - startedAt.getTime();
+    const durationMins = Math.floor(durationMs / 1000 / 60);
+    const hours = Math.floor(durationMins / 60);
+    const mins = durationMins % 60;
+
+    const isBreak = !!p.duty.isOnBreak;
+    const breakStr = isBreak ? '☕ **MOLADA**' : '🟢 **AKTİF NÖBETTE**';
+
+    const embed = new EmbedBuilder()
+      .setTitle('⚡ Canlı Nöbet İstatistikleriniz')
+      .setColor(isBreak ? 0xF1C40F : 0x2ECC71)
+      .setDescription(
+        `**Yetkili:** <@${userId}>\n` +
+        `🎭 **Durum:** ${breakStr}\n` +
+        `⏰ **Başlangıç:** <t:${Math.floor(startedAt.getTime() / 1000)}:R>\n` +
+        `⏱️ **Geçen Süre:** **${hours} saat ${mins} dakika**\n\n` +
+        `📊 **BU NÖBETTEKİ AKTİFLİĞİNİZ:**\n` +
+        `• 🎤 Sesli Oda Aktifliği: **${p.duty.sessionVoiceMinutes || 0} dk**\n` +
+        `• 🎫 Çözülen Bilet: **${p.duty.sessionTicketsSolved || 0} adet**\n` +
+        `• 🛡️ Moderasyon İşlemleri: **${p.duty.sessionModerationActions || 0} adet**\n\n` +
+        `👥 **ŞU ANDA NÖBETTE OLAN DİĞER YETKİLİLER (${activeStaffList.length}):**\n${activeGuardsStr}`
+      )
+      .setFooter({ text: 'EkoYıldız Akıllı Nöbet Sistemi' })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('btn_duty_break').setLabel(isBreak ? '▶️ Molayı Bitir' : '☕ Mola Al').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('btn_duty_end').setLabel('🛑 Nöbeti Bitir & Devret').setStyle(ButtonStyle.Danger)
+    );
+
+    return interaction.editReply({ embeds: [embed], components: [row] });
+  } catch (err) {
+    console.error('[staffDutyService] getDutyStatus error:', err.message);
+    return interaction.editReply({ content: `❌ Durum alınırken hata oluştu: ${err.message}` });
+  }
+}
+
+/**
+ * Toggles coffee break (mola) status for staff on duty
+ */
+async function toggleDutyBreak(interaction) {
+  const userId = interaction.user.id;
+  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p || !p.duty?.isActive) {
+      return interaction.editReply({ content: '❌ Molaya çıkabilmek için önce nöbet başlatmalısınız.' });
+    }
+
+    const currentState = !!p.duty.isOnBreak;
+    p.duty.isOnBreak = !currentState;
+    await p.save();
+
+    if (!currentState) {
+      return interaction.editReply({ content: '☕ **Nöbet Molanız Başlatıldı!** Dinlenebilirsiniz. Dönünce butondan molanızı bitirebilirsiniz.' });
+    } else {
+      return interaction.editReply({ content: '▶️ **Nöbet Molanız Bitti!** Göreve tekrar hoş geldiniz. Kolay gelsin! 🫡' });
+    }
+  } catch (err) {
+    console.error('[staffDutyService] toggleDutyBreak error:', err.message);
+    return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+  }
+}
+
+/**
+ * Displays the duty leaderboard (top duty staff)
+ */
+async function renderDutyLeaderboard(interaction) {
+  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  try {
+    const topStaff = await StaffProgress.find({ 'daily.dutyMinutesToday': { $gt: 0 } })
+      .sort({ 'daily.dutyMinutesToday': -1 })
+      .limit(10);
+
+    const embed = new EmbedBuilder()
+      .setTitle('🏆 Günlük Nöbet Liderlik Tablosu')
+      .setColor(0xF1C40F)
+      .setDescription(
+        topStaff.length > 0
+          ? topStaff.map((s, idx) => {
+              const mins = s.daily?.dutyMinutesToday || 0;
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '🎖️'));
+              return `${medal} **#${idx + 1}** <@${s.userId}> — **${h} sa ${m} dk** Nöbet`;
+            }).join('\n')
+          : '_Bugün henüz nöbet kaydı bulunan yetkili bulunmuyor._'
+      )
+      .setFooter({ text: 'EkoYıldız En Aktif Nöbetçiler' })
+      .setTimestamp();
+
+    return interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    console.error('[staffDutyService] renderDutyLeaderboard error:', err.message);
+    return interaction.editReply({ content: `❌ Sıralama alınırken hata oluştu: ${err.message}` });
+  }
+}
+
+/**
+ * Handles all duty-related buttons
  */
 async function handleDutyButton(interaction) {
   const { customId, client } = interaction;
-  if (customId === 'staff_duty_start') {
+  if (customId === 'staff_duty_start' || customId === 'btn_duty_start') {
     return startDuty(interaction, client);
   }
-  if (customId === 'staff_duty_end') {
+  if (customId === 'staff_duty_end' || customId === 'btn_duty_end') {
     const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
     const modal = new ModalBuilder()
       .setCustomId('modal_duty_end_handover')
@@ -300,6 +438,15 @@ async function handleDutyButton(interaction) {
 
     modal.addComponents(new ActionRowBuilder().addComponents(input));
     return interaction.showModal(modal).catch(() => {});
+  }
+  if (customId === 'staff_duty_status' || customId === 'btn_duty_status') {
+    return getDutyStatus(interaction);
+  }
+  if (customId === 'btn_duty_break') {
+    return toggleDutyBreak(interaction);
+  }
+  if (customId === 'btn_duty_leaderboard') {
+    return renderDutyLeaderboard(interaction);
   }
 }
 
@@ -412,18 +559,20 @@ function buildStaffDashboardV2(staffProgress = {}, user = {}) {
       TypographyHelper.subtext(`Sentara Staff Audit • ${TypographyHelper.timestamp(new Date(), "R")}`)
     ),
     ComponentsV2Factory.actionRow([
-      { custom_id: `staff_duty_toggle_${userId}`, label: "⚡ Mesai Durumu Değiştir", style: ButtonStyle.Primary },
+      { custom_id: `btn_duty_status`, label: "⚡ Nöbet Durumu", style: ButtonStyle.Primary },
       { custom_id: `staff_kpi_detail_${userId}`, label: "🔍 KPI Detayı", style: ButtonStyle.Secondary },
     ]),
   ]);
 }
-
 
 module.exports = {
   calculateKpi,
   getKpiGrade,
   startDuty,
   endDuty,
+  getDutyStatus,
+  toggleDutyBreak,
+  renderDutyLeaderboard,
   handleDutyButton,
   addCommendation,
   addDisciplinaryWarn,

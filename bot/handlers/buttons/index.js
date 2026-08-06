@@ -33,20 +33,10 @@ async function routeButtonInteraction(interaction) {
     }
   }
 
-  if (customId.startsWith('btn_staff_shift_')) {
-    const StaffShiftService = require('../../services/staffShiftService');
-    if (customId === 'btn_staff_shift_start') {
-      await StaffShiftService.startShift(interaction);
-      return true;
-    }
-    if (customId === 'btn_staff_shift_stop') {
-      await StaffShiftService.stopShift(interaction);
-      return true;
-    }
-    if (customId === 'btn_staff_shift_status') {
-      await StaffShiftService.getShiftStatus(interaction);
-      return true;
-    }
+  if (customId.startsWith('btn_duty_') || customId.startsWith('staff_duty_')) {
+    const { handleDutyButton } = require('../../services/staffDutyService');
+    await handleDutyButton(interaction);
+    return true;
   }
 
   if (customId.startsWith('btn_security_')) {

@@ -971,6 +971,16 @@ const staffCommands = [
     .setDMPermission(true),
 
   new SlashCommandBuilder()
+    .setName("nobet")
+    .setDescription("⚡ Akıllı Personel Nöbet Yönetim Sistemi")
+    .addSubcommand((sub) => sub.setName("baslat").setDescription("Aktif nöbetinizi ve aktiflik takibini başlatır"))
+    .addSubcommand((sub) => sub.setName("bitir").setDescription("Nöbetinizi sonlandırır ve devir notlarınızı iletir"))
+    .addSubcommand((sub) => sub.setName("durum").setDescription("Nöbet durumunuzu ve nöbetteki diğer yetkilileri gösterir"))
+    .addSubcommand((sub) => sub.setName("mola").setDescription("Nöbet molanızı (kahve molası) başlatır veya bitirir"))
+    .addSubcommand((sub) => sub.setName("liderlik").setDescription("Günün ve haftanın en aktif nöbetçi sıralamasını gösterir"))
+    .setDMPermission(true),
+
+  new SlashCommandBuilder()
     .setName("yardim")
     .setDescription("🌐 Sentara ve EkoYıldız komut rehberini ve kategorilerini gösterir")
     .setDMPermission(true),

@@ -160,20 +160,24 @@ async function ensureAdminPanels(client) {
     );
     await refreshPanel(client, '1466947058442305637', modSchoolEmbed, [modSchoolRow]);
 
-    // 11. Canlı Vardiya Takip Paneli
-    const shiftEmbed = new EmbedBuilder()
-      .setTitle("⏱️ Personel Canlı Vardiya Kontrol Paneli")
+    // 11. Canlı Nöbet Kontrol Paneli
+    const dutyEmbed = new EmbedBuilder()
+      .setTitle("⚡ Personel Canlı Nöbet & Nöbetçi Yetkili Paneli")
       .setDescription(
-        "Vardiyanıza başladığınızda 'Vardiya Başlat' butonuna, vardiyanızı bitirirken 'Vardiya Bitir' butonuna tıklayınız.\n\n" +
-        "• Canlı durum bilgisi ve toplam sürenizi anlık olarak sorgulayabilirsiniz."
+        "Nöbetinize başladığınızda **'⚡ Nöbet Başlat'** butonuna, nöbetinizi devrederken **'🛑 Nöbeti Bitir'** butonuna tıklayınız.\n\n" +
+        "• **⚡ Nöbet Başlat:** Aktif nöbetinizi ve puan takibini başlatır.\n" +
+        "• **🛑 Nöbeti Bitir:** Nöbetinizi sonlandırır ve devir notu göndermenizi sağlar.\n" +
+        "• **📊 Canlı Durum:** Nöbetteki yetkilileri ve aktiflik sürenizi gösterir.\n" +
+        "• **☕ Mola Al:** Geçici nöbet molanızı başlatır/bitirir."
       )
       .setColor(0x2ECC71);
-    const shiftRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_staff_shift_start').setLabel('🟢 Vardiya Başlat').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId('btn_staff_shift_stop').setLabel('🔴 Vardiya Bitir').setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId('btn_staff_shift_status').setLabel('📊 Canlı Durum').setStyle(ButtonStyle.Secondary)
+    const dutyRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('btn_duty_start').setLabel('⚡ Nöbet Başlat').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('btn_duty_end').setLabel('🛑 Nöbet Bitir & Devret').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('btn_duty_status').setLabel('📊 Canlı Durum').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('btn_duty_break').setLabel('☕ Mola Al').setStyle(ButtonStyle.Primary)
     );
-    await refreshPanel(client, '1466945894250188912', shiftEmbed, [shiftRow]);
+    await refreshPanel(client, '1466945894250188912', dutyEmbed, [dutyRow]);
 
     // 12. Pazar Yeri & Borsa Mum Grafiği Paneli
     const marketEmbed = new EmbedBuilder()

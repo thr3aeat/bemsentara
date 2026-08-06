@@ -67,6 +67,7 @@ const GENERAL_COMMANDS = new Set([
   "birim-tanitim",
   "birim-gorevleri",
   "birimgorevleri",
+  "nobet",
   "abusetest",
   "rowifi",
   // Panel command versions
@@ -3223,6 +3224,27 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
     if (commandName === "birim-gorevleri" || commandName === "birimgorevleri") {
       const { showUnitQuestPanel } = require("../services/unitQuestService");
       return showUnitQuestPanel(interaction);
+    }
+
+    if (commandName === "nobet") {
+      const { startDuty, handleDutyButton, getDutyStatus, toggleDutyBreak, renderDutyLeaderboard } = require("../services/staffDutyService");
+      const sub = interaction.options.getSubcommand(false) || "durum";
+      if (sub === "baslat") {
+        return startDuty(interaction, interaction.client);
+      }
+      if (sub === "bitir") {
+        interaction.customId = "btn_duty_end";
+        return handleDutyButton(interaction);
+      }
+      if (sub === "durum") {
+        return getDutyStatus(interaction);
+      }
+      if (sub === "mola") {
+        return toggleDutyBreak(interaction);
+      }
+      if (sub === "liderlik") {
+        return renderDutyLeaderboard(interaction);
+      }
     }
 
     if (commandName === "renk") {
