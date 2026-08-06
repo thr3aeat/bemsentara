@@ -943,31 +943,29 @@ router.get("/api/admin/users", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   const q = (req.query.q || "").trim().toLowerCase();
-  const { users } = require("../../models/Store");
-  let list = users.find({});
+  const StaffProgress = require("../../models/StaffProgress");
+  const staffRecords = await StaffProgress.find({}).catch(() => []);
+  const staffMap = new Map();
+  staffRecords.forEach(s => staffMap.set(String(s.userId), s));
 
-  if (q) {
-    list = list.filter(
-      (u) =>
-        String(u.discordId).includes(q) ||
-        (u.discordUsername || "").toLowerCase().includes(q) ||
-        (u.robloxUsername || "").toLowerCase().includes(q)
-    );
-  }
-
-  list = list.slice(0, 50).map((u) => ({
-    _id: u._id,
-    discordId: u.discordId,
-    discordUsername: u.discordUsername,
-    discordAvatar: u.discordAvatar,
-    robloxUsername: u.robloxUsername,
-    isAdmin: Boolean(u.isAdmin),
-    isStaff: Boolean(u.isStaff),
-    roles: u.roles || [],
-    isAuthorized: Boolean(u.isAuthorized),
-    isBanned: Boolean(u.isBanned),
-    banReason: u.banReason || null,
-  }));
+  list = list.slice(0, 50).map((u) => {
+    const sp = staffMap.get(String(u.discordId));
+    return {
+      _id: u._id,
+      discordId: u.discordId,
+      discordUsername: u.discordUsername,
+      discordAvatar: u.discordAvatar,
+      robloxUsername: u.robloxUsername,
+      isAdmin: Boolean(u.isAdmin),
+      isStaff: Boolean(u.isStaff),
+      roles: u.roles || [],
+      isAuthorized: Boolean(u.isAuthorized),
+      isBanned: Boolean(u.isBanned),
+      banReason: u.banReason || null,
+      modLevel: sp ? (sp.level || 1) : 1,
+      modStatus: sp ? (sp.status || 'active') : 'active',
+    };
+  });
 
   res.json({ success: true, users: list });
 });
@@ -995,6 +993,54 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
 
   await user.save();
   saveStoreNow();
+
+  // 🛡️ Web Admin Panel — Staff Progress Mod Seviyesi & Statü Yönetimi
+  if (req.body.modLevel !== undefined || req.body.modStatus !== undefined) {
+    try {
+      const StaffProgress = require("../../models/StaffProgress");
+      const { getOrCreate, ROLES } = require("../../bot/services/staffSystem");
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const staffAutomation = require("../../bot/services/staffAutomation");
+
+      let p = await StaffProgress.findOne({ userId: targetId });
+      if (!p) {
+        const client = getDiscordClient();
+        p = await getOrCreate(targetId, process.env.STAFF_GUILD_ID || "1367646464804655104", client);
+      }
+
+      if (p) {
+        const oldLevel = p.level || 1;
+        if (req.body.modLevel !== undefined) p.level = Number(req.body.modLevel);
+        if (req.body.modStatus !== undefined) p.status = String(req.body.modStatus);
+        p.promotedAt = new Date();
+        await p.save();
+
+        const client = getDiscordClient();
+        if (client && client.guilds) {
+          const guildId = process.env.STAFF_GUILD_ID || "1367646464804655104";
+          const guild = await client.guilds.fetch(guildId).catch(() => null);
+          if (guild) {
+            const member = await guild.members.fetch(targetId).catch(() => null);
+            if (member) {
+              const newLevel = p.level;
+              const oldRoleId = ROLES[oldLevel];
+              const newRoleId = ROLES[newLevel];
+
+              if (oldRoleId && oldRoleId !== newRoleId) {
+                await member.roles.remove(oldRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+              }
+              if (newRoleId) {
+                await member.roles.add(newRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+              }
+            }
+          }
+          await staffAutomation.syncStaffDiscordRoles(client, targetId).catch(() => {});
+        }
+      }
+    } catch (modErr) {
+      console.error("[api] Admin mod role update error:", modErr.message);
+    }
+  }
 
   res.json({
     success: true,

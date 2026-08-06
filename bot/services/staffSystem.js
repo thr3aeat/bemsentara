@@ -4140,32 +4140,73 @@ async function sendStaffChannelNotification(client, embed) {
 }
 
 /**
- * ID'si 1444656401216442497 olan kullanıcının terfi değişikliğini geri alıp tekrar Level 4 (Sekreter) yapar.
+ * Zerox'un terfisini geri alır (Level 3 yapar), Mert'in terfisini verir (Level 4 Sekreter yapar).
  */
-async function restoreZeroxPromotion(client) {
+async function fixZeroxAndMertPromotions(client) {
   try {
-    const targetUserId = "1444656401216442497";
-    let p = await StaffProgress.findOne({ userId: targetUserId });
-    if (p) {
-      p.level = 4; // 👑 Sekreter
-      p.status = 'active';
-      p.promotedAt = new Date();
-      await p.save();
+    const zeroxUserId = "1444656401216442497";
+    const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
 
-      const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
+    // 1. ZEROX: Terfisi geri alınıyor -> Level 3 (⭐ Kıdemli Personel)
+    let pZerox = await StaffProgress.findOne({ userId: zeroxUserId });
+    if (pZerox) {
+      pZerox.level = 3;
+      pZerox.status = 'active';
+      pZerox.promotedAt = new Date();
+      await pZerox.save();
+
       if (guild) {
-        const member = await guild.members.fetch(targetUserId).catch(() => null);
-        if (member) {
-          const sekreterRoleId = ROLES[4] || '1518692392415395971';
-          const kidemliRoleId = ROLES[3] || '1518692393660973186';
-          if (kidemliRoleId) await member.roles.remove(kidemliRoleId, 'Yönetici Talimatı: Sekreter Rolü İade').catch(() => {});
-          if (sekreterRoleId) await member.roles.add(sekreterRoleId, 'Yönetici Talimatı: Sekreter Rolü İade').catch(() => {});
+        const mZerox = await guild.members.fetch(zeroxUserId).catch(() => null);
+        if (mZerox) {
+          const sekreterRole = ROLES[4] || '1518692392415395971';
+          const kidemliRole = ROLES[3] || '1518692393660973186';
+          if (sekreterRole) await mZerox.roles.remove(sekreterRole, 'Yönetici Talimatı: Zerox Terfi Geri Alma').catch(() => {});
+          if (kidemliRole) await mZerox.roles.add(kidemliRole, 'Yönetici Talimatı: Kıdemli Personel').catch(() => {});
         }
       }
-      console.log(`[staffSystem] ✅ User ${targetUserId} restored to Level 4 (👑 Sekreter).`);
+      console.log(`[staffSystem] 🛑 Zerox (${zeroxUserId}) terfisi geri alındı -> Level 3 (Kıdemli Personel)`);
+    }
+
+    // 2. MERT: Terfisi veriliyor -> Level 4 (👑 Sekreter)
+    let pMert = await StaffProgress.findOne({
+      $or: [
+        { userId: "1031620522406072350" },
+        { name: { $regex: /mert/i } },
+        { username: { $regex: /mert/i } }
+      ]
+    });
+
+    if (!pMert) {
+      const User = require('../../models/User');
+      const dbUser = await User.findOne({
+        $or: [
+          { discordId: "1031620522406072350" },
+          { discordUsername: { $regex: /mert/i } }
+        ]
+      });
+      const mertUserId = dbUser ? dbUser.discordId : "1031620522406072350";
+      pMert = await getOrCreate(mertUserId, GUILD_ID, client);
+    }
+
+    if (pMert) {
+      pMert.level = 4; // 👑 Sekreter
+      pMert.status = 'active';
+      pMert.promotedAt = new Date();
+      await pMert.save();
+
+      if (guild) {
+        const mMert = await guild.members.fetch(pMert.userId).catch(() => null);
+        if (mMert) {
+          const sekreterRole = ROLES[4] || '1518692392415395971';
+          const kidemliRole = ROLES[3] || '1518692393660973186';
+          if (kidemliRole) await mMert.roles.remove(kidemliRole, 'Terfi İade').catch(() => {});
+          if (sekreterRole) await mMert.roles.add(sekreterRole, 'Yönetici Talimatı: Mert Sekreter Rolü İade').catch(() => {});
+        }
+      }
+      console.log(`[staffSystem] 🎉 Mert (${pMert.userId}) terfisi iade edildi -> Level 4 (Sekreter)`);
     }
   } catch (err) {
-    console.error('[staffSystem] restoreZeroxPromotion error:', err.message);
+    console.error('[staffSystem] fixZeroxAndMertPromotions error:', err.message);
   }
 }
 
@@ -4179,8 +4220,8 @@ async function syncInvalidPromotionsOnStartup(client) {
     const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
 
     for (const p of allStaff) {
-      // 🛡️ Yönetici özel istisnası (1444656401216442497 geri alma muafiyeti)
-      if (p.userId === "1444656401216442497") {
+      // 🛡️ Mert için yönetici istisnası (Terfisi korunsun)
+      if (p.userId === "1031620522406072350" || (p.username && p.username.toLowerCase().includes("mert"))) {
         continue;
       }
 
@@ -4260,8 +4301,8 @@ async function syncInvalidPromotionsOnStartup(client) {
 
 // ── Scheduler — sabah brifing + gün içi hatırlatmalar ──────────────────────
 function startStaffScheduler(client) {
-  // Kullanıcı 1444656401216442497 terfi durumunu geri yükle (Sekreter)
-  restoreZeroxPromotion(client).catch(() => {});
+  // Zerox terfisini geri al (Level 3) ve Mert terfisini iade et (Level 4 Sekreter)
+  fixZeroxAndMertPromotions(client).catch(() => {});
 
   // Bot başlatıldığında hatalı/erken terfileri otomatik denetle ve düzelt
   syncInvalidPromotionsOnStartup(client).catch(() => {});

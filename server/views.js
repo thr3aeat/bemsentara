@@ -3664,10 +3664,23 @@ function renderAdminPage(user) {
               (u.discordAvatar ? '<img src="'+adminEsc(u.discordAvatar)+'" style="width:36px;height:36px;border-radius:50%;">' : '') +
               '<div><div style="font-weight:800;">' + adminEsc(u.discordUsername) + (u.isBanned ? ' <span style="color:var(--danger);font-size:.75rem;">🚫 BANLANDI</span>' : '') + '</div>' +
               '<div style="font-size:0.8rem;color:var(--muted);">ID: ' + adminEsc(u.discordId) + '</div></div></div>' +
-              '<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">' +
+              '<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem;">' +
               '<label style="cursor:pointer;"><input type="checkbox" class="admin-cb-admin" ' + (u.isAdmin ? 'checked' : '') + '> Admin</label>' +
               '<label style="cursor:pointer;"><input type="checkbox" class="admin-cb-staff" ' + (u.isStaff ? 'checked' : '') + '> Staff</label>' +
-              '<button type="button" class="btn btn-sm" onclick="adminSaveRoles(this)">💾 Kaydet</button>' +
+              '<select class="admin-sel-modlevel" style="background:var(--bg3,#1e293b);color:var(--fg,#f8fafc);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:8px;padding:0.25rem 0.5rem;font-size:0.85rem;">' +
+              '<option value="1" ' + (u.modLevel === 1 ? 'selected' : '') + '>Stajyer Personel (L1)</option>' +
+              '<option value="2" ' + (u.modLevel === 2 ? 'selected' : '') + '>Personel (L2)</option>' +
+              '<option value="3" ' + (u.modLevel === 3 ? 'selected' : '') + '>⭐ Kıdemli Personel (L3)</option>' +
+              '<option value="4" ' + (u.modLevel === 4 ? 'selected' : '') + '>👑 Sekreter (L4)</option>' +
+              '<option value="5" ' + (u.modLevel === 5 ? 'selected' : '') + '>👨‍✈️ Kıdemli Sekreter (L5)</option>' +
+              '<option value="6" ' + (u.modLevel === 6 ? 'selected' : '') + '>💼 Genel Koordinatör (L6)</option>' +
+              '</select>' +
+              '<select class="admin-sel-modstatus" style="background:var(--bg3,#1e293b);color:var(--fg,#f8fafc);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:8px;padding:0.25rem 0.5rem;font-size:0.85rem;">' +
+              '<option value="active" ' + (u.modStatus === 'active' ? 'selected' : '') + '>🟢 Aktif Kadro</option>' +
+              '<option value="paused" ' + (u.modStatus === 'paused' ? 'selected' : '') + '>⏸️ Duraklatıldı</option>' +
+              '<option value="dismissed" ' + (u.modStatus === 'dismissed' ? 'selected' : '') + '>🔴 Ayrıldı</option>' +
+              '</select>' +
+              '<button type="button" class="btn btn-sm btn-primary" onclick="adminSaveRoles(this)">💾 Kaydet & Sync</button>' +
               restoreBtn + banBtn + '</div></div>';
           }).join('');
         } catch (err) {
@@ -3680,12 +3693,14 @@ function renderAdminPage(user) {
         const id = row.getAttribute('data-discord-id');
         const isAdmin = row.querySelector('.admin-cb-admin').checked;
         const isStaff = row.querySelector('.admin-cb-staff').checked;
+        const modLevel = Number(row.querySelector('.admin-sel-modlevel').value);
+        const modStatus = row.querySelector('.admin-sel-modstatus').value;
         const res = await fetch('/api/admin/users/' + encodeURIComponent(id) + '/roles', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isAdmin, isStaff })
+          body: JSON.stringify({ isAdmin, isStaff, modLevel, modStatus })
         });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) showToast('Kaydedildi: ' + (d.user?.discordUsername || id), 'success');
+        if (res.ok) showToast('Rütbe & Yetkiler Güncellendi: ' + (d.user?.discordUsername || id), 'success');
         else showToast(d.error || 'Kaydedilemedi', 'error');
       }
 
