@@ -171,7 +171,8 @@ async function createLeaderboardCard(leaderboardData, userRank, category = "Puan
 function drawHeader(ctx, width, headerHeight, category) {
   const gradient = ctx.createLinearGradient(0, 0, width, 0);
   gradient.addColorStop(0, THEME.accent);
-  gradient.addColorStop(1, THEME.purple);
+  gradient.addColorStop(0.5, THEME.purple);
+  gradient.addColorStop(1, "#3b82f6");
 
   ctx.save();
   roundRect(ctx, 0, 0, width, headerHeight, { tl: 0, tr: 0, br: 0, bl: 0 });
@@ -179,45 +180,79 @@ function drawHeader(ctx, width, headerHeight, category) {
   ctx.fill();
   ctx.restore();
 
+  // Header vector star badge
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+  ctx.beginPath();
+  ctx.arc(50, 60, 24, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("★", 50, 61);
+  ctx.restore();
+
   // Başlık
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "left";
-  ctx.font = "bold 40px Arial";
-  ctx.fillText("Leaderboard", 32, 62);
+  ctx.font = "bold 38px Arial";
+  ctx.fillText("Leaderboard Sıralaması", 88, 65);
 
   // Kategori pill
-  ctx.font = "22px Arial";
-  const label = `Kategori: ${category}`;
-  const pillW = ctx.measureText(label).width + 40;
+  ctx.font = "bold 15px Arial";
+  const label = `KATEGORİ: ${category.toUpperCase()}`;
+  const pillW = ctx.measureText(label).width + 32;
   ctx.save();
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  roundRect(ctx, 32, 84, pillW, 40, 20);
+  ctx.fillStyle = "rgba(255,255,255,0.2)";
+  roundRect(ctx, 88, 88, pillW, 32, 16);
   ctx.fill();
   ctx.restore();
   ctx.fillStyle = "#ffffff";
-  ctx.fillText(label, 52, 111);
+  ctx.fillText(label, 104, 109);
 }
 
 function drawLeaderboardItem(ctx, item, x, y, w, h) {
   const isTop3 = item.rank <= 3;
+  const rc = rankColor(item.rank);
 
-  drawPanel(ctx, x, y, w, h, 16, isTop3 ? "rgba(255,255,255,0.045)" : THEME.panel);
+  // Top 3 için özel parıltılı metalik zemin
+  if (isTop3) {
+    ctx.save();
+    ctx.shadowColor = rc;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    roundRect(ctx, x, y, w, h, 16);
+    ctx.fill();
+    ctx.strokeStyle = rc;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    drawPanel(ctx, x, y, w, h, 16, THEME.panel);
+  }
 
   const cx = x + 24;
   const centerY = y + h / 2;
 
-  // Rank kapsülü
-  const rc = rankColor(item.rank);
+  // Rank kapsülü (Daire / Yuvarlatılmış Kutu)
   ctx.save();
-  ctx.fillStyle = isTop3 ? rc : "rgba(255,255,255,0.06)";
+  if (isTop3) {
+    const grad = ctx.createLinearGradient(cx, y, cx + 52, y + h);
+    grad.addColorStop(0, rc);
+    grad.addColorStop(1, "#1a1a1a");
+    ctx.fillStyle = grad;
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+  }
   roundRect(ctx, cx, centerY - 22, 52, 44, 12);
   ctx.fill();
   ctx.restore();
 
-  ctx.fillStyle = isTop3 ? "#1a1a1a" : THEME.text;
-  ctx.font = "bold 22px Arial";
+  ctx.fillStyle = isTop3 ? "#ffffff" : THEME.text;
+  ctx.font = "bold 20px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(`#${item.rank}`, cx + 26, centerY + 8);
+  ctx.fillText(`#${item.rank}`, cx + 26, centerY + 7);
 
   // Avatar
   const avatarCx = cx + 100;
@@ -227,14 +262,14 @@ function drawLeaderboardItem(ctx, item, x, y, w, h) {
   ctx.textAlign = "left";
   const nameX = avatarCx + 44;
   ctx.fillStyle = THEME.text;
-  const nameFont = fitText(ctx, item.username, 280, 26, 16);
+  const nameFont = fitText(ctx, item.username, 280, 24, 16);
   ctx.font = `bold ${nameFont}px Arial`;
   ctx.fillText(truncate(item.username, 22), nameX, centerY - (item.isPremium ? 6 : -6));
 
   if (item.isPremium) {
     ctx.fillStyle = THEME.gold;
-    ctx.font = "600 15px Arial";
-    ctx.fillText("★ Premium", nameX, centerY + 16);
+    ctx.font = "600 14px Arial";
+    ctx.fillText("★ Premium VIP", nameX, centerY + 16);
   }
 
   // İstatistik sütunları (sağa hizalı, eşit aralıklı)
@@ -257,6 +292,17 @@ function drawLeaderboardItem(ctx, item, x, y, w, h) {
     ctx.font = "14px Arial";
     ctx.fillText(s.label, sx - colWidth + 20, centerY + 18);
   });
+
+  // İnce alt ilerleme çubuğu (Progress line)
+  if (item.points && typeof item.points === 'number') {
+    const maxPts = 5000;
+    const pct = Math.min(1, item.points / maxPts);
+    ctx.save();
+    ctx.fillStyle = rc;
+    roundRect(ctx, x + 16, y + h - 4, (w - 32) * pct, 3, 2);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 function drawUserRankFooter(ctx, userRank, x, y, w, h) {
