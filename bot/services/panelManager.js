@@ -160,6 +160,34 @@ async function ensureAdminPanels(client) {
     );
     await refreshPanel(client, '1466947058442305637', modSchoolEmbed, [modSchoolRow]);
 
+    // 11. Canlı Vardiya Takip Paneli
+    const shiftEmbed = new EmbedBuilder()
+      .setTitle("⏱️ Personel Canlı Vardiya Kontrol Paneli")
+      .setDescription(
+        "Vardiyanıza başladığınızda 'Vardiya Başlat' butonuna, vardiyanızı bitirirken 'Vardiya Bitir' butonuna tıklayınız.\n\n" +
+        "• Canlı durum bilgisi ve toplam sürenizi anlık olarak sorgulayabilirsiniz."
+      )
+      .setColor(0x2ECC71);
+    const shiftRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('btn_staff_shift_start').setLabel('🟢 Vardiya Başlat').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('btn_staff_shift_stop').setLabel('🔴 Vardiya Bitir').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('btn_staff_shift_status').setLabel('📊 Canlı Durum').setStyle(ButtonStyle.Secondary)
+    );
+    await refreshPanel(client, '1466945894250188912', shiftEmbed, [shiftRow]);
+
+    // 12. Pazar Yeri & Borsa Mum Grafiği Paneli
+    const marketEmbed = new EmbedBuilder()
+      .setTitle("🛒 Sentara Pazar Yeri & $EKO Borsa Paneli")
+      .setDescription(
+        "Mülk, rozet ve coin alım-satım pazarını açmak veya canlı $EKO Index borsa mum grafiğini görüntülemek için butonları kullanabilirsiniz."
+      )
+      .setColor(0x9B59B6);
+    const marketRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('btn_market_panel').setLabel('🛒 Pazar Yerini Aç').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('btn_stock_chart').setLabel('📈 $EKO Canlı Grafik').setStyle(ButtonStyle.Success)
+    );
+    await refreshPanel(client, '1466947058442305637', marketEmbed, [marketRow]);
+
   } catch (error) {
     console.error("[PanelManager] ensureAdminPanels Error:", error);
   }

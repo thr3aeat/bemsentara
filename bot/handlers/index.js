@@ -3876,6 +3876,11 @@ function initializeDiscordHandlers(client) {
 
         return interaction.reply({ content: `✅ ${successMessage}${extraMsg}\n💰 Kalan Bakiye: ${p.gamification.ecoCoins} E.C.`, ephemeral: true });
       }
+      if (interaction.isModalSubmit() && interaction.customId === "modal_staff_leave_request") {
+        const StaffLeaveService = require("../services/staffLeaveService");
+        await StaffLeaveService.submitLeaveRequest(interaction);
+        return;
+      }
       // ── Roblox Etkileşimleri ──────────────────────────────────────────────
       if (
         (interaction.isStringSelectMenu() && (interaction.customId === "roblox_group_select" || interaction.customId.startsWith("roblox_rank_select"))) ||
