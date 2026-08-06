@@ -103,6 +103,13 @@ async function handleButtonInteraction(interaction) {
     return handleTrustButtons(interaction);
   }
 
+  // ── Ses Odası (TempVoice V2) Panel Butonları ──────────────────────────────
+  if (customId.startsWith("tv_") || customId.startsWith("tempvoice_")) {
+    const { handleTempVoiceInteraction } = require("../services/tempVoiceService");
+    const handled = await handleTempVoiceInteraction(interaction);
+    if (handled) return;
+  }
+
   // ── Yeni Hesap Güvenlik Sistemi Butonları ──────────────────────────────────
   if (customId.startsWith("survey_") || customId.startsWith("investigate_") || customId.startsWith("tempjail_duration_")) {
     const { handleNewAccountButtons } = require("./newAccountButtonHandler");

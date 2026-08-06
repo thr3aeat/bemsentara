@@ -81,6 +81,31 @@ async function handleModalSubmit(interaction) {
     return handleTrustModals(interaction);
   }
 
+  // ── Ses Odası (TempVoice V2) Modalleri ──────────────────────────────────────
+  if (interaction.customId.startsWith('tv_modal_') || interaction.customId.startsWith('tempvoice_modal_')) {
+    const parts = interaction.customId.split('_');
+    const modalType = parts[2]; // rename or limit
+    const channelId = parts[3];
+    const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+
+    if (!channel) {
+      return interaction.reply({ content: '❌ Kanal bulunamadı veya silinmiş.', ephemeral: true });
+    }
+
+    if (modalType === 'rename') {
+      const newName = interaction.fields.getTextInputValue('room_name');
+      await channel.setName(`[🔊] ${newName}`).catch(() => {});
+      return interaction.reply({ content: `✏️ Oda ismi başarıyla **[🔊] ${newName}** olarak değiştirildi.`, ephemeral: true });
+    }
+
+    if (modalType === 'limit') {
+      const newLimit = parseInt(interaction.fields.getTextInputValue('user_limit'), 10) || 0;
+      const sanitized = Math.max(0, Math.min(99, newLimit));
+      await channel.setUserLimit(sanitized).catch(() => {});
+      return interaction.reply({ content: `👥 Oda kullanıcı limiti **${sanitized === 0 ? 'Sınırsız' : sanitized}** olarak ayarlandı.`, ephemeral: true });
+    }
+  }
+
   // ── Mutation (Mute/Deafen/Kick) İtiraz Modal ────────────────────────────────
   if (interaction.customId.startsWith('mutation_appeal_modal_')) {
     const { handleMutationAppealModalSubmit } = require("../services/mutationAppealService");
