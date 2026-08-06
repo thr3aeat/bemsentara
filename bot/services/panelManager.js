@@ -73,111 +73,33 @@ async function ensureAdminPanels(client) {
     );
     await refreshPanel(client, '1466946002547249296', suggestionEmbed, [suggestionRow]);
 
-    // 4. İstifa Formu
-    const resignEmbed = new EmbedBuilder()
-      .setTitle("🚪 Personel İstifa İşlemleri")
+    // 4. Moderatör Ekibi | Personel & Nöbet Anasayfası
+    const modHomeEmbed = new EmbedBuilder()
+      .setTitle("🛡️ EkoYıldız Moderatör Ekibi | Personel & Nöbet Anasayfası")
       .setDescription(
-        "EkoYıldız yetkili kadrosundaki görevinizden kendi isteğinizle ayrılmak için bu paneli kullanabilirsiniz.\n\n" +
-        "🚨 **Dikkat:** İstifa işleminin onaylanması durumunda tüm yetki rolleriniz ve erişim haklarınız **kalıcı olarak** kaldırılacaktır."
-      )
-      .setColor(0xE74C3C);
-    const resignRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_resign_form').setLabel('İstifa Et').setStyle(ButtonStyle.Danger).setEmoji('⚠️')
-    );
-    await refreshPanel(client, '1466945894250188912', resignEmbed, [resignRow]);
-
-    // 5. Kanıtlı Mod İşlem Formu
-    const modActionEmbed = new EmbedBuilder()
-      .setTitle("⚖️ Moderasyon Ceza Kanıt Raporlama")
-      .setDescription(
-        "Sunucu düzenini korumak amacıyla uyguladığınız tüm yaptırımları (Ban, Mute, Kick, Warn vb.) kanıtlarıyla birlikte bu panel üzerinden kayıt altına almalısınız.\n\n" +
-        "*Raporlanmayan cezalar performans değerlendirmesine dahil edilmeyecektir.*"
-      )
-      .setColor(0x9B59B6);
-    const modActionRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_modaction_form').setLabel('İşlem Raporla').setStyle(ButtonStyle.Primary).setEmoji('🔨')
-    );
-    await refreshPanel(client, '1466946794763321394', modActionEmbed, [modActionRow]);
-
-    // 6. EkoYıldız Moderatör Ekibi | Doğrulama Sistemi
-    const verifyEmbed = new EmbedBuilder()
-      .setTitle("🔐 Personel Kimlik Doğrulama & Yetkilendirme")
-      .setDescription(
-        "EkoYıldız yetkilendirilmiş personeli için entegre kimlik doğrulama portalı.\n\n" +
-        "👇 Aşağıdaki butona tıklayarak Roblox ve Discord hesaplarınızı eşleştirip **yetkili rollerinizi otomatik olarak devralabilirsiniz.**"
-      )
-      .setColor(0x3498DB);
-    const verifyRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_personel_check').setLabel('Doğrula & Rollerimi Ver').setStyle(ButtonStyle.Success).setEmoji('✅')
-    );
-    await refreshPanel(client, '1466933699122565120', verifyEmbed, [verifyRow]);
-
-    // 7. Ban Rapor Sistemi
-    const banReportEmbed = new EmbedBuilder()
-      .setTitle("🔨 Yasaklama (Ban) Rapor Paneli")
-      .setDescription(
-        "Sunucumuzdan yasaklanan veya yasaklanması talep edilen kullanıcıların detaylı gerekçe ve kanıt girişlerini bu form üzerinden yapabilirsiniz."
-      )
-      .setColor(0xE74C3C);
-    const banReportRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_ban_report_form').setLabel('Ban Raporla').setStyle(ButtonStyle.Danger).setEmoji('🔨')
-    );
-    await refreshPanel(client, '1466946902154018967', banReportEmbed, [banReportRow]);
-
-    // 8. Mute Rapor Sistemi
-    const muteReportEmbed = new EmbedBuilder()
-      .setTitle("🔇 Susturma (Mute) Rapor Paneli")
-      .setDescription(
-        "Kuralları ihlal ettiği için susturulan (Mute) kullanıcıların ceza sürelerini ve kanıtlarını raporlamak için bu paneli kullanın."
-      )
-      .setColor(0xF39C12);
-    const muteReportRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_mute_report_form').setLabel('Mute Raporla').setStyle(ButtonStyle.Primary).setEmoji('🔇')
-    );
-    await refreshPanel(client, '1466946762190229589', muteReportEmbed, [muteReportRow]);
-
-    // 9. Mod Şikayet Sistemi
-    const modComplainEmbed = new EmbedBuilder()
-      .setTitle("⚠️ Yetkili Hak İhlali & Şikayet Bildirimi")
-      .setDescription(
-        "Kuralları suistimal eden, yetkisini kötüye kullanan veya adil davranmayan yetkilileri, kimliğiniz **tamamen gizli kalacak şekilde** üst yönetime rapor edebilirsiniz."
-      )
-      .setColor(0x992D22);
-    const modComplainRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_mod_complain_form').setLabel('Mod Şikayet Et').setStyle(ButtonStyle.Danger).setEmoji('⚠️')
-    );
-    await refreshPanel(client, '1466946497206816973', modComplainEmbed, [modComplainRow]);
-
-    // 10. Moderatör Okulu Yönetim Paneli
-    const modSchoolEmbed = new EmbedBuilder()
-      .setTitle("🏫 Moderatör Okulu Disiplin Paneli")
-      .setDescription(
-        "Eğitim sürecinde başarısız olan, devamsızlık yapan veya okul kurallarını ihlal eden öğrencileri okul sisteminden uzaklaştırmak için yetkili işlem aracı."
-      )
-      .setColor(0xE67E22);
-    const modSchoolRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_modschool_kick_panel').setLabel('Öğrenci At').setStyle(ButtonStyle.Danger).setEmoji('👢')
-    );
-    await refreshPanel(client, '1466947058442305637', modSchoolEmbed, [modSchoolRow]);
-
-    // 11. Canlı Nöbet Kontrol Paneli
-    const dutyEmbed = new EmbedBuilder()
-      .setTitle("⚡ Personel Canlı Nöbet & Nöbetçi Yetkili Paneli")
-      .setDescription(
-        "Nöbetinize başladığınızda **'⚡ Nöbet Başlat'** butonuna, nöbetinizi devrederken **'🛑 Nöbeti Bitir'** butonuna tıklayınız.\n\n" +
+        "EkoYıldız Moderatör Ekibinin resmi yönetim, nöbet takip ve yetkili portalı.\n\n" +
+        "⚡ **NÖBET VE AKTİFLİK İŞLEMLERİ:**\n" +
         "• **⚡ Nöbet Başlat:** Aktif nöbetinizi ve puan takibini başlatır.\n" +
         "• **🛑 Nöbeti Bitir:** Nöbetinizi sonlandırır ve devir notu göndermenizi sağlar.\n" +
         "• **📊 Canlı Durum:** Nöbetteki yetkilileri ve aktiflik sürenizi gösterir.\n" +
-        "• **☕ Mola Al:** Geçici nöbet molanızı başlatır/bitirir."
+        "• **☕ Mola Al:** Geçici nöbet molanızı başlatır/bitirir.\n\n" +
+        "🚪 **DİĞER İŞLEMLER:**\n" +
+        "• Görevden kendi isteğinizle ayrılmak için **'🚪 İstifa Et'** butonunu kullanabilirsiniz."
       )
       .setColor(0x2ECC71);
-    const dutyRow = new ActionRowBuilder().addComponents(
+
+    const modHomeRow1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('btn_duty_start').setLabel('⚡ Nöbet Başlat').setStyle(ButtonStyle.Success),
       new ButtonBuilder().setCustomId('btn_duty_end').setLabel('🛑 Nöbet Bitir & Devret').setStyle(ButtonStyle.Danger),
       new ButtonBuilder().setCustomId('btn_duty_status').setLabel('📊 Canlı Durum').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('btn_duty_break').setLabel('☕ Mola Al').setStyle(ButtonStyle.Primary)
     );
-    await refreshPanel(client, '1466945894250188912', dutyEmbed, [dutyRow]);
+
+    const modHomeRow2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('btn_resign_form').setLabel('🚪 İstifa Et').setStyle(ButtonStyle.Secondary)
+    );
+
+    await refreshPanel(client, '1466945894250188912', modHomeEmbed, [modHomeRow1, modHomeRow2]);
 
     // 12. Pazar Yeri & Borsa Mum Grafiği Paneli
     const marketEmbed = new EmbedBuilder()
