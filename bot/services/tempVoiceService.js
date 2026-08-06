@@ -87,21 +87,40 @@ async function checkAndDeleteEmptyChannel(channel) {
  * Returns a Components V2 Control Panel payload for a temporary voice channel
  */
 function getTempVoiceControlPanelV2(member, channel) {
-  const TempVoiceV2 = require('./tempVoiceV2');
+  const ComponentsV2Factory = require('../utils/componentsV2Factory');
+  const TypographyHelper = require('../utils/typographyHelper');
+  const { ButtonStyle } = require('discord.js');
+
   const connectedUsers = channel.members.map(m => m.id);
-  
-  return TempVoiceV2.buildVoiceControlPayload({
-    channelId: channel.id,
-    channelName: channel.name,
-    ownerId: member.id,
-    ownerTag: member.user?.tag || member.displayName,
-    userCount: channel.members.size,
-    userLimit: channel.userLimit || 0,
-    isLocked: channel.permissionOverwrites.cache.some(po => po.id === channel.guild.id && po.deny.has(PermissionFlagsBits.Connect)),
-    connectedUsers: connectedUsers,
-    createdAt: channel.createdAt ? channel.createdAt.getTime() : Date.now(),
-  });
+  const isLocked = channel.permissionOverwrites.cache.some(po => po.id === channel.guild.id && po.deny.has(PermissionFlagsBits.Connect));
+  const accentColor = isLocked ? 0xED4245 : 0x57F287;
+  const lockStatusText = isLocked ? "🔒 KİLİTLİ" : "🔓 AÇIK";
+
+  const membersListText = connectedUsers.length > 0
+    ? connectedUsers.map((u, i) => `${i + 1}. <@${u}>`).join("\n")
+    : "Henüz başka üye katılmadı.";
+
+  return ComponentsV2Factory.buildPayload(accentColor, [
+    ...ComponentsV2Factory.headerBlock(`Ses Kanalı Kontrol Paneli: ${channel.name}`, "🎙️"),
+    ComponentsV2Factory.section(
+      `👑 **Oda Sahibi:** <@${member.id}>\n` +
+      `📊 **Kullanıcı Sayısı:** **${channel.members.size} / ${channel.userLimit || "Sınırsız"}**\n` +
+      `🛡️ **Erişim Durumu:** **${lockStatusText}**`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(`👥 **Odadaki Üyeler Listesi:**\n${membersListText}`),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      TypographyHelper.subtext(`Sentara TempVoice Engine • Kanal ID: ${channel.id}`)
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: `tempvoice_lock_${channel.id}`, label: isLocked ? "🔓 Kilit Aç" : "🔒 Odayı Kilitle", style: isLocked ? ButtonStyle.Success : ButtonStyle.Danger },
+      { custom_id: `tempvoice_limit_${channel.id}`, label: "👥 Limit Değiştir", style: ButtonStyle.Primary },
+      { custom_id: `tempvoice_rename_${channel.id}`, label: "✏️ İsim Değiştir", style: ButtonStyle.Secondary },
+    ]),
+  ]);
 }
+
 
 module.exports = {
   createTempVoiceChannel,

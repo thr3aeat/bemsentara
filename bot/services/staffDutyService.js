@@ -370,23 +370,54 @@ async function logDutyActivity(userId, activityType, amount = 1) {
 /**
  * Produces a Components V2 Audit Dashboard payload for a staff member
  */
-function buildStaffDashboardV2(staffProgress, user) {
-  const StaffDashboardV2 = require('./staffDashboardV2');
+function buildStaffDashboardV2(staffProgress = {}, user = {}) {
+  const ComponentsV2Factory = require('../utils/componentsV2Factory');
+  const TypographyHelper = require('../utils/typographyHelper');
+  const QuickChartHelper = require('../utils/quickChartHelper');
+  const { ButtonStyle } = require('discord.js');
+
   const kpiScore = calculateKpi(staffProgress);
   const kpiGrade = getKpiGrade(kpiScore);
 
-  return StaffDashboardV2.buildStaffDashboardPayload({
-    userId: staffProgress.userId,
-    username: user?.username || staffProgress.userId,
-    avatarUrl: user?.displayAvatarURL ? user.displayAvatarURL({ size: 256 }) : null,
-    roleName: kpiGrade.label,
-    ticketCount: staffProgress.duty?.sessionTicketsSolved || 0,
-    modActions: staffProgress.duty?.sessionModerationActions || 0,
-    voiceHours: Math.round(((staffProgress.duty?.sessionVoiceMinutes || 0) / 60) * 10) / 10,
-    avgResponseTimeMin: 3.5,
-    weeklyPerformanceDelta: 15,
+  const userId = staffProgress.userId || user.id || "0";
+  const username = user?.username || staffProgress.userId || "Yetkili";
+  const avatarUrl = user?.displayAvatarURL ? user.displayAvatarURL({ size: 256 }) : null;
+  const ticketCount = staffProgress.duty?.sessionTicketsSolved || 0;
+  const modActions = staffProgress.duty?.sessionModerationActions || 0;
+  const voiceHours = Math.round(((staffProgress.duty?.sessionVoiceMinutes || 0) / 60) * 10) / 10;
+
+  const chartUrl = QuickChartHelper.getChartUrl({
+    labels: ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"],
+    data: [2, 5, 8, 4, 10, 6, 3],
+    datasetLabel: "Ticket Çözümü",
+    chartType: "bar",
+    color: "#5865F2",
+    width: 450,
+    height: 180,
   });
+
+  return ComponentsV2Factory.buildPayload(kpiGrade.color || 0x5865F2, [
+    ComponentsV2Factory.section(
+      `${TypographyHelper.h2(`👑 Yetkili Audit Dashboard: ${username}`)}\n` +
+      `🎭 **Durum:** \`${kpiGrade.label}\` (KPI: **${kpiScore}/100**)\n` +
+      `🎫 **Ticket:** **${ticketCount}**  |  🔨 **Mod İşlemleri:** **${modActions}**\n` +
+      `🎙️ **Sesli Mesai:** **${voiceHours} Saat**`,
+      avatarUrl
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(`📈 **Haftalık Aktiflik & Performans Grafiği:**`),
+    ComponentsV2Factory.mediaGallery([chartUrl]),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      TypographyHelper.subtext(`Sentara Staff Audit • ${TypographyHelper.timestamp(new Date(), "R")}`)
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: `staff_duty_toggle_${userId}`, label: "⚡ Mesai Durumu Değiştir", style: ButtonStyle.Primary },
+      { custom_id: `staff_kpi_detail_${userId}`, label: "🔍 KPI Detayı", style: ButtonStyle.Secondary },
+    ]),
+  ]);
 }
+
 
 module.exports = {
   calculateKpi,

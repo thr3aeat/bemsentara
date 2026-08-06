@@ -31,6 +31,9 @@ const APPEAL_CHANNEL_ID = '1516411840064782427';
  */
 async function sendAppealDM(user, guildName, guildId, reason, type = 'ban') {
   try {
+    const ComponentsV2Factory = require('../utils/componentsV2Factory');
+    const TypographyHelper = require('../utils/typographyHelper');
+
     const typeLabels = {
       ban: '🔨 Yasaklandınız',
       kick: '👢 Atıldınız',
@@ -43,37 +46,47 @@ async function sendAppealDM(user, guildName, guildId, reason, type = 'ban') {
       honeypot: 0xff6b6b,
     };
 
-    const embed = new EmbedBuilder()
-      .setColor(typeColors[type] || 0xff4444)
-      .setTitle(typeLabels[type] || '🔨 Yasaklandınız')
-      .setDescription(
-        `**${guildName}** sunucusundan ${type === 'ban' ? 'yasaklandınız' : 'atıldınız'}.\n\n` +
-        `**Sebep:** ${reason || 'Belirtilmedi'}\n\n` +
-        `Bu işleme itiraz etmek istiyorsanız aşağıdaki butona tıklayarak itiraz formunu doldurabilirsiniz.\n` +
-        `İtirazınız yetkililer tarafından incelenecektir.`
-      )
-      .addFields(
-        { name: '🏠 Sunucu', value: guildName, inline: true },
-        { name: '📋 İşlem', value: type === 'ban' ? 'Yasaklama' : type === 'honeypot' ? 'Tuzak Kanalı (Kick)' : 'Atma', inline: true },
-      )
-      .setFooter({ text: 'Müttefik Orduları • İtiraz Sistemi' })
-      .setTimestamp();
+    const color = typeColors[type] || 0xff4444;
+    const title = typeLabels[type] || '🔨 Yasaklandınız';
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`ban_appeal_${guildId}_${type}`)
-        .setLabel('📝 İtiraz Et')
-        .setStyle(ButtonStyle.Danger),
-    );
+    const payload = {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container(color, [
+          ...ComponentsV2Factory.headerBlock(title, "⚖️"),
+          ComponentsV2Factory.section(
+            `**${guildName}** sunucusundan ${type === 'ban' ? 'yasaklandınız' : 'atıldınız'}.\n\n` +
+            `📋 **Gerekçe / Sebep:**\n${TypographyHelper.quote(reason || 'Belirtilmedi')}\n\n` +
+            `Bu kararın hatalı olduğunu düşünüyorsanız aşağıdaki butona tıklayarak **İtiraz Formunu** doldurabilirsiniz.`
+          ),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `🏠 **Sunucu:** ${guildName} | ⏱️ **İşlem Zamanı:** ${TypographyHelper.timestamp(new Date(), "F")}`
+          ),
+          ComponentsV2Factory.separator(false),
+          ComponentsV2Factory.text(
+            TypographyHelper.subtext(`Sentara Ban & Ceza İtiraz Sistemi • Otomatik İletim`)
+          ),
+          ComponentsV2Factory.actionRow([
+            {
+              custom_id: `ban_appeal_${guildId}_${type}`,
+              label: '📝 İtiraz Formunu Doldur',
+              style: ButtonStyle.Danger,
+            },
+          ]),
+        ]),
+      ],
+    };
 
-    await user.send({ embeds: [embed], components: [row] });
-    console.log(`[banAppeal] İtiraz DM gönderildi: ${user.tag} (${type}, sunucu: ${guildName})`);
+    await user.send(payload);
+    console.log(`[banAppeal] V2 İtiraz DM gönderildi: ${user.tag} (${type}, sunucu: ${guildName})`);
     return true;
   } catch (err) {
     console.log(`[banAppeal] DM gönderilemedi (${user.tag}): Ortak sunucu yok veya DM kapalı.`);
     return false;
   }
 }
+
 
 /**
  * İtiraz butonuna tıklandığında modal aç

@@ -1438,20 +1438,63 @@ async function handleContractSignature(interaction, caseCode, isAccept) {
 /**
  * Builds a Components V2 Interactive Case Docket payload for a court case
  */
-function buildCaseDocketV2(courtCase) {
-  const CaseDocketV2 = require('./caseDocketV2');
-  return CaseDocketV2.buildCaseDocketPayload({
-    caseId: courtCase.caseId || courtCase._id,
-    defendantId: courtCase.defendantId || courtCase.targetUserId,
-    judgeId: courtCase.judgeId || "0",
-    prosecutorId: courtCase.prosecutorId || "0",
-    claims: courtCase.claims || courtCase.reason || "Belirtilmedi",
-    evidenceList: courtCase.evidenceList || [],
-    votes: courtCase.votes || { guilty: 0, acquit: 0 },
-    status: courtCase.status || "ONGOING",
-    expiresAt: courtCase.expiresAt ? new Date(courtCase.expiresAt).getTime() : Date.now() + 86400000,
-  });
+function buildCaseDocketV2(courtCase = {}) {
+  const ComponentsV2Factory = require('../utils/componentsV2Factory');
+  const TypographyHelper = require('../utils/typographyHelper');
+  const { ButtonStyle } = require('discord.js');
+
+  const caseId = courtCase.caseId || courtCase._id || "DOSYA-001";
+  const defendantId = courtCase.defendantId || courtCase.targetUserId || "0";
+  const judgeId = courtCase.judgeId || "0";
+  const prosecutorId = courtCase.prosecutorId || "0";
+  const claims = courtCase.claims || courtCase.reason || "Açıklama belirtilmedi.";
+  const evidenceList = courtCase.evidenceList || [];
+  const votes = courtCase.votes || { guilty: 0, acquit: 0 };
+  const status = courtCase.status || "ONGOING";
+  const expiresAt = courtCase.expiresAt ? new Date(courtCase.expiresAt).getTime() : Date.now() + 86400000;
+
+  const statusConfig = status === 'GUILTY' ? { color: 0xED4245, emoji: '🔨', title: 'SUÇLU BULUNDU' }
+    : status === 'ACQUITTED' ? { color: 0x57F287, emoji: '🛡️', title: 'BERAAT ETTİ' }
+    : { color: 0xFEE75C, emoji: '⚖️', title: 'DAVA DEVAM EDİYOR' };
+
+  const safeClaims = claims.length > 500 ? `${claims.substring(0, 500)}...` : claims;
+  const safeEvList = (evidenceList || []).slice(0, 5);
+  const evidenceText = safeEvList.length > 0
+    ? safeEvList.map((e, idx) => `${idx + 1}. ||${e}||`).join("\n")
+    : "||Henüz gizli kanıt yüklenmedi.||";
+
+  const components = [
+    ...ComponentsV2Factory.headerBlock(`Dava Dosyası: ${caseId} - ${statusConfig.title}`, statusConfig.emoji),
+    ComponentsV2Factory.section(
+      `👤 **Sanık / Davalı:** <@${defendantId}> (\`${defendantId}\`)\n` +
+      `👨‍⚖️ **Hakim / Başkan:** <@${judgeId}>\n` +
+      `👔 **Savcı / İddia Makamı:** <@${prosecutorId}>\n` +
+      `⏱️ **Son Karar Zamanı:** ${TypographyHelper.timestamp(expiresAt, "R")}`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(
+      `📋 **İddia ve Suçlama Detayı:**\n${TypographyHelper.quote(safeClaims)}\n\n` +
+      `🔒 **Gizli Kanıtlar ve İfadeler (Spoiler):**\n${evidenceText}`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(
+      `📊 **Jüri / Hakem Oylama Durumu:**\n` +
+      `⚖️ Suçlu Oy: **${votes.guilty || 0}**  |  🛡️ Beraat Oy: **${votes.acquit || 0}**`
+    ),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      TypographyHelper.subtext(`Sentara Mahkeme & Yargı Sistemi • ${TypographyHelper.timestamp(new Date(), "R")}`)
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: `court_vote_guilty_${caseId}`, label: `⚖️ Suçlu (${votes.guilty || 0})`, style: ButtonStyle.Danger },
+      { custom_id: `court_vote_acquit_${caseId}`, label: `🛡️ Beraat (${votes.acquit || 0})`, style: ButtonStyle.Success },
+      { custom_id: `court_req_evidence_${caseId}`, label: "📜 Ek Kanıt Talep Et", style: ButtonStyle.Secondary },
+    ]),
+  ];
+
+  return ComponentsV2Factory.buildPayload(statusConfig.color, components);
 }
+
 
 module.exports = {
   LAW_ARTICLES,
