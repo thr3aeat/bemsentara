@@ -201,6 +201,12 @@ async function handleEpostaModalSubmit(interaction, category) {
 
     await channelA.send({ embeds: [userEmbed], components: [rowUser] });
 
+    // AI Smart Auto-Resolver: Arşiv ve SSS Kontrolü
+    try {
+      const { processTicketMessageForAutoResolution } = require('./ticketAIAutoResolver');
+      await processTicketMessageForAutoResolution(ticket, { content: `${subject} ${description}`, author: { bot: false } }, interaction.client);
+    } catch (_) {}
+
     // Welcome embed in Channel B (Mod view)
     const modEmbed = new EmbedBuilder()
       .setTitle(`🎫 E-Posta Destek Talebi — ${ticketId}`)

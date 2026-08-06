@@ -153,6 +153,14 @@ async function startAIConversation(channel, ticket, client) {
       category:  ticket.category || 'other',
     });
 
+    // ── AI Smart Auto-Resolver: Arşiv ve SSS Kontrolü ──
+    try {
+      const { processTicketMessageForAutoResolution } = require('./ticketAIAutoResolver');
+      await processTicketMessageForAutoResolution(ticket, { content: `${ticket.subject} ${ticket.description}`, author: { bot: false } }, client);
+    } catch (autoErr) {
+      console.warn('[ticketAI] Auto-Resolver check warning:', autoErr.message);
+    }
+
     // Kategori bilgisini sisteme ver
     const ctx = `Kategori: "${ticket.category || 'other'}"\nTicket konusu: "${ticket.subject}"\nAçıklama: "${ticket.description}"`;
     const history = conversationHistory.get(ticket.ticketId);

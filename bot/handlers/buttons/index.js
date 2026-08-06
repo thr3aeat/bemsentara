@@ -136,6 +136,12 @@ async function routeButtonInteraction(interaction) {
     return true;
   }
 
+  if (customId.startsWith('btn_ticket_smart_')) {
+    const { handleSmartResolveButton } = require('../../services/ticketAIAutoResolver');
+    await handleSmartResolveButton(interaction);
+    return true;
+  }
+
   if (customId.startsWith('ticket_')) {
     const handled = await handleTicketButton(interaction);
     if (handled) return true;
