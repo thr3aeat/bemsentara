@@ -83,8 +83,30 @@ async function checkAndDeleteEmptyChannel(channel) {
   }
 }
 
+/**
+ * Returns a Components V2 Control Panel payload for a temporary voice channel
+ */
+function getTempVoiceControlPanelV2(member, channel) {
+  const TempVoiceV2 = require('./tempVoiceV2');
+  const connectedUsers = channel.members.map(m => m.id);
+  
+  return TempVoiceV2.buildVoiceControlPayload({
+    channelId: channel.id,
+    channelName: channel.name,
+    ownerId: member.id,
+    ownerTag: member.user?.tag || member.displayName,
+    userCount: channel.members.size,
+    userLimit: channel.userLimit || 0,
+    isLocked: channel.permissionOverwrites.cache.some(po => po.id === channel.guild.id && po.deny.has(PermissionFlagsBits.Connect)),
+    connectedUsers: connectedUsers,
+    createdAt: channel.createdAt ? channel.createdAt.getTime() : Date.now(),
+  });
+}
+
 module.exports = {
   createTempVoiceChannel,
   checkAndDeleteEmptyChannel,
+  getTempVoiceControlPanelV2,
   tempChannels,
 };
+

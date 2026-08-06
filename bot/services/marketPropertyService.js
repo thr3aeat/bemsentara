@@ -65,4 +65,57 @@ async function sellProperty(sellerId, propertyId) {
   return { success: true, soldFor: currentPrice };
 }
 
-module.exports = { computePrice, listActiveProperties, buyProperty, sellProperty };
+/**
+ * Generates a Components V2 payload showcasing active properties for sale
+ */
+async function getPropertyMarketV2Payload(limit = 4) {
+  const ComponentsV2Factory = require('../utils/componentsV2Factory');
+  const TypographyHelper = require('../utils/typographyHelper');
+  const QuickChartHelper = require('../utils/quickChartHelper');
+  const { ButtonStyle } = require('discord.js');
+
+  const properties = await listActiveProperties(limit);
+
+  const labels = properties.map(p => p.name || `Mülk #${p._id.toString().slice(-4)}`);
+  const prices = properties.map(p => p.currentPrice || 100);
+
+  const chartUrl = QuickChartHelper.getChartUrl({
+    labels,
+    data: prices,
+    datasetLabel: "Mülk Fiyatları",
+    chartType: "bar",
+    color: "#FFD700",
+    width: 450,
+    height: 180,
+  });
+
+  const propText = properties.length > 0
+    ? properties.map((p, idx) => `${idx + 1}. **${p.name || "Gayrimenkul"}** — 💰 **$${p.currentPrice.toLocaleString()}** (Sahip: ${p.ownerId ? `<@${p.ownerId}>` : "Devlet / Satılık"})`).join("\n")
+    : "Şu anda piyasada aktif satılık gayrimenkul yok.";
+
+  return ComponentsV2Factory.buildPayload(0xFFD700, [
+    ...ComponentsV2Factory.headerBlock("Sentara Gayrimenkul & Pazar Yeri", "🏢"),
+    ComponentsV2Factory.section(
+      `Sunucumuzun dinamik pazar yerinde mülk satın alabilir veya portföyünüzdeki gayrimenkulleri satışa çıkarabilirsiniz.\n\n` +
+      `📈 **Piyasa Fiyatlandırma Trendi:** Zamana bağlı volatilite bazlı hesaplanır.`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(
+      `🏛️ **Satıştaki Gayrimenkuller Listesi:**\n${propText}`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.text(`📊 **Fiyat Endeksi Grafiği:**`),
+    ComponentsV2Factory.mediaGallery([chartUrl]),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      TypographyHelper.subtext(`Sentara Real Estate Engine • ${TypographyHelper.timestamp(new Date(), "R")}`)
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: "property_buy_menu", label: "🏢 Mülk Satın Al", style: ButtonStyle.Success },
+      { custom_id: "property_sell_menu", label: "💰 Mülkümü Sat", style: ButtonStyle.Primary },
+    ]),
+  ]);
+}
+
+module.exports = { computePrice, listActiveProperties, buyProperty, sellProperty, getPropertyMarketV2Payload };
+

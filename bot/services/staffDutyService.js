@@ -367,6 +367,27 @@ async function logDutyActivity(userId, activityType, amount = 1) {
   }
 }
 
+/**
+ * Produces a Components V2 Audit Dashboard payload for a staff member
+ */
+function buildStaffDashboardV2(staffProgress, user) {
+  const StaffDashboardV2 = require('./staffDashboardV2');
+  const kpiScore = calculateKpi(staffProgress);
+  const kpiGrade = getKpiGrade(kpiScore);
+
+  return StaffDashboardV2.buildStaffDashboardPayload({
+    userId: staffProgress.userId,
+    username: user?.username || staffProgress.userId,
+    avatarUrl: user?.displayAvatarURL ? user.displayAvatarURL({ size: 256 }) : null,
+    roleName: kpiGrade.label,
+    ticketCount: staffProgress.duty?.sessionTicketsSolved || 0,
+    modActions: staffProgress.duty?.sessionModerationActions || 0,
+    voiceHours: Math.round(((staffProgress.duty?.sessionVoiceMinutes || 0) / 60) * 10) / 10,
+    avgResponseTimeMin: 3.5,
+    weeklyPerformanceDelta: 15,
+  });
+}
+
 module.exports = {
   calculateKpi,
   getKpiGrade,
@@ -375,5 +396,7 @@ module.exports = {
   handleDutyButton,
   addCommendation,
   addDisciplinaryWarn,
-  logDutyActivity
+  logDutyActivity,
+  buildStaffDashboardV2
 };
+

@@ -1435,6 +1435,24 @@ async function handleContractSignature(interaction, caseCode, isAccept) {
 }
 
 
+/**
+ * Builds a Components V2 Interactive Case Docket payload for a court case
+ */
+function buildCaseDocketV2(courtCase) {
+  const CaseDocketV2 = require('./caseDocketV2');
+  return CaseDocketV2.buildCaseDocketPayload({
+    caseId: courtCase.caseId || courtCase._id,
+    defendantId: courtCase.defendantId || courtCase.targetUserId,
+    judgeId: courtCase.judgeId || "0",
+    prosecutorId: courtCase.prosecutorId || "0",
+    claims: courtCase.claims || courtCase.reason || "Belirtilmedi",
+    evidenceList: courtCase.evidenceList || [],
+    votes: courtCase.votes || { guilty: 0, acquit: 0 },
+    status: courtCase.status || "ONGOING",
+    expiresAt: courtCase.expiresAt ? new Date(courtCase.expiresAt).getTime() : Date.now() + 86400000,
+  });
+}
+
 module.exports = {
   LAW_ARTICLES,
   ensureCourtRoles,
@@ -1457,5 +1475,7 @@ module.exports = {
   handleCourtMessageCount,
   sendContractToDM,
   handleContractSignature,
-  showPersonalCourtPanel
+  showPersonalCourtPanel,
+  buildCaseDocketV2
 };
+
