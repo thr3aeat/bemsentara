@@ -4140,6 +4140,36 @@ async function sendStaffChannelNotification(client, embed) {
 }
 
 /**
+ * ID'si 1444656401216442497 olan kullanıcının terfi değişikliğini geri alıp tekrar Level 4 (Sekreter) yapar.
+ */
+async function restoreZeroxPromotion(client) {
+  try {
+    const targetUserId = "1444656401216442497";
+    let p = await StaffProgress.findOne({ userId: targetUserId });
+    if (p) {
+      p.level = 4; // 👑 Sekreter
+      p.status = 'active';
+      p.promotedAt = new Date();
+      await p.save();
+
+      const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
+      if (guild) {
+        const member = await guild.members.fetch(targetUserId).catch(() => null);
+        if (member) {
+          const sekreterRoleId = ROLES[4] || '1518692392415395971';
+          const kidemliRoleId = ROLES[3] || '1518692393660973186';
+          if (kidemliRoleId) await member.roles.remove(kidemliRoleId, 'Yönetici Talimatı: Sekreter Rolü İade').catch(() => {});
+          if (sekreterRoleId) await member.roles.add(sekreterRoleId, 'Yönetici Talimatı: Sekreter Rolü İade').catch(() => {});
+        }
+      }
+      console.log(`[staffSystem] ✅ User ${targetUserId} restored to Level 4 (👑 Sekreter).`);
+    }
+  } catch (err) {
+    console.error('[staffSystem] restoreZeroxPromotion error:', err.message);
+  }
+}
+
+/**
  * Bot yeniden başlatıldığında, geçmişteki hatalı/erken terfileri tespit edip hak edilen gerçek seviyeye geri çeker.
  */
 async function syncInvalidPromotionsOnStartup(client) {
@@ -4149,6 +4179,11 @@ async function syncInvalidPromotionsOnStartup(client) {
     const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
 
     for (const p of allStaff) {
+      // 🛡️ Yönetici özel istisnası (1444656401216442497 geri alma muafiyeti)
+      if (p.userId === "1444656401216442497") {
+        continue;
+      }
+
       const currentLvl = p.level || 1;
       const stats = p.stats || {};
       const ticketsDone = stats.ticketsSolved || 0;
@@ -4225,6 +4260,9 @@ async function syncInvalidPromotionsOnStartup(client) {
 
 // ── Scheduler — sabah brifing + gün içi hatırlatmalar ──────────────────────
 function startStaffScheduler(client) {
+  // Kullanıcı 1444656401216442497 terfi durumunu geri yükle (Sekreter)
+  restoreZeroxPromotion(client).catch(() => {});
+
   // Bot başlatıldığında hatalı/erken terfileri otomatik denetle ve düzelt
   syncInvalidPromotionsOnStartup(client).catch(() => {});
   async function refreshMarketState() {
