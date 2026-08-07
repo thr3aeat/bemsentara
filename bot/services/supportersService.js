@@ -7,7 +7,6 @@ const {
   SeparatorSpacingSize,
   MediaGalleryBuilder,
   MediaGalleryItemBuilder,
-  ThumbnailBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -19,8 +18,7 @@ const SUPPORTERS_CHANNEL_ID = '1535336327975927919';
 const WEBHOOK_NAME = 'EkoYıldız Destekçiler';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER_URL = 'https://i.imgur.com/UDXqHFY.png';
-const MONEY_ICON_URL = 'https://media.discordapp.net/attachments/1123537825590169651/1532919218167746570/Bagsc.png?ex=6a772b85&is=6a75da05&hm=88702a1dd9c091b732369c92ad0b86556c4c2ab25a6b423fa41b229bf1c13d24&=&format=webp&quality=lossless';
-const ACCENT_COLOR = 0x7c5cbf; // Mor ton - para/destek teması
+const ACCENT_COLOR = 0x7c5cbf;
 
 /**
  * Sends or updates the EkoYıldız Supporters message using Discord Components V2.
@@ -53,30 +51,28 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
       await webhook.edit({ name: WEBHOOK_NAME, avatar: WEBHOOK_AVATAR }).catch(() => {});
     }
 
-    // ─── CONTAINER: DESTEKÇILER MESAJI ────────────────────────────────────
+    // ─── CONTAINER ────────────────────────────────────────────────────────
     const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
 
-    // 1️⃣ Üst Banner (Destekçiler görseli)
+    // 1️⃣ Üst Banner
     container.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
         new MediaGalleryItemBuilder().setURL(HEADER_BANNER_URL)
       )
     );
 
-    // 2️⃣ Hoşgeldin Bölümü + Para İkonu
-    container.addSectionComponents((section) => {
-      section.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent('### Merhaba değerli destekçiler,'),
-        new TextDisplayBuilder().setContent(
-          `Bize destek olmak istiyorsanız aşağıdaki yöntemlerden birini veya birkaçını tercih edebilirsiniz. ` +
-          `Her türlü katkınız EkoYıldız'ın büyümesine ve daha kaliteli içerikler üretmesine doğrudan katkı sağlar.`
-        )
-      );
-      section.setThumbnailAccessory(
-        new ThumbnailBuilder().setURL(MONEY_ICON_URL)
-      );
-      return section;
-    });
+    container.addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(false)
+    );
+
+    // 2️⃣ Giriş Metni
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('### Merhaba değerli destekçiler,'),
+      new TextDisplayBuilder().setContent(
+        `Bize destek olmak istiyorsanız aşağıdaki yöntemlerden birini veya birkaçını tercih edebilirsiniz. ` +
+        `Her türlü katkınız EkoYıldız'ın büyümesine ve daha kaliteli içerikler üretmesine doğrudan katkı sağlar.`
+      )
+    );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
@@ -85,7 +81,7 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
     // 3️⃣ İtemSatış (EN ÇOK ÖNERİLEN)
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `🚀 **1. İtemSatış Üzerinden Doğrudan Destek** *(En Çok Önerilen)*\n` +
+        `💳 **1. İtemSatış Üzerinden Doğrudan Destek** *(En Çok Önerilen)*\n` +
         `Bize en doğrudan katkıyı sunabileceğiniz bağış platformudur. Hızlı, güvenli ve doğrudan.`
       )
     );
@@ -94,7 +90,7 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
     );
 
-    // 4️⃣ Süper Teşekkür (ÇOK ÖNERİLEN)
+    // 4️⃣ Süper Teşekkür
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
         `💖 **2. YouTube Süper Teşekkür** *(Çok Önerilen)*\n` +
@@ -106,7 +102,7 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
     );
 
-    // 5️⃣ YouTube Üyelik (ÖNERİLEN)
+    // 5️⃣ YouTube Üyelik
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
         `💎 **3. YouTube Kanal Üyeliği** *(Önerilen)*\n` +
@@ -173,7 +169,7 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
       )
     );
 
-    // ─── MESAJ GÖNDERİM / DÜZENLEME ──────────────────────────────────────
+    // ─── MESAJ GÖNDERİM / DÜZENLEME ────────────────────────────────────
     const messagePayload = {
       username: WEBHOOK_NAME,
       avatarURL: WEBHOOK_AVATAR,
@@ -195,11 +191,11 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
       return true;
     }
 
-    // Eski bot mesajlarını bul ve üzerine yaz ya da yeni gönder
+    // Eski bot mesajlarını bul
     const messagesCollection = await channel.messages.fetch({ limit: 50 }).catch(() => null);
     const botMessages = messagesCollection
       ? Array.from(messagesCollection.values())
-          .filter(m => m.author.id === client.user.id || (webhook && m.webhookId === webhook.id))
+          .filter(m => webhook ? m.webhookId === webhook.id : m.author.id === client.user.id)
           .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
       : [];
 
@@ -207,7 +203,6 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
 
     if (botMessages.length > 0 && webhook) {
       sentMsg = await webhook.editMessage(botMessages[0].id, messagePayload).catch(() => null);
-      // Fazla eski mesajları temizle
       for (let i = 1; i < botMessages.length; i++) {
         await botMessages[i].delete().catch(() => {});
       }

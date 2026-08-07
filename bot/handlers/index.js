@@ -393,6 +393,16 @@ function initializeDiscordHandlers(client) {
       console.error('[SupportersService] Yükleme Hatası:', err.message);
     }
 
+    // EkoYıldız Teşekkürler Mesajını Başlat (Discord Components V2)
+    try {
+      const { sendThanksMessage } = require('../services/thanksService');
+      setTimeout(() => sendThanksMessage(client).catch(err => {
+        console.error('[ThanksService] Başlatma Hatası:', err.message);
+      }), 12000);
+    } catch (err) {
+      console.error('[ThanksService] Yükleme Hatası:', err.message);
+    }
+
     // İlk defaya mahsus personele yeni gamification sistemi tanıtım mesajı at
     const { sendSystemUpdateNotification, sendV6WelcomeNotification } = require('../services/staffSystem');
     sendSystemUpdateNotification(client);
@@ -1592,6 +1602,23 @@ function initializeDiscordHandlers(client) {
         return;
       } catch (suppErr) {
         console.error('[-destekci komut hatası]:', suppErr.message);
+      }
+    }
+
+    // ── EkoYıldız Teşekkürler Komutu (-tesekkur / -teşekkür / -thanks) ─────────────────────
+    if (message.guild && (lowerContent.startsWith('-tesekkur') || lowerContent.startsWith('-teşekkür') || lowerContent.startsWith('-thanks'))) {
+      try {
+        const { sendThanksMessage } = require('../services/thanksService');
+        const forceNew = lowerContent.includes('yeni') || lowerContent.includes('new');
+        const ok = await sendThanksMessage(message.client, undefined, { forceNew });
+        if (ok) {
+          await message.reply({ content: '✅ **Teşekkürler mesajı V2 formatında başarıyla güncellendi/gönderildi!**' }).catch(() => {});
+        } else {
+          await message.reply({ content: '❌ Teşekkürler mesajı gönderilirken hata oluştu.' }).catch(() => {});
+        }
+        return;
+      } catch (thanksErr) {
+        console.error('[-tesekkur komut hatası]:', thanksErr.message);
       }
     }
 
