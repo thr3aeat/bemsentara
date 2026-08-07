@@ -1480,6 +1480,29 @@ function initializeDiscordHandlers(client) {
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
 
+    // ── Otomatik Gizli Arşiv Komutu (-arşiv / -arsiv) ──────────────────────────
+    if (message.guild && (lowerContent === "-arşiv" || lowerContent === "-arsiv" || lowerContent.startsWith("-arşiv ") || lowerContent.startsWith("-arsiv "))) {
+      try {
+        const channel = message.channel;
+        if (channel && channel.type === ChannelType.GuildText) {
+          const { handleArchiveChannel } = require("../services/archiveService");
+          
+          let cleanName = channel.name;
+          const norm = cleanName.toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
+          if (!norm.endsWith("-arsiv")) {
+            cleanName = `${channel.name}-arsiv`;
+            await channel.setName(cleanName, "Arşiv Komutu İle İsim Güncellemesi").catch(() => {});
+          }
+
+          await handleArchiveChannel(channel);
+          await message.reply({ content: "🔒 **Kanal başarıyla arşivlendi ve gizlendi.** (Bu arşivi artık @everyone ve Moderatörler görüntüleyemez.)" }).catch(() => {});
+          return;
+        }
+      } catch (archErr) {
+        console.error("[-arşiv komut hatası]:", archErr.message);
+      }
+    }
+
     const accidentalGreetingPattern = /yanlış(?:lıkla|lıkla)|uwu|oops|ne yazık ki|yanlışlıkla bu mesajı/;
     const greetingKeywords = /iyi geceler|iyi akşamlar|iyi günler|günaydın|akşamlar|geceler|hayırlı işler/;
 
