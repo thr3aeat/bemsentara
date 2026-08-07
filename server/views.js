@@ -394,12 +394,8 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 </head>
 <body>
   <header>
-    <a href="/" class="logo">
-      <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(244,63,94,0.5)); flex-shrink:0;">
-        <path d="M50 0L64.7 29.8L97.6 34.5L73.8 57.7L79.4 90.5L50 75L20.6 90.5L26.2 57.7L2.4 34.5L35.3 29.8L50 0Z" fill="#f43f5e"/>
-        <circle cx="50" cy="38" r="7" fill="white"/>
-        <path d="M35 52C35 46 41 44 50 44C59 44 65 46 65 52V70H57V58H43V70H35V52Z" fill="white"/>
-      </svg>
+    <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
+      <img src="https://i.imgur.com/PFcAc6q.png" alt="Sentara Logo" style="width:36px; height:36px; border-radius:10px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.6)); flex-shrink:0;">
       <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYıldız</span>
     </a>
     <button class="hamburger" id="hamburger" aria-label="Menü" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
@@ -861,12 +857,8 @@ function renderMainPage(user = null) {
   <div class="glow glow-2"></div>
 
   <header>
-    <a href="/" class="logo">
-      <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(244,63,94,0.5)); flex-shrink:0;">
-        <path d="M50 0L64.7 29.8L97.6 34.5L73.8 57.7L79.4 90.5L50 75L20.6 90.5L26.2 57.7L2.4 34.5L35.3 29.8L50 0Z" fill="#f43f5e"/>
-        <circle cx="50" cy="38" r="7" fill="white"/>
-        <path d="M35 52C35 46 41 44 50 44C59 44 65 46 65 52V70H57V58H43V70H35V52Z" fill="white"/>
-      </svg>
+    <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
+      <img src="https://i.imgur.com/PFcAc6q.png" alt="Sentara Logo" style="width:36px; height:36px; border-radius:10px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.6)); flex-shrink:0;">
       <span>EkoYıldız</span>
     </a>
     <nav>
@@ -905,7 +897,7 @@ function renderMainPage(user = null) {
     </div>
     <div class="hero-mascot-box">
       <div class="hero-mascot-glow"></div>
-      <img src="/public/assets/mascot.png" alt="EkoYıldız Mascot" class="hero-mascot-img">
+      <img src="https://i.imgur.com/NzyMqMK.png" alt="EkoYıldız Maskot" class="hero-mascot-img">
     </div>
   </div>
 
