@@ -16,12 +16,12 @@ const { appMeta, saveStoreNow } = require('../../models/Store');
 
 const EKO_SUPPORT_CHANNEL_ID = '1518692475189854218';
 const HEADER_BANNER_URL = 'https://i.imgur.com/bWvBM0N.png';
-const ACCENT_COLOR = 0x5865F2; // Discord blurple — premium destek teması
+const ACCENT_COLOR = 0x2b2d31;
 
 function buildSupportContainer() {
   const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
 
-  // ── BANNER ────────────────────────────────────────────────────────────
+  // 1️⃣ Banner
   container.addMediaGalleryComponents(
     new MediaGalleryBuilder().addItems(
       new MediaGalleryItemBuilder().setURL(HEADER_BANNER_URL)
@@ -32,35 +32,16 @@ function buildSupportContainer() {
     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(false)
   );
 
-  // ── BAŞLIK ────────────────────────────────────────────────────────────
+  // 2️⃣ Başlık
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent('## 📬 İletişim ve Destek Kanalı'),
-    new TextDisplayBuilder().setContent(
-      '> Sunucu hakkında yaşadığınız problemler ve sorularınız için aşağıdaki seçenekleri kullanabilirsiniz. ' +
-      'Talep oluştururken kuralları ihlal etmediğinizden **emin olun.**'
-    )
+    new TextDisplayBuilder().setContent('## İletişim ve Destek Kanalı')
   );
 
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
-  );
-
-  // ── KURALLAR BAŞLIĞI ──────────────────────────────────────────────────
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent('### 📋 Destek Talebi Oluşturmadan Önce')
-  );
-
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
-  );
-
-  // ── KURALLAR: BLOK 1 ──────────────────────────────────────────────────
+  // 3️⃣ Açıklama (alıntı bloğu)
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      '* 🚫 Troll, şaka veya deneme amaçlı destek talebi **açmayın.**\n' +
-      '* ✅ Sorununuzun gerçekten desteğe ihtiyaç duyduğundan **emin olun.**\n' +
-      '* 🔁 Daha önce açtığınız bir talep varsa yeni bir tane **açmayın.**\n' +
-      '* 🏷️ Reklam destek için doğru kategoriyi **seçtiğinizden emin olun.**'
+      `> Sunucu hakkında yaşadığınız problemler ve sorularınız için aşağıdaki seçenekleri kullanabilirsiniz. ` +
+      `Talep oluştururken kuralları ihlal etmediğinizden emin olun.`
     )
   );
 
@@ -68,15 +49,21 @@ function buildSupportContainer() {
     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
 
-  // ── KURALLAR: BLOK 2 ──────────────────────────────────────────────────
+  // 4️⃣ Kurallar
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      '* 💬 Konu başlığını ve açıklamayı **net bir şekilde yazın.**\n' +
-      '* 📎 Kanıtlarınızın (SS, video, ID vb.) hazır ve doğru olduğundan **emin olun.**\n' +
-      '* 📖 Sunucu kurallarını okuduğunuzdan ve ihlal etmediğinizden **emin olun.**\n' +
-      '* ⏳ Yetkilileri veya herhangi bir üyeyi **etiketlemeyin,** sabırlı olun.\n' +
-      '* 🗂️ Sorununuzun doğru kategoriye ait olduğundan **emin olun.**\n' +
-      '* 🙅 Başkasının adına talep **açmayın.**'
+      `* **Destek talebi oluşturmadan önce;**\n` +
+      `  * Troll, şaka veya deneme amaçlı destek talebi açmayın.\n` +
+      `  * Sorununuzun gerçekten desteğe ihtiyaç duyduğundan emin olun.\n` +
+      `  * Daha önce açtığınız bir talep varsa yeni bir tane açmayın.\n` +
+      `  * Reklam destek için doğru kategoriyi seçtiğinizden emin olun.\n` +
+      `  * Eğer kendinizi kötü hissediyor, asker oyunu bağımlılığı yaşıyor veya birisi sizi panikletiyorsa, **Kullanıcı Destek** açın.\n` +
+      `  * Konu başlığını ve açıklamayı net bir şekilde yazın.\n` +
+      `  * Kanıtlarınızın (SS, video, ID vb.) hazır ve doğru olduğundan emin olun.\n` +
+      `  * Sunucu kurallarını okuduğunuzdan ve ihlal etmediğinizden emin olun.\n` +
+      `  * Yetkilileri veya herhangi bir üyeyi etiketlemeyin, sabırlı olun.\n` +
+      `  * Sorununuzun doğru kategoriye ait olduğundan emin olun.\n` +
+      `  * Başkasının adına talep açmayın.`
     )
   );
 
@@ -84,43 +71,12 @@ function buildSupportContainer() {
     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
 
-  // ── ÖZEL NOT: KENDİNİZİ KÖTÜ HİSSEDİYORSANIZ ────────────────────────
+  // 5️⃣ Form açıklaması
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      '> 💙 Eğer kendinizi kötü hissediyor, bir bağımlılık yaşıyor veya biri sizi rahatsız ediyorsa — ' +
-      '**Kullanıcı Destek** seçeneğini seçin. Size yardımcı olmaya çalışacağız.'
-    )
-  );
-
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
-  );
-
-  // ── FORM SÜRECİ ──────────────────────────────────────────────────────
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent('### ⚙️ Süreç Nasıl İşler?')
-  );
-
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
-  );
-
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(
-      '**1.** Aşağıdaki menüden uygun kategoriyi seçin.\n' +
-      '**2.** Karşınıza çıkan formu eksiksiz doldurun.\n' +
-      '**3.** Formu gönderdikten sonra **yalnızca sizin ve yetkili ekibimizin** görebileceği özel bir kanal açılır.\n' +
-      '**4.** Sorununuzu bu kanal üzerinden detaylıca paylaşın; gerekli kanıtları ekleyin.'
-    )
-  );
-
-  container.addSeparatorComponents(
-    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-  );
-
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(
-      '-# EkoYıldız Destek Sistemi • Talepler en kısa sürede yanıtlanır. Sabırlı olduğunuz için teşekkür ederiz. 💜'
+      `Destek talep seçeneğinizi seçtikten sonra ekranınıza bir form gelecek. Bu formda seçtiğiniz seçeneğe göre içerik hazırlanır, ` +
+      `böylece size daha hızlı yardımcı olabiliriz. Formu gönderdikten sonra yalnızca sizin ve yetkili ekibimizin erişebileceği ` +
+      `özel bir kanal oluşturulacaktır. Sorununuzla ilgili detayları bu kanal üzerinden paylaşabilirsiniz.`
     )
   );
 
@@ -142,19 +98,19 @@ function buildSelectMenu() {
         {
           label: 'Şikayette bulunmak istiyorum',
           value: 'sikayet_destek',
-          description: 'Sunucuda bir sorun yaşıyorsan şikayette bulunabilirsin.',
+          description: 'Sunucuda bir sorun yaşıyorsan şikayette bulunmak istiyoruma tıklayabilirsin.',
           emoji: '❗'
         },
         {
           label: 'Kullanıcı Destek',
           value: 'kullanici_destek',
-          description: 'Birisi seni rahatsız ediyorsa veya yardıma ihtiyacın varsa.',
+          description: 'Birisi seni rahatsız ediyorsa veya yardıma ihtiyacın varsa buradan ulaş.',
           emoji: '👤'
         },
         {
           label: 'Yönetim ekibi ile görüşmek istiyorum',
           value: 'yonetim_destek',
-          description: 'EkoYıldız yönetim ekibi ile iletişim için bu seçeneği seç.',
+          description: 'EkoYıldız sunucu yönetim ekip üyeleriyle iletişim için bu seçeneği seç.',
           emoji: '👑'
         },
         {
@@ -196,12 +152,12 @@ async function ensureEkoSupportMessage(client) {
       return;
     }
 
-    // Eski mesajları temizle
+    // Eski embed tabanlı mesajı bul ve sil
     const msgs = await channel.messages.fetch({ limit: 20 }).catch(() => null);
     if (msgs) {
       for (const [, m] of msgs) {
         if (m.author.id === client.user.id) {
-          await m.delete().catch(() => {});
+          await m.delete().catch(() => { });
         }
       }
     }
