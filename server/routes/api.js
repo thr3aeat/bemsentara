@@ -11,13 +11,13 @@ router.get("/api/social-stats", (req, res) => {
       success: true,
       stats: {
         youtube1: 7420,
-        youtube2: 2100,
-        tiktok: 15800,
-        kick: 4500,
-        twitch: 3200,
-        instagram1: 8900,
-        instagram2: 2400,
-        total: 44320
+        youtube2: 1910,
+        tiktok: 150,
+        kick: 0,
+        twitch: 0,
+        instagram1: 0,
+        instagram2: 0,
+        total: 9480
       }
     });
   }

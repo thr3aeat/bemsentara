@@ -1115,26 +1115,26 @@ function renderMainPage(user = null) {
         if (data.success && data.stats) {
           const s = data.stats;
           animateCounter('stat-youtube1', s.youtube1 || 7420);
-          animateCounter('stat-youtube2', s.youtube2 || 2100);
-          animateCounter('stat-tiktok', s.tiktok || 15800);
-          animateCounter('stat-kick', s.kick || 4500);
-          animateCounter('stat-twitch', s.twitch || 3200);
-          animateCounter('stat-instagram1', s.instagram1 || 8900);
+          animateCounter('stat-youtube2', s.youtube2 || 1910);
+          animateCounter('stat-tiktok', s.tiktok || 150);
+          animateCounter('stat-kick', s.kick || 0);
+          animateCounter('stat-twitch', s.twitch || 0);
+          animateCounter('stat-instagram1', s.instagram1 || 0);
         } else {
           animateCounter('stat-youtube1', 7420);
-          animateCounter('stat-youtube2', 2100);
-          animateCounter('stat-tiktok', 15800);
-          animateCounter('stat-kick', 4500);
-          animateCounter('stat-twitch', 3200);
-          animateCounter('stat-instagram1', 8900);
+          animateCounter('stat-youtube2', 1910);
+          animateCounter('stat-tiktok', 150);
+          animateCounter('stat-kick', 0);
+          animateCounter('stat-twitch', 0);
+          animateCounter('stat-instagram1', 0);
         }
       } catch (err) {
         animateCounter('stat-youtube1', 7420);
-        animateCounter('stat-youtube2', 2100);
-        animateCounter('stat-tiktok', 15800);
-        animateCounter('stat-kick', 4500);
-        animateCounter('stat-twitch', 3200);
-        animateCounter('stat-instagram1', 8900);
+        animateCounter('stat-youtube2', 1910);
+        animateCounter('stat-tiktok', 150);
+        animateCounter('stat-kick', 0);
+        animateCounter('stat-twitch', 0);
+        animateCounter('stat-instagram1', 0);
       }
     }
 

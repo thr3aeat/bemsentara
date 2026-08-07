@@ -11,7 +11,7 @@ const VOICE_CHANNEL_ID = '1535296197017997343';
  */
 function parseCount(str) {
   if (!str) return 0;
-  
+
   const mMatch = str.match(/([\d.,]+)\s*(million|m|mn|milyon)/i);
   if (mMatch) {
     const val = parseFloat(mMatch[1].replace(',', '.'));
@@ -30,13 +30,13 @@ function parseCount(str) {
 
 // Memory cache of last known positive follower counts to ensure website stability even if platforms block requests
 const lastKnownCounts = {
-  youtube1: 7420,
-  youtube2: 2100,
-  tiktok: 15800,
-  kick: 4500,
-  twitch: 3200,
-  instagram1: 8900,
-  instagram2: 2400
+  youtube2: 7420,
+  youtube1: 1910,
+  tiktok: 150,
+  kick: 0,
+  twitch: 0,
+  instagram1: 180,
+  instagram2: 72
 };
 
 let lastChannelRenameTimestamp = 0;
@@ -66,9 +66,9 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.youtube.com/@eko8yildiz', { headers, timeout: 8000 });
     const match = res.data.match(/"subscriberCountText":\s*\{[^}]*"simpleText":"([^"]+)"/i) ||
-                  res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
-                  res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
-                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
+      res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
+      res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
+      res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
     const count = match ? parseCount(match[1]) : 0;
     if (count > 0) {
       lastKnownCounts.youtube1 = count;
@@ -84,9 +84,9 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.youtube.com/@eko8yildiz2', { headers, timeout: 8000 });
     const match = res.data.match(/"subscriberCountText":\s*\{[^}]*"simpleText":"([^"]+)"/i) ||
-                  res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
-                  res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
-                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
+      res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
+      res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
+      res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
     const count = match ? parseCount(match[1]) : 0;
     if (count > 0) {
       lastKnownCounts.youtube2 = count;
@@ -102,8 +102,8 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.tiktok.com/@kimdirbueko', { headers, timeout: 8000 });
     const match = res.data.match(/"followerCount":(\d+)/i) ||
-                  res.data.match(/"stats":\{"followerCount":(\d+)/i) ||
-                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon)?)\s*Followers/i);
+      res.data.match(/"stats":\{"followerCount":(\d+)/i) ||
+      res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon)?)\s*Followers/i);
     const count = match ? parseCount(match[1]) : 0;
     if (count > 0) {
       lastKnownCounts.tiktok = count;
@@ -133,7 +133,7 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.twitch.tv/ekoyildiz', { headers, timeout: 8000 });
     const match = res.data.match(/"followers":\{"totalCount":(\d+)\}/i) ||
-                  res.data.match(/"totalCount":(\d+)/i);
+      res.data.match(/"totalCount":(\d+)/i);
     const count = match ? parseInt(match[1], 10) : 0;
     if (count > 0) {
       lastKnownCounts.twitch = count;
@@ -149,7 +149,7 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.instagram.com/ekonqt/', { headers, timeout: 8000 });
     const match = res.data.match(/"edge_followed_by":\{"count":(\d+)\}/i) ||
-                  res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
+      res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
     const count = match ? parseCount(match[1]) : 0;
     if (count > 0) {
       lastKnownCounts.instagram1 = count;
@@ -165,7 +165,7 @@ async function fetchTotalSocialFollowers() {
   try {
     const res = await axios.get('https://www.instagram.com/egee7dino/', { headers, timeout: 8000 });
     const match = res.data.match(/"edge_followed_by":\{"count":(\d+)\}/i) ||
-                  res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
+      res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
     const count = match ? parseCount(match[1]) : 0;
     if (count > 0) {
       lastKnownCounts.instagram2 = count;
