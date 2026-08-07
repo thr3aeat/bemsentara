@@ -7,6 +7,50 @@ const ACTIVE_GUILD_ID = "1367646464804655104"; // EKO YILDIZ
 const RECORD_GUILD_ID = "1466927911364726845"; // Profile Channels Guild
 const RECORD_CATEGORY_ID = "1533884763507789965"; // Category ID
 
+/**
+ * Safely fetches the target guild for profile logging channels with fallback.
+ */
+async function getRecordGuild(client, preferredGuildId) {
+  try {
+    let guild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    if (!guild) {
+      const gId = preferredGuildId || ACTIVE_GUILD_ID;
+      guild = await client.guilds.fetch(gId).catch(() => null);
+    }
+    if (!guild && client.guilds.cache.size > 0) {
+      guild = client.guilds.cache.first();
+    }
+    return guild;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Safely fetches or creates the category for trust score profile channels.
+ */
+async function getRecordCategory(recordGuild) {
+  if (!recordGuild) return null;
+  try {
+    let category = recordGuild.channels.cache.get(RECORD_CATEGORY_ID);
+    if (!category) {
+      category = recordGuild.channels.cache.find(c => c.type === ChannelType.GuildCategory && (
+        c.name.includes("GÜVENLİK") || c.name.includes("GÜVEN") || c.name.includes("TRUST") || c.name.includes("PROFİL")
+      ));
+      if (!category) {
+        category = await recordGuild.channels.create({
+          name: "GÜVENLİK PROFİLLERİ",
+          type: ChannelType.GuildCategory,
+          reason: "Güvenlik Profilleri Otomatik Kategori"
+        }).catch(() => null);
+      }
+    }
+    return category;
+  } catch (_) {
+    return null;
+  }
+}
+
 // In-memory mutex/lock set to prevent race condition channel creation
 const activeChannelCreationLocks = new Set();
 
@@ -135,8 +179,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
 
     await record.save();
 
-    // Check if channel exists on logging guild
-    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    // Check if channel exists on logging guild with fallback
+    const recordGuild = await getRecordGuild(client, guildId);
     if (recordGuild) {
       let channel = null;
       if (record.profileChannelId) {
@@ -150,10 +194,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         }
       }
 
-      // ONLY create a new channel IF:
-      // 1) forceCreate === true (e.g. explicitly requested by mod/command), OR
-      // 2) User is in High Risk (< 50.0) AND profileChannelClosed is NOT true
-      const shouldCreate = forceCreate || (record.trustScore < 50.0 && !record.profileChannelClosed && !record.profileChannelId);
+      // Create channel if forceCreate or if profile channel does not exist and isn't closed
+      const shouldCreate = forceCreate || (!record.profileChannelClosed && !record.profileChannelId);
 
       if (!channel && shouldCreate) {
         // Prevent race condition duplicate channel creation via in-memory lock
@@ -163,6 +205,9 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         activeChannelCreationLocks.add(userId);
 
         try {
+          const category = await getRecordCategory(recordGuild);
+          const parentId = category ? category.id : null;
+
           const permissionOverwrites = [
             {
               id: recordGuild.roles.everyone.id,
@@ -199,9 +244,9 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
 
           // Create dynamic channel
           channel = await recordGuild.channels.create({
-            name: cleanName,
+            name: `g-${cleanName}`,
             type: ChannelType.GuildText,
-            parent: RECORD_CATEGORY_ID,
+            parent: parentId,
             permissionOverwrites,
             reason: `Güvenlik Profili: ${record.username}`
           }).catch((err) => {
@@ -229,8 +274,6 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         }
       }
     }
-
-    return record;
 
     return record;
   } catch (err) {
@@ -326,7 +369,7 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
 
     // Log to their profile channel
     if (record.profileChannelId) {
-      const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+      const recordGuild = await getRecordGuild(client).catch(() => null);
       if (recordGuild) {
         const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
         if (channel) {
@@ -377,7 +420,7 @@ async function incrementAfProgress(userId, client) {
       
       // Log to their channel
       if (record.profileChannelId) {
-        const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+        const recordGuild = await getRecordGuild(client).catch(() => null);
         if (recordGuild) {
           const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
           if (channel) {
@@ -543,7 +586,7 @@ async function buildProfileEmbed(record, client) {
  */
 async function updateProfileEmbed(record, client) {
   try {
-    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    const recordGuild = await getRecordGuild(client).catch(() => null);
     if (!recordGuild || !record.profileChannelId || !record.profileMessageId) return;
 
     const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
@@ -895,7 +938,7 @@ async function runInactivityDecay(client) {
               await record.save();
               
               if (record.profileChannelId) {
-                const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+                const recordGuild = await getRecordGuild(client).catch(() => null);
                 if (recordGuild) {
                   const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
                   if (channel) {
@@ -942,7 +985,7 @@ function startTrustScoreDecayScheduler(client) {
  */
 async function cleanupDuplicateTrustChannels(client) {
   try {
-    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    const recordGuild = await getRecordGuild(client).catch(() => null);
     if (!recordGuild) return;
 
     console.log("[TrustScore] Bot Başlangıcı: Çift Kanal Teşhis & Temizlik Taraması...");
@@ -1032,7 +1075,7 @@ async function logTrustUserActivity(client, userId, actionTitle, actionDetails, 
     const record = await UserTrustScore.findOne({ userId });
     if (!record || !record.profileChannelId) return;
 
-    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    const recordGuild = await getRecordGuild(client).catch(() => null);
     if (!recordGuild) return;
 
     const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);

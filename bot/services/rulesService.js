@@ -84,7 +84,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     container1.addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Medium).setDivider(true)
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
     // Bölüm 2: Güvenlik ve Gizlilik
@@ -112,7 +112,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     container2.addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Medium).setDivider(true)
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
     // Bölüm 4: Saygı, Düzen ve Reklam
@@ -129,7 +129,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     container2.addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Medium).setDivider(true)
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
     // Bölüm 5: Anayasa ve Özel Hükümler

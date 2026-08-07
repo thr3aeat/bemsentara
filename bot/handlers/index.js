@@ -105,7 +105,7 @@ function initializeDiscordHandlers(client) {
 
   // Çift Yönlü Güven ve Performans Puanı Sistemi
   const { initializeTrustScoreHandlers } = require("./trustScoreHandler");
-  // Yeni Kategori Oluşturulduğunda Otomatik Emoji + Arrow Biçimlendirme
+  // Yeni Kategori Oluşturulduğunda Otomatik Büyük Harf + Arrow Biçimlendirme
   client.on("channelCreate", async (channel) => {
     try {
       if (!channel || channel.type !== ChannelType.GuildCategory) return;
@@ -114,17 +114,22 @@ function initializeDiscordHandlers(client) {
       if (!name) return;
 
       const match = name.match(/^([\p{Extended_Pictographic}\p{Emoji_Presentation}\ufe0f\u200d]+)(.*)$/u);
+      let newName;
       if (match) {
         const emoji = match[1];
         const rest = match[2];
         const cleanRest = rest.replace(/^[\s\-_→\->]+/, '').trim();
-        if (cleanRest && !name.includes('→')) {
-          const newName = `${emoji} → ${cleanRest}`;
-          console.log(`[categoryAutoFormat] 🔄 New category created: "${name}" -> "${newName}"`);
-          await channel.setName(newName).catch((err) => {
-            console.error(`[categoryAutoFormat] Failed to rename category "${name}":`, err.message);
-          });
-        }
+        const upperRest = cleanRest.toLocaleUpperCase('tr-TR');
+        newName = upperRest ? `${emoji} → ${upperRest}` : name.toLocaleUpperCase('tr-TR');
+      } else {
+        newName = name.toLocaleUpperCase('tr-TR');
+      }
+
+      if (newName && newName !== name) {
+        console.log(`[categoryAutoFormat] 🔄 New category auto-formatted: "${name}" -> "${newName}"`);
+        await channel.setName(newName).catch((err) => {
+          console.error(`[categoryAutoFormat] Failed to rename category "${name}":`, err.message);
+        });
       }
     } catch (err) {
       console.error("[categoryAutoFormat] Error handling channelCreate:", err.message);
@@ -154,6 +159,16 @@ function initializeDiscordHandlers(client) {
     const { startJailScheduler } = require("../services/jailService");
 
     startJailScheduler(client);
+
+    // Tüm Kategorilerin Büyük Harfe Dönüştürülmesi (Startup)
+    try {
+      const { formatGuildChannelNames } = require('../services/channelAestheticsService');
+      setTimeout(() => formatGuildChannelNames(client).catch(err => {
+        console.error('[channelAesthetics] Başlatma Hatası:', err.message);
+      }), 8000);
+    } catch (err) {
+      console.error('[channelAesthetics] Yükleme Hatası:', err.message);
+    }
 
     // Start Voice Scan Scheduler for Trust Score System
     try {

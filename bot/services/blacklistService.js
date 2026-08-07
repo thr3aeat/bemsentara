@@ -150,9 +150,7 @@ async function renderBlacklist(client) {
     // En başa belirtilen görseli koyuyoruz
     headerContainer.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
-        new MediaGalleryItemBuilder()
-          .setURL(HEADER_BANNER_URL)
-          .setAltText('Karaliste Banner')
+        new MediaGalleryItemBuilder().setURL(HEADER_BANNER_URL)
       )
     );
 
