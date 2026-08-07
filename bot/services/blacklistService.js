@@ -1,6 +1,6 @@
 'use strict';
 
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Blacklist = require('../../models/Blacklist');
 
 const BLACKLIST_CHANNEL_ID = '1518692472367222915';
@@ -52,7 +52,7 @@ const DEFAULT_GROUPS = [
 ];
 
 /**
- * Seeds the blacklist database with default values if it is empty, and renders the initial message
+ * Seeds default data if empty and runs initial render
  */
 async function initializeBlacklist(client) {
   try {
@@ -70,13 +70,11 @@ async function initializeBlacklist(client) {
       console.log('[blacklist] Seeding complete.');
     }
 
-    // DB migration: Clean existing entries with invalid formatting characters (newlines, asterisks, tildes)
     const allEntries = await Blacklist.find();
     for (const entry of allEntries) {
       const cleanName = cleanBlacklistName(entry.name);
       const cleanReason = cleanBlacklistReason(entry.reason);
       if (entry.name !== cleanName || entry.reason !== cleanReason) {
-        console.log(`[blacklist] Migrating entry: "${entry.name}" -> "${cleanName}"`);
         entry.name = cleanName;
         entry.reason = cleanReason;
         await entry.save().catch(e => console.error('[blacklist] Migration save error:', e.message));
@@ -90,7 +88,7 @@ async function initializeBlacklist(client) {
 }
 
 /**
- * Generates the blacklist representation and posts/updates it in the designated channel
+ * Generates the unified single Embed Blacklist representation with Components v2 ActionRow
  */
 async function renderBlacklist(client) {
   try {
@@ -104,130 +102,81 @@ async function renderBlacklist(client) {
     const groups = await Blacklist.find({ type: 'group' }).sort({ createdAt: 1 });
 
     const formatList = (list) => {
-      if (list.length === 0) return '*(Temiz)*';
+      if (list.length === 0) return '> *(Kayıt bulunmuyor)*';
       return list.map(item => {
         const isRemoved = item.status === 'removed';
         const cleanName = cleanBlacklistName(item.name);
         const cleanReason = cleanBlacklistReason(item.reason);
-        const formattedName = isRemoved ? `~~**${cleanName}**~~` : `**${cleanName}**`;
-        const reasonText = cleanReason ? ` (${cleanReason})` : '';
-        const statusText = isRemoved ? ' - *[Kaldırıldı (15 gün sonra silinecek)]*' : '';
-        return `* ${formattedName}${reasonText}${statusText}`;
+        if (isRemoved) {
+          return `> ❌ ~~**${cleanName}**~~ • *[15 Günlük Silinme Sürecinde]*`;
+        }
+        const reasonText = cleanReason ? ` • *${cleanReason}*` : '';
+        return `> ⛔ **${cleanName}**${reasonText}`;
       }).join('\n');
     };
 
-    const mainContent = `# 🚫 KARALİSTE (BLACKLIST)\n\n` +
-      `Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.\n\n` +
-      `### 👤 Engellenen Kişiler\n\n` +
-      `${formatList(people)}\n\n` +
-      `### 🛡️ İlgili Gruplar / Platformlar\n\n` +
-      `${formatList(groups)}`;
+    const formattedPeople = formatList(people);
+    const formattedGroups = formatList(groups);
 
-    // Helper to split text into chunks of <= 1900 chars, preserving lines
-    const splitTextIntoChunks = (text, maxLength = 1900) => {
-      const lines = text.split('\n');
-      const chunks = [];
-      let currentChunk = '';
-
-      for (const line of lines) {
-        if (line.length > maxLength) {
-          let tempLine = line;
-          while (tempLine.length > 0) {
-            const part = tempLine.substring(0, maxLength);
-            tempLine = tempLine.substring(maxLength);
-            if (currentChunk.length + part.length + 1 > maxLength) {
-              chunks.push(currentChunk.trim());
-              currentChunk = part;
-            } else {
-              currentChunk = currentChunk ? currentChunk + '\n' + part : part;
-            }
-          }
-        } else if (currentChunk.length + line.length + 1 > maxLength) {
-          chunks.push(currentChunk.trim());
-          currentChunk = line;
-        } else {
-          currentChunk = currentChunk ? currentChunk + '\n' + line : line;
-        }
-      }
-      if (currentChunk) {
-        chunks.push(currentChunk.trim());
-      }
-      return chunks;
-    };
-
-    const chunks = splitTextIntoChunks(mainContent);
-
-    // Create custom Turkish date string
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('tr-TR', {
-      timeZone: 'Europe/Istanbul',
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    });
-    const dateStr = formatter.format(now);
-
-    const updateEmbed = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setColor(0xed4245)
-      .setTitle('ℹ️ Karaliste Bilgi ve Güncelleme')
-      .setDescription(`**Son Güncelleme:** ${dateStr}`)
-      .setFooter({ text: 'Eko Yıldız • Karaliste Sistemi' })
+      .setTitle('🚫 KARALİSTE (BLACKLIST)')
+      .setThumbnail('https://i.imgur.com/HT7bvru.png')
+      .setDescription(
+        'Aşağıda belirtilen kullanıcılar ve dahil oldukları grup/platformlar, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; **Karaliste**\'ye alınmıştır.'
+      )
+      .addFields(
+        { name: '👤 Engellenen Kişiler', value: formattedPeople.slice(0, 1024), inline: false },
+        { name: '🛡️ İlgili Gruplar / Platformlar', value: formattedGroups.slice(0, 1024), inline: false }
+      )
+      .setFooter({
+        text: 'Eko Yıldız • Karaliste Yönetim Sistemi',
+        iconURL: client.user.displayAvatarURL()
+      })
       .setTimestamp();
 
-    // Fetch message history to find previous posts
-    const messagesCollection = await channel.messages.fetch({ limit: 100 }).catch(() => null);
-    if (!messagesCollection) {
-      console.warn('[blacklist] Failed to fetch message history.');
-      return;
-    }
+    // Components v2 ActionRow (Interactive Buttons)
+    const actionRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('blacklist_btn_rules')
+        .setLabel('Kurallar & Formatlar')
+        .setEmoji('ℹ️')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('blacklist_btn_refresh')
+        .setLabel('Listeyi Yenile')
+        .setEmoji('🔄')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('blacklist_btn_stats')
+        .setLabel('İstatistikler')
+        .setEmoji('📊')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    // Single Embed Architecture: fetch messages, edit existing primary bot embed or send new
+    const messagesCollection = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+    if (!messagesCollection) return;
 
     const botMessages = Array.from(messagesCollection.values())
-      .filter(m => m.author.id === client.user.id)
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp); // Oldest first
+      .filter(m => m.author.id === client.user.id);
 
-    // Find and extract update embed message
-    const updateMsgIndex = botMessages.findIndex(m => m.embeds.length > 0 && m.embeds[0].title === 'ℹ️ Karaliste Bilgi ve Güncelleme');
-    let updateMsg = null;
-    if (updateMsgIndex !== -1) {
-      updateMsg = botMessages[updateMsgIndex];
-      botMessages.splice(updateMsgIndex, 1); // Remove from list messages
+    const primaryMsg = botMessages.find(m => m.embeds.length > 0 && m.embeds[0].title?.includes('KARALİSTE'));
+    const surplusMessages = botMessages.filter(m => m.id !== primaryMsg?.id);
+
+    // Clean up surplus bot messages to maintain a single pristine embed channel
+    for (const msg of surplusMessages) {
+      await msg.delete().catch(() => {});
     }
 
-    const contentMessages = botMessages;
-    let sentNewContentMsg = false;
-
-    // Update content messages chunk by chunk
-    for (let i = 0; i < chunks.length; i++) {
-      if (i < contentMessages.length) {
-        await contentMessages[i].edit({ content: chunks[i] }).catch(err => {
-          console.error(`[blacklist] Failed to edit content message ${i}:`, err.message);
-        });
-      } else {
-        await channel.send({ content: chunks[i] }).catch(err => {
-          console.error(`[blacklist] Failed to send new content message:`, err.message);
-        });
-        sentNewContentMsg = true;
-      }
-    }
-
-    // Delete surplus content messages
-    if (contentMessages.length > chunks.length) {
-      for (let i = chunks.length; i < contentMessages.length; i++) {
-        await contentMessages[i].delete().catch(err => {
-          console.warn(`[blacklist] Failed to delete surplus message:`, err.message);
-        });
-      }
-    }
-
-    // Update or re-send update embed
-    if (updateMsg) {
-      if (sentNewContentMsg) {
-        await updateMsg.delete().catch(() => {});
-        await channel.send({ embeds: [updateEmbed] }).catch(() => {});
-      } else {
-        await updateMsg.edit({ embeds: [updateEmbed] }).catch(() => {});
-      }
+    if (primaryMsg) {
+      await primaryMsg.edit({ embeds: [embed], components: [actionRow] }).catch(err => {
+        console.error('[blacklist] Failed to edit primary embed:', err.message);
+      });
     } else {
-      await channel.send({ embeds: [updateEmbed] }).catch(() => {});
+      await channel.send({ embeds: [embed], components: [actionRow] }).catch(err => {
+        console.error('[blacklist] Failed to send primary embed:', err.message);
+      });
     }
   } catch (err) {
     console.error('[blacklist] Render error:', err.stack || err.message);
@@ -235,8 +184,62 @@ async function renderBlacklist(client) {
 }
 
 /**
+ * Interactive button handler for Components v2 Blacklist Buttons
+ */
+async function handleBlacklistButtons(interaction) {
+  const { customId, client } = interaction;
+
+  if (customId === 'blacklist_btn_rules') {
+    await interaction.reply({
+      content:
+        `📜 **Karaliste Kuralları & Format Rehberi**\n\n` +
+        `• **Kişi Ekleme Formatı:** \`Kişiİsmi - Sebep\`\n` +
+        `• **Grup Ekleme Formatı:** \`Grup/Grupİsmi - Sebep\`\n` +
+        `• **Kaldırma / Pasife Alma:** \`Kaldır İsmi\` *(15 günlük silinme sürecine girer)*\n` +
+        `• **Tamamen Silme:** \`Sil İsmi\`\n` +
+        `• **Yeniden Açma:** \`Aç İsmi\`\n\n` +
+        `*Not: Karaliste kanalına yazılan komut dışı mesajlar otomatik olarak temizlenir.*`,
+      ephemeral: true
+    }).catch(() => {});
+    return true;
+  }
+
+  if (customId === 'blacklist_btn_refresh') {
+    await renderBlacklist(client);
+    await interaction.reply({
+      content: `✅ **Karaliste veritabanından başarıyla yenilendi ve güncellendi!**`,
+      ephemeral: true
+    }).catch(() => {});
+    return true;
+  }
+
+  if (customId === 'blacklist_btn_stats') {
+    const activePeopleCount = await Blacklist.countDocuments({ type: 'person', status: { $ne: 'removed' } });
+    const activeGroupsCount = await Blacklist.countDocuments({ type: 'group', status: { $ne: 'removed' } });
+    const removedCount = await Blacklist.countDocuments({ status: 'removed' });
+    const totalCount = await Blacklist.countDocuments();
+
+    const statsEmbed = new EmbedBuilder()
+      .setColor(0x3498db)
+      .setTitle('📊 Karaliste İstatistik Verileri')
+      .addFields(
+        { name: '👤 Aktif Engellenen Kişiler', value: `\`${activePeopleCount}\` kişi`, inline: true },
+        { name: '🛡️ Aktif Engellenen Gruplar', value: `\`${activeGroupsCount}\` grup`, inline: true },
+        { name: '⏳ Silinme Sürecindeki Kayıtlar', value: `\`${removedCount}\` kayıt`, inline: true },
+        { name: '📁 Toplam Veritabanı Kaydı', value: `\`${totalCount}\` adet`, inline: true }
+      )
+      .setFooter({ text: 'Eko Yıldız • Canlı İstatistik' })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [statsEmbed], ephemeral: true }).catch(() => {});
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Parses and processes a message written in the blacklist channel.
- * Cleans the message, parses the formatting, executes DB operation, and updates lists.
  */
 async function handleBlacklistMessage(message, client) {
   if (message.author.bot) return;
@@ -244,12 +247,10 @@ async function handleBlacklistMessage(message, client) {
   const content = message.content.trim();
   const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
 
-  // Helper to delete original message
   const deleteMessage = () => {
     message.delete().catch(err => console.warn(`[blacklist] Failed to delete user message:`, err.message));
   };
 
-  // Helper to send temporary warning
   const sendWarning = async (warningText) => {
     deleteMessage();
     const warnMsg = await message.channel.send({ content: warningText }).catch(() => null);
@@ -260,14 +261,12 @@ async function handleBlacklistMessage(message, client) {
     }
   };
 
-  // Regular expression patterns
   const additionPattern = /^\(?([^)]+?)\)?\s*\(([^)]+?)\)$/;
   const groupAdditionPattern = /^\(?([^)]+?)\)?\s*grubu\s*\(([^)]+?)\)$/i;
   const removalPattern = /^\(?([^)]+?)\)?\s*\(sorunçözüldü\)\s*Kaldırıldı$/i;
   const completeRemovalPattern = /^\(?([^)]+?)\)?\s*Tamamen\s*kaldırıldı$/i;
   const reopenPattern = /^\(?([^)]+?)\)?\s*\(sorun\s*çözülmemiş\)\s*Yeniden\s*Açıldı$/i;
 
-  // 1. Check Complete Removal Pattern (Instant delete without strikethrough, do not tag)
   if (completeRemovalPattern.test(content)) {
     const match = content.match(completeRemovalPattern);
     const name = match[1].trim();
@@ -279,7 +278,6 @@ async function handleBlacklistMessage(message, client) {
       }
 
       await Blacklist.deleteOne({ _id: entry._id });
-
       deleteMessage();
       await renderBlacklist(client);
 
@@ -297,7 +295,6 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  // 2. Check Removal Pattern (Standard 15-day strikeout)
   if (removalPattern.test(content)) {
     const match = content.match(removalPattern);
     const name = match[1].trim();
@@ -329,7 +326,6 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  // 3. Check Reopen Pattern
   if (reopenPattern.test(content)) {
     const match = content.match(reopenPattern);
     const name = match[1].trim();
@@ -350,7 +346,7 @@ async function handleBlacklistMessage(message, client) {
       if (logChannel) {
         const cleanName = entry.name.replace(/[<@!>]/g, "");
         await logChannel.send({
-          content: `🔄 **[KARALİSTE YENİDEN ETKİN]** <@${message.author.id}> tarafından **${cleanName}** yasağı/karaliste kaydı yeniden açıldı.`,
+          content: `🔄 **[KARALİSTE YENİDEN AÇILDI]** <@${message.author.id}> tarafından **${cleanName}** karaliste kaydı yeniden aktif edildi.`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -361,39 +357,31 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  // 4. Check Group Addition Pattern
   if (groupAdditionPattern.test(content)) {
     const match = content.match(groupAdditionPattern);
-    const name = cleanBlacklistName(match[1]) + ' grubu';
-    const reason = cleanBlacklistReason(match[2]);
+    const groupName = match[1].trim();
+    const reason = match[2].trim();
 
     try {
-      let entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
-      let isNew = false;
-
-      if (entry) {
-        entry.reason = reason;
-        entry.status = 'active';
-        entry.removedAt = null;
-        await entry.save();
-      } else {
-        entry = new Blacklist({
-          name,
-          type: 'group',
-          reason,
-          status: 'active'
-        });
-        await entry.save();
-        isNew = true;
+      const existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${groupName}$`, 'i') }, type: 'group' });
+      if (existing) {
+        return sendWarning(`⚠️ **${groupName}** grubu zaten karalistede ekli!`);
       }
+
+      await Blacklist.create({
+        name: groupName,
+        type: 'group',
+        reason: reason,
+        addedBy: message.author.id
+      });
 
       deleteMessage();
       await renderBlacklist(client);
 
       if (logChannel) {
-        const cleanName = entry.name.replace(/[<@!>]/g, "");
+        const cleanName = groupName.replace(/[<@!>]/g, "");
         await logChannel.send({
-          content: `📥 **[KARALİSTE EKLEME (GRUP)]** <@${message.author.id}> tarafından **${cleanName}** listeye eklendi.\n📋 **Sebep:** ${reason}\n📂 **Tür:** 🛡️ Grup (${isNew ? 'Yeni Kayıt' : 'Güncellenen Kayıt'})`,
+          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -404,49 +392,31 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  // 5. Check Addition Pattern (Standard Person/Auto-detect Group)
   if (additionPattern.test(content)) {
     const match = content.match(additionPattern);
-    const name = cleanBlacklistName(match[1]);
-    const reason = cleanBlacklistReason(match[2]);
-
-    // Check if the reason implies a state change like "sorunçözüldü" or "sorun çözülmemiş"
-    if (reason.toLowerCase() === 'sorunçözüldü' || reason.toLowerCase().includes('sorun çözülmemiş')) {
-      return sendWarning('❌ Hatalı biçim kullandınız! Kaldırmak için `isim (sorunçözüldü) Kaldırıldı` yazmalısınız.');
-    }
+    const name = match[1].trim();
+    const reason = match[2].trim();
 
     try {
-      // Determine type (person vs group)
-      const groupKeywords = ['grubu', 'platformu', 'sunucusu', 'orduları', 'birim', 'kızları', 'fraksiyon', 'tmt', 'ta', 'tnf', 'yıldırım', 'ermeniler', 'youtube'];
-      const isGroup = groupKeywords.some(k => name.toLowerCase().includes(k)) || name.endsWith('.');
-      const type = isGroup ? 'group' : 'person';
-
-      let entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
-      let isNew = false;
-
-      if (entry) {
-        entry.reason = reason;
-        entry.status = 'active';
-        entry.removedAt = null;
-        await entry.save();
-      } else {
-        entry = new Blacklist({
-          name,
-          type,
-          reason,
-          status: 'active'
-        });
-        await entry.save();
-        isNew = true;
+      const existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') }, type: 'person' });
+      if (existing) {
+        return sendWarning(`⚠️ **${name}** zaten karalistede ekli!`);
       }
+
+      await Blacklist.create({
+        name: name,
+        type: 'person',
+        reason: reason,
+        addedBy: message.author.id
+      });
 
       deleteMessage();
       await renderBlacklist(client);
 
       if (logChannel) {
-        const cleanName = entry.name.replace(/[<@!>]/g, "");
+        const cleanName = name.replace(/[<@!>]/g, "");
         await logChannel.send({
-          content: `📥 **[KARALİSTE EKLEME]** <@${message.author.id}> tarafından **${cleanName}** listeye eklendi.\n📋 **Sebep:** ${reason}\n📂 **Tür:** ${type === 'group' ? '🛡️ Grup' : '👤 Kişi'} (${isNew ? 'Yeni Kayıt' : 'Güncellenen Kayıt'})`,
+          content: `➕ **[KARALİSTE KİŞİ EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** eklendi. (Sebep: ${reason})`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -457,16 +427,7 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  // 6. Invalid Format
-  const warningText = `❌ **Hatalı biçim kullandınız!**\n\n` +
-    `**Kullanılabilir Formatlar:**\n` +
-    `1️⃣ **Kişi Ekleme:** \`(isim) (sebep)\` (Örn: \`LorerYT (salaklık)\`)\n` +
-    `2️⃣ **Grup Ekleme:** \`(isim) grubu (sebep)\` (Örn: \`LorerYT grubu (salaklık)\`)\n` +
-    `3️⃣ **Normal Kaldırma:** \`isim (sorunçözüldü) Kaldırıldı\` (Örn: \`TA Kızları (sorunçözüldü) Kaldırıldı\`)\n` +
-    `4️⃣ **Tamamen Silme:** \`isim Tamamen kaldırıldı\` (Örn: \`LorerYT Tamamen kaldırıldı\`)\n` +
-    `5️⃣ **Yeniden Açma:** \`isim (sorun çözülmemiş) Yeniden Açıldı\` (Örn: \`TA Kızları (sorun çözülmemiş) Yeniden Açıldı\`)`;
-
-  await sendWarning(warningText);
+  sendWarning(`⚠️ **Geçersiz Karaliste Formatı!**\nFormat: \`KullanıcıAdı (Sebep)\` veya \`GrupAdı grubu (Sebep)\``);
 }
 
 /**
@@ -482,16 +443,9 @@ async function checkBlacklistCleanup(client) {
 
     if (expiredEntries.length > 0) {
       console.log(`[blacklist] Found ${expiredEntries.length} expired removed blacklist entries. Deleting...`);
-      const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-
-      for (const entry of expiredEntries) {
-        await Blacklist.deleteOne({ _id: entry._id });
-        if (logChannel) {
-          await logChannel.send({
-            content: `🗑️ **[OTOMATİK TEMİZLEME]** **${entry.name}** 15 günlük kaldırılma süresinin dolması sebebiyle karalisteden tamamen silindi.`
-          }).catch(() => {});
-        }
-      }
+      await Blacklist.deleteMany({
+        _id: { $in: expiredEntries.map(e => e._id) }
+      });
 
       await renderBlacklist(client);
     }
@@ -504,6 +458,8 @@ module.exports = {
   initializeBlacklist,
   renderBlacklist,
   handleBlacklistMessage,
+  handleBlacklistButtons,
   checkBlacklistCleanup,
-  BLACKLIST_CHANNEL_ID,
+  cleanBlacklistName,
+  cleanBlacklistReason
 };
