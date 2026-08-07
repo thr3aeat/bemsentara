@@ -394,27 +394,24 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 </head>
 <body>
   <header>
-    <a href="/dashboard" class="logo">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent2); filter: drop-shadow(0 0 8px var(--accent2));"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/></svg>
-      <span>sentara</span>
+    <a href="/" class="logo">
+      <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(244,63,94,0.5)); flex-shrink:0;">
+        <path d="M50 0L64.7 29.8L97.6 34.5L73.8 57.7L79.4 90.5L50 75L20.6 90.5L26.2 57.7L2.4 34.5L35.3 29.8L50 0Z" fill="#f43f5e"/>
+        <circle cx="50" cy="38" r="7" fill="white"/>
+        <path d="M35 52C35 46 41 44 50 44C59 44 65 46 65 52V70H57V58H43V70H35V52Z" fill="white"/>
+      </svg>
+      <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYıldız</span>
     </a>
     <button class="hamburger" id="hamburger" aria-label="Menü" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
     <nav class="nav-links" id="nav-links">
-      ${navLink('/dashboard', 'Dashboard')}
-      ${navLink('/profile', 'Profil')}
-      ${navLink('/tickets', "Ticket'lar")}
-      ${navLink('/notifications', '🔔 Bildirimler')}
-      ${navLink('/leaderboard', 'Sıralama')}
-      ${navLink('/shop', 'Mağaza')}
-      ${navLink('/wiki', 'Wiki')}
-      ${navLink('/social', '📱 Sosyal')}
-      ${navLink('/settings', 'Ayarlar')}
+      ${navLink('/', 'Ana Sayfa')}
+      ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
       ${groupAdminLink}
       ${staffLinks}
       ${adminLink}
-      ${user ? `<a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<a href="/login" class="nav-link">Giriş</a>`}
+      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">Giriş Yap</button>`}
     </nav>
   </header>
 
@@ -615,251 +612,240 @@ function renderMainPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sentara — Premium Destek Sistemi</title>
+  <title>EkoYıldız — Resmi Topluluk & Destek Portalı</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:      #06060e;
-      --surface: rgba(255,255,255,0.035);
-      --border:  rgba(255,255,255,0.08);
-      --accent:  #a78bfa;
-      --accent2: #818cf8;
-      --text:    #f0f0f8;
-      --muted:   #7c7c9a;
+      --bg: #07070f;
+      --surface: rgba(255,255,255,0.03);
+      --border: rgba(244,63,94,0.2);
+      --accent: #f43f5e;
+      --accent-hover: #e11d48;
+      --accent2: #fb7185;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --glass-blur: 24px;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html { scroll-behavior:smooth; }
     body {
       background: var(--bg);
       background-image:
-        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(139,92,246,0.06) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(244,63,94,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 90%, rgba(225,29,72,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 10% 80%, rgba(244,63,94,0.06) 0%, transparent 40%);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
     }
-
     .glow {
-      position:fixed; width:500px; height:500px;
-      border-radius:50%; opacity:0.06; z-index:0;
-      filter:blur(180px); pointer-events:none;
-      animation: floatGlow 18s infinite ease-in-out alternate;
+      position:fixed; width:500px; height:500px; border-radius:50%;
+      opacity:0.1; z-index:0; filter:blur(180px); pointer-events:none;
+      animation: floatGlow 16s infinite ease-in-out alternate;
     }
-    .glow-1 { background:var(--accent2); top:-150px; right:-150px; }
-    .glow-2 { background:var(--accent);  bottom:-150px; left:-150px; animation-delay:-9s; }
+    .glow-1 { background:#f43f5e; top:-150px; right:-150px; }
+    .glow-2 { background:#fb7185; bottom:-150px; left:-150px; animation-delay:-8s; }
     @keyframes floatGlow {
-      0%   { transform: scale(1) translate(0,0); }
-      100% { transform: scale(1.1) translate(15px,20px); }
+      0% { transform: scale(1) translate(0,0); }
+      100% { transform: scale(1.15) translate(20px,30px); }
     }
 
     header {
-      background: rgba(6,6,14,0.45);
-      backdrop-filter: blur(28px) saturate(1.2);
-      -webkit-backdrop-filter: blur(28px) saturate(1.2);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(10,10,20,0.55);
+      backdrop-filter: blur(28px) saturate(1.3);
+      -webkit-backdrop-filter: blur(28px) saturate(1.3);
+      border: 1px solid rgba(244,63,94,0.25);
       border-radius: 50px;
-      padding: 0.6rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 1.5rem;
-      z-index: 200;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-      max-width: 1200px;
-      margin: 1.5rem auto 0;
+      padding: 0.65rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 1.5rem; z-index: 200;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+      max-width: 1200px; margin: 1.5rem auto 0;
       width: calc(100% - 3rem);
     }
     .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      text-decoration: none;
-      color: inherit;
+      display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;
     }
     .logo span {
-      font-weight: 800;
-      font-size: 1.4rem;
-      color: #ffffff;
+      font-weight: 800; font-size: 1.45rem;
+      background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       letter-spacing: -0.5px;
     }
-    nav { display:flex; gap:1.2rem; align-items:center; }
+    nav { display: flex; gap: 1rem; align-items: center; }
     nav a {
-      color:var(--muted); text-decoration:none; font-weight:500;
-      transition:color 0.3s; position:relative; font-size:0.95rem;
+      color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.95rem;
+      padding: 0.45rem 0.9rem; border-radius: 30px; transition: all 0.3s;
     }
-    nav a::after {
-      content:''; position:absolute; bottom:-4px; left:50%;
-      width:0; height:2px; background:var(--accent);
-      transition:width 0.3s ease, left 0.3s ease; border-radius:1px;
-    }
-    nav a:hover { color:var(--text); }
-    nav a:hover::after { width:100%; left:0; }
+    nav a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
-    .btn {
-      padding:0.8rem 2rem;
-      background:rgba(167,139,250,0.18);
-      border:1px solid rgba(167,139,250,0.25);
-      color:var(--accent); border-radius:30px;
-      font-family:'Outfit',sans-serif; font-weight:600; font-size:1rem;
-      cursor:pointer; text-decoration:none;
-      transition:all 0.3s ease;
-      box-shadow:0 2px 16px rgba(167,139,250,0.1);
-      display:inline-flex; align-items:center; gap:0.5rem;
-      position:relative; overflow:hidden;
-      backdrop-filter:blur(8px);
+    .nav-btn-login {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      border: 1px solid rgba(244,63,94,0.4);
+      color: #fff; border-radius: 30px; font-weight: 700; font-size: 0.95rem;
+      padding: 0.55rem 1.4rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;
+      box-shadow: 0 4px 20px rgba(244,63,94,0.35); transition: all 0.3s; text-decoration: none;
     }
-    .btn::after {
-      content:''; position:absolute; top:0; left:-100%;
-      width:100%; height:100%;
-      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
-      transition:left 0.5s;
-    }
-    .btn:hover::after { left:100%; }
-    .btn:hover {
-      transform:translateY(-2px) scale(1.02);
-      background:rgba(167,139,250,0.28);
-      border-color:rgba(167,139,250,0.4);
-      color:#fff;
-      box-shadow:0 8px 28px rgba(167,139,250,0.2);
+    .nav-btn-login:hover {
+      transform: translateY(-2px); box-shadow: 0 8px 30px rgba(244,63,94,0.5);
+      background: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%);
     }
 
-    /* ── Hero ── */
-    .hero {
-      position:relative; z-index:1;
-      max-width:1100px; margin:0 auto;
-      padding:7rem 2rem 4rem;
-      text-align:center;
+    .hero-container {
+      max-width: 1200px; margin: 4rem auto 2rem; padding: 0 2rem;
+      display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 3rem; align-items: center;
+      position: relative; z-index: 10;
     }
     .hero-badge {
-      display:inline-flex; align-items:center; gap:0.5rem;
-      background:rgba(167,139,250,0.08);
-      border:1px solid rgba(167,139,250,0.15);
-      padding:0.4rem 1rem; border-radius:30px;
-      font-size:0.85rem; font-weight:500; color:var(--accent);
-      margin-bottom:2rem;
-      animation:fadeUp 0.8s ease forwards; opacity:0;
-      backdrop-filter:blur(8px);
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.3);
+      padding: 0.45rem 1.2rem; border-radius: 30px; font-size: 0.88rem; font-weight: 600;
+      color: #fda4af; margin-bottom: 1.5rem; backdrop-filter: blur(10px);
     }
-    h1 {
-      font-size:4.5rem; line-height:1.05; font-weight:800;
-      margin-bottom:1.5rem;
-      animation:fadeUp 0.9s ease 0.1s forwards; opacity:0;
-      letter-spacing:-1px;
+    .hero-title {
+      font-size: 3.8rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -1px;
     }
-    .grad {
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    .hero-grad {
+      background: linear-gradient(135deg, #f43f5e 0%, #fda4af 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .subtitle {
-      color:var(--muted); font-size:1.15rem; max-width:640px;
-      margin:0 auto 3rem;
-      animation:fadeUp 0.9s ease 0.2s forwards; opacity:0;
-      line-height:1.8; font-weight:300;
+    .hero-sub {
+      color: var(--muted); font-size: 1.15rem; line-height: 1.8; font-weight: 300; margin-bottom: 2.5rem; max-width: 600px;
     }
-    .hero-cta {
-      display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;
-      animation:fadeUp 0.9s ease 0.3s forwards; opacity:0;
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+    
+    .btn-hero-primary {
+      padding: 0.95rem 2.2rem; background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      color: #fff; border-radius: 30px; font-weight: 700; font-size: 1.05rem;
+      border: 1px solid rgba(244,63,94,0.4); text-decoration: none; cursor: pointer;
+      box-shadow: 0 10px 30px rgba(244,63,94,0.4); transition: all 0.3s ease;
+      display: inline-flex; align-items: center; gap: 0.6rem;
     }
-    .btn-outline {
-      padding:0.8rem 2rem; background:rgba(255,255,255,0.03);
-      border:1px solid rgba(255,255,255,0.1); color:var(--text);
-      border-radius:30px; font-family:'Outfit',sans-serif;
-      font-weight:500; cursor:pointer; text-decoration:none;
-      transition:all 0.3s; backdrop-filter:blur(8px);
+    .btn-hero-primary:hover {
+      transform: translateY(-3px) scale(1.02); box-shadow: 0 14px 40px rgba(244,63,94,0.6);
     }
-    .btn-outline:hover {
-      border-color:rgba(167,139,250,0.35);
-      color:var(--accent);
-      background:rgba(167,139,250,0.05);
+    .btn-hero-secondary {
+      padding: 0.95rem 1.8rem; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 30px;
+      font-weight: 600; font-size: 1rem; text-decoration: none; cursor: pointer;
+      transition: all 0.3s; backdrop-filter: blur(10px); display: inline-flex; align-items: center; gap: 0.6rem;
+    }
+    .btn-hero-secondary:hover {
+      border-color: rgba(244,63,94,0.4); background: rgba(244,63,94,0.08); color: #fda4af;
+      transform: translateY(-2px);
     }
 
-    @keyframes fadeUp {
-      to { opacity:1; transform:translateY(0); }
-      from { opacity:0; transform:translateY(20px); }
+    .hero-mascot-box {
+      position: relative; display: flex; justify-content: center; align-items: center;
+    }
+    .hero-mascot-glow {
+      position: absolute; width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,63,94,0.35) 0%, transparent 70%);
+      filter: blur(40px); animation: pulseMascot 4s infinite alternate ease-in-out;
+    }
+    @keyframes pulseMascot {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      100% { transform: scale(1.15); opacity: 1; }
+    }
+    .hero-mascot-img {
+      width: 100%; max-width: 380px; height: auto; position: relative; z-index: 2;
+      filter: drop-shadow(0 15px 35px rgba(0,0,0,0.7));
+      transition: transform 0.4s ease;
+    }
+    .hero-mascot-img:hover { transform: translateY(-8px) scale(1.03); }
+
+    .section-container { max-width: 1200px; margin: 5rem auto; padding: 0 2rem; position: relative; z-index: 10; }
+    .section-header { text-align: center; margin-bottom: 3rem; }
+    .section-tag { color: #f43f5e; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .section-title { font-size: 2.6rem; font-weight: 800; letter-spacing: -0.5px; }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 1.8rem 1.2rem; text-align: center;
+      backdrop-filter: blur(20px); transition: all 0.35s ease; position: relative; overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .stat-card:hover {
+      transform: translateY(-6px); border-color: rgba(244,63,94,0.4);
+      box-shadow: 0 16px 36px rgba(244,63,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .stat-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .stat-number { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
+    .stat-badge {
+      display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;
+      font-weight: 700; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.3);
     }
 
-    /* ── Stats strip ── */
-    .stats {
-      display:flex; justify-content:center; gap:3rem; flex-wrap:wrap;
-      padding:2.5rem; background:rgba(255,255,255,0.035);
-      border:1px solid rgba(255,255,255,0.07); border-radius:20px;
-      max-width:900px; margin:3rem auto 0;
-      animation:fadeUp 1s ease 0.4s forwards; opacity:0;
-      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-      box-shadow:0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    .widget-box {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(244,63,94,0.25);
+      border-radius: 28px; padding: 2.5rem; backdrop-filter: blur(24px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem;
+      align-items: center;
     }
-    .stat-item { text-align:center; }
-    .stat-value { font-size:2.5rem; font-weight:800; }
-    .stat-label { color:var(--muted); font-size:0.85rem; font-weight:300; }
+    .widget-info h3 { font-size: 2.2rem; font-weight: 800; margin-bottom: 1rem; }
+    .widget-info p { color: var(--muted); line-height: 1.8; font-size: 1.05rem; font-weight: 300; margin-bottom: 2rem; }
+    .contact-btn {
+      display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.9rem 2rem;
+      background: rgba(88,101,242,0.2); border: 1px solid rgba(88,101,242,0.4); color: #818cf8;
+      border-radius: 30px; font-weight: 700; font-size: 1rem; text-decoration: none; transition: all 0.3s;
+    }
+    .contact-btn:hover {
+      background: rgba(88,101,242,0.35); color: #fff; transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(88,101,242,0.3);
+    }
 
-    /* ── Features ── */
-    #features {
-      max-width:1100px; margin:6rem auto; padding:0 2rem;
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(5,5,10,0.85); backdrop-filter: blur(16px);
+      z-index: 999; display: none; align-items: center; justify-content: center; padding: 1.5rem;
     }
-    .section-label {
-      text-align:center; color:var(--accent); font-weight:600;
-      font-size:0.8rem; letter-spacing:3px; text-transform:uppercase;
-      margin-bottom:1rem;
+    .modal-card {
+      background: rgba(15,15,25,0.95); border: 1px solid rgba(244,63,94,0.3);
+      border-radius: 28px; width: 100%; max-width: 480px; padding: 2.5rem;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+      position: relative; animation: popModal 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
     }
-    .section-title { text-align:center; font-size:2.5rem; font-weight:800; margin-bottom:4rem; letter-spacing:-0.5px; }
-    .features-grid {
-      display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.25rem;
+    @keyframes popModal {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
-    .feature {
-      background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06);
-      border-radius:20px; padding:2rem;
-      backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-      transition:transform 0.35s, border-color 0.35s, box-shadow 0.35s;
-      position:relative; overflow:hidden;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    .modal-close {
+      position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none;
+      color: var(--muted); font-size: 1.4rem; cursor: pointer; transition: color 0.2s;
     }
-    .feature::before {
-      content:''; position:absolute;
-      inset:0; border-radius:20px;
-      background:linear-gradient(135deg,rgba(167,139,250,0.04),transparent);
-      opacity:0; transition:opacity 0.35s;
-    }
-    .feature:hover {
-      transform:translateY(-6px);
-      border-color:rgba(167,139,250,0.2);
-      box-shadow:0 16px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
-    }
-    .feature:hover::before { opacity:1; }
-    .feature-icon {
-      font-size:2.2rem; display:inline-flex;
-      align-items:center; justify-content:center;
-      width:56px; height:56px;
-      background:rgba(167,139,250,0.08); border-radius:14px;
-      margin-bottom:1.25rem;
-      border:1px solid rgba(167,139,250,0.1);
-    }
-    .feature h3 { font-size:1.2rem; font-weight:700; margin-bottom:0.6rem; }
-    .feature p  { color:var(--muted); line-height:1.7; font-size:0.92rem; font-weight:300; }
+    .modal-close:hover { color: #fff; }
 
-    /* ── Footer ── */
+    .login-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; background: rgba(255,255,255,0.04); padding: 0.35rem; border-radius: 16px; }
+    .tab-btn {
+      flex: 1; padding: 0.65rem 0.5rem; border: none; border-radius: 12px; background: none;
+      color: var(--muted); font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.25s;
+    }
+    .tab-btn.active { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); color: #fff; box-shadow: 0 4px 15px rgba(244,63,94,0.3); }
+
+    .input-box { width: 100%; padding: 0.95rem 1.2rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; margin-bottom: 1rem; outline: none; transition: border-color 0.3s; }
+    .input-box:focus { border-color: #f43f5e; box-shadow: 0 0 0 3px rgba(244,63,94,0.15); }
+
+    .btn-submit-modal {
+      width: 100%; padding: 0.95rem; border-radius: 14px; border: none; font-weight: 700; font-size: 1rem;
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); color: #fff; cursor: pointer;
+      box-shadow: 0 6px 20px rgba(244,63,94,0.3); transition: all 0.3s; margin-top: 0.5rem;
+    }
+    .btn-submit-modal:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(244,63,94,0.5); }
+
     footer {
-      text-align:center; padding:3rem 2rem;
-      border-top:1px solid rgba(255,255,255,0.05);
-      color:var(--muted); background:rgba(6,6,14,0.8);
-      position:relative; z-index:1;
-      backdrop-filter:blur(10px);
+      border-top: 1px solid rgba(255,255,255,0.06); padding: 3rem 2rem; text-align: center; color: var(--muted);
+      background: rgba(5,5,10,0.8); margin-top: 6rem;
     }
-    footer .logo { font-size:1.4rem; display:block; margin-bottom:0.75rem; }
-    .footer-links { display:flex; justify-content:center; gap:1.5rem; margin:1rem 0; flex-wrap:wrap; }
-    .footer-links a { color:var(--muted); text-decoration:none; font-size:0.88rem; transition:color 0.2s; font-weight:300; }
-    .footer-links a:hover { color:var(--text); }
 
-    ::selection { background:rgba(167,139,250,0.3); color:#fff; }
-    ::-webkit-scrollbar { width:6px; }
-    ::-webkit-scrollbar-track { background:transparent; }
-    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:3px; }
-
-    @media(max-width:768px) {
-      header { padding:1rem; flex-direction:column; gap:1rem; }
-      h1 { font-size:2.5rem; }
-      .stats { gap:1.5rem; }
+    @media (max-width: 900px) {
+      .hero-container { grid-template-columns: 1fr; text-align: center; }
+      .hero-title { font-size: 2.8rem; }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-cta { justify-content: center; }
+      .widget-box { grid-template-columns: 1fr; text-align: center; }
     }
   </style>
 </head>
@@ -869,88 +855,280 @@ function renderMainPage() {
 
   <header>
     <a href="/" class="logo">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent2); filter: drop-shadow(0 0 8px var(--accent2));"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/></svg>
-      <span>sentara</span>
+      <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(244,63,94,0.5)); flex-shrink:0;">
+        <path d="M50 0L64.7 29.8L97.6 34.5L73.8 57.7L79.4 90.5L50 75L20.6 90.5L26.2 57.7L2.4 34.5L35.3 29.8L50 0Z" fill="#f43f5e"/>
+        <circle cx="50" cy="38" r="7" fill="white"/>
+        <path d="M35 52C35 46 41 44 50 44C59 44 65 46 65 52V70H57V58H43V70H35V52Z" fill="white"/>
+      </svg>
+      <span>EkoYıldız</span>
     </a>
     <nav>
-      <a href="#features">Özellikler</a>
-      <a href="/legal/tos">Koşullar</a>
-      <a href="/login" class="btn" style="background: #2563eb; border-color: #3b82f6; border-radius: 9999px; color: #fff; padding: 0.5rem 1.2rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Giriş Yap</a>
+      <a href="/">Ana Sayfa</a>
+      <button onclick="openLoginModal()" class="nav-btn-login">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Giriş Yap
+      </button>
     </nav>
   </header>
 
-  <div class="hero" style="position:relative;z-index:1;">
-    <div class="hero-badge">✨ Discord Destek Platformu</div>
-    <h1>Discord'da<br><span class="grad">Yeni Nesil Destek</span></h1>
-    <p class="subtitle">Sentara ile sunucunuzdaki destek deneyimini tamamen değiştirin. Roblox entegrasyonu, premium tasarım ve kusursuz hız bir arada.</p>
-    <div class="hero-cta">
-      <a href="/login" class="btn" style="font-size:1.1rem;padding:1rem 2.5rem;">🚀 Hemen Başla</a>
-      <a href="#features" class="btn-outline">Özellikleri İncele</a>
+  <div class="hero-container">
+    <div>
+      <div class="hero-badge">✨ EkoYıldız YouTube Kanalı & Resmi Topluluğu</div>
+      <h1 class="hero-title">EkoYıldız Dünyasına<br><span class="hero-grad">Hoş Geldiniz!</span></h1>
+      <p class="hero-sub">Canlı yayınlar, eğlenceli Roblox içerikleri, topluluk etkinlikleri ve sürpriz hediyeler burada! Siz de hemen aramıza katılın.</p>
+      <div class="hero-cta">
+        <button onclick="openLoginModal()" class="btn-hero-primary">🚀 Giriş Yap</button>
+        <a href="https://www.youtube.com/@eko8yildiz" target="_blank" class="btn-hero-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="red"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YouTube Kanalımız
+        </a>
+        <a href="https://discord.gg/1367646464804655104" target="_blank" class="btn-hero-secondary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.093.252-.19.373-.287a.075.075 0 0 1 .078-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.009c.12.098.245.195.372.288a.077.077 0 0 1-.006.128 12.299 12.299 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg> Discord Sunucumuz
+        </a>
+      </div>
+    </div>
+    <div class="hero-mascot-box">
+      <div class="hero-mascot-glow"></div>
+      <img src="/public/assets/mascot.png" alt="EkoYıldız Mascot" class="hero-mascot-img">
+    </div>
+  </div>
+
+  <div class="section-container">
+    <div class="section-header">
+      <div class="section-tag">SOSYAL MEDYA HESAPLARIMIZ</div>
+      <h2 class="section-title">Canlı Takipçi & <span class="hero-grad">Abone Sayıları</span></h2>
     </div>
 
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-value grad">12K+</div>
-        <div class="stat-label">Kayıtlı Kullanıcı</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📺</div>
+        <div class="stat-number">7.4K+</div>
+        <div class="stat-badge">YouTube (Ana Kanal)</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value grad">98K+</div>
-        <div class="stat-label">Çözülen Ticket</div>
+      <div class="stat-card">
+        <div class="stat-icon">🎬</div>
+        <div class="stat-number">2.1K+</div>
+        <div class="stat-badge">YouTube (Yedek)</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value grad">99.9%</div>
-        <div class="stat-label">Uptime</div>
+      <div class="stat-card">
+        <div class="stat-icon">🎵</div>
+        <div class="stat-number">15.8K+</div>
+        <div class="stat-badge">TikTok</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-value grad">&lt;2s</div>
-        <div class="stat-label">Ortalama Yanıt</div>
+      <div class="stat-card">
+        <div class="stat-icon">💚</div>
+        <div class="stat-number">4.5K+</div>
+        <div class="stat-badge">Kick Canlı Yayın</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💜</div>
+        <div class="stat-number">3.2K+</div>
+        <div class="stat-badge">Twitch</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📸</div>
+        <div class="stat-number">8.9K+</div>
+        <div class="stat-badge">Instagram</div>
       </div>
     </div>
   </div>
 
-  <section id="features">
-    <p class="section-label">Özellikler</p>
-    <h2 class="section-title">Neden <span class="grad">Sentara</span>?</h2>
-    <div class="features-grid">
-      <div class="feature">
-        <div class="feature-icon">🎮</div>
-        <h3>Roblox Entegrasyonu</h3>
-        <p>Kullanıcıların Roblox hesaplarını Discord ile eşleştirin. Destek taleplerinde güvenilir kimlik doğrulama sağlayın.</p>
+  <div class="section-container">
+    <div class="widget-box">
+      <div class="widget-info">
+        <div class="section-tag">CANLI DISCORD SUNUCUMUZ</div>
+        <h3>EkoYıldız Resmi <span class="hero-grad">Discord Ailesi</span></h3>
+        <p>Topluluğumuza katılarak binlerce aktif üye ile sohbet edebilir, çekilişlere katılabilir ve yetkili ekibimizden 7/24 destek alabilirsiniz.</p>
+        <a href="https://ptb.discord.com/channels/1367646464804655104/1518692475189854218" target="_blank" class="contact-btn">
+          💬 Bize Ulaşın / Destek Kanalı
+        </a>
       </div>
-      <div class="feature">
-        <div class="feature-icon">⚡</div>
-        <h3>Işık Hızında Panel</h3>
-        <p>Premium web paneli sayesinde tüm destek işlemlerinizi saniyeler içinde yönetin. Gerçek zamanlı güncellemeler.</p>
+      <div>
+        <iframe src="https://ptb.discord.com/widget?id=1367646464804655104&theme=dark" width="100%" height="450" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts" style="border-radius:24px; border:1px solid rgba(244,63,94,0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.6);"></iframe>
       </div>
-      <div class="feature">
-        <div class="feature-icon">🎨</div>
-        <h3>Modern Arayüz</h3>
-        <p>Glass morphism tasarım dili ile hem takımınız hem de üyeleriniz için unutulmaz bir kullanıcı deneyimi.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🔒</div>
-        <h3>Gelişmiş Güvenlik</h3>
-        <p>OAuth2 tabanlı kimlik doğrulama, rol yönetimi ve izin sistemi ile güvenli bir ortam.</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">📊</div>
-        <h3>Detaylı İstatistikler</h3>
-        <p>Ticket metrikleri, personel performansı ve anlık durum raporlaması.</p>
-      </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- FOOTER -->
-    <footer>
-      <div class="footer-links">
-        <a href="/legal/tos">Hizmet Şartları</a>
-        <a href="/legal/privacy">Gizlilik Politikası</a>
-        <a href="https://discord.gg/sentara">Destek Sunucusu</a>
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeLoginModal()">✕</button>
+      
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">Giriş Yap</h3>
+        <p style="color:var(--muted); font-size:0.9rem;">EkoYıldız portalına erişmek için giriş yöntemi seçin</p>
       </div>
-      <div class="copy">
-        &copy; 2024 Sentara Premium. Tüm hakları saklıdır.
+
+      <div class="login-tabs">
+        <button class="tab-btn active" onclick="switchLoginTab('discord')">Discord ile</button>
+        <button class="tab-btn" onclick="switchLoginTab('roblox')">Roblox ile</button>
+        <button class="tab-btn" onclick="switchLoginTab('username')">Kullanıcı Adı</button>
       </div>
-    </footer>
-  </main>
+
+      <div id="tab-discord" style="display:block;">
+        <a href="/auth/discord" class="btn-submit-modal" style="display:flex; align-items:center; justify-content:center; gap:0.6rem; text-decoration:none; margin-bottom:0.8rem; background:#5865F2;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.093.252-.19.373-.287a.075.075 0 0 1 .078-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.009c.12.098.245.195.372.288a.077.077 0 0 1-.006.128 12.299 12.299 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg> Discord OAuth ile Giriş Yap
+        </a>
+        
+        <div style="text-align:center; color:var(--muted); margin:1rem 0; font-size:0.85rem;">veya</div>
+
+        <input type="text" id="dmUsernameInput" class="input-box" placeholder="Discord Kullanıcı Adınız (Örn: ekonqtx)">
+        <button onclick="requestDiscordDMCode()" class="btn-submit-modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+          📩 Discord DM ile Kod Gönder
+        </button>
+
+        <div id="dmCodeVerifyBox" style="display:none; margin-top:1.2rem;">
+          <input type="text" id="dmCodeInput" class="input-box" placeholder="6 Haneli DM Kodunu Girin" maxlength="6">
+          <button onclick="verifyDiscordDMCode()" class="btn-submit-modal">Kodu Doğrula & Giriş Yap</button>
+        </div>
+      </div>
+
+      <div id="tab-roblox" style="display:none;">
+        <a href="/auth/roblox" class="btn-submit-modal" style="display:flex; align-items:center; justify-content:center; gap:0.6rem; text-decoration:none; background:#000; border:1px solid rgba(255,255,255,0.2);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.5 3.5L3.5 7.5L5.5 20.5L20.5 16.5L18.5 3.5ZM14 14L10 15L11 11L15 10L14 14Z"/></svg> Roblox OAuth ile Giriş Yap
+        </a>
+      </div>
+
+      <div id="tab-username" style="display:none;">
+        <input type="text" id="usernameCheckInput" class="input-box" placeholder="Kullanıcı Adı veya Discord ID">
+        <button onclick="checkUsernameSubmit()" class="btn-submit-modal">Devam Et</button>
+
+        <div id="passwordStepBox" style="display:none; margin-top:1.2rem;">
+          <input type="password" id="pinInput" class="input-box" placeholder="Site PIN / Şifrenizi Girin">
+          <button onclick="submitPinLogin()" class="btn-submit-modal">Giriş Yap</button>
+          <div style="text-align:center; margin-top:0.8rem;">
+            <a href="#" onclick="alert('Şifrenizi sıfırlamak için Discord DM kod gönder seçeneğini kullanabilirsiniz.');" style="color:var(--muted); font-size:0.85rem; text-decoration:none;">Şifremi Unuttum</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div style="font-weight:700; color:#fff;">EkoYıldız Resmi Topluluğu</div>
+      <div style="display:flex; gap:1.5rem; font-size:0.9rem;">
+        <a href="/legal/tos" style="color:var(--muted); text-decoration:none;">Kullanım Koşulları</a>
+        <a href="/legal/privacy" style="color:var(--muted); text-decoration:none;">Gizlilik Politikası</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function openLoginModal() {
+      document.getElementById('loginModal').style.display = 'flex';
+    }
+    function closeLoginModal() {
+      document.getElementById('loginModal').style.display = 'none';
+    }
+
+    function switchLoginTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-discord').style.display = 'none';
+      document.getElementById('tab-roblox').style.display = 'none';
+      document.getElementById('tab-username').style.display = 'none';
+
+      if (tab === 'discord') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('tab-discord').style.display = 'block';
+      } else if (tab === 'roblox') {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('tab-roblox').style.display = 'block';
+      } else {
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.getElementById('tab-username').style.display = 'block';
+      }
+    }
+
+    async function requestDiscordDMCode() {
+      const username = document.getElementById('dmUsernameInput').value.trim();
+      if (!username) return alert('Lütfen Discord kullanıcı adı girin.');
+
+      try {
+        const res = await fetch('/auth/send-discord-dm-code', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message);
+          document.getElementById('dmCodeVerifyBox').style.display = 'block';
+        } else {
+          alert('Hata: ' + (data.error || 'DM gönderilemedi.'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası.');
+      }
+    }
+
+    async function verifyDiscordDMCode() {
+      const code = document.getElementById('dmCodeInput').value.trim();
+      if (!code) return alert('Lütfen doğrulama kodunu girin.');
+
+      try {
+        const res = await fetch('/auth/verify-discord-dm-code', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = data.redirectUrl || '/dashboard';
+        } else {
+          alert('Hata: ' + (data.error || 'Kod doğrulanamadı.'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası.');
+      }
+    }
+
+    let activeCheckUsername = '';
+    async function checkUsernameSubmit() {
+      const username = document.getElementById('usernameCheckInput').value.trim();
+      if (!username) return alert('Lütfen kullanıcı adı girin.');
+
+      try {
+        const res = await fetch('/auth/check-username', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username })
+        });
+        const data = await res.json();
+        if (data.success && data.exists) {
+          activeCheckUsername = username;
+          if (data.hasPassword) {
+            document.getElementById('passwordStepBox').style.display = 'block';
+          } else {
+            if (data.hasDiscord) switchLoginTab('discord');
+            else switchLoginTab('roblox');
+          }
+        } else {
+          alert('Kullanıcı bulunamadı. Lütfen Discord veya Roblox ile giriş yapın.');
+        }
+      } catch (err) {
+        alert('Sunucu hatası.');
+      }
+    }
+
+    async function submitPinLogin() {
+      const pin = document.getElementById('pinInput').value.trim();
+      if (!pin) return alert('Lütfen şifrenizi girin.');
+
+      try {
+        const res = await fetch('/auth/login-pin', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ username: activeCheckUsername, pin })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = data.redirectUrl || '/dashboard';
+        } else {
+          alert('Hata: ' + (data.error || 'Giriş başarısız.'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası.');
+      }
+    }
+  </script>
 </body>
 </html>`;
 }
@@ -1064,8 +1242,8 @@ function renderLoginPage(errorMsg = null) {
   <div class="glow glow-2"></div>
   <div class="container">
     <div class="card">
-      <span class="logo">sentara</span>
-      <h1>Hoş Geldiniz</h1>
+      <span class="logo" style="background: linear-gradient(135deg, #f43f5e, #fda4af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:800; font-size:2.2rem;">EkoYıldız</span>
+      <h1>EkoYıldız Portalı</h1>
       <p class="subtitle">Sisteme giriş yapmak için bir yöntem seçin</p>
 
       <div class="error-box" id="error-box">${errorMsg ? errorMsg : ''}</div>
@@ -1076,9 +1254,10 @@ function renderLoginPage(errorMsg = null) {
           <input type="checkbox" id="remember-discord">
           <label for="remember-discord">Beni Hatırla</label>
         </div>
-        <a href="#" onclick="goDiscordAuth()" class="btn btn-discord">Discord ile Giriş Yap</a>
+        <a href="#" onclick="goDiscordAuth()" class="btn btn-discord" style="background:#5865F2;">Discord ile Giriş Yap</a>
+        <a href="/auth/roblox" class="btn" style="background:#000; border:1px solid rgba(255,255,255,0.2); color:#fff;">Roblox ile Giriş Yap</a>
         <div class="divider">veya</div>
-        <button onclick="showView('view-otp')" class="btn btn-primary">Discord Kod Gönder (DM)</button>
+        <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod Gönder (DM)</button>
         <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Şifresi ile Giriş</button>
       </div>
 
@@ -1403,14 +1582,17 @@ function renderDashboard(user, staffProgress) {
       </div>
       <div style="display:flex;align-items:center;gap:1rem;background:rgba(255,255,255,0.03);padding:1rem 1.5rem;border-radius:16px;border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(16px);">
         <img src="${_esc(user.discordAvatar)}" alt="Avatar"
-             style="width:50px;height:50px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 12px rgba(167,139,250,0.2);">
+             style="width:50px;height:50px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 12px rgba(244,63,94,0.2);">
         <div>
           <div style="font-weight:700;">${_esc(user.discordUsername)}</div>
           <div style="font-size:0.8rem;color:var(--muted);">
             ${user.isAdmin ? '<span style="color:var(--accent2);">👑 Admin</span>' :
       user.isStaff ? '<span style="color:var(--accent);">🛡 Staff</span>' : 'Kullanıcı'}
           </div>
-          <a href="/logout" style="color:var(--danger);font-size:0.8rem;text-decoration:none;">Çıkış Yap</a>
+          <div style="display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap;">
+            <a href="/auth/discord" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.3rem 0.7rem; border-color:rgba(255,255,255,0.15);">Discord hesabımı değiştirmek istiyorum</a>
+            <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.3rem 0.7rem; border-color:rgba(255,255,255,0.15);">Roblox hesabımı değiştirmek istiyorum</a>
+          </div>
         </div>
       </div>
     </div>

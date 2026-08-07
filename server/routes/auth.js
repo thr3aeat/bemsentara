@@ -201,6 +201,204 @@ router.post("/auth/generate-password", async (req, res) => {
   }
 });
 
+// --- Custom EkoYıldız Authentication Endpoints ---
+
+router.post("/auth/check-username", async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    if (!username) return res.status(400).json({ error: "Lütfen kullanıcı adı girin." });
+
+    const user = await User.findOne({
+      $or: [
+        { discordUsername: new RegExp(`^${username}$`, 'i') },
+        { username: new RegExp(`^${username}$`, 'i') },
+        { discordId: username }
+      ]
+    });
+
+    if (!user) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const hasPassword = !!(user.sitePinPassword || user.loginPassword || user.sitePassword);
+    const hasDiscord = !!user.discordId;
+    const hasRoblox = !!user.robloxId;
+
+    return res.json({
+      success: true,
+      exists: true,
+      userId: user.discordId || user._id,
+      username: user.username || user.discordUsername,
+      discordId: user.discordId,
+      robloxUsername: user.robloxUsername,
+      hasPassword,
+      hasDiscord,
+      hasRoblox
+    });
+  } catch (err) {
+    console.error("[auth] check-username error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+router.post("/auth/login-pin", async (req, res) => {
+  try {
+    const { username, pin } = req.body;
+    if (!username || !pin) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
+
+    const user = await User.findOne({
+      $or: [
+        { discordUsername: new RegExp(`^${username}$`, 'i') },
+        { username: new RegExp(`^${username}$`, 'i') },
+        { discordId: username }
+      ]
+    });
+
+    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+
+    if (user.sitePinPassword === pin || user.loginPassword === pin) {
+      req.login(user, (err) => {
+        if (err) return res.status(500).json({ error: "Oturum açma hatası." });
+        const needsPassword = !user.sitePinPassword;
+        return res.json({ success: true, redirectUrl: "/dashboard", needsPassword, user });
+      });
+    } else {
+      return res.status(400).json({ error: "Hatalı şifre veya PIN numarası!" });
+    }
+  } catch (err) {
+    console.error("[auth] login-pin error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+router.post("/auth/send-discord-dm-code", async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    if (!username) return res.status(400).json({ error: "Discord kullanıcı adı veya ID gerekli." });
+
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient();
+    if (!client || !client.isReady()) {
+      return res.status(500).json({ error: "Discord botu aktif değil." });
+    }
+
+    let discordUser = null;
+    if (/^\d{17,20}$/.test(username)) {
+      discordUser = await client.users.fetch(username).catch(() => null);
+    }
+
+    if (!discordUser) {
+      const { TARGET_GUILD_ID } = require("../../config");
+      const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
+      if (guild) {
+        const members = await guild.members.fetch();
+        const m = members.find(mem => mem.user.username.toLowerCase() === username.toLowerCase());
+        if (m) discordUser = m.user;
+      }
+    }
+
+    if (!discordUser) {
+      return res.status(404).json({ error: "Discord kullanıcısı bulunamadı." });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    req.session.dmAuthCode = code;
+    req.session.dmAuthTargetId = discordUser.id;
+
+    const { EmbedBuilder } = require('discord.js');
+    const embed = new EmbedBuilder()
+      .setColor(0xf43f5e)
+      .setTitle("🔑 EkoYıldız Site Giriş Kodu")
+      .setDescription(`EkoYıldız web sitesine giriş yapmak için doğrulama kodunuz:\n\n# **${code}**\n\nBu kodu kimseyle paylaşmayın. Kod 5 dakika geçerlidir.`)
+      .setFooter({ text: "EkoYıldız Güvenlik Doğrulaması" })
+      .setTimestamp();
+
+    await discordUser.send({ embeds: [embed] }).catch(() => {
+      throw new Error("DM gönderilemedi. Lütfen Discord DM'lerinizi açık konuma getirin.");
+    });
+
+    res.json({ success: true, message: "Doğrulama kodu Discord DM ile gönderildi!", targetId: discordUser.id });
+  } catch (err) {
+    res.status(400).json({ error: err.message || "DM gönderilemedi." });
+  }
+});
+
+router.post("/auth/verify-discord-dm-code", async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!req.session.dmAuthCode || !req.session.dmAuthTargetId) {
+      return res.status(400).json({ error: "Lütfen önce DM kodu talep edin." });
+    }
+
+    if (req.session.dmAuthCode !== String(code).trim()) {
+      return res.status(400).json({ error: "Geçersiz veya hatalı doğrulama kodu!" });
+    }
+
+    const discordId = req.session.dmAuthTargetId;
+    let user = await User.findOne({ discordId });
+    if (!user) {
+      user = await User.create({ discordId, isAuthorized: true });
+    }
+
+    delete req.session.dmAuthCode;
+    delete req.session.dmAuthTargetId;
+
+    req.login(user, (err) => {
+      if (err) return res.status(500).json({ error: "Giriş başarısız." });
+      const needsPassword = !user.sitePinPassword;
+      res.json({ success: true, redirectUrl: "/dashboard", needsPassword, user });
+    });
+  } catch (err) {
+    console.error("[auth] verify-discord-dm-code error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+router.post("/auth/setup-site-password", async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Oturum açmanız gerekir." });
+    const { pin, pinLength } = req.body;
+    const len = Number(pinLength) === 6 ? 6 : 4;
+
+    if (!pin || String(pin).length !== len || !/^\d+$/.test(pin)) {
+      return res.status(400).json({ error: `Lütfen ${len} haneli rakamlardan oluşan bir şifre/PIN girin.` });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.sitePinPassword = String(pin);
+      user.pinLength = len;
+      user.loginPassword = String(pin);
+      await user.save();
+    }
+
+    res.json({ success: true, message: "Site şifreniz başarıyla oluşturuldu!" });
+  } catch (err) {
+    console.error("[auth] setup-site-password error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+router.post("/auth/setup-2fa", async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: "Oturum açmanız gerekir." });
+    const { method } = req.body;
+    const selectedMethod = method === "roblox" ? "roblox" : "discord";
+
+    const user = await User.findById(req.user._id);
+    if (user) {
+      user.twoFactorEnabled = true;
+      user.twoFactorMethod = selectedMethod;
+      await user.save();
+    }
+
+    res.json({ success: true, message: "2 Aşamalı Doğrulama başarıyla aktif edildi!", method: selectedMethod });
+  } catch (err) {
+    console.error("[auth] setup-2fa error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
 router.get("/auth/authorize", (req, res) => {
   const linkDiscordId = req.query.discordId ? String(req.query.discordId) : null;
   if (linkDiscordId) {

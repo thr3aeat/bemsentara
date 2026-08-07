@@ -67,6 +67,10 @@ function UserConstructor(data) {
     profileColor: "#7c6af7",
     loginPassword: null, // 6-digit PIN for password-based login
     sitePassword: null, // bcrypt hashed strong password
+    sitePinPassword: null, // User custom 4 or 6 digit PIN password
+    pinLength: 4, // 4 or 6 digits
+    twoFactorEnabled: false,
+    twoFactorMethod: "discord", // "discord" or "roblox"
     passwordCreatedAt: null,
     browserNotificationsEnabled: false,
     browserNotificationPromptSent: false,

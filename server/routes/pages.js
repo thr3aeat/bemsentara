@@ -384,8 +384,12 @@ router.get("/group-admin", async (req, res) => {
 });
 
 router.get("/leaderboard", (req, res) => {
+  const { isSiteStaff } = require("../../utils/adminCheck");
+  if (!req.user || !isSiteStaff(req.user)) {
+    return res.redirect("/");
+  }
   const { economies, users } = require("../../models/Store");
-  const allEco = economies.find({}).sort({ balance: -1 }).slice(0, 10);
+  const allEco = economies.find({}).sort({ balance: -1 }).slice(0, 50);
   const topUsers = allEco.map(e => {
     const user = users.findOne({ discordId: e.userId });
     return {

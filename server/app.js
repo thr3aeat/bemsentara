@@ -57,6 +57,10 @@ const authLimiter = rateLimit({
   message: { error: "Çok fazla giriş denemesi. Lütfen bir dakika bekleyin." },
 });
 
+const path = require("path");
+
+app.use("/public", express.static(path.join(__dirname, "public")));
+
 app.use("/api/", apiLimiter);
 app.use("/auth/", authLimiter);
 
