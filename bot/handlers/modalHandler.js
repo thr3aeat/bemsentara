@@ -228,14 +228,6 @@ async function handleModalSubmit(interaction) {
     return;
   }
 
-    if (modalType === 'limit') {
-      const newLimit = parseInt(interaction.fields.getTextInputValue('user_limit'), 10) || 0;
-      const sanitized = Math.max(0, Math.min(99, newLimit));
-      await channel.setUserLimit(sanitized).catch(() => {});
-      return interaction.reply({ content: `👥 Oda kullanıcı limiti **${sanitized === 0 ? 'Sınırsız' : sanitized}** olarak ayarlandı.`, ephemeral: true });
-    }
-  }
-
   // ── Mutation (Mute/Deafen/Kick) İtiraz Modal ────────────────────────────────
   if (interaction.customId.startsWith('mutation_appeal_modal_')) {
     const { handleMutationAppealModalSubmit } = require("../services/mutationAppealService");
