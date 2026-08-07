@@ -233,6 +233,16 @@ function initializeDiscordHandlers(client) {
       console.error("[unitStartupVerifier] Rol doğrulama hatası:", err.message);
     }
 
+    // Kanal Estetik Düzenleme (Emoji ve ok işareti kontrolü)
+    try {
+      const { formatGuildChannelNames } = require("../services/channelAestheticsService");
+      formatGuildChannelNames(client).catch((err) => {
+        console.error("[channelAesthetics] Kanal ismi düzenleme hatası:", err.message);
+      });
+    } catch (err) {
+      console.error("[channelAesthetics] Servis yükleme hatası:", err.message);
+    }
+
     // Birim Aylık Terfi Döngüsü Planlayıcısı
     try {
       const { startMonthlyPromotionScheduler } = require("../services/unitMonthlyPromotionService");
