@@ -1,6 +1,17 @@
 'use strict';
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags
+} = require('discord.js');
 const { appMeta, saveStoreNow } = require('../../models/Store');
 
 const CHANNEL_ID = '1535332536564191413';
@@ -8,8 +19,12 @@ const WEBHOOK_NAME = 'Eko Hook';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER = 'https://i.imgur.com/6ZC1SXO.png';
 
+// Void Hook örneğindeki koyu tema rengiyle birebir aynı (#2b2d31)
+const ACCENT_COLOR = 0x2b2d31;
+
 /**
- * Creates, fetches, or edits the existing Webhook "Eko Hook" message with Components v2
+ * Creates, fetches, or edits the existing Webhook "Eko Hook" message using
+ * Discord's Components v2 (ContainerBuilder tabanlı) yapısı.
  */
 async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = {}) {
   try {
@@ -42,29 +57,43 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       }).catch(() => { });
     }
 
-    // Embed hazırlığı (Void Hook düzenine birebir uyumlu)
     const bannerUrl = options.banner || HEADER_BANNER;
 
-    // Void Hook stili metin yapısı
+    // Void Hook örneğindeki gibi: başlık + blockquote açıklama
     const descriptionText = options.description || (
-      `───────────────────────────────────────────────\n` +
-      `### Hakkında\n\n` +
       `> EkoYıldız, Eko tarafından özgün içerikler üretmek ve dijital yayıncılık alanında sürdürülebilir bir topluluk yapısı inşa etmek amacıyla hayata geçirilmiş bir YouTube kanalıdır. Bu ekosistemin merkezinde yer alan EkoYıldız Discord Topluluğu ise, başta EkoYıldız olmak üzere bünyesinde barındırdığı tüm dijital kanalların içerik yönetimini, operasyonel süreçlerini ve topluluk düzenini profesyonel standartlarda yürütmek amacıyla kurulmuştur.\n` +
       `> Amacımız, üyeler arasındaki etkileşimi güvenli, seviyeli ve dinamik bir yapıda tutmayı, içerik üretim süreçlerinin verimliliğini artırmayı ve dijital varlığımızın kurumsal bütünlüğünü korumaktır.\n\n` +
-      `Bu sunucu YouTube kanalı ve Roblox Türkiye üzerine kurulmuştur. Roblox Türkiye ile alakalı işbirlikleri için <#1518692475189854218> kanalına gidin.\n\n` +
-      `───────────────────────────────────────────────\n` +
-      `**Bağlantılarımız**\n` +
-      `🔴 📺 🟢 🟣 📸 🎵 📩\n\n` +
-      `───────────────────────────────────────────────\n` +
-      `14 Nisan 2024 tarihinde kuruldu.`
+      `Bu sunucu YouTube kanalı ve Roblox Türkiye üzerine kurulmuştur. Roblox Türkiye ile alakalı işbirlikleri için <#1518692475189854218> kanalına gidin.`
     );
 
-    const embed = new EmbedBuilder()
-      .setColor(0x2b2d31) // Void Hook ile aynı koyu tema rengi
-      .setImage(bannerUrl) // Afiş görseli tam en üstte
-      .setDescription(descriptionText);
+    const footerText = options.footer || '14 Nisan 2024 tarihinde kuruldu.';
 
-    // ActionRow 1: Yayın ve Video Platformları (Components v2)
+    // ─── Components v2 Container ───────────────────────────────
+    const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+
+    // Üstte tam genişlik banner görseli
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder().setURL(bannerUrl)
+      )
+    );
+
+    // "Hakkında" başlığı + açıklama
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('### Hakkında'),
+      new TextDisplayBuilder().setContent(descriptionText)
+    );
+
+    container.addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
+    );
+
+    // "Bağlantılarımız" başlığı
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('**Bağlantılarımız**')
+    );
+
+    // ActionRow 1: Yayın ve Video Platformları
     const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel('YouTube Ana Kanal')
@@ -88,7 +117,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         .setEmoji('🟣')
     );
 
-    // ActionRow 2: Sosyal Medya ve İletişim (Components v2)
+    // ActionRow 2: Sosyal Medya ve İletişim
     const row2 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel('Instagram')
@@ -107,6 +136,25 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         .setEmoji('📩')
     );
 
+    container.addActionRowComponents(row1);
+    container.addActionRowComponents(row2);
+
+    container.addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    );
+
+    // Alt bilgi (kuruluş tarihi)
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`-# ${footerText}`)
+    );
+
+    const messagePayload = {
+      username: WEBHOOK_NAME,
+      avatarURL: WEBHOOK_AVATAR,
+      components: [container],
+      flags: MessageFlags.IsComponentsV2
+    };
+
     // Persisted message tracking
     let metaRecord = appMeta ? appMeta.findOne({ key: 'ekoHookConfig' }) : null;
     let existingMsg = null;
@@ -117,12 +165,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
 
     if (webhook && existingMsg) {
       console.log(`[EkoHookService] ✏️ Existing Webhook message found (${existingMsg.id}). Editing message...`);
-      await webhook.editMessage(existingMsg.id, {
-        username: WEBHOOK_NAME,
-        avatarURL: WEBHOOK_AVATAR,
-        embeds: [embed],
-        components: [row1, row2]
-      });
+      await webhook.editMessage(existingMsg.id, messagePayload);
       console.log('[EkoHookService] ✅ Existing Webhook message updated successfully to Components v2.');
       return true;
     }
@@ -130,16 +173,11 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
     // Otherwise send new message and store ID
     let sentMsg = null;
     if (webhook) {
-      sentMsg = await webhook.send({
-        username: WEBHOOK_NAME,
-        avatarURL: WEBHOOK_AVATAR,
-        embeds: [embed],
-        components: [row1, row2]
-      });
+      sentMsg = await webhook.send(messagePayload);
     } else {
       sentMsg = await channel.send({
-        embeds: [embed],
-        components: [row1, row2]
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
       });
     }
 
