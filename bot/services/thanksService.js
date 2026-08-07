@@ -88,7 +88,7 @@ async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, op
 
     // 3️⃣ Destekçiler başlık
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### Destekçilerimiz; <:dinazor:1532912608196427950>')
+      new TextDisplayBuilder().setContent('### Destekçilerimiz; <:erkndnmdestkck:1535364220676476978>')
     );
 
     container.addSeparatorComponents(
