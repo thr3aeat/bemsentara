@@ -7234,6 +7234,15 @@ function renderSettingsPage(user, query = {}) {
 }
 
 // ─────────────────────────────────────────────
+// ACCOUNT TRANSFER PAGE (MODERATOR)
+// ─────────────────────────────────────────────
+async function renderAccountTransferPage(user, staffProgress) {
+  // Bu sayfa zaten EJS template olarak oluşturuldu
+  // Bu fonksiyon sadece uyumluluk için
+  return null;
+}
+
+// ─────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────
 module.exports = {
@@ -7259,6 +7268,7 @@ module.exports = {
   renderWebhookPage,
   renderErrorPage,
   renderSocialPage,
+  renderAccountTransferPage,
   // Internal helpers (exported for testing)
   _esc,
   _layout,

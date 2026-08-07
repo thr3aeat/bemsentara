@@ -3873,3 +3873,165 @@ router.post("/api/social/streams/:id/chat", async (req, res) => {
 
 module.exports = router;
 
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HESAP GEÇİŞİ (ACCOUNT TRANSFER) - MODERATÖR ONLY
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Hesap geçişi yap - POST /api/account-transfer
+ * Moderatör bir kullanıcının tüm verilerini başka bir Discord hesabına aktarır
+ */
+router.post("/api/account-transfer", async (req, res) => {
+  try {
+    // Oturum kontrolü
+    if (!req.user) {
+      return res.status(401).json({ error: "Oturum açmalısınız." });
+    }
+
+    // Moderatör yetkisi kontrolü
+    const StaffProgress = require("../../models/StaffProgress");
+    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
+    
+    if (!staffProgress || staffProgress.level < 5) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    }
+
+    const { oldDiscordId, newDiscordId, newDiscordUsername, reason } = req.body;
+
+    // Parametre kontrolü
+    if (!oldDiscordId || !newDiscordId || !newDiscordUsername) {
+      return res.status(400).json({ error: "Eski Discord ID, Yeni Discord ID ve Yeni Discord Kullanıcı Adı gereklidir." });
+    }
+
+    // Discord ID formatı kontrolü
+    if (!/^\d{17,20}$/.test(oldDiscordId) || !/^\d{17,20}$/.test(newDiscordId)) {
+      return res.status(400).json({ error: "Geçersiz Discord ID formatı." });
+    }
+
+    // Aynı hesaba geçiş kontrolü
+    if (oldDiscordId === newDiscordId) {
+      return res.status(400).json({ error: "Eski ve yeni Discord ID aynı olamaz." });
+    }
+
+    // Transfer servisini çalıştır
+    const { transferAccount } = require("../services/accountTransferService");
+    const result = await transferAccount(
+      oldDiscordId,
+      newDiscordId,
+      newDiscordUsername,
+      req.user.discordId,
+      reason || 'Moderatör tarafından yapılan hesap geçişi'
+    );
+
+    if (result.success) {
+      // Log kaydet
+      console.log(`[AccountTransfer] ${req.user.discordUsername} (${req.user.discordId}) transferred account from ${oldDiscordId} to ${newDiscordId}`);
+      
+      // Discord'a bildirim gönder
+      try {
+        const { getDiscordClient } = require("../../bot/discordClient");
+        const discordBot = getDiscordClient();
+        const { EmbedBuilder } = require('discord.js');
+        const { LOG_CHANNEL_ID } = require("../../config");
+
+        if (discordBot && LOG_CHANNEL_ID) {
+          const logChannel = await discordBot.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+          if (logChannel) {
+            const embed = new EmbedBuilder()
+              .setColor(0xFFA500)
+              .setTitle('🔄 Hesap Geçişi Yapıldı')
+              .setDescription(
+                `**Moderatör:** <@${req.user.discordId}> (${req.user.discordUsername})\n\n` +
+                `**Eski Hesap:** <@${oldDiscordId}>\n` +
+                `**Yeni Hesap:** <@${newDiscordId}> (${newDiscordUsername})\n\n` +
+                `**Sebep:** ${reason || 'Belirtilmemiş'}\n\n` +
+                `**Aktarılan Veriler:**\n` +
+                `${result.transferLog.transferredData.user ? '✅ User Data\n' : ''}` +
+                `${result.transferLog.transferredData.staffProgress ? '✅ Staff Progress\n' : ''}` +
+                `${result.transferLog.transferredData.economy ? '✅ Economy Data\n' : ''}` +
+                `${result.transferLog.transferredData.tickets ? `✅ ${result.transferLog.transferredData.tickets} Ticket(s)\n` : ''}`
+              )
+              .setTimestamp()
+              .setFooter({ text: 'Account Transfer System' });
+
+            await logChannel.send({ embeds: [embed] }).catch(() => {});
+          }
+        }
+      } catch (logErr) {
+        console.error('[AccountTransfer] Discord log error:', logErr.message);
+      }
+
+      return res.json(result);
+    } else {
+      return res.status(400).json({ error: result.message });
+    }
+
+  } catch (error) {
+    console.error('[API] Account transfer error:', error);
+    return res.status(500).json({ error: "Hesap geçişi sırasında bir hata oluştu." });
+  }
+});
+
+/**
+ * Hesap geçiş geçmişini getir - GET /api/account-transfer/history
+ */
+router.get("/api/account-transfer/history", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Oturum açmalısınız." });
+    }
+
+    // Moderatör yetkisi kontrolü
+    const StaffProgress = require("../../models/StaffProgress");
+    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
+    
+    if (!staffProgress || staffProgress.level < 5) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    }
+
+    const { getTransferHistory } = require("../services/accountTransferService");
+    const history = await getTransferHistory(100);
+
+    return res.json({ success: true, history });
+
+  } catch (error) {
+    console.error('[API] Transfer history error:', error);
+    return res.status(500).json({ error: "Geçmiş getirilirken bir hata oluştu." });
+  }
+});
+
+/**
+ * Belirli bir kullanıcının geçiş geçmişini getir - GET /api/account-transfer/user/:discordId
+ */
+router.get("/api/account-transfer/user/:discordId", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Oturum açmalısınız." });
+    }
+
+    // Moderatör yetkisi kontrolü
+    const StaffProgress = require("../../models/StaffProgress");
+    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
+    
+    if (!staffProgress || staffProgress.level < 5) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    }
+
+    const { discordId } = req.params;
+    
+    if (!/^\d{17,20}$/.test(discordId)) {
+      return res.status(400).json({ error: "Geçersiz Discord ID formatı." });
+    }
+
+    const { getUserTransferHistory } = require("../services/accountTransferService");
+    const history = await getUserTransferHistory(discordId);
+
+    return res.json({ success: true, history });
+
+  } catch (error) {
+    console.error('[API] User transfer history error:', error);
+    return res.status(500).json({ error: "Kullanıcı geçmişi getirilirken bir hata oluştu." });
+  }
+});

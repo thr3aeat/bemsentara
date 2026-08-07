@@ -98,6 +98,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ── View Engine Setup (EJS) ──
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+
 // ── Ban kontrolü: banlı kullanıcılar siteye giremez ─────────────────────────
 app.use((req, res, next) => {
   // Auth ve API rotalarını atla

@@ -87,6 +87,49 @@ router.get("/debug", (req, res) => {
   res.send(renderDebugPage(req.user, stats, logger.getLogs()));
 });
 
+// ══════════════════════════════════════════════════════════════════════
+// ACCOUNT TRANSFER PAGE - MODERATOR ONLY
+// ══════════════════════════════════════════════════════════════════════
+router.get("/account-transfer", async (req, res) => {
+  if (!req.user) return res.redirect("/login");
+  
+  try {
+    // Moderatör yetkisi kontrolü
+    const StaffProgress = require("../../models/StaffProgress");
+    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
+    
+    if (!staffProgress || staffProgress.level < 5) {
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+          <meta charset="UTF-8">
+          <title>Yetkisiz Erişim</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #0a0a0f; color: #fff; }
+            h1 { color: #f43f5e; }
+            a { color: #667eea; text-decoration: none; }
+          </style>
+        </head>
+        <body>
+          <h1>⛔ Yetkisiz Erişim</h1>
+          <p>Bu sayfaya erişmek için Moderatör (Level 5+) yetkisine sahip olmalısınız.</p>
+          <a href="/">← Ana Sayfaya Dön</a>
+        </body>
+        </html>
+      `);
+    }
+
+    res.render('accountTransfer', {
+      user: req.user,
+      staffProgress: staffProgress
+    });
+  } catch (error) {
+    console.error('[Pages] Account transfer page error:', error);
+    res.status(500).send('Sayfa yüklenirken bir hata oluştu.');
+  }
+});
+
 router.get("/profile", async (req, res) => {
   if (!req.user) return res.redirect("/login");
   let robloxGroups = [];
