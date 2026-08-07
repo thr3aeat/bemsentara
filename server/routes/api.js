@@ -1022,7 +1022,10 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
 
       if (p) {
         const oldLevel = p.level || 1;
-        if (req.body.modLevel !== undefined) p.level = Number(req.body.modLevel);
+        if (req.body.modLevel !== undefined) {
+          p.level = Number(req.body.modLevel);
+          p.adminOverride = true;
+        }
         if (req.body.modStatus !== undefined) p.status = String(req.body.modStatus);
         p.promotedAt = new Date();
         await p.save();

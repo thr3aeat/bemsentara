@@ -4215,85 +4215,26 @@ async function fixZeroxAndMertPromotions(client) {
  */
 async function syncInvalidPromotionsOnStartup(client) {
   try {
-    console.log('[staffSystem] 🔄 Bot başlatma denetimi: Hatalı/Erken terfiler kontrol ediliyor...');
-    const allStaff = await StaffProgress.find({ level: { $gt: 1 } });
+    console.log('[staffSystem] 🔄 Bot başlatma denetimi: Personel rütbe ve rolleri doğrulanıyor (Kalıcı Rütbe Koruması)...');
+    const allStaff = await StaffProgress.find({ level: { $gte: 1 } });
     const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
 
     for (const p of allStaff) {
-      // 🛡️ Mert için yönetici istisnası (Terfisi korunsun)
-      if (p.userId === "1031620522406072350" || (p.username && p.username.toLowerCase().includes("mert"))) {
-        continue;
-      }
-
       const currentLvl = p.level || 1;
-      const stats = p.stats || {};
-      const ticketsDone = stats.ticketsSolved || 0;
-      const msgsDone = stats.chatMessages || 0;
-      const voiceDone = stats.totalVoiceMinutes || 0;
-      const daysDone = stats.activeDays || 0;
-      const modsDone = stats.moderationActions || 0;
-
-      // Seviye hesapla: Hangi seviyenin giriş şartını (L-1 requirements) tam karşılıyor?
-      let validLevel = 1;
-      for (let lvl = 1; lvl < currentLvl; lvl++) {
-        const req = PROMOTION_REQUIREMENTS[lvl];
-        if (!req) break;
-
-        const passes =
-          ticketsDone >= (req.ticketsSolved || 0) &&
-          msgsDone >= (req.chatMessages || 0) &&
-          voiceDone >= (req.totalVoiceMinutes || 0) &&
-          daysDone >= (req.activeDays || 0) &&
-          modsDone >= (req.moderationActions || 0);
-
-        if (passes) {
-          validLevel = lvl + 1;
-        } else {
-          break; // Bu seviyenin şartı sağlanmadıysa daha üstüne çıkamaz
-        }
-      }
-
-      // Eğer mevcut level, istatistiklerin karşıladığı seviyeden yüksekse -> GERİ AL / DÜZELT!
-      if (validLevel < currentLvl) {
-        console.log(`[staffSystem] ⚠️ Hatalı terfi tespit edildi: ${p.userId} (${currentLvl} -> ${validLevel})`);
-        const oldLevel = p.level;
-        p.level = validLevel;
-        p.promotedAt = new Date();
-        await p.save();
-
-        if (guild) {
-          const member = await guild.members.fetch(p.userId).catch(() => null);
-          if (member) {
-            const oldRoleId = ROLES[oldLevel];
-            const validRoleId = ROLES[validLevel];
-
-            if (oldRoleId) await member.roles.remove(oldRoleId, 'Bot Başlatma Düzeltmesi: Erken Terfi Geri Alma').catch(() => {});
-            if (validRoleId) await member.roles.add(validRoleId, 'Bot Başlatma Düzeltmesi: Hak Edilen Seviye').catch(() => {});
+      
+      // Admin/Yönetici atamaları ve seviyeler kalıcıdır; restart esnasında asla düşürülmez.
+      if (guild) {
+        const member = await guild.members.fetch(p.userId).catch(() => null);
+        if (member) {
+          const targetRoleId = ROLES[currentLvl];
+          if (targetRoleId && !member.roles.cache.has(targetRoleId)) {
+            console.log(`[staffSystem] 👑 Rütbe Koruması: ${p.userId} kullanıcısına Level ${currentLvl} rolü veriliyor...`);
+            await member.roles.add(targetRoleId, 'Bot Başlatma Koruması: Yönetici Rütbe Rolü Senkronizasyonu').catch(() => {});
           }
         }
-
-        // Kullanıcıya bilgilendirme DM'si at
-        try {
-          const user = await client.users.fetch(p.userId).catch(() => null);
-          if (user) {
-            const revertEmbed = new EmbedBuilder()
-              .setColor(0x3498db)
-              .setTitle("🛡️ Sistem Güvenlik & Düzeltme Bildirimi")
-              .setDescription(
-                `Sayın Yetkili <@${p.userId}>,\n\n` +
-                `Bot yeniden başlatma denetiminde premature (erken) terfi tespiti yapılmış ve rütbeniz hak ettiğiniz **${ROLE_NAMES[validLevel]}** seviyesine düzeltilmiştir.\n\n` +
-                `• **Eski Statü:** ${ROLE_NAMES[oldLevel]}\n` +
-                `• **Düzeltilen Statü:** ${ROLE_NAMES[validLevel]}\n\n` +
-                `Gerekli terfi hedeflerini tamamladığınızda terfi sınavınız ve terfi süreciniz sorunsuz açılacaktır.`
-              )
-              .setFooter({ text: "Eko Yıldız • İnsan Kaynakları Denetimi" })
-              .setTimestamp();
-            await user.send({ embeds: [revertEmbed] }).catch(() => {});
-          }
-        } catch (_) {}
       }
     }
-    console.log('[staffSystem] ✅ Bot başlatma terfi denetimi tamamlandı.');
+    console.log('[staffSystem] ✅ Bot başlatma rütbe koruma ve senkronizasyon denetimi tamamlandı.');
   } catch (err) {
     console.error('[staffSystem] syncInvalidPromotionsOnStartup hatası:', err.message);
   }

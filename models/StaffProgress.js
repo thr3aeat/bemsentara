@@ -15,6 +15,7 @@ const staffProgressSchema = new mongoose.Schema({
 
   // Mevcut rol seviyesi (1=Stajyer, 2=Personel, 3=Gelişmiş, 4=Sekreter)
   level: { type: Number, default: 1 },
+  adminOverride: { type: Boolean, default: false }, // Yönetici tarafından manuel rütbe atandı mı? (Restart'ta silinmez)
 
   // Günlük görev takibi
   daily: {
