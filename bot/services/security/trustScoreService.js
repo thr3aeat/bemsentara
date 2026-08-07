@@ -1022,6 +1022,8 @@ async function cleanupDuplicateTrustChannels(client) {
   } catch (err) {
     console.error("[TrustScore] cleanupDuplicateTrustChannels hatası:", err.message);
   }
+}
+
 /**
  * Sends a detailed activity log to the user's dedicated Güven Puanı record channel.
  */
