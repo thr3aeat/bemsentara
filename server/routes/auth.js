@@ -38,14 +38,14 @@ async function logWebLogin(user, req) {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || 'Bilinmiyor';
     let location = 'Bilinmiyor';
-    
+
     if (ip && ip !== '::1' && ip !== '127.0.0.1' && ip !== 'Bilinmiyor') {
       try {
         const geoRes = await axios.get(`http://ip-api.com/json/${ip.split(',')[0].trim()}`);
         if (geoRes.data && geoRes.data.status === 'success') {
           location = `${geoRes.data.city}, ${geoRes.data.country}`;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const message = `**Web Girişi Yapıldı**\n**Kullanıcı:** ${user.username || user.discordUsername || "Bilinmiyor"} (${user.discordId})\n**IP:** ${ip}\n**Konum:** ${location}`;
@@ -54,7 +54,7 @@ async function logWebLogin(user, req) {
     const btn = new ButtonBuilder()
       .setLabel('Canlı İzle / Geçmişi Gör')
       .setStyle(ButtonStyle.Link)
-      .setURL(`${process.env.BASE_URL || 'https://bemsentara-4cyc.onrender.com'}/debug?watch=${user.discordId}`);
+      .setURL(`${process.env.BASE_URL || 'https://ekoyildiz.duckdns.org'}/debug?watch=${user.discordId}`);
 
     const row = new ActionRowBuilder().addComponents(btn);
     await discordLogger.sendLog('web', message, null, 'INFO', row);
@@ -97,11 +97,11 @@ async function resolveDiscordUser(username) {
   const { TARGET_GUILD_ID } = require("../../config");
   const client = getDiscordClient();
   if (!client || !client.isReady()) throw new Error("Discord botu aktif değil.");
-  
+
   if (/^\d{17,20}$/.test(username)) {
     return await client.users.fetch(username).catch(() => null);
   }
-  
+
   const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
   if (!guild) return null;
   const members = await guild.members.fetch();
@@ -131,8 +131,8 @@ router.get("/auth/discord/callback", passport.authenticate("discord", { failureR
     }
     return res.redirect("/auth/roblox");
   }
-  tryAutoSyncRoles(req.user).catch(() => {});
-  syncLinkedRoleMetadata(req.user, req.session).catch(() => {});
+  tryAutoSyncRoles(req.user).catch(() => { });
+  syncLinkedRoleMetadata(req.user, req.session).catch(() => { });
   logger.log("[AUTH] " + (req.user.username || req.user.discordUsername) + " (" + req.user.discordId + ") Discord OAuth ile giriş yaptı.", "auth");
   logWebLogin(req.user, req);
   res.redirect("/dashboard");
@@ -466,7 +466,7 @@ router.post("/api/auth/verify-code", async (req, res) => {
     otpStore.delete(discordId);
     return res.status(400).json({ error: "Geçersiz veya süresi dolmuş kod." });
   }
-  
+
   if (record.code !== String(code).trim()) return res.status(401).json({ error: "Hatalı kod." });
   otpStore.delete(discordId);
 
@@ -540,7 +540,7 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
           .setColor(0x2ecc71)
           .setFooter({ text: "Sentara" })
           .setTimestamp();
-        await discordUser.send({ embeds: [confirmEmbed] }).catch(() => {});
+        await discordUser.send({ embeds: [confirmEmbed] }).catch(() => { });
       }
     }
 
@@ -555,19 +555,19 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
 router.post("/api/auth/site-login", async (req, res) => {
   const { username, password, rememberMe } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
-  
+
   try {
     const discordUser = await resolveDiscordUser(username);
     if (!discordUser) return res.status(404).json({ error: "Kullanıcı bulunamadı. Bota erişiminiz olduğundan emin olun." });
-    
+
     const user = await User.findOne({ discordId: discordUser.id });
     if (!user || !user.sitePassword) return res.status(401).json({ error: "Bu hesaba ait site şifresi bulunmuyor." });
-    
+
     if (user.isBanned) return res.status(403).json({ error: "Hesabınız yasaklandı." });
-    
+
     const match = await bcrypt.compare(password, user.sitePassword);
     if (!match) return res.status(401).json({ error: "Hatalı şifre." });
-    
+
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: "Oturum açılamadı." });
       if (rememberMe) {
@@ -586,21 +586,21 @@ router.post("/api/auth/site-login", async (req, res) => {
 router.post("/api/auth/forgot-password", async (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: "Kullanıcı adı gereklidir." });
-  
+
   try {
     const discordUser = await resolveDiscordUser(username);
     if (!discordUser) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-    
+
     const user = await User.findOne({ discordId: discordUser.id });
     if (!user || !user.sitePassword) return res.status(400).json({ error: "Bu hesaba ait oluşturulmuş bir site şifresi bulunmuyor." });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000;
     otpStore.set(discordUser.id + "_reset", { code, expiresAt });
-    
+
     const { BASE_URL } = require("../../config");
     // We can also just send the code instead of a link if we don't have a reset page
-    
+
     try {
       await discordUser.send({
         embeds: [{
@@ -613,7 +613,7 @@ router.post("/api/auth/forgot-password", async (req, res) => {
     } catch (err) {
       return res.status(400).json({ error: "Size DM gönderilemedi!" });
     }
-    
+
     logger.log("[AUTH] " + discordUser.id + " şifre sıfırlama talep etti.", "auth");
     res.json({ success: true, message: "Şifre sıfırlama kodu DM kutunuza gönderildi.", discordId: discordUser.id });
   } catch (err) {
@@ -625,21 +625,21 @@ router.post("/api/auth/forgot-password", async (req, res) => {
 router.post("/api/auth/reset-password", async (req, res) => {
   const { discordId, code, password } = req.body;
   if (!discordId || !code || !password || password.length < 8) return res.status(400).json({ error: "Geçersiz istek veya çok kısa şifre (en az 8 karakter)." });
-  
+
   const record = otpStore.get(discordId + "_reset");
   if (!record || Date.now() > record.expiresAt || record.code !== String(code).trim()) {
     return res.status(400).json({ error: "Geçersiz veya süresi dolmuş sıfırlama kodu." });
   }
-  
+
   try {
     const user = await User.findOne({ discordId });
     if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-    
+
     user.sitePassword = await bcrypt.hash(password, 10);
     user.passwordCreatedAt = new Date();
     await user.save();
     saveStoreNow();
-    
+
     otpStore.delete(discordId + "_reset");
     res.json({ success: true, message: "Şifreniz başarıyla sıfırlandı! Artık yeni şifrenizle giriş yapabilirsiniz." });
   } catch (err) {
@@ -652,14 +652,14 @@ router.post("/api/auth/set-site-password", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmalısınız." });
   const { password } = req.body;
   if (!password || password.length < 8) return res.status(400).json({ error: "Şifre en az 8 karakter olmalıdır." });
-  
+
   try {
     const user = await User.findById(req.user._id);
     user.sitePassword = await bcrypt.hash(password, 10);
     user.passwordCreatedAt = new Date();
     await user.save();
     saveStoreNow();
-    
+
     res.json({ success: true, message: "Site şifreniz başarıyla ayarlandı!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -696,7 +696,7 @@ router.get(
           console.error("Session regenerate error:", err);
           return res.redirect("/dashboard?robloxError=true");
         }
-        
+
         // Re-establish user in regenerated session
         if (req.user) {
           req.login(req.user, async (err) => {
@@ -710,7 +710,7 @@ router.get(
               req.user = fresh;
               req.session.passport.user = fresh._id;
             }
-            tryAutoSyncRoles(req.user).catch(() => {});
+            tryAutoSyncRoles(req.user).catch(() => { });
 
             try {
               await syncLinkedRoleMetadata(req.user, req.session);
@@ -767,16 +767,16 @@ router.post("/api/auth/generate-pin", async (req, res) => {
   try {
     const user = await User.findOne({ discordId: req.user.discordId });
     if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
-    
+
     // Always generate a new 4-digit code if they aren't verified yet
     if (user.botVerified) {
       return res.status(400).json({ error: "Zaten botu doğruladınız." });
     }
-    
+
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
     user.botPin = pin;
     await saveStoreNow(); // Ensure it saves
-    
+
     res.json({ success: true, pin });
   } catch (err) {
     res.status(500).json({ error: "Sunucu hatası." });
@@ -788,46 +788,46 @@ router.post("/api/auth/generate-pin", async (req, res) => {
 // Request verification - generates a code and sends OAuth link to Discord
 router.post("/api/auth/verify-request", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmalısınız." });
-  
+
   try {
     const VerificationCode = require("../../models/VerificationCode");
     const user = await User.findOne({ discordId: req.user.discordId });
-    
+
     if (!user) {
       return res.status(404).json({ error: "Kullanıcı bulunamadı." });
     }
-    
+
     if (user.botVerified) {
       return res.status(400).json({ error: "Zaten botu doğruladınız." });
     }
-    
+
     // Create verification code
     const code = VerificationCode.create(req.user.discordId);
     const { BASE_URL } = require("../../config");
-    
+
     // Send Discord DM with verification link
     const { getDiscordClient } = require("../../bot/discordClient");
     const client = getDiscordClient();
-    
+
     if (!client || !client.isReady()) {
       return res.status(500).json({ error: "Discord botu aktif değil." });
     }
-    
+
     const discordUser = await client.users.fetch(req.user.discordId).catch(() => null);
     if (!discordUser) {
       return res.status(404).json({ error: "Discord hesabınıza erişilemedi." });
     }
-    
-    const verifyUrl = `${BASE_URL || 'https://bemsentara-4cyc.onrender.com'}/verify?code=${code}`;
-    
+
+    const verifyUrl = `${BASE_URL || 'https://ekoyildiz.duckdns.org'}/verify?code=${code}`;
+
     const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
     const button = new ButtonBuilder()
       .setLabel("🔐 Doğrulamak İçin Tıkla")
       .setStyle(ButtonStyle.Link)
       .setURL(verifyUrl);
-    
+
     const row = new ActionRowBuilder().addComponents(button);
-    
+
     const embed = new EmbedBuilder()
       .setTitle("🔐 Discord Doğrulaması Gerekli")
       .setDescription(
@@ -839,11 +839,11 @@ router.post("/api/auth/verify-request", async (req, res) => {
       .setColor(0x7c6af7)
       .setFooter({ text: "Sentara Doğrulama Sistemi" })
       .setTimestamp();
-    
+
     await discordUser.send({ embeds: [embed], components: [row] });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: "Doğrulama linki Discord DM'inize gönderildi!",
       code: code,
       expiresIn: 30 * 60 * 1000 // 30 minutes in ms
@@ -857,14 +857,14 @@ router.post("/api/auth/verify-request", async (req, res) => {
 // Verify bot verification code endpoint - called when user clicks link or enters code
 router.post("/api/auth/bot-verify-code", async (req, res) => {
   const { code, captchaToken } = req.body;
-  
+
   if (!code) {
     return res.status(400).json({ error: "Doğrulama kodu gereklidir." });
   }
   if (!captchaToken) {
     return res.status(400).json({ error: "reCAPTCHA doğrulaması gereklidir." });
   }
-  
+
   try {
     // reCAPTCHA doğrulaması yap
     const axios = require("axios");
@@ -885,24 +885,24 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
 
     const VerificationCode = require("../../models/VerificationCode");
     const verificationRecord = await VerificationCode.findOne({ code });
-    
+
     if (!verificationRecord) {
       return res.status(400).json({ error: "Geçersiz veya süresi dolmuş kod." });
     }
-    
+
     const user = await User.findOne({ discordId: verificationRecord.discordId });
     if (!user) {
       return res.status(404).json({ error: "Kullanıcı bulunamadı." });
     }
-    
+
     // Mark as verified
     user.botVerified = true;
     await user.save();
     saveStoreNow();
-    
+
     // Mark verification as verified
     await VerificationCode.verify(code);
-    
+
     // Send confirmation to Discord
     const { getDiscordClient } = require("../../bot/discordClient");
     const client = getDiscordClient();
@@ -919,13 +919,13 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
           .setColor(0x2ecc71)
           .setFooter({ text: "Sentara" })
           .setTimestamp();
-        
-        await discordUser.send({ embeds: [confirmEmbed] }).catch(() => {});
+
+        await discordUser.send({ embeds: [confirmEmbed] }).catch(() => { });
       }
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: "Doğrulama başarılı! Artık botu kullanabilirsiniz."
     });
   } catch (err) {
@@ -937,7 +937,7 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
 // Web Verification Page (GET endpoint)
 router.get("/verify", async (req, res) => {
   const { code } = req.query;
-  
+
   return res.send(`
     <!DOCTYPE html>
     <html lang="tr">
@@ -1110,16 +1110,16 @@ const isAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ error: "Giriş yapmalısınız" });
   }
-  
+
   // Check if user is admin (örn: ADMIN_ROLE_ID'si varsa, Roblox grup admini vs.)
-  const isUserAdmin = req.user.isAdmin || 
+  const isUserAdmin = req.user.isAdmin ||
     req.user.discordId === process.env.DISCORD_OWNER_ID ||
     (req.user.rolesInRobloxGroup && req.user.rolesInRobloxGroup.includes("Admin"));
-  
+
   if (!isUserAdmin) {
     return res.status(403).json({ error: "Yetkiniz yok" });
   }
-  
+
   next();
 };
 
@@ -1149,9 +1149,9 @@ router.get("/api/admin/aktivite-gecmisi/:discordId", isAdmin, (req, res) => {
   try {
     const { discordId } = req.params;
     const activities = UserActivityLog.getByUser(discordId, 100);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       discordId,
       count: activities.length,
       activities: activities.map(a => ({
@@ -1171,8 +1171,8 @@ router.get("/api/admin/kurallar-kabul", isAdmin, (req, res) => {
   try {
     const RulesAcceptance = require("../../models/RulesAcceptance");
     const acceptances = RulesAcceptance.getAllAcceptances();
-    
-    res.json({ 
+
+    res.json({
       success: true,
       total: acceptances.length,
       acceptances: acceptances.map(a => ({
@@ -1193,7 +1193,7 @@ router.get("/api/admin/istatistikler", isAdmin, (req, res) => {
     const inactiveUsers = UserActivityLog.getInactiveUsers(24);
     const RulesAcceptance = require("../../models/RulesAcceptance");
     const rulesAcceptances = RulesAcceptance.getAllAcceptances();
-    
+
     res.json({
       success: true,
       stats: {
@@ -1230,8 +1230,8 @@ router.post("/api/briefing/submit", (req, res) => {
       answers: Object.keys(answers)
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Form başarıyla gönderildi!",
       redirectUrl: "/briefing"
     });

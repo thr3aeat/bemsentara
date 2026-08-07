@@ -159,13 +159,13 @@ function initializeDiscordHandlers(client) {
     try {
       const { scanVoiceChannels, startTrustScoreDecayScheduler } = require("../services/security/trustScoreService");
       // Run once on startup after a delay
-      setTimeout(() => scanVoiceChannels(client).catch(() => {}), 15000);
+      setTimeout(() => scanVoiceChannels(client).catch(() => { }), 15000);
       // Run every 30 minutes
       setInterval(() => {
         scanVoiceChannels(client).catch(err => console.error("[scanVoiceChannels Interval] Error:", err.message));
       }, 30 * 60 * 1000);
       console.log("✅ Güven Puanı Ses Kanalı Tarayıcısı başlatıldı.");
-      
+
       startTrustScoreDecayScheduler(client);
     } catch (trustErr) {
       console.error("[TrustScore] Ses tarayıcı/decay başlatılamadı:", trustErr.message);
@@ -193,7 +193,7 @@ function initializeDiscordHandlers(client) {
 
     startCleanupScheduler();
     startStaffScheduler(client);
-    notifyAllStaffAboutV7(client).catch(() => {});
+    notifyAllStaffAboutV7(client).catch(() => { });
     startAtaturkHistoryScheduler(client);
     startEkoYildizHistoryScheduler(client);
 
@@ -219,9 +219,9 @@ function initializeDiscordHandlers(client) {
     try {
       const { autoGraduateOverdueStudents } = require('../services/moderatorSchool');
       // İlk çalıştırma: bot açılışından 30 saniye sonra
-      setTimeout(() => autoGraduateOverdueStudents(client).catch(() => {}), 30000);
+      setTimeout(() => autoGraduateOverdueStudents(client).catch(() => { }), 30000);
       // Sonraki çalıştırmalar: her 24 saatte bir
-      setInterval(() => autoGraduateOverdueStudents(client).catch(() => {}), 24 * 60 * 60 * 1000);
+      setInterval(() => autoGraduateOverdueStudents(client).catch(() => { }), 24 * 60 * 60 * 1000);
     } catch (err) {
       console.error('[ready] Okul otomatik mezuniyet zamanlayıcısı başlatılamadı:', err.message);
     }
@@ -230,12 +230,12 @@ function initializeDiscordHandlers(client) {
     try {
       const { setupTriggerButton, checkInactivityTimers } = require("../services/investigationService");
       const { setupCourtTriggerButton } = require("../services/courtService");
-      setupTriggerButton(client).catch(() => {});
-      setupCourtTriggerButton(client).catch(() => {});
+      setupTriggerButton(client).catch(() => { });
+      setupCourtTriggerButton(client).catch(() => { });
       const { setupEkoYildizThanksPanel } = require("../services/ekoYildizThanksService");
-      setupEkoYildizThanksPanel(client).catch(() => {});
+      setupEkoYildizThanksPanel(client).catch(() => { });
       setInterval(() => {
-        checkInactivityTimers(client).catch(() => {});
+        checkInactivityTimers(client).catch(() => { });
       }, 60000);
     } catch (err) {
       console.error("[ready] Soruşturma & Dava sistemi başlatma hatası:", err.message);
@@ -620,7 +620,7 @@ function initializeDiscordHandlers(client) {
           p.status = 'dismissed';
           p.dismissedAt = new Date();
           p.dismissReason = 'Sunucudan ayrılma (Otomatik Senkronizasyon)';
-          await p.save().catch(() => {});
+          await p.save().catch(() => { });
           console.log(`[staffSystem] Auto-dismissed user ${member.id} during leave due to leaving the server.`);
         }
       }
@@ -656,7 +656,7 @@ function initializeDiscordHandlers(client) {
           if (editableRoles.size > 0) {
             await member.roles.remove(Array.from(editableRoles.keys())).catch(() => { });
           }
-          await member.roles.add(hapisRole, "Hapisten kaçış engellendi (Yeniden giriş)").catch(() => {});
+          await member.roles.add(hapisRole, "Hapisten kaçış engellendi (Yeniden giriş)").catch(() => { });
           console.log(`[AutoJail] Re-jailed user ${member.id} (${member.user.tag}) on join.`);
           return;
         }
@@ -732,7 +732,7 @@ function initializeDiscordHandlers(client) {
       const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
       const hasHapisRole = newMember.roles.cache.some(r => r.name.toLowerCase().includes('hapis'));
       if (hasHapisRole && newMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
-        await newMember.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis rolü alındığı için Yavru Dinazor rolü otomatik çıkarıldı.').catch(() => {});
+        await newMember.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis rolü alındığı için Yavru Dinazor rolü otomatik çıkarıldı.').catch(() => { });
         console.log(`[HapisAutoFilter] Removed Yavru Dinazor role from jailed user ${newMember.user.tag}`);
       }
       // ── Mute Tracker (Susturma Takibi) ──
@@ -759,7 +759,7 @@ function initializeDiscordHandlers(client) {
             const cezaChannelId = EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
             const logChannel = newMember.guild.channels.cache.get(cezaChannelId)
               || await newMember.guild.channels.fetch(cezaChannelId).catch(() => null);
-              
+
             if (logChannel && logChannel.isTextBased()) {
               const { EmbedBuilder } = require("discord.js");
               const logEmbed = new EmbedBuilder()
@@ -771,15 +771,15 @@ function initializeDiscordHandlers(client) {
                   { name: "🕒 Bitiş", value: `<t:${Math.floor(newTimeout.getTime() / 1000)}:R>`, inline: true }
                 )
                 .setTimestamp();
-              await logChannel.send({ embeds: [logEmbed] }).catch(() => {});
+              await logChannel.send({ embeds: [logEmbed] }).catch(() => { });
             }
 
             // Check if muteCount is 3 (Kick)
             if (dbUser.muteCount === 3) {
               if (newMember.kickable) {
-                await newMember.send(`⚠️ **3 kez susturulduğunuz için sunucudan atıldınız!**`).catch(() => {});
+                await newMember.send(`⚠️ **3 kez susturulduğunuz için sunucudan atıldınız!**`).catch(() => { });
                 await newMember.kick("3 kez susturulduğu için otomatik atıldı.").catch(err => console.error("[MuteTracker] Kick error:", err.message));
-                
+
                 if (logChannel && logChannel.isTextBased()) {
                   const { EmbedBuilder } = require("discord.js");
                   const kickEmbed = new EmbedBuilder()
@@ -787,16 +787,16 @@ function initializeDiscordHandlers(client) {
                     .setColor(0xe74c3c)
                     .setDescription(`👤 **Kullanıcı:** ${newMember.toString()} (\`${newMember.user.tag}\`)\n⚠️ **Durum:** 3. kez susturulduğu için sunucudan atıldı.`)
                     .setTimestamp();
-                  await logChannel.send({ embeds: [kickEmbed] }).catch(() => {});
+                  await logChannel.send({ embeds: [kickEmbed] }).catch(() => { });
                 }
               }
-            } 
+            }
             // Check if muteCount is 6 (Ban)
             else if (dbUser.muteCount >= 6) {
               if (newMember.bannable) {
-                await newMember.send(`❌ **6 kez susturulduğunuz için sunucudan yasaklandınız (BAN)!**`).catch(() => {});
+                await newMember.send(`❌ **6 kez susturulduğunuz için sunucudan yasaklandınız (BAN)!**`).catch(() => { });
                 await newMember.ban({ reason: "6 kez susturulduğu için otomatik yasaklandı (BAN)." }).catch(err => console.error("[MuteTracker] Ban error:", err.message));
-                
+
                 if (logChannel && logChannel.isTextBased()) {
                   const { EmbedBuilder } = require("discord.js");
                   const banEmbed = new EmbedBuilder()
@@ -804,7 +804,7 @@ function initializeDiscordHandlers(client) {
                     .setColor(0xc0392b)
                     .setDescription(`👤 **Kullanıcı:** ${newMember.toString()} (\`${newMember.user.tag}\`)\n❌ **Durum:** 6. kez susturulduğu için sunucudan banlandı.`)
                     .setTimestamp();
-                  await logChannel.send({ embeds: [banEmbed] }).catch(() => {});
+                  await logChannel.send({ embeds: [banEmbed] }).catch(() => { });
                 }
               }
             }
@@ -1422,10 +1422,10 @@ function initializeDiscordHandlers(client) {
         if (activeTicket && activeTicket.channelId) {
           const channel = await client.channels.fetch(activeTicket.channelId).catch(() => null);
           if (channel && channel.isTextBased()) {
-            await channel.sendTyping().catch(() => {});
+            await channel.sendTyping().catch(() => { });
           }
         }
-      } 
+      }
       // Case B: In-guild typing events (User typing in private eposta channel, or moderator typing in ticket/reklam channel)
       else {
         const channelName = typing.channel.name;
@@ -1437,7 +1437,7 @@ function initializeDiscordHandlers(client) {
           if (activeTicket && activeTicket.channelId) {
             const channel = await client.channels.fetch(activeTicket.channelId).catch(() => null);
             if (channel && channel.isTextBased()) {
-              await channel.sendTyping().catch(() => {});
+              await channel.sendTyping().catch(() => { });
             }
           }
         }
@@ -1449,13 +1449,13 @@ function initializeDiscordHandlers(client) {
             if (activeTicket.userChannelId) {
               const uChannel = await client.channels.fetch(activeTicket.userChannelId).catch(() => null);
               if (uChannel && uChannel.isTextBased()) {
-                await uChannel.sendTyping().catch(() => {});
+                await uChannel.sendTyping().catch(() => { });
               }
             } else {
               // Otherwise forward to DM
               const user = await client.users.fetch(activeTicket.userId).catch(() => null);
               if (user) {
-                await user.sendTyping().catch(() => {});
+                await user.sendTyping().catch(() => { });
               }
             }
           }
@@ -1486,16 +1486,16 @@ function initializeDiscordHandlers(client) {
         const channel = message.channel;
         if (channel && channel.type === ChannelType.GuildText) {
           const { handleArchiveChannel } = require("../services/archiveService");
-          
+
           let cleanName = channel.name;
           const norm = cleanName.toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
           if (!norm.endsWith("-arsiv")) {
             cleanName = `${channel.name}-arsiv`;
-            await channel.setName(cleanName, "Arşiv Komutu İle İsim Güncellemesi").catch(() => {});
+            await channel.setName(cleanName, "Arşiv Komutu İle İsim Güncellemesi").catch(() => { });
           }
 
           await handleArchiveChannel(channel);
-          await message.reply({ content: "🔒 **Kanal başarıyla arşivlendi ve gizlendi.** (Bu arşivi artık @everyone ve Moderatörler görüntüleyemez.)" }).catch(() => {});
+          await message.reply({ content: "🔒 **Kanal başarıyla arşivlendi ve gizlendi.** (Bu arşivi artık @everyone ve Moderatörler görüntüleyemez.)" }).catch(() => { });
           return;
         }
       } catch (archErr) {
@@ -1524,7 +1524,7 @@ function initializeDiscordHandlers(client) {
         );
 
         if (aiReply) {
-          await message.reply({ content: `<@${message.author.id}> ${aiReply}` }).catch(() => {});
+          await message.reply({ content: `<@${message.author.id}> ${aiReply}` }).catch(() => { });
         }
       } catch (err) {
         console.error("[messageCreate] accidental greeting auto-fix error:", err.message);
@@ -1594,10 +1594,10 @@ function initializeDiscordHandlers(client) {
               .setDescription(message.content || '*[Sadece Görsel/Dosya Ekli]*')
               .setFooter({ text: `Dosya: #${report.reportId} | Yanıtlamak için buraya yazabilirsiniz.` })
               .setTimestamp();
-            
+
             const files = Array.from(message.attachments.values()).map(a => a.url);
-            await targetUser.send({ embeds: [embed], files }).catch(() => {});
-            await message.react('✉️').catch(() => {});
+            await targetUser.send({ embeds: [embed], files }).catch(() => { });
+            await message.react('✉️').catch(() => { });
           }
         }
       } catch (tunnelErr) {
@@ -1621,7 +1621,7 @@ function initializeDiscordHandlers(client) {
       // ── Hapis Engelleme Kontrolü ───────────────────────────────────────────
       if (!message.author.bot) {
         if (!message.member && message.author) {
-          await message.guild.members.fetch(message.author.id).catch(() => {});
+          await message.guild.members.fetch(message.author.id).catch(() => { });
         }
 
         const hasHapisRole = message.member?.roles.cache.some(r => r.name.toLowerCase() === "hapis");
@@ -1642,10 +1642,10 @@ function initializeDiscordHandlers(client) {
           );
 
           if (!isJailCategory && !isCayOcagi) {
-            await message.delete().catch(() => {});
+            await message.delete().catch(() => { });
             const reply = await message.channel.send(`❌ <@${message.author.id}>, hapiste olduğunuz için bu kanalda konuşamazsınız!`).catch(() => null);
             if (reply) {
-              setTimeout(() => reply.delete().catch(() => {}), 5000);
+              setTimeout(() => reply.delete().catch(() => { }), 5000);
             }
             return;
           } else {
@@ -1671,7 +1671,7 @@ function initializeDiscordHandlers(client) {
       try {
         const { recordCommand } = require("../services/usageTracker");
         recordCommand(`s!${cmd}`, message.author.id, message.guild.id);
-      } catch (_) {}
+      } catch (_) { }
 
       // 0) s!grafikler / s!grafik / !grafikler (Canlı Kullanım Grafiği & İstatistik)
       if (['grafikler', 'grafik', 'istatistik', 'stats', 'grafiklerim'].includes(cmd)) {
@@ -1776,12 +1776,12 @@ function initializeDiscordHandlers(client) {
       if (activeSessions.has(message.author.id) && activeSessions.get(message.author.id).channelId === message.channel.id) {
         // Oturumu hemen sil ki mükerrer çalışmasın
         activeSessions.delete(message.author.id);
-        
+
         const { PermissionFlagsBits } = require("discord.js");
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply("❌ Bu komutu kullanmak için `Yönetici` yetkisine sahip olmalısınız.").catch(() => {});
+          return message.reply("❌ Bu komutu kullanmak için `Yönetici` yetkisine sahip olmalısınız.").catch(() => { });
         }
-        
+
         // Eylemi işle
         processAIInstruction(message, content).catch(err => {
           console.error("[AI Management Command] Hata:", err);
@@ -1792,10 +1792,10 @@ function initializeDiscordHandlers(client) {
       // 2) Yeni komut başlatma
       if (lowerContent.startsWith("!botaiyaptırma")) {
         const { PermissionFlagsBits } = require("discord.js");
-        
+
         // Yetki kontrolü (Yalnızca Yönetici)
         if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply("❌ Bu komutu kullanmak için `Yönetici` yetkisine sahip olmalısınız.").catch(() => {});
+          return message.reply("❌ Bu komutu kullanmak için `Yönetici` yetkisine sahip olmalısınız.").catch(() => { });
         }
 
         const argsStr = content.slice("!botaiyaptırma".length).trim();
@@ -1810,14 +1810,14 @@ function initializeDiscordHandlers(client) {
             channelId: message.channel.id,
             timestamp: Date.now()
           });
-          
+
           await message.reply(
             "🤖 **Yapay Zeka Yönetim Modu Açıldı!**\n" +
             "Lütfen sunucuda yapmak istediğiniz işlemleri yazın. Örnekler:\n" +
             "• `Moderatör Anasayfa kategorisine moderatör-sohbet adında bir kanal oluştur ve o kategorinin izinlerini yap`\n" +
             "• `Moderatör Lideri rolünün altına siyah renginde yetkileri tam altında olan rol gibi olsun`\n\n" +
             "*Not: 2 dakika içinde yapacağınız bir sonraki mesajınız talimat olarak algılanacaktır.*"
-          ).catch(() => {});
+          ).catch(() => { });
         }
         return;
       }
@@ -1826,14 +1826,14 @@ function initializeDiscordHandlers(client) {
       if (lowerContent.startsWith("!devamedenegitimlermodalim")) {
         const { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
         if (!message.member.permissions.has(PermissionFlagsBits.ManageRoles) && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply("❌ Bu komutu kullanmak için gerekli yetkiniz bulunmamaktadır.").catch(() => {});
+          return message.reply("❌ Bu komutu kullanmak için gerekli yetkiniz bulunmamaktadır.").catch(() => { });
         }
 
         const { getActiveTrainings } = require("../services/moderatorSchool");
         const activeTrainingsMap = getActiveTrainings();
 
         if (activeTrainingsMap.size === 0) {
-          return message.reply("🌸 Selin: Şu anda devam eden aktif bir eğitim bulunmamaktadır. 💕").catch(() => {});
+          return message.reply("🌸 Selin: Şu anda devam eden aktif bir eğitim bulunmamaktadır. 💕").catch(() => { });
         }
 
         const embed = new EmbedBuilder()
@@ -1864,7 +1864,7 @@ function initializeDiscordHandlers(client) {
           index++;
         }
 
-        return message.reply({ embeds: [embed], components: rows }).catch(() => {});
+        return message.reply({ embeds: [embed], components: rows }).catch(() => { });
       }
 
       // ── !flört Komutu ──────────────────────────────────────────────────────
@@ -1886,7 +1886,7 @@ function initializeDiscordHandlers(client) {
             .setTitle("🌸 Selin:")
             .setThumbnail(randomImage)
             .setDescription("Şey... Benimle flört mü etmek istiyorsun? 👉👈\nHadi bana tatlı bir şeyler söyle veya bir mesaj yaz! Örn: `!flört çok güzelsin` 💕");
-          return message.reply({ embeds: [embed] }).catch(() => {});
+          return message.reply({ embeds: [embed] }).catch(() => { });
         }
 
         const systemPrompt = `Sen Selin'sin. Eko & Yıldız Moderatör Okulu'nun çok sevimli, cana yakın, ara sıra utangaç ve flörtöz anime kızı asistanısın. Kullanıcı seninle flört etmeye çalışıyor. Ona tatlı, flörtöz, anime kızlarına özgü konuşma tarzıyla (örn: "baka", "uwu", "👉👈", "seni şapşal", "kalbim güm güm atıyor...", "n-ne?!") cevaplar ver. Yanıtların çok uzun olmasın, samimi ve sevimli olsun. Türkçe konuş.`;
@@ -1904,16 +1904,16 @@ function initializeDiscordHandlers(client) {
             .setDescription(aiReply || "Şey... Ne diyeceğimi bilemedim... 👉👈");
 
           if (thinkingMsg) {
-            await thinkingMsg.edit({ content: " ", embeds: [embed] }).catch(() => {});
+            await thinkingMsg.edit({ content: " ", embeds: [embed] }).catch(() => { });
           } else {
-            await message.reply({ embeds: [embed] }).catch(() => {});
+            await message.reply({ embeds: [embed] }).catch(() => { });
           }
         } catch (err) {
           console.error("[Flirt Command] Hata:", err);
           const errorEmbed = new EmbedBuilder()
             .setColor(0xff0000)
             .setDescription("🌸 Selin: Ş-şey... Kafam biraz karıştı da, daha sonra tekrar dener misin? 👉👈");
-          await message.reply({ embeds: [errorEmbed] }).catch(() => {});
+          await message.reply({ embeds: [errorEmbed] }).catch(() => { });
         }
         return;
       }
@@ -2199,10 +2199,10 @@ function initializeDiscordHandlers(client) {
               .setAuthor({ name: '🤫 İhbarcı Mesajı' })
               .setDescription(message.content || '*[Sadece Görsel/Dosya Ekli]*')
               .setTimestamp();
-            
+
             const files = Array.from(message.attachments.values()).map(a => a.url);
             await thread.send({ embeds: [embed], files });
-            await message.react('✅').catch(() => {});
+            await message.react('✅').catch(() => { });
             return;
           }
         }
@@ -2487,7 +2487,7 @@ function initializeDiscordHandlers(client) {
           id && !['PERSONEL_ROLE_ID', 'GELISMIS_ROLE_ID', 'SEKRETER_ROLE_ID'].includes(id)
         );
         let isStaff = staffRoleIds.some(rid => message.member?.roles.cache.has(rid)) ||
-                      message.member?.permissions.has('Administrator');
+          message.member?.permissions.has('Administrator');
 
         if (!isStaff) {
           const StaffProgress = require("../../models/StaffProgress");
@@ -2505,7 +2505,7 @@ function initializeDiscordHandlers(client) {
           // 2) Selam verip vermediğini kontrol et (Türkçe selam varyasyonlarını kapsar ve hatalı eşleşmeleri önler)
           const cleanMessage = message.content.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "").trim();
           const words = cleanMessage.split(/\s+/);
-          
+
           const singleWordGreetings = [
             'selam', 'merhaba', 'günaydın', 'tünaydın', 'hey', 'heyy', 'hello', 'hi',
             'sa', 'slm', 'mrb', 'selamlar', 'merhabalar', 'günaydınlar', 'as',
@@ -2514,10 +2514,10 @@ function initializeDiscordHandlers(client) {
           const phraseGreetings = [
             'iyi günler', 'iyi akşamlar', 'iyi geceler', 'selamün aleyküm', 'selamun aleyküm', 's.a', 'aleyküm selam', 'aleykum selam'
           ];
-          
-          const isGreet = words.some(w => singleWordGreetings.includes(w)) || 
-                          phraseGreetings.some(phrase => cleanMessage.startsWith(phrase) || cleanMessage.includes(phrase));
-                          
+
+          const isGreet = words.some(w => singleWordGreetings.includes(w)) ||
+            phraseGreetings.some(phrase => cleanMessage.startsWith(phrase) || cleanMessage.includes(phrase));
+
           if (isGreet) {
             const { recordGreet } = require("../services/staffSystem");
             await recordGreet(message.author.id, client, message.guild.id).catch(() => { });
@@ -2542,20 +2542,20 @@ function initializeDiscordHandlers(client) {
       try {
         const Ticket = require('../../models/Ticket');
         const ticket = await Ticket.findOne({ channelId: message.channel.id, status: 'open', category: 'reklam_destek' });
-        
+
         if (ticket) {
           // Eğer kullanıcı (reklam açan kişi) kanala doğrudan yazıyorsa ve transfer bekleniyorsa:
           if (message.author.id === ticket.userId && ticket.transferState === 'pending_transfer') {
             ticket.transferState = 'connected';
             await ticket.save();
-            
+
             const { EmbedBuilder } = require('discord.js');
             const connEmbed = new EmbedBuilder()
               .setColor(0x2ECC71)
               .setTitle("🔌 Bağlantı Kuruldu")
               .setDescription("✅ **Bağlanıldı!** Satın alma işleminiz için üst düzey yönetici sohbete katıldı.")
               .setTimestamp();
-            await message.author.send({ embeds: [connEmbed] }).catch(() => {});
+            await message.author.send({ embeds: [connEmbed] }).catch(() => { });
           }
 
           // Yetkili mesaj yazdıysa (veya kullanıcı yazdıysa da yetkiliye iletmek gerekirse, normalde yetkili yazar ve kullanıcıya DM gider)
@@ -3484,7 +3484,7 @@ function initializeDiscordHandlers(client) {
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
-      
+
       // 1. Karantina (Self-Shutdown) Kontrolü
       if (global.SPAM_STOPPED) {
         const isLevel4 = p && p.level >= 6;
@@ -3493,7 +3493,7 @@ function initializeDiscordHandlers(client) {
             return interaction.reply({
               content: "🚨 **SİSTEM KANALLARI GÜVENLİK KARANTİNASI ALTINDADIR (Self-Shutdown)!** Tüm yetki komutları ve işlemleri askıya alınmıştır. Lütfen üst yönetimin talimatlarını bekleyiniz.",
               ephemeral: true
-            }).catch(() => {});
+            }).catch(() => { });
           }
           return;
         }
@@ -3510,13 +3510,13 @@ function initializeDiscordHandlers(client) {
               return interaction.reply({
                 content: "⚠️ **Sunucuda Olağanüstü Hal (OHAL) / Kriz Vardiyası Etkindir!** Standart yetki komutları geçici olarak kilitlenmiştir. Sadece yönetim komutları aktiftir.",
                 ephemeral: true
-              }).catch(() => {});
+              }).catch(() => { });
             }
             return;
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // ── BAKIM MODU ENGELLEYİCİ KONTROL ──
     const fs = require("fs");
@@ -3528,13 +3528,13 @@ function initializeDiscordHandlers(client) {
         const data = JSON.parse(fs.readFileSync(maintPath, "utf8"));
         isMaintenance = !!data.active;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (isMaintenance) {
       const { ADMIN_IDS } = require("../../config");
       const { PermissionFlagsBits, EmbedBuilder } = require("discord.js");
       const isDev = ADMIN_IDS.includes(interaction.user.id) ||
-                    interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
       if (!isDev) {
         const maintenanceEmbed = new EmbedBuilder()
           .setColor(0xe67e22)
@@ -3548,7 +3548,7 @@ function initializeDiscordHandlers(client) {
           .setTimestamp();
 
         if (interaction.isRepliable()) {
-          return interaction.reply({ embeds: [maintenanceEmbed], ephemeral: true }).catch(() => {});
+          return interaction.reply({ embeds: [maintenanceEmbed], ephemeral: true }).catch(() => { });
         }
         return;
       }
@@ -3565,7 +3565,7 @@ function initializeDiscordHandlers(client) {
             return interaction.reply({
               content: "⏳ **İşleminiz şu anda işleniyor.** Lütfen çift tıklamadan veya spam yapmadan tamamlanmasını bekleyin.",
               ephemeral: true
-            }).catch(() => {});
+            }).catch(() => { });
           }
           return;
         }
@@ -3581,7 +3581,7 @@ function initializeDiscordHandlers(client) {
         } else if (interaction.isModalSubmit()) {
           recordModalSubmit(interaction.customId, interaction.user.id, interaction.guildId);
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // ── MODULAR BUTTON ROUTER (DDD ROUTING) ──
       if (interaction.isButton()) {
@@ -3596,7 +3596,7 @@ function initializeDiscordHandlers(client) {
           content: '✅ **Hata Okundu / İşaretlendi.**',
           embeds: [],
           components: []
-        }).catch(() => {});
+        }).catch(() => { });
         return;
       }
 
@@ -3622,17 +3622,17 @@ function initializeDiscordHandlers(client) {
       // ── Bot Doğrulama (PIN) Kontrolü ──
       const { findOne } = require("../../models/User");
       const botUser = await findOne({ discordId: interaction.user.id });
-      
+
       const isDogrulaCmd = interaction.isCommand() && interaction.commandName === 'dogrula';
-      
+
       if (interaction.isCommand() && !isDogrulaCmd && (!botUser || !botUser.botVerified)) {
         if (interaction.isRepliable()) {
           const VerificationCode = require("../../models/VerificationCode");
           const { BASE_URL } = require("../../config");
           const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require("discord.js");
-          
+
           const code = VerificationCode.create(interaction.user.id);
-          const verifyUrl = `${BASE_URL || 'https://bemsentara-4cyc.onrender.com'}/verify?code=${code}`;
+          const verifyUrl = `${BASE_URL || 'https://ekoyildiz.duckdns.org'}/verify?code=${code}`;
 
           const verifyBtn = new ButtonBuilder()
             .setLabel("🔐 Doğrulamak İçin Tıkla")
@@ -3654,11 +3654,11 @@ function initializeDiscordHandlers(client) {
             .setFooter({ text: "Sentara Doğrulama Sistemi" })
             .setTimestamp();
 
-          return interaction.reply({ 
-            embeds: [embed], 
-            components: [row], 
-            ephemeral: true 
-          }).catch(() => {});
+          return interaction.reply({
+            embeds: [embed],
+            components: [row],
+            ephemeral: true
+          }).catch(() => { });
         }
         return;
       }
@@ -3757,7 +3757,7 @@ function initializeDiscordHandlers(client) {
           if (schoolGuild) {
             const member = await schoolGuild.members.fetch(userId).catch(() => null);
             if (member) {
-              await member.kick('Yönetim Paneli: Moderatör Okulundan atıldı.').catch(() => {});
+              await member.kick('Yönetim Paneli: Moderatör Okulundan atıldı.').catch(() => { });
             }
           }
 
@@ -3793,7 +3793,7 @@ function initializeDiscordHandlers(client) {
         const channelId = interaction.customId.replace("iskence_kapat_", "");
         if (interaction.channelId === channelId) {
           await interaction.reply({ content: "🔥 İşkence odası kapatılıyor..." });
-          setTimeout(() => interaction.channel.delete().catch(() => {}), 3000);
+          setTimeout(() => interaction.channel.delete().catch(() => { }), 3000);
         } else {
           await interaction.reply({ content: "Bu işlem sadece işkence odasında yapılabilir.", ephemeral: true });
         }

@@ -49,12 +49,12 @@ async function handleSlashCommand(interaction) {
           .setTitle("❌ Siteye Giriş Yapılmamış")
           .setDescription("Doğrulama yapmadan önce siteye giriş yapmalısınız.")
           .setColor(0xe74c3c);
-        
+
         const btn = new ButtonBuilder()
           .setLabel("🌐 Siteye Git")
           .setStyle(ButtonStyle.Link)
-          .setURL(BASE_URL || 'https://bemsentara-4cyc.onrender.com');
-        
+          .setURL(BASE_URL || 'https://ekoyildiz.duckdns.org');
+
         const row = new ActionRowBuilder().addComponents(btn);
         return interaction.editReply({ embeds: [embed], components: [row] });
       }
@@ -78,7 +78,7 @@ async function handleSlashCommand(interaction) {
           user.botPin = null;
           await saveStoreNow();
           logger.log(`[BOT] ${interaction.user.tag} botu PIN ile doğruladı.`);
-          
+
           const embed = new EmbedBuilder()
             .setTitle("🎉 Doğrulama Başarılı!")
             .setDescription("Hesabınız başarıyla doğrulandı.")
@@ -92,7 +92,7 @@ async function handleSlashCommand(interaction) {
       // OAuth akışı
       const VerificationCode = require("../../models/VerificationCode");
       const code = VerificationCode.create(interaction.user.id);
-      const verifyUrl = `${BASE_URL || 'https://bemsentara-4cyc.onrender.com'}/verify?code=${code}`;
+      const verifyUrl = `${BASE_URL || 'https://ekoyildiz.duckdns.org'}/verify?code=${code}`;
 
       const verifyBtn = new ButtonBuilder()
         .setLabel("🔐 Doğrulamak İçin Tıkla")
@@ -195,7 +195,7 @@ async function handleSlashCommand(interaction) {
     if (commandName === "closeticket") {
       const reason = interaction.options.getString("reason") || "Sebep belirtilmedi";
       const tickets = await Ticket.find({ userId: interaction.user.id, status: "open" });
-      
+
       if (tickets.length === 0) {
         return interaction.editReply({ content: "❌ Kapatılacak açık ticket'ınız yok" });
       }
@@ -245,7 +245,7 @@ async function handleSlashCommand(interaction) {
       try {
         const { TARGET_GUILD_ID, TMT_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
         const guildId = String(interaction.guildId).trim();
-        
+
         if (!guildId) {
           return interaction.editReply({ content: "❌ Bu komut sunucuda kullanılmalıdır" });
         }
@@ -304,7 +304,7 @@ async function handleSlashCommand(interaction) {
       const uptime = Math.floor(client.uptime / 1000);
       const hours = Math.floor(uptime / 3600);
       const minutes = Math.floor((uptime % 3600) / 60);
-      
+
       const embed = new EmbedBuilder()
         .setTitle("📊 Bot İstatistikleri")
         .addFields(
@@ -315,13 +315,13 @@ async function handleSlashCommand(interaction) {
         )
         .setColor(0x7c6af7)
         .setTimestamp();
-      
+
       return interaction.editReply({ embeds: [embed] });
     }
 
     if (commandName === "yardim") {
       const kategori = interaction.options.getString("kategori");
-      
+
       let embed = new EmbedBuilder()
         .setTitle("🆘 Sentara Bot Yardım")
         .setColor(0x7c6af7);
@@ -408,7 +408,7 @@ async function handleSlashCommand(interaction) {
       }
 
       const targetUser = interaction.options.getUser("kullanici");
-      
+
       // DM'ye modal gönder
       try {
         const dmChannel = await targetUser.createDM();
@@ -446,13 +446,13 @@ async function handleSlashCommand(interaction) {
 
     if (commandName === "aktif-kullanicilar") {
       const activeUsers = UserActivityLog.getActiveUsers();
-      
+
       if (activeUsers.length === 0) {
         return interaction.editReply({ content: "❌ Aktif kullanıcı yok" });
       }
 
       const userDetails = activeUsers.slice(0, 10).map(id => `<@${id}>`).join("\n");
-      
+
       const embed = new EmbedBuilder()
         .setTitle("🟢 Aktif Kullanıcılar (24 saat)")
         .setDescription(userDetails)
@@ -464,13 +464,13 @@ async function handleSlashCommand(interaction) {
 
     if (commandName === "inaktif-kullanicilar") {
       const inactiveUsers = UserActivityLog.getInactiveUsers(24);
-      
+
       if (inactiveUsers.length === 0) {
         return interaction.editReply({ content: "❌ İnaktif kullanıcı yok" });
       }
 
       const userDetails = inactiveUsers.slice(0, 10).map(id => `<@${id}>`).join("\n");
-      
+
       const embed = new EmbedBuilder()
         .setTitle("🔴 İnaktif Kullanıcılar (24 saatin üzerinde)")
         .setDescription(userDetails)
