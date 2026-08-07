@@ -1695,8 +1695,8 @@ Lütfen yetkiliye hitaben, karnesini takdim eden resmi bir AI Eğitim Mentoru di
     return interaction.reply({ embeds: [mailEmbed], components: [row], ephemeral: true });
   }
 
-  if (isEko && (category === "kullanici_destek" || category === "diger_destek")) {
-    const { handleEpostaSupportSelect } = require("../services/epostaTicketService");
+  if (isEko && (category === 'kullanici_destek' || category === 'diger_destek' || category === 'sikayet_destek' || category === 'yonetim_destek')) {
+    const { handleEpostaSupportSelect } = require('../services/epostaTicketService');
     return handleEpostaSupportSelect(interaction, category);
   }
 
@@ -1717,6 +1717,8 @@ Lütfen yetkiliye hitaben, karnesini takdim eden resmi bir AI Eğitim Mentoru di
     kullanici_destek: 'Kullanıcı Destek',
     reklam_destek:    'Reklam Destek',
     diger_destek:     'Diğer Destek',
+    sikayet_destek:   'Şikayet Bildirimi',
+    yonetim_destek:   'Yönetim ile Görüşme',
   };
   const categoryDescHints = {
     ban:       'Kimi şikayet ediyorsunuz? (kullanıcı adı/ID)',
@@ -1734,6 +1736,8 @@ Lütfen yetkiliye hitaben, karnesini takdim eden resmi bir AI Eğitim Mentoru di
     kullanici_destek: 'Kimi ve neden şikayet ediyorsunuz?',
     reklam_destek:    'Reklam talebinizi açıklayın',
     diger_destek:     'Talebinizi açıklayın',
+    sikayet_destek:   'Sunucuda yaşadığınız sorunu açıklayın',
+    yonetim_destek:   'Yönetim ile görüşmek istediğiniz konuyu açıklayın',
   };
 
   const title = categoryTitles[category] || 'Destek Talebi';
