@@ -152,7 +152,7 @@ async function getExecutor(guild, targetId, auditType, maxAgeMs = 5000) {
  * Allied Orduları merkezi kanalına embed log gönder.
  * @param {EmbedBuilder} embed
  */
-async function sendCentralLog(embed) {
+async function sendCentralLog(embed, files = []) {
   try {
     const client = getDiscordClient();
 
@@ -186,7 +186,17 @@ async function sendCentralLog(embed) {
       finalEmbed.setFooter({ text: `${existingFooter} • Sentara Audit System` });
     }
 
-    await channel.send({ embeds: [finalEmbed] });
+    const sendOptions = { embeds: [finalEmbed] };
+    if (files && files.length > 0) {
+      sendOptions.files = files;
+    }
+
+    try {
+      await channel.send(sendOptions);
+    } catch (_) {
+      // Fallback without files if upload fails
+      await channel.send({ embeds: [finalEmbed] });
+    }
   } catch (err) {
     console.error("[CentralAudit] Log gönderilemedi:", err.message);
   }
@@ -394,33 +404,64 @@ async function logMemberUpdate(oldMember, newMember) {
 async function logMessageDelete(message) {
   if (!message?.guild || message.author?.bot) return;
 
-  const content = message.content?.slice(0, 500) || "_(boş veya embed)_";
+  const contentText = message.content && message.content.trim().length > 0 
+    ? message.content 
+    : "*(Mesajda metin bulunmıyordu — Yalnızca görsel/dosya veya sticker içeriyordu)*";
+
   const executor = await getExecutor(message.guild, message.author.id, AuditLogEvent.MessageDelete);
 
-  const attachmentInfo = message.attachments.size > 0
-    ? message.attachments.map(a => a.url).slice(0, 5).join("\n")
-    : null;
+  const filesToUpload = [];
+  const attachmentLines = [];
+  let firstImageUrl = null;
+
+  if (message.attachments && message.attachments.size > 0) {
+    message.attachments.forEach(att => {
+      const isImg = att.contentType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(att.name || '');
+      if (isImg && !firstImageUrl) {
+        firstImageUrl = att.url;
+      }
+      const sizeKB = (att.size / 1024).toFixed(1);
+      attachmentLines.push(`• **[${att.name || 'Dosya'}](${att.url})** (${sizeKB} KB)`);
+      filesToUpload.push({ attachment: att.url, name: att.name || 'ek_dosya' });
+    });
+  }
+
+  const fields = {
+    "📺 Kanal": `<#${message.channelId}> \`${message.channelId}\``,
+    "👤 Yazar": `${message.author.tag} (<@${message.author.id}>)\n\`ID: ${message.author.id}\``,
+    "🆔 Mesaj ID": `\`${message.id}\``,
+    "📝 Silinen İçerik": message.content && message.content.length <= 1000 
+      ? `\`\`\`\n${message.content}\n\`\`\`` 
+      : (message.content ? `\`\`\`\n${message.content.slice(0, 980)}...\n\`\`\`` : contentText),
+    "⏰ Gönderim Zamanı": toFull(message.createdTimestamp),
+    "🗑️ Silinme Zamanı": toFull(Date.now()),
+    "Dosya Sayısı": String(message.attachments ? message.attachments.size : 0),
+    "Mention Sayısı": String(message.mentions ? message.mentions.users.size : 0),
+    "Reaksiyon Sayısı": String(message.reactions ? message.reactions.cache.size : 0)
+  };
+
+  if (attachmentLines.length > 0) {
+    fields["📎 Silinen Dosyalar/Ekler"] = attachmentLines.slice(0, 10).join("\n");
+  }
+
+  if (message.stickers && message.stickers.size > 0) {
+    fields["🎨 Sticker"] = message.stickers.map(s => `**${s.name}**`).join(", ");
+  }
 
   const embed = createDetailedEmbed(
     message.guild.id,
-    "🗑️ MESAJ SİLİNDİ",
+    "🗑️ MESAJ SİLİNDİ (DETAYLI LOG)",
     `<@${message.author.id}> tarafından yazılan mesaj silindi`,
-    {
-      "Kanal": `<#${message.channelId}> \`${message.channelId}\``,
-      "Yazar": `${message.author.tag}\n\`${message.author.id}\``,
-      "Mesaj ID": `\`${message.id}\``,
-      "İçerik": content,
-      "Oluşturma Zamanı": toFull(message.createdTimestamp),
-      ...(attachmentInfo ? { "Dosya URL'leri": attachmentInfo } : {}),
-      "Dosya Sayısı": String(message.attachments.size),
-      "Mention Sayısı": String(message.mentions.users.size),
-      "Reaksiyon Sayısı": String(message.reactions.cache.size)
-    },
+    fields,
     "message",
     executor
   );
 
-  await sendCentralLog(embed);
+  if (firstImageUrl && embed.setImage) {
+    embed.setImage(firstImageUrl);
+  }
+
+  await sendCentralLog(embed, filesToUpload.slice(0, 5));
 }
 
 /**

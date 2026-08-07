@@ -176,23 +176,64 @@ async function logEkoMessageDelete(message) {
     const channel = await getLogChannel(message.guild, "mesaj");
     if (!channel) return;
 
+    const contentText = message.content && message.content.trim().length > 0 
+      ? message.content 
+      : "*(Mesajda metin bulunmıyordu — Yalnızca görsel/dosya veya sticker içeriyordu)*";
+
     const embed = new EmbedBuilder()
-      .setColor(0xe74c3c)
-      .setTitle("🗑️ Mesaj Silindi")
-      .addFields(
-        { name: "👤 Mesaj Sahibi", value: `${message.author.toString()}\n\`${message.author.id}\``, inline: true },
-        { name: "📺 Kanal", value: `${message.channel.toString()}`, inline: true },
-        { name: "🆔 Mesaj ID", value: `\`${message.id}\``, inline: true },
-        { name: "📝 Silinen İçerik", value: `\`\`\`${message.content || "[İçerik Bulunmuyor Veya Görsel/Dosya]"}\`\`\``, inline: false }
+      .setColor(0xef4444)
+      .setTitle("🗑️ Mesaj Silindi (Detaylı Log)")
+      .setDescription(
+        `**👤 Mesaj Sahibi:** ${message.author.toString()} (\`${message.author.tag}\` — \`${message.author.id}\`)\n` +
+        `**📺 Silindiği Kanal:** ${message.channel.toString()} (\`#${message.channel.name}\` — \`${message.channel.id}\`)\n` +
+        `**🆔 Mesaj ID:** \`${message.id}\`\n` +
+        `**⏰ Gönderim Tarihi:** <t:${Math.floor(message.createdTimestamp / 1000)}:F> (<t:${Math.floor(message.createdTimestamp / 1000)}:R>)\n` +
+        `**🗑️ Silinme Tarihi:** <t:${Math.floor(Date.now() / 1000)}:F>`
       )
+      .addFields({
+        name: "📝 Silinen Mesaj İçeriği",
+        value: message.content && message.content.length <= 1000 
+          ? `\`\`\`\n${message.content}\n\`\`\`` 
+          : (message.content ? `\`\`\`\n${message.content.slice(0, 980)}...\n\`\`\`` : contentText),
+        inline: false
+      })
+      .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
 
-    if (message.attachments.size > 0) {
-      const attachUrls = message.attachments.map(a => `[${a.name}](${a.url})`).join("\n");
-      embed.addFields({ name: "📎 Silinen Dosyalar/Ekler", value: attachUrls || "Yok" });
+    const filesToUpload = [];
+    const attachmentLines = [];
+    let imageSet = false;
+
+    if (message.attachments && message.attachments.size > 0) {
+      message.attachments.forEach(att => {
+        const isImg = att.contentType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(att.name || '');
+        if (isImg && !imageSet) {
+          embed.setImage(att.url);
+          imageSet = true;
+        }
+        const sizeKB = (att.size / 1024).toFixed(1);
+        attachmentLines.push(`• **[${att.name || 'Dosya'}](${att.url})** (${sizeKB} KB)`);
+        filesToUpload.push({ attachment: att.url, name: att.name || 'ek_dosya' });
+      });
+
+      embed.addFields({
+        name: `📎 Silinen Ekler (${message.attachments.size} Adet)`,
+        value: attachmentLines.slice(0, 10).join("\n") || "Ek detayları okunamadı.",
+        inline: false
+      });
     }
 
-    await channel.send({ embeds: [embed] });
+    if (message.stickers && message.stickers.size > 0) {
+      const stickerNames = message.stickers.map(s => `**${s.name}**`).join(", ");
+      embed.addFields({ name: "🎨 Etiket / Sticker", value: stickerNames, inline: true });
+    }
+
+    try {
+      await channel.send({ embeds: [embed], files: filesToUpload.slice(0, 5) });
+    } catch (_) {
+      // Fallback in case file upload fails or URL expired
+      await channel.send({ embeds: [embed] });
+    }
   } catch (err) {
     console.error("[ekoLogger] logEkoMessageDelete error:", err.message);
   }
