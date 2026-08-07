@@ -1,6 +1,24 @@
 'use strict';
 
-const { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const {
+  PermissionFlagsBits,
+  ChannelType,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  MessageFlags
+} = require('discord.js');
 
 // Track temporary channel IDs in memory: channelId => creatorId
 const tempChannels = new Map();
@@ -79,71 +97,242 @@ async function checkAndDeleteEmptyChannel(channel) {
 }
 
 /**
- * Returns a 15-button Components V2 Control Panel payload for a temporary voice channel
+ * Returns Components V2 Control Panel payload for a temporary voice channel
+ * Görseldeki gibi büyük başlık banner'ı ve dropdown select menu ile
  */
 function getTempVoiceControlPanelV2(member, channel) {
-  const connectedUsers = channel.members.map(m => m.id);
+  const HEADER_BANNER_URL = 'https://i.imgur.com/xvYD3tF.png';
+  
   const isLocked = channel.permissionOverwrites.cache.some(po => po.id === channel.guild.id && po.deny.has(PermissionFlagsBits.Connect));
   const ownerId = tempChannels.get(channel.id) || member.id;
-  const accentColor = isLocked ? 0xED4245 : 0x57F287;
-  const lockStatusText = isLocked ? "🔒 KİLİTLİ" : "🔓 AÇIK";
 
-  const membersListText = connectedUsers.length > 0
-    ? connectedUsers.map((u, i) => `${i + 1}. <@${u}>${u === ownerId ? ' 👑 (Sahibi)' : ''}`).join("\n")
-    : "Henüz başka üye katılmadı.";
+  // ─── CONTAINER ────────────────────────────────────────────────────────
+  const container = new ContainerBuilder();
 
-  // Row 1: Temel Oda Ayarları (5 Buton)
-  const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`tv_rename_${channel.id}`).setLabel('ODA İSMİ').setEmoji('🗁').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`tv_limit_${channel.id}`).setLabel('ODA LİMİTİ').setEmoji('👥').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`tv_privacy_${channel.id}`).setLabel('GİZLİLİK').setEmoji('🛡️').setStyle(isLocked ? ButtonStyle.Danger : ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`tv_waiting_${channel.id}`).setLabel('BEKLEME ODASI').setEmoji('⏳').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`tv_chat_${channel.id}`).setLabel('SOHBET').setEmoji('💬').setStyle(ButtonStyle.Secondary)
+  // 1️⃣ Üst Banner Görseli
+  container.addMediaGalleryComponents(
+    new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL(HEADER_BANNER_URL)
+    )
   );
 
-  // Row 2: Erişim & Üye Yönetimi (5 Buton)
-  const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`tv_trust_${channel.id}`).setLabel('GÜVENİLİR').setEmoji('👤').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`tv_untrust_${channel.id}`).setLabel('GÜVENSİZ').setEmoji('👤').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`tv_invite_${channel.id}`).setLabel('DAVET').setEmoji('📞').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`tv_kick_${channel.id}`).setLabel('SESTEN AT').setEmoji('📞').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`tv_region_${channel.id}`).setLabel('BÖLGE').setEmoji('🌐').setStyle(ButtonStyle.Secondary)
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
 
-  // Row 3: Güvenlik & Mülkiyet (5 Buton)
-  const row3 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`tv_block_${channel.id}`).setLabel('ENGELLE').setEmoji('👤').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`tv_unblock_${channel.id}`).setLabel('ENGELİ KALDIR').setEmoji('👤').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`tv_claim_${channel.id}`).setLabel('SAHİPLEN').setEmoji('👑').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`tv_transfer_${channel.id}`).setLabel('ODAYI DEVRET').setEmoji('👑').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`tv_delete_${channel.id}`).setLabel('SİL').setEmoji('🗑️').setStyle(ButtonStyle.Danger)
+  // 2️⃣ Başlık
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent('## Özel Sesli Kanal Yönetim Paneli')
   );
 
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
+  );
+
+  // 3️⃣ Açıklama Metni
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      `> Bu arayüz özel sesli kanalınızın yönetim panelidir. Sesli kanalınızı bu panel üzerinden basitçe yönetebilirsiniz.\n` +
+      `> * **Kullanıcı susturmak, bağlantısını kesmek ve sağırlaştırmak için** seslide bulunan kullanıcının profilinden işlemi gerçekleştirebilirsiniz.\n` +
+      `> * Sesli kanalınız içerisinde **kurallar ve ilkeleri ihlal etmediğinizden** emin olun.`
+    )
+  );
+
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
+  );
+
+  // 4️⃣ Select Menu (Dropdown)
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`tv_select_${channel.id}`)
+    .setPlaceholder('Kanal ayar seçenekleri')
+    .addOptions(
+      new StringSelectMenuOptionBuilder()
+        .setLabel('📝 Kanal ismini değiştir')
+        .setDescription('Sesli kanalınızın ismini değiştirmek için kullanabilirsiniz.')
+        .setValue('rename')
+        .setEmoji('�'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('👁️ Kanal görünürlüğünü değiştir')
+        .setDescription('Sesli kanalınızın görünürlüğünü kapatmak ve açmak için kullanabilirsiniz.')
+        .setValue('visibility')
+        .setEmoji('👁️'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('🔨 Kullanıcıyı kanaldan yasakla')
+        .setDescription('Sesli kanalınızdan kullanıcı yasaklamak için kullanabilirsiniz.')
+        .setValue('ban_user')
+        .setEmoji('�'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('🔧 Kullanıcının kanaldan yasağını kaldır')
+        .setDescription('Sesli kanalınızdan yasaklanmış kullanıcının yasağını kaldırmak için kullanabilirsiniz.')
+        .setValue('unban_user')
+        .setEmoji('�'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('🔒 Kanal kilit seviyesini değiştir')
+        .setDescription('Sesli kanalınızı kilitleyebilirsiniz, kilidini açabilirsiniz.')
+        .setValue('lock')
+        .setEmoji('�')
+    );
+
+  const selectRow = new ActionRowBuilder().addComponents(selectMenu);
+  container.addActionRowComponents(selectRow);
+
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+  );
+
+  // 5️⃣ Footer Bilgisi
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      `-# Sentara Dynamic TempVoice V2 Engine • Kanal Sahibi: <@${ownerId}> • Durum: ${isLocked ? '🔒 Kilitli' : '🔓 Açık'}`
+    )
+  );
+
+  // ─── MESAJ PAYLOADı ────────────────────────────────────────────────
   return {
     content: null,
-    embeds: [
-      {
-        color: accentColor,
-        title: `🎙️ Ses Odası Kontrol Paneli: ${channel.name}`,
-        description:
-          `👑 **Oda Sahibi:** <@${ownerId}>\n` +
-          `📊 **Kullanıcı Sayısı:** **${channel.members.size} / ${channel.userLimit || "Sınırsız"}**\n` +
-          `🛡️ **Erişim Durumu:** **${lockStatusText}**\n\n` +
-          `👥 **Odadaki Üyeler Listesi:**\n${membersListText}`,
-        footer: { text: `Sentara Dynamic TempVoice V2 Engine • Kanal ID: ${channel.id}` },
-        timestamp: new Date().toISOString()
-      }
-    ],
-    components: [row1, row2, row3]
+    components: [container],
+    flags: MessageFlags.IsComponentsV2
   };
 }
 
 /**
- * TempVoice V2 Etkileşim Yöneticisi
+ * TempVoice V2 Etkileşim Yöneticisi (Select Menu ve Butonlar için)
  */
 async function handleTempVoiceInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId.startsWith('tv_') && !customId.startsWith('tempvoice_')) return false;
+
+  // Select Menu İşlemleri
+  if (interaction.isStringSelectMenu() && customId.startsWith('tv_select_')) {
+    const channelId = customId.replace('tv_select_', '');
+    const selectedValue = interaction.values[0];
+
+    const guild = interaction.guild;
+    if (!guild) return false;
+
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel) {
+      await interaction.reply({ content: '❌ Bu ses kanalı artık mevcut değil veya silinmiş.', ephemeral: true }).catch(() => {});
+      return true;
+    }
+
+    const ownerId = tempChannels.get(channel.id) || interaction.user.id;
+    const isOwner = ownerId === interaction.user.id;
+
+    // Sahip kontrolü
+    if (!isOwner && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      await interaction.reply({ content: '❌ Bu işlemi yapmak için oda sahibi olmalısınız.', ephemeral: true }).catch(() => {});
+      return true;
+    }
+
+    // 1. Kanal ismini değiştir
+    if (selectedValue === 'rename') {
+      const modal = new ModalBuilder()
+        .setCustomId(`tv_modal_rename_${channel.id}`)
+        .setTitle('📝 Kanal İsmini Değiştir')
+        .addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('room_name')
+              .setLabel('Yeni Kanal İsmi')
+              .setPlaceholder('Örn: Arkadaşlarımla Sohbet')
+              .setStyle(TextInputStyle.Short)
+              .setValue(channel.name.replace('[🔊] ', ''))
+              .setRequired(true)
+              .setMaxLength(50)
+          )
+        );
+      await interaction.showModal(modal);
+      return true;
+    }
+
+    // 2. Kanal görünürlüğünü değiştir
+    if (selectedValue === 'visibility') {
+      const isHidden = channel.permissionOverwrites.cache.some(
+        po => po.id === guild.id && po.deny.has(PermissionFlagsBits.ViewChannel)
+      );
+
+      if (isHidden) {
+        await channel.permissionOverwrites.edit(guild.id, { ViewChannel: null });
+        await interaction.reply({ 
+          content: '👁️ **Kanal görünürlüğü açıldı.** Artık kanal sunucu üyelerine görünür.', 
+          ephemeral: true 
+        }).catch(() => {});
+      } else {
+        await channel.permissionOverwrites.edit(guild.id, { ViewChannel: false });
+        await interaction.reply({ 
+          content: '👁️‍🗨️ **Kanal gizlendi.** Artık kanal sadece izinli üyelere görünür.', 
+          ephemeral: true 
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    // 3. Kullanıcıyı kanaldan yasakla
+    if (selectedValue === 'ban_user') {
+      const modal = new ModalBuilder()
+        .setCustomId(`tv_modal_ban_${channel.id}`)
+        .setTitle('🔨 Kullanıcıyı Yasakla')
+        .addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('user_id')
+              .setLabel('Kullanıcı ID veya Mention')
+              .setPlaceholder('Örn: 123456789012345678 veya @kullanıcı')
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          )
+        );
+      await interaction.showModal(modal);
+      return true;
+    }
+
+    // 4. Kullanıcının yasağını kaldır
+    if (selectedValue === 'unban_user') {
+      const modal = new ModalBuilder()
+        .setCustomId(`tv_modal_unban_${channel.id}`)
+        .setTitle('🔧 Yasağı Kaldır')
+        .addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId('user_id')
+              .setLabel('Kullanıcı ID veya Mention')
+              .setPlaceholder('Örn: 123456789012345678 veya @kullanıcı')
+              .setStyle(TextInputStyle.Short)
+              .setRequired(true)
+          )
+        );
+      await interaction.showModal(modal);
+      return true;
+    }
+
+    // 5. Kanal kilit seviyesini değiştir
+    if (selectedValue === 'lock') {
+      const isLocked = channel.permissionOverwrites.cache.some(
+        po => po.id === guild.id && po.deny.has(PermissionFlagsBits.Connect)
+      );
+
+      if (isLocked) {
+        await channel.permissionOverwrites.edit(guild.id, { Connect: null });
+        await interaction.reply({ 
+          content: '🔓 **Kanal kilidi açıldı.** Artık herkes kanala katılabilir.', 
+          ephemeral: true 
+        }).catch(() => {});
+      } else {
+        await channel.permissionOverwrites.edit(guild.id, { Connect: false });
+        await interaction.reply({ 
+          content: '🔒 **Kanal kilitlendi.** Artık sadece izinli üyeler kanala katılabilir.', 
+          ephemeral: true 
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+  // Buton İşlemleri (Eski kod uyumluluğu için)
 
   const parts = customId.split('_');
   const action = parts[1];

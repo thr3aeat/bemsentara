@@ -83,8 +83,9 @@ async function handleModalSubmit(interaction) {
 
   // ── Ses Odası (TempVoice V2) Modalleri ──────────────────────────────────────
   if (interaction.customId.startsWith('tv_modal_') || interaction.customId.startsWith('tempvoice_modal_')) {
+    const { tempChannels } = require('../services/tempVoiceService');
     const parts = interaction.customId.split('_');
-    const modalType = parts[2]; // rename or limit
+    const modalType = parts[2]; // rename, limit, ban, unban
     const channelId = parts[3];
     const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
 
@@ -92,11 +93,52 @@ async function handleModalSubmit(interaction) {
       return interaction.reply({ content: '❌ Kanal bulunamadı veya silinmiş.', ephemeral: true });
     }
 
-    if (modalType === 'rename') {
-      const newName = interaction.fields.getTextInputValue('room_name');
-      await channel.setName(`[🔊] ${newName}`).catch(() => {});
-      return interaction.reply({ content: `✏️ Oda ismi başarıyla **[🔊] ${newName}** olarak değiştirildi.`, ephemeral: true });
+    const ownerId = tempChannels.get(channel.id) || interaction.user.id;
+    const isOwner = ownerId === interaction.user.id;
+
+    if (!isOwner && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      return interaction.reply({ content: '❌ Bu işlemi yapmak için oda sahibi olmalısınız.', ephemeral: true });
     }
+
+    // 1. Kanal ismini değiştir
+    if (modalType === 'rename') {
+      const newName = interaction.fields.getTextInputValue('room_name').trim();
+      await channel.setName(`[🔊] ${newName}`).catch(() => {});
+      return interaction.reply({ content: `📝 **Kanal ismi başarıyla değiştirildi:** ${channel.name}`, ephemeral: true });
+    }
+
+    // 2. Kullanıcıyı yasakla
+    if (modalType === 'ban') {
+      const userInput = interaction.fields.getTextInputValue('user_id').trim();
+      const userId = await resolveUserFromInput(userInput, interaction);
+      
+      if (!userId) {
+        return interaction.reply({ content: '❌ Kullanıcı bulunamadı. Lütfen geçerli bir kullanıcı ID veya mention girin.', ephemeral: true });
+      }
+
+      await channel.permissionOverwrites.create(userId, { 
+        ViewChannel: false, 
+        Connect: false 
+      }).catch(() => {});
+      
+      return interaction.reply({ content: `🔨 <@${userId}> kanaldan yasaklandı.`, ephemeral: true });
+    }
+
+    // 3. Kullanıcı yasağını kaldır
+    if (modalType === 'unban') {
+      const userInput = interaction.fields.getTextInputValue('user_id').trim();
+      const userId = await resolveUserFromInput(userInput, interaction);
+      
+      if (!userId) {
+        return interaction.reply({ content: '❌ Kullanıcı bulunamadı. Lütfen geçerli bir kullanıcı ID veya mention girin.', ephemeral: true });
+      }
+
+      await channel.permissionOverwrites.delete(userId).catch(() => {});
+      return interaction.reply({ content: `🔧 <@${userId}> kullanıcısının yasağı kaldırıldı.`, ephemeral: true });
+    }
+
+    return;
+  }
 
     if (modalType === 'limit') {
       const newLimit = parseInt(interaction.fields.getTextInputValue('user_limit'), 10) || 0;
