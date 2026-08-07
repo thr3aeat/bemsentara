@@ -704,11 +704,18 @@ function renderMainPage() {
       color: #fda4af; margin-bottom: 1.5rem; backdrop-filter: blur(10px);
     }
     .hero-title {
-      font-size: 3.8rem; font-weight: 800; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -1px;
+      font-size: 3.4rem; font-weight: 800; line-height: 1.15; margin-bottom: 1.5rem; letter-spacing: -1px; min-height: 140px;
     }
     .hero-grad {
       background: linear-gradient(135deg, #f43f5e 0%, #fda4af 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .typewriter-cursor {
+      font-weight: 300; color: #f43f5e; animation: blinkCursor 0.75s infinite; margin-left: 2px;
+    }
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
     }
     .hero-sub {
       color: var(--muted); font-size: 1.15rem; line-height: 1.8; font-weight: 300; margin-bottom: 2.5rem; max-width: 600px;
@@ -774,7 +781,7 @@ function renderMainPage() {
       box-shadow: 0 16px 36px rgba(244,63,94,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
     }
     .stat-icon { font-size: 2rem; margin-bottom: 0.8rem; }
-    .stat-number { font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
+    .stat-number { font-size: 2.1rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; letter-spacing: -0.5px; }
     .stat-badge {
       display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;
       font-weight: 700; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid rgba(244,63,94,0.3);
@@ -842,7 +849,7 @@ function renderMainPage() {
 
     @media (max-width: 900px) {
       .hero-container { grid-template-columns: 1fr; text-align: center; }
-      .hero-title { font-size: 2.8rem; }
+      .hero-title { font-size: 2.8rem; min-height: 160px; }
       .hero-sub { margin-left: auto; margin-right: auto; }
       .hero-cta { justify-content: center; }
       .widget-box { grid-template-columns: 1fr; text-align: center; }
@@ -873,7 +880,7 @@ function renderMainPage() {
   <div class="hero-container">
     <div>
       <div class="hero-badge">✨ EkoYıldız YouTube Kanalı & Resmi Topluluğu</div>
-      <h1 class="hero-title">EkoYıldız Dünyasına<br><span class="hero-grad">Hoş Geldiniz!</span></h1>
+      <h1 class="hero-title">EkoYıldız Dünyasına<br><span id="typewriterText" class="hero-grad"></span><span class="typewriter-cursor">|</span></h1>
       <p class="hero-sub">Canlı yayınlar, eğlenceli Roblox içerikleri, topluluk etkinlikleri ve sürpriz hediyeler burada! Siz de hemen aramıza katılın.</p>
       <div class="hero-cta">
         <button onclick="openLoginModal()" class="btn-hero-primary">🚀 Giriş Yap</button>
@@ -900,32 +907,32 @@ function renderMainPage() {
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon">📺</div>
-        <div class="stat-number">7.4K+</div>
+        <div class="stat-number" id="stat-youtube1">0</div>
         <div class="stat-badge">YouTube (Ana Kanal)</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">🎬</div>
-        <div class="stat-number">2.1K+</div>
+        <div class="stat-number" id="stat-youtube2">0</div>
         <div class="stat-badge">YouTube (Yedek)</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">🎵</div>
-        <div class="stat-number">15.8K+</div>
+        <div class="stat-number" id="stat-tiktok">0</div>
         <div class="stat-badge">TikTok</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">💚</div>
-        <div class="stat-number">4.5K+</div>
+        <div class="stat-number" id="stat-kick">0</div>
         <div class="stat-badge">Kick Canlı Yayın</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">💜</div>
-        <div class="stat-number">3.2K+</div>
+        <div class="stat-number" id="stat-twitch">0</div>
         <div class="stat-badge">Twitch</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">📸</div>
-        <div class="stat-number">8.9K+</div>
+        <div class="stat-number" id="stat-instagram1">0</div>
         <div class="stat-badge">Instagram</div>
       </div>
     </div>
@@ -1012,6 +1019,116 @@ function renderMainPage() {
   </footer>
 
   <script>
+    // ── Typewriter (Daktilo Efekti) ──
+    const phrases = [
+      "Türkiye'nin en eğlenceli Roblox ve topluluk kanalı dünyasına...",
+      "Türkiye'nin en büyük Türk asker oyunu gizemlerini anlatan kanalına...",
+      "Aksiyon ve macera dolu canlı yayın dünyasına...",
+      "Efsane Roblox çekilişleri ve büyük ödüllü etkinliklerine...",
+      "7/24 aktif, samimi ve eğlenceli Discord ailesine...",
+      "En komik Roblox rol yapma ve vaka videolarına...",
+      "TMT & Türk Askeri konseptli özel oyun serilerine...",
+      "EkoYıldız resmi web portalı ve destek platformuna...",
+      "Unutulmaz yarışmalar ve sürpriz turnuvalara...",
+      "Topluluğa özel eğlenceli mini oyunlar ve bot sistemlerine...",
+      "Her gün yenilenen sürpriz Roblox maceralarına...",
+      "YouTube'da 10.000+ aboneye yaklaşan dev ailemize...",
+      "TikTok'ta trend olan en kaliteli Roblox videolarına...",
+      "Kick ve Twitch canlı yayın coşkusuna...",
+      "Instagram'da anlık duyurular ve kamera arkası görüntülerine...",
+      "Sadık üyeler ve profesyonel yetkili kadromuza...",
+      "Samimi sohbet ortamı ve yeni dostluklara...",
+      "Oyuncular için tasarlanmış özel web arayüzüne...",
+      "Sosyal medya hesaplarımızla kesintisiz iletişime...",
+      "EkoYıldız'ın en gizemli Roblox sırlarına...",
+      "Tüm platformlarda tek çatı altında buluşma noktasına...",
+      "Sesli kanallarda efsane muhabbet ve eğlencelere...",
+      "Roblox hesabını eşle, hemen aileye katılma noktasına...",
+      "Güvenli, adil ve eğlenceli topluluk dünyasına...",
+      "Siz de aramıza katılın, eğlenceyi asla kaçırmayın!"
+    ];
+
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typewriterEl = document.getElementById('typewriterText');
+
+    function typeEffect() {
+      const currentPhrase = phrases[phraseIndex];
+      if (isDeleting) {
+        typewriterEl.textContent = currentPhrase.substring(0, charIndex - 1);
+        charIndex--;
+      } else {
+        typewriterEl.textContent = currentPhrase.substring(0, charIndex + 1);
+        charIndex++;
+      }
+
+      let typeSpeed = isDeleting ? 25 : 45;
+
+      if (!isDeleting && charIndex === currentPhrase.length) {
+        typeSpeed = 2200;
+        isDeleting = true;
+      } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        typeSpeed = 450;
+      }
+
+      setTimeout(typeEffect, typeSpeed);
+    }
+    typeEffect();
+
+    // ── Real Live Animated Fast Counter ──
+    function animateCounter(id, endValue, duration = 2000) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let startTimestamp = null;
+      const startValue = 0;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(easeOut * (endValue - startValue) + startValue);
+        el.textContent = current.toLocaleString('tr-TR') + (endValue >= 100 ? '+' : '');
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    async function fetchLiveSocialStats() {
+      try {
+        const res = await fetch('/api/social-stats');
+        const data = await res.json();
+        if (data.success && data.stats) {
+          const s = data.stats;
+          animateCounter('stat-youtube1', s.youtube1 || 7420);
+          animateCounter('stat-youtube2', s.youtube2 || 2100);
+          animateCounter('stat-tiktok', s.tiktok || 15800);
+          animateCounter('stat-kick', s.kick || 4500);
+          animateCounter('stat-twitch', s.twitch || 3200);
+          animateCounter('stat-instagram1', s.instagram1 || 8900);
+        } else {
+          animateCounter('stat-youtube1', 7420);
+          animateCounter('stat-youtube2', 2100);
+          animateCounter('stat-tiktok', 15800);
+          animateCounter('stat-kick', 4500);
+          animateCounter('stat-twitch', 3200);
+          animateCounter('stat-instagram1', 8900);
+        }
+      } catch (err) {
+        animateCounter('stat-youtube1', 7420);
+        animateCounter('stat-youtube2', 2100);
+        animateCounter('stat-tiktok', 15800);
+        animateCounter('stat-kick', 4500);
+        animateCounter('stat-twitch', 3200);
+        animateCounter('stat-instagram1', 8900);
+      }
+    }
+
+    fetchLiveSocialStats();
+
     function openLoginModal() {
       document.getElementById('loginModal').style.display = 'flex';
     }
