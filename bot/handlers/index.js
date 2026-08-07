@@ -383,25 +383,6 @@ function initializeDiscordHandlers(client) {
       console.error('[RulesService] Yükleme Hatası:', err.message);
     }
 
-    // EkoYıldız Destekçiler Mesajını Başlat (Discord Components V2)
-    try {
-      const { sendSupportersMessage } = require('../services/supportersService');
-      setTimeout(() => sendSupportersMessage(client).catch(err => {
-        console.error('[SupportersService] Başlatma Hatası:', err.message);
-      }), 10000);
-    } catch (err) {
-      console.error('[SupportersService] Yükleme Hatası:', err.message);
-    }
-
-    // EkoYıldız Teşekkürler Mesajını Başlat (Discord Components V2)
-    try {
-      const { sendThanksMessage } = require('../services/thanksService');
-      setTimeout(() => sendThanksMessage(client).catch(err => {
-        console.error('[ThanksService] Başlatma Hatası:', err.message);
-      }), 12000);
-    } catch (err) {
-      console.error('[ThanksService] Yükleme Hatası:', err.message);
-    }
 
     // İlk defaya mahsus personele yeni gamification sistemi tanıtım mesajı at
     const { sendSystemUpdateNotification, sendV6WelcomeNotification } = require('../services/staffSystem');
