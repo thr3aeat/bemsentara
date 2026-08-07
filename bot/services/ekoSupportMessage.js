@@ -16,10 +16,49 @@ const { appMeta, saveStoreNow } = require('../../models/Store');
 
 const EKO_SUPPORT_CHANNEL_ID = '1518692475189854218';
 const HEADER_BANNER_URL = 'https://i.imgur.com/bWvBM0N.png';
-const ACCENT_COLOR = 0x2b2d31;
+
+function buildSelectMenu() {
+  return new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('ekoyildiz_support_category')
+      .setPlaceholder('İletişime geçmek istediğiniz bölümü seçin')
+      .addOptions(
+        {
+          label: 'Bir konu hakkında soru sormak istiyorum',
+          value: 'diger_destek',
+          description: 'Sorularınız için bu seçeneği seçebilirsiniz.',
+          emoji: '❓'
+        },
+        {
+          label: 'Şikayette bulunmak istiyorum',
+          value: 'sikayet_destek',
+          description: 'Sunucuda bir sorun yaşıyorsan şikayette bulunmak istiyoruma tıklayabilirsin.',
+          emoji: '❗'
+        },
+        {
+          label: 'Kullanıcı Destek',
+          value: 'kullanici_destek',
+          description: 'Birisi seni rahatsız ediyorsa veya yardıma ihtiyacın varsa buradan ulaş.',
+          emoji: '👤'
+        },
+        {
+          label: 'Yönetim ekibi ile görüşmek istiyorum',
+          value: 'yonetim_destek',
+          description: 'EkoYıldız sunucu yönetim ekip üyeleriyle iletişim için bu seçeneği seç.',
+          emoji: '👑'
+        },
+        {
+          label: 'Reklam verdirmek ve sponsor olmak istiyorum',
+          value: 'reklam_destek',
+          description: 'Bize reklam verdirerek sponsor olabilirsin.',
+          emoji: '📢'
+        }
+      )
+  );
+}
 
 function buildSupportContainer() {
-  const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+  const container = new ContainerBuilder();
 
   // 1️⃣ Banner
   container.addMediaGalleryComponents(
@@ -80,47 +119,14 @@ function buildSupportContainer() {
     )
   );
 
-  return container;
-}
-
-function buildSelectMenu() {
-  return new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId('ekoyildiz_support_category')
-      .setPlaceholder('İletişime geçmek istediğiniz bölümü seçin')
-      .addOptions(
-        {
-          label: 'Bir konu hakkında soru sormak istiyorum',
-          value: 'diger_destek',
-          description: 'Sorularınız için bu seçeneği seçebilirsiniz.',
-          emoji: '❓'
-        },
-        {
-          label: 'Şikayette bulunmak istiyorum',
-          value: 'sikayet_destek',
-          description: 'Sunucuda bir sorun yaşıyorsan şikayette bulunmak istiyoruma tıklayabilirsin.',
-          emoji: '❗'
-        },
-        {
-          label: 'Kullanıcı Destek',
-          value: 'kullanici_destek',
-          description: 'Birisi seni rahatsız ediyorsa veya yardıma ihtiyacın varsa buradan ulaş.',
-          emoji: '👤'
-        },
-        {
-          label: 'Yönetim ekibi ile görüşmek istiyorum',
-          value: 'yonetim_destek',
-          description: 'EkoYıldız sunucu yönetim ekip üyeleriyle iletişim için bu seçeneği seç.',
-          emoji: '👑'
-        },
-        {
-          label: 'Reklam verdirmek ve sponsor olmak istiyorum',
-          value: 'reklam_destek',
-          description: 'Bize reklam verdirerek sponsor olabilirsin.',
-          emoji: '📢'
-        }
-      )
+  container.addSeparatorComponents(
+    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
+
+  // 6️⃣ Select menu artık container'ın içinde
+  container.addActionRowComponents(buildSelectMenu());
+
+  return container;
 }
 
 async function ensureEkoSupportMessage(client) {
@@ -131,10 +137,9 @@ async function ensureEkoSupportMessage(client) {
     if (!channel) return;
 
     const container = buildSupportContainer();
-    const selectMenu = buildSelectMenu();
 
     const messagePayload = {
-      components: [container, selectMenu],
+      components: [container],
       flags: MessageFlags.IsComponentsV2
     };
 
