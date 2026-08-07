@@ -4370,13 +4370,15 @@ function startStaffScheduler(client) {
     run();
   }
 
-  // 🔧 FIX: V6 notification asla çalışmıyordu. Scheduler başında 1 kere çalıştır
+  // V6 Welcome Notification (Devre Dışı)
+  /*
   setImmediate(() => {
     console.log('[staffSystem] V6 Welcome Notification başlatılıyor...');
     sendV6WelcomeNotification(client).catch(err => {
       console.error('[staffSystem] V6 Notification hatası:', err.message);
     });
   });
+  */
 
   // Her saat başı market snapshot güncellemesi
   setInterval(() => {
@@ -4385,7 +4387,8 @@ function startStaffScheduler(client) {
 
   refreshMarketState().catch(() => { });
 
-  // 09:00 — Sabah brifing (tüm personele)
+  // 09:00 — Sabah brifing (DM - Devre Dışı)
+  /*
   scheduleAt(9, 0, async () => {
     console.log('[staffSystem] 09:00 sabah brifing gönderiliyor...');
     const today = todayStr();
@@ -4397,6 +4400,7 @@ function startStaffScheduler(client) {
       await sendMorningBriefing(p, client).catch(() => { });
     }
   });
+  */
 
   // 00:05 — Pazartesi haftalık rapor sayacını temizle
   scheduleAt(0, 5, async () => {
@@ -4428,7 +4432,8 @@ function startStaffScheduler(client) {
   });
   */
 
-  // 19:00 — Akşam uyarısı (DM #2: Hâllâ tamamlamamış yetkililere son DM uyarısı)
+  // 19:00 — Akşam uyarısı (DM - Devre Dışı)
+  /*
   scheduleAt(19, 0, async () => {
     console.log('[staffSystem] 19:00 akşam uyarısı (DM)...');
     const today = todayStr();
@@ -4445,6 +4450,7 @@ function startStaffScheduler(client) {
       }
     }
   });
+  */
 
   // 15:00 — Öğleden sonra motivasyon mesajı (Kanal Bildirimi - Devre Dışı)
   /*
