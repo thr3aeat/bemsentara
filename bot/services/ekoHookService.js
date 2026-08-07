@@ -15,13 +15,17 @@ const {
 const { appMeta, saveStoreNow } = require('../../models/Store');
 
 const CHANNEL_ID = '1535332536564191413';
-const WEBHOOK_NAME = 'Eko Hook'; // Void Hook tarzı isim
+const WEBHOOK_NAME = 'Eko Hook';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER = 'https://i.imgur.com/6ZC1SXO.png';
 
-// Void Hook'un tam olarak kullandığı koyu gri ton (#2b2d31)
+// Void Hook örneğindeki koyu tema rengiyle birebir aynı (#2b2d31)
 const ACCENT_COLOR = 0x2b2d31;
 
+/**
+ * Creates, fetches, or edits the existing Webhook "Eko Hook" message using
+ * Discord's Components v2 (ContainerBuilder tabanlı) yapısı.
+ */
 async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = {}) {
   try {
     const channel = await client.channels.fetch(targetChannelId).catch(() => null);
@@ -30,9 +34,9 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       return false;
     }
 
-    console.log(`[EkoHookService] 📌 Hedef kanal: #${channel.name} (${channel.id})`);
+    console.log(`[EkoHookService] 📌 Target channel: #${channel.name} (${channel.id})`);
 
-    // Webhook yönetimi
+    // Webhook bul veya oluştur
     let webhooks = await channel.fetchWebhooks().catch(() => null);
     let webhook = webhooks ? webhooks.find(w => w.name === WEBHOOK_NAME) : null;
 
@@ -41,97 +45,109 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       webhook = await channel.createWebhook({
         name: WEBHOOK_NAME,
         avatar: WEBHOOK_AVATAR,
-        reason: 'EkoYıldız Resmi Hakkında'
+        reason: 'EkoYıldız Resmi Hakkında Webhook Duyurusu'
       }).catch((err) => {
-        console.error('[EkoHookService] Webhook hatası:', err.message);
+        console.error('[EkoHookService] Webhook oluşturma hatası:', err.message);
         return null;
       });
     } else {
-      await webhook.edit({ name: WEBHOOK_NAME, avatar: WEBHOOK_AVATAR }).catch(() => {});
+      await webhook.edit({
+        name: WEBHOOK_NAME,
+        avatar: WEBHOOK_AVATAR
+      }).catch(() => { });
     }
 
     const bannerUrl = options.banner || HEADER_BANNER;
 
-    // ─── METİN İÇERİĞİ ────────────────────────────────────────
+    // Void Hook örneğindeki gibi: başlık + blockquote açıklama
     const descriptionText = options.description || (
-      `> EkoYıldız, özgün dijital içerikler üretmek ve sürdürülebilir bir topluluk ekosistemi kurmak amacıyla hayata geçirilmiştir.\n` +
-      `> Bu Discord topluluğu, YouTube kanalı operasyonlarını, içerik yönetimini ve profesyonel standartlarda topluluk düzenini yürütmektedir.\n` +
-      `> Amacımız; güvenli, seviyeli etkileşim alanı ve kurumsal bütünlük korumasıdır.\n\n` +
-      `Bu sunucu **YouTube** ve **Roblox Türkiye** üzerine kurulmuştur.` +
-      ` İşbirlikleri için <#1518692475189854218> kanalını kullanabilirsiniz.`
+      `> EkoYıldız, Eko tarafından özgün içerikler üretmek ve dijital yayıncılık alanında sürdürülebilir bir topluluk yapısı inşa etmek amacıyla hayata geçirilmiş bir YouTube kanalıdır. Bu ekosistemin merkezinde yer alan EkoYıldız Discord Topluluğu ise, başta EkoYıldız olmak üzere bünyesinde barındırdığı tüm dijital kanalların içerik yönetimini, operasyonel süreçlerini ve topluluk düzenini profesyonel standartlarda yürütmek amacıyla kurulmuştur.\n` +
+      `> Amacımız, üyeler arasındaki etkileşimi güvenli, seviyeli ve dinamik bir yapıda tutmayı, içerik üretim süreçlerinin verimliliğini artırmayı ve dijital varlığımızın kurumsal bütünlüğünü korumaktır.\n\n` +
+      `Bu sunucu YouTube kanalı ve Roblox Türkiye üzerine kurulmuştur. Roblox Türkiye ile alakalı işbirlikleri için <#1518692475189854218> kanalına gidin.`
     );
 
-    const footerText = options.footer || '*14 Nisan 2024 tarihinde kuruldu.*';
+    const footerText = options.footer || '14 Nisan 2024 tarihinde kuruldu.';
 
-    // ─── CONTAINER V2 YAPILANDIRMASI ──────────────────────────
+    // ─── Components v2 Container ───────────────────────────────
     const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
 
-    // 1️⃣ ÜST BANNER (Tam genişlik, koyu temalı görsel)
+    // Üstte tam genişlik banner görseli
     container.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
-        new MediaGalleryItemBuilder()
-          .setURL(bannerUrl)
-          .setAltText('EkoYıldız Banner')
+        new MediaGalleryItemBuilder().setURL(bannerUrl)
       )
     );
 
-    // 2️⃣ HAKKINDA BÖLÜMÜ (Heading + Blockquote)
+    // "Hakkında" başlığı + açıklama
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('### Hakkında'),
-      new TextDisplayBuilder().setContent('\u200B'),
       new TextDisplayBuilder().setContent(descriptionText)
     );
 
-    // 3️⃣ BÜYÜK AYIRICI (Section break)
     container.addSeparatorComponents(
-      new SeparatorBuilder()
-        .setSpacing(SeparatorSpacingSize.Large)
-        .setDivider(true)
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
     );
 
-    // 4️⃣ BAĞLANTILAR (İkon Odaklı Butonlar)
+    // "Bağlantılarımız" başlığı
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('**Bağlantılarımız**')
     );
 
-    const rowIcons = new ActionRowBuilder().addComponents(
+    // ActionRow 1: Yayın ve Video Platformları
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setLabel('YouTube')
-        .setStyle(ButtonStyle.Link)
+        .setLabel('YouTube Ana Kanal')
         .setURL('https://www.youtube.com/@eko8yildiz')
+        .setStyle(ButtonStyle.Link)
         .setEmoji('🔴'),
       new ButtonBuilder()
-        .setLabel('Kick')
+        .setLabel('YouTube 2. Kanal')
+        .setURL('https://www.youtube.com/@eko8yildiz2')
         .setStyle(ButtonStyle.Link)
+        .setEmoji('📺'),
+      new ButtonBuilder()
+        .setLabel('Kick Canlı Yayın')
         .setURL('https://kick.com/ekoyildiz')
+        .setStyle(ButtonStyle.Link)
         .setEmoji('🟢'),
       new ButtonBuilder()
-        .setLabel('TikTok')
+        .setLabel('Twitch')
+        .setURL('https://www.twitch.tv/ekoyildiz')
         .setStyle(ButtonStyle.Link)
+        .setEmoji('🟣')
+    );
+
+    // ActionRow 2: Sosyal Medya ve İletişim
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('Instagram')
+        .setURL('https://www.instagram.com/ekonqt/')
+        .setStyle(ButtonStyle.Link)
+        .setEmoji('📸'),
+      new ButtonBuilder()
+        .setLabel('TikTok')
         .setURL('https://www.tiktok.com/@kimdirbueko')
+        .setStyle(ButtonStyle.Link)
         .setEmoji('🎵'),
       new ButtonBuilder()
-        .setLabel('İletişim')
-        .setStyle(ButtonStyle.Link)
+        .setLabel('Bize Ulaşın / İletişim')
         .setURL('https://ptb.discord.com/channels/1367646464804655104/1518692475189854218')
+        .setStyle(ButtonStyle.Link)
         .setEmoji('📩')
     );
 
-    container.addActionRowComponents(rowIcons);
+    container.addActionRowComponents(row1);
+    container.addActionRowComponents(row2);
 
-    // 5️⃣ KÜÇÜK AYIRICI (Footer öncesi)
     container.addSeparatorComponents(
-      new SeparatorBuilder()
-        .setSpacing(SeparatorSpacingSize.Small)
-        .setDivider(true)
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
-    // 6️⃣ ALT BİLGİ (Footer - İtalik ve küçük görünüm)
+    // Alt bilgi (kuruluş tarihi)
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(footerText)
+      new TextDisplayBuilder().setContent(`-# ${footerText}`)
     );
 
-    // ─── MESAJ GÖNDERİM ──────────────────────────────────────
     const messagePayload = {
       username: WEBHOOK_NAME,
       avatarURL: WEBHOOK_AVATAR,
@@ -139,7 +155,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       flags: MessageFlags.IsComponentsV2
     };
 
-    // Persisted message logic
+    // Persisted message tracking
     let metaRecord = appMeta ? appMeta.findOne({ key: 'ekoHookConfig' }) : null;
     let existingMsg = null;
 
@@ -148,12 +164,13 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
     }
 
     if (webhook && existingMsg) {
-      console.log(`[EkoHookService] ✏️ Mevcut mesaj düzenleniyor (${existingMsg.id})...`);
+      console.log(`[EkoHookService] ✏️ Existing Webhook message found (${existingMsg.id}). Editing message...`);
       await webhook.editMessage(existingMsg.id, messagePayload);
-      console.log('[EkoHookService] ✅ Components v2 formatına güncellendi.');
+      console.log('[EkoHookService] ✅ Existing Webhook message updated successfully to Components v2.');
       return true;
     }
 
+    // Otherwise send new message and store ID
     let sentMsg = null;
     if (webhook) {
       sentMsg = await webhook.send(messagePayload);
@@ -179,10 +196,10 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       saveStoreNow();
     }
 
-    console.log('[EkoHookService] ✅ Void Hook stili mesaj başarıyla gönderildi.');
+    console.log('[EkoHookService] ✅ Eko Hook message dispatched and ID recorded.');
     return true;
   } catch (err) {
-    console.error('[EkoHookService] ❌ Hata:', err.message);
+    console.error('[EkoHookService] ❌ Error:', err.message);
     return false;
   }
 }

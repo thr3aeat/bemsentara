@@ -1,10 +1,20 @@
 'use strict';
 
-const { EmbedBuilder } = require('discord.js');
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags
+} = require('discord.js');
 const Blacklist = require('../../models/Blacklist');
 
 const BLACKLIST_CHANNEL_ID = '1518692472367222915';
 const LOG_CHANNEL_ID = '1518920074264842380';
+const HEADER_BANNER_URL = 'https://i.imgur.com/ZaYKvkE.png';
+const ACCENT_COLOR = 0x2b2d31;
 
 const cleanBlacklistName = (name) => {
   if (!name) return '';
@@ -88,7 +98,7 @@ async function initializeBlacklist(client) {
 }
 
 /**
- * Generates the blacklist representation and posts/updates it in the designated channel
+ * Generates the blacklist representation and posts/updates it in the designated channel using Components V2
  */
 async function renderBlacklist(client) {
   try {
@@ -101,61 +111,120 @@ async function renderBlacklist(client) {
     const people = await Blacklist.find({ type: 'person' }).sort({ createdAt: 1 });
     const groups = await Blacklist.find({ type: 'group' }).sort({ createdAt: 1 });
 
-    const formatList = (list) => {
-      if (list.length === 0) return '*(Temiz)*';
-      return list.map(item => {
-        const isRemoved = item.status === 'removed';
-        const cleanName = cleanBlacklistName(item.name);
-        const cleanReason = cleanBlacklistReason(item.reason);
-        const formattedName = isRemoved ? `~~**${cleanName}**~~` : `**${cleanName}**`;
-        const reasonText = cleanReason ? ` (${cleanReason})` : '';
-        const statusText = isRemoved ? ' - *[Kaldırıldı (15 gün sonra silinecek)]*' : '';
-        return `* ${formattedName}${reasonText}${statusText}`;
-      }).join('\n');
+    const formatItem = (item) => {
+      const isRemoved = item.status === 'removed';
+      const cleanName = cleanBlacklistName(item.name);
+      const cleanReason = cleanBlacklistReason(item.reason);
+      const formattedName = isRemoved ? `~~**${cleanName}**~~` : `**${cleanName}**`;
+      const reasonText = cleanReason ? ` (${cleanReason})` : '';
+      const statusText = isRemoved ? ' - *[Kaldırıldı (15 gün sonra silinecek)]*' : '';
+      return `* ${formattedName}${reasonText}${statusText}`;
     };
 
-    const mainContent = `# 🚫 KARALİSTE (BLACKLIST)\n\n` +
-      `Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.\n\n` +
-      `### 👤 Engellenen Kişiler\n\n` +
-      `${formatList(people)}\n\n` +
-      `### 🛡️ İlgili Gruplar / Platformlar\n\n` +
-      `${formatList(groups)}`;
-
-    // Helper to split text into chunks of <= 1900 chars, preserving lines
-    const splitTextIntoChunks = (text, maxLength = 1900) => {
-      const lines = text.split('\n');
+    const splitListIntoChunks = (list, maxChars = 1500) => {
+      if (list.length === 0) return ['*(Temiz)*'];
       const chunks = [];
-      let currentChunk = '';
+      let current = '';
 
-      for (const line of lines) {
-        if (line.length > maxLength) {
-          let tempLine = line;
-          while (tempLine.length > 0) {
-            const part = tempLine.substring(0, maxLength);
-            tempLine = tempLine.substring(maxLength);
-            if (currentChunk.length + part.length + 1 > maxLength) {
-              chunks.push(currentChunk.trim());
-              currentChunk = part;
-            } else {
-              currentChunk = currentChunk ? currentChunk + '\n' + part : part;
-            }
-          }
-        } else if (currentChunk.length + line.length + 1 > maxLength) {
-          chunks.push(currentChunk.trim());
-          currentChunk = line;
+      for (const item of list) {
+        const line = formatItem(item);
+        if (current.length + line.length + 1 > maxChars) {
+          chunks.push(current.trim());
+          current = line;
         } else {
-          currentChunk = currentChunk ? currentChunk + '\n' + line : line;
+          current = current ? current + '\n' + line : line;
         }
       }
-      if (currentChunk) {
-        chunks.push(currentChunk.trim());
-      }
+      if (current) chunks.push(current.trim());
       return chunks;
     };
 
-    const chunks = splitTextIntoChunks(mainContent);
+    const peopleChunks = splitListIntoChunks(people, 1500);
+    const groupChunks = splitListIntoChunks(groups, 1500);
 
-    // Fetch message history to find previous posts
+    const containers = [];
+
+    // ─── 1️⃣ ANA BAŞLIK, GÖRSEL VE KİŞİLER (1. PARÇA) ─────────────────────
+    const headerContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+
+    // En başa belirtilen görseli koyuyoruz
+    headerContainer.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder()
+          .setURL(HEADER_BANNER_URL)
+          .setAltText('Karaliste Banner')
+      )
+    );
+
+    headerContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('# 🚫 KARALİSTE (BLACKLIST)'),
+      new TextDisplayBuilder().setContent('\u200B'),
+      new TextDisplayBuilder().setContent(
+        `> Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.`
+      )
+    );
+
+    headerContainer.addSeparatorComponents(
+      new SeparatorBuilder()
+        .setSpacing(SeparatorSpacingSize.Large)
+        .setDivider(true)
+    );
+
+    headerContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('### 👤 Engellenen Kişiler'),
+      new TextDisplayBuilder().setContent('\u200B'),
+      new TextDisplayBuilder().setContent(peopleChunks[0])
+    );
+
+    containers.push(headerContainer);
+
+    // Eğer kişiler 1. parçaya sığmadıysa sonraki parçalar için container ekle
+    for (let i = 1; i < peopleChunks.length; i++) {
+      const pContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+      pContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`### 👤 Engellenen Kişiler (Kısım ${i + 1})`),
+        new TextDisplayBuilder().setContent('\u200B'),
+        new TextDisplayBuilder().setContent(peopleChunks[i])
+      );
+      containers.push(pContainer);
+    }
+
+    // ─── 2️⃣ İLGİLİ GRUPLAR BÖLÜMÜ ───────────────────────────────────────
+    const firstGroupContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    firstGroupContainer.addSeparatorComponents(
+      new SeparatorBuilder()
+        .setSpacing(SeparatorSpacingSize.Large)
+        .setDivider(true)
+    );
+    firstGroupContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('### 🛡️ İlgili Gruplar / Platformlar'),
+      new TextDisplayBuilder().setContent('\u200B'),
+      new TextDisplayBuilder().setContent(groupChunks[0])
+    );
+    containers.push(firstGroupContainer);
+
+    for (let i = 1; i < groupChunks.length; i++) {
+      const gContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+      gContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`### 🛡️ İlgili Gruplar / Platformlar (Kısım ${i + 1})`),
+        new TextDisplayBuilder().setContent('\u200B'),
+        new TextDisplayBuilder().setContent(groupChunks[i])
+      );
+      containers.push(gContainer);
+    }
+
+    // ─── 3️⃣ FOOTER (SON CONTAINER'A EKLENİR) ───────────────────────────
+    const lastContainer = containers[containers.length - 1];
+    lastContainer.addSeparatorComponents(
+      new SeparatorBuilder()
+        .setSpacing(SeparatorSpacingSize.Small)
+        .setDivider(true)
+    );
+    lastContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`*Son Güncelleme: <t:${Math.floor(Date.now() / 1000)}:f>*`)
+    );
+
+    // ─── MESAJLARI GÖNDER / GÜNCELLE ────────────────────────────────────
     const messagesCollection = await channel.messages.fetch({ limit: 100 }).catch(() => null);
     if (!messagesCollection) {
       console.warn('[blacklist] Failed to fetch message history.');
@@ -164,33 +233,31 @@ async function renderBlacklist(client) {
 
     const botMessages = Array.from(messagesCollection.values())
       .filter(m => m.author.id === client.user.id)
-      .sort((a, b) => a.createdTimestamp - b.createdTimestamp); // Oldest first
+      .sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-    // Delete any old embed messages (such as previous update embeds)
-    const embedMessages = botMessages.filter(m => m.embeds.length > 0);
-    for (const em of embedMessages) {
-      await em.delete().catch(() => {});
-    }
+    for (let i = 0; i < containers.length; i++) {
+      const payload = {
+        content: '',
+        embeds: [],
+        components: [containers[i]],
+        flags: MessageFlags.IsComponentsV2
+      };
 
-    const contentMessages = botMessages.filter(m => m.embeds.length === 0);
-
-    // Update content messages chunk by chunk
-    for (let i = 0; i < chunks.length; i++) {
-      if (i < contentMessages.length) {
-        await contentMessages[i].edit({ content: chunks[i], embeds: [], components: [] }).catch(err => {
+      if (i < botMessages.length) {
+        await botMessages[i].edit(payload).catch(err => {
           console.error(`[blacklist] Failed to edit content message ${i}:`, err.message);
         });
       } else {
-        await channel.send({ content: chunks[i] }).catch(err => {
+        await channel.send(payload).catch(err => {
           console.error(`[blacklist] Failed to send new content message:`, err.message);
         });
       }
     }
 
-    // Delete surplus content messages
-    if (contentMessages.length > chunks.length) {
-      for (let i = chunks.length; i < contentMessages.length; i++) {
-        await contentMessages[i].delete().catch(err => {
+    // Ekstra kalan eski mesajları temizle
+    if (botMessages.length > containers.length) {
+      for (let i = containers.length; i < botMessages.length; i++) {
+        await botMessages[i].delete().catch(err => {
           console.warn(`[blacklist] Failed to delete surplus message:`, err.message);
         });
       }
