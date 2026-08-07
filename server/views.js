@@ -411,7 +411,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       ${groupAdminLink}
       ${staffLinks}
       ${adminLink}
-      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">Giriş Yap</button>`}
+      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/settings" class="nav-link">⚙️ Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">Giriş Yap</button>`}
     </nav>
   </header>
 
@@ -871,9 +871,15 @@ function renderMainPage() {
     </a>
     <nav>
       <a href="/">Ana Sayfa</a>
-      <button onclick="openLoginModal()" class="nav-btn-login">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Giriş Yap
-      </button>
+      ${user ? `
+        <a href="/dashboard" class="nav-btn-login" style="background:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); text-decoration:none;">🚀 Panelim</a>
+        <a href="/settings" class="nav-btn-login" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); text-decoration:none;">⚙️ Ayarlar</a>
+        <a href="/logout" style="color:var(--danger); font-weight:600; text-decoration:none; font-size:0.9rem; margin-left:0.5rem;">Çıkış Yap</a>
+      ` : `
+        <button onclick="openLoginModal()" class="nav-btn-login">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Giriş Yap
+        </button>
+      `}
     </nav>
   </header>
 
@@ -883,7 +889,12 @@ function renderMainPage() {
       <h1 class="hero-title">EkoYıldız Dünyasına<br><span id="typewriterText" class="hero-grad"></span><span class="typewriter-cursor">|</span></h1>
       <p class="hero-sub">Canlı yayınlar, eğlenceli Roblox içerikleri, topluluk etkinlikleri ve sürpriz hediyeler burada! Siz de hemen aramıza katılın.</p>
       <div class="hero-cta">
-        <button onclick="openLoginModal()" class="btn-hero-primary">🚀 Giriş Yap</button>
+        ${user ? `
+          <a href="/dashboard" class="btn-hero-primary">🚀 Panelime Git</a>
+          <a href="/settings" class="btn-hero-secondary">⚙️ Hesabım & Ayarlar</a>
+        ` : `
+          <button onclick="openLoginModal()" class="btn-hero-primary">🚀 Giriş Yap</button>
+        `}
         <a href="https://www.youtube.com/@eko8yildiz" target="_blank" class="btn-hero-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="red"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YouTube Kanalımız
         </a>
@@ -1707,8 +1718,9 @@ function renderDashboard(user, staffProgress) {
       user.isStaff ? '<span style="color:var(--accent);">🛡 Staff</span>' : 'Kullanıcı'}
           </div>
           <div style="display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap;">
-            <a href="/auth/discord" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.3rem 0.7rem; border-color:rgba(255,255,255,0.15);">Discord hesabımı değiştirmek istiyorum</a>
-            <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.3rem 0.7rem; border-color:rgba(255,255,255,0.15);">Roblox hesabımı değiştirmek istiyorum</a>
+            <a href="/settings" class="btn btn-sm" style="background:linear-gradient(135deg,#f43f5e,#e11d48); color:#fff; font-size:0.75rem; padding:0.35rem 0.8rem; text-decoration:none; font-weight:700;">⚙️ Hesap Ayarları & 2FA</a>
+            <a href="/auth/discord" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Discord Değiştir</a>
+            <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Roblox Değiştir</a>
           </div>
         </div>
       </div>
@@ -7044,6 +7056,189 @@ function renderSocialPage(user) {
     </script>
   `;
   return _layout('Sentara Sosyal', user, content, '', '/social');
+}
+
+// ─────────────────────────────────────────────
+// SETTINGS PAGE
+// ─────────────────────────────────────────────
+function renderSettingsPage(user, query = {}) {
+  const isSetupPin = query.setupPin === '1' || !user.sitePinPassword;
+  const hasPin = Boolean(user.sitePinPassword);
+  const pinLength = user.pinLength || 6;
+  const is2FA = Boolean(user.twoFactorEnabled);
+  const twoFactorMethod = user.twoFactorMethod || 'discord_dm';
+
+  const content = `
+    <div style="max-width:900px; margin:2rem auto; animation:fadeUp 0.5s ease;">
+      <!-- Title Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <div style="color:var(--muted); font-size:0.88rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">HESAP YÖNETİMİ</div>
+          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg, #fff, #fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Hesap Ayarları & Güvenlik</h1>
+        </div>
+        <a href="/dashboard" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15);">← Dashboard'a Dön</a>
+      </div>
+
+      ${isSetupPin ? `
+      <div style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.4); border-radius:20px; padding:1.5rem 2rem; margin-bottom:2rem; backdrop-filter:blur(16px); box-shadow:0 10px 30px rgba(244,63,94,0.2);">
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <span style="font-size:2rem;">🔑</span>
+          <div>
+            <div style="font-size:1.2rem; font-weight:800; color:#fff;">Site Şifresi (PIN) Tanımlamanız Gerekiyor</div>
+            <div style="font-size:0.92rem; color:var(--muted); margin-top:0.25rem;">
+              Hesap güvenliğiniz için lütfen aşağıdan 4 veya 6 haneli bir Site PIN Şifresi belirleyin.
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Settings Cards -->
+      <div style="display:grid; grid-template-columns:1fr; gap:2rem;">
+        
+        <!-- CARD 1: SITE PIN PASSWORD -->
+        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔑</div>
+            <div>
+              <h3 style="font-size:1.3rem; font-weight:700;">Site PIN / Şifresi</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">Giriş yaparken veya hassas işlemlerde kullanılan şifreniz</p>
+            </div>
+          </div>
+
+          <div style="background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px; border:1px solid rgba(255,255,255,0.05); margin-bottom:1.5rem;">
+            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:0.4rem;">Mevcut Şifre Durumu:</div>
+            <div style="font-weight:700; color:${hasPin ? 'var(--success)' : 'var(--danger)'};">
+              ${hasPin ? `✅ Şifre Aktif (${pinLength} Haneli PIN)` : '⚠️ Şifre Belirlenmemiş'}
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:1rem; max-width:420px;">
+            <div>
+              <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">Yeni PIN Şifresi (4 veya 6 Haneli Rakam)</label>
+              <input type="password" id="settingsPinInput" class="input-field" placeholder="Örn: 123456" maxlength="6" style="font-size:1.2rem; letter-spacing:0.3rem;">
+            </div>
+            <button onclick="updateSitePin()" class="btn btn-primary" style="background:linear-gradient(135deg, #f43f5e, #e11d48); font-weight:700;">
+              💾 Şifreyi Kaydet
+            </button>
+          </div>
+        </div>
+
+        <!-- CARD 2: 2FA SECURITY -->
+        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(88,101,242,0.15); border:1px solid rgba(88,101,242,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🛡️</div>
+            <div>
+              <h3 style="font-size:1.3rem; font-weight:700;">2 Aşamalı Doğrulama (2FA)</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">Hesabınıza ekstra güvenlik katmanı ekleyin</p>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px;">
+            <input type="checkbox" id="toggle2FA" ${is2FA ? 'checked' : ''} style="width:20px; height:20px; accent-color:#f43f5e; cursor:pointer;">
+            <label for="toggle2FA" style="font-weight:700; cursor:pointer;">2 Aşamalı Doğrulamayı Aktif Et</label>
+          </div>
+
+          <div style="margin-bottom:1.5rem; max-width:420px;">
+            <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">2FA Doğrulama Yöntemi</label>
+            <select id="select2FAMethod" class="input-field" style="background:#0a0a14; color:#fff;">
+              <option value="discord_dm" ${twoFactorMethod === 'discord_dm' ? 'selected' : ''}>📩 Discord DM 6 Haneli Kod ile</option>
+              <option value="roblox_oauth" ${twoFactorMethod === 'roblox_oauth' ? 'selected' : ''}>🌐 Roblox OAuth Doğrulaması ile</option>
+            </select>
+          </div>
+
+          <button onclick="update2FASettings()" class="btn btn-primary" style="max-width:420px; background:linear-gradient(135deg, #5865F2, #4752C4); font-weight:700;">
+            🛡️ 2FA Ayarlarını Kaydet
+          </button>
+        </div>
+
+        <!-- CARD 3: ACCOUNT CONNECTIONS -->
+        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔗</div>
+            <div>
+              <h3 style="font-size:1.3rem; font-weight:700;">Hesap Bağlantıları</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">Discord ve Roblox hesap entegrasyonlarınız</p>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem;">
+            <!-- Roblox -->
+            <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
+              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Roblox Hesabı:</div>
+              <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
+                ${user.robloxUsername ? `🎮 ${_esc(user.robloxUsername)}` : '❌ Bağlı Değil'}
+              </div>
+              <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
+                🔄 Roblox Hesabımı Değiştir / Eşle
+              </a>
+            </div>
+
+            <!-- Discord -->
+            <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
+              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Discord Hesabı:</div>
+              <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
+                💬 ${_esc(user.discordUsername || 'Bağlı')}
+              </div>
+              <a href="/auth/discord" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
+                🔄 Discord Hesabımı Değiştir
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      async function updateSitePin() {
+        const pin = document.getElementById('settingsPinInput').value.trim();
+        if (!pin || (pin.length !== 4 && pin.length !== 6) || !/^\\d+$/.test(pin)) {
+          return alert('Lütfen 4 veya 6 haneli sadece rakamlardan oluşan bir PIN girin.');
+        }
+
+        try {
+          const res = await fetch('/api/settings/update-pin', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ pin })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message || 'PIN başarıyla güncellendi!');
+            window.location.href = '/settings';
+          } else {
+            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+          }
+        } catch (e) {
+          alert('Sunucu hatası.');
+        }
+      }
+
+      async function update2FASettings() {
+        const enabled = document.getElementById('toggle2FA').checked;
+        const method = document.getElementById('select2FAMethod').value;
+
+        try {
+          const res = await fetch('/api/settings/update-2fa', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ enabled, method })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message || '2FA ayarları kaydedildi!');
+          } else {
+            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+          }
+        } catch (e) {
+          alert('Sunucu hatası.');
+        }
+      }
+    </script>
+  `;
+
+  return _layout('Hesap Ayarları & Güvenlik', user, content, '', '/settings');
 }
 
 // ─────────────────────────────────────────────

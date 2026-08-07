@@ -25,7 +25,12 @@ const { isSiteAdmin } = require("../../utils/adminCheck");
 const router = express.Router();
 
 router.get("/", (req, res) => {
-  res.send(renderMainPage());
+  res.send(renderMainPage(req.user));
+});
+
+router.get("/settings", (req, res) => {
+  if (!req.user) return res.redirect("/login");
+  res.send(renderSettingsPage(req.user, req.query));
 });
 
 router.get("/dashboard", async (req, res) => {

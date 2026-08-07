@@ -7,7 +7,7 @@ const GUILD_ID = '1367646464804655104';
 const VOICE_CHANNEL_ID = '1535296197017997343';
 
 /**
- * Parses subscriber/follower count string (e.g. "7.42 thousand", "12.5K", "1,5 M", "150") into integer.
+ * Parses subscriber/follower count string (e.g. "7,42 bin abone", "12.5K", "1,5 M", "150") into integer.
  */
 function parseCount(str) {
   if (!str) return 0;
@@ -28,92 +28,121 @@ function parseCount(str) {
   return isNaN(pureNum) ? 0 : pureNum;
 }
 
-let latestSocialStats = {
+// Memory cache of last known positive follower counts to ensure website stability even if platforms block requests
+const lastKnownCounts = {
   youtube1: 7420,
   youtube2: 2100,
   tiktok: 15800,
   kick: 4500,
   twitch: 3200,
   instagram1: 8900,
-  instagram2: 2400,
-  total: 44320,
-  lastUpdated: new Date()
+  instagram2: 2400
 };
 
+let lastChannelRenameTimestamp = 0;
+const TEN_MINUTES_MS = 10 * 60 * 1000;
+
 function getSocialStats() {
-  return latestSocialStats;
+  const total = Object.values(lastKnownCounts).reduce((a, b) => a + b, 0);
+  return {
+    ...lastKnownCounts,
+    total,
+    lastUpdated: new Date()
+  };
 }
 
 /**
- * Scrapes/fetches follower counts from specified social media platforms.
+ * Scrapes/fetches follower counts from specified social media platforms with fallback logging.
  */
 async function fetchTotalSocialFollowers() {
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9,tr;q=0.8'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
   };
 
-  let totalFollowers = 0;
-  const platformCounts = {
-    youtube1: 7420,
-    youtube2: 2100,
-    tiktok: 15800,
-    kick: 4500,
-    twitch: 3200,
-    instagram1: 8900,
-    instagram2: 2400
-  };
+  console.log('[socialStatsService] 🔄 Fetching live social media statistics...');
 
   // 1. YouTube - @eko8yildiz
   try {
     const res = await axios.get('https://www.youtube.com/@eko8yildiz', { headers, timeout: 8000 });
-    const match = res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
-                  res.data.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/i);
-    const count = parseCount(match ? match[1] : '');
-    if (count > 0) platformCounts.youtube1 = count;
+    const match = res.data.match(/"subscriberCountText":\s*\{[^}]*"simpleText":"([^"]+)"/i) ||
+                  res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
+                  res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
+                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
+    const count = match ? parseCount(match[1]) : 0;
+    if (count > 0) {
+      lastKnownCounts.youtube1 = count;
+      console.log(`[YouTube 1 OK]: ${count.toLocaleString('tr-TR')} aboneye ulaşıldı.`);
+    } else {
+      console.warn(`[YouTube 1 Warning]: Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.youtube1}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] YouTube @eko8yildiz fetch warning:', err.message);
+    console.warn(`[YouTube 1 Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.youtube1}).`);
   }
 
   // 2. YouTube - @eko8yildiz2
   try {
     const res = await axios.get('https://www.youtube.com/@eko8yildiz2', { headers, timeout: 8000 });
-    const match = res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
-                  res.data.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/i);
-    const count = parseCount(match ? match[1] : '');
-    if (count > 0) platformCounts.youtube2 = count;
+    const match = res.data.match(/"subscriberCountText":\s*\{[^}]*"simpleText":"([^"]+)"/i) ||
+                  res.data.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"/i) ||
+                  res.data.match(/<meta itemprop="interactionCount" content="(\d+)"/i) ||
+                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon|thousand|million)?)\s*abone/i);
+    const count = match ? parseCount(match[1]) : 0;
+    if (count > 0) {
+      lastKnownCounts.youtube2 = count;
+      console.log(`[YouTube 2 OK]: ${count.toLocaleString('tr-TR')} aboneye ulaşıldı.`);
+    } else {
+      console.warn(`[YouTube 2 Warning]: Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.youtube2}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] YouTube @eko8yildiz2 fetch warning:', err.message);
+    console.warn(`[YouTube 2 Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.youtube2}).`);
   }
 
   // 3. TikTok - @kimdirbueko
   try {
     const res = await axios.get('https://www.tiktok.com/@kimdirbueko', { headers, timeout: 8000 });
-    const match = res.data.match(/"followerCount":(\d+)/i) || res.data.match(/"stats":\{"followerCount":(\d+)/i);
-    const count = match ? parseInt(match[1], 10) : 0;
-    if (count > 0) platformCounts.tiktok = count;
+    const match = res.data.match(/"followerCount":(\d+)/i) ||
+                  res.data.match(/"stats":\{"followerCount":(\d+)/i) ||
+                  res.data.match(/(\d[\d.,]*\s*(?:bin|k|b|mn|m|milyon)?)\s*Followers/i);
+    const count = match ? parseCount(match[1]) : 0;
+    if (count > 0) {
+      lastKnownCounts.tiktok = count;
+      console.log(`[TikTok OK]: ${count.toLocaleString('tr-TR')} takipçiye ulaşıldı.`);
+    } else {
+      console.warn(`[TikTok Warning]: Engellendi veya Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.tiktok}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] TikTok fetch warning:', err.message);
+    console.warn(`[TikTok Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.tiktok}).`);
   }
 
   // 4. Kick - ekoyildiz
   try {
-    const res = await axios.get('https://kick.com/ekoyildiz', { headers, timeout: 8000 });
-    const match = res.data.match(/"followers_count":(\d+)/i) || res.data.match(/"followersCount":(\d+)/i);
-    const count = match ? parseInt(match[1], 10) : 0;
-    if (count > 0) platformCounts.kick = count;
+    const res = await axios.get('https://kick.com/api/v2/channels/ekoyildiz', { headers, timeout: 8000 });
+    const count = res.data?.followers_count || res.data?.followersCount || 0;
+    if (count > 0) {
+      lastKnownCounts.kick = count;
+      console.log(`[Kick OK]: ${count.toLocaleString('tr-TR')} takipçiye ulaşıldı.`);
+    } else {
+      console.warn(`[Kick Warning]: Yanıt alınamadı. Son geçerli değer korundu (${lastKnownCounts.kick}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] Kick fetch warning:', err.message);
+    console.warn(`[Kick Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.kick}).`);
   }
 
   // 5. Twitch - ekoyildiz
   try {
     const res = await axios.get('https://www.twitch.tv/ekoyildiz', { headers, timeout: 8000 });
-    const match = res.data.match(/"followers":\{"totalCount":(\d+)\}/i) || res.data.match(/"totalCount":(\d+)/i);
+    const match = res.data.match(/"followers":\{"totalCount":(\d+)\}/i) ||
+                  res.data.match(/"totalCount":(\d+)/i);
     const count = match ? parseInt(match[1], 10) : 0;
-    if (count > 0) platformCounts.twitch = count;
+    if (count > 0) {
+      lastKnownCounts.twitch = count;
+      console.log(`[Twitch OK]: ${count.toLocaleString('tr-TR')} takipçiye ulaşıldı.`);
+    } else {
+      console.warn(`[Twitch Warning]: Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.twitch}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] Twitch fetch warning:', err.message);
+    console.warn(`[Twitch Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.twitch}).`);
   }
 
   // 6. Instagram - ekonqt
@@ -122,9 +151,14 @@ async function fetchTotalSocialFollowers() {
     const match = res.data.match(/"edge_followed_by":\{"count":(\d+)\}/i) ||
                   res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
     const count = match ? parseCount(match[1]) : 0;
-    if (count > 0) platformCounts.instagram1 = count;
+    if (count > 0) {
+      lastKnownCounts.instagram1 = count;
+      console.log(`[Instagram 1 OK]: ${count.toLocaleString('tr-TR')} takipçiye ulaşıldı.`);
+    } else {
+      console.warn(`[Instagram 1 Warning]: Engellendi veya Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.instagram1}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] Instagram @ekonqt fetch warning:', err.message);
+    console.warn(`[Instagram 1 Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.instagram1}).`);
   }
 
   // 7. Instagram - egee7dino
@@ -133,25 +167,24 @@ async function fetchTotalSocialFollowers() {
     const match = res.data.match(/"edge_followed_by":\{"count":(\d+)\}/i) ||
                   res.data.match(/(\d[\d.,KMB]*)\s*Followers/i);
     const count = match ? parseCount(match[1]) : 0;
-    if (count > 0) platformCounts.instagram2 = count;
+    if (count > 0) {
+      lastKnownCounts.instagram2 = count;
+      console.log(`[Instagram 2 OK]: ${count.toLocaleString('tr-TR')} takipçiye ulaşıldı.`);
+    } else {
+      console.warn(`[Instagram 2 Warning]: Engellendi veya Regex eşleşmedi. Son geçerli değer korundu (${lastKnownCounts.instagram2}).`);
+    }
   } catch (err) {
-    console.warn('[socialStatsService] Instagram @egee7dino fetch warning:', err.message);
+    console.warn(`[Instagram 2 Error]: ${err.message}. Son geçerli değer korundu (${lastKnownCounts.instagram2}).`);
   }
 
-  totalFollowers = Object.values(platformCounts).reduce((a, b) => a + b, 0);
-
-  latestSocialStats = {
-    ...platformCounts,
-    total: totalFollowers,
-    lastUpdated: new Date()
-  };
-
-  console.log('[socialStatsService] Fetched follower counts:', platformCounts, '| TOTAL:', totalFollowers);
+  const totalFollowers = Object.values(lastKnownCounts).reduce((a, b) => a + b, 0);
+  console.log('[socialStatsService] 📊 Toplam Takipçi/Abone Sayısı:', totalFollowers.toLocaleString('tr-TR'));
   return totalFollowers;
 }
 
 /**
  * Updates the target voice channel name to "[TOTAL]+ adet Ekocan'ın evi."
+ * Enforces Discord API Rate-Limit protection (max 2 renames per 10 minutes).
  */
 async function updateSocialStatsChannel(client) {
   try {
@@ -170,13 +203,22 @@ async function updateSocialStatsChannel(client) {
     const formattedNum = totalFollowers.toLocaleString('tr-TR');
     const newName = `${formattedNum}+ adet Ekocan'ın evi.`;
 
-    if (channel.name !== newName) {
-      console.log(`[socialStatsService] 🔄 Updating channel name from "${channel.name}" to "${newName}"`);
-      await channel.setName(newName);
-      console.log('[socialStatsService] ✅ Voice channel name updated successfully.');
-    } else {
-      console.log('[socialStatsService] Voice channel name is already up to date.');
+    if (channel.name === newName) {
+      console.log('[socialStatsService] Ses kanalı ismi zaten güncel.');
+      return;
     }
+
+    const now = Date.now();
+    if (lastChannelRenameTimestamp > 0 && (now - lastChannelRenameTimestamp) < TEN_MINUTES_MS) {
+      const minutesLeft = Math.ceil((TEN_MINUTES_MS - (now - lastChannelRenameTimestamp)) / 1000 / 60);
+      console.log(`[socialStatsService] ⏳ Discord Rate-Limit Koruması: Kanal en son yakın zamanda güncellendi. ${minutesLeft} dakika sonra tekrar denenecek.`);
+      return;
+    }
+
+    console.log(`[socialStatsService] 🔄 Kanal ismi güncelleniyor: "${channel.name}" ➔ "${newName}"`);
+    await channel.setName(newName);
+    lastChannelRenameTimestamp = now;
+    console.log('[socialStatsService] ✅ Ses kanalı ismi başarıyla güncellendi.');
   } catch (err) {
     console.error('[socialStatsService] Error updating voice channel stats:', err.message);
   }
@@ -206,7 +248,7 @@ function startSocialStatsScheduler(client) {
     }
 
     const delay = target.getTime() - now.getTime();
-    console.log(`[socialStatsService] Next 07:00 AM update scheduled in ${Math.round(delay / 1000 / 60)} minutes.`);
+    console.log(`[socialStatsService] Bir sonraki 07:00 AM güncellemesi ${Math.round(delay / 1000 / 60)} dakika sonra planlandı.`);
 
     setTimeout(async () => {
       try {

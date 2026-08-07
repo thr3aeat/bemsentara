@@ -21,6 +21,41 @@ router.get("/api/social-stats", (req, res) => {
     });
   }
 });
+
+router.post("/api/settings/update-pin", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Oturum açmalısınız." });
+  const { pin } = req.body;
+  if (!pin || (pin.length !== 4 && pin.length !== 6) || !/^\d+$/.test(pin)) {
+    return res.status(400).json({ error: "Şifreniz 4 veya 6 haneli sadece rakamlardan oluşmalıdır." });
+  }
+  try {
+    req.user.sitePinPassword = pin;
+    req.user.pinLength = pin.length;
+    await req.user.save();
+    const { saveStoreNow } = require("../../models/Store");
+    saveStoreNow();
+    res.json({ success: true, message: "Site PIN şifreniz başarıyla kaydedildi." });
+  } catch (err) {
+    res.status(500).json({ error: "Şifre güncellenirken hata oluştu." });
+  }
+});
+
+router.post("/api/settings/update-2fa", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Oturum açmalısınız." });
+  const { enabled, method } = req.body;
+  try {
+    req.user.twoFactorEnabled = Boolean(enabled);
+    if (method && ['discord_dm', 'roblox_oauth'].includes(method)) {
+      req.user.twoFactorMethod = method;
+    }
+    await req.user.save();
+    const { saveStoreNow } = require("../../models/Store");
+    saveStoreNow();
+    res.json({ success: true, message: "2FA güvenlik ayarlarınız güncellendi." });
+  } catch (err) {
+    res.status(500).json({ error: "Ayarlar güncellenirken hata oluştu." });
+  }
+});
 const crypto = require("crypto");
 const axios = require("axios");
 const Ticket = require("../../models/Ticket");
