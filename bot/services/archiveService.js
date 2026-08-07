@@ -1,5 +1,10 @@
 const { ChannelType, PermissionFlagsBits } = require("discord.js");
 
+// Protection against event loop recursion
+const processingChannels = new Set();
+const processedCooldowns = new Map();
+const COOLDOWN_MS = 60000; // 1 minute cooldown per channel
+
 /**
  * Normalizes Turkish characters and lowercases a string.
  * @param {string} str 
@@ -74,26 +79,48 @@ async function applyPrivateArchivePermissions(channelOrCategory) {
  * @param {import("discord.js").GuildChannel} channel
  */
 async function handleArchiveChannel(channel) {
+  if (!channel || !channel.guild || !channel.id) return;
+
+  // 1. Lock check to prevent channelUpdate infinite loops
+  if (processingChannels.has(channel.id)) return;
+
+  const lastProcessed = processedCooldowns.get(channel.id);
+  if (lastProcessed && (Date.now() - lastProcessed) < COOLDOWN_MS) {
+    return;
+  }
+
+  // Skip categories and threads
+  if (channel.type === ChannelType.GuildCategory || channel.isThread?.()) return;
+
+  const name = channel.name;
+  if (!name) return;
+
+  const normalizedName = normalizeString(name);
+  if (!normalizedName.endsWith("-arsiv")) return;
+
+  // Check if @everyone is already denied ViewChannel
+  const everyoneOverwrite = channel.permissionOverwrites?.cache?.get(channel.guild.id);
+  const isEveryoneDenied = everyoneOverwrite?.deny?.has(PermissionFlagsBits.ViewChannel);
+
+  // Find or check "🗂️ Arşiv" category
+  let archiveCategory = channel.guild.channels.cache.find(c => {
+    if (c.type !== ChannelType.GuildCategory) return false;
+    const normalizedCatName = normalizeString(c.name);
+    return normalizedCatName.includes("arsiv") || normalizedCatName.includes("arşiv");
+  });
+
+  const isInArchiveCategory = archiveCategory && channel.parentId === archiveCategory.id;
+
+  // If already private and in archive category, skip re-applying permissions to avoid API loops
+  if (isEveryoneDenied && isInArchiveCategory) {
+    return;
+  }
+
+  processingChannels.add(channel.id);
+  processedCooldowns.set(channel.id, Date.now());
+
   try {
-    if (!channel || !channel.guild) return;
-
-    // Skip categories and threads
-    if (channel.type === ChannelType.GuildCategory || channel.isThread?.()) return;
-
-    const name = channel.name;
-    if (!name) return;
-
-    const normalizedName = normalizeString(name);
-    if (!normalizedName.endsWith("-arsiv")) return;
-
     console.log(`[ArchiveService] 🔒 Private Archive action initiated for channel: "${channel.name}" (${channel.id}) in guild: "${channel.guild.name}"`);
-
-    // Find or create "🗂️ Arşiv" category
-    let archiveCategory = channel.guild.channels.cache.find(c => {
-      if (c.type !== ChannelType.GuildCategory) return false;
-      const normalizedCatName = normalizeString(c.name);
-      return normalizedCatName.includes("arsiv") || normalizedCatName.includes("arşiv");
-    });
 
     if (!archiveCategory) {
       archiveCategory = await channel.guild.channels.create({
@@ -106,7 +133,7 @@ async function handleArchiveChannel(channel) {
     if (archiveCategory) {
       await applyPrivateArchivePermissions(archiveCategory);
       if (channel.parentId !== archiveCategory.id) {
-        await channel.setParent(archiveCategory.id, { lockPermissions: false });
+        await channel.setParent(archiveCategory.id, { lockPermissions: false }).catch(() => {});
         console.log(`[ArchiveService] Successfully moved "${channel.name}" to category "${archiveCategory.name}".`);
       }
     }
@@ -116,6 +143,8 @@ async function handleArchiveChannel(channel) {
     console.log(`[ArchiveService] ✅ Channel "${channel.name}" is now completely private (@everyone & Moderators hidden).`);
   } catch (error) {
     console.error(`[ArchiveService] Error processing archive channel "${channel?.name}":`, error.message || error);
+  } finally {
+    processingChannels.delete(channel.id);
   }
 }
 
