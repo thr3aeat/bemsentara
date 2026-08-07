@@ -19,7 +19,7 @@ const WEBHOOK_NAME = 'EkoYıldız Kurallar';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const BANNER_URL = 'https://i.imgur.com/j3pnVTu.png';
 const ACCENT_COLOR = 0x2b2d31;
-const ANAYASA_URL = 'https://docs.google.com/document/d/1tnZ75554rJscst2Cp0r2aIom2bOBlWzZ54iM0qshg3o/edit?usp=sharing';
+const ANAYASA_URL = 'https://docs.google.com/document/d/1uug3KuDnHaT9qYweF6pSdj40_yRSHBlqIVPo8Mg_VZ0/edit?usp=sharing';
 
 /**
  * Sends or updates the EkoYıldız rules in channel 1535319008956649564 using Discord Components V2.
