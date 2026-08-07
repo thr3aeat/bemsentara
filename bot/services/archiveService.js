@@ -17,7 +17,60 @@ function normalizeString(str) {
 }
 
 /**
+ * Applies strict privacy overwrites: Denies ViewChannel to @everyone and all Moderator/Staff roles.
+ * @param {import("discord.js").GuildChannel} channelOrCategory 
+ */
+async function applyPrivateArchivePermissions(channelOrCategory) {
+  try {
+    const guild = channelOrCategory.guild;
+    await guild.roles.fetch().catch(() => {});
+
+    // Collect all overwrites: @everyone is denied ViewChannel
+    const overwrites = [
+      {
+        id: guild.id, // @everyone role
+        deny: [PermissionFlagsBits.ViewChannel]
+      }
+    ];
+
+    // Deny ViewChannel for all staff/mod roles (unless they possess full Administrator permissions)
+    guild.roles.cache.forEach(role => {
+      if (role.id === guild.id) return; // skip @everyone
+      
+      // If role has Administrator permission, leave them untouched so full admins/owner can view
+      if (role.permissions.has(PermissionFlagsBits.Administrator)) return;
+
+      const lowerRoleName = role.name.toLowerCase();
+      const isModOrStaff = role.permissions.has(PermissionFlagsBits.ManageMessages) ||
+                           role.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+                           role.permissions.has(PermissionFlagsBits.ManageChannels) ||
+                           role.permissions.has(PermissionFlagsBits.KickMembers) ||
+                           role.permissions.has(PermissionFlagsBits.BanMembers) ||
+                           lowerRoleName.includes('mod') ||
+                           lowerRoleName.includes('yetkili') ||
+                           lowerRoleName.includes('personel') ||
+                           lowerRoleName.includes('stajyer') ||
+                           lowerRoleName.includes('sekreter') ||
+                           lowerRoleName.includes('rehber') ||
+                           lowerRoleName.includes('koordinatör');
+
+      if (isModOrStaff) {
+        overwrites.push({
+          id: role.id,
+          deny: [PermissionFlagsBits.ViewChannel]
+        });
+      }
+    });
+
+    await channelOrCategory.permissionOverwrites.set(overwrites, "Otomatik Özel Arşiv İzinleri (@everyone ve Modlar Engellendi)").catch(() => {});
+  } catch (err) {
+    console.error(`[ArchiveService] Error applying permissions to "${channelOrCategory?.name}":`, err.message);
+  }
+}
+
+/**
  * Checks if a channel ends with "-arşiv" or "-arsiv" and processes it accordingly.
+ * Makes the channel strictly private: @everyone and ALL moderators CANNOT view it!
  * @param {import("discord.js").GuildChannel} channel
  */
 async function handleArchiveChannel(channel) {
@@ -33,39 +86,37 @@ async function handleArchiveChannel(channel) {
     const normalizedName = normalizeString(name);
     if (!normalizedName.endsWith("-arsiv")) return;
 
-    console.log(`[ArchiveService] Checking archive action for channel: "${channel.name}" (${channel.id}) in guild: "${channel.guild.name}"`);
+    console.log(`[ArchiveService] 🔒 Private Archive action initiated for channel: "${channel.name}" (${channel.id}) in guild: "${channel.guild.name}"`);
 
-    // The primary target name is " 🗂️Arşiv ". But we will also search for any category containing "arşiv" or "arsiv".
-    const archiveCategory = channel.guild.channels.cache.find(c => {
+    // Find or create "🗂️ Arşiv" category
+    let archiveCategory = channel.guild.channels.cache.find(c => {
       if (c.type !== ChannelType.GuildCategory) return false;
       const normalizedCatName = normalizeString(c.name);
       return normalizedCatName.includes("arsiv") || normalizedCatName.includes("arşiv");
     });
 
+    if (!archiveCategory) {
+      archiveCategory = await channel.guild.channels.create({
+        name: "🗂️ Arşiv",
+        type: ChannelType.GuildCategory,
+        reason: "Gizli Otomatik Arşiv Kategorisi"
+      }).catch(() => null);
+    }
+
     if (archiveCategory) {
+      await applyPrivateArchivePermissions(archiveCategory);
       if (channel.parentId !== archiveCategory.id) {
         await channel.setParent(archiveCategory.id, { lockPermissions: false });
-        console.log(`[ArchiveService] Successfully moved "${channel.name}" to category "${archiveCategory.name}" in guild "${channel.guild.name}".`);
-      } else {
-        console.log(`[ArchiveService] Channel "${channel.name}" is already in category "${archiveCategory.name}".`);
-      }
-    } else {
-      // Category does not exist, make it private so nobody can see it
-      const everyoneOverwrites = channel.permissionOverwrites.cache.get(channel.guild.id);
-      const hasViewChannelDenied = everyoneOverwrites && everyoneOverwrites.deny.has(PermissionFlagsBits.ViewChannel);
-
-      if (!hasViewChannelDenied) {
-        await channel.permissionOverwrites.edit(channel.guild.id, {
-          ViewChannel: false
-        });
-        console.log(`[ArchiveService] Category not found. Successfully hid "${channel.name}" by denying ViewChannel for everyone in guild "${channel.guild.name}".`);
-      } else {
-        console.log(`[ArchiveService] Category not found. Channel "${channel.name}" already has ViewChannel denied for everyone.`);
+        console.log(`[ArchiveService] Successfully moved "${channel.name}" to category "${archiveCategory.name}".`);
       }
     }
+
+    // Apply strict privacy overwrites to the Archive Channel
+    await applyPrivateArchivePermissions(channel);
+    console.log(`[ArchiveService] ✅ Channel "${channel.name}" is now completely private (@everyone & Moderators hidden).`);
   } catch (error) {
-    console.error(`[ArchiveService] Error processing archive channel "${channel?.name}" in guild "${channel?.guild?.name}":`, error.message || error);
+    console.error(`[ArchiveService] Error processing archive channel "${channel?.name}":`, error.message || error);
   }
 }
 
-module.exports = { handleArchiveChannel };
+module.exports = { handleArchiveChannel, applyPrivateArchivePermissions };
