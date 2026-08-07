@@ -107,7 +107,43 @@ async function handleModalSubmit(interaction) {
       return interaction.reply({ content: `📝 **Kanal ismi başarıyla değiştirildi:** ${channel.name}`, ephemeral: true });
     }
 
-    // 2. Kullanıcıyı yasakla
+    // 2. Kullanıcı limiti değiştir
+    if (modalType === 'limit') {
+      const limitInput = interaction.fields.getTextInputValue('user_limit').trim();
+      const limit = parseInt(limitInput) || 0;
+      const sanitizedLimit = Math.max(0, Math.min(99, limit));
+      
+      await channel.setUserLimit(sanitizedLimit).catch(() => {});
+      return interaction.reply({ 
+        content: `👥 **Kullanıcı limiti değiştirildi:** ${sanitizedLimit === 0 ? 'Sınırsız' : sanitizedLimit}`, 
+        ephemeral: true 
+      });
+    }
+
+    // 3. Bitrate değiştir
+    if (modalType === 'bitrate') {
+      const bitrateInput = interaction.fields.getTextInputValue('bitrate').trim();
+      const bitrate = parseInt(bitrateInput) || 64;
+      const sanitizedBitrate = Math.max(8, Math.min(96, bitrate)) * 1000;
+      
+      await channel.setBitrate(sanitizedBitrate).catch(() => {});
+      return interaction.reply({ 
+        content: `🎚️ **Bitrate kalitesi değiştirildi:** ${sanitizedBitrate / 1000} kbps`, 
+        ephemeral: true 
+      });
+    }
+
+    // 4. Bölge değiştir
+    if (modalType === 'region') {
+      const regionInput = interaction.fields.getTextInputValue('region').trim() || null;
+      await channel.setRTCRegion(regionInput).catch(() => {});
+      return interaction.reply({ 
+        content: `🌍 **Bölge ayarı değiştirildi:** ${regionInput || 'Otomatik'}`, 
+        ephemeral: true 
+      });
+    }
+
+    // 5. Kullanıcıyı yasakla
     if (modalType === 'ban') {
       const userInput = interaction.fields.getTextInputValue('user_id').trim();
       const userId = await resolveUserFromInput(userInput, interaction);
@@ -124,7 +160,7 @@ async function handleModalSubmit(interaction) {
       return interaction.reply({ content: `🔨 <@${userId}> kanaldan yasaklandı.`, ephemeral: true });
     }
 
-    // 3. Kullanıcı yasağını kaldır
+    // 6. Kullanıcı yasağını kaldır
     if (modalType === 'unban') {
       const userInput = interaction.fields.getTextInputValue('user_id').trim();
       const userId = await resolveUserFromInput(userInput, interaction);
@@ -135,6 +171,58 @@ async function handleModalSubmit(interaction) {
 
       await channel.permissionOverwrites.delete(userId).catch(() => {});
       return interaction.reply({ content: `🔧 <@${userId}> kullanıcısının yasağı kaldırıldı.`, ephemeral: true });
+    }
+
+    // 7. Güvenilir kullanıcı ekle (whitelist)
+    if (modalType === 'whitelist') {
+      const userInput = interaction.fields.getTextInputValue('user_id').trim();
+      const userId = await resolveUserFromInput(userInput, interaction);
+      
+      if (!userId) {
+        return interaction.reply({ content: '❌ Kullanıcı bulunamadı. Lütfen geçerli bir kullanıcı ID veya mention girin.', ephemeral: true });
+      }
+
+      await channel.permissionOverwrites.create(userId, { 
+        ViewChannel: true, 
+        Connect: true 
+      }).catch(() => {});
+      
+      return interaction.reply({ content: `👤 <@${userId}> güvenilir listeye eklendi. Kanal kilitli bile olsa girebilir.`, ephemeral: true });
+    }
+
+    // 8. Kullanıcıyı sesten at
+    if (modalType === 'kick') {
+      const userInput = interaction.fields.getTextInputValue('user_id').trim();
+      const userId = await resolveUserFromInput(userInput, interaction);
+      
+      if (!userId) {
+        return interaction.reply({ content: '❌ Kullanıcı bulunamadı. Lütfen geçerli bir kullanıcı ID veya mention girin.', ephemeral: true });
+      }
+
+      const member = channel.members.get(userId);
+      if (!member) {
+        return interaction.reply({ content: '❌ Bu kullanıcı kanalda değil.', ephemeral: true });
+      }
+
+      await member.voice.disconnect().catch(() => {});
+      return interaction.reply({ content: `🚫 <@${userId}> sesten atıldı.`, ephemeral: true });
+    }
+
+    // 9. Sahipliği devret
+    if (modalType === 'transfer') {
+      const userInput = interaction.fields.getTextInputValue('user_id').trim();
+      const userId = await resolveUserFromInput(userInput, interaction);
+      
+      if (!userId) {
+        return interaction.reply({ content: '❌ Kullanıcı bulunamadı. Lütfen geçerli bir kullanıcı ID veya mention girin.', ephemeral: true });
+      }
+
+      if (userId === interaction.user.id) {
+        return interaction.reply({ content: '❌ Kendinize sahipliği devredemezsiniz.', ephemeral: true });
+      }
+
+      tempChannels.set(channel.id, userId);
+      return interaction.reply({ content: `👑 **Kanal sahipliği <@${userId}> kullanıcısına devredildi!**`, ephemeral: true });
     }
 
     return;
