@@ -39,27 +39,32 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
       await webhook.edit({
         name: WEBHOOK_NAME,
         avatar: WEBHOOK_AVATAR
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
-    // Embed hazırlığı (Görseldekinin birebir tasarımı)
+    // Embed hazırlığı (Void Hook düzenine birebir uyumlu)
     const bannerUrl = options.banner || HEADER_BANNER;
+
+    // Void Hook stili metin yapısı
     const descriptionText = options.description || (
-      `# Hakkında\n\n` +
-      `> EkoYıldız, Eko tarafından özgün içerikler üretmek ve dijital yayıncılık alanında sürdürülebilir bir topluluk yapısı inşa etmek amacıyla hayata geçirilmiş bir YouTube kanalıdır.\n>\n` +
-      `> Bu ekosistemin merkezinde yer alan EkoYıldız Discord Topluluğu ise, başta EkoYıldız olmak üzere bünyesinde barındırdığı tüm dijital kanalların içerik yönetimini, operasyonel süreçlerini ve topluluk düzenini profesyonel standartlarda yürütmek amacıyla kurulmuştur. Topluluğumuz; üyeler arasındaki etkileşimi güvenli, seviyeli ve dinamik bir yapıda tutmayı, içerik üretim süreçlerinin verimliliğini artırmayı ve dijital varlığımızın kurumsal bütünlüğünü korumayı temel misyonu olarak benimsemektedir.\n\n` +
-      `Bu sunucu Youtube kanalı ve Roblox Türkiye üzerine kurulmuştur. Roblox Türkiye ile alakalı işbirlikleri için <#1518692475189854218> kanalına gidin.\n\n` +
       `───────────────────────────────────────────────\n` +
-      `**Bağlantılarımız**`
+      `### Hakkında\n\n` +
+      `> EkoYıldız, Eko tarafından özgün içerikler üretmek ve dijital yayıncılık alanında sürdürülebilir bir topluluk yapısı inşa etmek amacıyla hayata geçirilmiş bir YouTube kanalıdır. Bu ekosistemin merkezinde yer alan EkoYıldız Discord Topluluğu ise, başta EkoYıldız olmak üzere bünyesinde barındırdığı tüm dijital kanalların içerik yönetimini, operasyonel süreçlerini ve topluluk düzenini profesyonel standartlarda yürütmek amacıyla kurulmuştur.\n` +
+      `> Amacımız, üyeler arasındaki etkileşimi güvenli, seviyeli ve dinamik bir yapıda tutmayı, içerik üretim süreçlerinin verimliliğini artırmayı ve dijital varlığımızın kurumsal bütünlüğünü korumaktır.\n\n` +
+      `Bu sunucu YouTube kanalı ve Roblox Türkiye üzerine kurulmuştur. Roblox Türkiye ile alakalı işbirlikleri için <#1518692475189854218> kanalına gidin.\n\n` +
+      `───────────────────────────────────────────────\n` +
+      `**Bağlantılarımız**\n` +
+      `🔴 📺 🟢 🟣 📸 🎵 📩\n\n` +
+      `───────────────────────────────────────────────\n` +
+      `14 Nisan 2024 tarihinde kuruldu.`
     );
 
     const embed = new EmbedBuilder()
-      .setColor(0x2b2d31) // Discord koyu tema rengi
-      .setImage(bannerUrl)
-      .setDescription(descriptionText)
-      .setFooter({ text: '14 Nisan 2024 tarihinde kuruldu.' });
+      .setColor(0x2b2d31) // Void Hook ile aynı koyu tema rengi
+      .setImage(bannerUrl) // Afiş görseli tam en üstte
+      .setDescription(descriptionText);
 
-    // ActionRow 1: Dijital Kanallar (Components v2)
+    // ActionRow 1: Yayın ve Video Platformları (Components v2)
     const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel('YouTube Ana Kanal')
@@ -75,16 +80,16 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         .setLabel('Kick Canlı Yayın')
         .setURL('https://kick.com/ekoyildiz')
         .setStyle(ButtonStyle.Link)
-        .setEmoji('🟢')
-    );
-
-    // ActionRow 2: Sosyal Medya ve Destek
-    const row2 = new ActionRowBuilder().addComponents(
+        .setEmoji('🟢'),
       new ButtonBuilder()
         .setLabel('Twitch')
         .setURL('https://www.twitch.tv/ekoyildiz')
         .setStyle(ButtonStyle.Link)
-        .setEmoji('💜'),
+        .setEmoji('🟣')
+    );
+
+    // ActionRow 2: Sosyal Medya ve İletişim (Components v2)
+    const row2 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel('Instagram')
         .setURL('https://www.instagram.com/ekonqt/')
@@ -102,7 +107,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         .setEmoji('📩')
     );
 
-    // Persisted message tracking: check if we already sent a message before
+    // Persisted message tracking
     let metaRecord = appMeta ? appMeta.findOne({ key: 'ekoHookConfig' }) : null;
     let existingMsg = null;
 
@@ -118,7 +123,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         embeds: [embed],
         components: [row1, row2]
       });
-      console.log('[EkoHookService] ✅ Existing Webhook message updated successfully.');
+      console.log('[EkoHookService] ✅ Existing Webhook message updated successfully to Components v2.');
       return true;
     }
 
