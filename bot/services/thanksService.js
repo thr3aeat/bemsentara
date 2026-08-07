@@ -16,7 +16,6 @@ const WEBHOOK_NAME = 'EkoYıldız Destekçiler';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER_URL = 'https://i.imgur.com/DrkAlzu.png';
 const SUPPORTERS_CHANNEL_LINK = 'https://ptb.discord.com/channels/1367646464804655104/1535336327975927919';
-const ACCENT_COLOR = 0x7c5cbf;
 
 // Destekçi listesi — güncellemek için buraya ekleyin/çıkarın
 const SUPPORTERS_LIST = [
@@ -31,6 +30,7 @@ const SUPPORTERS_LIST = [
 
 /**
  * Sends or updates the EkoYıldız "Teşekkürler" donors message using Discord Components V2.
+ * (Accent color kaldırıldı — nötr/renksiz container)
  */
 async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, options = {}) {
   try {
@@ -57,11 +57,11 @@ async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, op
         return null;
       });
     } else {
-      await webhook.edit({ name: WEBHOOK_NAME, avatar: WEBHOOK_AVATAR }).catch(() => {});
+      await webhook.edit({ name: WEBHOOK_NAME, avatar: WEBHOOK_AVATAR }).catch(() => { });
     }
 
-    // ─── CONTAINER ────────────────────────────────────────────────────────
-    const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    // ─── CONTAINER (renksiz / accent color yok) ────────────────────────────
+    const container = new ContainerBuilder();
 
     // 1️⃣ Üst Banner (Teşekkürler görseli)
     container.addMediaGalleryComponents(
@@ -140,8 +140,8 @@ async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, op
     const messagesCollection = await channel.messages.fetch({ limit: 50 }).catch(() => null);
     const botMessages = messagesCollection
       ? Array.from(messagesCollection.values())
-          .filter(m => webhook ? m.webhookId === webhook.id : m.author.id === client.user.id)
-          .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+        .filter(m => webhook ? m.webhookId === webhook.id : m.author.id === client.user.id)
+        .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
       : [];
 
     let sentMsg = null;
@@ -149,7 +149,7 @@ async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, op
     if (botMessages.length > 0 && webhook) {
       sentMsg = await webhook.editMessage(botMessages[0].id, messagePayload).catch(() => null);
       for (let i = 1; i < botMessages.length; i++) {
-        await botMessages[i].delete().catch(() => {});
+        await botMessages[i].delete().catch(() => { });
       }
     }
 
