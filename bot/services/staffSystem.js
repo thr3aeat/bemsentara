@@ -4414,7 +4414,8 @@ function startStaffScheduler(client) {
     }
   });
 
-  // 13:00 — Öğlen hatırlatması (Sunucu Yetkili Kanalına)
+  // 13:00 — Öğlen hatırlatması (Kanal Bildirimi - Devre Dışı)
+  /*
   scheduleAt(13, 0, async () => {
     console.log('[staffSystem] 13:00 öğlen hatırlatması (Kanal Bildirimi)...');
     const embed = new EmbedBuilder()
@@ -4425,6 +4426,7 @@ function startStaffScheduler(client) {
       .setTimestamp();
     await sendStaffChannelNotification(client, embed);
   });
+  */
 
   // 19:00 — Akşam uyarısı (DM #2: Hâllâ tamamlamamış yetkililere son DM uyarısı)
   scheduleAt(19, 0, async () => {
@@ -4444,7 +4446,8 @@ function startStaffScheduler(client) {
     }
   });
 
-  // 15:00 — Öğleden sonra motivasyon mesajı (Sunucu Yetkili Kanalına)
+  // 15:00 — Öğleden sonra motivasyon mesajı (Kanal Bildirimi - Devre Dışı)
+  /*
   scheduleAt(15, 0, async () => {
     console.log('[staffSystem] 15:00 motivasyon mesajı (Kanal Bildirimi)...');
     const embed = new EmbedBuilder()
@@ -4455,8 +4458,10 @@ function startStaffScheduler(client) {
       .setTimestamp();
     await sendStaffChannelNotification(client, embed);
   });
+  */
 
-  // 18:00 — Akşam eğlenceleri (Sunucu Yetkili Kanalına)
+  // 18:00 — Akşam eğlenceleri (Kanal Bildirimi - Devre Dışı)
+  /*
   scheduleAt(18, 0, async () => {
     console.log('[staffSystem] 18:00 eğlenceli mesaj (Kanal Bildirimi)...');
     const embed = new EmbedBuilder()
@@ -4467,8 +4472,10 @@ function startStaffScheduler(client) {
       .setTimestamp();
     await sendStaffChannelNotification(client, embed);
   });
+  */
 
-  // 21:00 — Akşam geç saatlerde teşvik mesajı (Sunucu Yetkili Kanalına)
+  // 21:00 — Akşam geç saatlerde teşvik mesajı (Kanal Bildirimi - Devre Dışı)
+  /*
   scheduleAt(21, 0, async () => {
     console.log('[staffSystem] 21:00 gece motivasyonu (Kanal Bildirimi)...');
     const embed = new EmbedBuilder()
@@ -4479,6 +4486,7 @@ function startStaffScheduler(client) {
       .setTimestamp();
     await sendStaffChannelNotification(client, embed);
   });
+  */
 
   // 23:30 — Günlük kapanış kontrol + uyarı
   scheduleAt(23, 30, async () => {
