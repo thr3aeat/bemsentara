@@ -126,29 +126,23 @@ class ComponentsV2Factory {
 
   /**
    * Ana Kapsayıcı Konteyner (Container) oluşturur
-   * @param {number|string} accentColor - Hex renk kodu (Örn: 0x5865F2 veya "#5865F2")
    * @param {Array} innerComponents - Konteyner içi bileşenler listesi
    */
-  static container(accentColor, innerComponents = []) {
+  static container(innerComponents = []) {
     return {
       type: TYPE_CONTAINER,
-      accent_color:
-        typeof accentColor === "string"
-          ? parseInt(accentColor.replace("#", ""), 16)
-          : accentColor,
       components: innerComponents,
     };
   }
 
   /**
    * Eksiksiz interaction.reply / send payload'ı üretir
-   * @param {number|string} accentColor - Sol renk çubuğu rengi
    * @param {Array} innerComponents - Konteyner içi bileşenler
    */
-  static buildPayload(accentColor, innerComponents = []) {
+  static buildPayload(innerComponents = []) {
     return {
       flags: FLAGS_V2,
-      components: [this.container(accentColor, innerComponents)],
+      components: [this.container(innerComponents)],
     };
   }
 
@@ -157,17 +151,16 @@ class ComponentsV2Factory {
    * @param {string} attachmentName - Örn: "attachment://levelup.png"
    * @param {string} title - Kart Başlığı
    * @param {string} description - Açıklama metni
-   * @param {number|string} accentColor - Renk çubuğu
    * @param {Array} files - AttachmentBuilder listesi
    */
-  static buildCanvasAttachmentContainer(attachmentName, title, description = '', accentColor = 0x43B581, files = []) {
+  static buildCanvasAttachmentContainer(attachmentName, title, description = '', files = []) {
     const mediaUrl = attachmentName.startsWith("attachment://") ? attachmentName : `attachment://${attachmentName}`;
 
     return {
       flags: FLAGS_V2,
       files: files,
       components: [
-        this.container(accentColor, [
+        this.container([
           ...this.headerBlock(title, "🎉"),
           ...(description ? [this.text(description), this.separator(false)] : []),
           this.mediaGallery([mediaUrl]),

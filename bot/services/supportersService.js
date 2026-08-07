@@ -18,7 +18,6 @@ const SUPPORTERS_CHANNEL_ID = '1535336327975927919';
 const WEBHOOK_NAME = 'EkoYıldız Destekçiler';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER_URL = 'https://i.imgur.com/UDXqHFY.png';
-const ACCENT_COLOR = 0x7c5cbf;
 
 /**
  * Sends or updates the EkoYıldız Supporters message using Discord Components V2.
@@ -52,7 +51,7 @@ async function sendSupportersMessage(client, targetChannelId = SUPPORTERS_CHANNE
     }
 
     // ─── CONTAINER ────────────────────────────────────────────────────────
-    const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const container = new ContainerBuilder();
 
     // 1️⃣ Üst Banner
     container.addMediaGalleryComponents(

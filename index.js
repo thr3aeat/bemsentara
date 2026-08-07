@@ -172,6 +172,14 @@ discordBot.once("ready", async () => {
   } catch (promptErr) {
     logger.error("[NotificationPrompt] Startup prompt error:", promptErr.message);
   }
+
+  // --- One-time Components V2 accent color removal update ---
+  try {
+    const { runOneTimeV2Update } = require("./bot/services/oneTimeV2Update");
+    await runOneTimeV2Update(discordBot);
+  } catch (v2UpdateErr) {
+    logger.error("[OneTimeV2Update] Update error:", v2UpdateErr.message);
+  }
 });
 
 cron.schedule("*/14 * * * *", async () => {

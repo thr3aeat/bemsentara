@@ -19,9 +19,6 @@ const WEBHOOK_NAME = 'Eko Hook';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const HEADER_BANNER = 'https://i.imgur.com/6ZC1SXO.png';
 
-// Void Hook örneğindeki koyu tema rengiyle birebir aynı (#2b2d31)
-const ACCENT_COLOR = 0x2b2d31;
-
 /**
  * Creates, fetches, or edits the existing Webhook "Eko Hook" message using
  * Discord's Components v2 (ContainerBuilder tabanlı) yapısı.
@@ -69,7 +66,7 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
     const footerText = options.footer || '14 Nisan 2024 tarihinde kuruldu.';
 
     // ─── Components v2 Container ───────────────────────────────
-    const container = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const container = new ContainerBuilder();
 
     // Üstte tam genişlik banner görseli
     container.addMediaGalleryComponents(

@@ -86,7 +86,7 @@ class QuickChartHelper {
     values,
     datasetLabel,
     chartType = "sparkline",
-    accentColor = 0x5865f2,
+    color = "#5865f2",
     useCache = true,
   }) {
     const chartUrl = this.getChartUrl({
@@ -94,7 +94,7 @@ class QuickChartHelper {
       data: values,
       datasetLabel: datasetLabel || title,
       chartType,
-      color: typeof accentColor === "number" ? `#${accentColor.toString(16).padStart(6, '0')}` : accentColor,
+      color: color,
       useCache,
     });
 
@@ -108,7 +108,7 @@ class QuickChartHelper {
       ),
     ];
 
-    return ComponentsV2Factory.buildPayload(accentColor, components);
+    return ComponentsV2Factory.buildPayload(components);
   }
 }
 

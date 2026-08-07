@@ -18,7 +18,6 @@ const RULES_CHANNEL_ID = '1535319008956649564';
 const WEBHOOK_NAME = 'EkoYıldız Kurallar';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const BANNER_URL = 'https://i.imgur.com/j3pnVTu.png';
-const ACCENT_COLOR = 0x2b2d31;
 const ANAYASA_URL = 'https://docs.google.com/document/d/1uug3KuDnHaT9qYweF6pSdj40_yRSHBlqIVPo8Mg_VZ0/edit?usp=sharing';
 
 /**
@@ -52,7 +51,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     }
 
     // ─── CONTAINER 1: HOŞ GELDİN + GENEL TOPLULUK + GÜVENLİK/KVKK ───────────
-    const container1 = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const container1 = new ContainerBuilder();
 
     // Banner görseli
     container1.addMediaGalleryComponents(
@@ -99,7 +98,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     // ─── CONTAINER 2: MÜSTEHCENLİK + SAYGI/DÜZEN + ANAYASA ────────────────
-    const container2 = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const container2 = new ContainerBuilder();
 
     // Bölüm 3: İçerik ve Müstehcenlik
     container2.addTextDisplayComponents(

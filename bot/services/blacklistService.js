@@ -14,7 +14,6 @@ const Blacklist = require('../../models/Blacklist');
 const BLACKLIST_CHANNEL_ID = '1518692472367222915';
 const LOG_CHANNEL_ID = '1518920074264842380';
 const HEADER_BANNER_URL = 'https://i.imgur.com/ZaYKvkE.png';
-const ACCENT_COLOR = 0x2b2d31;
 
 const cleanBlacklistName = (name) => {
   if (!name) return '';
@@ -145,7 +144,7 @@ async function renderBlacklist(client) {
     const containers = [];
 
     // ─── 1️⃣ ANA BAŞLIK, GÖRSEL VE KİŞİLER (1. PARÇA) ─────────────────────
-    const headerContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const headerContainer = new ContainerBuilder();
 
     // En başa belirtilen görseli koyuyoruz
     headerContainer.addMediaGalleryComponents(
@@ -178,7 +177,7 @@ async function renderBlacklist(client) {
 
     // Eğer kişiler 1. parçaya sığmadıysa sonraki parçalar için container ekle
     for (let i = 1; i < peopleChunks.length; i++) {
-      const pContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+      const pContainer = new ContainerBuilder();
       pContainer.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(`### 👤 Engellenen Kişiler (Kısım ${i + 1})`),
         new TextDisplayBuilder().setContent('\u200B'),
@@ -188,7 +187,7 @@ async function renderBlacklist(client) {
     }
 
     // ─── 2️⃣ İLGİLİ GRUPLAR BÖLÜMÜ ───────────────────────────────────────
-    const firstGroupContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+    const firstGroupContainer = new ContainerBuilder();
     firstGroupContainer.addSeparatorComponents(
       new SeparatorBuilder()
         .setSpacing(SeparatorSpacingSize.Large)
@@ -202,7 +201,7 @@ async function renderBlacklist(client) {
     containers.push(firstGroupContainer);
 
     for (let i = 1; i < groupChunks.length; i++) {
-      const gContainer = new ContainerBuilder().setAccentColor(ACCENT_COLOR);
+      const gContainer = new ContainerBuilder();
       gContainer.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(`### 🛡️ İlgili Gruplar / Platformlar (Kısım ${i + 1})`),
         new TextDisplayBuilder().setContent('\u200B'),
