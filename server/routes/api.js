@@ -226,8 +226,6 @@ function renderEmailTemplate(aiResponse) {
 </html>`;
 }
 
-const router = express.Router();
-
 function requireLogin(req, res) {
   if (!req.user) {
     res.status(401).json({ error: "Giriş yapmanız gerekli." });
