@@ -45,7 +45,13 @@ async function formatGuildChannelNames(client) {
       if (channel.type !== ChannelType.GuildCategory) {
         if (name.includes('→')) {
           const revertedName = name
-            .replace(/[\s\-_]*→[\s\-_]*/g, '-')
+            .replace(/-*→-*/g, (match, offset, string) => {
+              const nextChar = string[offset + match.length];
+              if (nextChar && /[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]/.test(nextChar)) {
+                return '-';
+              }
+              return '';
+            })
             .replace(/--+/g, '-')
             .replace(/^-+|-+$/g, '');
 
