@@ -606,7 +606,7 @@ function _esc(str) {
 // ─────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────
-function renderMainPage() {
+function renderMainPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
