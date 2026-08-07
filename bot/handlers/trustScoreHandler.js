@@ -262,12 +262,42 @@ function initializeTrustScoreHandlers(client) {
     }
   });
 
-  // ── 2. Message Delete Event Handler (Ghost Ping Tespiti) ───────────────────
+  // ── 1.1. Message Update Event Handler (Mesaj Düzenleme Logu) ───────────────
+  client.on("messageUpdate", async (oldMessage, newMessage) => {
+    try {
+      if (!newMessage.guild || newMessage.guild.id !== ACTIVE_GUILD_ID || newMessage.author?.bot) return;
+      if (oldMessage.content === newMessage.content) return;
+
+      logTrustUserActivity(
+        client,
+        newMessage.author.id,
+        "Mesaj Düzenlendi",
+        `**Kanal:** <#${newMessage.channel.id}>\n**Eski İçerik:** ${oldMessage.content ? oldMessage.content.slice(0, 200) : '*(boş)*'}\n**Yeni İçerik:** ${newMessage.content ? newMessage.content.slice(0, 200) : '*(boş)*'}`,
+        "✏️"
+      ).catch(() => {});
+    } catch (err) {
+      console.error("[TrustScoreHandler] messageUpdate error:", err);
+    }
+  });
+
+  // ── 2. Message Delete Event Handler (Ghost Ping & Silme Logu) ───────────────
   client.on("messageDelete", async (message) => {
     try {
       if (!message.guild || message.guild.id !== ACTIVE_GUILD_ID) return;
 
       const msgData = recentMessages.get(message.id);
+      const targetUserId = message.author?.id || msgData?.authorId;
+
+      if (targetUserId) {
+        logTrustUserActivity(
+          client,
+          targetUserId,
+          "Mesaj Silindi",
+          `**Kanal:** <#${message.channel.id}>\n**Silinen İçerik:** ${message.content ? message.content.slice(0, 300) : '*(boş/görsel)*'}`,
+          "🗑️"
+        ).catch(() => {});
+      }
+
       if (!msgData) return;
 
       recentMessages.delete(message.id);
@@ -346,7 +376,7 @@ function initializeTrustScoreHandlers(client) {
     }
   });
 
-  // ── 4. Voice State Event Handler (Ses Aktifliği & Ekran Paylaşımı) ──────────
+  // ── 4. Voice State Event Handler (Ses Katılımı, Mute, Deafen, Kamera, Ekran) ──
   client.on("voiceStateUpdate", async (oldState, newState) => {
     try {
       if (newState.guild.id !== ACTIVE_GUILD_ID) return;
@@ -361,37 +391,78 @@ function initializeTrustScoreHandlers(client) {
         await record.save();
       }
 
+      // Voice Join / Leave / Move Detailed Logs
       if (!oldChannel && newChannel) {
         if (!newState.member.user.bot) {
           voiceSessions.set(userId, Date.now());
+          logTrustUserActivity(client, userId, "Ses Kanalına Katıldı", `**Kanal:** <#${newChannel}>`, "🔊").catch(() => {});
         }
       }
       else if (oldChannel && !newChannel) {
         const joinTime = voiceSessions.get(userId);
+        let durationStr = "";
         if (joinTime) {
-          const elapsedMin = (Date.now() - joinTime) / (1000 * 60);
+          const elapsedMin = Math.floor((Date.now() - joinTime) / (1000 * 60));
+          durationStr = `\n**Seste Kalma Süresi:** ${elapsedMin} dakika`;
           const pointsToAward = Math.floor(elapsedMin / 30) * 0.5;
 
           if (pointsToAward > 0) {
-            await updateTrustScore(userId, pointsToAward, `Sesli Kanal Aktifliği (${Math.floor(elapsedMin)} Dk)`, "SYSTEM", client);
+            await updateTrustScore(userId, pointsToAward, `Sesli Kanal Aktifliği (${elapsedMin} Dk)`, "SYSTEM", client);
           }
           voiceSessions.delete(userId);
         }
+        logTrustUserActivity(client, userId, "Ses Kanalından Ayrıldı", `**Eski Kanal:** <#${oldChannel}>${durationStr}`, "🔇").catch(() => {});
       }
-      else if (oldChannel && newChannel) {
-        const joinTime = voiceSessions.get(userId);
-        if (joinTime) {
-          const elapsedMin = (Date.now() - joinTime) / (1000 * 60);
-          if (elapsedMin >= 30) {
-            const pointsToAward = Math.floor(elapsedMin / 30) * 0.5;
-            await updateTrustScore(userId, pointsToAward, `Sesli Kanal Aktifliği (${Math.floor(elapsedMin)} Dk)`, "SYSTEM", client);
-            voiceSessions.set(userId, Date.now());
-          }
-        } else {
-          if (!newState.member.user.bot) {
-            voiceSessions.set(userId, Date.now());
-          }
-        }
+      else if (oldChannel && newChannel && oldChannel !== newChannel) {
+        logTrustUserActivity(client, userId, "Ses Kanalı Değiştirildi", `**Eski Kanal:** <#${oldChannel}>\n**Yeni Kanal:** <#${newChannel}>`, "🔄").catch(() => {});
+      }
+
+      // Microphone Mute / Unmute Log
+      if (oldState.selfMute !== newState.selfMute) {
+        const isMuted = newState.selfMute;
+        logTrustUserActivity(
+          client,
+          userId,
+          isMuted ? "Mikrofon Kapatıldı (Mute)" : "Mikrofon Açıldı (Unmute)",
+          `**Kanal:** <#${newState.channelId || oldState.channelId}>`,
+          isMuted ? "🎙️❌" : "🎙️"
+        ).catch(() => {});
+      }
+
+      // Deaf / Undeafen Log
+      if (oldState.selfDeaf !== newState.selfDeaf) {
+        const isDeaf = newState.selfDeaf;
+        logTrustUserActivity(
+          client,
+          userId,
+          isDeaf ? "Kulaklık Kapatıldı (Deafen)" : "Kulaklık Açıldı (Undeafen)",
+          `**Kanal:** <#${newState.channelId || oldState.channelId}>`,
+          isDeaf ? "🎧❌" : "🎧"
+        ).catch(() => {});
+      }
+
+      // Camera Video On / Off Log
+      if (oldState.selfVideo !== newState.selfVideo) {
+        const isVideo = newState.selfVideo;
+        logTrustUserActivity(
+          client,
+          userId,
+          isVideo ? "Kamera Açıldı" : "Kamera Kapatıldı",
+          `**Kanal:** <#${newState.channelId || oldState.channelId}>`,
+          "📷"
+        ).catch(() => {});
+      }
+
+      // Stream / Screen Share Log
+      if (oldState.streaming !== newState.streaming) {
+        const isStreaming = newState.streaming;
+        logTrustUserActivity(
+          client,
+          userId,
+          isStreaming ? "Ekran Paylaşımı / Yayın Başlatıldı" : "Ekran Paylaşımı Durduruldu",
+          `**Kanal:** <#${newState.channelId || oldState.channelId}>`,
+          "🖥️"
+        ).catch(() => {});
       }
 
     } catch (err) {

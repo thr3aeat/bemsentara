@@ -1022,6 +1022,32 @@ async function cleanupDuplicateTrustChannels(client) {
   } catch (err) {
     console.error("[TrustScore] cleanupDuplicateTrustChannels hatası:", err.message);
   }
+/**
+ * Sends a detailed activity log to the user's dedicated Güven Puanı record channel.
+ */
+async function logTrustUserActivity(client, userId, actionTitle, actionDetails, emoji = "📝") {
+  try {
+    const record = await UserTrustScore.findOne({ userId });
+    if (!record || !record.profileChannelId) return;
+
+    const recordGuild = await client.guilds.fetch(RECORD_GUILD_ID).catch(() => null);
+    if (!recordGuild) return;
+
+    const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+    if (!channel || !channel.isSendable()) return;
+
+    const timestamp = `<t:${Math.floor(Date.now() / 1000)}:F>`;
+    const embed = new EmbedBuilder()
+      .setColor(0x3b82f6)
+      .setTitle(`${emoji} ${actionTitle}`)
+      .setDescription(`**Zaman:** ${timestamp}\n${actionDetails}`)
+      .setFooter({ text: `Güvenlik Logu • ${record.username || userId}` })
+      .setTimestamp();
+
+    await channel.send({ embeds: [embed] }).catch(() => {});
+  } catch (err) {
+    console.error("[TrustScoreLog] Activity log error:", err.message);
+  }
 }
 
 module.exports = {
@@ -1035,4 +1061,5 @@ module.exports = {
   scanVoiceChannels,
   startTrustScoreDecayScheduler,
   cleanupDuplicateTrustChannels,
+  logTrustUserActivity,
 };
