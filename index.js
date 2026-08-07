@@ -180,6 +180,49 @@ discordBot.once("ready", async () => {
   } catch (v2UpdateErr) {
     logger.error("[OneTimeV2Update] Update error:", v2UpdateErr.message);
   }
+
+  // --- One-time Voice Panel Send to Specific Channel ---
+  try {
+    const { appMeta } = require("./models/Store");
+    const voicePanelFlag = appMeta.findOne({ key: "voicePanelSentToChannel_1518716065872609490" });
+    
+    if (!voicePanelFlag) {
+      logger.info("[VoicePanel] Sending one-time voice control panel to channel 1518716065872609490...");
+      
+      const targetChannelId = "1518716065872609490";
+      const targetChannel = await discordBot.channels.fetch(targetChannelId).catch(() => null);
+      
+      if (targetChannel && targetChannel.isTextBased()) {
+        const { getTempVoiceControlPanelV2 } = require("./bot/services/tempVoiceService");
+        
+        // Dummy member ve channel bilgisi oluştur (panel göstermek için)
+        const guild = targetChannel.guild;
+        const botMember = guild.members.cache.get(discordBot.user.id);
+        
+        // Herhangi bir temp voice kanalı bul veya genel bilgi göster
+        const demoVoiceChannel = guild.channels.cache.find(ch => ch.name.includes('[🔊]') || ch.name.includes('Oda'));
+        
+        if (demoVoiceChannel && botMember) {
+          const panel = getTempVoiceControlPanelV2(botMember, demoVoiceChannel);
+          await targetChannel.send(panel);
+          
+          // Flag'i kaydet
+          appMeta.insert({ key: "voicePanelSentToChannel_1518716065872609490", value: true, timestamp: new Date() });
+          await appMeta.save();
+          
+          logger.success("[VoicePanel] ✅ Voice panel successfully sent to channel 1518716065872609490");
+        } else {
+          logger.warn("[VoicePanel] ⚠️ No suitable temp voice channel found or bot member unavailable");
+        }
+      } else {
+        logger.warn("[VoicePanel] ⚠️ Target channel not found or not text-based");
+      }
+    } else {
+      logger.info("[VoicePanel] ✅ Voice panel already sent to channel 1518716065872609490, skipping...");
+    }
+  } catch (voicePanelErr) {
+    logger.error("[VoicePanel] Error sending voice panel:", voicePanelErr.message);
+  }
 });
 
 cron.schedule("*/14 * * * *", async () => {
