@@ -1,6 +1,6 @@
 'use strict';
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const Blacklist = require('../../models/Blacklist');
 
 const BLACKLIST_CHANNEL_ID = '1518692472367222915';
@@ -88,7 +88,7 @@ async function initializeBlacklist(client) {
 }
 
 /**
- * Generates the unified single Embed Blacklist representation with Components v2 ActionRow
+ * Generates the blacklist representation and posts/updates it in the designated channel
  */
 async function renderBlacklist(client) {
   try {
@@ -102,140 +102,102 @@ async function renderBlacklist(client) {
     const groups = await Blacklist.find({ type: 'group' }).sort({ createdAt: 1 });
 
     const formatList = (list) => {
-      if (list.length === 0) return '> *(Kayıt bulunmuyor)*';
+      if (list.length === 0) return '*(Temiz)*';
       return list.map(item => {
         const isRemoved = item.status === 'removed';
         const cleanName = cleanBlacklistName(item.name);
         const cleanReason = cleanBlacklistReason(item.reason);
-        if (isRemoved) {
-          return `> ❌ ~~**${cleanName}**~~ • *[15 Günlük Silinme Sürecinde]*`;
-        }
-        const reasonText = cleanReason ? ` • *${cleanReason}*` : '';
-        return `> ⛔ **${cleanName}**${reasonText}`;
+        const formattedName = isRemoved ? `~~**${cleanName}**~~` : `**${cleanName}**`;
+        const reasonText = cleanReason ? ` (${cleanReason})` : '';
+        const statusText = isRemoved ? ' - *[Kaldırıldı (15 gün sonra silinecek)]*' : '';
+        return `* ${formattedName}${reasonText}${statusText}`;
       }).join('\n');
     };
 
-    const formattedPeople = formatList(people);
-    const formattedGroups = formatList(groups);
+    const mainContent = `# 🚫 KARALİSTE (BLACKLIST)\n\n` +
+      `Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.\n\n` +
+      `### 👤 Engellenen Kişiler\n\n` +
+      `${formatList(people)}\n\n` +
+      `### 🛡️ İlgili Gruplar / Platformlar\n\n` +
+      `${formatList(groups)}`;
 
-    const embed = new EmbedBuilder()
-      .setColor(0xed4245)
-      .setTitle('🚫 KARALİSTE (BLACKLIST)')
-      .setThumbnail('https://i.imgur.com/HT7bvru.png')
-      .setDescription(
-        'Aşağıda belirtilen kullanıcılar ve dahil oldukları grup/platformlar, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; **Karaliste**\'ye alınmıştır.'
-      )
-      .addFields(
-        { name: '👤 Engellenen Kişiler', value: formattedPeople.slice(0, 1024), inline: false },
-        { name: '🛡️ İlgili Gruplar / Platformlar', value: formattedGroups.slice(0, 1024), inline: false }
-      )
-      .setFooter({
-        text: 'Eko Yıldız • Karaliste Yönetim Sistemi',
-        iconURL: client.user.displayAvatarURL()
-      })
-      .setTimestamp();
+    // Helper to split text into chunks of <= 1900 chars, preserving lines
+    const splitTextIntoChunks = (text, maxLength = 1900) => {
+      const lines = text.split('\n');
+      const chunks = [];
+      let currentChunk = '';
 
-    // Components v2 ActionRow (Interactive Buttons)
-    const actionRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('blacklist_btn_rules')
-        .setLabel('Kurallar & Formatlar')
-        .setEmoji('ℹ️')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('blacklist_btn_refresh')
-        .setLabel('Listeyi Yenile')
-        .setEmoji('🔄')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('blacklist_btn_stats')
-        .setLabel('İstatistikler')
-        .setEmoji('📊')
-        .setStyle(ButtonStyle.Secondary)
-    );
+      for (const line of lines) {
+        if (line.length > maxLength) {
+          let tempLine = line;
+          while (tempLine.length > 0) {
+            const part = tempLine.substring(0, maxLength);
+            tempLine = tempLine.substring(maxLength);
+            if (currentChunk.length + part.length + 1 > maxLength) {
+              chunks.push(currentChunk.trim());
+              currentChunk = part;
+            } else {
+              currentChunk = currentChunk ? currentChunk + '\n' + part : part;
+            }
+          }
+        } else if (currentChunk.length + line.length + 1 > maxLength) {
+          chunks.push(currentChunk.trim());
+          currentChunk = line;
+        } else {
+          currentChunk = currentChunk ? currentChunk + '\n' + line : line;
+        }
+      }
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+      }
+      return chunks;
+    };
 
-    // Single Embed Architecture: fetch messages, edit existing primary bot embed or send new
-    const messagesCollection = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-    if (!messagesCollection) return;
+    const chunks = splitTextIntoChunks(mainContent);
 
-    const botMessages = Array.from(messagesCollection.values())
-      .filter(m => m.author.id === client.user.id);
-
-    const primaryMsg = botMessages.find(m => m.embeds.length > 0 && m.embeds[0].title?.includes('KARALİSTE'));
-    const surplusMessages = botMessages.filter(m => m.id !== primaryMsg?.id);
-
-    // Clean up surplus bot messages to maintain a single pristine embed channel
-    for (const msg of surplusMessages) {
-      await msg.delete().catch(() => {});
+    // Fetch message history to find previous posts
+    const messagesCollection = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    if (!messagesCollection) {
+      console.warn('[blacklist] Failed to fetch message history.');
+      return;
     }
 
-    if (primaryMsg) {
-      await primaryMsg.edit({ embeds: [embed], components: [actionRow] }).catch(err => {
-        console.error('[blacklist] Failed to edit primary embed:', err.message);
-      });
-    } else {
-      await channel.send({ embeds: [embed], components: [actionRow] }).catch(err => {
-        console.error('[blacklist] Failed to send primary embed:', err.message);
-      });
+    const botMessages = Array.from(messagesCollection.values())
+      .filter(m => m.author.id === client.user.id)
+      .sort((a, b) => a.createdTimestamp - b.createdTimestamp); // Oldest first
+
+    // Delete any old embed messages (such as previous update embeds)
+    const embedMessages = botMessages.filter(m => m.embeds.length > 0);
+    for (const em of embedMessages) {
+      await em.delete().catch(() => {});
+    }
+
+    const contentMessages = botMessages.filter(m => m.embeds.length === 0);
+
+    // Update content messages chunk by chunk
+    for (let i = 0; i < chunks.length; i++) {
+      if (i < contentMessages.length) {
+        await contentMessages[i].edit({ content: chunks[i], embeds: [], components: [] }).catch(err => {
+          console.error(`[blacklist] Failed to edit content message ${i}:`, err.message);
+        });
+      } else {
+        await channel.send({ content: chunks[i] }).catch(err => {
+          console.error(`[blacklist] Failed to send new content message:`, err.message);
+        });
+      }
+    }
+
+    // Delete surplus content messages
+    if (contentMessages.length > chunks.length) {
+      for (let i = chunks.length; i < contentMessages.length; i++) {
+        await contentMessages[i].delete().catch(err => {
+          console.warn(`[blacklist] Failed to delete surplus message:`, err.message);
+        });
+      }
     }
   } catch (err) {
     console.error('[blacklist] Render error:', err.stack || err.message);
   }
-}
-
-/**
- * Interactive button handler for Components v2 Blacklist Buttons
- */
-async function handleBlacklistButtons(interaction) {
-  const { customId, client } = interaction;
-
-  if (customId === 'blacklist_btn_rules') {
-    await interaction.reply({
-      content:
-        `📜 **Karaliste Kuralları & Format Rehberi**\n\n` +
-        `• **Kişi Ekleme Formatı:** \`Kişiİsmi - Sebep\`\n` +
-        `• **Grup Ekleme Formatı:** \`Grup/Grupİsmi - Sebep\`\n` +
-        `• **Kaldırma / Pasife Alma:** \`Kaldır İsmi\` *(15 günlük silinme sürecine girer)*\n` +
-        `• **Tamamen Silme:** \`Sil İsmi\`\n` +
-        `• **Yeniden Açma:** \`Aç İsmi\`\n\n` +
-        `*Not: Karaliste kanalına yazılan komut dışı mesajlar otomatik olarak temizlenir.*`,
-      ephemeral: true
-    }).catch(() => {});
-    return true;
-  }
-
-  if (customId === 'blacklist_btn_refresh') {
-    await renderBlacklist(client);
-    await interaction.reply({
-      content: `✅ **Karaliste veritabanından başarıyla yenilendi ve güncellendi!**`,
-      ephemeral: true
-    }).catch(() => {});
-    return true;
-  }
-
-  if (customId === 'blacklist_btn_stats') {
-    const activePeopleCount = await Blacklist.countDocuments({ type: 'person', status: { $ne: 'removed' } });
-    const activeGroupsCount = await Blacklist.countDocuments({ type: 'group', status: { $ne: 'removed' } });
-    const removedCount = await Blacklist.countDocuments({ status: 'removed' });
-    const totalCount = await Blacklist.countDocuments();
-
-    const statsEmbed = new EmbedBuilder()
-      .setColor(0x3498db)
-      .setTitle('📊 Karaliste İstatistik Verileri')
-      .addFields(
-        { name: '👤 Aktif Engellenen Kişiler', value: `\`${activePeopleCount}\` kişi`, inline: true },
-        { name: '🛡️ Aktif Engellenen Gruplar', value: `\`${activeGroupsCount}\` grup`, inline: true },
-        { name: '⏳ Silinme Sürecindeki Kayıtlar', value: `\`${removedCount}\` kayıt`, inline: true },
-        { name: '📁 Toplam Veritabanı Kaydı', value: `\`${totalCount}\` adet`, inline: true }
-      )
-      .setFooter({ text: 'Eko Yıldız • Canlı İstatistik' })
-      .setTimestamp();
-
-    await interaction.reply({ embeds: [statsEmbed], ephemeral: true }).catch(() => {});
-    return true;
-  }
-
-  return false;
 }
 
 /**
@@ -458,7 +420,6 @@ module.exports = {
   initializeBlacklist,
   renderBlacklist,
   handleBlacklistMessage,
-  handleBlacklistButtons,
   checkBlacklistCleanup,
   cleanBlacklistName,
   cleanBlacklistReason

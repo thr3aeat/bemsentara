@@ -163,10 +163,9 @@ async function routeButtonInteraction(interaction) {
     if (handled) return true;
   }
 
-  if (customId.startsWith('blacklist_btn_')) {
-    const { handleBlacklistButtons } = require('../../services/blacklistService');
-    await handleBlacklistButtons(interaction);
-    return true;
+  if (customId.startsWith('court_')) {
+    const handled = await handleCourtButton(interaction);
+    if (handled) return true;
   }
 
   return false;

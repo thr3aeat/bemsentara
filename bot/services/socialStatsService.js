@@ -226,18 +226,10 @@ async function updateSocialStatsChannel(client) {
 
 /**
  * Starts the scheduler:
- * - Runs once on startup
- * - Schedules daily execution at 07:00 AM (Istanbul / GMT+3)
+ * - Schedules daily execution ONLY at 07:00 AM (Istanbul / GMT+3)
  */
 function startSocialStatsScheduler(client) {
-  // 1. Run once on bot startup (ready)
-  setTimeout(() => {
-    updateSocialStatsChannel(client).catch((err) => {
-      console.error('[socialStatsService] Startup update error:', err.message);
-    });
-  }, 10000);
-
-  // 2. Schedule daily execution at 07:00 AM GMT+3
+  // Schedule daily execution at 07:00 AM GMT+3 (04:00 UTC)
   function scheduleDaily7AM() {
     const now = new Date();
     const target = new Date(now);
@@ -248,7 +240,7 @@ function startSocialStatsScheduler(client) {
     }
 
     const delay = target.getTime() - now.getTime();
-    console.log(`[socialStatsService] Bir sonraki 07:00 AM güncellemesi ${Math.round(delay / 1000 / 60)} dakika sonra planlandı.`);
+    console.log(`[socialStatsService] ⏰ Takipçi güncellemesi günlük 07:00 AM'de çalışacak. Sonraki kontrol ${Math.round(delay / 1000 / 60)} dakika sonra.`);
 
     setTimeout(async () => {
       try {
