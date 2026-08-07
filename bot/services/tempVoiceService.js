@@ -106,16 +106,18 @@ function getTempVoiceControlPanelV2(member, channel) {
   // ─── CONTAINER ────────────────────────────────────────────────────────
   const container = new ContainerBuilder();
 
-  // 1️⃣ Başlık
-  container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(`# Kanal Yönetimi`)
+  // 1️⃣ Banner (Resimdeki Kanal Yönetimi Banner'ı)
+  container.addMediaGalleryComponents(
+    new MediaGalleryBuilder().addItems(
+      new MediaGalleryItemBuilder().setURL('https://i.imgur.com/xvYD3tF.png')
+    )
   );
 
   container.addSeparatorComponents(
     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
   );
 
-  // 2️⃣ Alt Başlık
+  // 2️⃣ Başlık
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`## Özel Sesli Kanal Yönetim Paneli`)
   );
@@ -127,8 +129,8 @@ function getTempVoiceControlPanelV2(member, channel) {
   // 3️⃣ Açıklama
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
-      `> Bu arayüz özel sesli kanalınızın yönetim panelidir. Sesli kanalınızı bu panel üzerinden basitçe yönetebilirsiniz.\n\n` +
-      `> • **Kullanıcı susturmak, bağlantısını kesmek ve sağırlaştırmak** için seslide bulunan kullanıcının profilinden işlemi gerçekleştirebilirsiniz.\n\n` +
+      `> Bu arayüz özel sesli kanalınızın yönetim panelidir. Sesli kanalınızı bu panel üzerinden basitçe yönetebilirsiniz.\n` +
+      `> • **Kullanıcı susturmak, bağlantısını kesmek ve sağırlaştırmak** için seslide bulunan kullanıcının profilinden işlemi gerçekleştirebilirsiniz.\n` +
       `> • **Sesli kanalınız içerisinde kurallar ve ilkeleri ihlal etmediğinizden** emin olun.`
     )
   );
@@ -143,65 +145,80 @@ function getTempVoiceControlPanelV2(member, channel) {
     .setPlaceholder('Kanal ayar seçenekleri')
     .addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel('📝 Kanal ismini değiştir')
+        .setLabel('Kanal ismini değiştir')
         .setDescription('Sesli kanalınızın ismini değiştirmek için kullanabilirsiniz.')
-        .setValue('rename'),
+        .setValue('rename')
+        .setEmoji('✏️'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('👥 Kullanıcı limitini değiştir')
+        .setLabel('Kanal görünürlüğünü değiştir')
+        .setDescription('Sesli kanalınızın görünürlüğünü kapatmak ve açmak için kullanabilirsiniz.')
+        .setValue('visibility')
+        .setEmoji('👁️'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('Kullanıcıyı kanaldan yasakla')
+        .setDescription('Sesli kanalınızdan kullanıcı yasaklamak için kullanabilirsiniz.')
+        .setValue('ban_user')
+        .setEmoji('🔨'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('Kullanıcının kanaldan yasağını kaldır')
+        .setDescription('Sesli kanalınızdan yasaklanmış kullanıcının yasağını kaldırmak için kullanabilirsiniz.')
+        .setValue('unban_user')
+        .setEmoji('🔧'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('Kanal kilit seviyesini değiştir')
+        .setDescription('Sesli kanalınızı kilitleyebilirsiniz, kilidini açabilirsiniz.')
+        .setValue('lock')
+        .setEmoji('🔒'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('Kullanıcı limitini değiştir')
         .setDescription('Kanala girebilecek maksimum kullanıcı sayısını belirleyin.')
-        .setValue('user_limit'),
+        .setValue('user_limit')
+        .setEmoji('👥'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🎚️ Bitrate kalitesini değiştir')
+        .setLabel('Bitrate kalitesini değiştir')
         .setDescription('Ses kalitesini artırmak veya azaltmak için kullanabilirsiniz.')
-        .setValue('bitrate'),
+        .setValue('bitrate')
+        .setEmoji('🎚️'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🌍 Bölge ayarını değiştir')
+        .setLabel('Bölge ayarını değiştir')
         .setDescription('Ses bağlantısı için sunucu bölgesini seçin.')
-        .setValue('region'),
+        .setValue('region')
+        .setEmoji('🌍'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🔒 Kanal kilit seviyesini değiştir')
-        .setDescription('Kanalı kilitleyebilir veya kilidini açabilirsiniz.')
-        .setValue('lock'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('👁️ Kanal görünürlüğünü değiştir')
-        .setDescription('Kanalın sunucuda görünürlüğünü ayarlayın.')
-        .setValue('visibility'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('� Kullanıcıyı kanaldan yasakla')
-        .setDescription('Belirli bir kullanıcının kanala erişimini engelleyin.')
-        .setValue('ban_user'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('🔧 Kullanıcının yasağını kaldır')
-        .setDescription('Yasaklı bir kullanıcının erişimini geri verin.')
-        .setValue('unban_user'),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('� Güvenilir kullanıcı ekle')
+        .setLabel('Güvenilir kullanıcı ekle')
         .setDescription('Kanal kilitli bile olsa girebilecek kullanıcı ekleyin.')
-        .setValue('whitelist'),
+        .setValue('whitelist')
+        .setEmoji('⭐'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('📞 Davet linki oluştur')
+        .setLabel('Davet linki oluştur')
         .setDescription('Arkadaşlarınızı kanala davet etmek için link oluşturun.')
-        .setValue('invite'),
+        .setValue('invite')
+        .setEmoji('📞'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🚫 Sesli kanaldan kullanıcı at')
+        .setLabel('Sesli kanaldan kullanıcı at')
         .setDescription('Belirli bir kullanıcıyı sesli kanaldan çıkarın.')
-        .setValue('kick_user'),
+        .setValue('kick_user')
+        .setEmoji('🚫'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('👑 Kanal sahipliğini devret')
+        .setLabel('Kanal sahipliğini devret')
         .setDescription('Kanal sahipliğini başka bir kullanıcıya devredin.')
-        .setValue('transfer'),
+        .setValue('transfer')
+        .setEmoji('👑'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('📋 Kanal durumunu kopyala')
+        .setLabel('Kanal durumunu kopyala')
         .setDescription('Kanal bilgilerini ve ayarlarını metin olarak alın.')
-        .setValue('copy_info'),
+        .setValue('copy_info')
+        .setEmoji('📋'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🗑️ Kanalı sil')
+        .setLabel('Kanalı sil')
         .setDescription('Sesli kanalı kalıcı olarak silin.')
-        .setValue('delete'),
+        .setValue('delete')
+        .setEmoji('🗑️'),
       new StringSelectMenuOptionBuilder()
-        .setLabel('🔄 Paneli yenile')
+        .setLabel('Paneli yenile')
         .setDescription('Kanal bilgilerini ve üye listesini güncelleyin.')
         .setValue('refresh')
+        .setEmoji('🔄')
     );
 
   const menuRow = new ActionRowBuilder().addComponents(channelMenu);
@@ -248,7 +265,8 @@ async function handleTempVoiceInteraction(interaction) {
       return true;
     }
 
-    // 6. Kanal kilidi
+    // 1. Kanal ismini değiştir
+    if (selectedValue === 'rename') {
       const modal = new ModalBuilder()
         .setCustomId(`tv_modal_rename_${channel.id}`)
         .setTitle('📝 Kanal İsmini Değiştir')
