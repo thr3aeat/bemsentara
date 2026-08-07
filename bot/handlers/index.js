@@ -358,6 +358,16 @@ function initializeDiscordHandlers(client) {
       console.error('[blacklist] Başlatma Hatası:', err);
     }
 
+    // EkoYıldız Kurallar Sistemini Başlat (Discord Components V2)
+    try {
+      const { sendEkoYildizRules } = require('../services/rulesService');
+      await sendEkoYildizRules(client).catch(err => {
+        console.error('[RulesService] Başlatma Hatası:', err.message);
+      });
+    } catch (err) {
+      console.error('[RulesService] Yükleme Hatası:', err.message);
+    }
+
     // İlk defaya mahsus personele yeni gamification sistemi tanıtım mesajı at
     const { sendSystemUpdateNotification, sendV6WelcomeNotification } = require('../services/staffSystem');
     sendSystemUpdateNotification(client);
@@ -1523,6 +1533,23 @@ function initializeDiscordHandlers(client) {
         return;
       } catch (hookErr) {
         console.error("[-ekohook komut hatası]:", hookErr.message);
+      }
+    }
+
+    // ── EkoYıldız Kurallar Komutu (-kurallar / -kural) ─────────────────────
+    if (message.guild && (lowerContent.startsWith("-kurallar") || lowerContent.startsWith("-kural"))) {
+      try {
+        const { sendEkoYildizRules } = require("../services/rulesService");
+        const forceNew = lowerContent.includes("yeni") || lowerContent.includes("new");
+        const ok = await sendEkoYildizRules(message.client, message.channel.id, { forceNew });
+        if (ok) {
+          await message.reply({ content: "✅ **EkoYıldız Kuralları V2 formatında başarıyla güncellendi/gönderildi!**" }).catch(() => {});
+        } else {
+          await message.reply({ content: "❌ Kurallar gönderilirken/güncellenirken hata oluştu." }).catch(() => {});
+        }
+        return;
+      } catch (rulesErr) {
+        console.error("[-kurallar komut hatası]:", rulesErr.message);
       }
     }
 
