@@ -49,6 +49,10 @@ async function handleVoiceButton(interaction) {
       });
     }
     const ch = await createPrivateChannel(interaction.guild, interaction.member);
+    if (ch) {
+      const { sendVoiceControlPanel } = require("../services/voiceManager");
+      await sendVoiceControlPanel(ch, interaction.member);
+    }
     return interaction.reply({
       content: `✅ Ses kanalın oluşturuldu: ${ch}`,
       ephemeral: true,

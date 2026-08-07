@@ -1535,6 +1535,18 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Ses Paneli Gönderme Komutu (-sespanel / .sespanel / !sespanel) ──────
+    if (message.guild && (lowerContent === "-sespanel" || lowerContent === ".sespanel" || lowerContent === "!sespanel" || lowerContent.startsWith("-sespanel ") || lowerContent.startsWith(".sespanel ") || lowerContent.startsWith("!sespanel "))) {
+      try {
+        const { ensureVoicePanelForGuild } = require("../services/voicePanelMessage");
+        await ensureVoicePanelForGuild(client, message.guild.id, message.channel.id);
+        await message.reply({ content: "✅ **Ses sistemi paneli bu kanala başarıyla kuruldu/güncellendi.**" }).catch(() => {});
+        return;
+      } catch (voicePanelCmdErr) {
+        console.error("[-sespanel komut hatası]:", voicePanelCmdErr.message);
+      }
+    }
+
     // ── Eko Hook Webhook Hakkında Komutu (-ekohook / -webhook) ─────────────
     if (message.guild && (lowerContent.startsWith("-ekohook") || lowerContent.startsWith("-webhook") || lowerContent.startsWith("-hakkinda"))) {
       try {
@@ -3560,8 +3572,10 @@ function initializeDiscordHandlers(client) {
         await ensureTMTVerifyHelpMessage(client);
         await ensureTMTSupportMessage(client);
         await ensureTMTRules(client);
+        await ensureVoicePanelMessage(client);
       } else if (guild.id === GUILD2_ID) {
         await ensureEkoSupportMessage(client);
+        await ensureVoicePanelMessage(client);
       } else if (guild.id === ALLIED_GUILD_ID) {
         const { ensureAlliedVerifyHelpMessage, ensureAlliedSupportMessage } = require("../services/alliedRoleSyncService");
         await ensureAlliedVerifyHelpMessage(client);

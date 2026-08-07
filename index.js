@@ -187,33 +187,20 @@ discordBot.once("ready", async () => {
     const voicePanelFlag = appMeta.findOne({ key: "voicePanelSentToChannel_1518716065872609490" });
     
     if (!voicePanelFlag) {
-      logger.info("[VoicePanel] Sending one-time voice control panel to channel 1518716065872609490...");
+      logger.info("[VoicePanel] Sending voice control panel to channel 1518716065872609490...");
       
       const targetChannelId = "1518716065872609490";
       const targetChannel = await discordBot.channels.fetch(targetChannelId).catch(() => null);
       
       if (targetChannel && targetChannel.isTextBased()) {
-        const { getTempVoiceControlPanelV2 } = require("./bot/services/tempVoiceService");
+        const { ensureVoicePanelForGuild } = require("./bot/services/voicePanelMessage");
+        await ensureVoicePanelForGuild(discordBot, targetChannel.guild.id, targetChannelId);
         
-        // Dummy member ve channel bilgisi oluştur (panel göstermek için)
-        const guild = targetChannel.guild;
-        const botMember = guild.members.cache.get(discordBot.user.id);
+        // Flag'i kaydet
+        appMeta.insert({ key: "voicePanelSentToChannel_1518716065872609490", value: true, timestamp: new Date() });
+        await appMeta.save();
         
-        // Herhangi bir temp voice kanalı bul veya genel bilgi göster
-        const demoVoiceChannel = guild.channels.cache.find(ch => ch.name.includes('[🔊]') || ch.name.includes('Oda'));
-        
-        if (demoVoiceChannel && botMember) {
-          const panel = getTempVoiceControlPanelV2(botMember, demoVoiceChannel);
-          await targetChannel.send(panel);
-          
-          // Flag'i kaydet
-          appMeta.insert({ key: "voicePanelSentToChannel_1518716065872609490", value: true, timestamp: new Date() });
-          await appMeta.save();
-          
-          logger.success("[VoicePanel] ✅ Voice panel successfully sent to channel 1518716065872609490");
-        } else {
-          logger.warn("[VoicePanel] ⚠️ No suitable temp voice channel found or bot member unavailable");
-        }
+        logger.success("[VoicePanel] ✅ Voice panel successfully processed for channel 1518716065872609490");
       } else {
         logger.warn("[VoicePanel] ⚠️ Target channel not found or not text-based");
       }

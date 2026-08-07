@@ -142,6 +142,28 @@ async function deleteChannelIfEmpty(channel) {
   await channel.delete("Özel ses kanalı boş").catch(() => null);
 }
 
+async function sendVoiceControlPanel(channel, member) {
+  if (!channel || !member) return;
+  try {
+    const { getTempVoiceControlPanelV2 } = require('./tempVoiceService');
+    const panel = getTempVoiceControlPanelV2(member, channel);
+    
+    // 1. Kanal içi sohbet (Voice Text Chat)
+    if (typeof channel.send === 'function') {
+      await channel.send(panel).catch(err => {
+        console.warn(`[voiceManager] Kanal içi panel gönderilemedi: ${err.message}`);
+      });
+    }
+
+    // 2. Kullanıcıya DM (İsteğe bağlı/Yedek)
+    await member.send(panel).catch(err => {
+      console.warn(`[voiceManager] DM panel gönderilemedi: ${err.message}`);
+    });
+  } catch (panelErr) {
+    console.error('[voiceManager] Panel oluşturma hatası:', panelErr.message);
+  }
+}
+
 async function handleJoinToCreate(oldState, newState) {
   if (!newState.channelId) return;
   if (newState.member.user.bot) return;
@@ -151,18 +173,8 @@ async function handleJoinToCreate(oldState, newState) {
 
   const channel = await createPrivateChannel(newState.guild, newState.member);
   
-  // Ses panelini kullanıcıya DM olarak gönder
   if (channel) {
-    try {
-      const { getTempVoiceControlPanelV2 } = require('./tempVoiceService');
-      const panel = getTempVoiceControlPanelV2(newState.member, channel);
-      
-      await newState.member.send(panel).catch(err => {
-        console.warn(`[voiceManager] DM panel gönderilemedi: ${err.message}`);
-      });
-    } catch (panelErr) {
-      console.error('[voiceManager] Panel oluşturma hatası:', panelErr.message);
-    }
+    await sendVoiceControlPanel(channel, newState.member);
   }
 }
 
@@ -190,6 +202,8 @@ module.exports = {
   handleJoinToCreate,
   handleVoiceLeave,
   getJoinChannelId,
+  sendVoiceControlPanel,
   // Eski compat export
   VOICE_JOIN_CHANNEL_ID,
 };
+

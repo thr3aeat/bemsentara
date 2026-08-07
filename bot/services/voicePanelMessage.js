@@ -7,10 +7,13 @@ const {
 const {
   TARGET_GUILD_ID,
   VOICE_PANEL_CHANNEL_ID,
+  VOICE_JOIN_CHANNEL_ID,
   GUILD2_ID,
   GUILD2_VOICE_PANEL_ID,
+  GUILD2_VOICE_JOIN_ID,
   TMT_GUILD_ID,
   TMT_VOICE_PANEL_CHANNEL_ID,
+  TMT_VOICE_JOIN_CHANNEL_ID,
 } = require("../../config");
 
 const VOICE_PANEL_MARKER = "Sentara-Voice-Panel-v1";
@@ -72,10 +75,25 @@ function getVoicePanelComponents() {
 function isVoicePanelMessage(message, botId) {
   if (message.author?.id !== botId) return false;
   const embed = message.embeds?.[0];
-  return (
+  if (
     embed?.footer?.text?.includes(VOICE_PANEL_MARKER) ||
     embed?.title?.includes("Ses Sistemi Paneli")
-  );
+  ) {
+    return true;
+  }
+  if (message.components?.length > 0) {
+    const customIds = message.components.flatMap((row) =>
+      (row.components || []).map((c) => c.customId)
+    );
+    if (
+      customIds.some(
+        (id) => id && (id.startsWith("voice_") || id.startsWith("tv_"))
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -86,15 +104,16 @@ async function ensureVoicePanelForGuild(client, guildId, channelId) {
   if (!channelId) return;
 
   try {
-    const guild = await client.guilds.fetch(guildId);
-    const channel = await guild.channels.fetch(channelId);
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
+    if (!guild) return;
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
 
     let existing = null;
     let lastId;
     for (let i = 0; i < 5; i++) {
-      const batch = await channel.messages.fetch({ limit: 100, before: lastId });
-      if (batch.size === 0) break;
+      const batch = await channel.messages.fetch({ limit: 100, before: lastId }).catch(() => null);
+      if (!batch || batch.size === 0) break;
       existing = batch.find((m) => isVoicePanelMessage(m, client.user.id));
       if (existing) break;
       lastId = batch.last()?.id;
@@ -120,15 +139,53 @@ async function ensureVoicePanelForGuild(client, guildId, channelId) {
  * Tüm sunuculara ses paneli gönderir.
  */
 async function ensureVoicePanelMessage(client) {
-  // Ana sunucu
-  await ensureVoicePanelForGuild(client, TARGET_GUILD_ID, VOICE_PANEL_CHANNEL_ID);
-  // İkinci sunucu
-  if (GUILD2_ID && GUILD2_VOICE_PANEL_ID) {
-    await ensureVoicePanelForGuild(client, GUILD2_ID, GUILD2_VOICE_PANEL_ID);
+  // 1. Ana sunucu
+  if (TARGET_GUILD_ID) {
+    if (VOICE_PANEL_CHANNEL_ID) await ensureVoicePanelForGuild(client, TARGET_GUILD_ID, VOICE_PANEL_CHANNEL_ID);
+    if (VOICE_JOIN_CHANNEL_ID && VOICE_JOIN_CHANNEL_ID !== VOICE_PANEL_CHANNEL_ID) {
+      await ensureVoicePanelForGuild(client, TARGET_GUILD_ID, VOICE_JOIN_CHANNEL_ID);
+    }
   }
-  // TMT Sunucusu
-  if (TMT_GUILD_ID && TMT_VOICE_PANEL_CHANNEL_ID) {
-    await ensureVoicePanelForGuild(client, TMT_GUILD_ID, TMT_VOICE_PANEL_CHANNEL_ID);
+
+  // 2. İkinci sunucu
+  if (GUILD2_ID) {
+    if (GUILD2_VOICE_PANEL_ID) await ensureVoicePanelForGuild(client, GUILD2_ID, GUILD2_VOICE_PANEL_ID);
+    if (GUILD2_VOICE_JOIN_ID && GUILD2_VOICE_JOIN_ID !== GUILD2_VOICE_PANEL_ID) {
+      await ensureVoicePanelForGuild(client, GUILD2_ID, GUILD2_VOICE_JOIN_ID);
+    }
+  }
+
+  // 3. TMT Sunucusu
+  if (TMT_GUILD_ID) {
+    if (TMT_VOICE_PANEL_CHANNEL_ID) await ensureVoicePanelForGuild(client, TMT_GUILD_ID, TMT_VOICE_PANEL_CHANNEL_ID);
+    if (TMT_VOICE_JOIN_CHANNEL_ID && TMT_VOICE_JOIN_CHANNEL_ID !== TMT_VOICE_PANEL_CHANNEL_ID) {
+      await ensureVoicePanelForGuild(client, TMT_GUILD_ID, TMT_VOICE_JOIN_CHANNEL_ID);
+    }
+  }
+
+  // 4. Tüm sunucularda ismi sesli kanal oluşturma ile ilgili olan kanalları bul ve panel gönder
+  try {
+    for (const guild of client.guilds.cache.values()) {
+      const matchingChannels = guild.channels.cache.filter((ch) => {
+        if (!ch.isTextBased()) return false;
+        const name = (ch.name || "").toLowerCase();
+        return (
+          name.includes("sesli-kanal-olustur") ||
+          name.includes("sesli-kanal-oluştur") ||
+          name.includes("ses-paneli") ||
+          name.includes("sesli-panel") ||
+          name.includes("ses-oluştur") ||
+          name.includes("ses-olustur") ||
+          name.includes("voice-create")
+        );
+      });
+
+      for (const channel of matchingChannels.values()) {
+        await ensureVoicePanelForGuild(client, guild.id, channel.id);
+      }
+    }
+  } catch (err) {
+    console.error("[ensureVoicePanelMessage] Auto-scan error:", err.message);
   }
 }
 
@@ -138,3 +195,4 @@ module.exports = {
   getVoicePanelEmbed,
   getVoicePanelComponents,
 };
+
