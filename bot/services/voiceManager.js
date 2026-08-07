@@ -149,7 +149,21 @@ async function handleJoinToCreate(oldState, newState) {
   const joinChannelId = getJoinChannelId(newState.guild.id);
   if (newState.channelId !== joinChannelId) return;
 
-  await createPrivateChannel(newState.guild, newState.member);
+  const channel = await createPrivateChannel(newState.guild, newState.member);
+  
+  // Ses panelini kullanıcıya DM olarak gönder
+  if (channel) {
+    try {
+      const { getTempVoiceControlPanelV2 } = require('./tempVoiceService');
+      const panel = getTempVoiceControlPanelV2(newState.member, channel);
+      
+      await newState.member.send(panel).catch(err => {
+        console.warn(`[voiceManager] DM panel gönderilemedi: ${err.message}`);
+      });
+    } catch (panelErr) {
+      console.error('[voiceManager] Panel oluşturma hatası:', panelErr.message);
+    }
+  }
 }
 
 async function handleVoiceLeave(oldState, newState) {

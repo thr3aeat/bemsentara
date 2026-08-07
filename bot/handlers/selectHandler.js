@@ -9,6 +9,14 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
+  // ══════════════════════════════════════════════════════════════════════
+  // TEMP VOICE SELECT MENUS
+  // ══════════════════════════════════════════════════════════════════════
+  if (customId.startsWith('tv_select_')) {
+    const { handleTempVoiceInteraction } = require('../services/tempVoiceService');
+    return handleTempVoiceInteraction(interaction);
+  }
+
   if (customId === "s_help_category_select") {
     const selectedCategory = interaction.values[0];
     const { createHelpPayload } = require("../services/helpService");
