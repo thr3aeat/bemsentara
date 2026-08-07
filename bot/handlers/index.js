@@ -105,7 +105,31 @@ function initializeDiscordHandlers(client) {
 
   // Çift Yönlü Güven ve Performans Puanı Sistemi
   const { initializeTrustScoreHandlers } = require("./trustScoreHandler");
-  initializeTrustScoreHandlers(client);
+  // Yeni Kategori Oluşturulduğunda Otomatik Emoji + Arrow Biçimlendirme
+  client.on("channelCreate", async (channel) => {
+    try {
+      if (!channel || channel.type !== ChannelType.GuildCategory) return;
+      if (channel.guild?.id !== '1367646464804655104') return;
+      const name = channel.name;
+      if (!name) return;
+
+      const match = name.match(/^([\p{Extended_Pictographic}\p{Emoji_Presentation}\ufe0f\u200d]+)(.*)$/u);
+      if (match) {
+        const emoji = match[1];
+        const rest = match[2];
+        const cleanRest = rest.replace(/^[\s\-_→\->]+/, '').trim();
+        if (cleanRest && !name.includes('→')) {
+          const newName = `${emoji} → ${cleanRest}`;
+          console.log(`[categoryAutoFormat] 🔄 New category created: "${name}" -> "${newName}"`);
+          await channel.setName(newName).catch((err) => {
+            console.error(`[categoryAutoFormat] Failed to rename category "${name}":`, err.message);
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[categoryAutoFormat] Error handling channelCreate:", err.message);
+    }
+  });
 
   client.once("ready", async () => {
     logger.section("READY INITIALIZATION");
@@ -233,14 +257,12 @@ function initializeDiscordHandlers(client) {
       console.error("[unitStartupVerifier] Rol doğrulama hatası:", err.message);
     }
 
-    // Kanal Estetik Düzenleme (Emoji ve ok işareti kontrolü)
+    // Sosyal Medya Toplam Abone/Takipçi Sayacı Zamanlayıcısı (07:00 Günlük + Açılışta)
     try {
-      const { formatGuildChannelNames } = require("../services/channelAestheticsService");
-      formatGuildChannelNames(client).catch((err) => {
-        console.error("[channelAesthetics] Kanal ismi düzenleme hatası:", err.message);
-      });
+      const { startSocialStatsScheduler } = require("../services/socialStatsService");
+      startSocialStatsScheduler(client);
     } catch (err) {
-      console.error("[channelAesthetics] Servis yükleme hatası:", err.message);
+      console.error("[socialStats] Zamanlayıcı başlatma hatası:", err.message);
     }
 
     // Birim Aylık Terfi Döngüsü Planlayıcısı
