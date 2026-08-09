@@ -160,14 +160,16 @@ function initializeDiscordHandlers(client) {
 
     startJailScheduler(client);
 
-    // Tüm Kategorilerin Büyük Harfe Dönüştürülmesi (Startup)
-    try {
-      const { formatGuildChannelNames } = require('../services/channelAestheticsService');
-      setTimeout(() => formatGuildChannelNames(client).catch(err => {
-        console.error('[channelAesthetics] Başlatma Hatası:', err.message);
-      }), 8000);
-    } catch (err) {
-      console.error('[channelAesthetics] Yükleme Hatası:', err.message);
+    // Tüm Kategorilerin Büyük Harfe Dönüştürülmesi (Startup - İsteğe Bağlı)
+    if (process.env.SYNC_CHANNEL_AESTHETICS === "true") {
+      try {
+        const { formatGuildChannelNames } = require('../services/channelAestheticsService');
+        setTimeout(() => formatGuildChannelNames(client).catch(err => {
+          console.error('[channelAesthetics] Başlatma Hatası:', err.message);
+        }), 8000);
+      } catch (err) {
+        console.error('[channelAesthetics] Yükleme Hatası:', err.message);
+      }
     }
 
     // Start Voice Scan Scheduler for Trust Score System
@@ -186,25 +188,36 @@ function initializeDiscordHandlers(client) {
       console.error("[TrustScore] Ses tarayıcı/decay başlatılamadı:", trustErr.message);
     }
 
-    await ensureVerifyHelpMessage(client);
-    await ensureVoicePanelMessage(client);
-    await ensureTMTVerifyHelpMessage(client);
-    await ensureTMTSupportMessage(client);
-    await ensureEkoSupportMessage(client);
-    await ensureTMTRules(client);
-    await ensureAdminPanels(client);
-    await initializeRoblox();
-    await ensureRobloxManagementMenu(client);
-    await ensureEkoYildizRobloxMenu(client);
-    await ensureAlliedRobloxMenu(client);
-    await ensureBemRobloxMenu(client);
+    // Startup panel sync (Her başlatmada gereksiz mesaj güncellemesi yapılmaması için varsayılan olarak kapalıdır)
+    if (process.env.SYNC_PANELS_ON_STARTUP === "true") {
+      try {
+        await ensureVerifyHelpMessage(client);
+        await ensureVoicePanelMessage(client);
+        await ensureTMTVerifyHelpMessage(client);
+        await ensureTMTSupportMessage(client);
+        await ensureEkoSupportMessage(client);
+        await ensureTMTRules(client);
+        await ensureAdminPanels(client);
+        await initializeRoblox();
+        await ensureRobloxManagementMenu(client);
+        await ensureEkoYildizRobloxMenu(client);
+        await ensureAlliedRobloxMenu(client);
+        await ensureBemRobloxMenu(client);
+        await ensureAlliedVerifyHelpMessage(client);
+        await ensureAlliedSupportMessage(client);
+        await ensureTMTLogEmbed(client);
+      } catch (syncErr) {
+        console.error("[StartupSync] Panel senkronizasyon hatası:", syncErr.message);
+      }
+    } else {
+      console.log("ℹ️ [StartupSync] Başlangıç mesaj/panel güncellemeleri devreden çıkarıldı.");
+      await initializeRoblox().catch(() => {});
+    }
+
     startAuditLogPoller(client);
     const { startDiscordAbuseDetector } = require("../services/discordAbuseDetector");
     startDiscordAbuseDetector(client);
-    await ensureAlliedVerifyHelpMessage(client);
-    await ensureAlliedSupportMessage(client);
     await initTMTInvites(client);
-    await ensureTMTLogEmbed(client);
 
     startCleanupScheduler();
     startStaffScheduler(client);

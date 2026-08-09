@@ -281,52 +281,47 @@ function initializeVoiceAndBanHandlers(client) {
             // Gerçek moderator kick'ini tespit et (self-leave vs moderator action ayırt et)
             const kickInfo = await detectVoiceKick(newState, newState.guild);
             
-            // Eğer kick değilse = gönüllü ayrılış → hiçbir şey yapma
-            if (!kickInfo.isKicked) {
-              console.log(`[voiceStateUpdate] User ${newState.member?.user?.tag || newState.member?.id} voluntarily left voice channel`);
-              return;
-            }
+            if (kickInfo && kickInfo.isKicked) {
+              const { moderator, moderatorObj } = kickInfo;
 
-            const { moderator, moderatorObj } = kickInfo;
-
-            // ✅ GERÇEK KICK TESPIT EDILDI - Appeal DM gönder
-            
-            // Eğer hedef moderatör ise → mutual confirmation DM
-            const isModerator = newState.member.roles.cache.some(r => 
-              r.name.toLowerCase().includes('mod') ||
-              r.name.toLowerCase().includes('staff') ||
-              r.name.toLowerCase().includes('yetkili')
-            );
-
-            if (isModerator && moderatorObj?.id !== newState.member.id) {
-              await sendMutualConfirmationDM(
-                newState.client,
-                moderatorObj,
-                newState.member.user,
-                newState.guild,
-                'kick',
-                'Ses kanalından çıkarıldı'
+              // ✅ GERÇEK KICK TESPIT EDILDI - Appeal DM gönder
+              const isModerator = newState.member.roles.cache.some(r => 
+                r.name.toLowerCase().includes('mod') ||
+                r.name.toLowerCase().includes('staff') ||
+                r.name.toLowerCase().includes('yetkili')
               );
-              return;
+
+              if (isModerator && moderatorObj?.id !== newState.member.id) {
+                await sendMutualConfirmationDM(
+                  newState.client,
+                  moderatorObj,
+                  newState.member.user,
+                  newState.guild,
+                  'kick',
+                  'Ses kanalından çıkarıldı'
+                );
+              } else {
+                // Normal kullanıcı → appeal DM
+                await sendMutationAppealDM(
+                  newState.member.user,
+                  newState.guild,
+                  'kick',
+                  moderator,
+                  'Ses kanalından çıkarıldınız'
+                );
+              }
+
+              // DB'ye kaydet
+              new Mutation({
+                guildId: newState.guild.id,
+                targetUserId: newState.member.id,
+                moderatorUserId: moderatorObj?.id || 'bilinmeyen',
+                actionType: 'kick',
+                reason: 'Ses kanalından çıkarıldı',
+              }).save().catch(() => {});
+            } else {
+              console.log(`[voiceStateUpdate] User ${newState.member?.user?.tag || newState.member?.id} voluntarily left voice channel`);
             }
-
-            // Normal kullanıcı → appeal DM
-            await sendMutationAppealDM(
-              newState.member.user,
-              newState.guild,
-              'kick',
-              moderator,
-              'Ses kanalından çıkarıldınız'
-            );
-
-            // DB'ye kaydet
-            new Mutation({
-              guildId: newState.guild.id,
-              targetUserId: newState.member.id,
-              moderatorUserId: moderatorObj?.id || 'bilinmeyen',
-              actionType: 'kick',
-              reason: 'Ses kanalından çıkarıldı',
-            }).save().catch(() => {});
           } catch (err) {
             console.warn("[voiceStateUpdate] Kick appeal DM hatası:", err.message);
           }

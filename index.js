@@ -172,44 +172,6 @@ discordBot.once("ready", async () => {
   } catch (promptErr) {
     logger.error("[NotificationPrompt] Startup prompt error:", promptErr.message);
   }
-
-  // --- One-time Components V2 accent color removal update ---
-  try {
-    const { runOneTimeV2Update } = require("./bot/services/oneTimeV2Update");
-    await runOneTimeV2Update(discordBot);
-  } catch (v2UpdateErr) {
-    logger.error("[OneTimeV2Update] Update error:", v2UpdateErr.message);
-  }
-
-  // --- One-time Voice Panel Send to Specific Channel ---
-  try {
-    const { appMeta } = require("./models/Store");
-    const voicePanelFlag = appMeta.findOne({ key: "voicePanelSentToChannel_1518716065872609490" });
-    
-    if (!voicePanelFlag) {
-      logger.info("[VoicePanel] Sending voice control panel to channel 1518716065872609490...");
-      
-      const targetChannelId = "1518716065872609490";
-      const targetChannel = await discordBot.channels.fetch(targetChannelId).catch(() => null);
-      
-      if (targetChannel && targetChannel.isTextBased()) {
-        const { ensureVoicePanelForGuild } = require("./bot/services/voicePanelMessage");
-        await ensureVoicePanelForGuild(discordBot, targetChannel.guild.id, targetChannelId);
-        
-        // Flag'i kaydet
-        appMeta.insert({ key: "voicePanelSentToChannel_1518716065872609490", value: true, timestamp: new Date() });
-        await appMeta.save();
-        
-        logger.success("[VoicePanel] ✅ Voice panel successfully processed for channel 1518716065872609490");
-      } else {
-        logger.warn("[VoicePanel] ⚠️ Target channel not found or not text-based");
-      }
-    } else {
-      logger.info("[VoicePanel] ✅ Voice panel already sent to channel 1518716065872609490, skipping...");
-    }
-  } catch (voicePanelErr) {
-    logger.error("[VoicePanel] Error sending voice panel:", voicePanelErr.message);
-  }
 });
 
 cron.schedule("*/14 * * * *", async () => {

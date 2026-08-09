@@ -180,11 +180,27 @@ async function handleJoinToCreate(oldState, newState) {
 
 async function handleVoiceLeave(oldState, newState) {
   const leftChannel = oldState.channel;
-  if (!leftChannel || !isManagedChannel(leftChannel.id)) return;
+  if (!leftChannel) return;
+
+  const tempVoiceService = require("./tempVoiceService");
+  const isTemp = isManagedChannel(leftChannel.id) ||
+                 tempVoiceService.tempChannels.has(leftChannel.id) ||
+                 (leftChannel.name && (leftChannel.name.startsWith("[🔊]") || leftChannel.name.startsWith("#")));
+
+  if (!isTemp) return;
 
   setTimeout(async () => {
-    const refreshed = await oldState.guild.channels.fetch(leftChannel.id).catch(() => null);
-    if (refreshed) await deleteChannelIfEmpty(refreshed);
+    try {
+      const refreshed = await oldState.guild.channels.fetch(leftChannel.id).catch(() => null);
+      if (refreshed && refreshed.members.size === 0) {
+        unregisterChannel(refreshed.id);
+        tempVoiceService.tempChannels.delete(refreshed.id);
+        await refreshed.delete("Özel ses kanalı boş olduğu için silindi.").catch(() => null);
+        console.log(`[handleVoiceLeave] 🗑️ Boş kalan özel ses kanalı otomatik silindi: ${refreshed.name} (${refreshed.id})`);
+      }
+    } catch (err) {
+      console.warn(`[handleVoiceLeave] Kanal silme hatası: ${err.message}`);
+    }
   }, 1500);
 }
 

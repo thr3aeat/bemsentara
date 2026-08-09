@@ -115,7 +115,9 @@ async function sendLog(system, message, details = null, level = "INFO", actionRo
 
     await channel.send(payload);
   } catch (err) {
-    console.error(`[discordLogger] ${system} kanalına log gönderilemedi:`, err.message);
+    if (err && err.message) {
+      console.warn(`[discordLogger] ${system} kanalına log gönderilemedi: ${err.message}`);
+    }
   }
 }
 
