@@ -5,9 +5,6 @@
 
 const {
   EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
 } = require("discord.js");
 
 const { BASE_URL } = require("../../config");
@@ -15,26 +12,32 @@ const { BASE_URL } = require("../../config");
 const RECRUITMENT_CHANNEL_ID = "1535967551874670693";
 const RECRUITMENT_GUILD_ID = "1367646464804655104";
 
-const BADGE_ACIK = "<:a1:1535973588031635608><:a2:1535973586706108416><:a3:1535973585083175063><:a4:1535973583485009940>";
-const BADGE_KAPALI = "<:k1:1535973581995909170><:k2:1535973580343611442><:k3:1535973578816880690><:k4:1535973577042567178>";
+// 4-parça emojiler yan yana — açık (yeşil) ve kapalı (kırmızı)
+const BADGE_ACIK   = "<:a1:1535976290857783356><:a2:1535976288567693383><:a3:1535976286399242340><:a4:1535976284310470776>";
+const BADGE_KAPALI = "<:k1:1535976282947453009><:k2:1535976281479319583><:k3:1535976280292597830><:k4:1535976279063666688>";
+
+const BANNER_IMAGE_URL = "https://i.imgur.com/bSVh4Rl.png";
 
 /**
  * Build Discord Panel Embed for Channel 1535967551874670693
+ * — Buton yok, linkler embed açıklamasındaki "tıklayın" metninde.
  */
 function getRecruitmentPanelEmbed() {
-  const eventStaffUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms/event-staff`;
+  const formsUrl       = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms`;
+  const eventStaffUrl  = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms/event-staff`;
 
   return new EmbedBuilder()
     .setTitle("│ Yetkili Formları │")
+    .setImage(BANNER_IMAGE_URL)
     .setDescription(
-      "# **EkoYıldız Yetkili Ekibi Başvuruları**\n\n" +
-      "• <:mod:1535974297829642301> **[ Discord Moderasyon Takımı ]** başvuru formu için tıklayın.\n" +
+      "\n**EkoYıldız Yetkili Ekibi Başvuruları**\n\n" +
+      `• <:mod:1535976277654249562> **[ Discord Moderasyon Takımı ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
-      "• 🗡️ **[ Oyun Moderasyon Takımı ]** başvuru formu için tıklayın.\n" +
+      `• 🗡️ **[ Oyun Moderasyon Takımı ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
-      "• <:etkinlik:1535974991382978641> **[ Etkinlik Yetkilisi ]** başvuru formu için [tıklayın](" + eventStaffUrl + ").\n" +
+      `• <:etkinlik:1535976275317891194> **[ Etkinlik Yetkilisi ]** başvuru formu için [tıklayın](${eventStaffUrl}).\n` +
       "  ◦ Başvuru durumu: " + BADGE_ACIK + "\n\n" +
-      "• ⚜️ **[ Topluluk Elçiliği ]** başvuru formu için tıklayın.\n" +
+      `• ⚜️ **[ Topluluk Elçiliği ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
       "───────────────────────────────────\n" +
       "Başvuru durumları otomatik olarak güncellenmektedir. Yeni bir bölümün başvuruları açıldığında sizleri bilgilendireceğiz."
@@ -42,25 +45,6 @@ function getRecruitmentPanelEmbed() {
     .setColor(0x2F3136)
     .setFooter({ text: "EkoYıldız Yetkili Alımları • Başvuru Sistemi" })
     .setTimestamp();
-}
-
-/**
- * Build ActionRow button for Panel
- */
-function getRecruitmentPanelButton() {
-  const formsUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms`;
-  const eventStaffUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms/event-staff`;
-
-  return new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setLabel("🌐 Siteden Başvuru Yap (Etkinlik Yetkilisi)")
-      .setStyle(ButtonStyle.Link)
-      .setURL(eventStaffUrl),
-    new ButtonBuilder()
-      .setLabel("📋 Tüm Yetkili Formları")
-      .setStyle(ButtonStyle.Link)
-      .setURL(formsUrl)
-  );
 }
 
 /**
@@ -87,16 +71,21 @@ async function ensureRecruitmentPanelMessage(client) {
     }
 
     const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
-    const existingMessage = messages ? messages.find(m => m.author.id === client.user.id && m.embeds.length > 0 && m.embeds[0].title?.includes("Yetkili Formları")) : null;
+    const existingMessage = messages
+      ? messages.find(m =>
+          m.author.id === client.user.id &&
+          m.embeds.length > 0 &&
+          m.embeds[0].title?.includes("Yetkili Formları")
+        )
+      : null;
 
     const embed = getRecruitmentPanelEmbed();
-    const row = getRecruitmentPanelButton();
 
     if (existingMessage) {
-      await existingMessage.edit({ embeds: [embed], components: [row] }).catch(() => {});
+      await existingMessage.edit({ embeds: [embed], components: [] }).catch(() => {});
       console.log(`✅ [RecruitmentPanel] Yetkili alımları paneli güncellendi (#${channel.name})`);
     } else {
-      await channel.send({ embeds: [embed], components: [row] });
+      await channel.send({ embeds: [embed], components: [] });
       console.log(`✅ [RecruitmentPanel] Yetkili alımları paneli gönderildi (#${channel.name})`);
     }
   } catch (err) {
@@ -128,15 +117,7 @@ async function sendNewApplicationLog(client, submission) {
       .setFooter({ text: "EkoYıldız Başvuru Yönetim Sistemi" })
       .setTimestamp();
 
-    const adminUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/admin`;
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setLabel("⚙️ Admin Paneline Git & İncele")
-        .setStyle(ButtonStyle.Link)
-        .setURL(adminUrl)
-    );
-
-    await channel.send({ embeds: [embed], components: [row] });
+    await channel.send({ embeds: [embed], components: [] });
   } catch (err) {
     console.error("[RecruitmentPanel] sendNewApplicationLog error:", err.message);
   }

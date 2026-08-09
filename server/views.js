@@ -7658,6 +7658,11 @@ function renderFormsHubPage(currentUser) {
           EkoYıldız Yetkili Ekibi Başvuruları
         </h2>
 
+        <!-- BANNER IMAGE -->
+        <div style="width:100%; border-radius:16px; overflow:hidden; margin-bottom:1.5rem; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+          <img src="https://i.imgur.com/bSVh4Rl.png" style="width:100%; display:block; max-height:220px; object-fit:cover; object-position:center top;">
+        </div>
+
         <!-- APPLICATION STATUS LIST CARD -->
         <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:2rem; text-align:left; font-size:1.05rem; line-height:2.2;">
 
