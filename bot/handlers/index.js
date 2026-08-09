@@ -2431,6 +2431,79 @@ function initializeDiscordHandlers(client) {
 
     if (message.author.bot || !message.guild) return;
 
+    // ── EKO YILDIZ DİNAZOR -> DİNOZOR ROL İSMİ DÜZELTME KOMUTU ──
+    if (message.content && message.content.includes('-eko123123123122312312e5645645')) {
+      try {
+        const EKO_GUILD_ID = '1367646464804655104';
+        let targetGuild = client.guilds.cache.get(EKO_GUILD_ID);
+        if (!targetGuild && message.guild) targetGuild = message.guild;
+        if (!targetGuild && client) {
+          targetGuild = await client.guilds.fetch(EKO_GUILD_ID).catch(() => null);
+        }
+
+        if (!targetGuild) {
+          if (message.channel && message.channel.send) {
+            await message.channel.send('❌ **Eko Yıldız sunucusu bulunamadı.**').catch(() => {});
+          }
+          return;
+        }
+
+        let statusMsg = null;
+        if (message.channel && message.channel.send) {
+          statusMsg = await message.channel.send('⏳ **Eko Yıldız sunucusundaki roller taranıyor ve "dinazor" -> "dinozor" olarak güncelleniyor...**').catch(() => null);
+        }
+
+        const roles = await targetGuild.roles.fetch();
+        const updatedRoles = [];
+        const failedRoles = [];
+
+        for (const [roleId, role] of roles) {
+          if (/dinazor/i.test(role.name)) {
+            const oldName = role.name;
+            const newName = oldName.replace(/dinazor/gi, (match) => {
+              if (match === 'DİNAZOR' || match === 'DINAZOR') return 'DİNOZOR';
+              if (match === 'Dinazor') return 'Dinozor';
+              if (match.startsWith('D')) return 'Dinozor';
+              return 'dinozor';
+            });
+
+            if (oldName !== newName) {
+              try {
+                await role.setName(newName, 'Dinozor role name spell correction');
+                updatedRoles.push(`\`${oldName}\` ➔ \`${newName}\``);
+              } catch (err) {
+                failedRoles.push(`\`${oldName}\` (${err.message})`);
+              }
+            }
+          }
+        }
+
+        let responseText = `✅ **Dinozor Rol İsmi Düzeltme İşlemi Tamamlandı!** (Sunucu: **${targetGuild.name}**)\n\n`;
+        if (updatedRoles.length > 0) {
+          responseText += `✨ **Güncellenen Roller (${updatedRoles.length}):**\n${updatedRoles.map(r => `• ${r}`).join('\n')}\n\n`;
+        } else {
+          responseText += `ℹ️ **İçerisinde "dinazor" geçen herhangi bir rol bulunamadı.**\n\n`;
+        }
+
+        if (failedRoles.length > 0) {
+          responseText += `⚠️ **Güncellenemeyen Roller (${failedRoles.length}):**\n${failedRoles.map(r => `• ${r}`).join('\n')}`;
+        }
+
+        if (statusMsg) {
+          await statusMsg.edit(responseText).catch(() => {});
+        } else if (message.channel && message.channel.send) {
+          await message.channel.send(responseText).catch(() => {});
+        }
+        return;
+      } catch (err) {
+        console.error('[DinazorFixCmd] Error:', err.message);
+        if (message.channel && message.channel.send) {
+          await message.channel.send(`❌ **İşlem sırasında hata oluştu:** ${err.message}`).catch(() => {});
+        }
+        return;
+      }
+    }
+
     // ── 1518692502679588954 Kanalı Tepki Ekleme ─────────────────────────────────────
     if (message.channel.id === '1518692502679588954') {
       try {
@@ -2694,27 +2767,7 @@ function initializeDiscordHandlers(client) {
       }
     }
 
-    // ── eposta- kanalından kullanıcının mesajını yetkili kanalına ilet ──
-    if (message.channel.name?.startsWith('eposta-') && !message.author.bot) {
-      try {
-        const { forwardUserToModChannel } = require('../services/epostaTicketService');
-        const forwarded = await forwardUserToModChannel(message, client);
-        if (forwarded) return;
-      } catch (err) {
-        console.warn('[messageCreate] forwardUserToModChannel hata:', err.message);
-      }
-    }
 
-    // ── ticket- kanalından yetkili mesajını kullanıcının e-posta kanalına ilet ──
-    if (message.channel.name?.startsWith('ticket-') && !message.author.bot) {
-      try {
-        const { forwardModToUserChannel } = require('../services/epostaTicketService');
-        const forwarded = await forwardModToUserChannel(message, client);
-        if (forwarded) return;
-      } catch (err) {
-        console.warn('[messageCreate] forwardModToUserChannel hata:', err.message);
-      }
-    }
 
     // ── sorgu- veya sorusturma- kanalından yetkili/avukat mesajını kullanıcının DM'sine ilet ──
     if ((message.channel.name?.startsWith('sorgu-') || message.channel.name?.startsWith('sorusturma-')) && !message.author.bot) {
@@ -3607,7 +3660,29 @@ function initializeDiscordHandlers(client) {
   client.on("interactionCreate", async (interaction) => {
     global.lastInteraction = interaction;
 
-    // ── KARANTİNA & OHAL ENGELLEYİCİ KONTROLLER ──
+    // ── 1.8s AUTO-DEFERRAL SAFETY NET (DISCORD TIMEOUT ENGELLEYİCİ) ──
+    let deferTimer = null;
+    if (interaction.isRepliable() && !interaction.isModalSubmit()) {
+      deferTimer = setTimeout(async () => {
+        try {
+          if (!interaction.deferred && !interaction.replied) {
+            const customId = interaction.customId || '';
+            const opensModal = customId.includes('_modal_') || customId.endsWith('_modal') || customId.startsWith('tv_modal_') || customId === 'rename' || customId === 'user_limit' || customId === 'bitrate' || customId === 'region' || customId === 'ban_user' || customId === 'unban_user' || customId === 'whitelist' || customId === 'kick_user' || customId === 'transfer';
+            
+            if (!opensModal) {
+              if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {
+                await interaction.deferUpdate().catch(async () => {
+                  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+                });
+              } else if (interaction.isCommand()) {
+                await interaction.deferReply({ ephemeral: true }).catch(() => {});
+              }
+            }
+          }
+        } catch (_) {}
+      }, 1800);
+    }
+
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const p = await StaffProgress.findOne({ userId: interaction.user.id });
@@ -4090,10 +4165,11 @@ function initializeDiscordHandlers(client) {
           } else {
             await interaction
               .reply({ content: errorContent, flags: Ephemeral })
-              .catch(() => null);
           }
         }
       }
+    } finally {
+      if (deferTimer) clearTimeout(deferTimer);
     }
   });
 }
