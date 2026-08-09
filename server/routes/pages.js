@@ -426,19 +426,77 @@ router.get("/user-logs/:userId", async (req, res) => {
     const UserActivityLog = require("../../models/UserActivityLog");
     const { tickets, courtCases, investigations } = require("../../models/Store");
 
+    const safeQuery = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     let targetUser = await User.findOne({
       $or: [
         { discordId: userId },
-        { discordUsername: new RegExp(`^${userId}$`, 'i') },
-        { username: new RegExp(`^${userId}$`, 'i') }
+        { _id: userId },
+        { robloxId: userId },
+        { discordUsername: new RegExp(`^${safeQuery}$`, 'i') },
+        { username: new RegExp(`^${safeQuery}$`, 'i') },
+        { robloxUsername: new RegExp(`^${safeQuery}$`, 'i') }
       ]
     });
 
-    const resolvedId = targetUser ? targetUser.discordId : userId;
-    let trustRecord = await UserTrustScore.findOne({ userId: resolvedId });
+    let resolvedId = targetUser ? (targetUser.discordId || String(targetUser._id)) : userId;
+    let trustRecord = await UserTrustScore.findOne({
+      $or: [
+        { userId: resolvedId },
+        { username: new RegExp(`^${safeQuery}$`, 'i') }
+      ]
+    });
 
+    if (trustRecord && trustRecord.userId) {
+      resolvedId = trustRecord.userId;
+    }
+
+    // Auto-resolve via Discord Bot if not yet found in local Store
+    if (!trustRecord) {
+      try {
+        const { getDiscordClient } = require("../../bot/discordClient");
+        const { ensureUserTrustScore } = require("../../bot/services/security/trustScoreService");
+        const botClient = getDiscordClient();
+        if (botClient && botClient.isReady()) {
+          let fetchedUser = null;
+          if (/^\d{17,20}$/.test(userId)) {
+            fetchedUser = await botClient.users.fetch(userId).catch(() => null);
+          } else {
+            for (const guild of botClient.guilds.cache.values()) {
+              const members = await guild.members.fetch({ query: userId, limit: 5 }).catch(() => null);
+              if (members && members.size > 0) {
+                fetchedUser = members.first().user;
+                break;
+              }
+            }
+          }
+
+          if (fetchedUser) {
+            resolvedId = fetchedUser.id;
+            trustRecord = await ensureUserTrustScore(resolvedId, null, botClient, true);
+            if (!targetUser) {
+              targetUser = {
+                discordId: fetchedUser.id,
+                discordUsername: fetchedUser.tag,
+                discordAvatar: fetchedUser.displayAvatarURL({ dynamic: true })
+              };
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallback if ID is numeric 17-20 digit string
     if (!targetUser && !trustRecord) {
-      return res.status(404).send(renderLegalPage("Kullanıcı Bulunamadı", "<p>Aramış olduğunuz kullanıcıya ait veri veya log bulunamadı.</p>"));
+      if (/^\d{17,20}$/.test(userId)) {
+        trustRecord = {
+          userId: userId,
+          username: `Kullanıcı (${userId})`,
+          trustScore: 100.0,
+          scoreLogs: []
+        };
+      } else {
+        return res.status(404).send(renderLegalPage("Kullanıcı Bulunamadı", "<p>Aramış olduğunuz kullanıcıya ait veri veya log bulunamadı. Lütfen kullanıcı ID veya adını kontrol edin.</p>"));
+      }
     }
 
     const webLogs = UserActivityLog.getByUser(resolvedId, 200) || [];
