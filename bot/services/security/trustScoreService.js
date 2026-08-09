@@ -185,7 +185,12 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
       let channel = null;
       if (record.profileChannelId) {
         channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
-        if (!channel) {
+        if (channel) {
+          const cleanName = (record.username || 'kullanici').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100);
+          if (channel.name.startsWith('g-')) {
+            await channel.setName(cleanName, "g- ön eki kaldırıldı").catch(() => {});
+          }
+        } else {
           // Channel was previously recorded but deleted/closed!
           record.profileChannelClosed = true;
           record.profileChannelId = null;
@@ -1068,25 +1073,32 @@ async function cleanupDuplicateTrustChannels(client) {
 }
 
 /**
- * Sends a detailed activity log to the user's dedicated Güven Puanı record channel.
+ * Sends a detailed activity log to the user's dedicated personal channel (#username).
  */
 async function logTrustUserActivity(client, userId, actionTitle, actionDetails, emoji = "📝") {
   try {
-    const record = await UserTrustScore.findOne({ userId });
+    if (!client || !userId) return;
+    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
     if (!record || !record.profileChannelId) return;
 
     const recordGuild = await getRecordGuild(client).catch(() => null);
     if (!recordGuild) return;
 
     const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
-    if (!channel || !channel.isSendable()) return;
+    if (!channel || (!channel.isTextBased && typeof channel.send !== 'function')) return;
+
+    // Auto-rename if channel still starts with g-
+    if (channel.name.startsWith('g-')) {
+      const cleanName = (record.username || 'kullanici').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100);
+      await channel.setName(cleanName, 'g- ön eki kaldırıldı').catch(() => {});
+    }
 
     const timestamp = `<t:${Math.floor(Date.now() / 1000)}:F>`;
     const embed = new EmbedBuilder()
       .setColor(0x3b82f6)
       .setTitle(`${emoji} ${actionTitle}`)
-      .setDescription(`**Zaman:** ${timestamp}\n${actionDetails}`)
-      .setFooter({ text: `Güvenlik Logu • ${record.username || userId}` })
+      .setDescription(`**Zaman:** ${timestamp}\n\n${actionDetails}`)
+      .setFooter({ text: `Kullanıcı Aktivite Logu • ${record.username || userId}` })
       .setTimestamp();
 
     await channel.send({ embeds: [embed] }).catch(() => {});
@@ -1106,5 +1118,5 @@ module.exports = {
   scanVoiceChannels,
   startTrustScoreDecayScheduler,
   cleanupDuplicateTrustChannels,
-  logTrustUserActivity,
+  logTrustUserActivity
 };

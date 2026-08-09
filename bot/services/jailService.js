@@ -138,6 +138,12 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
       await logChannel.send({ embeds: [logEmbed], components: [row] }).catch(() => {});
     }
 
+    // Log to user's personal channel (#username)
+    try {
+      const { logTrustUserActivity } = require("./security/trustScoreService");
+      logTrustUserActivity(client, userId, "Hapis Cezası Uygulandı", `🔒 **Gerekçe:** ${reason}\n⏱️ **Süre:** ${durationMinutes} dakika\n👮 **Yetkili:** <@${moderatorId}>`, "🔒").catch(() => {});
+    } catch (_) {}
+
     return true;
   } catch (err) {
     console.error("[JailService] jailUser error:", err);

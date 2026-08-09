@@ -65,6 +65,16 @@ async function logWebLogin(user, req) {
       location: location,
       source: 'web'
     });
+
+    // Personal user log channel activity
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      const client = getDiscordClient();
+      if (client && user.discordId) {
+        logTrustUserActivity(client, user.discordId, "Web Portalı Girişi Yapıldı", `🌐 **IP Adresi:** \`${ip}\`\n📍 **Konum:** ${location}\n🔑 **Giriş Yöntemi:** Web Oturumu`, "🌐").catch(() => {});
+      }
+    } catch (_) {}
   } catch (err) {
     console.error("[logWebLogin] Error:", err.message);
   }
