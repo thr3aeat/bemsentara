@@ -125,6 +125,38 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Web Sitesi Kullanıcı İzleme & Takip Sistemi ──────────────────────────────
+const UserActivityLog = require("../models/UserActivityLog");
+const userPageLogThrottle = new Map();
+
+app.use((req, res, next) => {
+  if (req.user && (req.user.discordId || req.user._id)) {
+    const userId = req.user.discordId || String(req.user._id);
+    const path = req.path;
+
+    if (!path.startsWith('/public') && !path.startsWith('/api/activity') && !path.startsWith('/api/logs')) {
+      const throttleKey = `${userId}:${path}`;
+      const now = Date.now();
+      const lastLogged = userPageLogThrottle.get(throttleKey) || 0;
+
+      if (now - lastLogged > 15000) {
+        userPageLogThrottle.set(throttleKey, now);
+
+        if (userPageLogThrottle.size > 2000) {
+          userPageLogThrottle.clear();
+        }
+
+        UserActivityLog.log(userId, UserActivityLog.ACTIVITY_TYPES.PAGE_VIEW, {
+          path: path,
+          method: req.method,
+          username: req.user.discordUsername || req.user.username || 'Kullanıcı'
+        });
+      }
+    }
+  }
+  next();
+});
+
 app.use(authRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);

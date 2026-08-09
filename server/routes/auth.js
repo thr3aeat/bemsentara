@@ -1205,8 +1205,13 @@ const isAdmin = (req, res, next) => {
 // Aktif Kullanıcılar (24 saatte aktif olanlar)
 router.get("/api/admin/aktif-kullanicilar", isAdmin, (req, res) => {
   try {
-    const activeUsers = UserActivityLog.getActiveUsers();
-    res.json({ success: true, count: activeUsers.length, users: activeUsers });
+    const { users } = require("../../models/Store");
+    const activeUserIds = UserActivityLog.getActiveUsers();
+    const formatted = activeUserIds.map(id => {
+      const u = users.findOne({ discordId: id });
+      return u ? `${u.discordUsername || u.username} (${id})` : id;
+    });
+    res.json({ success: true, count: formatted.length, users: formatted });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1215,8 +1220,13 @@ router.get("/api/admin/aktif-kullanicilar", isAdmin, (req, res) => {
 // İnaktif Kullanıcılar (24+ saatin üzerinde inaktif)
 router.get("/api/admin/inaktif-kullanicilar", isAdmin, (req, res) => {
   try {
-    const inactiveUsers = UserActivityLog.getInactiveUsers(24);
-    res.json({ success: true, count: inactiveUsers.length, users: inactiveUsers });
+    const { users } = require("../../models/Store");
+    const inactiveUserIds = UserActivityLog.getInactiveUsers(24);
+    const formatted = inactiveUserIds.map(id => {
+      const u = users.findOne({ discordId: id });
+      return u ? `${u.discordUsername || u.username} (${id})` : id;
+    });
+    res.json({ success: true, count: formatted.length, users: formatted });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
