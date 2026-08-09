@@ -1159,7 +1159,7 @@ function renderMainPage(user = null) {
 
     async function requestDiscordDMCode() {
       const username = document.getElementById('dmUsernameInput').value.trim();
-      if (!username) return alert('Lütfen Discord kullanıcı adı girin.');
+      if (!username) return;
 
       try {
         const res = await fetch('/auth/send-discord-dm-code', {
@@ -1169,19 +1169,19 @@ function renderMainPage(user = null) {
         });
         const data = await res.json();
         if (data.success) {
-          alert(data.message);
           document.getElementById('dmCodeVerifyBox').style.display = 'block';
         } else {
-          alert('Hata: ' + (data.error || 'DM gönderilemedi.'));
+          // HİÇBİR POPUP UYARISI GÖSTERMEDEN DOĞRUDAN İNTERAKTİF HESAP OLUŞTURMA SİHİRBAZINA YÖNLENDİR
+          window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
         }
       } catch (err) {
-        alert('Sunucu hatası.');
+        window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
       }
     }
 
     async function verifyDiscordDMCode() {
       const code = document.getElementById('dmCodeInput').value.trim();
-      if (!code) return alert('Lütfen doğrulama kodunu girin.');
+      if (!code) return;
 
       try {
         const res = await fetch('/auth/verify-discord-dm-code', {
@@ -1193,17 +1193,17 @@ function renderMainPage(user = null) {
         if (data.success) {
           window.location.href = data.redirectUrl || '/dashboard';
         } else {
-          alert('Hata: ' + (data.error || 'Kod doğrulanamadı.'));
+          window.location.href = '/login?register=1';
         }
       } catch (err) {
-        alert('Sunucu hatası.');
+        window.location.href = '/login?register=1';
       }
     }
 
     let activeCheckUsername = '';
     async function checkUsernameSubmit() {
       const username = document.getElementById('usernameCheckInput').value.trim();
-      if (!username) return alert('Lütfen kullanıcı adı girin.');
+      if (!username) return;
 
       try {
         const res = await fetch('/auth/check-username', {
@@ -1221,10 +1221,11 @@ function renderMainPage(user = null) {
             else switchLoginTab('roblox');
           }
         } else {
-          alert('Kullanıcı bulunamadı. Lütfen Discord veya Roblox ile giriş yapın.');
+          // HİÇBİR POPUP UYARISI GÖSTERMEDEN DOĞRUDAN İNTERAKTİF HESAP OLUŞTURMA SİHİRBAZINA YÖNLENDİR
+          window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
         }
       } catch (err) {
-        alert('Sunucu hatası.');
+        window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
       }
     }
 
@@ -1510,6 +1511,15 @@ function renderLoginPage(errorMsg = null) {
           showView('view-register-wizard');
           showWizardStep(1);
         }
+
+        // Auto-launch registration wizard if register=1 or username parameter is present in URL
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const autoUser = urlParams.get('username') || '';
+          if (urlParams.get('register') === '1' || autoUser) {
+            startRegisterWizard(autoUser);
+          }
+        } catch(e) {}
 
         function showWizardStep(stepNum) {
           hideError();
