@@ -424,6 +424,7 @@ router.get("/user-logs/:userId", async (req, res) => {
     const User = require("../../models/User");
     const UserTrustScore = require("../../models/UserTrustScore");
     const UserActivityLog = require("../../models/UserActivityLog");
+    const { tickets, courtCases, investigations } = require("../../models/Store");
 
     let targetUser = await User.findOne({
       $or: [
@@ -440,9 +441,37 @@ router.get("/user-logs/:userId", async (req, res) => {
       return res.status(404).send(renderLegalPage("Kullanıcı Bulunamadı", "<p>Aramış olduğunuz kullanıcıya ait veri veya log bulunamadı.</p>"));
     }
 
-    const webLogs = UserActivityLog.getByUser(resolvedId, 100) || [];
+    const webLogs = UserActivityLog.getByUser(resolvedId, 200) || [];
 
-    res.send(renderUserLogsPage(req.user, targetUser, trustRecord, webLogs));
+    let userTickets = [];
+    if (tickets) {
+      userTickets = tickets.find({ userId: resolvedId }) || [];
+    }
+
+    let userCourtCases = [];
+    if (courtCases) {
+      userCourtCases = courtCases.find({ targetId: resolvedId }) || courtCases.find({ userId: resolvedId }) || [];
+    }
+
+    let userInvestigations = [];
+    if (investigations) {
+      userInvestigations = investigations.find({ targetId: resolvedId }) || investigations.find({ userId: resolvedId }) || [];
+    }
+
+    let userLeaves = [];
+    try {
+      const StaffLeave = require("../../models/StaffLeave");
+      userLeaves = await StaffLeave.find({ userId: resolvedId });
+    } catch (_) {}
+
+    const extraLogs = {
+      tickets: Array.isArray(userTickets) ? userTickets : [],
+      courtCases: Array.isArray(userCourtCases) ? userCourtCases : [],
+      investigations: Array.isArray(userInvestigations) ? userInvestigations : [],
+      leaves: Array.isArray(userLeaves) ? userLeaves : []
+    };
+
+    res.send(renderUserLogsPage(req.user, targetUser, trustRecord, webLogs, extraLogs));
   } catch (err) {
     console.error("[user-logs] Error:", err.message);
     res.status(500).send("Sayfa yükleme hatası.");

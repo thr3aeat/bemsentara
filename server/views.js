@@ -7416,7 +7416,7 @@ async function renderAccountTransferPage(user, staffProgress) {
 // ─────────────────────────────────────────────
 // USER LOGS PAGE & ADMIN USER IMPROVEMENTS
 // ─────────────────────────────────────────────
-function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) {
+function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], extraLogs = {}) {
   const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen Kullanıcı";
   const avatar = targetUser?.discordAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
   const discordId = targetUser?.discordId || trustRecord?.userId || "Bilinmiyor";
@@ -7426,11 +7426,13 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) 
 
   const combinedLogs = [];
 
+  // 1. Güven Puanı Hareketi
   scoreLogs.forEach(l => {
     combinedLogs.push({
       type: "TRUST",
+      icon: "⭐",
       title: "Güven Puanı Hareketi",
-      description: `${l.amount >= 0 ? '+' : ''}${l.amount.toFixed(1)} TS — ${l.reason || 'Sistem Güncellemesi'}`,
+      description: `${l.amount >= 0 ? '+' : ''}${l.amount.toFixed(1)} TS — ${_esc(l.reason || 'Sistem Güncellemesi')}`,
       amount: l.amount,
       operator: l.operatorId || 'SYSTEM',
       timestamp: new Date(l.timestamp).getTime(),
@@ -7438,17 +7440,92 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) 
     });
   });
 
+  // 2. Web & Discord Aktivite Logları (IP Maskelendi / Gizlendi)
   webLogs.forEach(w => {
+    const actType = w.activityType;
+    let title = "🌐 Portal Girişi";
+    let type = "WEB";
+    let icon = "🌐";
+    let desc = "Web oturumu başlatıldı";
+
+    if (actType === "command") {
+      title = "💬 Discord Komut Kullanımı";
+      type = "DISCORD";
+      icon = "💬";
+      desc = `Komut: /${_esc(w.details?.commandName || w.details?.command || 'komut')} ${w.details?.channelName ? '(# ' + _esc(w.details.channelName) + ')' : ''}`;
+    } else if (actType === "profile_update") {
+      title = "⚙️ Profil Güncellemesi";
+      type = "WEB";
+      icon = "⚙️";
+      desc = "Kullanıcı profil ayarlarını güncelledi";
+    } else if (actType === "mod_action") {
+      title = "⚖️ Moderatör İşlemi";
+      type = "MOD";
+      icon = "⚖️";
+      desc = _esc(w.details?.action || w.details?.reason || "Moderatör işlemi yapıldı");
+    } else {
+      desc = `Oturum Aktif — Konum: ${_esc(w.details?.location || 'Türkiye')} (Cihaz: ${_esc(w.details?.device || w.details?.userAgent || 'Web Browser')})`;
+    }
+
     combinedLogs.push({
-      type: "WEB",
-      title: "Web Portalı Girişi",
-      description: `IP: ${w.details?.ip || 'Bilinmiyor'} | Konum: ${w.details?.location || 'Bilinmiyor'}`,
+      type,
+      icon,
+      title,
+      description: desc,
       amount: 0,
-      operator: "WEB",
+      operator: actType === "command" ? "DISCORD_BOT" : "WEB_PORTAL",
       timestamp: new Date(w.timestamp).getTime(),
       dateStr: new Date(w.timestamp).toLocaleString("tr-TR")
     });
   });
+
+  // 3. Destek Talepleri (Ticket) Logları
+  if (extraLogs.tickets && Array.isArray(extraLogs.tickets)) {
+    extraLogs.tickets.forEach(t => {
+      combinedLogs.push({
+        type: "TICKET",
+        icon: "🎫",
+        title: `🎫 Destek Talebi: #${_esc(t.ticketId || t.channelName || 'ticket')}`,
+        description: `Kategori: ${_esc(t.category || 'Genel')} | Durum: ${t.status === 'closed' ? '🔒 Kapalı' : '🟢 Açık'}`,
+        amount: 0,
+        operator: "DISCORD_TICKET",
+        timestamp: new Date(t.createdAt || Date.now()).getTime(),
+        dateStr: new Date(t.createdAt || Date.now()).toLocaleString("tr-TR")
+      });
+    });
+  }
+
+  // 4. Mahkeme & Soruşturma Logları
+  if (extraLogs.courtCases && Array.isArray(extraLogs.courtCases)) {
+    extraLogs.courtCases.forEach(c => {
+      combinedLogs.push({
+        type: "DISCORD",
+        icon: "🏛️",
+        title: `🏛️ Mahkeme Dosyası: #${_esc(c.caseId || c.caseCode || 'dava')}`,
+        description: `Sebep: ${_esc(c.reason || 'Dava')} | Durum: ${_esc(c.status || 'Aktif')}`,
+        amount: 0,
+        operator: "DISCORD_COURT",
+        timestamp: new Date(c.createdAt || Date.now()).getTime(),
+        dateStr: new Date(c.createdAt || Date.now()).toLocaleString("tr-TR")
+      });
+    });
+  }
+
+  // 5. Personel İzin Kayıtları
+  if (extraLogs.leaves && Array.isArray(extraLogs.leaves)) {
+    extraLogs.leaves.forEach(lev => {
+      combinedLogs.push({
+        type: "LEAVE",
+        icon: "🏖️",
+        title: `🏖️ Personel İzin Talebi`,
+        description: `Süre: ${lev.durationDays || 1} gün | Nedeni: ${_esc(lev.reason || '-')} | Durum: ${lev.status === 'APPROVED' ? '✅ Onaylandı' : lev.status === 'REJECTED' ? '❌ Reddedildi' : '⏳ Bekliyor'}`,
+        amount: 0,
+        operator: lev.approvedBy ? `ONAY: ${lev.approvedBy}` : 'PERSONEL_FORM',
+        timestamp: new Date(lev.createdAt || Date.now()).getTime(),
+        dateStr: new Date(lev.createdAt || Date.now()).toLocaleString("tr-TR")
+      });
+    });
+  }
 
   combinedLogs.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -7488,11 +7565,13 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) 
       <!-- LOG FILTER & SEARCH BAR -->
       <div class="card" style="margin-bottom:1.5rem; padding:1.2rem 1.5rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
         <div style="flex:1; min-width:280px;">
-          <input type="text" id="log-search" class="input-field" style="margin-bottom:0;" oninput="filterLogsTimeline()" placeholder="🔍 Loglar içinde canlı ara (Sebep, İşlem, IP, Operatör)...">
+          <input type="text" id="log-search" class="input-field" style="margin-bottom:0;" oninput="filterLogsTimeline()" placeholder="🔍 Loglar içinde canlı ara (Sebep, İşlem, Komut, Tarih, Yetkili)...">
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button class="btn btn-sm" onclick="setLogCategory('ALL')" style="background:rgba(255,255,255,0.1);">Tüm Loglar</button>
           <button class="btn btn-sm" onclick="setLogCategory('TRUST')" style="background:rgba(241,196,15,0.15); color:#f1c40f;">⭐ Güven Puanı</button>
+          <button class="btn btn-sm" onclick="setLogCategory('DISCORD')" style="background:rgba(155,89,182,0.15); color:#9b59b6;">💬 Discord Logları</button>
+          <button class="btn btn-sm" onclick="setLogCategory('TICKET')" style="background:rgba(46,204,113,0.15); color:#2ecc71;">🎫 Destek Talepleri</button>
           <button class="btn btn-sm" onclick="setLogCategory('WEB')" style="background:rgba(230,126,34,0.15); color:#e67e22;">🌐 Web Girişleri</button>
         </div>
       </div>
@@ -7503,11 +7582,11 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) 
           <div class="log-card-item" data-type="${l.type}" data-text="${_esc((l.title + ' ' + l.description + ' ' + l.operator + ' ' + l.dateStr).toLowerCase())}" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:1.2rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; backdrop-filter:blur(12px);">
             <div style="display:flex; align-items:center; gap:1rem;">
               <div style="font-size:1.6rem; width:44px; height:44px; border-radius:14px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center;">
-                ${l.type === 'TRUST' ? '⭐' : l.type === 'WEB' ? '🌐' : '📌'}
+                ${l.icon || '📌'}
               </div>
               <div>
                 <div style="font-weight:700; font-size:1rem; color:#fff;">${_esc(l.title)}</div>
-                <div style="font-size:0.88rem; color:var(--muted); margin-top:0.2rem;">${_esc(l.description)}</div>
+                <div style="font-size:0.88rem; color:var(--muted); margin-top:0.2rem;">${l.description}</div>
               </div>
             </div>
 
