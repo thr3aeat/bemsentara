@@ -241,25 +241,32 @@ async function handleTempVoiceInteraction(interaction) {
 
   // Select Menu İşlemleri
   if (interaction.isStringSelectMenu()) {
-    const channelIdMatch = customId.match(/_(\d{17,20})$/);
-    if (!channelIdMatch) return false;
-    
-    const channelId = channelIdMatch[1];
     const selectedValue = interaction.values[0];
-
     const guild = interaction.guild;
     if (!guild) return false;
 
-    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    let channel = null;
+    const channelIdMatch = customId.match(/_(\d{17,20})$/);
+    if (channelIdMatch) {
+      const channelId = channelIdMatch[1];
+      channel = await guild.channels.fetch(channelId).catch(() => null);
+    } else {
+      // Genel ses paneli (tv_select_main_panel) -> Kullanıcının aktif ses kanalını al
+      channel = interaction.member?.voice?.channel;
+    }
+
     if (!channel) {
-      await interaction.reply({ content: '❌ Bu ses kanalı artık mevcut değil veya silinmiş.', ephemeral: true }).catch(() => {});
+      await interaction.reply({
+        content: '❌ Özel ses kanalı ayarlarını yönetebilmek için bir sesli kanalda bulunmanız gerekmektedir.',
+        ephemeral: true
+      }).catch(() => {});
       return true;
     }
 
-    const ownerId = tempChannels.get(channel.id) || interaction.user.id;
-    const isOwner = ownerId === interaction.user.id;
+    const ownerId = tempChannels.get(channel.id);
+    const isOwner = !ownerId || ownerId === interaction.user.id || channel.name.includes(interaction.user.displayName) || channel.name.includes(interaction.user.username);
 
-    // Sahip kontrolü
+    // Sahip ve yetkili kontrolü
     if (!isOwner && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels)) {
       await interaction.reply({ content: '❌ Bu işlemi yapmak için oda sahibi olmalısınız.', ephemeral: true }).catch(() => {});
       return true;
