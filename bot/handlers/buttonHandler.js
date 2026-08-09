@@ -98,6 +98,12 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  if (customId.startsWith("user_audit_")) {
+    const { handleUserAuditButton } = require("../services/userAuditPanelService");
+    const handled = await handleUserAuditButton(interaction);
+    if (handled) return;
+  }
+
   if (customId.startsWith("trust_")) {
     const { handleTrustButtons } = require("../services/security/trustScoreService");
     return handleTrustButtons(interaction);

@@ -69,6 +69,13 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Kullanıcı Log / Audit Sorgulama Modali ──────────────────────────────
+  if (interaction.customId.startsWith('user_audit_')) {
+    const { handleUserAuditModal } = require("../services/userAuditPanelService");
+    const handled = await handleUserAuditModal(interaction);
+    if (handled) return;
+  }
+
   // ── Birim İçi Talep / Emir Modalleri ──────────────────────────────────────
   if (interaction.customId.startsWith('modal_unit_')) {
     const { handleRequestModal } = require("../services/unitRequestService");

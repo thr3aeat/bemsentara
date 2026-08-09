@@ -7440,13 +7440,15 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     });
   });
 
-  // 2. Web & Discord Aktivite Logları (IP Maskelendi / Gizlendi)
+  // 2. Discord Aktivite Logları (Komut Kullanımı & Moderasyon — Web Girişleri ve IP/Ülke kaldırıldı)
   webLogs.forEach(w => {
     const actType = w.activityType;
-    let title = "🌐 Portal Girişi";
-    let type = "WEB";
-    let icon = "🌐";
-    let desc = "Web oturumu başlatıldı";
+    if (actType === "login" || actType === "page_view") return; // Web girişleri gösterilmez
+
+    let title = "📌 Discord Aktivitesi";
+    let type = "DISCORD";
+    let icon = "💬";
+    let desc = "Sistem Aktivitesi";
 
     if (actType === "command") {
       title = "💬 Discord Komut Kullanımı";
@@ -7455,16 +7457,16 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
       desc = `Komut: /${_esc(w.details?.commandName || w.details?.command || 'komut')} ${w.details?.channelName ? '(# ' + _esc(w.details.channelName) + ')' : ''}`;
     } else if (actType === "profile_update") {
       title = "⚙️ Profil Güncellemesi";
-      type = "WEB";
+      type = "DISCORD";
       icon = "⚙️";
       desc = "Kullanıcı profil ayarlarını güncelledi";
     } else if (actType === "mod_action") {
       title = "⚖️ Moderatör İşlemi";
-      type = "MOD";
+      type = "DISCORD";
       icon = "⚖️";
       desc = _esc(w.details?.action || w.details?.reason || "Moderatör işlemi yapıldı");
     } else {
-      desc = `Oturum Aktif — Konum: ${_esc(w.details?.location || 'Türkiye')} (Cihaz: ${_esc(w.details?.device || w.details?.userAgent || 'Web Browser')})`;
+      desc = _esc(w.details?.action || w.details?.reason || "Aktivite kaydı");
     }
 
     combinedLogs.push({
@@ -7473,7 +7475,7 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
       title,
       description: desc,
       amount: 0,
-      operator: actType === "command" ? "DISCORD_BOT" : "WEB_PORTAL",
+      operator: "DISCORD_BOT",
       timestamp: new Date(w.timestamp).getTime(),
       dateStr: new Date(w.timestamp).toLocaleString("tr-TR")
     });
@@ -7572,7 +7574,7 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
           <button class="btn btn-sm" onclick="setLogCategory('TRUST')" style="background:rgba(241,196,15,0.15); color:#f1c40f;">⭐ Güven Puanı</button>
           <button class="btn btn-sm" onclick="setLogCategory('DISCORD')" style="background:rgba(155,89,182,0.15); color:#9b59b6;">💬 Discord Logları</button>
           <button class="btn btn-sm" onclick="setLogCategory('TICKET')" style="background:rgba(46,204,113,0.15); color:#2ecc71;">🎫 Destek Talepleri</button>
-          <button class="btn btn-sm" onclick="setLogCategory('WEB')" style="background:rgba(230,126,34,0.15); color:#e67e22;">🌐 Web Girişleri</button>
+          <button class="btn btn-sm" onclick="setLogCategory('LEAVE')" style="background:rgba(52,152,219,0.15); color:#3498db;">🏖️ İzin Kayıtları</button>
         </div>
       </div>
 

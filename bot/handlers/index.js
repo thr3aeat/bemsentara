@@ -214,6 +214,13 @@ function initializeDiscordHandlers(client) {
       await initializeRoblox().catch(() => {});
     }
 
+    try {
+      const { ensureUserAuditPanel } = require("../services/userAuditPanelService");
+      await ensureUserAuditPanel(client);
+    } catch (panelErr) {
+      console.error("[UserAuditPanel] Initial load error:", panelErr.message);
+    }
+
     startAuditLogPoller(client);
     const { startDiscordAbuseDetector } = require("../services/discordAbuseDetector");
     startDiscordAbuseDetector(client);
