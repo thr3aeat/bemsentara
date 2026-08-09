@@ -4222,7 +4222,7 @@ function renderAdminPage(user) {
                   '<div style="font-size:0.9rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">' + subEsc(displayVal) + '</div>' +
                   behHtml +
                 '</div>' +
-                '<button onclick="openAskModal(\'' + subEsc(_currentSubId) + '\',\'' + subEsc(key) + '\',\'' + subEsc(label) + '\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
+                '<button onclick="openAskModal(\\\'' + subEsc(_currentSubId) + \\\',\\\'' + subEsc(key) + \\\',\\\'' + subEsc(label) + \\\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
               '</div>' +
             '</div>';
           });
@@ -4327,7 +4327,7 @@ function renderAdminPage(user) {
           '<div style="font-size:0.85rem;color:#818cf8;font-weight:700;margin-bottom:1rem;padding:0.5rem 0.8rem;background:rgba(129,140,248,0.1);border-radius:8px;border-left:3px solid #818cf8;" id="ask-question-label"></div>' +
           '<textarea id="ask-question-text" rows="4" placeholder="Kullanıcıya sormak istediğiniz soruyu yazın... (Bot DM üzerinden iletecek)" style="width:100%;margin-bottom:1rem;font-size:0.9rem;"></textarea>' +
           '<div style="display:flex;gap:0.75rem;justify-content:flex-end;">' +
-            '<button onclick="document.getElementById(\'ask-modal-overlay\').style.display=\'none\'" style="padding:0.6rem 1.2rem;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--muted);cursor:pointer;font-family:inherit;">İptal</button>' +
+            '<button onclick="document.getElementById(&quot;ask-modal-overlay&quot;).style.display=&quot;none&quot;" style="padding:0.6rem 1.2rem;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--muted);cursor:pointer;font-family:inherit;">İptal</button>' +
             '<button onclick="sendAskQuestion()" style="padding:0.6rem 1.4rem;border-radius:10px;background:linear-gradient(135deg,#818cf8,#6366f1);border:none;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">💬 DM Gönder</button>' +
           '</div>' +
           '<div id="ask-result" style="margin-top:0.8rem;font-size:0.85rem;min-height:18px;"></div>' +
