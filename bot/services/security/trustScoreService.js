@@ -612,7 +612,7 @@ async function updateProfileEmbed(record, client) {
  * Builds interaction buttons.
  */
 function buildActionButtons(userId) {
-  return new ActionRowBuilder().addComponents(
+  const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`trust_add_${userId}`)
       .setLabel("🟢 Güven Puanı Ekle")
@@ -622,14 +622,23 @@ function buildActionButtons(userId) {
       .setLabel("🔴 Güven Puanı Düşür")
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
+      .setCustomId(`trust_weblogs_${userId}`)
+      .setLabel("🌐 KULLANICININ TÜM YAPTIĞI LOG-İŞLEMLER")
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  const row2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
       .setCustomId(`trust_logs_${userId}`)
-      .setLabel("📜 Geçmiş Sicil")
+      .setLabel("📜 Puan Geçmişi")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`trust_close_${userId}`)
       .setLabel("🔒 Kanalı Kapat & Sil")
       .setStyle(ButtonStyle.Secondary)
   );
+
+  return [row1, row2];
 }
 
 /**
@@ -722,6 +731,30 @@ async function handleTrustButtons(interaction) {
       return;
     }
     
+    if (action === "weblogs" || customId.startsWith("trust_weblogs_")) {
+      const baseUrl = process.env.BASE_URL || "https://ekoyildiz.duckdns.org";
+      const userLogsUrl = `${baseUrl}/user-logs/${targetUserId}`;
+
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle("🌐 Kullanıcının Tüm Web & Sunucu İçi Log İşlemleri")
+        .setDescription(
+          `Kullanıcının Discord sunucu içi mesajları, ses aktiviteleri, güven puanı değişimleri, web girişleri ve disiplin loglarının tamamını görüntülemek için aşağıdaki bağlantıya tıklayın:\n\n` +
+          `🔗 **[Tüm Log İşlemlerini Gör](${userLogsUrl})**`
+        )
+        .setFooter({ text: "Eko Yıldız Güvenlik & Denetim Paneli" })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("🌐 Site Üzerinden Tüm Logları İncele")
+          .setStyle(ButtonStyle.Link)
+          .setURL(userLogsUrl)
+      );
+
+      return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    }
+
     if (action === "logs") {
       await interaction.deferReply({ ephemeral: true });
       const record = await UserTrustScore.findOne({ userId: targetUserId });

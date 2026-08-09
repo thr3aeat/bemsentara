@@ -244,6 +244,13 @@ async function handleButtonInteraction(interaction) {
     return applyAIJailPenalty(interaction, ticketId, offenderId, durationMinutes);
   }
 
+  // ── Automod Ceza & AI Onaylı İnfaz Butonları ──────────────────────────────
+  if (customId.startsWith("jail_")) {
+    const { handleAutomodPunishmentButton } = require("../services/automodPunishmentService");
+    const handled = await handleAutomodPunishmentButton(interaction);
+    if (handled !== false) return;
+  }
+
   // ── Moderatör Seçim Onay Butonları ──────────────────────────────────────────
   if (customId.startsWith("mod_confirm_weekly_") || customId.startsWith("mod_confirm_monthly_")) {
     const isWeekly = customId.startsWith("mod_confirm_weekly_");

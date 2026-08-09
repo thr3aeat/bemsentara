@@ -7401,6 +7401,222 @@ async function renderAccountTransferPage(user, staffProgress) {
 }
 
 // ─────────────────────────────────────────────
+// USER LOGS PAGE & ADMIN USER IMPROVEMENTS
+// ─────────────────────────────────────────────
+function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) {
+  const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen Kullanıcı";
+  const avatar = targetUser?.discordAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
+  const discordId = targetUser?.discordId || trustRecord?.userId || "Bilinmiyor";
+  const robloxName = targetUser?.robloxUsername || "Bağlı Değil";
+  const trustScore = trustRecord ? trustRecord.trustScore.toFixed(1) : "100.0";
+  const scoreLogs = trustRecord?.scoreLogs || [];
+
+  const combinedLogs = [];
+
+  scoreLogs.forEach(l => {
+    combinedLogs.push({
+      type: "TRUST",
+      title: "Güven Puanı Hareketi",
+      description: `${l.amount >= 0 ? '+' : ''}${l.amount.toFixed(1)} TS — ${l.reason || 'Sistem Güncellemesi'}`,
+      amount: l.amount,
+      operator: l.operatorId || 'SYSTEM',
+      timestamp: new Date(l.timestamp).getTime(),
+      dateStr: new Date(l.timestamp).toLocaleString("tr-TR")
+    });
+  });
+
+  webLogs.forEach(w => {
+    combinedLogs.push({
+      type: "WEB",
+      title: "Web Portalı Girişi",
+      description: `IP: ${w.details?.ip || 'Bilinmiyor'} | Konum: ${w.details?.location || 'Bilinmiyor'}`,
+      amount: 0,
+      operator: "WEB",
+      timestamp: new Date(w.timestamp).getTime(),
+      dateStr: new Date(w.timestamp).toLocaleString("tr-TR")
+    });
+  });
+
+  combinedLogs.sort((a, b) => b.timestamp - a.timestamp);
+
+  const content = `
+    <div style="max-width:1100px; margin:2rem auto; animation:fadeUp 0.5s ease;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <div style="color:var(--muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">KULLANICI AKTİVİTE & LOG İNCELEME</div>
+          <h1 style="font-size:2.2rem; font-weight:800; color:#fff;">${_esc(username)} — Tüm İncelemeler</h1>
+        </div>
+        <a href="/admin" class="btn btn-sm btn-ghost">← Admin Paneline Dön</a>
+      </div>
+
+      <!-- USER HEADER CARD -->
+      <div class="card" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(24px); margin-bottom:2rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem;">
+          <div style="display:flex; align-items:center; gap:1.5rem;">
+            <img src="${avatar}" style="width:76px; height:76px; border-radius:50%; border:3px solid var(--accent); box-shadow:0 8px 25px rgba(167,139,250,0.3);">
+            <div>
+              <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:0.3rem;">${_esc(username)}</h2>
+              <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:0.88rem; color:var(--muted);">
+                <span>🆔 Discord ID: <code style="color:var(--text);">${discordId}</code></span>
+                <span>🎮 Roblox: <strong style="color:var(--accent2);">${_esc(robloxName)}</strong></span>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.3); border-radius:18px; padding:1rem 1.5rem; text-align:center;">
+            <div style="font-size:0.8rem; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">GÜVEN PUANI</div>
+            <div style="font-size:2.2rem; font-weight:800; color:${parseFloat(trustScore) >= 100 ? '#34d399' : parseFloat(trustScore) < 50 ? '#fb7185' : '#fbbf24'};">
+              ⭐ ${trustScore} <span style="font-size:1rem; color:var(--muted);">/ 500</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG FILTER & SEARCH BAR -->
+      <div class="card" style="margin-bottom:1.5rem; padding:1.2rem 1.5rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
+        <div style="flex:1; min-width:280px;">
+          <input type="text" id="log-search" class="input-field" style="margin-bottom:0;" oninput="filterLogsTimeline()" placeholder="🔍 Loglar içinde canlı ara (Sebep, İşlem, IP, Operatör)...">
+        </div>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="setLogCategory('ALL')" style="background:rgba(255,255,255,0.1);">Tüm Loglar</button>
+          <button class="btn btn-sm" onclick="setLogCategory('TRUST')" style="background:rgba(241,196,15,0.15); color:#f1c40f;">⭐ Güven Puanı</button>
+          <button class="btn btn-sm" onclick="setLogCategory('WEB')" style="background:rgba(230,126,34,0.15); color:#e67e22;">🌐 Web Girişleri</button>
+        </div>
+      </div>
+
+      <!-- LOG TIMELINE -->
+      <div id="log-timeline-container" style="display:flex; flex-direction:column; gap:0.8rem;">
+        ${combinedLogs.length > 0 ? combinedLogs.map(l => `
+          <div class="log-card-item" data-type="${l.type}" data-text="${_esc((l.title + ' ' + l.description + ' ' + l.operator + ' ' + l.dateStr).toLowerCase())}" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:1.2rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; backdrop-filter:blur(12px);">
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <div style="font-size:1.6rem; width:44px; height:44px; border-radius:14px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center;">
+                ${l.type === 'TRUST' ? '⭐' : l.type === 'WEB' ? '🌐' : '📌'}
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:1rem; color:#fff;">${_esc(l.title)}</div>
+                <div style="font-size:0.88rem; color:var(--muted); margin-top:0.2rem;">${_esc(l.description)}</div>
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <div style="font-size:0.82rem; color:var(--muted);">${l.dateStr}</div>
+              <div style="font-size:0.78rem; color:var(--accent2); margin-top:0.2rem;">Yetkili/Kaynak: <code>${_esc(l.operator)}</code></div>
+            </div>
+          </div>
+        `).join('') : '<div class="card" style="text-align:center; padding:3rem; color:var(--muted);">Kullanıcıya ait kaydedilmiş log işlemi bulunamadı.</div>'}
+      </div>
+
+    </div>
+
+    <script>
+      let currentCategory = 'ALL';
+
+      function setLogCategory(cat) {
+        currentCategory = cat;
+        filterLogsTimeline();
+      }
+
+      function filterLogsTimeline() {
+        const query = (document.getElementById('log-search')?.value || '').toLowerCase().trim();
+        const items = document.querySelectorAll('.log-card-item');
+
+        items.forEach(item => {
+          const type = item.getAttribute('data-type');
+          const text = item.getAttribute('data-text') || '';
+
+          const matchesCat = (currentCategory === 'ALL' || type === currentCategory);
+          const matchesQuery = !query || text.includes(query);
+
+          if (matchesCat && matchesQuery) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      }
+    </script>
+  `;
+
+  return _layout(`Log Geçmişi — ${username}`, currentUser, content, '', '/admin');
+}
+
+function renderAdminPage(user, usersList = []) {
+  const { users: usersStore } = require("../models/Store");
+  const allUsers = usersList.length ? usersList : usersStore.find({});
+
+  const content = `
+    <div style="max-width:1200px; margin:2rem auto; animation:fadeUp 0.5s ease;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <div style="color:var(--muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">GÜVENLİK VE KULLANICI YÖNETİMİ</div>
+          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg,#fff,#fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Admin Paneli — Kullanıcılar</h1>
+        </div>
+      </div>
+
+      <!-- LIVE USER SEARCH BAR -->
+      <div class="card" style="margin-bottom:1.5rem; padding:1.5rem;">
+        <label style="font-size:0.88rem; color:var(--muted); font-weight:700; margin-bottom:0.5rem; display:block;">🔍 CANLI KULLANICI ARAMA</label>
+        <input type="text" id="admin-user-search" class="input-field" style="margin-bottom:0; font-size:1.05rem;" oninput="filterAdminUserTable(this.value)" placeholder="Kullanıcı adı, Discord ID veya Roblox ID yazın...">
+      </div>
+
+      <!-- USERS TABLE -->
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.9rem;">
+          <thead>
+            <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); color:var(--muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:1px;">
+              <th style="padding:1rem 1.5rem;">Kullanıcı</th>
+              <th style="padding:1rem 1.5rem;">Discord ID</th>
+              <th style="padding:1rem 1.5rem;">Roblox Kullanıcı</th>
+              <th style="padding:1rem 1.5rem;">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-tbody">
+            ${allUsers.map(u => {
+              const uName = u.discordUsername || u.username || 'Bilinmiyor';
+              const uAvatar = u.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+              const rName = u.robloxUsername || 'Yok';
+              const searchText = `${uName} ${u.discordId || ''} ${rName}`.toLowerCase();
+              return `
+                <tr class="admin-user-row" data-search="${_esc(searchText)}" style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                  <td style="padding:1rem 1.5rem; display:flex; align-items:center; gap:0.8rem;">
+                    <img src="${uAvatar}" style="width:36px; height:36px; border-radius:50%;">
+                    <strong style="color:#fff;">${_esc(uName)}</strong>
+                  </td>
+                  <td style="padding:1rem 1.5rem; font-family:monospace; color:var(--muted);">${u.discordId || '-'}</td>
+                  <td style="padding:1rem 1.5rem; color:var(--accent2);">${_esc(rName)}</td>
+                  <td style="padding:1rem 1.5rem;">
+                    <a href="/user-logs/${u.discordId || u._id}" class="btn btn-sm btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8); font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                      📜 Tüm Logları Gör
+                    </a>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      function filterAdminUserTable(val) {
+        const query = (val || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('.admin-user-row');
+        rows.forEach(r => {
+          const text = r.getAttribute('data-search') || '';
+          if (!query || text.includes(query)) {
+            r.style.display = 'table-row';
+          } else {
+            r.style.display = 'none';
+          }
+        });
+      }
+    </script>
+  `;
+
+  return _layout('Admin — Kullanıcı Yönetimi', user, content, '', '/admin');
+}
+
+// ─────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────
 module.exports = {
@@ -7419,6 +7635,7 @@ module.exports = {
   renderWikiListPage,
   renderWikiArticlePage,
   renderAdminPage,
+  renderUserLogsPage,
   renderBriefingOnboardingModal,
   renderGroupAdminPage,
   renderLeaderboardPage,

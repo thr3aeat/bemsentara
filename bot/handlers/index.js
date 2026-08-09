@@ -2230,50 +2230,96 @@ function initializeDiscordHandlers(client) {
               console.error("[SwearDetector] AI değerlendirme hatası:", err.message);
             }
 
+            const User = require("../../models/User");
+            const dbUser = await User.findOne({ discordId: message.author.id });
+            const targetMember = await message.guild.members.fetch(message.author.id).catch(() => null);
+            const isUserJailed = !!(dbUser?.isJailed || targetMember?.roles?.cache?.some(r => r.name.toLowerCase() === "hapis"));
+
+            const alertTitle = isUserJailed ? "🚨 HAPİSTEYKEN KURAL İHLALİ ALGILANDI" : "🚨 KÜFÜR VEYA UYGUNSUZ İÇERİK ALGILANDI";
+
             const embed = new EmbedBuilder()
-              .setTitle("🚨 KÜFÜR VEYA UYGUNSUZ İÇERİK ALGILANDI")
+              .setTitle(alertTitle)
               .setColor(0xe74c3c)
               .setDescription(
-                `Sunucuda küfür veya uygunsuz içerik barındıran bir mesaj tespit edildi.\n\n` +
+                `Sunucuda küfür veya uygunsuz içerik barındıran bir mesaj tespit edildi.${isUserJailed ? "\n\n⚠️ **DİKKAT:** Bu kullanıcı şu an **HAPİSHANEDEDİR!**" : ""}\n\n` +
                 `👤 **Kullanıcı:** ${message.author.toString()} (\`${message.author.tag}\`)\n` +
                 `🏠 **Sunucu:** ${message.guild.name}\n` +
                 `📂 **Kanal:** <#${message.channel.id}>\n` +
                 `📝 **İçerik:** \`${message.content}\`\n\n` +
                 `🤖 **AI Değerlendirmesi:**\n` +
                 `• **Önem Derecesi:** \`${severity.toUpperCase()}\`\n` +
-                `• **Önerilen Hapis Süresi:** \`${suggestedDuration} dakika\``
+                `• **Önerilen Süre:** \`${suggestedDuration} dakika\``
               )
               .setTimestamp();
 
-            const row1 = new ActionRowBuilder().addComponents(
+            const row1 = new ActionRowBuilder();
+            const row2 = new ActionRowBuilder();
+
+            // AI Auto Punish Button
+            row1.addComponents(
               new ButtonBuilder()
-                .setCustomId(`jail_warn_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                .setLabel("⚠️ UYAR")
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId(`jail_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
-                .setLabel("🔇 SUSTUR (MUTE)")
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId(`jail_immed_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
-                .setLabel("🔒 HAPİSE AT")
-                .setStyle(ButtonStyle.Danger)
+                .setCustomId(`jail_ai_auto_punish_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("✨ AI ÖNERİLEN CEZAYI UYGULA")
+                .setStyle(ButtonStyle.Success)
             );
 
-            const row2 = new ActionRowBuilder().addComponents(
-              new ButtonBuilder()
-                .setCustomId(`jail_kick_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                .setLabel("👢 SUNUCUDAN AT")
-                .setStyle(ButtonStyle.Danger),
-              new ButtonBuilder()
-                .setCustomId(`jail_ban_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                .setLabel("🔨 BANLA")
-                .setStyle(ButtonStyle.Danger),
-              new ButtonBuilder()
-                .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                .setLabel("✅ YOKSAY")
-                .setStyle(ButtonStyle.Secondary)
-            );
+            if (isUserJailed) {
+              row1.addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`jail_jop_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("🏏 JOPLA (HAPİSTE SUSTUR)")
+                  .setStyle(ButtonStyle.Warning),
+                new ButtonBuilder()
+                  .setCustomId(`jail_extend_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("🔒 HAPİS SÜRESİNİ UZAT")
+                  .setStyle(ButtonStyle.Danger)
+              );
+
+              row2.addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`jail_kick_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("👢 SUNUCUDAN AT")
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setCustomId(`jail_ban_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("🔨 BANLA")
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("✅ YOKSAY")
+                  .setStyle(ButtonStyle.Secondary)
+              );
+            } else {
+              row1.addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`jail_warn_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("⚠️ UYAR")
+                  .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                  .setCustomId(`jail_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
+                  .setLabel("🔇 SUSTUR (MUTE)")
+                  .setStyle(ButtonStyle.Primary)
+              );
+
+              row2.addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`jail_immed_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
+                  .setLabel("🔒 HAPİSE AT")
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setCustomId(`jail_kick_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("👢 SUNUCUDAN AT")
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setCustomId(`jail_ban_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("🔨 BANLA")
+                  .setStyle(ButtonStyle.Danger),
+                new ButtonBuilder()
+                  .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                  .setLabel("✅ YOKSAY")
+                  .setStyle(ButtonStyle.Secondary)
+              );
+            }
 
             await targetMod.send({ embeds: [embed], components: [row1, row2] }).catch((err) => {
               console.error(`[SwearDetector] Yetkiliye DM gönderilemedi:`, err.message);

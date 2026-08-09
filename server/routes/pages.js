@@ -13,6 +13,7 @@ const {
   renderWikiListPage,
   renderWikiArticlePage,
   renderAdminPage,
+  renderUserLogsPage,
   renderBriefingOnboardingModal,
   renderLeaderboardPage,
   renderShopPage,
@@ -415,6 +416,37 @@ router.get("/wiki/:id", (req, res) => {
 router.get("/admin", (req, res) => {
   if (!req.user || !isSiteAdmin(req.user)) return res.redirect("/");
   res.send(renderAdminPage(req.user));
+});
+
+router.get("/user-logs/:userId", async (req, res) => {
+  try {
+    const userId = String(req.params.userId || '').trim();
+    const User = require("../../models/User");
+    const UserTrustScore = require("../../models/UserTrustScore");
+    const UserActivityLog = require("../../models/UserActivityLog");
+
+    let targetUser = await User.findOne({
+      $or: [
+        { discordId: userId },
+        { discordUsername: new RegExp(`^${userId}$`, 'i') },
+        { username: new RegExp(`^${userId}$`, 'i') }
+      ]
+    });
+
+    const resolvedId = targetUser ? targetUser.discordId : userId;
+    let trustRecord = await UserTrustScore.findOne({ userId: resolvedId });
+
+    if (!targetUser && !trustRecord) {
+      return res.status(404).send(renderLegalPage("Kullanıcı Bulunamadı", "<p>Aramış olduğunuz kullanıcıya ait veri veya log bulunamadı.</p>"));
+    }
+
+    const webLogs = UserActivityLog.getByUser(resolvedId, 100) || [];
+
+    res.send(renderUserLogsPage(req.user, targetUser, trustRecord, webLogs));
+  } catch (err) {
+    console.error("[user-logs] Error:", err.message);
+    res.status(500).send("Sayfa yükleme hatası.");
+  }
 });
 
 router.get("/group-admin", async (req, res) => {
