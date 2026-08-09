@@ -2259,6 +2259,92 @@ router.get("/api/admin/bans", async (req, res) => {
   }
 });
 
+// ── Etkinlik Yetkilisi Formu Gönderme ───────────────────────────────────────
+router.post("/api/forms/event-staff/submit", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Başvuru yapabilmek için öncelikle giriş yapmalısınız." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const userId = req.user.discordId;
+
+    // Check existing pending application
+    const existing = await FormSubmission.findPendingByUser(userId, "event_staff");
+    if (existing) {
+      return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir başvurunuz bulunmaktadır." });
+    }
+
+    const { discordUsername, personal, technical, scenarios, confirmations } = req.body;
+
+    if (!personal || !technical || !scenarios || !confirmations) {
+      return res.status(400).json({ error: "Lütfen tüm zorunlu soruları doldurun." });
+    }
+
+    // Save submission
+    const submission = await FormSubmission.create({
+      userId,
+      discordUsername: discordUsername || req.user.discordUsername || req.user.username,
+      formType: "event_staff",
+      formTitle: "Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu",
+      formData: {
+        personal,
+        technical,
+        scenarios,
+        confirmations
+      }
+    });
+
+    // Send Discord Log & Channel Notification
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
+      const botClient = getDiscordClient();
+      if (botClient && botClient.isReady()) {
+        sendNewApplicationLog(botClient, submission).catch(() => {});
+      }
+    } catch (_) {}
+
+    res.json({ success: true, message: "Başvurunuz başarıyla gönderildi!", submissionId: submission._id });
+  } catch (err) {
+    console.error("[event-staff-submit] Error:", err.message);
+    res.status(500).json({ error: "Sunucu hatası: " + err.message });
+  }
+});
+
+// ── Admin: Form Başvurularını Listele ─────────────────────────────────────────
+router.get("/api/admin/form-submissions", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const FormSubmission = require("../../models/FormSubmission");
+    const submissions = await FormSubmission.findAll();
+    res.json({ success: true, submissions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Form Başvurusunu Değerlendir (Onayla / Reddet) ──────────────────────
+router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { status, note } = req.body;
+    if (!["APPROVED", "REJECTED"].includes(status)) {
+      return res.status(400).json({ error: "Geçersiz durum (APPROVED veya REJECTED olmalı)." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.updateStatus(req.params.id, status, req.user.discordUsername, note);
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Admin: panel form gönder ────────────────────────────────────────────────
 router.post("/api/admin/submit-form", async (req, res) => {
   if (!requireAdmin(req, res)) return;

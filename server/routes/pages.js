@@ -578,6 +578,24 @@ router.get("/webhook", (req, res) => {
 });
 
 
+// ── Yetkili Formları Dashboard & Etkinlik Yetkilisi Formu ──────────────────────
+router.get("/forms", (req, res) => {
+  const { renderFormsHubPage } = require("../views");
+  res.send(renderFormsHubPage(req.user));
+});
+
+router.get("/forms/event-staff", async (req, res) => {
+  const { renderEventStaffFormPage } = require("../views");
+  const FormSubmission = require("../../models/FormSubmission");
+  
+  let existingSubmission = null;
+  if (req.user) {
+    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "event_staff");
+  }
+
+  res.send(renderEventStaffFormPage(req.user, existingSubmission));
+});
+
 // Briefing Onboarding
 router.get("/briefing-form", (req, res) => {
   if (!req.user) return res.redirect("/login");

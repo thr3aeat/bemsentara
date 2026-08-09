@@ -216,9 +216,11 @@ function initializeDiscordHandlers(client) {
 
     try {
       const { ensureUserAuditPanel } = require("../services/userAuditPanelService");
+      const { ensureRecruitmentPanelMessage } = require("../services/staffRecruitmentPanelService");
       await ensureUserAuditPanel(client);
+      await ensureRecruitmentPanelMessage(client);
     } catch (panelErr) {
-      console.error("[UserAuditPanel] Initial load error:", panelErr.message);
+      console.error("[UserAuditPanel/RecruitmentPanel] Initial load error:", panelErr.message);
     }
 
     startAuditLogPoller(client);

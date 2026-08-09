@@ -7637,8 +7637,473 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
 
 
 // ─────────────────────────────────────────────
-// EXPORTS
+// APPLICATION FORMS HUB & EVENT STAFF FORM VIEWS
 // ─────────────────────────────────────────────
+
+function renderFormsHubPage(currentUser) {
+  const content = `
+    <div style="max-width:900px; margin:2rem auto; animation:fadeUp 0.5s ease;">
+      
+      <!-- HERO HEADER CARD -->
+      <div class="card" style="background:linear-gradient(135deg, rgba(20,20,35,0.8), rgba(10,10,20,0.9)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2.5rem; text-align:center; position:relative; overflow:hidden; backdrop-filter:blur(24px); box-shadow:0 15px 40px rgba(0,0,0,0.4);">
+        <div style="position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #34d399, #818cf8, #a78bfa);"></div>
+
+        <div style="display:inline-flex; align-items:center; justify-content:center; gap:1rem; margin-bottom:1.5rem;">
+          <div style="width:4px; height:48px; background:linear-gradient(to bottom, #a78bfa, #818cf8); border-radius:2px;"></div>
+          <h1 style="font-size:2.4rem; font-weight:800; color:#fff; letter-spacing:1px; margin:0;">Yetkili Formları</h1>
+          <div style="width:4px; height:48px; background:linear-gradient(to bottom, #818cf8, #a78bfa); border-radius:2px;"></div>
+        </div>
+
+        <h2 style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-bottom:2rem; opacity:0.9;">
+          EkoYıldız Yetkili Ekibi Başvuruları
+        </h2>
+
+        <!-- APPLICATION STATUS LIST CARD -->
+        <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:2rem; text-align:left; font-size:1.05rem; line-height:2.2;">
+
+          <!-- 1. DISCORD MODERASYON -->
+          <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
+              <span style="font-size:1.2rem;">🛡️</span>
+              <span>[ Discord Moderasyon Takımı ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973578816880690.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973577042567178.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. OYUN MODERASYON -->
+          <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
+              <span style="font-size:1.2rem;">🗡️</span>
+              <span>[ Oyun Moderasyon Takımı ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973578816880690.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973577042567178.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. ETKİNLİK YETKİLİSİ (AÇIK) -->
+          <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(52,211,153,0.03); border-radius:12px; padding:1rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
+              <span style="font-size:1.2rem;">✳️</span>
+              <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Etkinlik Yetkilisi ]</a>
+              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">başvuru formu için <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline;">tıklayın</a>.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973588031635608.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973586706108416.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973585083175063.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973583485009940.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. TOPLULUK ELÇİLİĞİ -->
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
+              <span style="font-size:1.2rem;">⚜️</span>
+              <span>[ Topluluk Elçiliği ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973578816880690.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973577042567178.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:1.8rem; font-size:0.85rem; color:var(--muted); font-style:italic;">
+          Başvuru durumları otomatik olarak güncellenmektedir. Yeni bir bölümün başvuruları açıldığında sizleri bilgilendireceğiz.
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  return _layout('Yetkili Formları', currentUser, content, '', '/forms');
+}
+
+
+function renderEventStaffFormPage(currentUser, existingSubmission = null) {
+  const isLoggedIn = Boolean(currentUser);
+  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username) : '';
+
+  const content = `
+    <div style="max-width:960px; margin:1.5rem auto; animation:fadeUp 0.5s ease;">
+      
+      <!-- FORM BANNER HEADER IMAGE -->
+      <div style="width:100%; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:1.5rem; box-shadow:0 12px 35px rgba(0,0,0,0.5);">
+        <img src="https://docs.google.com/forms-images-rt/AI1Qifi6RTS6PDzvi6a0bY9erFb8VZ8H7zBQ3lbq0WpKc8I-prOFObR_0yZwd1vgSry6L_ldDqBEIrBad_uCrsTOKTvA-LQuYCjCHd0Glpd219NaL7YzX3RYZynprJMAzfcbQI8EX-0i4g7ulIaeuk9FxXV6ttl0w3mZKGoBUz2xtvvjZEWhXRKRD8FcRb3vYtDb5g7OLWORbWwkJQ89YfAaLg7i5cOIB13cq_pWVmY=w1920" style="width:100%; display:block; max-height:280px; object-fit:cover;">
+      </div>
+
+      <!-- FORM HEADER TITLE CARD -->
+      <div class="card" style="background:rgba(20,20,35,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:2rem; backdrop-filter:blur(20px); margin-bottom:1.5rem; border-top:4px solid #34d399;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <div style="color:#34d399; font-size:0.85rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">✳️ ETKİNLİK YETKİLİSİ ALIM FORMU</div>
+            <h1 style="font-size:1.8rem; font-weight:800; color:#fff;">Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu</h1>
+          </div>
+          <a href="/forms" class="btn btn-sm btn-ghost">← Tüm Formlara Dön</a>
+        </div>
+      </div>
+
+      ${!isLoggedIn ? `
+        <!-- LOGIN REQUIRED BANNER -->
+        <div class="card" style="background:rgba(251,113,133,0.1); border:1px solid rgba(251,113,133,0.3); border-radius:20px; padding:2.5rem; text-align:center; margin-bottom:2rem;">
+          <div style="font-size:2.5rem; margin-bottom:1rem;">🔒</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
+          <p style="color:var(--muted); max-width:600px; margin:0 auto 1.5rem; line-height:1.6;">
+            Etkinlik Yetkilisi başvuru formunu doldurabilmek için öncelikle Discord hesabınızla web portalına giriş yapmanız veya kayıt olmanız gerekmektedir.
+          </p>
+          <a href="/login?redirect=/forms/event-staff" class="btn" style="background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; font-weight:800; padding:0.8rem 2rem; border-radius:30px; font-size:1.05rem; display:inline-block; box-shadow:0 6px 20px rgba(244,63,94,0.4);">
+            🔑 Discord ile Giriş Yap / Kayıt Ol
+          </a>
+        </div>
+      ` : existingSubmission ? `
+        <!-- ALREADY SUBMITTED BANNER -->
+        <div class="card" style="background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.3); border-radius:20px; padding:2.5rem; text-align:center; margin-bottom:2rem;">
+          <div style="font-size:2.5rem; margin-bottom:1rem;">⏳</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvurunuz Değerlendirilme Aşamasında!</h2>
+          <p style="color:var(--muted); max-width:650px; margin:0 auto 1.5rem; line-height:1.6;">
+            Sayın <strong>${_esc(usernameStr)}</strong>, Etkinlik Yetkilisi başvuru formunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde tarafımıza ulaşmıştır. 
+            Başvurunuz yetkili komite tarafından incelenmektedir.
+          </p>
+          <div style="display:inline-block; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:1rem 1.5rem; text-align:left; font-size:0.9rem; color:var(--muted);">
+            <div>📌 <strong>Başvuru Durumu:</strong> <span style="color:#fbbf24; font-weight:700;">⏳ İNCELENİYOR (PENDING)</span></div>
+            <div>🆔 <strong>Başvuru ID:</strong> <code>${existingSubmission._id}</code></div>
+          </div>
+        </div>
+      ` : `
+
+        <!-- DOCUMENTATION & RULES INFO SECTION -->
+        <div class="card" style="margin-bottom:1.5rem; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:20px; padding:1.8rem;">
+          <h3 style="font-size:1.2rem; font-weight:800; color:var(--accent); margin-bottom:1rem;">📖 FORMUN AMACI, SÜRECİ VE KURALLARI</h3>
+
+          <div style="display:flex; flex-direction:column; gap:1rem; font-size:0.92rem; color:var(--muted); line-height:1.7;">
+            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #818cf8; padding:1rem 1.2rem; border-radius:0 12px 12px 0;">
+              <strong style="color:#fff;">BİRİNCİL ALIM FORMU:</strong> Birincil değerlendirme formumuz, adayların başvuru sürecinde ilk adımı attıkları ve başvurularının ön değerlendirmesinin yapıldığı önemli bir belgedir. Bu form, "Etkinlik Sorumlusu" pozisyonuna başvuran adayların ilk değerlendirmeye tabi tutulduğu bir araçtır.
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #34d399; padding:1rem 1.2rem; border-radius:0 12px 12px 0;">
+              <strong style="color:#fff;">ÖN ALIMLAR MÜLAKATI:</strong> Başvurduğunuz departmanı harici olarak yöneten komite, sizinle iletişime geçecektir. Regülasyon Komitesi, size özel hazırlanmış soruları yanıtlamanızı isteyecektir. Yalnızca Etkinlik Organizatörü'nün onayını alırsanız, departmana katılma hakkına sahip olacaksınız.
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #fbbf24; padding:1rem 1.2rem; border-radius:0 12px 12px 0; font-size:0.88rem;">
+              <strong style="color:#fff;">📌 ÖNEMLİ FORM KURALLARI:</strong><br>
+              • Başvuru formunu sadece bir kez göndermelisiniz. Birden fazla gönderilen başvurular değerlendirilmeyecektir.<br>
+              • Form doldururken dil bilgisi ve imla kurallarına tam uyum gösteriniz.<br>
+              • Trolleme veya toksik başvurularda bulunan kişiler EkoYıldız tarafından kara listeye alınacaktır.<br>
+              • Başvuru cevaplarının özgün olması zorunludur. Yapay zekâ (AI) veya başkasından kopyalanmış içerikler tespit edildiğinde başvuru kalıcı olarak reddedilir.<br>
+              • Formda 25 soru mevcut olup, istenilen tüm alanların eksiksiz doldurulması zorunludur.
+            </div>
+          </div>
+        </div>
+
+        <!-- APPLICATION FORM CONTAINER -->
+        <form id="event-staff-form" onsubmit="handleFormSubmit(event)" style="display:flex; flex-direction:column; gap:1.5rem;">
+
+          <!-- 1. İSTENİLEN ÖN BİLGİLER -->
+          <div class="card" style="border-radius:20px; border-left:4px solid #818cf8;">
+            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN ÖN BİLGİLER・</h3>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
+              Başvuru formunun ilk bölümünde, kimliğinizin doğrulanabilmesi için temel ön bilgileriniz talep edilmektedir.
+            </p>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">DISCORD HESABI *</label>
+              <div style="font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem;">DISCORD hesabınızın kullanıcı adı nedir? İsim#(etiket) şeklinde yazabilirsiniz.</div>
+              <input type="text" id="q_discord_username" class="input-field" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
+            </div>
+          </div>
+
+          <!-- 2. İSTENİLEN KİŞİSEL BİLGİLER -->
+          <div class="card" style="border-radius:20px; border-left:4px solid #a78bfa;">
+            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN KİŞİSEL BİLGİLER・</h3>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
+              Sunduğunuz akademik geçmiş, deneyimler ve kişisel tercihler EkoYıldız Yetkili Ekipleri tarafından değerlendirilecektir.
+            </p>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">1. Bize biraz kendinizden bahseder misiniz? *</label>
+              <textarea id="q_personal_1" class="input-field" rows="3" required placeholder="Kendiniz, ilgi alanlarınız ve yaşınızdan bahsedin..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">2. Hangi becerilerinizin takım içinde en çok değer taşıdığını düşünüyorsunuz? *</label>
+              <textarea id="q_personal_2" class="input-field" rows="3" required placeholder="Becerilerinizi ve güçlü yönlerinizi detaylandırın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">3. Takıma ne gibi özellikler getirebilirsiniz? *</label>
+              <textarea id="q_personal_3" class="input-field" rows="3" required placeholder="Takıma katacağınız değerleri açıklayın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">4. Neden Etkinlik Sorumluluğu'nda görev almak istediğinizi açıklar mısınız? *</label>
+              <textarea id="q_personal_4" class="input-field" rows="3" required placeholder="Etkinlik Yetkililiğinde çalışmanın sizin için anlamı nedir?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">5. Üstlerinizden direktif alma konusunda ne kadar rahat hissedersiniz? *</label>
+              <textarea id="q_personal_5" class="input-field" rows="3" required placeholder="Yönergeleri anlama, uygulama ve adapte etme yeteneğinizi açıklayın..."></textarea>
+            </div>
+          </div>
+
+          <!-- 3. İSTENİLEN TEKNİK BİLGİLER -->
+          <div class="card" style="border-radius:20px; border-left:4px solid #34d399;">
+            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN TEKNİK BİLGİLER・</h3>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
+              EkoYıldız topluluk standartlarına uygun teknik ve yönetsel bilgi ölçümü.
+            </p>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">1. Etkinlik Sorumlusunun, moderasyon ve yönetim kadrosundan farkları nelerdir? *</label>
+              <textarea id="q_tech_1" class="input-field" rows="3" required placeholder="Hangi konularda doğrudan yetkili, hangi konularda yetkisiz olduğunu teknik açıdan açıklayın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">2. Etkinlik sırasında tutulması gereken teknik kayıtlar (log, ekran görüntüsü vb.) nelerdir? *</label>
+              <textarea id="q_tech_2" class="input-field" rows="3" required placeholder="Bu kayıtlar hangi durumlarda tutulmalı ve kullanılmalıdır?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">3. Sunucu dışı platformlarda temsil yetkisi ve iletişim dili nasıl belirlenmelidir? *</label>
+              <textarea id="q_tech_3" class="input-field" rows="3" required placeholder="Dış sunucu ve ortak etkinlik alanlarında temsil prosedürlerini açıklayın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">4. Bir başka yetkilinin kararlarınıza açıkça müdahale etmesi durumunu nasıl yönetirsiniz? *</label>
+              <textarea id="q_tech_4" class="input-field" rows="3" required placeholder="Yetki karmaşası durumunda atılacak adımları açıklayın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">5. Etkinlik kurallarının sunucu genel kurallarıyla çeliştiği iddiasında yaklaşımınız ne olmalıdır? *</label>
+              <textarea id="q_tech_5" class="input-field" rows="3" required placeholder="Hangi birimlerle koordinasyon kurulmalıdır?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">6. Etkinliğin adil olmadığı eleştirilerine karşı geri bildirim ve teknik raporlama sürecini nasıl yürütürsünüz? *</label>
+              <textarea id="q_tech_6" class="input-field" rows="3" required placeholder="Raporlama ve iyileştirme adımlarını açıklayın..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">7. Etkinlik Sorumlusunun performansı hangi ölçülebilir teknik kriterler üzerinden değerlendirilmelidir? *</label>
+              <textarea id="q_tech_7" class="input-field" rows="3" required placeholder="Örn: Akışa uyum, kriz müdahale süresi, iletişim netliği..."></textarea>
+            </div>
+
+            <!-- MULTIPLE CHOICE QUESTION -->
+            <div class="form-group" style="margin-bottom:1.5rem; background:rgba(0,0,0,0.25); padding:1.2rem; border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.6rem;">8. (Test Sorusu) Geçici ses kanallarında karmaşa yaşanması durumunda öncelikli teknik müdahale nedir? *</label>
+              <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; color:var(--muted);">
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="A" required> A) Etkinliği durdurarak tüm kanalları kapatmak ve sorunu daha sonra incelemek</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; color:#34d399; font-weight:600;"><input type="radio" name="q_tech_8_mc" value="B"> B) Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="C"> C) Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="D"> D) Moderasyon ekibine durumu bildirip hiçbir müdahalede bulunmamak</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="E"> E) Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek</label>
+              </div>
+            </div>
+
+            <!-- CHECKBOXES QUESTION -->
+            <div class="form-group" style="margin-bottom:1.5rem; background:rgba(0,0,0,0.25); padding:1.2rem; border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.6rem;">9. (Çoklu Seçim) Teknik aksaklık ve itiraz durumunda atılması gereken DOĞRU adımları seçiniz: *</label>
+              <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; color:var(--muted);">
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="explain"> Yaşanan teknik sorunu katılımcılara kısa ve net şekilde açıklamak</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="rules_remind"> Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="argue"> İtiraz eden katılımcılarla tartışmaya girmek</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="coord"> Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak</label>
+                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="abort"> Etkinliği gerekçesiz şekilde sonlandırmak</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">10. Görev sırasında yetkisini aşması ile inisiyatif alması arasındaki farkı açıklayınız? *</label>
+              <textarea id="q_tech_10" class="input-field" rows="3" required placeholder="EkoYıldız etkinlik yapısı özelinde detaylandırın..."></textarea>
+            </div>
+          </div>
+
+          <!-- 4. İSTENİLEN SENARYO BİLGİLERİ -->
+          <div class="card" style="border-radius:20px; border-left:4px solid #fbbf24;">
+            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN SENARYO BİLGİLERİ・</h3>
+            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
+              Gerçekleşmesi muhtemel organizasyon odaklı kriz senaryolarına yaklaşımınız.
+            </p>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 1: Büyük ölçekli etkinlik kriz yönetimi & dış iletişim *</label>
+              <textarea id="q_scenario_1" class="input-field" rows="3" required placeholder="Katılımcı sayısının aşırı artması, RP bozulması ve yanlış bilgi yayılımına karşı stratejileriniz..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 2: Adaletsizlik iddiaları, teknik kanal sorunları ve itiraz yönetimi *</label>
+              <textarea id="q_scenario_2" class="input-field" rows="3" required placeholder="Hangi öncelik sırasıyla adımlar atarsınız?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 3: Dış topluluklardaki bilgi kirliliği ve topluluk güveni *</label>
+              <textarea id="q_scenario_3" class="input-field" rows="3" required placeholder="İletişim adımları, yetki sınırları ve topluluk güvenini tesis etme stratejiniz..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 4: Rol akışını kasıtlı bozan oyuncular ve kriz müdahalesi *</label>
+              <textarea id="q_scenario_4" class="input-field" rows="3" required placeholder="Hangi müdahaleleri uygular, hangi bilgileri paylaşırsınız?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 5: Etkinlik sonrası sosyal medya eleştirileri ve log raporlaması *</label>
+              <textarea id="q_scenario_5" class="input-field" rows="3" required placeholder="Hangi belge ve logları kullanarak raporlama sağlarsınız?"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Tekli Senaryo: Sunucu bakımı, kural ihlali ve dış platform eleştirileri *</label>
+              <textarea id="q_scenario_single" class="input-field" rows="4" required placeholder="Genel kriz yönetim öncelikleriniz ve adımlarınız..."></textarea>
+            </div>
+          </div>
+
+          <!-- 5. İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR) -->
+          <div class="card" style="border-radius:20px; border-left:4px solid #fb7185;">
+            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR)・</h3>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
+                1. Yetkilerinizi kötüye kullanırsanız sorumluluk haklarınızın alınabileceğini ve soruşturma altına olacağınızı kabul ediyor musunuz? *
+              </label>
+              <div style="display:flex; gap:1.5rem; font-size:0.95rem; color:#fff;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_abuse" value="EVET" required> Evet, kabul ediyorum.</label>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_abuse" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.2rem;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
+                2. Başka bir çalışana saygısızlık ederseniz yetkililik haklarınızın elinizden alınabileceğini kabul ediyor musunuz? *
+              </label>
+              <div style="display:flex; gap:1.5rem; font-size:0.95rem; color:#fff;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_respect" value="EVET" required> Evet, kabul ediyorum.</label>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_respect" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
+                3. TALİMATNAME: Yetkilendirme kuralları gereğince el kitapçığına uyacağınızı teyit eder misiniz? *
+              </label>
+              <div style="font-size:0.95rem; color:#34d399; font-weight:600;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                  <input type="radio" name="opt_rules" value="EVET" required checked> 
+                  Kurallara uyacağım, Talimat kitapçığına göre ilerleyecek ve vazifemi yerine getireceğim.
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBMIT BUTTON -->
+          <div style="text-align:center; margin-top:1rem;">
+            <button type="submit" id="submit-btn" class="btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-weight:800; font-size:1.15rem; padding:1rem 3rem; border-radius:30px; box-shadow:0 8px 25px rgba(16,185,129,0.4); border:none; cursor:pointer; font-family:inherit; transition:transform 0.2s;">
+              🚀 Başvuru Formunu Gönder
+            </button>
+          </div>
+
+        </form>
+
+        <script>
+          async function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Gönderiliyor...';
+
+            const checkboxes = Array.from(document.querySelectorAll('input[name="q_tech_9_cb"]:checked')).map(c => c.value);
+
+            const payload = {
+              formType: 'event_staff',
+              discordUsername: document.getElementById('q_discord_username').value.trim(),
+              personal: {
+                q1: document.getElementById('q_personal_1').value.trim(),
+                q2: document.getElementById('q_personal_2').value.trim(),
+                q3: document.getElementById('q_personal_3').value.trim(),
+                q4: document.getElementById('q_personal_4').value.trim(),
+                q5: document.getElementById('q_personal_5').value.trim()
+              },
+              technical: {
+                q1: document.getElementById('q_tech_1').value.trim(),
+                q2: document.getElementById('q_tech_2').value.trim(),
+                q3: document.getElementById('q_tech_3').value.trim(),
+                q4: document.getElementById('q_tech_4').value.trim(),
+                q5: document.getElementById('q_tech_5').value.trim(),
+                q6: document.getElementById('q_tech_6').value.trim(),
+                q7: document.getElementById('q_tech_7').value.trim(),
+                mc8: document.querySelector('input[name="q_tech_8_mc"]:checked')?.value || '',
+                cb9: checkboxes,
+                q10: document.getElementById('q_tech_10').value.trim()
+              },
+              scenarios: {
+                s1: document.getElementById('q_scenario_1').value.trim(),
+                s2: document.getElementById('q_scenario_2').value.trim(),
+                s3: document.getElementById('q_scenario_3').value.trim(),
+                s4: document.getElementById('q_scenario_4').value.trim(),
+                s5: document.getElementById('q_scenario_5').value.trim(),
+                single: document.getElementById('q_scenario_single').value.trim()
+              },
+              confirmations: {
+                abuse: document.querySelector('input[name="opt_abuse"]:checked')?.value || '',
+                respect: document.querySelector('input[name="opt_respect"]:checked')?.value || '',
+                rules: document.querySelector('input[name="opt_rules"]:checked')?.value || ''
+              }
+            };
+
+            try {
+              const res = await fetch('/api/forms/event-staff/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              const data = await res.json();
+              if (data && data.success) {
+                showToast('✅ Başvurunuz başarıyla alındı!', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+              } else {
+                showToast('❌ Error: ' + (data.error || 'Başvuru gönderilemedi'), 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Başvuru Formunu Gönder';
+              }
+            } catch (err) {
+              showToast('❌ Bağlantı hatası yaşandı.', 'error');
+              btn.disabled = false;
+              btn.innerHTML = '🚀 Başvuru Formunu Gönder';
+            }
+          }
+        </script>
+      `}
+
+    </div>
+  `;
+
+  return _layout('Etkinlik Yetkilisi Başvuru Formu', currentUser, content, '', '/forms');
+}
 module.exports = {
   renderMainPage,
   renderLoginPage,
@@ -7653,6 +8118,11 @@ module.exports = {
   renderSettingsPage,
   renderLegalPage,
   renderWikiListPage,
+  renderWikiArticlePage,
+  renderAdminPage,
+  renderUserLogsPage,
+  renderFormsHubPage,
+  renderEventStaffFormPage,
   renderWikiArticlePage,
   renderAdminPage,
   renderUserLogsPage,
