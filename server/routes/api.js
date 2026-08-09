@@ -2489,7 +2489,36 @@ router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
       ],
     };
 
-    await user.send(payload);
+    try {
+      await user.send(payload);
+    } catch (dmErr) {
+      try {
+        const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+        const embed = new EmbedBuilder()
+          .setColor(0x818cf8)
+          .setTitle("💬 Moderatörümüz Size Soru Sordu")
+          .setDescription(
+            '**Form:** ' + (submission.formTitle || 'Etkinlik Yetkilisi Başvurusu') + '\n' +
+            '**Sorulan konu:** ' + (questionLabel || questionKey || '—') + '\n\n' +
+            '**Soru:**\n> ' + questionText.trim()
+          )
+          .setFooter({ text: "Cevap vermek veya reddetmek için aşağıdaki butonları kullanabilirsiniz." });
+
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('formask_reply_' + replyToken).setLabel('✍️ Cevap Ver').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId('formask_decline_' + replyToken).setLabel('Cevap Vermek İstemiyorum').setStyle(ButtonStyle.Secondary)
+        );
+
+        await user.send({ embeds: [embed], components: [row] });
+      } catch (fallbackErr) {
+        console.error('[form-ask] DM send error:', fallbackErr.message);
+        if (fallbackErr.code === 50007 || dmErr.code === 50007) {
+          return res.status(400).json({ error: "Kullanıcının Discord özel mesajları (DM) kapalı olduğu için soru iletilemedi." });
+        }
+        return res.status(400).json({ error: "Discord DM gönderilemedi: " + (fallbackErr.message || dmErr.message) });
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error('[form-ask] Error:', err);

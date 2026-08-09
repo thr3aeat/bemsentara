@@ -4205,52 +4205,195 @@ function renderAdminPage(user) {
         }
       }
 
-      function buildFormQA(formData, behavior) {
-        if (!formData) return '<p style="color:var(--muted);">Form verisi bulunamadı.</p>';
-        const sections = [];
+      const FORM_LABELS_MAP = {
+        // Topluluk Elçisi Formu
+        'section1.fullName': '👤 Adınız / İkinci Adınız ve Soyadınız',
+        'section1.discordUsername': '🆔 Discord Kullanıcı Adınız ve Discord ID',
+        'section1.ageBirthDate': '🎂 Yaşınız ve Doğum Tarihiniz',
+        'section1.cityTimezone': '🌍 Bulunduğunuz Şehir ve Zaman Dilimi',
+        'section1.availability': '⏰ Günlük ve Haftalık Müsaitlik Süreniz (Hafta içi & Hafta sonu)',
+        'section1.pastExperience': '📜 Görev Alınan Sunucular, Üye Sayıları, Rol ve Ayrılma Nedenleri',
+        'section1.toughestIncident': '⚡ Karşılaşılan En Zorlu Olay ve Çözüm Adımları',
+        'section1.references': '👥 Referans Gösterilebilecek 2 Kişi (Discord ID & Rol)',
 
-        function section(title, color, fields) {
-          const rows = fields.map(([key, val]) => {
-            const label = FORM_QUESTION_LABELS[key] || key;
-            const displayVal = Array.isArray(val) ? val.join(', ') : (val || '—');
-            const beh = behavior && behavior[key.split('.').pop()] || null;
-            const behHtml = beh ? '<div style="font-size:0.7rem;color:' + (beh.type === 'kopyala-yapıştır' ? '#fbbf24' : 'var(--muted)') + ';margin-top:0.3rem;">🔍 ' + subEsc(beh.type) + ' &nbsp;·&nbsp; ' + beh.chars + ' karakter</div>' : '';
-            return '<div style="margin-bottom:1rem;padding:0.9rem 1rem;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">' +
-              '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">' +
-                '<div style="flex:1;">' +
-                  '<div style="font-size:0.75rem;font-weight:700;color:' + color + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">' + subEsc(label) + '</div>' +
-                  '<div style="font-size:0.9rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">' + subEsc(displayVal) + '</div>' +
-                  behHtml +
-                '</div>' +
-                '<button onclick="openAskModal(\\\''+subEsc(_currentSubId)+'\\\',\\\''+subEsc(key)+'\\\',\\\''+subEsc(label)+'\\\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
-              '</div>' +
-            '</div>';
-          });
-          return '<div style="margin-bottom:1.5rem;"><div style="font-size:0.8rem;font-weight:800;color:' + color + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:1px solid ' + color + '30;">' + title + '</div>' + rows.join('') + '</div>';
+        'section2.brandVision': '🌟 EkoYıldız Markası Vizyonu & Sunucu Atmosferi Düşünceleri',
+        'section2.ambassadorVsMod': '⚖️ Moderatör ile Topluluk Elçisi Farkı & Topluluğa Yön Verme',
+        'section2.top3Traits': '🏆 Adayı Öne Çıkaran En Belirgin 3 Kişisel Özellik',
+        'section2.first30DaysPlan': '🚀 İlk 30 Gün İçin Somut Proje & Etkileşim Stratejisi',
+        'section2.retentionStrategy': '🔄 Üye Bağlılığını (Retention) Artırma & Oryantasyon Kurgusu',
+
+        'section3.scenario1_A': '📌 Senaryo 1 (Gerginlik & Kutuplaşma) — Soru A: Kanala Müdahale İlk Mesaj Metni',
+        'section3.scenario1_B': '📌 Senaryo 1 (Gerginlik & Kutuplaşma) — Soru B: Kıdemli Üyelerin Tepkisine Tutum',
+        'section3.scenario1_C': '📌 Senaryo 1 (Gerginlik & Kutuplaşma) — Soru C: Slowmode/Kilit Olmadan İletişimsel & Psikolojik Teknikler',
+
+        'section3.scenario2_A': '📌 Senaryo 2 (Yönetim Karşıtı Provokasyon) — Soru A: İlk 3 Teknik / İdari Adım',
+        'section3.scenario2_B': '📌 Senaryo 2 (Yönetim Karşıtı Provokasyon) — Soru B: Kamuoyuna Yapılacak Açıklama Metni',
+        'section3.scenario2_C': '📌 Senaryo 2 (Yönetim Karşıtı Provokasyon) — Soru C: Provokatör ile Masum Üye Ayrımı',
+
+        'section3.scenario3_A': '📌 Senaryo 3 (Yetki Suistimali) — Soru A: Mağdur Üyeye DM Yanıt Metni',
+        'section3.scenario3_B': '📌 Senaryo 3 (Yetki Suistimali) — Soru B: Yönetici İle İletişim & Üst Mercie Raporlama',
+        'section3.scenario3_C': '📌 Senaryo 3 (Yetki Suistimali) — Soru C: Sunucu İmajını Koruma Önlemleri',
+
+        'section3.scenario4_A': '📌 Senaryo 4 (Düşük Katılımlı Etkinlik) — Soru A: İlk 10 Dakikada Katılımı Artırma Acil Hamleler',
+        'section3.scenario4_B': '📌 Senaryo 4 (Düşük Katılımlı Etkinlik) — Soru B: Duyuru Kanalları & Etiket Efektifliği',
+        'section3.scenario4_C': '📌 Senaryo 4 (Düşük Katılımlı Etkinlik) — Soru C: Yönetime Sunulacak Analiz Raporu Başlıkları',
+
+        'section3.scenario5_A': '📌 Senaryo 5 (DM İhlalleri & Reklam) — Soru A: Ekran Görüntüsü / Kanıt Doğrulama Kriterleri',
+        'section3.scenario5_B': '📌 Senaryo 5 (DM İhlalleri & Reklam) — Soru B: Sızma ve Gizli Reklam Tespit Mekanizması',
+
+        'section4.ethics1': '⚖️ Etik İfade 1: Yakın arkadaş bile ihlal yapsa tolerans gösterilmemeli',
+        'section4.ethics2': '⚖️ Etik İfade 2: Huzur için kurallar esnetilmeli / insani çözümler uygulanmalı',
+        'section4.ethics3': '⚖️ Etik İfade 3: Yetkili içi tartışmalar üyelere yansıtılmamalı',
+        'section4.ethics4': '⚖️ Etik İfade 4: Olumsuz eleştiriler silinmemeli, gelişim fırsatı olarak yönetilmeli',
+
+        'section5.techSecurityBots': '🤖 Discord Güvenlik, Doğrulama & Otomasyon Bot Tecrübesi',
+        'section5.techAuditLogs': '🔍 Audit Log (Denetim Kaydı) & Bot Log İnceleme / Kanıtlaştırma',
+        'section5.techMarkdownDesign': '🎨 Discord Markdown & Görsel Düzen Tasarımı (Hoş Geldin & Kurallar)',
+
+        'section6.declarationAccepted': '📜 Resmi Taahhütname Onayı',
+        'section6.declarationDate': '📅 Tarih',
+        'section6.declarationSignature': '✍️ İmza / Ad Soyad',
+
+        // Etkinlik Yetkilisi Formu
+        'personal.discord_username': '🆔 Discord Kullanıcı Adı',
+        'personal.q1': 'Kişisel — Kendiniz, İlgi Alanlarınız ve Yaşınız',
+        'personal.q2': 'Kişisel — Takım İçinde En Çok Değer Taşıyan Becerileriniz',
+        'personal.q3': 'Kişisel — Takıma Katacağınız Özellikler',
+        'personal.q4': 'Kişisel — Neden Etkinlik Sorumluluğunda Görev Almak İstiyorsunuz?',
+        'personal.q5': 'Kişisel — Üstlerinizden Direktif Alma Konusunda Uyumunuz',
+        'technical.q1': 'Teknik — Etkinlik Sorumlusunun Moderasyondan Yönetsel & Teknik Farkları',
+        'technical.q2': 'Teknik — Kararların Tartışılmaması İçin Tutulması Gereken Kayıtlar (Log, SS)',
+        'technical.q3': 'Teknik — Sunucu Dışı Platformlarda Temsil Yetkisi & İletişim Sınırları',
+        'technical.q4': 'Teknik — Yetkili Müdahalesi & Yetki Karmaşası Yönetimi',
+        'technical.q5': 'Teknik — Etkinlik Kuralları ile Sunucu Kuralları Çelişki Yönetimi',
+        'technical.q6': 'Teknik — Geri Bildirim Toplama & İyileştirme Süreci',
+        'technical.q7': 'Teknik — Ölçülebilir Performans Kriterleri Listesi',
+        'technical.mc8': 'Teknik — Çoktan Seçmeli Test (Geçici Ses Kanalları Karmaşası)',
+        'technical.cb9': 'Teknik — Çoklu Seçim Testi (Teknik Aksaklık Durum Adımları)',
+        'technical.q10': 'Teknik — Yetki Aşımı vs. İnisiyatif Alma Farkı',
+        'scenarios.s1': 'Senaryo 1 — Büyük Ölçekli Etkinlik & RP Bütünlüğü Kriz Yönetimi',
+        'scenarios.s2': 'Senaryo 2 — Ödül Adaletsizliği İddiası & Kanal Karmaşası',
+        'scenarios.s3': 'Senaryo 3 — Yanıltıcı Bilgi Yayılımı & Dış Platform Huzursuzluğu',
+        'scenarios.s4': 'Senaryo 4 — Rol Akışını Bozma & Teknik Kesinti',
+        'scenarios.s5': 'Senaryo 5 — Etkinlik Sonrası Sosyal Platform Eleştirileri & Log Analizi',
+        'scenarios.single': 'Tekli Senaryo — Beklenmedik Bakım, Rol İhlali & Etik Sınır Aşımı Kriz Planı',
+        'confirmations.abuse': 'Yetki Suistimali ve Toleranssızlık Beyanı',
+        'confirmations.respect': 'Saygı ve İletişim Beyanı',
+        'confirmations.rules': 'Sunucu Kurallarını Kabul Beyanı'
+      };
+
+      const SECTION_TITLES_MAP = {
+        section1: { title: '👤 BÖLÜM 1 — Kişisel Bilgiler, Geçmiş ve Teknik Profil', color: '#818cf8' },
+        section2: { title: '🎯 BÖLÜM 2 — Motivasyon, Vizyon ve Rol Bilinci', color: '#a78bfa' },
+        section3: { title: '🚨 BÖLÜM 3 — Derinleştirilmiş Senaryo ve Kriz Yönetimi Testleri', color: '#f59e0b' },
+        section4: { title: '⚖️ BÖLÜM 4 — Etik, İletişim ve Kişisel Tutum Testi', color: '#ec4899' },
+        section5: { title: '🛠️ BÖLÜM 5 — Teknik Bilgi ve Bot/Sistem Hakimiyeti', color: '#10b981' },
+        section6: { title: '📜 BÖLÜM 6 — Onay ve Beyan', color: '#3b82f6' },
+
+        personal: { title: '📝 Kişisel Bilgiler', color: '#818cf8' },
+        technical: { title: '⚙️ Teknik Bilgiler', color: '#34d399' },
+        scenarios: { title: '🎭 Senaryo Cevapları', color: '#fbbf24' },
+        confirmations: { title: '✅ Onaylar & Beyanlar', color: '#fb7185' }
+      };
+
+      function buildFormQA(formData, behavior) {
+        if (!formData || typeof formData !== 'object') {
+          return '<p style="color:var(--muted);text-align:center;padding:2rem;">Form verisi bulunamadı.</p>';
         }
 
-        const p = formData.personal || {};
-        const t = formData.technical || {};
-        const sc = formData.scenarios || {};
-        const c = formData.confirmations || {};
+        const htmlSections = [];
 
-        sections.push(section('📝 Kişisel Bilgiler', '#818cf8', [
-          ['personal.q1', p.q1], ['personal.q2', p.q2], ['personal.q3', p.q3], ['personal.q4', p.q4], ['personal.q5', p.q5]
-        ]));
-        sections.push(section('⚙️ Teknik Bilgiler', '#34d399', [
-          ['technical.q1', t.q1], ['technical.q2', t.q2], ['technical.q3', t.q3], ['technical.q4', t.q4],
-          ['technical.q5', t.q5], ['technical.q6', t.q6], ['technical.q7', t.q7],
-          ['technical.mc8', t.mc8], ['technical.cb9', t.cb9], ['technical.q10', t.q10]
-        ]));
-        sections.push(section('🎭 Senaryo Cevapları', '#fbbf24', [
-          ['scenarios.s1', sc.s1], ['scenarios.s2', sc.s2], ['scenarios.s3', sc.s3],
-          ['scenarios.s4', sc.s4], ['scenarios.s5', sc.s5], ['scenarios.single', sc.single]
-        ]));
-        sections.push(section('✅ Onaylar', '#fb7185', [
-          ['confirmations.abuse', c.abuse], ['confirmations.respect', c.respect], ['confirmations.rules', c.rules]
-        ]));
+        for (const [secKey, secVal] of Object.entries(formData)) {
+          if (!secVal || typeof secVal !== 'object') continue;
 
-        return sections.join('');
+          const secMeta = SECTION_TITLES_MAP[secKey] || {
+            title: '📌 ' + secKey.toUpperCase(),
+            color: '#818cf8'
+          };
+
+          const fieldsHtml = [];
+
+          for (const [qKey, qVal] of Object.entries(secVal)) {
+            const fullKey = secKey + '.' + qKey;
+            const labelText = FORM_LABELS_MAP[fullKey] || FORM_LABELS_MAP[qKey] || (secKey + ' → ' + qKey);
+
+            let valueContent = '';
+
+            if (qVal && typeof qVal === 'object' && !Array.isArray(qVal)) {
+              const choiceStr = qVal.choice || 'Belirtilmedi';
+              const reasonStr = qVal.reason || '—';
+              let badgeCol = '#34d399';
+              if (choiceStr === 'Katılmıyorum') badgeCol = '#f43f5e';
+              else if (choiceStr === 'Kısmen Katılıyorum') badgeCol = '#fbbf24';
+
+              valueContent = '<div style="margin-bottom:0.6rem;">' +
+                '<span style="display:inline-block;padding:0.25rem 0.8rem;border-radius:12px;font-size:0.82rem;font-weight:800;background:' + badgeCol + '20;border:1px solid ' + badgeCol + '50;color:' + badgeCol + ';">📌 Tercih: ' + subEsc(choiceStr) + '</span>' +
+              '</div>' +
+              '<div style="background:rgba(0,0,0,0.3);padding:0.8rem 1rem;border-radius:10px;border-left:3px solid ' + badgeCol + ';font-size:0.9rem;color:#e2e8f0;line-height:1.6;white-space:pre-wrap;">' +
+                subEsc(reasonStr) +
+              '</div>';
+            } else if (typeof qVal === 'boolean') {
+              valueContent = qVal
+                ? '<span style="color:#34d399;font-weight:700;">✅ Evet / Onaylandı</span>'
+                : '<span style="color:#f43f5e;font-weight:700;">❌ Hayır / Onaylanmadı</span>';
+            } else if (Array.isArray(qVal)) {
+              valueContent = '<span style="color:#fff;font-weight:600;">' + subEsc(qVal.join(', ')) + '</span>';
+            } else {
+              const strVal = String(qVal || '—');
+              const hasCodeBlock = strVal.indexOf(String.fromCharCode(96, 96, 96)) !== -1;
+              if (hasCodeBlock || strVal.indexOf('# ') !== -1 || strVal.indexOf('**') !== -1) {
+                valueContent = '<div style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);padding:0.9rem;border-radius:10px;font-family:monospace;font-size:0.88rem;color:#67e8f9;line-height:1.6;white-space:pre-wrap;overflow-x:auto;">' + subEsc(strVal) + '</div>';
+              } else {
+                valueContent = '<div style="font-size:0.92rem;color:#f1f5f9;line-height:1.65;white-space:pre-wrap;background:rgba(0,0,0,0.25);padding:0.75rem 0.9rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">' + subEsc(strVal) + '</div>';
+              }
+            }
+
+            let behBadge = '';
+            const fieldBeh = behavior && (behavior[qKey] || behavior[fullKey]);
+            if (fieldBeh) {
+              const pastes = fieldBeh.pasteCount || 0;
+              const chars = fieldBeh.charCount || (typeof qVal === 'string' ? qVal.length : 0);
+              const words = fieldBeh.wordCount || 0;
+              const secSpent = fieldBeh.totalTimeMs ? Math.round(fieldBeh.totalTimeMs / 1000) : 0;
+              
+              const pasteAlert = pastes > 0 ? '<span style="color:#fbbf24;font-weight:700;">⚠️ ' + pastes + ' Kopyala-Yapıştır</span>' : '<span style="color:#34d399;">✓ Manuel Yazıldı</span>';
+              
+              behBadge = '<div style="margin-top:0.4rem;font-size:0.75rem;color:var(--muted);display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;background:rgba(0,0,0,0.2);padding:0.3rem 0.6rem;border-radius:6px;">' +
+                '<span>' + pasteAlert + '</span>' +
+                '<span>✍️ ' + chars + ' karakter' + (words ? ' (' + words + ' kelime)' : '') + '</span>' +
+                (secSpent ? '<span>⏱️ ' + secSpent + ' sn odaklanma</span>' : '') +
+              '</div>';
+            }
+
+            const cleanLabelForAsk = labelText.replace(/'/g, "\\'");
+
+            fieldsHtml.push(
+              '<div style="margin-bottom:1.1rem;padding:1rem 1.1rem;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:0.6rem;">' +
+                  '<div style="flex:1;font-weight:700;color:' + secMeta.color + ';font-size:0.9rem;line-height:1.5;">' +
+                    subEsc(labelText) +
+                  '</div>' +
+                  '<button onclick="openAskModal(\\\'' + subEsc(_currentSubId) + '\\\',\\\'' + subEsc(fullKey) + '\\\',\\\'' + subEsc(cleanLabelForAsk) + '\\\')" style="flex-shrink:0;padding:0.35rem 0.85rem;border-radius:10px;background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.35);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all 0.2s;" onmouseover="this.style.background=\\\'rgba(129,140,248,0.25)\\\'" onmouseout="this.style.background=\\\'rgba(129,140,248,0.15)\\\'" title="Bu soru hakkında kullanıcıya Discord DM ile soru sor">💬 Soru Sor</button>' +
+                '</div>' +
+                valueContent +
+                behBadge +
+              '</div>'
+            );
+          }
+
+          if (fieldsHtml.length > 0) {
+            htmlSections.push(
+              '<div style="margin-bottom:1.8rem;">' +
+                '<div style="font-size:0.9rem;font-weight:800;color:' + secMeta.color + ';text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.9rem;padding-bottom:0.4rem;border-bottom:2px solid ' + secMeta.color + '40;display:flex;align-items:center;gap:0.5rem;">' +
+                  secMeta.title +
+                '</div>' +
+                fieldsHtml.join('') +
+              '</div>'
+            );
+          }
+        }
+
+        return htmlSections.length > 0 ? htmlSections.join('') : '<p style="color:var(--muted);text-align:center;padding:2rem;">Görüntülenecek form verisi bulunamadı.</p>';
       }
 
       function openSubModal(id) {
