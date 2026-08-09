@@ -7664,7 +7664,7 @@ function renderFormsHubPage(currentUser) {
           <!-- 1. DISCORD MODERASYON -->
           <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
-              <span style="font-size:1.2rem;">🛡️</span>
+              <img src="https://cdn.discordapp.com/emojis/1535974297829642301.png" style="height:22px; width:22px; object-fit:contain;">
               <span>[ Discord Moderasyon Takımı ]</span>
               <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
             </div>
@@ -7700,7 +7700,7 @@ function renderFormsHubPage(currentUser) {
           <!-- 3. ETKİNLİK YETKİLİSİ (AÇIK) -->
           <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(52,211,153,0.03); border-radius:12px; padding:1rem;">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
-              <span style="font-size:1.2rem;">✳️</span>
+              <img src="https://cdn.discordapp.com/emojis/1535974991382978641.png" style="height:22px; width:22px; object-fit:contain;">
               <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Etkinlik Yetkilisi ]</a>
               <span style="color:var(--text); font-size:0.9rem; font-weight:600;">başvuru formu için <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline;">tıklayın</a>.</span>
             </div>

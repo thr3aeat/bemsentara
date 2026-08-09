@@ -28,11 +28,11 @@ function getRecruitmentPanelEmbed() {
     .setTitle("│ Yetkili Formları │")
     .setDescription(
       "# **EkoYıldız Yetkili Ekibi Başvuruları**\n\n" +
-      "• 🛡️ **[ Discord Moderasyon Takımı ]** başvuru formu için tıklayın.\n" +
+      "• <:mod:1535974297829642301> **[ Discord Moderasyon Takımı ]** başvuru formu için tıklayın.\n" +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
       "• 🗡️ **[ Oyun Moderasyon Takımı ]** başvuru formu için tıklayın.\n" +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
-      "• ✳️ **[ Etkinlik Yetkilisi ]** başvuru formu için [tıklayın](" + eventStaffUrl + ").\n" +
+      "• <:etkinlik:1535974991382978641> **[ Etkinlik Yetkilisi ]** başvuru formu için [tıklayın](" + eventStaffUrl + ").\n" +
       "  ◦ Başvuru durumu: " + BADGE_ACIK + "\n\n" +
       "• ⚜️ **[ Topluluk Elçiliği ]** başvuru formu için tıklayın.\n" +
       "  ◦ Başvuru durumu: " + BADGE_KAPALI + "\n\n" +
