@@ -16,7 +16,14 @@ const { handleBanButton, handleWarnButton, handleAdLinkButton, handleAdLinkModal
 const { handleDiscordAbuseButton } = require("./discordAbuseButtonHandler");
 const { handleNightUnbanButton } = require("../services/discordAbuseDetector");
 const { handleAbuseButton, handleRobloxInteractions } = require("./robloxInteractionHandler");
-const { handleAppealButton, handleAppealDecisionButton, handleAppealModalSubmit } = require('../services/banAppeal');
+const {
+  handleAppealButton,
+  handleAppealDecisionButton,
+  handleAppealModalSubmit,
+  handleAppealModalExtras,
+  handleAppealDmBridge,
+  handleAppealChannelBridge,
+} = require('../services/banAppeal');
 const { handleModActionApproval } = require("../services/modActionService");
 const { handleStartTrigger, handleAnswerInteraction, handleDelayExam1h } = require('../services/aiExamService');
 const { handleVoiceButton, handleVoiceSelect, handleVoiceModal } = require("./voiceButtonHandler");
@@ -1524,6 +1531,18 @@ function initializeDiscordHandlers(client) {
         return;
       }
     }
+
+    // ── Ban İtiraz DM Köprüsü: Kullanıcı DM → İtiraz Kanalı ──────────────
+    try {
+      const handled = await handleAppealDmBridge(message, client);
+      if (handled) return;
+    } catch (_) {}
+
+    // ── Ban İtiraz Kanal Köprüsü: Mod "-dm userId mesaj" → Kullanıcı DM ──
+    try {
+      const handled = await handleAppealChannelBridge(message, client);
+      if (handled) return;
+    } catch (_) {}
 
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
@@ -3992,14 +4011,28 @@ function initializeDiscordHandlers(client) {
         await handleAppealButton(interaction);
         return;
       }
-      // ── Ban İtiraz Karar Butonları (Onayla/Reddet) ─────────────────────────
-      if (interaction.isButton() && (interaction.customId?.startsWith('appeal_accept_') || interaction.customId?.startsWith('appeal_reject_'))) {
+      // ── Ban İtiraz Karar Butonları (Onayla/Reddet/Soru/Log/DM) ────────────
+      if (interaction.isButton() && (
+        interaction.customId?.startsWith('appeal_accept_') ||
+        interaction.customId?.startsWith('appeal_reject_') ||
+        interaction.customId?.startsWith('appeal_ask_') ||
+        interaction.customId?.startsWith('appeal_logs_') ||
+        interaction.customId?.startsWith('appeal_dm_')
+      )) {
         await handleAppealDecisionButton(interaction, client);
         return;
       }
-      // ── Ban İtiraz Modal Submit ─────────────────────────────────────────────
+      // ── Ban İtiraz Modal Submit (form) ─────────────────────────────────────
       if (interaction.isModalSubmit() && interaction.customId?.startsWith('ban_appeal_modal_')) {
         await handleAppealModalSubmit(interaction, client);
+        return;
+      }
+      // ── Ban İtiraz Modal Submit (red/soru) ─────────────────────────────────
+      if (interaction.isModalSubmit() && (
+        interaction.customId?.startsWith('appeal_reject_modal_') ||
+        interaction.customId?.startsWith('appeal_ask_modal_')
+      )) {
+        await handleAppealModalExtras(interaction, client);
         return;
       }
       // ── Moderatör Okulu Panel Atma Modal Submit ────────────────────────────
