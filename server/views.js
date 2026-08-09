@@ -4222,7 +4222,7 @@ function renderAdminPage(user) {
                   '<div style="font-size:0.9rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">' + subEsc(displayVal) + '</div>' +
                   behHtml +
                 '</div>' +
-                '<button onclick="openAskModal(\\\'' + subEsc(_currentSubId) + \\\',\\\'' + subEsc(key) + \\\',\\\'' + subEsc(label) + \\\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
+                '<button onclick="openAskModal(\\\''+subEsc(_currentSubId)+'\\\',\\\''+subEsc(key)+'\\\',\\\''+subEsc(label)+'\\\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
               '</div>' +
             '</div>';
           });
