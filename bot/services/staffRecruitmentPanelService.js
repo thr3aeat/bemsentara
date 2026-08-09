@@ -79,22 +79,30 @@ function getRecruitmentPanelPayload() {
  */
 async function ensureRecruitmentPanelMessage(client) {
   try {
-    if (!client || !client.isReady()) return;
-
-    let channel = await client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
-    if (!channel) {
-      for (const guild of client.guilds.cache.values()) {
-        const found = guild.channels.cache.get(RECRUITMENT_CHANNEL_ID);
-        if (found) { channel = found; break; }
-      }
-    }
-
-    if (!channel) {
-      console.warn(`[RecruitmentPanel] Target channel ${RECRUITMENT_CHANNEL_ID} not found.`);
+    if (!client || !client.isReady()) {
+      console.warn("[RecruitmentPanel] Client hazır değil, panel atlanıyor.");
       return;
     }
 
-    const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+    let channel = null;
+
+    // Önce guild üzerinden fetch et — en güvenilir yol
+    try {
+      const guild = await client.guilds.fetch(RECRUITMENT_GUILD_ID);
+      channel = await guild.channels.fetch(RECRUITMENT_CHANNEL_ID);
+    } catch (_) {}
+
+    // Fallback: doğrudan client üzerinden dene
+    if (!channel) {
+      channel = await client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
+    }
+
+    if (!channel) {
+      console.error(`[RecruitmentPanel] Kanal bulunamadı: ${RECRUITMENT_CHANNEL_ID} (guild: ${RECRUITMENT_GUILD_ID})`);
+      return;
+    }
+
+    const messages = await channel.messages.fetch({ limit: 20 }).catch(() => null);
     const existingMessage = messages
       ? messages.find(m =>
           m.author.id === client.user.id &&
@@ -105,11 +113,11 @@ async function ensureRecruitmentPanelMessage(client) {
     const payload = getRecruitmentPanelPayload();
 
     if (existingMessage) {
-      await existingMessage.edit(payload).catch(() => {});
-      console.log(`✅ [RecruitmentPanel] Yetkili alımları paneli güncellendi (#${channel.name})`);
+      await existingMessage.edit(payload);
+      console.log(`✅ [RecruitmentPanel] Panel güncellendi (#${channel.name})`);
     } else {
       await channel.send(payload);
-      console.log(`✅ [RecruitmentPanel] Yetkili alımları paneli gönderildi (#${channel.name})`);
+      console.log(`✅ [RecruitmentPanel] Panel gönderildi (#${channel.name})`);
     }
   } catch (err) {
     console.error("[RecruitmentPanel] ensureRecruitmentPanelMessage error:", err.message);
