@@ -15,6 +15,7 @@ const LOG_SYSTEMS = {
 
 let discordClient = null;
 let channelCache = new Map();
+let isLoggerActive = false;
 
 /**
  * Initializes the logger, ensuring all necessary channels exist.
@@ -24,16 +25,16 @@ async function init(client) {
   if (!discordClient || !discordClient.isReady()) return;
 
   try {
-    const guild = await discordClient.guilds.fetch(LOG_GUILD_ID);
+    const guild = await discordClient.guilds.fetch(LOG_GUILD_ID).catch(() => null);
     if (!guild) {
-      console.warn("[discordLogger] Log sunucusu bulunamadı:", LOG_GUILD_ID);
+      isLoggerActive = false;
       return;
     }
 
     // Attempt to fetch or verify category
     let category = await guild.channels.fetch(LOG_CATEGORY_ID).catch(() => null);
     if (!category) {
-      console.warn("[discordLogger] Log kategorisi bulunamadı:", LOG_CATEGORY_ID);
+      isLoggerActive = false;
       return;
     }
 
@@ -47,7 +48,6 @@ async function init(client) {
       let channel = existingChannels.find(c => c.name === config.name);
       
       if (!channel) {
-        console.log(`[discordLogger] '${config.name}' kanalı oluşturuluyor...`);
         channel = await guild.channels.create({
           name: config.name,
           type: ChannelType.GuildText,
@@ -62,18 +62,21 @@ async function init(client) {
               allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks],
             }
           ]
-        });
+        }).catch(() => null);
       }
       
-      channelCache.set(sysKey, channel.id);
+      if (channel) {
+        channelCache.set(sysKey, channel.id);
+      }
     }
     
     // Alias routing
-    channelCache.set("error", channelCache.get("bot"));
-    
-    console.log("[discordLogger] Tüm log kanalları başarıyla hazırlandı.");
+    if (channelCache.has("bot")) {
+      channelCache.set("error", channelCache.get("bot"));
+      isLoggerActive = true;
+    }
   } catch (err) {
-    console.error("[discordLogger] Kurulum hatası:", err);
+    isLoggerActive = false;
   }
 }
 
@@ -81,9 +84,8 @@ async function init(client) {
  * Send a log message to the appropriate channel
  */
 async function sendLog(system, message, details = null, level = "INFO", actionRow = null) {
-  if (!discordClient || !discordClient.isReady()) return;
+  if (!isLoggerActive || !discordClient || !discordClient.isReady()) return;
 
-  const config = LOG_SYSTEMS[system] || LOG_SYSTEMS.bot;
   const channelId = channelCache.get(system) || channelCache.get("bot");
   if (!channelId) return;
 
@@ -91,6 +93,7 @@ async function sendLog(system, message, details = null, level = "INFO", actionRo
     const channel = await discordClient.channels.fetch(channelId).catch(() => null);
     if (!channel) return;
 
+    const config = LOG_SYSTEMS[system] || LOG_SYSTEMS.bot;
     let color = config.color;
     if (level === "ERROR") color = 0xe74c3c;
     else if (level === "WARN") color = 0xf39c12;
@@ -104,7 +107,6 @@ async function sendLog(system, message, details = null, level = "INFO", actionRo
     if (details) {
       const detailsStr = typeof details === "string" ? details : JSON.stringify(details, null, 2);
       if (detailsStr.length > 0) {
-        // truncate if too long
         const safeDetails = detailsStr.length > 1000 ? detailsStr.substring(0, 1000) + "..." : detailsStr;
         embed.addFields({ name: "Detaylar", value: `\`\`\`json\n${safeDetails}\n\`\`\`` });
       }
@@ -113,11 +115,9 @@ async function sendLog(system, message, details = null, level = "INFO", actionRo
     const payload = { embeds: [embed] };
     if (actionRow) payload.components = [actionRow];
 
-    await channel.send(payload);
-  } catch (err) {
-    if (err && err.message) {
-      console.warn(`[discordLogger] ${system} kanalına log gönderilemedi: ${err.message}`);
-    }
+    await channel.send(payload).catch(() => {});
+  } catch (_) {
+    // Fail silently without clogging console
   }
 }
 
