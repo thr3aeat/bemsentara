@@ -48,13 +48,15 @@ class ComponentsV2Factory {
 
   /**
    * Bölüm (Section) bileşeni oluşturur (İsteğe bağlı sağ aksesuar/thumbnail ile)
+   * Discord API: Section type=9, components:[TextDisplay,...], accessory?
    * @param {string|object} textContent - Metin string veya TextDisplay objesi
    * @param {string|null} imageUrl - Sağ tarafta duracak aksesuar görsel URL'si
    */
   static section(textContent, imageUrl = null) {
+    const textNode = typeof textContent === "string" ? this.text(textContent) : textContent;
     const sec = {
       type: TYPE_SECTION,
-      text: typeof textContent === "string" ? this.text(textContent) : textContent,
+      components: [textNode],
     };
     if (imageUrl) {
       sec.accessory = {
@@ -82,10 +84,12 @@ class ComponentsV2Factory {
   static sectionWithThumbnail(title, description, thumbnailUrl) {
     return {
       type: TYPE_SECTION,
-      text: {
-        type: TYPE_TEXT_DISPLAY,
-        content: `### ${title}\n${description}`,
-      },
+      components: [
+        {
+          type: TYPE_TEXT_DISPLAY,
+          content: `### ${title}\n${description}`,
+        },
+      ],
       accessory: {
         type: TYPE_THUMBNAIL,
         media: { url: thumbnailUrl },
