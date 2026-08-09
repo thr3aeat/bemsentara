@@ -4154,6 +4154,7 @@ function renderAdminPage(user) {
               '<option value="dismissed" ' + (u.modStatus === 'dismissed' ? 'selected' : '') + '>🔴 Ayrıldı</option>' +
               '</select>' +
               '<button type="button" class="btn btn-sm btn-primary" onclick="adminSaveRoles(this)">💾 Kaydet & Sync</button>' +
+              '<a href="/user-logs/' + adminEsc(u.discordId) + '" class="btn btn-sm btn-ghost" style="border-color:var(--accent);color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📜 Loglar</a>' +
               restoreBtn + banBtn + '</div></div>';
           }).join('');
         } catch (err) {
@@ -7552,81 +7553,7 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = []) 
   return _layout(`Log Geçmişi — ${username}`, currentUser, content, '', '/admin');
 }
 
-function renderAdminPage(user, usersList = []) {
-  const { users: usersStore } = require("../models/Store");
-  const allUsers = usersList.length ? usersList : usersStore.find({});
 
-  const content = `
-    <div style="max-width:1200px; margin:2rem auto; animation:fadeUp 0.5s ease;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
-        <div>
-          <div style="color:var(--muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">GÜVENLİK VE KULLANICI YÖNETİMİ</div>
-          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg,#fff,#fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Admin Paneli — Kullanıcılar</h1>
-        </div>
-      </div>
-
-      <!-- LIVE USER SEARCH BAR -->
-      <div class="card" style="margin-bottom:1.5rem; padding:1.5rem;">
-        <label style="font-size:0.88rem; color:var(--muted); font-weight:700; margin-bottom:0.5rem; display:block;">🔍 CANLI KULLANICI ARAMA</label>
-        <input type="text" id="admin-user-search" class="input-field" style="margin-bottom:0; font-size:1.05rem;" oninput="filterAdminUserTable(this.value)" placeholder="Kullanıcı adı, Discord ID veya Roblox ID yazın...">
-      </div>
-
-      <!-- USERS TABLE -->
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.9rem;">
-          <thead>
-            <tr style="background:rgba(255,255,255,0.04); border-bottom:1px solid rgba(255,255,255,0.08); color:var(--muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:1px;">
-              <th style="padding:1rem 1.5rem;">Kullanıcı</th>
-              <th style="padding:1rem 1.5rem;">Discord ID</th>
-              <th style="padding:1rem 1.5rem;">Roblox Kullanıcı</th>
-              <th style="padding:1rem 1.5rem;">İşlemler</th>
-            </tr>
-          </thead>
-          <tbody id="admin-users-tbody">
-            ${allUsers.map(u => {
-              const uName = u.discordUsername || u.username || 'Bilinmiyor';
-              const uAvatar = u.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
-              const rName = u.robloxUsername || 'Yok';
-              const searchText = `${uName} ${u.discordId || ''} ${rName}`.toLowerCase();
-              return `
-                <tr class="admin-user-row" data-search="${_esc(searchText)}" style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                  <td style="padding:1rem 1.5rem; display:flex; align-items:center; gap:0.8rem;">
-                    <img src="${uAvatar}" style="width:36px; height:36px; border-radius:50%;">
-                    <strong style="color:#fff;">${_esc(uName)}</strong>
-                  </td>
-                  <td style="padding:1rem 1.5rem; font-family:monospace; color:var(--muted);">${u.discordId || '-'}</td>
-                  <td style="padding:1rem 1.5rem; color:var(--accent2);">${_esc(rName)}</td>
-                  <td style="padding:1rem 1.5rem;">
-                    <a href="/user-logs/${u.discordId || u._id}" class="btn btn-sm btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8); font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-                      📜 Tüm Logları Gör
-                    </a>
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <script>
-      function filterAdminUserTable(val) {
-        const query = (val || '').toLowerCase().trim();
-        const rows = document.querySelectorAll('.admin-user-row');
-        rows.forEach(r => {
-          const text = r.getAttribute('data-search') || '';
-          if (!query || text.includes(query)) {
-            r.style.display = 'table-row';
-          } else {
-            r.style.display = 'none';
-          }
-        });
-      }
-    </script>
-  `;
-
-  return _layout('Admin — Kullanıcı Yönetimi', user, content, '', '/admin');
-}
 
 // ─────────────────────────────────────────────
 // EXPORTS

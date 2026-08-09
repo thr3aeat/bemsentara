@@ -31,7 +31,7 @@ const botFriendTracker = new Map();
 function initializeDiscordHandlers(client) {
   // Intercept and patch interaction replies to avoid ephemeral deprecation warnings
   try {
-    const { CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, MessageFlags } = require("discord.js");
+    const { CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, MessageFlags, ChannelType } = require("discord.js");
     const EphemeralFlag = MessageFlags?.Ephemeral ?? 64;
 
     const patchInteractionOptions = (options) => {

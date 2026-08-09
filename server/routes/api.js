@@ -2848,8 +2848,20 @@ router.post("/api/auth/roblox/friend-request", async (req, res) => {
     try {
       await noblox.sendFriendRequest({ userId: robloxId, jar: friendJar });
     } catch (err) {
-      const errMsg = err.message || "";
-      if (!errMsg.includes("already friends") && !errMsg.includes("Cannot send friend request to friends") && !errMsg.includes("are already friends")) {
+      const errMsg = typeof err === "string" ? err : (err?.message || JSON.stringify(err || ""));
+      const lowerMsg = errMsg.toLowerCase();
+      const isAlreadyFriend =
+        lowerMsg.includes("already a friend") ||
+        lowerMsg.includes("already friends") ||
+        lowerMsg.includes("are already friends") ||
+        lowerMsg.includes("cannot send friend request") ||
+        lowerMsg.includes("already pending") ||
+        lowerMsg.includes("zaten var") ||
+        lowerMsg.includes('"code":5') ||
+        lowerMsg.includes('"code": 5') ||
+        err?.errors?.[0]?.code === 5;
+
+      if (!isAlreadyFriend) {
         console.error("sendFriendRequest error:", err);
         return res.status(400).json({
           error: `Arkadaşlık isteği gönderilemedi. Hata: ${errMsg}`
