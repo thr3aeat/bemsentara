@@ -3893,7 +3893,7 @@ function renderAdminPage(user) {
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('leave', this)" style="border-color:#f1c40f;color:#f1c40f;">🏖️ İzin Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('suggestion', this)" style="border-color:#2ecc71;color:#2ecc71;">💡 Tavsiye Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74crrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr 3c;color:#e74c3c;">🚪 İstifa Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74c3c;color:#e74c3c;">🚪 İstifa Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('modaction', this)" style="border-color:#9b59b6;color:#9b59b6;">⚖️ Mod İşlem Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('ban_report', this)" style="border-color:#e74c3c;color:#e74c3c;">🔨 Ban Raporu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('mute_report', this)" style="border-color:#f39c12;color:#f39c12;">🔇 Mute Raporu</button>
