@@ -458,7 +458,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     }, { passive: true });
 
     document.addEventListener('click', (e) => {
-      let tText = (e.target.innerText || e.target.tagName || "").trim().replace(/\n/g, ' ');
+      let tText = (e.target.innerText || e.target.tagName || "").trim().replace(/\\n/g, ' ');
       if (tText.length > 50) tText = tText.substring(0, 50) + "...";
       actClicks.push({ x: e.clientX, y: e.clientY, t: Date.now(), element: tText });
     }, { passive: true });
