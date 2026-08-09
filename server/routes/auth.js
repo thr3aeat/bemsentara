@@ -428,7 +428,9 @@ router.post("/api/auth/request-code", async (req, res) => {
 
   try {
     const discordUser = await resolveDiscordUser(username);
-    if (!discordUser) return res.status(404).json({ error: "Kullanıcı bulunamadı. Lütfen bot ile aynı sunucuda olduğunuzdan emin olun." });
+    if (!discordUser) {
+      return res.json({ success: false, isNewUser: true, error: "Discord kullanıcısı bulunamadı." });
+    }
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     const expiresAt = Date.now() + 5 * 60 * 1000;
@@ -448,9 +450,75 @@ router.post("/api/auth/request-code", async (req, res) => {
     }
 
     logger.log("[AUTH] " + discordUser.id + " ID'li kullanıcı giriş kodu talep etti.", "auth");
-    res.json({ success: true, message: "Kod Discord özel mesajlarınıza gönderildi.", discordId: discordUser.id });
+    res.json({ success: true, discordId: discordUser.id });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Interactive Step-by-Step Registration Endpoint
+ */
+router.post("/api/auth/register-interactive", async (req, res) => {
+  try {
+    const { username, robloxMethod, robloxUsername, password, enable2FA } = req.body;
+    let targetUsername = String(username || req.session.tempRegUsername || '').trim();
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "Şifreniz en az 6 karakter olmalıdır." });
+    }
+
+    let discordUser = null;
+    if (targetUsername) {
+      discordUser = await resolveDiscordUser(targetUsername).catch(() => null);
+    }
+
+    const discordId = discordUser ? discordUser.id : (req.session.linkDiscordId || `user_${Date.now()}`);
+    const finalUsername = discordUser ? (discordUser.username || discordUser.tag) : (targetUsername || "Yeni Kullanıcı");
+
+    let user = await User.findOne({
+      $or: [
+        { discordId: discordId },
+        { discordUsername: new RegExp(`^${finalUsername}$`, 'i') },
+        { username: new RegExp(`^${finalUsername}$`, 'i') }
+      ]
+    });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    if (!user) {
+      user = new User({
+        discordId: discordId,
+        discordUsername: finalUsername,
+        username: finalUsername,
+        isAuthorized: true,
+        botVerified: true
+      });
+    }
+
+    user.sitePassword = hashedPassword;
+    user.sitePinPassword = password;
+    user.loginPassword = password;
+    user.twoFactorEnabled = !!enable2FA;
+    user.twoFactorMethod = enable2FA ? "discord" : "none";
+    user.robloxAuthMethod = robloxMethod || "friend_request";
+
+    if (robloxUsername) {
+      user.robloxUsername = robloxUsername;
+    }
+
+    await user.save();
+    saveStoreNow();
+
+    req.login(user, (err) => {
+      if (err) return res.status(500).json({ error: "Oturum açma hatası." });
+      logWebLogin(user, req);
+      logger.log(`[AUTH] Yeni hesap oluşturuldu: ${user.username} (${user.discordId})`, "auth");
+      return res.json({ success: true, redirectUrl: "/dashboard", message: "Hesabınız başarıyla oluşturuldu!" });
+    });
+  } catch (err) {
+    console.error("[register-interactive] Error:", err.message);
+    res.status(500).json({ error: "Hesap oluşturma hatası: " + err.message });
   }
 });
 

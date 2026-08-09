@@ -1379,6 +1379,7 @@ function renderLoginPage(errorMsg = null) {
         <div class="divider">veya</div>
         <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod Gönder (DM)</button>
         <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Şifresi ile Giriş</button>
+        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">✨ Yeni Hesap Oluştur (Kayıt Ol)</button>
       </div>
 
       <!-- OTP VIEW -->
@@ -1415,6 +1416,63 @@ function renderLoginPage(errorMsg = null) {
         <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:0 auto;">← Geri dön</button>
       </div>
 
+      <!-- INTERACTIVE REGISTER WIZARD VIEW -->
+      <div id="view-register-wizard" style="display:none; text-align:left;">
+        <h2 style="font-size:1.15rem; margin-bottom:0.3rem; color:#fff; text-align:center;">✨ Yeni Hesap Oluşturma</h2>
+        <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-bottom:1.2rem;">Adım Adım İnteraktif Kurulum <span id="reg-username-display" style="color:var(--accent); font-weight:600;"></span></p>
+
+        <!-- STEP 1: ROBLOX METHOD -->
+        <div id="wiz-step-1">
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🎮 Adım 1/3: Roblox Hesabını Bağla</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.4;">Şimdi Roblox hesabını EkoYıldız portalına bağlayalım. Roblox hesabını hangi yöntemle doğrulamak istersin?</p>
+
+          <div class="wiz-card" id="opt-rbx-friend" onclick="selectRobloxMethod('friend_request')" style="padding:0.9rem; border:1px solid rgba(167,139,250,0.4); border-radius:14px; background:rgba(167,139,250,0.1); margin-bottom:0.7rem; cursor:pointer;">
+            <div style="font-weight:600; font-size:0.9rem; color:#fff;">👥 Arkadaş İsteği İle (RoWifi / Bot)</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">RoWifi Botumuza arkadaşlık isteği göndererek otomatik doğrulayın.</div>
+          </div>
+
+          <div class="wiz-card" id="opt-rbx-profile" onclick="selectRobloxMethod('profile_code')" style="padding:0.9rem; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(0,0,0,0.25); margin-bottom:1.2rem; cursor:pointer;">
+            <div style="font-weight:600; font-size:0.9rem; color:#fff;">🔐 Roblox Profil Açıklaması / 2FA Kodu İle</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">Roblox profil açıklamanıza özel kodu ekleyerek veya Roblox 2FA ile doğrulayın.</div>
+          </div>
+
+          <button onclick="nextWizardStep(1)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (Adım 2) →</button>
+        </div>
+
+        <!-- STEP 2: PASSWORD CREATION -->
+        <div id="wiz-step-2" style="display:none;">
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🔐 Adım 2/3: Güvenli Web Şifresi Belirle</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">Portalınıza tek tıkla güvenle giriş yapabilmek için kendi web şifrenizi belirleyin:</p>
+
+          <input type="password" id="reg-pwd-1" class="input-field" placeholder="Web Şifresi (En az 6 karakter)" oninput="checkPasswordStrength(this.value)">
+          <div id="pwd-strength" style="font-size:0.75rem; color:var(--muted); margin:-0.5rem 0 0.8rem; text-align:right;"></div>
+
+          <input type="password" id="reg-pwd-2" class="input-field" placeholder="Web Şifresini Tekrarla">
+
+          <button onclick="nextWizardStep(2)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (Adım 3) →</button>
+          <button onclick="showWizardStep(1)" class="link-btn" style="display:block; margin:0.6rem auto 0;">← Önceki Adım</button>
+        </div>
+
+        <!-- STEP 3: 2FA CHOICE -->
+        <div id="wiz-step-3" style="display:none;">
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🛡️ Adım 3/3: 2 Aşamalı Doğrulama (2FA)</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;">Hesabınızı izinsiz girişlere karşı korumak için 2 Aşamalı Doğrulamayı aktif etmek ister misiniz?</p>
+
+          <button id="btn-finish-reg" onclick="finishRegisterWizard(true)" class="btn btn-success" style="background:linear-gradient(135deg,#10b981,#059669); margin-bottom:0.8rem;">🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)</button>
+          <button onclick="finishRegisterWizard(false)" class="btn" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.1);">⚡ Hayır, Şimdilik Atla</button>
+          <button onclick="showWizardStep(2)" class="link-btn" style="display:block; margin:0.6rem auto 0;">← Önceki Adım</button>
+        </div>
+
+        <!-- STEP 4: SUCCESS ANIMATION -->
+        <div id="wiz-step-4" style="display:none; text-align:center; padding:1.2rem 0;">
+          <div style="font-size:3.2rem; margin-bottom:0.6rem;">🎉</div>
+          <h3 style="font-size:1.15rem; font-weight:700; color:#34d399; margin-bottom:0.4rem;">Hesabınız Başarıyla Oluşturuldu!</h3>
+          <p style="font-size:0.85rem; color:var(--muted);">EkoYıldız portalına yönlendiriliyorsunuz, lütfen bekleyin...</p>
+        </div>
+
+        <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:1rem auto 0; text-align:center;">← Kaydı İptal Et ve Girişe Dön</button>
+      </div>
+
       <script>
         // Init error box
         const srvErr = ${JSON.stringify(errorMsg || '')};
@@ -1433,7 +1491,100 @@ function renderLoginPage(errorMsg = null) {
           document.getElementById('view-main').style.display = 'none';
           document.getElementById('view-otp').style.display = 'none';
           document.getElementById('view-password').style.display = 'none';
+          const regWiz = document.getElementById('view-register-wizard');
+          if (regWiz) regWiz.style.display = 'none';
           document.getElementById(id).style.display = 'block';
+        }
+
+        // --- INTERACTIVE REGISTER WIZARD STATE ---
+        let regState = {
+          username: '',
+          robloxMethod: 'friend_request',
+          password: '',
+          enable2FA: false
+        };
+
+        function startRegisterWizard(username = '') {
+          regState.username = username || document.getElementById('otp-username')?.value || document.getElementById('pwd-username')?.value || '';
+          document.getElementById('reg-username-display').innerText = regState.username ? '(@' + regState.username + ')' : '';
+          showView('view-register-wizard');
+          showWizardStep(1);
+        }
+
+        function showWizardStep(stepNum) {
+          hideError();
+          document.getElementById('wiz-step-1').style.display = 'none';
+          document.getElementById('wiz-step-2').style.display = 'none';
+          document.getElementById('wiz-step-3').style.display = 'none';
+          document.getElementById('wiz-step-4').style.display = 'none';
+          document.getElementById('wiz-step-' + stepNum).style.display = 'block';
+        }
+
+        function selectRobloxMethod(method) {
+          regState.robloxMethod = method;
+          const optFriend = document.getElementById('opt-rbx-friend');
+          const optProfile = document.getElementById('opt-rbx-profile');
+          if (method === 'friend_request') {
+            optFriend.style.borderColor = 'rgba(167,139,250,0.6)';
+            optFriend.style.background = 'rgba(167,139,250,0.15)';
+            optProfile.style.borderColor = 'rgba(255,255,255,0.08)';
+            optProfile.style.background = 'rgba(0,0,0,0.25)';
+          } else {
+            optProfile.style.borderColor = 'rgba(167,139,250,0.6)';
+            optProfile.style.background = 'rgba(167,139,250,0.15)';
+            optFriend.style.borderColor = 'rgba(255,255,255,0.08)';
+            optFriend.style.background = 'rgba(0,0,0,0.25)';
+          }
+        }
+
+        function checkPasswordStrength(val) {
+          const indicator = document.getElementById('pwd-strength');
+          if (!indicator) return;
+          if (!val) { indicator.innerText = ''; return; }
+          if (val.length < 6) { indicator.innerText = '🔴 Şifre çok kısa (en az 6 karakter)'; indicator.style.color = '#fb7185'; }
+          else if (val.length < 9) { indicator.innerText = '🟡 Şifre gücü: Orta'; indicator.style.color = '#fbbf24'; }
+          else { indicator.innerText = '🟢 Şifre gücü: Güçlü'; indicator.style.color = '#34d399'; }
+        }
+
+        function nextWizardStep(fromStep) {
+          hideError();
+          if (fromStep === 1) {
+            showWizardStep(2);
+          } else if (fromStep === 2) {
+            const p1 = document.getElementById('reg-pwd-1').value;
+            const p2 = document.getElementById('reg-pwd-2').value;
+            if (!p1 || p1.length < 6) return showError("Lütfen en az 6 karakterli bir şifre girin.");
+            if (p1 !== p2) return showError("Girilen şifreler eşleşmiyor!");
+            regState.password = p1;
+            showWizardStep(3);
+          }
+        }
+
+        async function finishRegisterWizard(enable2FA) {
+          regState.enable2FA = enable2FA;
+          const btn = document.getElementById('btn-finish-reg');
+          if (btn) { btn.disabled = true; btn.innerText = "Hesap Oluşturuluyor..."; }
+
+          try {
+            const res = await fetch('/api/auth/register-interactive', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(regState)
+            });
+            const data = await res.json();
+            if (data.success) {
+              showWizardStep(4);
+              setTimeout(() => {
+                window.location.href = data.redirectUrl || '/dashboard';
+              }, 1500);
+            } else {
+              showError(data.error || "Hesap oluşturulamadı.");
+              if (btn) { btn.disabled = false; btn.innerText = "🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)"; }
+            }
+          } catch (e) {
+            showError("Bağlantı hatası oluştu.");
+            if (btn) { btn.disabled = false; btn.innerText = "🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)"; }
+          }
         }
 
         // Discord OAuth2
@@ -1467,9 +1618,9 @@ function renderLoginPage(errorMsg = null) {
           hideError();
           const username = document.getElementById('otp-username').value.trim();
           if (!username) return showError("Lütfen Discord Kullanıcı Adınızı girin.");
-          
+
           const btn = document.getElementById('btn-request');
-          btn.disabled = true; btn.innerText = "Gönderiliyor...";
+          btn.disabled = true; btn.innerText = "Kontrol Ediliyor...";
           try {
             const res = await fetch('/api/auth/request-code', {
               method: 'POST', headers:{'Content-Type':'application/json'},
@@ -1480,8 +1631,11 @@ function renderLoginPage(errorMsg = null) {
               document.getElementById('otp-resolved-id').value = data.discordId;
               document.getElementById('otp-step-1').style.display = 'none';
               document.getElementById('otp-step-2').style.display = 'block';
+            } else if (data.isNewUser) {
+              // NO POPUP ALERT! Smoothly start interactive registration wizard
+              startRegisterWizard(username);
             } else {
-              showError(data.error || "Bilinmeyen hata");
+              showError(data.error || "Giriş hatası.");
             }
           } catch(e) { showError("Bağlantı hatası."); }
           btn.disabled = false; btn.innerText = "Kod Gönder";
@@ -1493,7 +1647,7 @@ function renderLoginPage(errorMsg = null) {
           const code = document.getElementById('otp-code').value.trim();
           const rem = document.getElementById('remember-otp').checked;
           if(!code || code.length !== 4) return showError("Lütfen 4 haneli kodu girin.");
-          
+
           const btn = document.getElementById('btn-verify');
           btn.disabled = true; btn.innerText = "Doğrulanıyor...";
           try {
@@ -1514,12 +1668,12 @@ function renderLoginPage(errorMsg = null) {
           const username = document.getElementById('pwd-username').value.trim();
           const password = document.getElementById('pwd-password').value.trim();
           const rem = document.getElementById('remember-pwd').checked;
-          
+
           if (!username || !password) return showError("Lütfen tüm alanları doldurun.");
-          
+
           const btn = document.getElementById('btn-pwd-login');
           btn.disabled = true; btn.innerText = "Giriş Yapılıyor...";
-          
+
           try {
             const res = await fetch('/api/auth/site-login', {
               method: 'POST', headers:{'Content-Type':'application/json'},
@@ -1527,9 +1681,13 @@ function renderLoginPage(errorMsg = null) {
             });
             const data = await res.json();
             if(data.success) window.location.href = '/dashboard';
-            else showError(data.error || "Bilinmeyen hata");
+            else if (data.isNewUser) {
+              startRegisterWizard(username);
+            } else {
+              showError(data.error || "Hatalı şifre veya kullanıcı bulunamadı.");
+            }
           } catch(e) { showError("Bağlantı hatası."); }
-          
+
           btn.disabled = false; btn.innerText = "Giriş Yap";
         }
 
@@ -1537,7 +1695,7 @@ function renderLoginPage(errorMsg = null) {
           hideError();
           const username = prompt("Lütfen Discord Kullanıcı Adınızı girin:");
           if(!username) return;
-          
+
           try {
             const res = await fetch('/api/auth/forgot-password', {
               method: 'POST', headers:{'Content-Type':'application/json'},
@@ -1551,7 +1709,7 @@ function renderLoginPage(errorMsg = null) {
               if(!code) return;
               const newPassword = prompt("Lütfen yeni Site Şifrenizi belirleyin (En az 8 karakter):");
               if(!newPassword || newPassword.length < 8) return alert("Geçersiz şifre.");
-              
+
               const res2 = await fetch('/api/auth/reset-password', {
                 method: 'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ discordId: data.discordId, code, password: newPassword })

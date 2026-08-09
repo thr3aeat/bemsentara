@@ -242,13 +242,13 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
 
           const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
 
-          // Create dynamic channel
+          // Create dynamic channel directly with user's username (without g- prefix)
           channel = await recordGuild.channels.create({
-            name: `g-${cleanName}`,
+            name: cleanName,
             type: ChannelType.GuildText,
             parent: parentId,
             permissionOverwrites,
-            reason: `Güvenlik Profili: ${record.username}`
+            reason: `Güvenlik & Kişisel Log Profili: ${record.username}`
           }).catch((err) => {
             console.error("[TrustScore] Channel creation failed:", err.message);
             return null;
