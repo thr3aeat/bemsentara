@@ -1,4 +1,13 @@
+function _esc(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function renderEventStaffFormPage(currentUser, existingSubmission = null) {
+  const _layout = require('./views')._layout;
   const isLoggedIn = Boolean(currentUser);
   const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username || '') : '';
   const BANNER = 'https://i.imgur.com/PeLUdcU.jpeg';
@@ -494,6 +503,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
 
 function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '') {
+  const _layout = require('./views')._layout;
   const content = `
     <div style="max-width:720px; margin:4rem auto; text-align:center; animation:fadeUp 0.5s ease;">
       ${bannerUrl ? '<div style="width:100%;border-radius:20px;overflow:hidden;margin-bottom:1.5rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);"><img src="' + bannerUrl + '" style="width:100%;display:block;max-height:200px;object-fit:cover;filter:brightness(0.6);"></div>' : ''}
@@ -512,3 +522,610 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
   `;
   return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
 }
+
+function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = null) {
+  const _layout = require('./views')._layout;
+  const isLoggedIn = Boolean(currentUser);
+  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username || '') : '';
+  const BANNER = 'https://i.imgur.com/ELNPQjZ.jpeg';
+
+  function _step(num, color, title, subtitle, bodyHtml, navHtml) {
+    const hidden = num > 1 ? 'display:none;' : '';
+    return `
+      <div id="form-step-${num}" class="form-step card" style="border-radius:20px;border-left:4px solid ${color};${hidden}transition:all 0.3s;margin-bottom:1.5rem;background:rgba(20,20,35,0.7);backdrop-filter:blur(20px);padding:2rem;">
+        <div class="step-header-bar" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleStep(${num})">
+          <div>
+            <h3 style="font-size:1.15rem;font-weight:800;color:${color};margin-bottom:0.2rem;">${title}</h3>
+            <p style="font-size:0.8rem;color:var(--muted);margin:0;">${subtitle}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="step-done-badge" style="display:none;background:${color}20;color:${color};font-size:0.72rem;font-weight:800;padding:0.25rem 0.7rem;border-radius:20px;border:1px solid ${color}40;">✓ TAMAMLANDI</span>
+            <span class="step-expand-btn" style="display:none;color:${color};font-size:1.2rem;cursor:pointer;" title="Genişlet / Daralt">▼</span>
+          </div>
+        </div>
+        <div class="step-body" style="margin-top:1.2rem;">
+          ${bodyHtml}
+          <div class="step-nav" style="display:flex;justify-content:${num === 1 ? 'flex-end' : 'space-between'};margin-top:1.8rem;padding-top:1.2rem;border-top:1px solid rgba(255,255,255,0.06);">
+            ${navHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function _field(id, label, placeholder, rows) {
+    return `
+      <div class="form-group" style="margin-bottom:1.3rem;">
+        <label class="field-label" style="display:block;font-weight:700;color:#e2e8f0;font-size:0.92rem;margin-bottom:0.4rem;">${label} <span style="color:#f43f5e;">*</span></label>
+        <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="${rows || 3}" required placeholder="${placeholder}" style="width:100%;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:0.8rem 1rem;color:#fff;font-family:inherit;font-size:0.9rem;line-height:1.6;outline:none;transition:border-color 0.2s;"></textarea>
+        <div class="field-hint" id="hint-${id}" style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+      </div>`;
+  }
+
+  function _fieldInput(id, label, placeholder, val = '') {
+    return `
+      <div class="form-group" style="margin-bottom:1.3rem;">
+        <label class="field-label" style="display:block;font-weight:700;color:#e2e8f0;font-size:0.92rem;margin-bottom:0.4rem;">${label} <span style="color:#f43f5e;">*</span></label>
+        <input type="text" id="${id}" class="input-field track-field" data-field="${id}" value="${_esc(val)}" required placeholder="${placeholder}" style="width:100%;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:0.8rem 1rem;color:#fff;font-family:inherit;font-size:0.9rem;outline:none;transition:border-color 0.2s;">
+        <div class="field-hint" id="hint-${id}" style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+      </div>`;
+  }
+
+  function _ethicsField(idPrefix, qNum, statementText) {
+    return `
+      <div class="form-group" style="margin-bottom:1.5rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.4rem;">
+        <div style="font-weight:800;color:#ec4899;font-size:0.85rem;letter-spacing:0.5px;margin-bottom:0.4rem;">İFADE ${qNum}</div>
+        <p style="font-size:0.95rem;color:#fff;font-weight:600;line-height:1.6;margin-bottom:1rem;">"${statementText}"</p>
+        
+        <div style="margin-bottom:1rem;">
+          <label style="display:block;font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem;font-weight:600;">SEÇİMİNİZ *</label>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+            ${[
+              ['Katılıyorum', '#34d399'],
+              ['Kısmen Katılıyorum', '#fbbf24'],
+              ['Katılmıyorum', '#f43f5e']
+            ].map(([opt, col]) => `
+              <label style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);padding:0.5rem 1rem;border-radius:20px;cursor:pointer;font-size:0.88rem;color:#fff;transition:all 0.2s;">
+                <input type="radio" name="${idPrefix}_choice" value="${opt}" required style="accent-color:${col};">
+                <span>${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:0.82rem;color:var(--muted);margin-bottom:0.4rem;font-weight:600;">YANITINIZ VE GEREKÇENİZ (En az 3 cümle) *</label>
+          <textarea id="${idPrefix}_reason" class="input-field track-field" data-field="${idPrefix}_reason" rows="3" required placeholder="Lütfen tercihinizi en az 3 cümle ile detaylandırarak açıklayınız..." style="width:100%;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:0.8rem 1rem;color:#fff;font-family:inherit;font-size:0.9rem;line-height:1.6;outline:none;"></textarea>
+          <div class="field-hint" id="hint-${idPrefix}_reason" style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+        </div>
+      </div>`;
+  }
+
+  const prevBtn = (n) => `<button type="button" onclick="prevStep(${n})" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki Bölüm</button>`;
+  const nextBtn = (n, color, grad) => `<button type="button" onclick="nextStep(${n})" class="btn" style="background:linear-gradient(135deg,${grad});color:#fff;font-weight:700;padding:0.75rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;box-shadow:0 4px 15px ${color}40;">Sonraki Bölüm →</button>`;
+
+  // ═══ BÖLÜM 1 ═══
+  const step1Body = `
+    <div style="background:rgba(129,140,248,0.06);border-left:3px solid #818cf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      <strong>1.1. Kimlik, İletişim ve Müsaitlik Bilgileri:</strong><br>
+      Başvuru değerlendirme ve mülakat davet süreçlerinin sağlıklı yürütülmesi adına kimlik ve iletişim bilgilerinizi doğru girmelisiniz.
+    </div>
+    ${_fieldInput('q_fullName', 'Adınız / İkinci Adınız ve Soyadınız', 'Örn: Ahmet Yılmaz')}
+    ${_fieldInput('q_discordUsername', 'Discord Kullanıcı Adınız (Username) ve Discord ID (18 Haneli Numerik Kodu)', 'Örn: ahmet_user (123456789012345678)', usernameStr)}
+    ${_fieldInput('q_ageBirthDate', 'Yaşınız ve Doğum Tarihiniz', 'Örn: 21 (15.04.2005)')}
+    ${_fieldInput('q_cityTimezone', 'Bulunduğunuz Şehir ve Zaman Diliminiz', 'Örn: İstanbul (GMT+3)')}
+    ${_field('q_availability', 'Günlük ve Haftalık Müsaitlik Süreniz', 'Hafta içi: 18:00 - 23:00, Hafta sonu: 14:00 - 01:00 saat aralıklarında aktiftim...', 3)}
+    
+    <div style="background:rgba(129,140,248,0.06);border-left:3px solid #818cf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-top:1.5rem;margin-bottom:1.3rem;">
+      <strong>1.2. Geçmiş Deneyim ve Referanslar:</strong>
+    </div>
+    ${_field('q_pastExperience', 'Daha önce görev aldığınız Discord sunucuları, topluluklar veya platformlar hangileridir?', 'Lütfen sunucu adı, sunucudaki üye sayısı, üstlendiğiniz rol ve ayrılma nedeninizi detaylandırarak yazınız...', 4)}
+    ${_field('q_toughestIncident', 'Geçmişte üstlendiğiniz rollerde karşılaştığınız ve yönetmekte en çok zorlandığınız tek bir olayı ve bu olayı nasıl çözdüğünüzü anlatınız.', 'Karşılaştığınız zorlu kriz durumunu ve uyguladığınız çözüm adımlarını detaylandırın...', 4)}
+    ${_field('q_references', 'Referans gösterebileceğiniz 2 kişiyi belirtiniz', 'Discord Kullanıcı Adı ve Rolü ile yazınız. Örn:\n1. @kullanici1 - Üst Yönetici\n2. @kullanici2 - Moderatör Lideri', 3)}`;
+
+  const step1 = _step(1, '#818cf8', 'BÖLÜM I — KİŞİSEL BİLGİLER, GEÇMİŞ VE TEKNİK PROFİL', 'Kimlik, erişim, deneyim ve referans bilgileri.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
+
+  // ═══ BÖLÜM 2 ═══
+  const step2Body = `
+    <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      <strong>2.1. Temsil ve Kurumsal Bakış:</strong><br>
+      Topluluk Elçisi, markanın dışa dönük yüzü ve kültür taşıyıcısıdır. Vizyonunuz ve rol bilinciniz değerlendirilecektir.
+    </div>
+    ${_field('q_brandVision', 'EkoYıldız markası ve topluluğu sizin için ne ifade ediyor? Sunucudaki genel gidişat ve atmosfer hakkında ne düşünüyorsunuz?', 'Topluluk vizyonu, atmosfer ve genel gidişat hakkındaki düşünceleriniz...', 4)}
+    ${_field('q_ambassadorVsMod', '"Moderasyon/Disiplin Yetkilisi" ile "Topluluk Elçisi" arasındaki fark sizce nedir? Bir Elçi, moderatörlerin yetersiz kaldığı veya yetki alanına girmediği durumlarda topluluğa nasıl yön vermelidir?', 'Yetki sınırları, temsil farkı ve topluluğa rehberlik etme yöntemi...', 4)}
+    ${_field('q_top3Traits', 'Sizi diğer adaylardan ayıran ve EkoYıldız Topluluk Elçiliği kadrosuna katmamızı gerektiren en belirgin 3 kişisel özelliğinizi açıklayınız.', '1. Kişisel özellik...\n2. Kişisel özellik...\n3. Kişisel özellik...', 4)}
+
+    <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-top:1.5rem;margin-bottom:1.3rem;">
+      <strong>2.2. Proaktif Katkı ve Strateji:</strong>
+    </div>
+    ${_field('q_first30DaysPlan', 'Topluluk Elçisi seçilmeniz durumunda ilk 30 gün içinde uygulamayı planladığınız somut bir proje, etkinlik veya etkileşim artırma stratejisi var mı? Detaylandırarak açıklayınız.', 'Uygulanabilir somut proje, etkinlik ve etkileşim stratejiniz...', 5)}
+    ${_field('q_retentionStrategy', 'Toplulukta üye bağlılığını (retention) artırmak ve yeni katılan kullanıcıların sunucudan hemen ayrılmasını engellemek için nasıl bir karşılama/oryantasyon mekanizması kurgulardınız?', 'Yeni katılan kullanıcıları tutundurma, oryantasyon ve uyum mekanizması...', 5)}`;
+
+  const step2 = _step(2, '#a78bfa', 'BÖLÜM II — MOTİVASYON, VİZYON VE ROL BİLİNCİ', 'Temsil, proaktif projeler ve üye bağlılığı kurgusu.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa', '#a78bfa,#8b5cf6'));
+
+  // ═══ BÖLÜM 3 ═══
+  const step3Body = `
+    <div style="background:rgba(245,158,11,0.06);border-left:3px solid #f59e0b;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Bu bölümdeki senaryolara verdiğiniz yanıtlar, kriz anındaki karar verme mekanizmanızı ve iletişim dilinizi ölçecektir. Her senaryo için adım adım ne yapacağınızı yazınız.
+    </div>
+
+    <!-- SENARYO 1 -->
+    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#f59e0b;font-size:0.9rem;margin-bottom:0.5rem;">📌 SENARYO 1: Kural Sınırında Yürüyen Gerginlik ve Kutuplaşma</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+        <strong>Durum:</strong> Sunucunun ana sohbet kanalında (#genel-chat), sunucunun kıdemli ve popüler 3 üyesi ile henüz yeni katılmış 2 üye arasında hassas bir toplumsal/güncel konu üzerinden tartışma başladı. Taraflar doğrudan hakaret etmiyor ancak yoğun şekilde imalı dil, pasif-agresif ifadeler ve mizah kılıfı altında aşağılamalar kullanıyor. Sohbet aşırı hızlandı, diğer üyeler rahatsız olup kanaldan çıkmaya başladı.
+      </p>
+      ${_field('q_s1_A', 'Soru A — Kanala müdahale ederken kullanacağınız ilk mesajın birebir metnini yazınız.', 'Müdahale mesajınızın birebir metni...', 3)}
+      ${_field('q_s1_B', 'Soru B — Kıdemli üyeler sizin uyarınıza "Biz kural ihlali yapmıyoruz, sohbet ediyoruz. İstemeyen okumasın" şeklinde tepki verirse tutumunuz ne olur?', 'Tutumunuz ve atacağınız adımlar...', 3)}
+      ${_field('q_s1_C', 'Soru C — Olayı kanalı yavaş moda (slowmode) almadan veya kilitlenmeden yönetmek için hangi psikolojik/iletişimsel teknikleri kullanırsınız?', 'Kullanacağınız iletişim ve psikolojik yönlendirme teknikleri...', 4)}
+    </div>
+
+    <!-- SENARYO 2 -->
+    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#f59e0b;font-size:0.9rem;margin-bottom:0.5rem;">📌 SENARYO 2: Yönetim Karşıtı Provokasyon ve Bilgi Kirliliği</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+        <strong>Durum:</strong> Gece saatlerinde sunucudaki bir kullanıcının haksız yere banlandığı iddiasıyla, bir grup üye #genel-chat ve #öneri-şikayet kanallarında eş zamanlı olarak üst yönetimi hedef alan mesajlar atmaya başladı. Grup, "Adalet İstiyoruz", "Yönetim İstifa" gibi sloganlar atarak sunucu düzenini bozuyor. O an sunucuda sizden başka aktif yetkili bulunmuyor.
+      </p>
+      ${_field('q_s2_A', 'Soru A — Bu kitlesel tepki karşısında atacağınız ilk 3 teknik/idari adım ne olur?', '1. Adım...\n2. Adım...\n3. Adım...', 3)}
+      ${_field('q_s2_B', 'Soru B — İddiaların doğru olup olmadığını bilmediğiniz o anki kriz sürecinde, topluluğun öfkesini dindirmek adına kamuoyuna nasıl bir açıklama yaparsınız? (Açıklama metnini yazınız.)', 'Kamuoyuna yapacağınız yatıştırıcı resmi duyuru metni...', 4)}
+      ${_field('q_s2_C', 'Soru C — Olayı provoke eden ana kişiler ile konudan etkilenip galeyana gelen masum üyeleri nasıl ayırt edersiniz?', 'Provokatör ve galeyana gelen üye ayrımı kriterleriniz...', 3)}
+    </div>
+
+    <!-- SENARYO 3 -->
+    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#f59e0b;font-size:0.9rem;margin-bottom:0.5rem;">📌 SENARYO 3: Üst Yönetim İçi Anlaşmazlık ve Yetki Suistimali</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+        <strong>Durum:</strong> Bir etkinlik sırasında, sizden kıdemli bir Yönetici (Admin), topluluk önünde bir üyeyi kişisel husumetinden dolayı haksız yere aşağıladı ve rolünü aldı. Mağdur üye size özel mesajdan (DM) ulaşarak ağlayarak yardım istiyor ve olayı sosyal medyaya taşımakla tehdit ediyor.
+      </p>
+      ${_field('q_s3_A', 'Soru A — Mağdur üyeye özel mesajdan vereceğiniz yanıtın metni ne olur?', 'Mağdur üyeye DM üzerinden yazacağınız yanıt metni...', 3)}
+      ${_field('q_s3_B', 'Soru B — Kendi üstünüz olan bu Yönetici ile nasıl bir iletişim kurarsınız? Olayı hiyerarşik olarak bir üst mercie (Sunucu Sahibi / Topluluk Lideri) nasıl raporlarsınız?', 'Kıdemli yönetici ile iletişim ve hiyerarşik raporlama adımlarınız...', 4)}
+      ${_field('q_s3_C', 'Soru C — Bu krizin sunucu imajına zarar vermesini önlemek için Elçi olarak alacağınız önlemler nelerdir?', 'Sunucu imajını koruma önlemleri...', 3)}
+    </div>
+
+    <!-- SENARYO 4 -->
+    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:1.4rem;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#f59e0b;font-size:0.9rem;margin-bottom:0.5rem;">📌 SENARYO 4: Çöküş Aşamasındaki Etkinlik ve Düşük Katılım</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+        <strong>Durum:</strong> Haftalar öncesinden duyurusu yapılan, büyük ödüllü bir EkoYıldız topluluk yarışması/etkinliği başladı. Ancak etkinliğin başlamasından 15 dakika geçmesine rağmen sesli kanala sadece 3 kişi katıldı. Etkinliği sunan ekip paniklemiş durumda ve sunucuda ciddi bir mahcubiyet havası oluşmak üzere.
+      </p>
+      ${_field('q_s4_A', 'Soru A — İlk 10 dakika içinde katılımı anlık olarak artırmak için yapacağınız acil durum hamleleri nelerdir?', 'Katılımı anlık yükseltmek için atılacak acil hamleler...', 3)}
+      ${_field('q_s4_B', 'Soru B — Duyuru kanallarını, rol etiketlerini (@everyone / @here suistimal etmeden) ve diğer kanalları nasıl efektif kullanırsınız?', 'Etiket suistimali yapmadan duyuru kanallarını efektif kullanma...', 3)}
+      ${_field('q_s4_C', 'Soru C — Etkinlik bittikten sonra bu başarısızlığın tekrarlanmaması için yönetime sunacağınız analiz raporunda hangi başlıklara yer verirsiniz?', 'Analiz raporu başlıkları ve çözüm tavsiyeleri...', 4)}
+    </div>
+
+    <!-- SENARYO 5 -->
+    <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:1.4rem;">
+      <div style="font-weight:800;color:#f59e0b;font-size:0.9rem;margin-bottom:0.5rem;">📌 SENARYO 5: Özel Mesaj (DM) İhlalleri ve Gizli Çıkar İlişkileri</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;">
+        <strong>Durum:</strong> Bir topluluk üyesi size ekran görüntüleriyle birlikte gelerek, başka bir sunucunun reklamcısının EkoYıldız üyelerine DM üzerinden reklam attığını ve bu kişinin sunucumuzdaki bazı üyelerle iş birliği yaptığını bildirdi.
+      </p>
+      ${_field('q_s5_A', 'Soru A — Kanıtların geçerliliğini ve doğruluğunu doğrulamak için hangi kriterleri incelersiniz?', 'Kanıt doğrulama kriterleriniz...', 3)}
+      ${_field('q_s5_B', 'Soru B — Sunucu içindeki sızmaları ve gizli reklam faaliyetlerini tespit etmek için ne tür bir izleme ve raporlama mekanizması kurarsınız?', 'İzleme ve raporlama mekanizması tasarımı...', 4)}
+    </div>`;
+
+  const step3 = _step(3, '#f59e0b', 'BÖLÜM III — DERİNLATILMIŞ SENARYO VE KRİZ YÖNETİMİ TESTLERİ', 'Gerçekçi kriz durumlarında karar alma ve iletişim becerisi.', step3Body, prevBtn(3) + nextBtn(3, '#f59e0b', '#f59e0b,#d97706'));
+
+  // ═══ BÖLÜM 4 ═══
+  const step4Body = `
+    <div style="background:rgba(236,72,153,0.06);border-left:3px solid #ec4899;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Aşağıdaki ifadelere "Katılıyorum", "Kısmen Katılıyorum" veya "Katılmıyorum" şeklinde yanıt verip <strong>en az 3 cümle</strong> ile gerekçenizi açıklayınız.
+    </div>
+    ${_ethicsField('q_e1', 1, 'Bir Topluluk Elçisi, sunucu içinde en yakın arkadaşı bile kural ihlali yapsa, hiçbir tolerans göstermeden resmi prosedürü uygulamalıdır.')}
+    ${_ethicsField('q_e2', 2, 'Topluluk içi huzur için bazen kuralların esnetilmesi veya yazılı olmayan insani çözümler uygulanması gerekebilir.')}
+    ${_ethicsField('q_e3', 3, 'Yetkili ekibi içerisindeki bir tartışma veya fikir ayrılığı asla üyelere yansıtılmamalı, üye önünde tartışılmamalıdır.')}
+    ${_ethicsField('q_e4', 4, 'Topluluk Elçisi, sunucudaki olumsuz eleştirileri silmek yerine, o eleştirileri topluluğun gelişim fırsatı olarak yönetmelidir.')}`;
+
+  const step4 = _step(4, '#ec4899', 'BÖLÜM IV — ETİK, İLETİŞİM VE KİŞİSEL TUTUM TESTİ', 'Etik ilkeler, tarafsızlık ve yetkili tutumu testi.', step4Body, prevBtn(4) + nextBtn(4, '#ec4899', '#ec4899,#be185d'));
+
+  // ═══ BÖLÜM 5 ═══
+  const step5Body = `
+    <div style="background:rgba(16,185,129,0.06);border-left:3px solid #10b981;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Discord platform hakimiyeti, bot sistemleri, log takibi ve markdown düzen yetkinliğinizi ölçen teknik sorular.
+    </div>
+    ${_field('q_t1_security', 'Discord Sunucu Güvenliği ve Bot Yapılandırmaları', 'Sunucu güvenlik seviyeleri, doğrulama sistemleri ve otomasyon botları (kayıt botları, ceza botları, log sistemleri) hakkındaki tecrübelerinizi açıklayınız...', 4)}
+    ${_field('q_t2_auditLog', 'Log (Kayıt) İnceleme Becerisi', 'Bir kural ihlali veya sohbet silinmesi durumunda, denetim kaydı (Audit Log) ve bot log kanalları üzerinden olayı nasıl takip eder ve kanıtlaştırırsınız?', 4)}
+    ${_field('q_t3_markdown', 'Discord Zengin Metin (Markdown) ve Görsel Düzen Tasarımı', 'EkoYıldız topluluğuna özel hazırlanmış "Hoş Geldin & Kurallar Hatırlatması" temalı, Markdown (kalın, italik, kod bloğu, alt çizgi) kullanılarak biçimlendirilmiş profesyonel bir duyuru metni tasarlayınız:\n\n```markdown\n# 🌟 EKOYILDIZ TOPLULUĞUNA HOŞ GELDİNİZ! ...\n```', 6)}`;
+
+  const step5 = _step(5, '#10b981', 'BÖLÜM V — TEKNİK BİLGİ VE BOT/SİSTEM HAKİMİYETİ', 'Bot sistemleri, Audit Log takibi ve Markdown duyuru tasarımı.', step5Body, prevBtn(5) + nextBtn(5, '#10b981', '#10b981,#047857'));
+
+  // ═══ BÖLÜM 6 ═══
+  const step6Body = `
+    <div style="background:rgba(59,130,246,0.06);border-left:3px solid #3b82f6;padding:1.2rem 1.4rem;border-radius:0 12px 12px 0;font-size:0.9rem;color:#e2e8f0;line-height:1.7;margin-bottom:1.5rem;">
+      <div style="font-weight:800;color:#60a5fa;margin-bottom:0.5rem;font-size:1rem;">📜 TAAHHÜT VE RESMİ ONAY BEYANI</div>
+      "Yukarıda verdiğim tüm bilgilerin, senaryo yanıtlarının ve analizlerin şahsıma ait olduğunu; EkoYıldız Topluluk Elçiliği rolüne seçilmem halinde sunucu gizlilik ilkelerine, yetkili etiğine ve hiyerarşik yapıya eksiksiz uyacağımı taahhüt ederim."
+    </div>
+
+    <div style="margin-bottom:1.5rem;background:rgba(0,0,0,0.3);border:1px solid rgba(59,130,246,0.3);border-radius:16px;padding:1.2rem;">
+      <label style="display:flex;align-items:center;gap:0.8rem;cursor:pointer;color:#fff;font-weight:700;font-size:0.95rem;">
+        <input type="checkbox" id="q_decl_confirm" required style="width:20px;height:20px;accent-color:#3b82f6;flex-shrink:0;">
+        <span>Yukarıdaki taahhütnameyi okudum, anladım ve kabul ediyorum. *</span>
+      </label>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+      ${_fieldInput('q_decl_date', 'Tarih', 'Örn: ' + new Date().toLocaleDateString('tr-TR'))}
+      ${_fieldInput('q_decl_signature', 'İmza / Ad Soyad', 'Adınız Soyadınız')}
+    </div>
+
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:14px;padding:1rem 1.2rem;font-size:0.85rem;color:#fde68a;line-height:1.6;margin-bottom:1rem;">
+      ⚠️ <strong>Son Kontrol Hatırlatması:</strong> Formu göndermeden önce tüm bölümleri eksiksiz doldurduğunuzdan emin olunuz. Gönderilen başvurularda sonradan değişiklik yapılamaz.
+    </div>`;
+
+  const submitBtn = `<button type="submit" id="ambassador-submit-btn" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:800;padding:0.9rem 2.5rem;border-radius:30px;border:none;cursor:pointer;font-size:1.05rem;box-shadow:0 6px 20px rgba(245,158,11,0.4);letter-spacing:0.5px;">🚀 Başvuruyu Resmen Gönder</button>`;
+  const step6 = _step(6, '#3b82f6', 'BÖLÜM VI — ONAY VE BEYAN', 'Taahhütname onayı, tarih ve imza.', step6Body, prevBtn(6) + submitBtn);
+
+  // ═══ MAIN PAGE LAYOUT ═══
+  const content = `
+    <div style="max-width:960px; margin:2rem auto; animation:fadeUp 0.5s ease;">
+      
+      <!-- HEADER BANNER CARD -->
+      <div class="card" style="padding:0; overflow:hidden; border-radius:24px; border:1px solid rgba(255,255,255,0.1); margin-bottom:1.5rem; box-shadow:0 12px 35px rgba(0,0,0,0.5);">
+        <img src="${BANNER}" alt="EkoYıldız Topluluk Elçisi" style="width:100%; display:block; max-height:280px; object-fit:cover; object-position:center;">
+      </div>
+
+      <!-- FORM HEADER TITLE CARD -->
+      <div class="card" style="background:rgba(20,20,35,0.7);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem;backdrop-filter:blur(20px);margin-bottom:1.5rem;border-top:4px solid #f59e0b;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div style="color:#f59e0b;font-size:0.85rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.4rem;">👑 EKOYILDIZ TOPLULUK ELÇİLİĞİ</div>
+            <h1 style="font-size:1.8rem;font-weight:800;color:#fff;margin:0;">Topluluk Elçisi // Mülakat Başvuru Formu</h1>
+          </div>
+          <a href="/forms" class="btn btn-sm btn-ghost" style="border-radius:20px;">← Tüm Formlara Dön</a>
+        </div>
+      </div>
+
+      ${!isLoggedIn ? `
+        <div class="card" style="background:rgba(251,113,133,0.1);border:1px solid rgba(251,113,133,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>
+          <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
+          <p style="color:var(--muted);max-width:600px;margin:0 auto 1.5rem;line-height:1.6;">Bu formu doldurabilmek için Discord hesabınızla giriş yapmanız gerekmektedir.</p>
+          <a href="/login?redirect=/forms/community-ambassador" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:800;padding:0.8rem 2rem;border-radius:30px;font-size:1.05rem;display:inline-block;box-shadow:0 6px 20px rgba(245,158,11,0.4);">🔑 Discord ile Giriş Yap / Kayıt Ol</a>
+        </div>
+      ` : existingSubmission ? `
+        <div class="card" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
+          <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Topluluk Elçiliği Başvurunuz İncelemede!</h2>
+          <p style="color:var(--muted);max-width:650px;margin:0 auto 1.5rem;line-height:1.6;">
+            Sayın <strong>${_esc(usernameStr)}</strong>, başvurunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde başarıyla teslim alınmıştır.
+          </p>
+          <div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.5rem;text-align:left;font-size:0.9rem;color:var(--muted);">
+            <div>📌 <strong>Durum:</strong> <span style="color:#fbbf24;font-weight:700;">⏳ İNCELENİYOR</span></div>
+            <div>🆔 <strong>ID:</strong> <code>${existingSubmission._id}</code></div>
+          </div>
+        </div>
+      ` : `
+
+        <!-- DOCUMENTATION & ROLE DESCRIPTION CARD -->
+        <div class="card" style="margin-bottom:1.5rem;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:1.8rem;">
+          <h3 style="font-size:1.2rem;font-weight:800;color:#fff;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>📜</span> 1. Topluluk Elçiliği Rolü ve Vizyonu
+          </h3>
+          <p style="font-size:0.92rem;color:var(--muted);line-height:1.7;margin-bottom:1.2rem;">
+            EkoYıldız topluluğunda Topluluk Elçisi, sadece düzeni sağlayan bir yetkili değil; sunucu kültürünü dış dünyaya tanıtan, üyeler arası etkileşimi artıran, markanın imajını temsil eden ve topluluk içi dinamikleri yöneten köprü rolüdür.
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0.8rem;margin-bottom:1.5rem;">
+            <div style="border-left:3px solid #f59e0b;padding:0.7rem 1rem;background:rgba(255,255,255,0.02);border-radius:0 10px 10px 0;font-size:0.85rem;">
+              <strong style="color:#fff;">Temsil ve Marka Yüzü:</strong> EkoYıldız sunucusunu hem Discord bünyesinde hem de harici platformlarda vizyonuna uygun temsil etmek.
+            </div>
+            <div style="border-left:3px solid #34d399;padding:0.7rem 1rem;background:rgba(255,255,255,0.02);border-radius:0 10px 10px 0;font-size:0.85rem;">
+              <strong style="color:#fff;">Kullanıcı Karşılama:</strong> Yeni katılan kişilerin uyum sürecini hızlandırmak ve aktif üyeliğe teşvik etmek.
+            </div>
+            <div style="border-left:3px solid #a78bfa;padding:0.7rem 1rem;background:rgba(255,255,255,0.02);border-radius:0 10px 10px 0;font-size:0.85rem;">
+              <strong style="color:#fff;">Kriz ve Denge Yönetimi:</strong> Sohbet kanallarındaki gerginlikleri kural ihlallerine varmadan uzlaşmacı üslupla yatıştırmak.
+            </div>
+            <div style="border-left:3px solid #818cf8;padding:0.7rem 1rem;background:rgba(255,255,255,0.02);border-radius:0 10px 10px 0;font-size:0.85rem;">
+              <strong style="color:#fff;">Etkinlik ve Etkileşim:</strong> Yarışma, çekiliş, sesli kanal buluşmaları ve organizasyon desteği sağlamak.
+            </div>
+            <div style="border-left:3px solid #ec4899;padding:0.7rem 1rem;background:rgba(255,255,255,0.02);border-radius:0 10px 10px 0;font-size:0.85rem;grid-column:1/-1;">
+              <strong style="color:#fff;">Geri Bildirim Toplama:</strong> Üyelerden gelen istek ve önerileri hiyerarşik yapıya uygun biçimde Üst Yönetim ekibine raporlamak.
+            </div>
+          </div>
+
+          <h4 style="font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:0.8rem;">🎯 2. Adaylarda Aranan Kriterler ve Yetkinlikler</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.6rem;font-size:0.84rem;color:var(--muted);margin-bottom:1.5rem;">
+            <div style="background:rgba(0,0,0,0.2);padding:0.6rem 0.9rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+              • <strong>Yaş ve Olgunluk:</strong> Kriz anında soğukkanlı kalma yetisi.
+            </div>
+            <div style="background:rgba(0,0,0,0.2);padding:0.6rem 0.9rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+              • <strong>İletişim & Diksiyon:</strong> Türkçeyi imla kurallarına uygun kullanabilme.
+            </div>
+            <div style="background:rgba(0,0,0,0.2);padding:0.6rem 0.9rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+              • <strong>Discord Bilgisi:</strong> Yetki/rol ve bot komutlarına hakimiyet.
+            </div>
+            <div style="background:rgba(0,0,0,0.2);padding:0.6rem 0.9rem;border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+              • <strong>Aktiflik & Sorumluluk:</strong> Haftalık aktiflik sürelerini aksatmama.
+            </div>
+          </div>
+
+          <div style="background:rgba(245,158,11,0.08);border-left:4px solid #f59e0b;padding:0.9rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.86rem;color:#fde68a;line-height:1.6;">
+            <strong>📌 ADAYLARA NOT:</strong> Bu form, EkoYıldız topluluğundaki stratejik ve temsil düzeyi yüksek "Topluluk Elçisi" rolü için hazırlanmıştır. Yanıtlarınızın yüzeysel olmaması, detaylı gerekçeler ve somut adımlar içermesi değerlendirme puanınızı doğrudan etkileyecektir.
+          </div>
+        </div>
+
+        <!-- STEP PROGRESS BAR -->
+        <div id="step-progress" class="card" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;">
+          <div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.8rem;flex-wrap:wrap;">
+            ${[
+              ['1','Profil','#818cf8'],
+              ['2','Vizyon','#a78bfa'],
+              ['3','Kriz & Senaryo','#f59e0b'],
+              ['4','Etik Testi','#ec4899'],
+              ['5','Teknik & Bot','#10b981'],
+              ['6','Onay','#3b82f6']
+            ].map(([n,label,color], i) => `
+              <div id="step-pill-${n}" style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;border-radius:20px;font-size:0.78rem;font-weight:800;border:1.5px solid ${color}40;color:${color};opacity:${i===0?'1':'0.4'};transition:opacity 0.3s;cursor:pointer;" onclick="toggleStep(${n})">
+                <span style="width:18px;height:18px;border-radius:50%;background:${color}20;border:1.5px solid ${color};display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">${n}</span>
+                ${label}
+                <span class="pill-check" style="display:none;color:${color};font-weight:800;">✓</span>
+              </div>
+              ${i < 5 ? '<div style="flex:1;min-width:12px;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;"><div id="step-bar-' + n + '" style="height:100%;width:0%;background:' + color + ';border-radius:1px;transition:width 0.4s;"></div></div>' : ''}
+            `).join('')}
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);">Bölüm <span id="step-current-label">1</span>/6 — <span id="step-name-label" style="color:var(--accent);">Kişisel Bilgiler & Profil</span></div>
+        </div>
+
+        <form id="community-ambassador-form" autocomplete="off" style="display:flex;flex-direction:column;gap:1.2rem;">
+          ${step1}
+          ${step2}
+          ${step3}
+          ${step4}
+          ${step5}
+          ${step6}
+        </form>
+
+        <script>
+          const _beh = {};
+          let _currentStep = 1;
+          const STEP_NAMES = {
+            1: 'Kişisel Bilgiler & Profil',
+            2: 'Motivasyon, Vizyon ve Rol Bilinci',
+            3: 'Derinleştirilmiş Senaryo ve Kriz Yönetimi',
+            4: 'Etik, İletişim ve Kişisel Tutum Testi',
+            5: 'Teknik Bilgi ve Bot/Sistem Hakimiyeti',
+            6: 'Onay ve Beyan'
+          };
+          const STEP_COLORS = {
+            1: '#818cf8',
+            2: '#a78bfa',
+            3: '#f59e0b',
+            4: '#ec4899',
+            5: '#10b981',
+            6: '#3b82f6'
+          };
+
+          function _initTracking() {
+            document.querySelectorAll('.track-field').forEach(el => {
+              const fid = el.getAttribute('data-field');
+              if (!fid) return;
+              if (!_beh[fid]) {
+                _beh[fid] = { focusCount: 0, pasteCount: 0, totalTimeMs: 0, charCount: 0, wordCount: 0, focusStart: 0 };
+              }
+              el.addEventListener('focus', () => {
+                _beh[fid].focusCount++;
+                _beh[fid].focusStart = Date.now();
+              });
+              el.addEventListener('blur', () => {
+                if (_beh[fid].focusStart > 0) {
+                  _beh[fid].totalTimeMs += (Date.now() - _beh[fid].focusStart);
+                  _beh[fid].focusStart = 0;
+                }
+              });
+              el.addEventListener('paste', () => {
+                _beh[fid].pasteCount++;
+              });
+              el.addEventListener('input', () => {
+                const val = el.value || '';
+                _beh[fid].charCount = val.length;
+                _beh[fid].wordCount = val.trim() ? val.trim().split(/\\s+/).length : 0;
+                const hintEl = document.getElementById('hint-' + fid);
+                if (hintEl) {
+                  hintEl.textContent = val.length > 0 ? (val.length + ' karakter, ' + _beh[fid].wordCount + ' kelime') : '';
+                }
+              });
+            });
+          }
+
+          function toggleStep(num) {
+            const stepEl = document.getElementById('form-step-' + num);
+            if (!stepEl) return;
+            const bodyEl = stepEl.querySelector('.step-body');
+            const expandBtn = stepEl.querySelector('.step-expand-btn');
+            if (bodyEl.style.display === 'none') {
+              bodyEl.style.display = 'block';
+              if (expandBtn) expandBtn.textContent = '▼';
+            } else {
+              bodyEl.style.display = 'none';
+              if (expandBtn) expandBtn.textContent = '▲';
+            }
+          }
+
+          function _updateStepUI(stepNum) {
+            _currentStep = stepNum;
+            for (let i = 1; i <= 6; i++) {
+              const st = document.getElementById('form-step-' + i);
+              const pill = document.getElementById('step-pill-' + i);
+              const bar = document.getElementById('step-bar-' + i);
+              if (st) {
+                if (i === stepNum) {
+                  st.style.display = 'block';
+                  st.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  st.style.display = 'none';
+                }
+              }
+              if (pill) {
+                pill.style.opacity = i === stepNum ? '1' : i < stepNum ? '0.85' : '0.4';
+                const check = pill.querySelector('.pill-check');
+                if (check) check.style.display = i < stepNum ? 'inline' : 'none';
+              }
+              if (bar) {
+                bar.style.width = i < stepNum ? '100%' : '0%';
+              }
+            }
+            const lbl = document.getElementById('step-current-label');
+            const nlbl = document.getElementById('step-name-label');
+            if (lbl) lbl.textContent = stepNum;
+            if (nlbl) {
+              nlbl.textContent = STEP_NAMES[stepNum];
+              nlbl.style.color = STEP_COLORS[stepNum];
+            }
+          }
+
+          function nextStep(currentNum) {
+            const currentStepEl = document.getElementById('form-step-' + currentNum);
+            if (currentStepEl) {
+              const reqs = currentStepEl.querySelectorAll('[required]');
+              let valid = true;
+              reqs.forEach(r => {
+                if (r.type === 'radio') {
+                  const name = r.name;
+                  const checked = currentStepEl.querySelector('input[name="' + name + '"]:checked');
+                  if (!checked) valid = false;
+                } else if (!r.value || !r.value.trim()) {
+                  r.style.borderColor = '#f43f5e';
+                  valid = false;
+                } else {
+                  r.style.borderColor = 'rgba(255,255,255,0.12)';
+                }
+              });
+              if (!valid) {
+                if (typeof showToast === 'function') {
+                  showToast('⚠️ Lütfen bu bölümdeki tüm zorunlu soruları doldurunuz.', 'warning');
+                } else {
+                  alert('Lütfen bu bölümdeki tüm zorunlu soruları doldurunuz.');
+                }
+                return;
+              }
+            }
+            if (currentNum < 6) {
+              _updateStepUI(currentNum + 1);
+            }
+          }
+
+          function prevStep(currentNum) {
+            if (currentNum > 1) {
+              _updateStepUI(currentNum - 1);
+            }
+          }
+
+          document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('community-ambassador-form');
+            if (!form) return;
+
+            form.addEventListener('submit', async function(e) {
+              e.preventDefault();
+
+              const confirmCb = document.getElementById('q_decl_confirm');
+              if (!confirmCb || !confirmCb.checked) {
+                if (typeof showToast === 'function') showToast('⚠️ Lütfen resmi taahhütnameyi onaylayınız.', 'warning');
+                return;
+              }
+
+              const btn = document.getElementById('ambassador-submit-btn');
+              btn.disabled = true;
+              btn.innerHTML = '⏳ Gönderiliyor...';
+
+              const payload = {
+                discordUsername: document.getElementById('q_discordUsername')?.value || '',
+                section1: {
+                  fullName: document.getElementById('q_fullName')?.value || '',
+                  discordUsername: document.getElementById('q_discordUsername')?.value || '',
+                  ageBirthDate: document.getElementById('q_ageBirthDate')?.value || '',
+                  cityTimezone: document.getElementById('q_cityTimezone')?.value || '',
+                  availability: document.getElementById('q_availability')?.value || '',
+                  pastExperience: document.getElementById('q_pastExperience')?.value || '',
+                  toughestIncident: document.getElementById('q_toughestIncident')?.value || '',
+                  references: document.getElementById('q_references')?.value || '',
+                },
+                section2: {
+                  brandVision: document.getElementById('q_brandVision')?.value || '',
+                  ambassadorVsMod: document.getElementById('q_ambassadorVsMod')?.value || '',
+                  top3Traits: document.getElementById('q_top3Traits')?.value || '',
+                  first30DaysPlan: document.getElementById('q_first30DaysPlan')?.value || '',
+                  retentionStrategy: document.getElementById('q_retentionStrategy')?.value || '',
+                },
+                section3: {
+                  scenario1_A: document.getElementById('q_s1_A')?.value || '',
+                  scenario1_B: document.getElementById('q_s1_B')?.value || '',
+                  scenario1_C: document.getElementById('q_s1_C')?.value || '',
+                  scenario2_A: document.getElementById('q_s2_A')?.value || '',
+                  scenario2_B: document.getElementById('q_s2_B')?.value || '',
+                  scenario2_C: document.getElementById('q_s2_C')?.value || '',
+                  scenario3_A: document.getElementById('q_s3_A')?.value || '',
+                  scenario3_B: document.getElementById('q_s3_B')?.value || '',
+                  scenario3_C: document.getElementById('q_s3_C')?.value || '',
+                  scenario4_A: document.getElementById('q_s4_A')?.value || '',
+                  scenario4_B: document.getElementById('q_s4_B')?.value || '',
+                  scenario4_C: document.getElementById('q_s4_C')?.value || '',
+                  scenario5_A: document.getElementById('q_s5_A')?.value || '',
+                  scenario5_B: document.getElementById('q_s5_B')?.value || '',
+                },
+                section4: {
+                  ethics1: {
+                    choice: form.querySelector('input[name="q_e1_choice"]:checked')?.value || '',
+                    reason: document.getElementById('q_e1_reason')?.value || '',
+                  },
+                  ethics2: {
+                    choice: form.querySelector('input[name="q_e2_choice"]:checked')?.value || '',
+                    reason: document.getElementById('q_e2_reason')?.value || '',
+                  },
+                  ethics3: {
+                    choice: form.querySelector('input[name="q_e3_choice"]:checked')?.value || '',
+                    reason: document.getElementById('q_e3_reason')?.value || '',
+                  },
+                  ethics4: {
+                    choice: form.querySelector('input[name="q_e4_choice"]:checked')?.value || '',
+                    reason: document.getElementById('q_e4_reason')?.value || '',
+                  },
+                },
+                section5: {
+                  techSecurityBots: document.getElementById('q_t1_security')?.value || '',
+                  techAuditLogs: document.getElementById('q_t2_auditLog')?.value || '',
+                  techMarkdownDesign: document.getElementById('q_t3_markdown')?.value || '',
+                },
+                section6: {
+                  declarationAccepted: true,
+                  declarationDate: document.getElementById('q_decl_date')?.value || '',
+                  declarationSignature: document.getElementById('q_decl_signature')?.value || '',
+                },
+                behavior: _beh
+              };
+
+              try {
+                const res = await fetch('/api/forms/community-ambassador/submit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                  if (typeof showToast === 'function') showToast('✅ ' + data.message, 'success');
+                  setTimeout(() => { window.location.reload(); }, 1500);
+                } else {
+                  if (typeof showToast === 'function') showToast('❌ ' + (data.error || 'Gönderim hatası.'), 'error');
+                  btn.disabled = false;
+                  btn.innerHTML = '🚀 Başvuruyu Resmen Gönder';
+                }
+              } catch (err) {
+                if (typeof showToast === 'function') showToast('❌ Bağlantı hatası yaşandı.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Başvuruyu Resmen Gönder';
+              }
+            });
+
+            _initTracking();
+          });
+        </script>
+      `}
+    </div>
+  `;
+
+  return _layout('Topluluk Elçisi Mülakat Başvuru Formu', currentUser, content, '', '/forms');
+}
+
+module.exports = {
+  renderEventStaffFormPage,
+  renderClosedFormPage,
+  renderCommunityAmbassadorFormPage,
+};
+

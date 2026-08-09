@@ -23,8 +23,9 @@ const RESOLVED_BASE_URL = BASE_URL || "https://ekoyildiz.duckdns.org";
  * Üstte banner görseli, altında başvuru listesi ve durumlar.
  */
 function getRecruitmentPanelPayload() {
-  const formsUrl      = `${RESOLVED_BASE_URL}/forms`;
-  const eventStaffUrl = `${RESOLVED_BASE_URL}/forms/event-staff`;
+  const formsUrl               = `${RESOLVED_BASE_URL}/forms`;
+  const eventStaffUrl          = `${RESOLVED_BASE_URL}/forms/event-staff`;
+  const communityAmbassadorUrl = `${RESOLVED_BASE_URL}/forms/community-ambassador`;
 
   return {
     flags: ComponentsV2Factory.FLAGS,
@@ -59,10 +60,10 @@ function getRecruitmentPanelPayload() {
           `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
-        // Topluluk Elçiliği
+        // Topluluk Elçiliği — AÇIK
         ComponentsV2Factory.text(
-          `• ✨ [**[ Topluluk Elçiliği ]**](${formsUrl}) başvuru formu için [tıklayın](${formsUrl}).\n` +
-          `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
+          `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
+          `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
         ComponentsV2Factory.separator(true),
@@ -173,15 +174,17 @@ async function sendNewApplicationLog(client, submission) {
 
     const username = submission.discordUsername || "Bilinmiyor";
     const submissionId = submission._id ?? "N/A";
+    const formTitle = submission.formTitle || (submission.formType === 'community_ambassador' ? "Topluluk Elçisi Mülakat Başvuru Formu" : "Etkinlik Yetkilisi Başvuru Formu");
+    const embedColor = submission.formType === 'community_ambassador' ? 0xf59e0b : 0x818cf8;
 
     const payload = {
       flags: ComponentsV2Factory.FLAGS,
       components: [
-        ComponentsV2Factory.container(0x818cf8, [
+        ComponentsV2Factory.container(embedColor, [
           ComponentsV2Factory.text(
             '## 📥 Yeni Başvuru Gönderildi!\n\n' +
-            `**${username}** (\`${submission.userId}\`) adlı kullanıcı **Etkinlik Yetkilisi Alım Formunu** doldurdu.\n\n` +
-            `📋 **Form:** ✳️ Etkinlik Yetkilisi [A-1]\n` +
+            `**${username}** (\`${submission.userId}\`) adlı kullanıcı **${formTitle}** belgesini doldurdu.\n\n` +
+            `📋 **Form:** ${formTitle}\n` +
             `👤 **Başvuran:** <@${submission.userId}>\n` +
             `🆔 **Başvuru ID:** \`${submissionId}\``
           ),

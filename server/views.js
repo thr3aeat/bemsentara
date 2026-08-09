@@ -8058,20 +8058,20 @@ function renderFormsHubPage(currentUser) {
             </div>
           </div>
 
-          <!-- 4. TOPLULUK ELÇİLİĞİ -->
-          <div style="margin-bottom:1rem;">
-            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
-              <span style="font-size:1.2rem;">⚜️</span>
-              <span>[ Topluluk Elçiliği ]</span>
-              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+          <!-- 4. TOPLULUK ELÇİLİĞİ (AÇIK) -->
+          <div style="margin-bottom:1rem; background:rgba(245,158,11,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(245,158,11,0.2);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
+              <span style="font-size:1.2rem;">👑</span>
+              <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Topluluk Elçisi ]</a>
+              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">mülakat & başvuru formu için <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline;">tıklayın</a>.</span>
             </div>
-            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
               <span>◦ Başvuru durumu:</span>
               <div style="display:inline-flex; align-items:center; gap:0;">
-                <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
-                <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
-                <img src="https://cdn.discordapp.com/emojis/1535973578816880690.png" style="height:24px; display:block;">
-                <img src="https://cdn.discordapp.com/emojis/1535973577042567178.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973588031635608.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973586706108416.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973585083175063.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973583485009940.png" style="height:24px; display:block;">
               </div>
             </div>
           </div>
@@ -8605,6 +8605,8 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
   return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
 }
 
+const { renderCommunityAmbassadorFormPage } = require("./_form_views_patch");
+
 module.exports = {
   renderMainPage,
   renderLoginPage,
@@ -8624,9 +8626,7 @@ module.exports = {
   renderUserLogsPage,
   renderFormsHubPage,
   renderEventStaffFormPage,
-  renderWikiArticlePage,
-  renderAdminPage,
-  renderUserLogsPage,
+  renderCommunityAmbassadorFormPage,
   renderBriefingOnboardingModal,
   renderGroupAdminPage,
   renderLeaderboardPage,

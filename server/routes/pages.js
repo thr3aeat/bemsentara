@@ -596,6 +596,22 @@ router.get("/forms/event-staff", async (req, res) => {
   res.send(renderEventStaffFormPage(req.user, existingSubmission));
 });
 
+router.get("/forms/community-ambassador", async (req, res) => {
+  const { renderCommunityAmbassadorFormPage } = require("../views");
+  const FormSubmission = require("../../models/FormSubmission");
+  
+  let existingSubmission = null;
+  if (req.user) {
+    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "community_ambassador");
+  }
+
+  res.send(renderCommunityAmbassadorFormPage(req.user, existingSubmission));
+});
+
+router.get("/forms/topluluk-elcisi", (req, res) => {
+  res.redirect("/forms/community-ambassador");
+});
+
 // Briefing Onboarding
 router.get("/briefing-form", (req, res) => {
   if (!req.user) return res.redirect("/login");

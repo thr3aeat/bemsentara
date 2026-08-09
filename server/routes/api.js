@@ -2312,6 +2312,62 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
   }
 });
 
+// ── Topluluk Elçisi Formu Gönderme ───────────────────────────────────────────
+router.post("/api/forms/community-ambassador/submit", async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Başvuru yapabilmek için öncelikle giriş yapmalısınız." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const userId = req.user.discordId;
+
+    // Check existing pending application
+    const existing = await FormSubmission.findPendingByUser(userId, "community_ambassador");
+    if (existing) {
+      return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir Topluluk Elçiliği başvurunuz bulunmaktadır." });
+    }
+
+    const { discordUsername, section1, section2, section3, section4, section5, section6, behavior } = req.body;
+
+    if (!section1 || !section2 || !section3 || !section4 || !section5 || !section6) {
+      return res.status(400).json({ error: "Lütfen tüm zorunlu bölüm ve soruları doldurunuz." });
+    }
+
+    // Save submission
+    const submission = await FormSubmission.create({
+      userId,
+      discordUsername: discordUsername || req.user.discordUsername || req.user.username,
+      formType: "community_ambassador",
+      formTitle: "EkoYıldız Topluluk Elçisi // Mülakat Başvuru Formu",
+      formData: {
+        section1,
+        section2,
+        section3,
+        section4,
+        section5,
+        section6,
+        behavior
+      }
+    });
+
+    // Send Discord Log & Channel Notification
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
+      const botClient = getDiscordClient();
+      if (botClient && botClient.isReady()) {
+        sendNewApplicationLog(botClient, submission).catch(() => {});
+      }
+    } catch (_) {}
+
+    res.json({ success: true, message: "Topluluk Elçiliği başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
+  } catch (err) {
+    console.error("[community-ambassador-submit] Error:", err.message);
+    res.status(500).json({ error: "Sunucu hatası: " + err.message });
+  }
+});
+
 // ── Admin: Form Başvurularını Listele ─────────────────────────────────────────
 router.get("/api/admin/form-submissions", async (req, res) => {
   if (!requireAdmin(req, res)) return;
