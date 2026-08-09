@@ -7754,7 +7754,409 @@ function renderFormsHubPage(currentUser) {
 
 function renderEventStaffFormPage(currentUser, existingSubmission = null) {
   const isLoggedIn = Boolean(currentUser);
-  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username) : '';
+  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username || '') : '';
+  const BANNER = 'https://i.imgur.com/PeLUdcU.jpeg';
+
+  const content = `
+    <div style="max-width:960px; margin:1.5rem auto; animation:fadeUp 0.5s ease;">
+
+      <!-- FORM BANNER HEADER IMAGE -->
+      <div style="width:100%; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:1.5rem; box-shadow:0 12px 35px rgba(0,0,0,0.5);">
+        <img src="${BANNER}" style="width:100%; display:block; max-height:280px; object-fit:cover;">
+      </div>
+
+      <!-- FORM HEADER TITLE CARD -->
+      <div class="card" style="background:rgba(20,20,35,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:2rem; backdrop-filter:blur(20px); margin-bottom:1.5rem; border-top:4px solid #34d399;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <div style="color:#34d399; font-size:0.85rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">✳️ ETKİNLİK YETKİLİSİ ALIM FORMU</div>
+            <h1 style="font-size:1.8rem; font-weight:800; color:#fff;">Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu</h1>
+          </div>
+          <a href="/forms" class="btn btn-sm btn-ghost">← Tüm Formlara Dön</a>
+        </div>
+      </div>
+
+      ${!isLoggedIn ? `
+        <div class="card" style="background:rgba(251,113,133,0.1); border:1px solid rgba(251,113,133,0.3); border-radius:20px; padding:2.5rem; text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:1rem;">🔒</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
+          <p style="color:var(--muted); max-width:600px; margin:0 auto 1.5rem; line-height:1.6;">
+            Bu formu doldurabilmek için Discord hesabınızla giriş yapmanız gerekmektedir.
+          </p>
+          <a href="/login?redirect=/forms/event-staff" class="btn" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;font-weight:800;padding:0.8rem 2rem;border-radius:30px;font-size:1.05rem;display:inline-block;box-shadow:0 6px 20px rgba(244,63,94,0.4);">
+            🔑 Discord ile Giriş Yap / Kayıt Ol
+          </a>
+        </div>
+      ` : existingSubmission ? `
+        <div class="card" style="background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.3); border-radius:20px; padding:2.5rem; text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:1rem;">⏳</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvurunuz Değerlendirilme Aşamasında!</h2>
+          <p style="color:var(--muted); max-width:650px; margin:0 auto 1.5rem; line-height:1.6;">
+            Sayın <strong>${_esc(usernameStr)}</strong>, başvurunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde ulaşmıştır.
+          </p>
+          <div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.5rem;text-align:left;font-size:0.9rem;color:var(--muted);">
+            <div>📌 <strong>Durum:</strong> <span style="color:#fbbf24;font-weight:700;">⏳ İNCELENİYOR</span></div>
+            <div>🆔 <strong>ID:</strong> <code>${existingSubmission._id}</code></div>
+          </div>
+        </div>
+      ` : `
+
+        <!-- STEP PROGRESS BAR -->
+        <div id="step-progress" class="card" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">
+            ${[
+              ['1','Ön Bilgiler','#818cf8'],
+              ['2','Kişisel','#a78bfa'],
+              ['3','Teknik','#34d399'],
+              ['4','Senaryolar','#fbbf24'],
+              ['5','Onaylar','#fb7185']
+            ].map(([n,label,color], i) => `
+              <div id="step-pill-${n}" style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:800;border:1.5px solid ${color}40;color:${color};opacity:${i===0?'1':'0.4'};transition:opacity 0.3s;">
+                <span style="width:18px;height:18px;border-radius:50%;background:${color}20;border:1.5px solid ${color};display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">${n}</span>
+                ${label}
+              </div>
+              ${i < 4 ? `<div style="flex:1;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;"><div id="step-bar-${n}" style="height:100%;width:0%;background:${color};border-radius:1px;transition:width 0.4s;"></div></div>` : ''}
+            `).join('')}
+          </div>
+          <div style="font-size:0.8rem;color:var(--muted);">Bölüm <span id="step-current-label">1</span>/5 — <span id="step-name-label" style="color:var(--accent);">Ön Bilgiler</span></div>
+        </div>
+
+        <form id="event-staff-form" autocomplete="off" style="display:flex;flex-direction:column;gap:1.2rem;">
+
+          <!-- ═══ BÖLÜM 1: ÖN BİLGİLER ═══ -->
+          <div id="form-step-1" class="form-step card" style="border-radius:20px;border-left:4px solid #818cf8;">
+            <h3 style="font-size:1.1rem;font-weight:800;color:#818cf8;margin-bottom:0.3rem;">BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz talep edilmektedir.</p>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="field-label">DISCORD HESABI *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Discord kullanıcı adınız (İsim#etiket şeklinde yazabilirsiniz)</span></label>
+              <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
+              <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+            </div>
+            <div class="step-nav" style="display:flex;justify-content:flex-end;margin-top:1.5rem;">
+              <button type="button" onclick="nextStep(1)" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+            </div>
+          </div>
+
+          <!-- ═══ BÖLÜM 2: KİŞİSEL BİLGİLER ═══ -->
+          <div id="form-step-2" class="form-step card" style="border-radius:20px;border-left:4px solid #a78bfa;display:none;">
+            <h3 style="font-size:1.1rem;font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">BÖLÜM 2 — İSTENİLEN KİŞİSEL BİLGİLER</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Akademik geçmiş, deneyimler ve kişisel tercihleriniz değerlendirilecektir.</p>
+            ${[
+              ['q_p1','1. Bize biraz kendinizden bahseder misiniz?','Kendiniz, ilgi alanlarınız ve yaşınızdan bahsedin...'],
+              ['q_p2','2. Hangi becerilerinizin takım içinde en çok değer taşıdığını düşünüyorsunuz?','Becerilerinizi ve güçlü yönlerinizi detaylandırın...'],
+              ['q_p3','3. Takıma ne gibi özellikler getirebilirsiniz?','Takıma katacağınız değerleri açıklayın...'],
+              ['q_p4','4. Neden Etkinlik Sorumluluğunda görev almak istiyorsunuz?','Motivasyonunuzu ve amacınızı açıklayın...'],
+              ['q_p5','5. Üstlerinizden direktif alma konusunda ne kadar rahatsınız?','Yönergeleri anlama ve uygulama yeteneğinizi açıklayın...']
+            ].map(([id, label, ph]) => `
+              <div class="form-group" style="margin-bottom:1.2rem;">
+                <label class="field-label">${label} *</label>
+                <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="3" required placeholder="${ph}"></textarea>
+                <div class="field-hint" id="hint-${id}" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+              </div>
+            `).join('')}
+            <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1rem;">
+              <button type="button" onclick="prevStep(2)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
+              <button type="button" onclick="nextStep(2)" class="btn" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+            </div>
+          </div>
+
+          <!-- ═══ BÖLÜM 3: TEKNİK BİLGİLER ═══ -->
+          <div id="form-step-3" class="form-step card" style="border-radius:20px;border-left:4px solid #34d399;display:none;">
+            <h3 style="font-size:1.1rem;font-weight:800;color:#34d399;margin-bottom:0.3rem;">BÖLÜM 3 — İSTENİLEN TEKNİK BİLGİLER</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">EkoYıldız topluluk standartlarına uygun teknik ve yönetsel bilgi ölçümü.</p>
+            ${[
+              ['q_t1','1. Etkinlik Sorumlusunun moderasyon ve yönetim kadrosundan farkları nelerdir?','Hangi konularda doğrudan yetkili veya yetkisiz olduğunu açıklayın...'],
+              ['q_t2','2. Etkinlik sırasında tutulması gereken teknik kayıtlar nelerdir?','Log, ekran görüntüsü vs. hangi durumlarda tutulmalıdır...'],
+              ['q_t3','3. Sunucu dışı platformlarda temsil yetkisi ve iletişim dili nasıl belirlenmelidir?','Dış sunucu ve ortak etkinlik alanlarında prosedürler...'],
+              ['q_t4','4. Bir başka yetkilinin kararlarınıza müdahale etmesi durumunda nasıl yönetirsiniz?','Yetki karmaşası durumunda atılacak adımlar...'],
+              ['q_t5','5. Etkinlik kuralları sunucu genel kurallarıyla çeliştiğinde yaklaşımınız ne olur?','Hangi birimlerle koordinasyon kurulmalıdır...'],
+              ['q_t6','6. Adil olmadığı eleştirilen etkinlikte raporlama sürecini nasıl yürütürsünüz?','Raporlama ve iyileştirme adımlarınız...'],
+              ['q_t7','7. Etkinlik Sorumlusunun performansı hangi kriterlerle değerlendirilmelidir?','Ölçülebilir teknik kriterler (akışa uyum, kriz müdahale süresi vs.)...']
+            ].map(([id, label, ph]) => `
+              <div class="form-group" style="margin-bottom:1.2rem;">
+                <label class="field-label">${label} *</label>
+                <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="3" required placeholder="${ph}"></textarea>
+                <div class="field-hint" id="hint-${id}" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+              </div>
+            `).join('')}
+
+            <!-- TEST SORUSU (Çoktan Seçmeli) -->
+            <div class="form-group" style="margin-bottom:1.2rem;background:rgba(0,0,0,0.25);padding:1.1rem;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+              <label class="field-label">8. (Test) Geçici ses kanallarında karmaşa yaşanmasında öncelikli teknik müdahale nedir? *</label>
+              <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="A" required> A) Etkinliği durdurarak tüm kanalları kapatıp sorunu sonra incelemek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;color:#34d399;font-weight:600;"><input type="radio" name="q_mc8" value="B"> B) Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="C"> C) Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="D"> D) Moderasyon ekibine bildirip hiçbir müdahalede bulunmamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="E"> E) Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek</label>
+              </div>
+            </div>
+
+            <!-- ÇOKLU SEÇİM -->
+            <div class="form-group" style="margin-bottom:1.2rem;background:rgba(0,0,0,0.25);padding:1.1rem;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
+              <label class="field-label">9. (Çoklu Seçim) Teknik aksaklık ve itiraz durumunda atılması gereken DOĞRU adımlar: *</label>
+              <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="explain"> Yaşanan sorunu katılımcılara kısa ve net şekilde açıklamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="rules_remind"> Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="argue"> İtiraz eden katılımcılarla tartışmaya girmek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="coord"> Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="abort"> Etkinliği gerekçesiz şekilde sonlandırmak</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="field-label">10. Görev sırasında yetkiyi aşmak ile inisiyatif almak arasındaki farkı açıklayınız. *</label>
+              <textarea id="q_t10" class="input-field track-field" data-field="q_t10" rows="3" required placeholder="EkoYıldız etkinlik yapısı özelinde detaylandırın..."></textarea>
+              <div class="field-hint" id="hint-q_t10" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+            </div>
+            <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1.2rem;">
+              <button type="button" onclick="prevStep(3)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
+              <button type="button" onclick="nextStep(3)" class="btn" style="background:linear-gradient(135deg,#34d399,#059669);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+            </div>
+          </div>
+
+          <!-- ═══ BÖLÜM 4: SENARYO BİLGİLERİ ═══ -->
+          <div id="form-step-4" class="form-step card" style="border-radius:20px;border-left:4px solid #fbbf24;display:none;">
+            <h3 style="font-size:1.1rem;font-weight:800;color:#fbbf24;margin-bottom:0.3rem;">BÖLÜM 4 — İSTENİLEN SENARYO BİLGİLERİ</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Gerçekleşmesi muhtemel kriz senaryolarına yaklaşımınız.</p>
+            ${[
+              ['q_s1','Senaryo 1: Büyük ölçekli etkinlik kriz yönetimi & dış iletişim','Katılımcı sayısı aşırı artması, RP bozulması ve yanlış bilgi yayılımı...'],
+              ['q_s2','Senaryo 2: Adaletsizlik iddiaları, teknik kanal sorunları ve itiraz yönetimi','Hangi öncelik sırasıyla adımlar atarsınız...'],
+              ['q_s3','Senaryo 3: Dış topluluklardaki bilgi kirliliği ve topluluk güveni','İletişim adımları, yetki sınırları ve güveni tesis etme stratejiniz...'],
+              ['q_s4','Senaryo 4: Rol akışını kasıtlı bozan oyuncular ve kriz müdahalesi','Hangi müdahaleleri uygular, hangi bilgileri paylaşırsınız...'],
+              ['q_s5','Senaryo 5: Etkinlik sonrası sosyal medya eleştirileri ve log raporlaması','Hangi belge ve logları kullanarak raporlama sağlarsınız...'],
+              ['q_ss','Tekli Senaryo: Sunucu bakımı, kural ihlali ve dış platform eleştirileri','Genel kriz yönetim öncelikleriniz ve adımlarınız...']
+            ].map(([id, label, ph]) => `
+              <div class="form-group" style="margin-bottom:1.2rem;">
+                <label class="field-label">${label} *</label>
+                <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="3" required placeholder="${ph}"></textarea>
+                <div class="field-hint" id="hint-${id}" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+              </div>
+            `).join('')}
+            <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1rem;">
+              <button type="button" onclick="prevStep(4)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
+              <button type="button" onclick="nextStep(4)" class="btn" style="background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+            </div>
+          </div>
+
+          <!-- ═══ BÖLÜM 5: SON BİLGİLER (ONAYLAR) ═══ -->
+          <div id="form-step-5" class="form-step card" style="border-radius:20px;border-left:4px solid #fb7185;display:none;">
+            <h3 style="font-size:1.1rem;font-weight:800;color:#fb7185;margin-bottom:0.3rem;">BÖLÜM 5 — İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR)</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Başvurunuzu tamamlamak için aşağıdaki zorunlu onayları verin.</p>
+
+            <div class="form-group" style="margin-bottom:1.3rem;">
+              <label class="field-label">1. Yetkilerinizi kötüye kullanırsanız soruşturma altına alınacağınızı kabul ediyor musunuz? *</label>
+              <div style="display:flex;gap:1.5rem;font-size:0.95rem;color:#fff;margin-top:0.4rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_abuse" value="EVET" required> Evet, kabul ediyorum.</label>
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_abuse" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.3rem;">
+              <label class="field-label">2. Başka bir çalışana saygısızlık ederseniz yetkililik haklarınızın alınabileceğini kabul ediyor musunuz? *</label>
+              <div style="display:flex;gap:1.5rem;font-size:0.95rem;color:#fff;margin-top:0.4rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_respect" value="EVET" required> Evet, kabul ediyorum.</label>
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_respect" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="field-label">3. TALİMATNAME: El kitapçığına uyacağınızı teyit eder misiniz? *</label>
+              <div style="font-size:0.95rem;color:#34d399;font-weight:600;margin-top:0.4rem;">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                  <input type="radio" name="opt_rules" value="EVET" required checked>
+                  Kurallara uyacağım, talimat kitapçığına göre ilerleyeceğim.
+                </label>
+              </div>
+            </div>
+
+            <div style="margin-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+              <button type="button" onclick="prevStep(5)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
+              <button type="submit" id="submit-btn" class="btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:1.1rem;padding:0.9rem 2.8rem;border-radius:30px;box-shadow:0 8px 25px rgba(16,185,129,0.4);border:none;cursor:pointer;font-family:inherit;">
+                🚀 Başvuruyu Gönder
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+        <script>
+          // ─── DAVRANIŞSAL TAKİP SİSTEMİ ───────────────────────────
+          const _beh = {};  // { fieldId: { type, typed_chars, paste_count, focus_time_ms, idle_events, last_char_at } }
+          let _currentStep = 1;
+          const STEP_NAMES = {1:'Ön Bilgiler',2:'Kişisel Bilgiler',3:'Teknik Bilgiler',4:'Senaryo Bilgileri',5:'Son Bilgiler (Onaylar)'};
+
+          function _initTracking() {
+            document.querySelectorAll('.track-field').forEach(el => {
+              const fid = el.dataset.field;
+              _beh[fid] = { typed_chars: 0, paste_count: 0, focus_count: 0, focus_ms: 0, idle_events: 0, _ft: 0, _last: 0 };
+
+              el.addEventListener('focus', () => {
+                _beh[fid]._ft = Date.now();
+                _beh[fid].focus_count++;
+              });
+              el.addEventListener('blur', () => {
+                if (_beh[fid]._ft) _beh[fid].focus_ms += Date.now() - _beh[fid]._ft;
+                _beh[fid]._ft = 0;
+              });
+              el.addEventListener('input', e => {
+                const now = Date.now();
+                if (_beh[fid]._last && (now - _beh[fid]._last) > 4000) _beh[fid].idle_events++;
+                _beh[fid]._last = now;
+                _beh[fid].typed_chars++;
+                _updateHint(fid, el);
+              });
+              el.addEventListener('paste', () => {
+                _beh[fid].paste_count++;
+                setTimeout(() => _updateHint(fid, el), 10);
+              });
+            });
+          }
+
+          function _updateHint(fid, el) {
+            const hint = document.getElementById('hint-' + el.id);
+            if (!hint) return;
+            const b = _beh[fid];
+            const parts = [];
+            const len = (el.value || '').length;
+            if (len > 0) {
+              if (b.paste_count > 0) parts.push('📋 Yapıştırıldı');
+              else parts.push('✍️ Yazıldı');
+            }
+            if (b.idle_events > 1) parts.push('⏸️ Bekleme var');
+            if (len > 0) parts.push(len + ' karakter');
+            hint.textContent = parts.join(' • ');
+            hint.style.color = b.paste_count > 0 ? '#fbbf24' : 'var(--muted)';
+          }
+
+          function _getBehavior() {
+            const result = {};
+            for (const [fid, b] of Object.entries(_beh)) {
+              const el = document.querySelector('[data-field="' + fid + '"]');
+              const len = el ? (el.value || '').length : 0;
+              let type = 'bilinmiyor';
+              if (len === 0) { type = 'boş'; }
+              else if (b.paste_count > 0 && b.typed_chars < 5) { type = 'kopyala-yapıştır'; }
+              else if (b.paste_count > 0) { type = 'yapıştır + düzenleme'; }
+              else if (b.idle_events >= 3) { type = 'yazdı (uzun bekleme)'; }
+              else { type = 'yazdı'; }
+              result[fid] = {
+                type,
+                chars: len,
+                typed: b.typed_chars,
+                pastes: b.paste_count,
+                focus_sec: Math.round(b.focus_ms / 1000),
+                idle_events: b.idle_events
+              };
+            }
+            return result;
+          }
+
+          // ─── STEP NAVİGASYONU ───────────────────────────────────
+          function nextStep(current) {
+            const step = document.getElementById('form-step-' + current);
+            const fields = step.querySelectorAll('[required]');
+            let valid = true;
+            fields.forEach(f => { if (!f.value.trim() && !f.checked) { f.style.borderColor = '#fb7185'; valid = false; } else { f.style.borderColor = ''; } });
+            if (!valid) { showToast('⚠️ Lütfen tüm zorunlu alanları doldurun.', 'error'); return; }
+
+            step.style.display = 'none';
+            _currentStep = current + 1;
+            const next = document.getElementById('form-step-' + _currentStep);
+            if (next) { next.style.display = 'block'; next.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            _updateProgress();
+          }
+
+          function prevStep(current) {
+            document.getElementById('form-step-' + current).style.display = 'none';
+            _currentStep = current - 1;
+            const prev = document.getElementById('form-step-' + _currentStep);
+            if (prev) { prev.style.display = 'block'; prev.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+            _updateProgress();
+          }
+
+          function _updateProgress() {
+            const pillColors = {1:'#818cf8',2:'#a78bfa',3:'#34d399',4:'#fbbf24',5:'#fb7185'};
+            for (let i = 1; i <= 5; i++) {
+              const pill = document.getElementById('step-pill-' + i);
+              if (pill) pill.style.opacity = i <= _currentStep ? '1' : '0.4';
+              if (i < 5) {
+                const bar = document.getElementById('step-bar-' + i);
+                if (bar) bar.style.width = i < _currentStep ? '100%' : '0%';
+              }
+            }
+            const nameEl = document.getElementById('step-name-label');
+            const curEl = document.getElementById('step-current-label');
+            if (nameEl) nameEl.textContent = STEP_NAMES[_currentStep] || '';
+            if (curEl) curEl.textContent = _currentStep;
+          }
+
+          // ─── FORM GÖNDERİM ──────────────────────────────────────
+          document.getElementById('event-staff-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Gönderiliyor...';
+
+            const cb9 = Array.from(document.querySelectorAll('input[name="q_cb9"]:checked')).map(c => c.value);
+
+            const payload = {
+              formType: 'event_staff',
+              discordUsername: document.getElementById('q_discord').value.trim(),
+              personal:  { q1: (document.getElementById('q_p1')||{}).value||'', q2: (document.getElementById('q_p2')||{}).value||'', q3: (document.getElementById('q_p3')||{}).value||'', q4: (document.getElementById('q_p4')||{}).value||'', q5: (document.getElementById('q_p5')||{}).value||'' },
+              technical: { q1: (document.getElementById('q_t1')||{}).value||'', q2: (document.getElementById('q_t2')||{}).value||'', q3: (document.getElementById('q_t3')||{}).value||'', q4: (document.getElementById('q_t4')||{}).value||'', q5: (document.getElementById('q_t5')||{}).value||'', q6: (document.getElementById('q_t6')||{}).value||'', q7: (document.getElementById('q_t7')||{}).value||'', mc8: (document.querySelector('input[name="q_mc8"]:checked')||{}).value||'', cb9, q10: (document.getElementById('q_t10')||{}).value||'' },
+              scenarios: { s1: (document.getElementById('q_s1')||{}).value||'', s2: (document.getElementById('q_s2')||{}).value||'', s3: (document.getElementById('q_s3')||{}).value||'', s4: (document.getElementById('q_s4')||{}).value||'', s5: (document.getElementById('q_s5')||{}).value||'', single: (document.getElementById('q_ss')||{}).value||'' },
+              confirmations: { abuse: (document.querySelector('input[name="opt_abuse"]:checked')||{}).value||'', respect: (document.querySelector('input[name="opt_respect"]:checked')||{}).value||'', rules: (document.querySelector('input[name="opt_rules"]:checked')||{}).value||'' },
+              behavior: _getBehavior()
+            };
+
+            try {
+              const res = await fetch('/api/forms/event-staff/submit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+              const data = await res.json();
+              if (data && data.success) {
+                showToast('✅ Başvurunuz başarıyla alındı!', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+              } else {
+                showToast('❌ ' + (data.error || 'Başvuru gönderilemedi'), 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Başvuruyu Gönder';
+              }
+            } catch (err) {
+              showToast('❌ Bağlantı hatası yaşandı.', 'error');
+              btn.disabled = false;
+              btn.innerHTML = '🚀 Başvuruyu Gönder';
+            }
+          });
+
+          _initTracking();
+        </script>
+      `}
+
+    </div>
+  `;
+
+  return _layout('Etkinlik Yetkilisi Başvuru Formu', currentUser, content, '', '/forms');
+}
+
+
+function renderClosedFormPage(currentUser, formName = 'Bu Form') {
+  const content = `
+    <div style="max-width:720px; margin:4rem auto; text-align:center; animation:fadeUp 0.5s ease;">
+      <div class="card" style="background:rgba(251,113,133,0.06); border:1px solid rgba(251,113,133,0.25); border-radius:24px; padding:3.5rem 2.5rem;">
+        <div style="font-size:4rem; margin-bottom:1.5rem; opacity:0.85;">🔒</div>
+        <h1 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:0.8rem;">${_esc(formName)} Şu An Kapalı</h1>
+        <p style="color:var(--muted); font-size:1.05rem; line-height:1.7; max-width:500px; margin:0 auto 2rem;">
+          Başvurular şu anda alınmamaktadır. Yeni bir alım dönemi açıldığında duyurulacaktır.
+        </p>
+        <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+          <a href="/forms" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-weight:700; padding:0.75rem 1.8rem; border-radius:24px;">← Tüm Formlar</a>
+          <a href="/dashboard" class="btn btn-ghost" style="padding:0.75rem 1.8rem; border-radius:24px;">Ana Sayfa</a>
+        </div>
+      </div>
+    </div>
+  `;
+  return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
+}
 
   const content = `
     <div style="max-width:960px; margin:1.5rem auto; animation:fadeUp 0.5s ease;">
