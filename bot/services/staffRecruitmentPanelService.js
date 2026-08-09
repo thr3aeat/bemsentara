@@ -6,8 +6,9 @@
 const { BASE_URL } = require("../../config");
 const ComponentsV2Factory = require("../utils/componentsV2Factory");
 
-const RECRUITMENT_CHANNEL_ID = "1535967551874670693";
-const RECRUITMENT_GUILD_ID = "1367646464804655104";
+const RECRUITMENT_CHANNEL_ID = "1535967551874670693"; // Yetkili alımları paneli
+const RECRUITMENT_GUILD_ID   = "1367646464804655104";
+const FORM_LOG_CHANNEL_ID    = "1518692526998032626"; // Form başvuru logları
 
 // 5-parça kapalı badge ve 4-parça açık badge
 const BADGE_ACIK   = "<:a1:1535976290857783356><:a2:1535976288567693383><:a3:1535976286399242340><:a4:1535976284310470776>";
@@ -154,18 +155,19 @@ async function sendNewApplicationLog(client, submission) {
       return;
     }
 
+    // Form logları ayrı kanala gönderilir
     let channel = null;
     try {
       const guild = await client.guilds.fetch(RECRUITMENT_GUILD_ID);
-      channel = await guild.channels.fetch(RECRUITMENT_CHANNEL_ID);
+      channel = await guild.channels.fetch(FORM_LOG_CHANNEL_ID);
     } catch (_) {}
 
     if (!channel) {
-      channel = await client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
+      channel = await client.channels.fetch(FORM_LOG_CHANNEL_ID).catch(() => null);
     }
 
     if (!channel) {
-      console.error(`[RecruitmentPanel] Log kanalı bulunamadı: ${RECRUITMENT_CHANNEL_ID}`);
+      console.error(`[RecruitmentPanel] Form log kanalı bulunamadı: ${FORM_LOG_CHANNEL_ID}`);
       return;
     }
 
