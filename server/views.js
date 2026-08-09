@@ -2,22 +2,22 @@
 
 const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SHARED LAYOUT HELPER  (declared ONCE at top)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function _layout(title, user, content, extraHead = '', activePath = '') {
   const staffLinks = user && isSiteStaff(user)
-    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">👨‍💼 Staff</a>`
+    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">ğŸ‘¨â€ğŸ’¼ Staff</a>`
     : '';
   const adminLink = user && isSiteAdmin(user)
-    ? `<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">⚙️ Admin</a>`
+    ? `<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">âš™ï¸ Admin</a>`
     : '';
 
   const isOwner = user && user.discordUsername === "ekonqtx";
   const { groupAdmins } = require("../models/Store");
   const isGrpAdmin = user && (isOwner || groupAdmins.findOne({ username: user.discordUsername }));
   const groupAdminLink = isGrpAdmin
-    ? `<a href="/group-admin" class="nav-link${activePath === '/group-admin' ? ' nav-active' : ''}">⚙️ Grup Yönetimi</a>`
+    ? `<a href="/group-admin" class="nav-link${activePath === '/group-admin' ? ' nav-active' : ''}">âš™ï¸ Grup YÃ¶netimi</a>`
     : '';
 
   function navLink(href, label) {
@@ -30,7 +30,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${_esc(title)} — Sentara Premium</title>
+  <title>${_esc(title)} â€” Sentara Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   ${extraHead}
   <style>
@@ -68,7 +68,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       opacity:0.4;
     }
 
-    /* ── Ambient Glow ── */
+    /* â”€â”€ Ambient Glow â”€â”€ */
     body::after {
       content:'';
       position:fixed; top:-30%; left:-10%; width:50vw; height:50vw;
@@ -81,7 +81,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       100% { transform: translate(15vw, 20vh) scale(1.2); }
     }
 
-    /* ── Header ── */
+    /* â”€â”€ Header â”€â”€ */
     header {
       background: rgba(6,6,14,0.45);
       backdrop-filter: blur(28px) saturate(1.2);
@@ -148,7 +148,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     .nav-link.nav-active { color: var(--text); background: rgba(255,255,255,0.05); }
     .nav-link.nav-active::after { width: 40%; left:30%; }
 
-    /* ── Hamburger ── */
+    /* â”€â”€ Hamburger â”€â”€ */
     .hamburger {
       display: none;
       flex-direction: column;
@@ -190,7 +190,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       .nav-link { padding: 0.7rem 0.75rem; font-size: 0.95rem; width:100%; }
     }
 
-    /* ── Main & Card ── */
+    /* â”€â”€ Main & Card â”€â”€ */
     main { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; position:relative; z-index:1; }
     .card {
       background: var(--surface);
@@ -207,7 +207,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     }
     .card + .card { margin-top: 2rem; }
 
-    /* ── Buttons ── */
+    /* â”€â”€ Buttons â”€â”€ */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -283,7 +283,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       box-shadow: none;
     }
 
-    /* ── Form elements ── */
+    /* â”€â”€ Form elements â”€â”€ */
     label { display: block; margin-bottom: 0.4rem; color: var(--muted); font-size: 0.85rem; font-weight: 500; letter-spacing:0.3px; }
     input, textarea, select {
       width: 100%;
@@ -308,7 +308,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     input::placeholder, textarea::placeholder { color: rgba(124,124,154,0.5); }
     select option { background: #0e0e1a; }
 
-    /* ── Badges ── */
+    /* â”€â”€ Badges â”€â”€ */
     .badge {
       display: inline-flex;
       align-items: center;
@@ -325,7 +325,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     .badge-pending { background: rgba(251,191,36,0.1);  color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
     .badge-admin   { background: rgba(129,140,248,0.1); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
 
-    /* ── Toast ── */
+    /* â”€â”€ Toast â”€â”€ */
     #toast-container {
       position: fixed;
       bottom: 2rem; right: 2rem;
@@ -358,13 +358,13 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     @keyframes toastIn  { from { opacity:0; transform:translateY(12px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
     @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(-8px) scale(0.95); } }
 
-    /* ── Scrollbar ── */
+    /* â”€â”€ Scrollbar â”€â”€ */
     ::-webkit-scrollbar { width:6px; }
     ::-webkit-scrollbar-track { background:transparent; }
     ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:3px; }
     ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.15); }
 
-    /* ── Misc ── */
+    /* â”€â”€ Misc â”€â”€ */
     .text-muted  { color: var(--muted); }
     .text-accent { color: var(--accent); }
     .text-danger { color: var(--danger); }
@@ -381,10 +381,10 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     .w-full { width:100%; }
     hr.divider { border:none; border-top:1px solid rgba(255,255,255,0.06); margin:2rem 0; }
 
-    /* ── Selection ── */
+    /* â”€â”€ Selection â”€â”€ */
     ::selection { background: rgba(167,139,250,0.3); color:#fff; }
 
-    /* ── Responsive ── */
+    /* â”€â”€ Responsive â”€â”€ */
     @media (max-width:768px) {
       header { flex-wrap:wrap; gap:0.75rem; }
       .nav-links { width:100%; flex-wrap:wrap; gap:0.75rem; }
@@ -396,18 +396,18 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   <header>
     <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
       <img src="https://i.imgur.com/PFcAc6q.png" alt="Sentara Logo" style="width:36px; height:36px; border-radius:10px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.6)); flex-shrink:0;">
-      <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYıldız</span>
+      <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYÄ±ldÄ±z</span>
     </a>
-    <button class="hamburger" id="hamburger" aria-label="Menü" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
+    <button class="hamburger" id="hamburger" aria-label="MenÃ¼" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
     <nav class="nav-links" id="nav-links">
       ${navLink('/', 'Ana Sayfa')}
-      ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
+      ${user && isSiteStaff(user) ? navLink('/leaderboard', 'ğŸ† SÄ±ralama (Mod)') : ''}
       ${groupAdminLink}
       ${staffLinks}
       ${adminLink}
-      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/settings" class="nav-link">⚙️ Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">Giriş Yap</button>`}
+      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/settings" class="nav-link">âš™ï¸ Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Ã‡Ä±kÄ±ÅŸ</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">GiriÅŸ Yap</button>`}
     </nav>
   </header>
 
@@ -418,26 +418,26 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   </main>
 
   <script>
-    // ── Toast utility ──
+    // â”€â”€ Toast utility â”€â”€
     function showToast(msg, type = 'info', duration = 3500) {
       const c = document.getElementById('toast-container');
       if (!c) return;
       const t = document.createElement('div');
       t.className = 'toast toast-' + type;
-      t.innerHTML = \`<div class="toast-inner"><span>\${msg}</span><button class="toast-close" onclick="this.closest('.toast').remove()">✕</button></div>\`;
+      t.innerHTML = \`<div class="toast-inner"><span>\${msg}</span><button class="toast-close" onclick="this.closest('.toast').remove()">âœ•</button></div>\`;
       c.appendChild(t);
       const timer = setTimeout(() => t.remove(), duration);
       t.querySelector('.toast-close').addEventListener('click', () => clearTimeout(timer));
     }
     window.showToast = showToast;
 
-    // ── Confirm util ──
+    // â”€â”€ Confirm util â”€â”€
     function confirmAction(msg) {
       return new Promise(resolve => resolve(window.confirm(msg)));
     }
     window.confirmAction = confirmAction;
 
-    // ── Close mobile nav on outside click ──
+    // â”€â”€ Close mobile nav on outside click â”€â”€
     document.addEventListener('click', (e) => {
       const nav = document.getElementById('nav-links');
       const btn = document.getElementById('hamburger');
@@ -447,7 +447,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       }
     });
 
-    // ── Live Activity Tracker ──
+    // â”€â”€ Live Activity Tracker â”€â”€
     const ACT_PING_FREQ = 2000; // 2 seconds
     let actClicks = [];
     let actPos = { x: 0, y: 0 };
@@ -481,7 +481,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       }
     }, ACT_PING_FREQ);
 
-    // ── Browser Notification System ──
+    // â”€â”€ Browser Notification System â”€â”€
     const userLoggedIn = ${user ? 'true' : 'false'};
     if (userLoggedIn && window.Notification) {
       function syncBrowserNotificationStatus() {
@@ -585,9 +585,9 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // UTILITY: HTML escape (XSS prevention)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function _esc(str) {
   if (str == null) return '';
   return String(str)
@@ -599,16 +599,16 @@ function _esc(str) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // MAIN PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderMainPage(user = null) {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EkoYıldız — Resmi Topluluk & Destek Portalı</title>
+  <title>EkoYÄ±ldÄ±z â€” Resmi Topluluk & Destek PortalÄ±</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -859,17 +859,17 @@ function renderMainPage(user = null) {
   <header>
     <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
       <img src="https://i.imgur.com/PFcAc6q.png" alt="Sentara Logo" style="width:36px; height:36px; border-radius:10px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.6)); flex-shrink:0;">
-      <span>EkoYıldız</span>
+      <span>EkoYÄ±ldÄ±z</span>
     </a>
     <nav>
       <a href="/">Ana Sayfa</a>
       ${user ? `
-        <a href="/dashboard" class="nav-btn-login" style="background:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); text-decoration:none;">🚀 Panelim</a>
-        <a href="/settings" class="nav-btn-login" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); text-decoration:none;">⚙️ Ayarlar</a>
-        <a href="/logout" style="color:var(--danger); font-weight:600; text-decoration:none; font-size:0.9rem; margin-left:0.5rem;">Çıkış Yap</a>
+        <a href="/dashboard" class="nav-btn-login" style="background:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); text-decoration:none;">ğŸš€ Panelim</a>
+        <a href="/settings" class="nav-btn-login" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); text-decoration:none;">âš™ï¸ Ayarlar</a>
+        <a href="/logout" style="color:var(--danger); font-weight:600; text-decoration:none; font-size:0.9rem; margin-left:0.5rem;">Ã‡Ä±kÄ±ÅŸ Yap</a>
       ` : `
         <button onclick="openLoginModal()" class="nav-btn-login">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> Giriş Yap
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg> GiriÅŸ Yap
         </button>
       `}
     </nav>
@@ -877,18 +877,18 @@ function renderMainPage(user = null) {
 
   <div class="hero-container">
     <div>
-      <div class="hero-badge">✨ EkoYıldız YouTube Kanalı & Resmi Topluluğu</div>
-      <h1 class="hero-title">EkoYıldız Dünyasına<br><span id="typewriterText" class="hero-grad"></span><span class="typewriter-cursor">|</span></h1>
-      <p class="hero-sub">Canlı yayınlar, eğlenceli Roblox içerikleri, topluluk etkinlikleri ve sürpriz hediyeler burada! Siz de hemen aramıza katılın.</p>
+      <div class="hero-badge">âœ¨ EkoYÄ±ldÄ±z YouTube KanalÄ± & Resmi TopluluÄŸu</div>
+      <h1 class="hero-title">EkoYÄ±ldÄ±z DÃ¼nyasÄ±na<br><span id="typewriterText" class="hero-grad"></span><span class="typewriter-cursor">|</span></h1>
+      <p class="hero-sub">CanlÄ± yayÄ±nlar, eÄŸlenceli Roblox iÃ§erikleri, topluluk etkinlikleri ve sÃ¼rpriz hediyeler burada! Siz de hemen aramÄ±za katÄ±lÄ±n.</p>
       <div class="hero-cta">
         ${user ? `
-          <a href="/dashboard" class="btn-hero-primary">🚀 Panelime Git</a>
-          <a href="/settings" class="btn-hero-secondary">⚙️ Hesabım & Ayarlar</a>
+          <a href="/dashboard" class="btn-hero-primary">ğŸš€ Panelime Git</a>
+          <a href="/settings" class="btn-hero-secondary">âš™ï¸ HesabÄ±m & Ayarlar</a>
         ` : `
-          <button onclick="openLoginModal()" class="btn-hero-primary">🚀 Giriş Yap</button>
+          <button onclick="openLoginModal()" class="btn-hero-primary">ğŸš€ GiriÅŸ Yap</button>
         `}
         <a href="https://www.youtube.com/@eko8yildiz" target="_blank" class="btn-hero-secondary">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="red"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YouTube Kanalımız
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="red"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> YouTube KanalÄ±mÄ±z
         </a>
         <a href="https://discord.gg/1367646464804655104" target="_blank" class="btn-hero-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#5865F2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.093.252-.19.373-.287a.075.075 0 0 1 .078-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.009c.12.098.245.195.372.288a.077.077 0 0 1-.006.128 12.299 12.299 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg> Discord Sunucumuz
@@ -897,44 +897,44 @@ function renderMainPage(user = null) {
     </div>
     <div class="hero-mascot-box">
       <div class="hero-mascot-glow"></div>
-      <img src="https://i.imgur.com/NzyMqMK.png" alt="EkoYıldız Maskot" class="hero-mascot-img">
+      <img src="https://i.imgur.com/NzyMqMK.png" alt="EkoYÄ±ldÄ±z Maskot" class="hero-mascot-img">
     </div>
   </div>
 
   <div class="section-container">
     <div class="section-header">
       <div class="section-tag">SOSYAL MEDYA HESAPLARIMIZ</div>
-      <h2 class="section-title">Canlı Takipçi & <span class="hero-grad">Abone Sayıları</span></h2>
+      <h2 class="section-title">CanlÄ± TakipÃ§i & <span class="hero-grad">Abone SayÄ±larÄ±</span></h2>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">📺</div>
+        <div class="stat-icon">ğŸ“º</div>
         <div class="stat-number" id="stat-youtube1">0</div>
         <div class="stat-badge">YouTube (Ana Kanal)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🎬</div>
+        <div class="stat-icon">ğŸ¬</div>
         <div class="stat-number" id="stat-youtube2">0</div>
         <div class="stat-badge">YouTube (Yedek)</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🎵</div>
+        <div class="stat-icon">ğŸµ</div>
         <div class="stat-number" id="stat-tiktok">0</div>
         <div class="stat-badge">TikTok</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">💚</div>
+        <div class="stat-icon">ğŸ’š</div>
         <div class="stat-number" id="stat-kick">0</div>
-        <div class="stat-badge">Kick Canlı Yayın</div>
+        <div class="stat-badge">Kick CanlÄ± YayÄ±n</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">💜</div>
+        <div class="stat-icon">ğŸ’œ</div>
         <div class="stat-number" id="stat-twitch">0</div>
         <div class="stat-badge">Twitch</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">📸</div>
+        <div class="stat-icon">ğŸ“¸</div>
         <div class="stat-number" id="stat-instagram1">0</div>
         <div class="stat-badge">Instagram</div>
       </div>
@@ -945,10 +945,10 @@ function renderMainPage(user = null) {
     <div class="widget-box">
       <div class="widget-info">
         <div class="section-tag">CANLI DISCORD SUNUCUMUZ</div>
-        <h3>EkoYıldız Resmi <span class="hero-grad">Discord Ailesi</span></h3>
-        <p>Topluluğumuza katılarak binlerce aktif üye ile sohbet edebilir, çekilişlere katılabilir ve yetkili ekibimizden 7/24 destek alabilirsiniz.</p>
+        <h3>EkoYÄ±ldÄ±z Resmi <span class="hero-grad">Discord Ailesi</span></h3>
+        <p>TopluluÄŸumuza katÄ±larak binlerce aktif Ã¼ye ile sohbet edebilir, Ã§ekiliÅŸlere katÄ±labilir ve yetkili ekibimizden 7/24 destek alabilirsiniz.</p>
         <a href="https://ptb.discord.com/channels/1367646464804655104/1518692475189854218" target="_blank" class="contact-btn">
-          💬 Bize Ulaşın / Destek Kanalı
+          ğŸ’¬ Bize UlaÅŸÄ±n / Destek KanalÄ±
         </a>
       </div>
       <div>
@@ -959,52 +959,52 @@ function renderMainPage(user = null) {
 
   <div class="modal-overlay" id="loginModal">
     <div class="modal-card">
-      <button class="modal-close" onclick="closeLoginModal()">✕</button>
+      <button class="modal-close" onclick="closeLoginModal()">âœ•</button>
       
       <div style="text-align:center; margin-bottom:1.5rem;">
-        <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">Giriş Yap</h3>
-        <p style="color:var(--muted); font-size:0.9rem;">EkoYıldız portalına erişmek için giriş yöntemi seçin</p>
+        <h3 style="font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">GiriÅŸ Yap</h3>
+        <p style="color:var(--muted); font-size:0.9rem;">EkoYÄ±ldÄ±z portalÄ±na eriÅŸmek iÃ§in giriÅŸ yÃ¶ntemi seÃ§in</p>
       </div>
 
       <div class="login-tabs">
         <button class="tab-btn active" onclick="switchLoginTab('discord')">Discord ile</button>
         <button class="tab-btn" onclick="switchLoginTab('roblox')">Roblox ile</button>
-        <button class="tab-btn" onclick="switchLoginTab('username')">Kullanıcı Adı</button>
+        <button class="tab-btn" onclick="switchLoginTab('username')">KullanÄ±cÄ± AdÄ±</button>
       </div>
 
       <div id="tab-discord" style="display:block;">
         <a href="/auth/discord" class="btn-submit-modal" style="display:flex; align-items:center; justify-content:center; gap:0.6rem; text-decoration:none; margin-bottom:0.8rem; background:#5865F2;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.093.252-.19.373-.287a.075.075 0 0 1 .078-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.009c.12.098.245.195.372.288a.077.077 0 0 1-.006.128 12.299 12.299 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg> Discord OAuth ile Giriş Yap
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.093.252-.19.373-.287a.075.075 0 0 1 .078-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.009c.12.098.245.195.372.288a.077.077 0 0 1-.006.128 12.299 12.299 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028z"/></svg> Discord OAuth ile GiriÅŸ Yap
         </a>
         
         <div style="text-align:center; color:var(--muted); margin:1rem 0; font-size:0.85rem;">veya</div>
 
-        <input type="text" id="dmUsernameInput" class="input-box" placeholder="Discord Kullanıcı Adınız (Örn: ekonqtx)">
+        <input type="text" id="dmUsernameInput" class="input-box" placeholder="Discord KullanÄ±cÄ± AdÄ±nÄ±z (Ã–rn: ekonqtx)">
         <button onclick="requestDiscordDMCode()" class="btn-submit-modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-          📩 Discord DM ile Kod Gönder
+          ğŸ“© Discord DM ile Kod GÃ¶nder
         </button>
 
         <div id="dmCodeVerifyBox" style="display:none; margin-top:1.2rem;">
           <input type="text" id="dmCodeInput" class="input-box" placeholder="6 Haneli DM Kodunu Girin" maxlength="6">
-          <button onclick="verifyDiscordDMCode()" class="btn-submit-modal">Kodu Doğrula & Giriş Yap</button>
+          <button onclick="verifyDiscordDMCode()" class="btn-submit-modal">Kodu DoÄŸrula & GiriÅŸ Yap</button>
         </div>
       </div>
 
       <div id="tab-roblox" style="display:none;">
         <a href="/auth/roblox" class="btn-submit-modal" style="display:flex; align-items:center; justify-content:center; gap:0.6rem; text-decoration:none; background:#000; border:1px solid rgba(255,255,255,0.2);">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.5 3.5L3.5 7.5L5.5 20.5L20.5 16.5L18.5 3.5ZM14 14L10 15L11 11L15 10L14 14Z"/></svg> Roblox OAuth ile Giriş Yap
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.5 3.5L3.5 7.5L5.5 20.5L20.5 16.5L18.5 3.5ZM14 14L10 15L11 11L15 10L14 14Z"/></svg> Roblox OAuth ile GiriÅŸ Yap
         </a>
       </div>
 
       <div id="tab-username" style="display:none;">
-        <input type="text" id="usernameCheckInput" class="input-box" placeholder="Kullanıcı Adı veya Discord ID">
+        <input type="text" id="usernameCheckInput" class="input-box" placeholder="KullanÄ±cÄ± AdÄ± veya Discord ID">
         <button onclick="checkUsernameSubmit()" class="btn-submit-modal">Devam Et</button>
 
         <div id="passwordStepBox" style="display:none; margin-top:1.2rem;">
-          <input type="password" id="pinInput" class="input-box" placeholder="Site PIN / Şifrenizi Girin">
-          <button onclick="submitPinLogin()" class="btn-submit-modal">Giriş Yap</button>
+          <input type="password" id="pinInput" class="input-box" placeholder="Site PIN / Åifrenizi Girin">
+          <button onclick="submitPinLogin()" class="btn-submit-modal">GiriÅŸ Yap</button>
           <div style="text-align:center; margin-top:0.8rem;">
-            <a href="#" onclick="alert('Şifrenizi sıfırlamak için Discord DM kod gönder seçeneğini kullanabilirsiniz.');" style="color:var(--muted); font-size:0.85rem; text-decoration:none;">Şifremi Unuttum</a>
+            <a href="#" onclick="alert('Åifrenizi sÄ±fÄ±rlamak iÃ§in Discord DM kod gÃ¶nder seÃ§eneÄŸini kullanabilirsiniz.');" style="color:var(--muted); font-size:0.85rem; text-decoration:none;">Åifremi Unuttum</a>
           </div>
         </div>
       </div>
@@ -1013,42 +1013,42 @@ function renderMainPage(user = null) {
 
   <footer>
     <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-      <div style="font-weight:700; color:#fff;">EkoYıldız Resmi Topluluğu</div>
+      <div style="font-weight:700; color:#fff;">EkoYÄ±ldÄ±z Resmi TopluluÄŸu</div>
       <div style="display:flex; gap:1.5rem; font-size:0.9rem;">
-        <a href="/legal/tos" style="color:var(--muted); text-decoration:none;">Kullanım Koşulları</a>
-        <a href="/legal/privacy" style="color:var(--muted); text-decoration:none;">Gizlilik Politikası</a>
+        <a href="/legal/tos" style="color:var(--muted); text-decoration:none;">KullanÄ±m KoÅŸullarÄ±</a>
+        <a href="/legal/privacy" style="color:var(--muted); text-decoration:none;">Gizlilik PolitikasÄ±</a>
       </div>
     </div>
   </footer>
 
   <script>
-    // ── Typewriter (Daktilo Efekti) ──
+    // â”€â”€ Typewriter (Daktilo Efekti) â”€â”€
     const phrases = [
-      "Türkiye'nin en eğlenceli Roblox ve topluluk kanalı dünyasına...",
-      "Türkiye'nin en büyük Türk asker oyunu gizemlerini anlatan kanalına...",
-      "Aksiyon ve macera dolu canlı yayın dünyasına...",
-      "Efsane Roblox çekilişleri ve büyük ödüllü etkinliklerine...",
-      "7/24 aktif, samimi ve eğlenceli Discord ailesine...",
-      "En komik Roblox rol yapma ve vaka videolarına...",
-      "TMT & Türk Askeri konseptli özel oyun serilerine...",
-      "EkoYıldız resmi web portalı ve destek platformuna...",
-      "Unutulmaz yarışmalar ve sürpriz turnuvalara...",
-      "Topluluğa özel eğlenceli mini oyunlar ve bot sistemlerine...",
-      "Her gün yenilenen sürpriz Roblox maceralarına...",
-      "YouTube'da 10.000+ aboneye yaklaşan dev ailemize...",
-      "TikTok'ta trend olan en kaliteli Roblox videolarına...",
-      "Kick ve Twitch canlı yayın coşkusuna...",
-      "Instagram'da anlık duyurular ve kamera arkası görüntülerine...",
-      "Sadık üyeler ve profesyonel yetkili kadromuza...",
-      "Samimi sohbet ortamı ve yeni dostluklara...",
-      "Oyuncular için tasarlanmış özel web arayüzüne...",
-      "Sosyal medya hesaplarımızla kesintisiz iletişime...",
-      "EkoYıldız'ın en gizemli Roblox sırlarına...",
-      "Tüm platformlarda tek çatı altında buluşma noktasına...",
-      "Sesli kanallarda efsane muhabbet ve eğlencelere...",
-      "Roblox hesabını eşle, hemen aileye katılma noktasına...",
-      "Güvenli, adil ve eğlenceli topluluk dünyasına...",
-      "Siz de aramıza katılın, eğlenceyi asla kaçırmayın!"
+      "TÃ¼rkiye'nin en eÄŸlenceli Roblox ve topluluk kanalÄ± dÃ¼nyasÄ±na...",
+      "TÃ¼rkiye'nin en bÃ¼yÃ¼k TÃ¼rk asker oyunu gizemlerini anlatan kanalÄ±na...",
+      "Aksiyon ve macera dolu canlÄ± yayÄ±n dÃ¼nyasÄ±na...",
+      "Efsane Roblox Ã§ekiliÅŸleri ve bÃ¼yÃ¼k Ã¶dÃ¼llÃ¼ etkinliklerine...",
+      "7/24 aktif, samimi ve eÄŸlenceli Discord ailesine...",
+      "En komik Roblox rol yapma ve vaka videolarÄ±na...",
+      "TMT & TÃ¼rk Askeri konseptli Ã¶zel oyun serilerine...",
+      "EkoYÄ±ldÄ±z resmi web portalÄ± ve destek platformuna...",
+      "Unutulmaz yarÄ±ÅŸmalar ve sÃ¼rpriz turnuvalara...",
+      "TopluluÄŸa Ã¶zel eÄŸlenceli mini oyunlar ve bot sistemlerine...",
+      "Her gÃ¼n yenilenen sÃ¼rpriz Roblox maceralarÄ±na...",
+      "YouTube'da 10.000+ aboneye yaklaÅŸan dev ailemize...",
+      "TikTok'ta trend olan en kaliteli Roblox videolarÄ±na...",
+      "Kick ve Twitch canlÄ± yayÄ±n coÅŸkusuna...",
+      "Instagram'da anlÄ±k duyurular ve kamera arkasÄ± gÃ¶rÃ¼ntÃ¼lerine...",
+      "SadÄ±k Ã¼yeler ve profesyonel yetkili kadromuza...",
+      "Samimi sohbet ortamÄ± ve yeni dostluklara...",
+      "Oyuncular iÃ§in tasarlanmÄ±ÅŸ Ã¶zel web arayÃ¼zÃ¼ne...",
+      "Sosyal medya hesaplarÄ±mÄ±zla kesintisiz iletiÅŸime...",
+      "EkoYÄ±ldÄ±z'Ä±n en gizemli Roblox sÄ±rlarÄ±na...",
+      "TÃ¼m platformlarda tek Ã§atÄ± altÄ±nda buluÅŸma noktasÄ±na...",
+      "Sesli kanallarda efsane muhabbet ve eÄŸlencelere...",
+      "Roblox hesabÄ±nÄ± eÅŸle, hemen aileye katÄ±lma noktasÄ±na...",
+      "GÃ¼venli, adil ve eÄŸlenceli topluluk dÃ¼nyasÄ±na...",
+      "Siz de aramÄ±za katÄ±lÄ±n, eÄŸlenceyi asla kaÃ§Ä±rmayÄ±n!"
     ];
 
     let phraseIndex = 0;
@@ -1081,7 +1081,7 @@ function renderMainPage(user = null) {
     }
     typeEffect();
 
-    // ── Real Live Animated Fast Counter ──
+    // â”€â”€ Real Live Animated Fast Counter â”€â”€
     function animateCounter(id, endValue, duration = 2000) {
       const el = document.getElementById(id);
       if (!el) return;
@@ -1171,7 +1171,7 @@ function renderMainPage(user = null) {
         if (data.success) {
           document.getElementById('dmCodeVerifyBox').style.display = 'block';
         } else {
-          // HİÇBİR POPUP UYARISI GÖSTERMEDEN DOĞRUDAN İNTERAKTİF HESAP OLUŞTURMA SİHİRBAZINA YÖNLENDİR
+          // HÄ°Ã‡BÄ°R POPUP UYARISI GÃ–STERMEDEN DOÄRUDAN Ä°NTERAKTÄ°F HESAP OLUÅTURMA SÄ°HÄ°RBAZINA YÃ–NLENDÄ°R
           window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
         }
       } catch (err) {
@@ -1221,7 +1221,7 @@ function renderMainPage(user = null) {
             else switchLoginTab('roblox');
           }
         } else {
-          // HİÇBİR POPUP UYARISI GÖSTERMEDEN DOĞRUDAN İNTERAKTİF HESAP OLUŞTURMA SİHİRBAZINA YÖNLENDİR
+          // HÄ°Ã‡BÄ°R POPUP UYARISI GÃ–STERMEDEN DOÄRUDAN Ä°NTERAKTÄ°F HESAP OLUÅTURMA SÄ°HÄ°RBAZINA YÃ–NLENDÄ°R
           window.location.href = '/login?register=1&username=' + encodeURIComponent(username);
         }
       } catch (err) {
@@ -1231,7 +1231,7 @@ function renderMainPage(user = null) {
 
     async function submitPinLogin() {
       const pin = document.getElementById('pinInput').value.trim();
-      if (!pin) return alert('Lütfen şifrenizi girin.');
+      if (!pin) return alert('LÃ¼tfen ÅŸifrenizi girin.');
 
       try {
         const res = await fetch('/auth/login-pin', {
@@ -1243,10 +1243,10 @@ function renderMainPage(user = null) {
         if (data.success) {
           window.location.href = data.redirectUrl || '/dashboard';
         } else {
-          alert('Hata: ' + (data.error || 'Giriş başarısız.'));
+          alert('Hata: ' + (data.error || 'GiriÅŸ baÅŸarÄ±sÄ±z.'));
         }
       } catch (err) {
-        alert('Sunucu hatası.');
+        alert('Sunucu hatasÄ±.');
       }
     }
   </script>
@@ -1254,16 +1254,16 @@ function renderMainPage(user = null) {
 </html>`;
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // LOGIN PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderLoginPage(errorMsg = null) {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Giriş Yap — Sentara Premium</title>
+  <title>GiriÅŸ Yap â€” Sentara Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -1363,9 +1363,9 @@ function renderLoginPage(errorMsg = null) {
   <div class="glow glow-2"></div>
   <div class="container">
     <div class="card">
-      <span class="logo" style="background: linear-gradient(135deg, #f43f5e, #fda4af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:800; font-size:2.2rem;">EkoYıldız</span>
-      <h1>EkoYıldız Portalı</h1>
-      <p class="subtitle">Sisteme giriş yapmak için bir yöntem seçin</p>
+      <span class="logo" style="background: linear-gradient(135deg, #f43f5e, #fda4af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:800; font-size:2.2rem;">EkoYÄ±ldÄ±z</span>
+      <h1>EkoYÄ±ldÄ±z PortalÄ±</h1>
+      <p class="subtitle">Sisteme giriÅŸ yapmak iÃ§in bir yÃ¶ntem seÃ§in</p>
 
       <div class="error-box" id="error-box">${errorMsg ? errorMsg : ''}</div>
 
@@ -1373,105 +1373,105 @@ function renderLoginPage(errorMsg = null) {
       <div id="view-main">
         <div class="remember-me">
           <input type="checkbox" id="remember-discord">
-          <label for="remember-discord">Beni Hatırla</label>
+          <label for="remember-discord">Beni HatÄ±rla</label>
         </div>
-        <a href="#" onclick="goDiscordAuth()" class="btn btn-discord" style="background:#5865F2;">Discord ile Giriş Yap</a>
-        <a href="/auth/roblox" class="btn" style="background:#000; border:1px solid rgba(255,255,255,0.2); color:#fff;">Roblox ile Giriş Yap</a>
+        <a href="#" onclick="goDiscordAuth()" class="btn btn-discord" style="background:#5865F2;">Discord ile GiriÅŸ Yap</a>
+        <a href="/auth/roblox" class="btn" style="background:#000; border:1px solid rgba(255,255,255,0.2); color:#fff;">Roblox ile GiriÅŸ Yap</a>
         <div class="divider">veya</div>
-        <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod Gönder (DM)</button>
-        <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Şifresi ile Giriş</button>
-        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">✨ Yeni Hesap Oluştur (Kayıt Ol)</button>
+        <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod GÃ¶nder (DM)</button>
+        <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Åifresi ile GiriÅŸ</button>
+        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">âœ¨ Yeni Hesap OluÅŸtur (KayÄ±t Ol)</button>
       </div>
 
       <!-- OTP VIEW -->
       <div id="view-otp" style="display:none;">
-        <h2 style="font-size:1.1rem; margin-bottom:1rem;">Discord Kodu ile Giriş</h2>
+        <h2 style="font-size:1.1rem; margin-bottom:1rem;">Discord Kodu ile GiriÅŸ</h2>
         <div class="remember-me">
           <input type="checkbox" id="remember-otp">
-          <label for="remember-otp">Beni Hatırla</label>
+          <label for="remember-otp">Beni HatÄ±rla</label>
         </div>
         <div id="otp-step-1">
-          <input type="text" id="otp-username" class="input-field" placeholder="Discord Kullanıcı Adı (Örn: ekoyildiz)">
-          <button id="btn-request" onclick="requestCode()" class="btn btn-primary">Kod Gönder</button>
+          <input type="text" id="otp-username" class="input-field" placeholder="Discord KullanÄ±cÄ± AdÄ± (Ã–rn: ekoyildiz)">
+          <button id="btn-request" onclick="requestCode()" class="btn btn-primary">Kod GÃ¶nder</button>
         </div>
         <div id="otp-step-2" style="display:none;">
-          <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">Discord özel mesajlarınıza gelen 4 haneli kodu girin:</p>
+          <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">Discord Ã¶zel mesajlarÄ±nÄ±za gelen 4 haneli kodu girin:</p>
           <input type="text" id="otp-code" class="input-field" placeholder="____" maxlength="4" style="text-align:center; letter-spacing:0.5rem; font-size:1.5rem;">
           <input type="hidden" id="otp-resolved-id">
-          <button id="btn-verify" onclick="verifyCode()" class="btn btn-success">Doğrula ve Giriş Yap</button>
+          <button id="btn-verify" onclick="verifyCode()" class="btn btn-success">DoÄŸrula ve GiriÅŸ Yap</button>
         </div>
-        <button onclick="showView('view-main')" class="link-btn" style="margin-top:1rem;">← Geri dön</button>
+        <button onclick="showView('view-main')" class="link-btn" style="margin-top:1rem;">â† Geri dÃ¶n</button>
       </div>
 
       <!-- PASSWORD VIEW -->
       <div id="view-password" style="display:none;">
-        <h2 style="font-size:1.1rem; margin-bottom:1rem;">Site Şifresi ile Giriş</h2>
+        <h2 style="font-size:1.1rem; margin-bottom:1rem;">Site Åifresi ile GiriÅŸ</h2>
         <div class="remember-me">
           <input type="checkbox" id="remember-pwd">
-          <label for="remember-pwd">Beni Hatırla</label>
+          <label for="remember-pwd">Beni HatÄ±rla</label>
         </div>
-        <input type="text" id="pwd-username" class="input-field" placeholder="Discord Kullanıcı Adı">
-        <input type="password" id="pwd-password" class="input-field" placeholder="Site Şifresi">
-        <button id="btn-pwd-login" onclick="passwordLogin()" class="btn btn-success">Giriş Yap</button>
-        <button onclick="forgotPassword()" class="link-btn" style="display:block; margin: 1rem auto 0.5rem;">Şifremi Unuttum</button>
-        <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:0 auto;">← Geri dön</button>
+        <input type="text" id="pwd-username" class="input-field" placeholder="Discord KullanÄ±cÄ± AdÄ±">
+        <input type="password" id="pwd-password" class="input-field" placeholder="Site Åifresi">
+        <button id="btn-pwd-login" onclick="passwordLogin()" class="btn btn-success">GiriÅŸ Yap</button>
+        <button onclick="forgotPassword()" class="link-btn" style="display:block; margin: 1rem auto 0.5rem;">Åifremi Unuttum</button>
+        <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:0 auto;">â† Geri dÃ¶n</button>
       </div>
 
       <!-- INTERACTIVE REGISTER WIZARD VIEW -->
       <div id="view-register-wizard" style="display:none; text-align:left;">
-        <h2 style="font-size:1.15rem; margin-bottom:0.3rem; color:#fff; text-align:center;">✨ Yeni Hesap Oluşturma</h2>
-        <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-bottom:1.2rem;">Adım Adım İnteraktif Kurulum <span id="reg-username-display" style="color:var(--accent); font-weight:600;"></span></p>
+        <h2 style="font-size:1.15rem; margin-bottom:0.3rem; color:#fff; text-align:center;">âœ¨ Yeni Hesap OluÅŸturma</h2>
+        <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-bottom:1.2rem;">AdÄ±m AdÄ±m Ä°nteraktif Kurulum <span id="reg-username-display" style="color:var(--accent); font-weight:600;"></span></p>
 
         <!-- STEP 1: ROBLOX METHOD -->
         <div id="wiz-step-1">
-          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🎮 Adım 1/3: Roblox Hesabını Bağla</h3>
-          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.4;">Şimdi Roblox hesabını EkoYıldız portalına bağlayalım. Roblox hesabını hangi yöntemle doğrulamak istersin?</p>
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">ğŸ® AdÄ±m 1/3: Roblox HesabÄ±nÄ± BaÄŸla</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.4;">Åimdi Roblox hesabÄ±nÄ± EkoYÄ±ldÄ±z portalÄ±na baÄŸlayalÄ±m. Roblox hesabÄ±nÄ± hangi yÃ¶ntemle doÄŸrulamak istersin?</p>
 
           <div class="wiz-card" id="opt-rbx-friend" onclick="selectRobloxMethod('friend_request')" style="padding:0.9rem; border:1px solid rgba(167,139,250,0.4); border-radius:14px; background:rgba(167,139,250,0.1); margin-bottom:0.7rem; cursor:pointer;">
-            <div style="font-weight:600; font-size:0.9rem; color:#fff;">👥 Arkadaş İsteği İle (RoWifi / Bot)</div>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">RoWifi Botumuza arkadaşlık isteği göndererek otomatik doğrulayın.</div>
+            <div style="font-weight:600; font-size:0.9rem; color:#fff;">ğŸ‘¥ ArkadaÅŸ Ä°steÄŸi Ä°le (RoWifi / Bot)</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">RoWifi Botumuza arkadaÅŸlÄ±k isteÄŸi gÃ¶ndererek otomatik doÄŸrulayÄ±n.</div>
           </div>
 
           <div class="wiz-card" id="opt-rbx-profile" onclick="selectRobloxMethod('profile_code')" style="padding:0.9rem; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(0,0,0,0.25); margin-bottom:1.2rem; cursor:pointer;">
-            <div style="font-weight:600; font-size:0.9rem; color:#fff;">🔐 Roblox Profil Açıklaması / 2FA Kodu İle</div>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">Roblox profil açıklamanıza özel kodu ekleyerek veya Roblox 2FA ile doğrulayın.</div>
+            <div style="font-weight:600; font-size:0.9rem; color:#fff;">ğŸ” Roblox Profil AÃ§Ä±klamasÄ± / 2FA Kodu Ä°le</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">Roblox profil aÃ§Ä±klamanÄ±za Ã¶zel kodu ekleyerek veya Roblox 2FA ile doÄŸrulayÄ±n.</div>
           </div>
 
-          <button onclick="nextWizardStep(1)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (Adım 2) →</button>
+          <button onclick="nextWizardStep(1)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (AdÄ±m 2) â†’</button>
         </div>
 
         <!-- STEP 2: PASSWORD CREATION -->
         <div id="wiz-step-2" style="display:none;">
-          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🔐 Adım 2/3: Güvenli Web Şifresi Belirle</h3>
-          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">Portalınıza tek tıkla güvenle giriş yapabilmek için kendi web şifrenizi belirleyin:</p>
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">ğŸ” AdÄ±m 2/3: GÃ¼venli Web Åifresi Belirle</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">PortalÄ±nÄ±za tek tÄ±kla gÃ¼venle giriÅŸ yapabilmek iÃ§in kendi web ÅŸifrenizi belirleyin:</p>
 
-          <input type="password" id="reg-pwd-1" class="input-field" placeholder="Web Şifresi (En az 6 karakter)" oninput="checkPasswordStrength(this.value)">
+          <input type="password" id="reg-pwd-1" class="input-field" placeholder="Web Åifresi (En az 6 karakter)" oninput="checkPasswordStrength(this.value)">
           <div id="pwd-strength" style="font-size:0.75rem; color:var(--muted); margin:-0.5rem 0 0.8rem; text-align:right;"></div>
 
-          <input type="password" id="reg-pwd-2" class="input-field" placeholder="Web Şifresini Tekrarla">
+          <input type="password" id="reg-pwd-2" class="input-field" placeholder="Web Åifresini Tekrarla">
 
-          <button onclick="nextWizardStep(2)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (Adım 3) →</button>
-          <button onclick="showWizardStep(1)" class="link-btn" style="display:block; margin:0.6rem auto 0;">← Önceki Adım</button>
+          <button onclick="nextWizardStep(2)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (AdÄ±m 3) â†’</button>
+          <button onclick="showWizardStep(1)" class="link-btn" style="display:block; margin:0.6rem auto 0;">â† Ã–nceki AdÄ±m</button>
         </div>
 
         <!-- STEP 3: 2FA CHOICE -->
         <div id="wiz-step-3" style="display:none;">
-          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🛡️ Adım 3/3: 2 Aşamalı Doğrulama (2FA)</h3>
-          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;">Hesabınızı izinsiz girişlere karşı korumak için 2 Aşamalı Doğrulamayı aktif etmek ister misiniz?</p>
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">ğŸ›¡ï¸ AdÄ±m 3/3: 2 AÅŸamalÄ± DoÄŸrulama (2FA)</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;">HesabÄ±nÄ±zÄ± izinsiz giriÅŸlere karÅŸÄ± korumak iÃ§in 2 AÅŸamalÄ± DoÄŸrulamayÄ± aktif etmek ister misiniz?</p>
 
-          <button id="btn-finish-reg" onclick="finishRegisterWizard(true)" class="btn btn-success" style="background:linear-gradient(135deg,#10b981,#059669); margin-bottom:0.8rem;">🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)</button>
-          <button onclick="finishRegisterWizard(false)" class="btn" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.1);">⚡ Hayır, Şimdilik Atla</button>
-          <button onclick="showWizardStep(2)" class="link-btn" style="display:block; margin:0.6rem auto 0;">← Önceki Adım</button>
+          <button id="btn-finish-reg" onclick="finishRegisterWizard(true)" class="btn btn-success" style="background:linear-gradient(135deg,#10b981,#059669); margin-bottom:0.8rem;">ğŸ›¡ï¸ Evet, 2 AÅŸamalÄ± DoÄŸrulamayÄ± Aktif Et (Ã–nerilir)</button>
+          <button onclick="finishRegisterWizard(false)" class="btn" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.1);">âš¡ HayÄ±r, Åimdilik Atla</button>
+          <button onclick="showWizardStep(2)" class="link-btn" style="display:block; margin:0.6rem auto 0;">â† Ã–nceki AdÄ±m</button>
         </div>
 
         <!-- STEP 4: SUCCESS ANIMATION -->
         <div id="wiz-step-4" style="display:none; text-align:center; padding:1.2rem 0;">
-          <div style="font-size:3.2rem; margin-bottom:0.6rem;">🎉</div>
-          <h3 style="font-size:1.15rem; font-weight:700; color:#34d399; margin-bottom:0.4rem;">Hesabınız Başarıyla Oluşturuldu!</h3>
-          <p style="font-size:0.85rem; color:var(--muted);">EkoYıldız portalına yönlendiriliyorsunuz, lütfen bekleyin...</p>
+          <div style="font-size:3.2rem; margin-bottom:0.6rem;">ğŸ‰</div>
+          <h3 style="font-size:1.15rem; font-weight:700; color:#34d399; margin-bottom:0.4rem;">HesabÄ±nÄ±z BaÅŸarÄ±yla OluÅŸturuldu!</h3>
+          <p style="font-size:0.85rem; color:var(--muted);">EkoYÄ±ldÄ±z portalÄ±na yÃ¶nlendiriliyorsunuz, lÃ¼tfen bekleyin...</p>
         </div>
 
-        <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:1rem auto 0; text-align:center;">← Kaydı İptal Et ve Girişe Dön</button>
+        <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:1rem auto 0; text-align:center;">â† KaydÄ± Ä°ptal Et ve GiriÅŸe DÃ¶n</button>
       </div>
 
       <script>
@@ -1481,7 +1481,7 @@ function renderLoginPage(errorMsg = null) {
 
         function showError(msg) {
           const box = document.getElementById('error-box');
-          box.innerText = "⚠️ " + msg;
+          box.innerText = "âš ï¸ " + msg;
           box.style.display = 'block';
         }
         function hideError() {
@@ -1551,9 +1551,9 @@ function renderLoginPage(errorMsg = null) {
           const indicator = document.getElementById('pwd-strength');
           if (!indicator) return;
           if (!val) { indicator.innerText = ''; return; }
-          if (val.length < 6) { indicator.innerText = '🔴 Şifre çok kısa (en az 6 karakter)'; indicator.style.color = '#fb7185'; }
-          else if (val.length < 9) { indicator.innerText = '🟡 Şifre gücü: Orta'; indicator.style.color = '#fbbf24'; }
-          else { indicator.innerText = '🟢 Şifre gücü: Güçlü'; indicator.style.color = '#34d399'; }
+          if (val.length < 6) { indicator.innerText = 'ğŸ”´ Åifre Ã§ok kÄ±sa (en az 6 karakter)'; indicator.style.color = '#fb7185'; }
+          else if (val.length < 9) { indicator.innerText = 'ğŸŸ¡ Åifre gÃ¼cÃ¼: Orta'; indicator.style.color = '#fbbf24'; }
+          else { indicator.innerText = 'ğŸŸ¢ Åifre gÃ¼cÃ¼: GÃ¼Ã§lÃ¼'; indicator.style.color = '#34d399'; }
         }
 
         function nextWizardStep(fromStep) {
@@ -1563,8 +1563,8 @@ function renderLoginPage(errorMsg = null) {
           } else if (fromStep === 2) {
             const p1 = document.getElementById('reg-pwd-1').value;
             const p2 = document.getElementById('reg-pwd-2').value;
-            if (!p1 || p1.length < 6) return showError("Lütfen en az 6 karakterli bir şifre girin.");
-            if (p1 !== p2) return showError("Girilen şifreler eşleşmiyor!");
+            if (!p1 || p1.length < 6) return showError("LÃ¼tfen en az 6 karakterli bir ÅŸifre girin.");
+            if (p1 !== p2) return showError("Girilen ÅŸifreler eÅŸleÅŸmiyor!");
             regState.password = p1;
             showWizardStep(3);
           }
@@ -1573,7 +1573,7 @@ function renderLoginPage(errorMsg = null) {
         async function finishRegisterWizard(enable2FA) {
           regState.enable2FA = enable2FA;
           const btn = document.getElementById('btn-finish-reg');
-          if (btn) { btn.disabled = true; btn.innerText = "Hesap Oluşturuluyor..."; }
+          if (btn) { btn.disabled = true; btn.innerText = "Hesap OluÅŸturuluyor..."; }
 
           try {
             const res = await fetch('/api/auth/register-interactive', {
@@ -1588,12 +1588,12 @@ function renderLoginPage(errorMsg = null) {
                 window.location.href = data.redirectUrl || '/dashboard';
               }, 1500);
             } else {
-              showError(data.error || "Hesap oluşturulamadı.");
-              if (btn) { btn.disabled = false; btn.innerText = "🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)"; }
+              showError(data.error || "Hesap oluÅŸturulamadÄ±.");
+              if (btn) { btn.disabled = false; btn.innerText = "ğŸ›¡ï¸ Evet, 2 AÅŸamalÄ± DoÄŸrulamayÄ± Aktif Et (Ã–nerilir)"; }
             }
           } catch (e) {
-            showError("Bağlantı hatası oluştu.");
-            if (btn) { btn.disabled = false; btn.innerText = "🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)"; }
+            showError("BaÄŸlantÄ± hatasÄ± oluÅŸtu.");
+            if (btn) { btn.disabled = false; btn.innerText = "ğŸ›¡ï¸ Evet, 2 AÅŸamalÄ± DoÄŸrulamayÄ± Aktif Et (Ã–nerilir)"; }
           }
         }
 
@@ -1610,7 +1610,7 @@ function renderLoginPage(errorMsg = null) {
           errorBox.style.display = 'block';
 
           let seconds = 3;
-          errorBox.innerHTML = '🔒 <strong>Sentara botunun sadece kullanıcı ismine erişebildiğini unutmayın.</strong><br>Yönlendiriliyor (' + seconds + 's)...';
+          errorBox.innerHTML = 'ğŸ”’ <strong>Sentara botunun sadece kullanÄ±cÄ± ismine eriÅŸebildiÄŸini unutmayÄ±n.</strong><br>YÃ¶nlendiriliyor (' + seconds + 's)...';
 
           const interval = setInterval(() => {
             seconds--;
@@ -1618,7 +1618,7 @@ function renderLoginPage(errorMsg = null) {
               clearInterval(interval);
               window.location.href = '/auth/discord?remember=' + (rem ? 'true' : 'false');
             } else {
-              errorBox.innerHTML = '🔒 <strong>Sentara botunun sadece kullanıcı ismine erişebildiğini unutmayın.</strong><br>Yönlendiriliyor (' + seconds + 's)...';
+              errorBox.innerHTML = 'ğŸ”’ <strong>Sentara botunun sadece kullanÄ±cÄ± ismine eriÅŸebildiÄŸini unutmayÄ±n.</strong><br>YÃ¶nlendiriliyor (' + seconds + 's)...';
             }
           }, 1000);
         }
@@ -1627,7 +1627,7 @@ function renderLoginPage(errorMsg = null) {
         async function requestCode() {
           hideError();
           const username = document.getElementById('otp-username').value.trim();
-          if (!username) return showError("Lütfen Discord Kullanıcı Adınızı girin.");
+          if (!username) return showError("LÃ¼tfen Discord KullanÄ±cÄ± AdÄ±nÄ±zÄ± girin.");
 
           const btn = document.getElementById('btn-request');
           btn.disabled = true; btn.innerText = "Kontrol Ediliyor...";
@@ -1642,15 +1642,15 @@ function renderLoginPage(errorMsg = null) {
               document.getElementById('otp-step-1').style.display = 'none';
               document.getElementById('otp-step-2').style.display = 'block';
             } else if (data.isNewUser || res.status === 404) {
-              // HİÇBİR UYARI/ALERT POPUP GÖSTERMEDEN DOĞRUDAN ADIM ADIM KAYIT WIZARDINA AKTAR
+              // HÄ°Ã‡BÄ°R UYARI/ALERT POPUP GÃ–STERMEDEN DOÄRUDAN ADIM ADIM KAYIT WIZARDINA AKTAR
               startRegisterWizard(username);
             } else {
-              showError(data.error || "Giriş hatası.");
+              showError(data.error || "GiriÅŸ hatasÄ±.");
             }
           } catch(e) { 
             startRegisterWizard(username);
           }
-          btn.disabled = false; btn.innerText = "Kod Gönder";
+          btn.disabled = false; btn.innerText = "Kod GÃ¶nder";
         }
 
         async function verifyCode() {
@@ -1658,10 +1658,10 @@ function renderLoginPage(errorMsg = null) {
           const discordId = document.getElementById('otp-resolved-id').value;
           const code = document.getElementById('otp-code').value.trim();
           const rem = document.getElementById('remember-otp').checked;
-          if(!code || code.length !== 4) return showError("Lütfen 4 haneli kodu girin.");
+          if(!code || code.length !== 4) return showError("LÃ¼tfen 4 haneli kodu girin.");
 
           const btn = document.getElementById('btn-verify');
-          btn.disabled = true; btn.innerText = "Doğrulanıyor...";
+          btn.disabled = true; btn.innerText = "DoÄŸrulanÄ±yor...";
           try {
             const res = await fetch('/api/auth/verify-code', {
               method: 'POST', headers:{'Content-Type':'application/json'},
@@ -1669,9 +1669,9 @@ function renderLoginPage(errorMsg = null) {
             });
             const data = await res.json();
             if(data.success) window.location.href = '/dashboard';
-            else showError(data.error || "Hatalı kod.");
-          } catch(e) { showError("Bağlantı hatası."); }
-          btn.disabled = false; btn.innerText = "Doğrula ve Giriş Yap";
+            else showError(data.error || "HatalÄ± kod.");
+          } catch(e) { showError("BaÄŸlantÄ± hatasÄ±."); }
+          btn.disabled = false; btn.innerText = "DoÄŸrula ve GiriÅŸ Yap";
         }
 
         // Custom Password Auth
@@ -1681,10 +1681,10 @@ function renderLoginPage(errorMsg = null) {
           const password = document.getElementById('pwd-password').value.trim();
           const rem = document.getElementById('remember-pwd').checked;
 
-          if (!username || !password) return showError("Lütfen tüm alanları doldurun.");
+          if (!username || !password) return showError("LÃ¼tfen tÃ¼m alanlarÄ± doldurun.");
 
           const btn = document.getElementById('btn-pwd-login');
-          btn.disabled = true; btn.innerText = "Giriş Yapılıyor...";
+          btn.disabled = true; btn.innerText = "GiriÅŸ YapÄ±lÄ±yor...";
 
           try {
             const res = await fetch('/api/auth/site-login', {
@@ -1696,16 +1696,16 @@ function renderLoginPage(errorMsg = null) {
             else if (data.isNewUser) {
               startRegisterWizard(username);
             } else {
-              showError(data.error || "Hatalı şifre veya kullanıcı bulunamadı.");
+              showError(data.error || "HatalÄ± ÅŸifre veya kullanÄ±cÄ± bulunamadÄ±.");
             }
-          } catch(e) { showError("Bağlantı hatası."); }
+          } catch(e) { showError("BaÄŸlantÄ± hatasÄ±."); }
 
-          btn.disabled = false; btn.innerText = "Giriş Yap";
+          btn.disabled = false; btn.innerText = "GiriÅŸ Yap";
         }
 
         async function forgotPassword() {
           hideError();
-          const username = prompt("Lütfen Discord Kullanıcı Adınızı girin:");
+          const username = prompt("LÃ¼tfen Discord KullanÄ±cÄ± AdÄ±nÄ±zÄ± girin:");
           if(!username) return;
 
           try {
@@ -1717,22 +1717,22 @@ function renderLoginPage(errorMsg = null) {
             if(data.success) {
               alert(data.message);
               // Wait for code
-              const code = prompt("DM kutunuza gelen 6 haneli sıfırlama kodunu girin:");
+              const code = prompt("DM kutunuza gelen 6 haneli sÄ±fÄ±rlama kodunu girin:");
               if(!code) return;
-              const newPassword = prompt("Lütfen yeni Site Şifrenizi belirleyin (En az 8 karakter):");
-              if(!newPassword || newPassword.length < 8) return alert("Geçersiz şifre.");
+              const newPassword = prompt("LÃ¼tfen yeni Site Åifrenizi belirleyin (En az 8 karakter):");
+              if(!newPassword || newPassword.length < 8) return alert("GeÃ§ersiz ÅŸifre.");
 
               const res2 = await fetch('/api/auth/reset-password', {
                 method: 'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ discordId: data.discordId, code, password: newPassword })
               });
               const data2 = await res2.json();
-              if(data2.success) alert("Şifreniz başarıyla sıfırlandı!");
-              else alert("Sıfırlama başarısız: " + data2.error);
+              if(data2.success) alert("Åifreniz baÅŸarÄ±yla sÄ±fÄ±rlandÄ±!");
+              else alert("SÄ±fÄ±rlama baÅŸarÄ±sÄ±z: " + data2.error);
             } else {
-              showError(data.error || "Hata oluştu.");
+              showError(data.error || "Hata oluÅŸtu.");
             }
-          } catch(e) { showError("Bağlantı hatası."); }
+          } catch(e) { showError("BaÄŸlantÄ± hatasÄ±."); }
         }
       </script>
     </div>
@@ -1742,16 +1742,16 @@ function renderLoginPage(errorMsg = null) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DISCORD AUTHORIZE PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderAuthorizePage(scopes = []) {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yetkilendirme — Sentara Premium</title>
+  <title>Yetkilendirme â€” Sentara Premium</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root { --bg:#06060e; --border:rgba(255,255,255,0.08); --accent:#a78bfa; --accent2:#818cf8; --text:#f0f0f8; --muted:#7c7c9a; }
@@ -1798,14 +1798,14 @@ function renderAuthorizePage(scopes = []) {
 <body>
   <div class="card">
     <span class="logo">sentara</span>
-    <h1>Uygulamayı Yetkilendir</h1>
-    <p>Sentara şu izinlere erişmek istiyor:</p>
+    <h1>UygulamayÄ± Yetkilendir</h1>
+    <p>Sentara ÅŸu izinlere eriÅŸmek istiyor:</p>
     <div class="scope-list">
       ${(scopes.length ? scopes : ['identify', 'email', 'guilds']).map(s => `
-        <div class="scope-item">✅ <span><strong>${_esc(s)}</strong></span></div>
+        <div class="scope-item">âœ… <span><strong>${_esc(s)}</strong></span></div>
       `).join('')}
     </div>
-    <a href="/auth/discord" class="btn">İzin Ver</a>
+    <a href="/auth/discord" class="btn">Ä°zin Ver</a>
     <a href="/" class="btn btn-ghost">Reddet</a>
   </div>
 </body>
@@ -1813,9 +1813,9 @@ function renderAuthorizePage(scopes = []) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DASHBOARD
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderDashboard(user, staffProgress) {
   // Use isAuthorized flag instead of checking username, since username might be a fallback value
   const isRobloxLinked = user.isAuthorized && user.robloxId;
@@ -1842,14 +1842,14 @@ function renderDashboard(user, staffProgress) {
   const categoryCards = Object.entries(SUPPORT_CATEGORIES).map(([key, cat]) => {
     let desc = "";
     switch (key) {
-      case "ban": desc = "Yasaklama ve sunucudaki cezalarınız hakkında itirazda bulunmak için talep oluşturun."; break;
-      case "reklam": desc = "Reklam sponsorlukları ve iş ortaklıkları hakkında bilgi almak için başvurun."; break;
-      case "report": desc = "Kuralları ihlal eden kullanıcıları moderatör ekibimize bildirin."; break;
-      case "billing": desc = "EkoCoin ve diğer ödeme işlemleriyle ilgili karşılaştığınız sorunları iletin."; break;
-      case "technical": desc = "Sistemlerimiz ve Discord botu ile ilgili teknik sorunları çözün."; break;
-      case "account": desc = "Roblox hesabı eşleme veya yetki sorunlarınızı ekibimize iletin."; break;
-      case "genel": desc = "Genel soru, öneri ve diğer konularda yardım almak için talep oluşturun."; break;
-      default: desc = "Diğer kategorilere uymayan destek talepleriniz için başvurun."; break;
+      case "ban": desc = "Yasaklama ve sunucudaki cezalarÄ±nÄ±z hakkÄ±nda itirazda bulunmak iÃ§in talep oluÅŸturun."; break;
+      case "reklam": desc = "Reklam sponsorluklarÄ± ve iÅŸ ortaklÄ±klarÄ± hakkÄ±nda bilgi almak iÃ§in baÅŸvurun."; break;
+      case "report": desc = "KurallarÄ± ihlal eden kullanÄ±cÄ±larÄ± moderatÃ¶r ekibimize bildirin."; break;
+      case "billing": desc = "EkoCoin ve diÄŸer Ã¶deme iÅŸlemleriyle ilgili karÅŸÄ±laÅŸtÄ±ÄŸÄ±nÄ±z sorunlarÄ± iletin."; break;
+      case "technical": desc = "Sistemlerimiz ve Discord botu ile ilgili teknik sorunlarÄ± Ã§Ã¶zÃ¼n."; break;
+      case "account": desc = "Roblox hesabÄ± eÅŸleme veya yetki sorunlarÄ±nÄ±zÄ± ekibimize iletin."; break;
+      case "genel": desc = "Genel soru, Ã¶neri ve diÄŸer konularda yardÄ±m almak iÃ§in talep oluÅŸturun."; break;
+      default: desc = "DiÄŸer kategorilere uymayan destek talepleriniz iÃ§in baÅŸvurun."; break;
     }
 
     return `
@@ -1857,7 +1857,7 @@ function renderDashboard(user, staffProgress) {
         <div class="category-icon">${cat.name.split(" ")[0]}</div>
         <h3 class="category-title">${cat.name.split(" ").slice(1).join(" ")}</h3>
         <p class="category-desc">${desc}</p>
-        <div class="category-btn">Talep Aç ➔</div>
+        <div class="category-btn">Talep AÃ§ â”</div>
       </div>
     `;
   }).join("");
@@ -1866,9 +1866,9 @@ function renderDashboard(user, staffProgress) {
     <!-- Welcome -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:2.5rem; animation:fadeUp 0.5s ease;">
       <div>
-        <div style="color:var(--muted);font-size:0.9rem;margin-bottom:0.3rem;">Naber? 👋</div>
+        <div style="color:var(--muted);font-size:0.9rem;margin-bottom:0.3rem;">Naber? ğŸ‘‹</div>
         <h1 style="font-size:2.4rem;font-weight:800;">${_esc(user.discordUsername)}</h1>
-        <p class="text-muted mt-1">İşte destek sistemindeki güncel durumun.</p>
+        <p class="text-muted mt-1">Ä°ÅŸte destek sistemindeki gÃ¼ncel durumun.</p>
       </div>
       <div style="display:flex;align-items:center;gap:1rem;background:rgba(255,255,255,0.03);padding:1rem 1.5rem;border-radius:16px;border:1px solid rgba(255,255,255,0.07);backdrop-filter:blur(16px);">
         <img src="${_esc(user.discordAvatar)}" alt="Avatar"
@@ -1876,13 +1876,13 @@ function renderDashboard(user, staffProgress) {
         <div>
           <div style="font-weight:700;">${_esc(user.discordUsername)}</div>
           <div style="font-size:0.8rem;color:var(--muted);">
-            ${user.isAdmin ? '<span style="color:var(--accent2);">👑 Admin</span>' :
-      user.isStaff ? '<span style="color:var(--accent);">🛡 Staff</span>' : 'Kullanıcı'}
+            ${user.isAdmin ? '<span style="color:var(--accent2);">ğŸ‘‘ Admin</span>' :
+      user.isStaff ? '<span style="color:var(--accent);">ğŸ›¡ Staff</span>' : 'KullanÄ±cÄ±'}
           </div>
           <div style="display:flex; gap:0.5rem; margin-top:0.6rem; flex-wrap:wrap;">
-            <a href="/settings" class="btn btn-sm" style="background:linear-gradient(135deg,#f43f5e,#e11d48); color:#fff; font-size:0.75rem; padding:0.35rem 0.8rem; text-decoration:none; font-weight:700;">⚙️ Hesap Ayarları & 2FA</a>
-            <a href="/auth/discord" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Discord Değiştir</a>
-            <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Roblox Değiştir</a>
+            <a href="/settings" class="btn btn-sm" style="background:linear-gradient(135deg,#f43f5e,#e11d48); color:#fff; font-size:0.75rem; padding:0.35rem 0.8rem; text-decoration:none; font-weight:700;">âš™ï¸ Hesap AyarlarÄ± & 2FA</a>
+            <a href="/auth/discord" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Discord DeÄŸiÅŸtir</a>
+            <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="font-size:0.75rem; padding:0.35rem 0.7rem; border-color:rgba(255,255,255,0.15); text-decoration:none;">Roblox DeÄŸiÅŸtir</a>
           </div>
         </div>
       </div>
@@ -1896,18 +1896,18 @@ function renderDashboard(user, staffProgress) {
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
                 margin-bottom:2rem;animation:fadeUp 0.5s ease;">
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <span style="font-size:1.5rem;">✅</span>
+        <span style="font-size:1.5rem;">âœ…</span>
         <div>
           <div style="font-weight:700;color:var(--success);">
-            Roblox Bağlandı
+            Roblox BaÄŸlandÄ±
           </div>
           <div style="font-size:0.85rem;color:var(--muted);">
-            Roblox Kullanıcı Adı: ${_esc(user.robloxUsername)}
+            Roblox KullanÄ±cÄ± AdÄ±: ${_esc(user.robloxUsername)}
           </div>
         </div>
       </div>
       <div>
-        <button type="button" id="btn-sync-roles" class="btn btn-sm btn-success">🔄 Rolleri Güncelle</button>
+        <button type="button" id="btn-sync-roles" class="btn btn-sm btn-success">ğŸ”„ Rolleri GÃ¼ncelle</button>
       </div>
     </div>
     ` : `
@@ -1917,19 +1917,19 @@ function renderDashboard(user, staffProgress) {
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
                 margin-bottom:2rem;box-shadow:0 0 15px rgba(251,191,36,0.05);animation:fadeUp 0.5s ease;">
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <span style="font-size:1.5rem;">⚠️</span>
+        <span style="font-size:1.5rem;">âš ï¸</span>
         <div>
           <div style="font-weight:800;color:var(--warning);letter-spacing:0.5px;">
-            ROBLOX HESABINI DOĞRULADIN MI? HEMEN DOĞRULA!!
+            ROBLOX HESABINI DOÄRULADIN MI? HEMEN DOÄRULA!!
           </div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">
-            Ticket açabilmek ve yetkili/üye rollerini eşitlemek için Roblox hesabını bağlaman gerekmektedir.
+            Ticket aÃ§abilmek ve yetkili/Ã¼ye rollerini eÅŸitlemek iÃ§in Roblox hesabÄ±nÄ± baÄŸlaman gerekmektedir.
           </div>
         </div>
       </div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-        <a href="/auth/roblox" class="btn btn-sm">🌐 Web ile Bağla</a>
-        <button type="button" onclick="showFriendVerifyModal()" class="btn btn-sm btn-ghost" style="border-color:var(--border);">🤖 Arkadaş İsteği ile Doğrula</button>
+        <a href="/auth/roblox" class="btn btn-sm">ğŸŒ Web ile BaÄŸla</a>
+        <button type="button" onclick="showFriendVerifyModal()" class="btn btn-sm btn-ghost" style="border-color:var(--border);">ğŸ¤– ArkadaÅŸ Ä°steÄŸi ile DoÄŸrula</button>
       </div>
     </div>
     `}
@@ -1943,13 +1943,13 @@ function renderDashboard(user, staffProgress) {
                 border-radius:16px;padding:1.25rem 1.5rem;
                 display:flex;align-items:center;gap:1rem;
                 margin-bottom:2rem;animation:pulseBorder 2s infinite alternate;">
-      <span style="font-size:1.5rem;">📈</span>
+      <span style="font-size:1.5rem;">ğŸ“ˆ</span>
       <div>
         <div style="font-weight:700;color:var(--danger);">
-          Son birkaç gündür terfi almıyorsun veya rütben değişmiyor..
+          Son birkaÃ§ gÃ¼ndÃ¼r terfi almÄ±yorsun veya rÃ¼tben deÄŸiÅŸmiyor..
         </div>
         <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">
-          Aktifliğini artırarak ve daha fazla ticket çözerek rütbeni yükseltebilirsin!
+          AktifliÄŸini artÄ±rarak ve daha fazla ticket Ã§Ã¶zerek rÃ¼tbeni yÃ¼kseltebilirsin!
         </div>
       </div>
     </div>
@@ -1962,33 +1962,33 @@ function renderDashboard(user, staffProgress) {
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
                 margin-bottom:1rem;animation:fadeUp 0.5s ease;">
       <div style="display:flex;align-items:center;gap:0.75rem;flex:1;">
-        <span style="font-size:1.5rem;">🔗</span>
+        <span style="font-size:1.5rem;">ğŸ”—</span>
         <div>
-          <div style="font-weight:700;color:var(--accent2);">Discord ile doğrulama ve bağlantılı roller</div>
+          <div style="font-weight:700;color:var(--accent2);">Discord ile doÄŸrulama ve baÄŸlantÄ±lÄ± roller</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">
-            Roblox doğrulaması tamamlandığında Discord tarafında bağlantılı roller için şartlar otomatik güncellenir.
+            Roblox doÄŸrulamasÄ± tamamlandÄ±ÄŸÄ±nda Discord tarafÄ±nda baÄŸlantÄ±lÄ± roller iÃ§in ÅŸartlar otomatik gÃ¼ncellenir.
           </div>
         </div>
       </div>
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
-        <a href="/auth/discord" class="btn btn-sm btn-ghost" style="border-color:rgba(129,140,248,0.3);color:var(--accent2);font-weight:700;">Discord ile Giriş Yap</a>
+        <a href="/auth/discord" class="btn btn-sm btn-ghost" style="border-color:rgba(129,140,248,0.3);color:var(--accent2);font-weight:700;">Discord ile GiriÅŸ Yap</a>
       </div>
     </div>
 
     <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1rem 1.25rem;margin-bottom:2rem;">
-      <div style="font-weight:800;margin-bottom:0.75rem;">📋 Doğrulama Şartları</div>
+      <div style="font-weight:800;margin-bottom:0.75rem;">ğŸ“‹ DoÄŸrulama ÅartlarÄ±</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">
         <div style="padding:0.75rem;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
           <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">Discord OAuth</div>
-          <div style="font-weight:700;color:${hasDiscordOAuth ? 'var(--success)' : 'var(--warning)'};">${hasDiscordOAuth ? '✅ Tamamlandı' : '⏳ Bekliyor'}</div>
+          <div style="font-weight:700;color:${hasDiscordOAuth ? 'var(--success)' : 'var(--warning)'};">${hasDiscordOAuth ? 'âœ… TamamlandÄ±' : 'â³ Bekliyor'}</div>
         </div>
         <div style="padding:0.75rem;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
-          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">Roblox Doğrulaması</div>
-          <div style="font-weight:700;color:${isRobloxLinked ? 'var(--success)' : 'var(--warning)'};">${isRobloxLinked ? '✅ Tamamlandı' : '⏳ Bekliyor'}</div>
+          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">Roblox DoÄŸrulamasÄ±</div>
+          <div style="font-weight:700;color:${isRobloxLinked ? 'var(--success)' : 'var(--warning)'};">${isRobloxLinked ? 'âœ… TamamlandÄ±' : 'â³ Bekliyor'}</div>
         </div>
         <div style="padding:0.75rem;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
-          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">Kullanıcı adı damndoggii mi?</div>
-          <div style="font-weight:700;color:${usernameIsEkonqt ? 'var(--success)' : 'var(--warning)'};">${usernameIsEkonqt ? '✅ Tamamlandı' : '⏳ Bekliyor'}</div>
+          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">KullanÄ±cÄ± adÄ± damndoggii mi?</div>
+          <div style="font-weight:700;color:${usernameIsEkonqt ? 'var(--success)' : 'var(--warning)'};">${usernameIsEkonqt ? 'âœ… TamamlandÄ±' : 'â³ Bekliyor'}</div>
         </div>
       </div>
     </div>
@@ -1999,13 +1999,13 @@ function renderDashboard(user, staffProgress) {
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
                 margin-bottom:2rem;animation:fadeUp 0.5s ease;">
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <span style="font-size:1.5rem;">⚖️</span>
+        <span style="font-size:1.5rem;">âš–ï¸</span>
         <div>
           <div style="font-weight:700;color:var(--accent2);">
-            Şartlarımızı kabul ettin mi?
+            ÅartlarÄ±mÄ±zÄ± kabul ettin mi?
           </div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">
-            Kullanım koşullarımızı ve gizlilik politikamızı okuyup onayladığınızdan emin olun.
+            KullanÄ±m koÅŸullarÄ±mÄ±zÄ± ve gizlilik politikamÄ±zÄ± okuyup onayladÄ±ÄŸÄ±nÄ±zdan emin olun.
           </div>
         </div>
       </div>
@@ -2016,8 +2016,8 @@ function renderDashboard(user, staffProgress) {
 
     <!-- Ticket Categories Title -->
     <div style="margin-bottom: 1.5rem; animation:fadeUp 0.6s ease; margin-top:2rem;">
-      <h2 style="font-size:1.8rem;font-weight:800;background:linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:inline-block;">🎫 Destek Kategorileri</h2>
-      <p class="text-muted" style="margin-top:0.3rem;">Yaşadığınız soruna en uygun kategoriyi seçerek yeni bir destek talebi (ticket) başlatın.</p>
+      <h2 style="font-size:1.8rem;font-weight:800;background:linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:inline-block;">ğŸ« Destek Kategorileri</h2>
+      <p class="text-muted" style="margin-top:0.3rem;">YaÅŸadÄ±ÄŸÄ±nÄ±z soruna en uygun kategoriyi seÃ§erek yeni bir destek talebi (ticket) baÅŸlatÄ±n.</p>
     </div>
 
     <!-- Categories Grid -->
@@ -2122,27 +2122,27 @@ function renderDashboard(user, staffProgress) {
         const box = document.getElementById('role-sync-result');
         if (!btn || !box) return;
         btn.disabled = true;
-        btn.textContent = '⏳ Güncelleniyor...';
+        btn.textContent = 'â³ GÃ¼ncelleniyor...';
         box.style.display = 'block';
         box.innerHTML = '<div class="card" style="color:var(--muted);">Roller senkronize ediliyor...</div>';
         try {
           const res = await fetch('/api/roles/sync', { method: 'POST' });
           const data = await res.json();
           if (!res.ok || !data.success) {
-            throw new Error(data.error || 'Senkronizasyon başarısız');
+            throw new Error(data.error || 'Senkronizasyon baÅŸarÄ±sÄ±z');
           }
           const added = (data.added || []).map(r => r.name).join(', ') || 'Yok';
           const removed = (data.removed || []).map(r => r.name).join(', ') || 'Yok';
           box.innerHTML = '<div class="card" style="border-left:4px solid var(--success);">' +
-            '<div style="font-weight:800;margin-bottom:0.75rem;">✅ Update — ' + (data.nickname || '') + '</div>' +
-            '<div style="font-size:0.9rem;margin-bottom:0.4rem;"><strong>Rütbe:</strong> ' + (data.rankName || '—') + '</div>' +
+            '<div style="font-weight:800;margin-bottom:0.75rem;">âœ… Update â€” ' + (data.nickname || '') + '</div>' +
+            '<div style="font-size:0.9rem;margin-bottom:0.4rem;"><strong>RÃ¼tbe:</strong> ' + (data.rankName || 'â€”') + '</div>' +
             '<div style="font-size:0.9rem;margin-bottom:0.4rem;"><strong>Eklenen:</strong> ' + added + '</div>' +
-            '<div style="font-size:0.9rem;"><strong>Kaldırılan:</strong> ' + removed + '</div></div>';
+            '<div style="font-size:0.9rem;"><strong>KaldÄ±rÄ±lan:</strong> ' + removed + '</div></div>';
         } catch (err) {
-          box.innerHTML = '<div class="card" style="border-left:4px solid var(--danger);color:var(--danger);">❌ ' + err.message + '</div>';
+          box.innerHTML = '<div class="card" style="border-left:4px solid var(--danger);color:var(--danger);">âŒ ' + err.message + '</div>';
         } finally {
           btn.disabled = false;
-          btn.textContent = '🔄 Rolleri Güncelle';
+          btn.textContent = 'ğŸ”„ Rolleri GÃ¼ncelle';
         }
       }
 
@@ -2153,26 +2153,26 @@ function renderDashboard(user, staffProgress) {
     <!-- Modal HTML -->
     <div id="friend-verify-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:1000; align-items:center; justify-content:center; padding:1.5rem;">
       <div class="card" style="width:100%; max-width:480px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
-        <button onclick="closeFriendVerifyModal()" style="position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer;">✕</button>
-        <h3 style="font-size:1.5rem; font-weight:800; margin-bottom:1rem; background:linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:flex; align-items:center; gap:0.5rem; text-align:left;">🤖 Arkadaş İsteği Doğrulaması</h3>
+        <button onclick="closeFriendVerifyModal()" style="position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer;">âœ•</button>
+        <h3 style="font-size:1.5rem; font-weight:800; margin-bottom:1rem; background:linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; display:flex; align-items:center; gap:0.5rem; text-align:left;">ğŸ¤– ArkadaÅŸ Ä°steÄŸi DoÄŸrulamasÄ±</h3>
         
         <div id="fv-step-1">
           <p style="color:var(--muted); font-size:0.95rem; line-height:1.6; margin-bottom:1.5rem; text-align:left;">
-            Roblox kullanıcı adınızı girin. Botumuz size Roblox üzerinden bir arkadaşlık isteği gönderecektir.
+            Roblox kullanÄ±cÄ± adÄ±nÄ±zÄ± girin. Botumuz size Roblox Ã¼zerinden bir arkadaÅŸlÄ±k isteÄŸi gÃ¶nderecektir.
           </p>
-          <label for="fv-username" style="text-align:left;">Roblox Kullanıcı Adı</label>
-          <input type="text" id="fv-username" placeholder="örn: RobloxUser" style="margin-bottom:1.5rem;">
-          <button onclick="startFriendVerification()" id="fv-start-btn" class="btn w-full">Arkadaş İsteği Gönder</button>
+          <label for="fv-username" style="text-align:left;">Roblox KullanÄ±cÄ± AdÄ±</label>
+          <input type="text" id="fv-username" placeholder="Ã¶rn: RobloxUser" style="margin-bottom:1.5rem;">
+          <button onclick="startFriendVerification()" id="fv-start-btn" class="btn w-full">ArkadaÅŸ Ä°steÄŸi GÃ¶nder</button>
         </div>
         
         <div id="fv-step-2" style="display:none;">
           <p style="color:var(--muted); font-size:0.95rem; line-height:1.6; margin-bottom:1.5rem; text-align:left;">
-            Bot size arkadaşlık isteği gönderdi! Lütfen aşağıdaki profili ziyaret edip isteği kabul edin, ardından **Doğrulamayı Tamamla** butonuna tıklayın.
+            Bot size arkadaÅŸlÄ±k isteÄŸi gÃ¶nderdi! LÃ¼tfen aÅŸaÄŸÄ±daki profili ziyaret edip isteÄŸi kabul edin, ardÄ±ndan **DoÄŸrulamayÄ± Tamamla** butonuna tÄ±klayÄ±n.
           </p>
           <div style="background:rgba(0,0,0,0.2); padding:1rem; border-radius:10px; border:1px solid var(--border); text-align:center; margin-bottom:1.5rem;">
-            <a id="fv-bot-profile" href="#" target="_blank" class="text-accent" style="font-weight:700; text-decoration:none; font-size:1.05rem;">🔗 Botun Roblox Profiline Git</a>
+            <a id="fv-bot-profile" href="#" target="_blank" class="text-accent" style="font-weight:700; text-decoration:none; font-size:1.05rem;">ğŸ”— Botun Roblox Profiline Git</a>
           </div>
-          <button onclick="confirmFriendVerification()" id="fv-confirm-btn" class="btn w-full btn-success">✅ Doğrulamayı Tamamla</button>
+          <button onclick="confirmFriendVerification()" id="fv-confirm-btn" class="btn w-full btn-success">âœ… DoÄŸrulamayÄ± Tamamla</button>
         </div>
       </div>
     </div>
@@ -2195,11 +2195,11 @@ function renderDashboard(user, staffProgress) {
       async function startFriendVerification() {
         const username = document.getElementById('fv-username').value.trim();
         if (!username) {
-          showToast('Lütfen Roblox kullanıcı adınızı girin.', 'warning');
+          showToast('LÃ¼tfen Roblox kullanÄ±cÄ± adÄ±nÄ±zÄ± girin.', 'warning');
           return;
         }
         const btn = document.getElementById('fv-start-btn');
-        btn.textContent = 'Gönderiliyor...';
+        btn.textContent = 'GÃ¶nderiliyor...';
         btn.disabled = true;
         try {
           const res = await fetch('/api/auth/roblox/friend-request', {
@@ -2214,21 +2214,21 @@ function renderDashboard(user, staffProgress) {
             document.getElementById('fv-bot-profile').href = data.botProfileUrl;
             document.getElementById('fv-step-1').style.display = 'none';
             document.getElementById('fv-step-2').style.display = 'block';
-            showToast('Arkadaşlık isteği gönderildi!', 'success');
+            showToast('ArkadaÅŸlÄ±k isteÄŸi gÃ¶nderildi!', 'success');
           } else {
-            showToast(data.error || 'İstek gönderilirken bir hata oluştu.', 'error');
+            showToast(data.error || 'Ä°stek gÃ¶nderilirken bir hata oluÅŸtu.', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         } finally {
-          btn.textContent = 'Arkadaş İsteği Gönder';
+          btn.textContent = 'ArkadaÅŸ Ä°steÄŸi GÃ¶nder';
           btn.disabled = false;
         }
       }
       
       async function confirmFriendVerification() {
         if (!pendingRobloxId || !pendingUsername) {
-          showToast('Geçersiz doğrulama isteği.', 'error');
+          showToast('GeÃ§ersiz doÄŸrulama isteÄŸi.', 'error');
           return;
         }
         const btn = document.getElementById('fv-confirm-btn');
@@ -2242,15 +2242,15 @@ function renderDashboard(user, staffProgress) {
           });
           const data = await res.json();
           if (res.ok && data.success) {
-            showToast('Doğrulama başarılı! Sayfa yenileniyor...', 'success');
+            showToast('DoÄŸrulama baÅŸarÄ±lÄ±! Sayfa yenileniyor...', 'success');
             setTimeout(() => window.location.reload(), 1500);
           } else {
-            showToast(data.error || 'Arkadaşlık isteği henüz kabul edilmemiş.', 'error');
+            showToast(data.error || 'ArkadaÅŸlÄ±k isteÄŸi henÃ¼z kabul edilmemiÅŸ.', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         } finally {
-          btn.textContent = '✅ Doğrulamayı Tamamla';
+          btn.textContent = 'âœ… DoÄŸrulamayÄ± Tamamla';
           btn.disabled = false;
         }
       }
@@ -2260,44 +2260,44 @@ function renderDashboard(user, staffProgress) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TICKETS PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderTicketsPage(user) {
   const content = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
-        <h1 style="font-size:2rem;font-weight:800;">🎫 Ticket'larım</h1>
-        <a href="/tickets/new" class="btn btn-sm">➕ Yeni Ticket</a>
+        <h1 style="font-size:2rem;font-weight:800;">ğŸ« Ticket'larÄ±m</h1>
+        <a href="/tickets/new" class="btn btn-sm">â• Yeni Ticket</a>
       </div>
 
       <!-- Search + Filter bar -->
       <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-        <input id="search-input" type="text" placeholder="🔍 Ticket ara..." style="flex:1;min-width:180px;margin-bottom:0;">
+        <input id="search-input" type="text" placeholder="ğŸ” Ticket ara..." style="flex:1;min-width:180px;margin-bottom:0;">
         <select id="filter-status" style="width:auto;margin-bottom:0;font-size:0.9rem;">
-          <option value="">Tümü</option>
-          <option value="open">Açık</option>
-          <option value="closed">Kapalı</option>
+          <option value="">TÃ¼mÃ¼</option>
+          <option value="open">AÃ§Ä±k</option>
+          <option value="closed">KapalÄ±</option>
         </select>
         <select id="filter-cat" style="width:auto;margin-bottom:0;font-size:0.9rem;">
-          <option value="">Tüm Kategoriler</option>
+          <option value="">TÃ¼m Kategoriler</option>
         </select>
       </div>
 
       <div id="ticket-count" style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;"></div>
       <div id="tickets-container">
-        <div style="color:var(--muted);text-align:center;padding:3rem;">Yükleniyor...</div>
+        <div style="color:var(--muted);text-align:center;padding:3rem;">YÃ¼kleniyor...</div>
       </div>
     </div>
 
     <!-- Kapatma sebebi modal -->
     <div id="close-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:rgba(14,14,26,0.9);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:2rem;max-width:480px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.4);">
-        <h3 style="margin-bottom:1rem;">🔒 Ticket'ı Kapat</h3>
+        <h3 style="margin-bottom:1rem;">ğŸ”’ Ticket'Ä± Kapat</h3>
         <textarea id="close-reason-input" rows="4" placeholder="Kapatma sebebi..." style="width:100%;margin-bottom:1rem;"></textarea>
         <div style="display:flex;gap:0.75rem;">
           <button class="btn btn-danger" onclick="confirmClose()" style="flex:1;">Kapat</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('close-modal').style.display='none'" style="flex:1;">İptal</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('close-modal').style.display='none'" style="flex:1;">Ä°ptal</button>
         </div>
       </div>
     </div>
@@ -2339,7 +2339,7 @@ function renderTicketsPage(user) {
           renderTickets();
         } catch (err) {
           document.getElementById('tickets-container').innerHTML =
-            \`<div style="color:var(--danger);padding:1rem;">❌ \${err.message}</div>\`;
+            \`<div style="color:var(--danger);padding:1rem;">âŒ \${err.message}</div>\`;
         }
       }
 
@@ -2347,13 +2347,13 @@ function renderTicketsPage(user) {
         if (!dateStr) return '';
         const diff = Date.now() - new Date(dateStr).getTime();
         const m = Math.floor(diff / 60000);
-        if (m < 1)  return 'az önce';
-        if (m < 60) return m + 'dk önce';
+        if (m < 1)  return 'az Ã¶nce';
+        if (m < 60) return m + 'dk Ã¶nce';
         const h = Math.floor(m / 60);
-        if (h < 24) return h + 'sa önce';
+        if (h < 24) return h + 'sa Ã¶nce';
         const d = Math.floor(h / 24);
-        if (d < 30) return d + 'g önce';
-        return Math.floor(d / 30) + 'ay önce';
+        if (d < 30) return d + 'g Ã¶nce';
+        return Math.floor(d / 30) + 'ay Ã¶nce';
       }
 
       function renderTickets() {
@@ -2375,7 +2375,7 @@ function renderTicketsPage(user) {
         countEl.textContent = tickets.length + ' ticket bulundu';
 
         if (!tickets.length) {
-          c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">Eşleşen ticket bulunamadı.</div>';
+          c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">EÅŸleÅŸen ticket bulunamadÄ±.</div>';
           return;
         }
 
@@ -2384,14 +2384,14 @@ function renderTicketsPage(user) {
           const ago = timeAgo(t.createdAt);
           const closedAgo = t.closedAt ? timeAgo(t.closedAt) : null;
           const hasChannel = t.channelId && !t.channelDeleted;
-          const source = t.source === 'web' ? '🌐 Web' : '💬 Discord';
+          const source = t.source === 'web' ? 'ğŸŒ Web' : 'ğŸ’¬ Discord';
 
           const actions = isOpen
-            ? \`<button class="btn btn-sm btn-danger" onclick="openCloseModal('\${t.ticketId}')">🔒 Kapat</button>
-               \${hasChannel ? \`<a href="https://discord.com/channels/\${t.guildId || ''}/\${t.channelId}" target="_blank" class="btn btn-sm btn-ghost">💬 Kanala Git</a>\` : ''}
-               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`
-            : \`<button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">🔓 Tekrar Aç</button>
-               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`;
+            ? \`<button class="btn btn-sm btn-danger" onclick="openCloseModal('\${t.ticketId}')">ğŸ”’ Kapat</button>
+               \${hasChannel ? \`<a href="https://discord.com/channels/\${t.guildId || ''}/\${t.channelId}" target="_blank" class="btn btn-sm btn-ghost">ğŸ’¬ Kanala Git</a>\` : ''}
+               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">ğŸ—‘ï¸ Sil</button>\`
+            : \`<button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">ğŸ”“ Tekrar AÃ§</button>
+               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">ğŸ—‘ï¸ Sil</button>\`;
 
           return \`<div class="ticket-item" id="ticket-\${t.ticketId}">
             <div class="ticket-header">
@@ -2403,19 +2403,19 @@ function renderTicketsPage(user) {
                 </div>
                 <div style="font-weight:600;margin-bottom:0.2rem;">\${t.subject || 'Konu belirtilmedi'}</div>
               </div>
-              <span class="badge badge-\${isOpen ? 'open' : 'closed'}">\${isOpen ? 'AÇIK' : 'KAPALI'}</span>
+              <span class="badge badge-\${isOpen ? 'open' : 'closed'}">\${isOpen ? 'AÃ‡IK' : 'KAPALI'}</span>
             </div>
             <div class="ticket-meta">
-              \${ago ? \`<span>🕐 \${ago}</span>\` : ''}
-              \${!isOpen && closedAgo ? \`<span>🔒 \${closedAgo} kapatıldı</span>\` : ''}
-              \${t.closeReason ? \`<span title="\${t.closeReason}">� \${t.closeReason.slice(0,40)}\${t.closeReason.length>40?'…':''}</span>\` : ''}
+              \${ago ? \`<span>ğŸ• \${ago}</span>\` : ''}
+              \${!isOpen && closedAgo ? \`<span>ğŸ”’ \${closedAgo} kapatÄ±ldÄ±</span>\` : ''}
+              \${t.closeReason ? \`<span title="\${t.closeReason}">ï¿½ \${t.closeReason.slice(0,40)}\${t.closeReason.length>40?'â€¦':''}</span>\` : ''}
             </div>
             <div class="ticket-actions">\${actions}</div>
           </div>\`;
         }).join('');
       }
 
-      // ── Kapatma ──
+      // â”€â”€ Kapatma â”€â”€
       function openCloseModal(ticketId) {
         pendingCloseId = ticketId;
         document.getElementById('close-reason-input').value = '';
@@ -2424,7 +2424,7 @@ function renderTicketsPage(user) {
 
       async function confirmClose() {
         if (!pendingCloseId) return;
-        const reason = document.getElementById('close-reason-input').value.trim() || 'Web üzerinden kapatıldı';
+        const reason = document.getElementById('close-reason-input').value.trim() || 'Web Ã¼zerinden kapatÄ±ldÄ±';
         document.getElementById('close-modal').style.display = 'none';
         try {
           const res = await fetch('/api/tickets/' + pendingCloseId + '/close', {
@@ -2432,32 +2432,32 @@ function renderTicketsPage(user) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ reason })
           });
-          if (res.ok) { showToast('Ticket kapatıldı.', 'success'); await loadTickets(); }
+          if (res.ok) { showToast('Ticket kapatÄ±ldÄ±.', 'success'); await loadTickets(); }
           else { const d = await res.json().catch(()=>({})); showToast(d.error || 'Hata', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
         pendingCloseId = null;
       }
 
-      // ── Tekrar Aç ──
+      // â”€â”€ Tekrar AÃ§ â”€â”€
       async function reopenTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı yeniden açmak istiyor musun?')) return;
+        if (!confirm('Bu ticket\\'Ä± yeniden aÃ§mak istiyor musun?')) return;
         try {
           const res = await fetch('/api/tickets/' + ticketId + '/reopen', { method: 'POST' });
           const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket yeniden açıldı.', 'success'); await loadTickets(); }
+          if (res.ok) { showToast(d.message || 'Ticket yeniden aÃ§Ä±ldÄ±.', 'success'); await loadTickets(); }
           else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
 
-      // ── Sil ──
+      // â”€â”€ Sil â”€â”€
       async function deleteTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+        if (!confirm('Bu ticket\\'Ä± tamamen silmek istediÄŸinize emin misiniz? Bu iÅŸlem geri alÄ±namaz.')) return;
         try {
           const res = await fetch('/api/tickets/' + ticketId, { method: 'DELETE' });
           const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket başarıyla tamamen silindi.', 'success'); await loadTickets(); }
+          if (res.ok) { showToast(d.message || 'Ticket baÅŸarÄ±yla tamamen silindi.', 'success'); await loadTickets(); }
           else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
 
       document.getElementById('filter-status').addEventListener('change', renderTickets);
@@ -2466,32 +2466,32 @@ function renderTicketsPage(user) {
       loadTickets();
     </script>
   `;
-  return _layout("Ticket'larım", user, content, '', '/tickets');
+  return _layout("Ticket'larÄ±m", user, content, '', '/tickets');
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // STAFF PANEL
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderStaffPanel(user) {
   const content = `
-    <!-- Sekme başlıkları -->
+    <!-- Sekme baÅŸlÄ±klarÄ± -->
     <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;">
-      <button class="sf-tab sf-tab-active" onclick="switchTab('tickets',this)" style="padding:0.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">🎫 Ticketlar</button>
-      <button class="sf-tab" onclick="switchTab('ratings',this)" style="padding:0.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">⭐ Moderatör Puanları</button>
+      <button class="sf-tab sf-tab-active" onclick="switchTab('tickets',this)" style="padding:0.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">ğŸ« Ticketlar</button>
+      <button class="sf-tab" onclick="switchTab('ratings',this)" style="padding:0.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">â­ ModeratÃ¶r PuanlarÄ±</button>
     </div>
 
     <!-- Ticket sekmesi -->
     <div id="tab-tickets" class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
-        <h1 style="font-size:2rem;font-weight:800;">👨‍💼 Staff Panel</h1>
+        <h1 style="font-size:2rem;font-weight:800;">ğŸ‘¨â€ğŸ’¼ Staff Panel</h1>
         <div style="display:flex;gap:0.75rem;align-items:center;">
           <select id="sf-filter" style="width:auto;margin-bottom:0;font-size:0.9rem;">
-            <option value="open">Açık</option>
-            <option value="closed">Kapalı</option>
-            <option value="">Tümü</option>
+            <option value="open">AÃ§Ä±k</option>
+            <option value="closed">KapalÄ±</option>
+            <option value="">TÃ¼mÃ¼</option>
           </select>
-          <button class="btn btn-sm" onclick="loadStaff()">🔄 Yenile</button>
+          <button class="btn btn-sm" onclick="loadStaff()">ğŸ”„ Yenile</button>
         </div>
       </div>
 
@@ -2500,37 +2500,37 @@ function renderStaffPanel(user) {
           <thead>
             <tr style="background:rgba(167,139,250,0.06);border-bottom:1px solid rgba(255,255,255,0.06);">
               <th style="padding:0.9rem 1rem;color:var(--accent);">ID</th>
-              <th style="padding:0.9rem 1rem;color:var(--accent);">Kullanıcı</th>
+              <th style="padding:0.9rem 1rem;color:var(--accent);">KullanÄ±cÄ±</th>
               <th style="padding:0.9rem 1rem;color:var(--accent);">Konu</th>
               <th style="padding:0.9rem 1rem;color:var(--accent);">Kategori</th>
               <th style="padding:0.9rem 1rem;color:var(--accent);">Durum</th>
-              <th style="padding:0.9rem 1rem;color:var(--accent);">İşlem</th>
+              <th style="padding:0.9rem 1rem;color:var(--accent);">Ä°ÅŸlem</th>
             </tr>
           </thead>
           <tbody id="sf-body">
-            <tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--muted);">Yükleniyor...</td></tr>
+            <tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--muted);">YÃ¼kleniyor...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Moderatör Puanları sekmesi -->
+    <!-- ModeratÃ¶r PuanlarÄ± sekmesi -->
     <div id="tab-ratings" class="card" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
-          <h1 style="font-size:2rem;font-weight:800;">⭐ Moderatör Puan Sıralaması</h1>
-          <p style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem;">Kullanıcı değerlendirmelerine göre sıralama (anonim)</p>
+          <h1 style="font-size:2rem;font-weight:800;">â­ ModeratÃ¶r Puan SÄ±ralamasÄ±</h1>
+          <p style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem;">KullanÄ±cÄ± deÄŸerlendirmelerine gÃ¶re sÄ±ralama (anonim)</p>
         </div>
-        <button class="btn btn-sm" onclick="loadRatings()">🔄 Yenile</button>
+        <button class="btn btn-sm" onclick="loadRatings()">ğŸ”„ Yenile</button>
       </div>
 
       <div id="ratings-body">
-        <div style="text-align:center;padding:3rem;color:var(--muted);">Yükleniyor...</div>
+        <div style="text-align:center;padding:3rem;color:var(--muted);">YÃ¼kleniyor...</div>
       </div>
     </div>
 
     <script>
-      // ── Sekme geçişi ──────────────────────────────────────────────────────
+      // â”€â”€ Sekme geÃ§iÅŸi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       function switchTab(name, btn) {
         document.getElementById('tab-tickets').style.display = name === 'tickets' ? '' : 'none';
         document.getElementById('tab-ratings').style.display = name === 'ratings' ? '' : 'none';
@@ -2543,7 +2543,7 @@ function renderStaffPanel(user) {
         if (name === 'ratings') loadRatings();
       }
 
-      // ── Ticket listesi ────────────────────────────────────────────────────
+      // â”€â”€ Ticket listesi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       async function loadStaff() {
         const filter = document.getElementById('sf-filter').value;
         try {
@@ -2554,7 +2554,7 @@ function renderStaffPanel(user) {
 
           const tbody = document.getElementById('sf-body');
           if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--muted);">Ticket bulunamadı.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--muted);">Ticket bulunamadÄ±.</td></tr>';
             return;
           }
 
@@ -2562,14 +2562,14 @@ function renderStaffPanel(user) {
             const isOpen = t.status === 'open';
             return \`<tr style="border-bottom:1px solid var(--border);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
               <td style="padding:1rem;font-weight:700;color:var(--accent);">\${t.ticketId}</td>
-              <td style="padding:1rem;">\${t.userName || '—'}</td>
-              <td style="padding:1rem;">\${t.subject || '—'}</td>
-              <td style="padding:1rem;">\${t.category || '—'}</td>
-              <td style="padding:1rem;"><span class="badge badge-\${isOpen ? 'open' : 'closed'}">\${isOpen ? 'AÇIK' : 'KAPALI'}</span></td>
+              <td style="padding:1rem;">\${t.userName || 'â€”'}</td>
+              <td style="padding:1rem;">\${t.subject || 'â€”'}</td>
+              <td style="padding:1rem;">\${t.category || 'â€”'}</td>
+              <td style="padding:1rem;"><span class="badge badge-\${isOpen ? 'open' : 'closed'}">\${isOpen ? 'AÃ‡IK' : 'KAPALI'}</span></td>
               <td style="padding:1rem;">
                 \${isOpen
                   ? \`<button class="btn btn-sm btn-danger" onclick="closeTicket('\${t.ticketId}')">Kapat</button>\`
-                  : \`<button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">Yeniden Aç</button>\`
+                  : \`<button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">Yeniden AÃ§</button>\`
                 }
                 <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">Sil</button>
               </td>
@@ -2577,59 +2577,59 @@ function renderStaffPanel(user) {
           }).join('');
         } catch (err) {
           document.getElementById('sf-body').innerHTML =
-            \`<tr><td colspan="6" style="padding:1rem;color:var(--danger);">❌ \${err.message}</td></tr>\`;
+            \`<tr><td colspan="6" style="padding:1rem;color:var(--danger);">âŒ \${err.message}</td></tr>\`;
         }
       }
 
       async function closeTicket(id) {
-        if (!confirm('Bu ticket\\'ı kapatmak istediğine emin misin?')) return;
+        if (!confirm('Bu ticket\\'Ä± kapatmak istediÄŸine emin misin?')) return;
         try {
           const res = await fetch('/api/tickets/' + id + '/close', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: 'Staff tarafından kapatıldı' })
+            body: JSON.stringify({ reason: 'Staff tarafÄ±ndan kapatÄ±ldÄ±' })
           });
-          if (res.ok) { showToast('Ticket kapatıldı.', 'success'); loadStaff(); }
-          else showToast('İşlem başarısız.', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+          if (res.ok) { showToast('Ticket kapatÄ±ldÄ±.', 'success'); loadStaff(); }
+          else showToast('Ä°ÅŸlem baÅŸarÄ±sÄ±z.', 'error');
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
 
       async function reopenTicket(id) {
         try {
           const res = await fetch('/api/tickets/' + id + '/reopen', { method: 'POST' });
-          if (res.ok) { showToast('Ticket yeniden açıldı.', 'success'); loadStaff(); }
-          else showToast('İşlem başarısız.', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+          if (res.ok) { showToast('Ticket yeniden aÃ§Ä±ldÄ±.', 'success'); loadStaff(); }
+          else showToast('Ä°ÅŸlem baÅŸarÄ±sÄ±z.', 'error');
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
 
       async function deleteTicket(id) {
-        if (!confirm('Bu ticket\\'ı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve Discord kanalı da silinecektir.')) return;
+        if (!confirm('Bu ticket\\'Ä± tamamen silmek istediÄŸinize emin misiniz? Bu iÅŸlem geri alÄ±namaz ve Discord kanalÄ± da silinecektir.')) return;
         try {
           const res = await fetch('/api/tickets/' + id, { method: 'DELETE' });
           const d = await res.json().catch(() => ({}));
           if (res.ok) { showToast('Ticket tamamen silindi.', 'success'); loadStaff(); }
-          else showToast(d.error || 'İşlem başarısız.', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+          else showToast(d.error || 'Ä°ÅŸlem baÅŸarÄ±sÄ±z.', 'error');
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
 
       document.getElementById('sf-filter').addEventListener('change', loadStaff);
       loadStaff();
 
-      // ── Moderatör puan sıralaması ─────────────────────────────────────────
+      // â”€â”€ ModeratÃ¶r puan sÄ±ralamasÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       async function loadRatings() {
         const box = document.getElementById('ratings-body');
-        box.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">Yükleniyor...</div>';
+        box.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">YÃ¼kleniyor...</div>';
         try {
           const res  = await fetch('/api/staff/ratings');
           const data = await res.json();
           const list = data.staff || [];
 
           if (!list.length) {
-            box.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">Henüz değerlendirme yok.</div>';
+            box.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">HenÃ¼z deÄŸerlendirme yok.</div>';
             return;
           }
 
-          const medals = ['🥇','🥈','🥉'];
+          const medals = ['ğŸ¥‡','ğŸ¥ˆ','ğŸ¥‰'];
           const rankColors = ['#fbbf24','#9ca3af','#b45309'];
 
           box.innerHTML = list.map((s, i) => {
@@ -2658,7 +2658,7 @@ function renderStaffPanel(user) {
                  onmouseover="this.style.transform='translateX(4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.4)'"
                  onmouseout="this.style.transform='none';this.style.boxShadow='none'">
 
-              <!-- Sıra -->
+              <!-- SÄ±ra -->
               <div style="font-size:1.8rem;width:36px;text-align:center;flex-shrink:0;padding-top:0.25rem;">\${medal}</div>
 
               <!-- Avatar -->
@@ -2673,16 +2673,16 @@ function renderStaffPanel(user) {
                   <span style="color:var(--muted);font-size:0.85rem;">/ 5.0</span>
                   <span style="background:rgba(124,106,247,0.12);color:var(--accent);border:1px solid rgba(124,106,247,0.3);
                                padding:0.2rem 0.6rem;border-radius:20px;font-size:0.78rem;font-weight:700;">
-                    \${s.totalRatings} değerlendirme
+                    \${s.totalRatings} deÄŸerlendirme
                   </span>
                 </div>
-                <!-- Puan dağılımı -->
+                <!-- Puan daÄŸÄ±lÄ±mÄ± -->
                 <div style="max-width:220px;">\${distBars}</div>
               </div>
             </div>\`;
           }).join('');
         } catch (err) {
-          box.innerHTML = \`<div style="text-align:center;padding:2rem;color:var(--danger);">❌ \${err.message}</div>\`;
+          box.innerHTML = \`<div style="text-align:center;padding:2rem;color:var(--danger);">âŒ \${err.message}</div>\`;
         }
       }
 
@@ -2690,7 +2690,7 @@ function renderStaffPanel(user) {
         const full  = Math.floor(score);
         const half  = score - full >= 0.5 ? 1 : 0;
         const empty = 5 - full - half;
-        return '⭐'.repeat(full) + (half ? '✨' : '') + '☆'.repeat(empty);
+        return 'â­'.repeat(full) + (half ? 'âœ¨' : '') + 'â˜†'.repeat(empty);
       }
     </script>
   `;
@@ -2698,15 +2698,15 @@ function renderStaffPanel(user) {
 }
 
 
-// ─────────────────────────────────────────────
-// DEBUG PAGE  (fixed — was truncated)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// DEBUG PAGE  (fixed â€” was truncated)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderDebugPage(user, stats = {}, logs = []) {
   const safeStats = stats || {};
   const safeLogs = Array.isArray(logs) ? logs : [];
 
   const content = `
-    <h1 style="font-size:2rem;font-weight:800;margin-bottom:1.5rem;color:var(--danger);">🔍 Debug Panel</h1>
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:1.5rem;color:var(--danger);">ğŸ” Debug Panel</h1>
 
     <!-- Stats Grid -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
@@ -2715,16 +2715,16 @@ function renderDebugPage(user, stats = {}, logs = []) {
           <div style="color:var(--muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;">${_esc(k)}</div>
           <div style="font-size:2rem;font-weight:800;color:var(--accent);">${_esc(String(v))}</div>
         </div>
-      `).join('') || '<div class="card" style="padding:1.25rem;color:var(--muted);">İstatistik yok.</div>'}
+      `).join('') || '<div class="card" style="padding:1.25rem;color:var(--muted);">Ä°statistik yok.</div>'}
     </div>
 
     </div>
 
     <!-- Live Users -->
     <div class="card" style="margin-bottom:2rem;">
-      <h2 style="font-size:1.4rem;font-weight:800;color:var(--success);margin-bottom:1rem;">🟢 Canlı Kullanıcılar</h2>
+      <h2 style="font-size:1.4rem;font-weight:800;color:var(--success);margin-bottom:1rem;">ğŸŸ¢ CanlÄ± KullanÄ±cÄ±lar</h2>
       <div id="live-users-output" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem;">
-        <div style="color:var(--muted);">Yükleniyor...</div>
+        <div style="color:var(--muted);">YÃ¼kleniyor...</div>
       </div>
     </div>
 
@@ -2732,7 +2732,7 @@ function renderDebugPage(user, stats = {}, logs = []) {
     <div id="live-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;backdrop-filter:blur(10px);padding:2rem;">
       <div class="card" style="max-width:1000px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;">
         <button onclick="closeLiveModal()" style="position:absolute;top:1rem;right:1rem;background:var(--danger);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-weight:bold;">X</button>
-        <h3 id="live-modal-title" style="margin-bottom:1rem;font-size:1.2rem;">Canlı İzleme</h3>
+        <h3 id="live-modal-title" style="margin-bottom:1rem;font-size:1.2rem;">CanlÄ± Ä°zleme</h3>
         <p id="live-modal-url" style="color:var(--muted);margin-bottom:1rem;font-family:monospace;"></p>
         <div id="live-screen-box" style="flex:1;background:#000;border:1px solid rgba(255,255,255,0.1);position:relative;overflow:hidden;border-radius:8px;">
           <!-- Cursor -->
@@ -2745,10 +2745,10 @@ function renderDebugPage(user, stats = {}, logs = []) {
     <!-- Logs -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-        <h2 style="font-size:1.4rem;font-weight:800;color:var(--accent);">Sistem Logları <span id="log-count"></span></h2>
+        <h2 style="font-size:1.4rem;font-weight:800;color:var(--accent);">Sistem LoglarÄ± <span id="log-count"></span></h2>
         <div style="display:flex;gap:0.5rem;">
           <select id="log-filter" style="width:auto;margin-bottom:0;font-size:0.85rem;" onchange="renderLogs()">
-            <option value="">Tümü</option>
+            <option value="">TÃ¼mÃ¼</option>
             <option value="ERROR">ERROR</option>
             <option value="WARN">WARN</option>
             <option value="INFO">INFO</option>
@@ -2763,7 +2763,7 @@ function renderDebugPage(user, stats = {}, logs = []) {
       let liveUsers = [];
       let watchingUserId = null;
 
-      // ── LOG RENDERER ──
+      // â”€â”€ LOG RENDERER â”€â”€
       function renderLogs() {
         const filter = document.getElementById('log-filter').value;
         const list   = filter ? rawLogs.filter(l => l.type === filter) : rawLogs;
@@ -2782,14 +2782,14 @@ function renderDebugPage(user, stats = {}, logs = []) {
                 \${l.details ? \`<div style="color:#888;margin-left:2rem;margin-top:0.2rem;">\${l.details}</div>\` : ''}
               </div>\`;
             }).join('')
-          : '<div style="color:var(--muted);padding:1rem;text-align:center;">Log bulunamadı.</div>';
+          : '<div style="color:var(--muted);padding:1rem;text-align:center;">Log bulunamadÄ±.</div>';
       }
 
-      // ── LIVE USERS RENDERER ──
+      // â”€â”€ LIVE USERS RENDERER â”€â”€
       function renderLiveUsers() {
         const container = document.getElementById('live-users-output');
         if (liveUsers.length === 0) {
-          container.innerHTML = '<div style="color:var(--muted);">Şu an aktif kullanıcı yok.</div>';
+          container.innerHTML = '<div style="color:var(--muted);">Åu an aktif kullanÄ±cÄ± yok.</div>';
         } else {
           container.innerHTML = liveUsers.map(u => \`
             <div class="card" style="padding:1rem;display:flex;align-items:center;gap:1rem;cursor:pointer;border:1px solid \${watchingUserId === u.userId ? 'var(--success)' : 'rgba(255,255,255,0.1)'}" onclick="openLiveModal('\${u.userId}')">
@@ -2806,7 +2806,7 @@ function renderDebugPage(user, stats = {}, logs = []) {
         if (watchingUserId) {
           const user = liveUsers.find(u => u.userId === watchingUserId);
           if (user) {
-            document.getElementById('live-modal-title').innerText = "Canlı İzleme: " + user.username;
+            document.getElementById('live-modal-title').innerText = "CanlÄ± Ä°zleme: " + user.username;
             document.getElementById('live-modal-url').innerText = "Aktif Sayfa: " + user.url + " (" + user.w + "x" + user.h + ")";
             
             const box = document.getElementById('live-screen-box');
@@ -2821,7 +2821,7 @@ function renderDebugPage(user, stats = {}, logs = []) {
 
             const clicksLog = document.getElementById('live-clicks-log');
             clicksLog.innerHTML = (user.clicks || []).map(c => 
-              \`<div>[\${new Date(c.t).toLocaleTimeString()}] Tıkladı: X=\${c.x}, Y=\${c.y}</div>\`
+              \`<div>[\${new Date(c.t).toLocaleTimeString()}] TÄ±kladÄ±: X=\${c.x}, Y=\${c.y}</div>\`
             ).reverse().join('');
           }
         }
@@ -2839,7 +2839,7 @@ function renderDebugPage(user, stats = {}, logs = []) {
         renderLiveUsers();
       }
 
-      // ── AUTO POLLING ──
+      // â”€â”€ AUTO POLLING â”€â”€
       async function fetchData() {
         try {
           const res = await fetch('/api/activity/users');
@@ -2879,11 +2879,11 @@ function renderDebugPage(user, stats = {}, logs = []) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PROFILE PAGE  (guns.lol style)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) {
-  // profileUser = profilini gösterdiğimiz kişi, user = oturum sahibi
+  // profileUser = profilini gÃ¶sterdiÄŸimiz kiÅŸi, user = oturum sahibi
   if (!profileUser) profileUser = user;
   const accent = _esc(profileUser.profileColor || '#7c6af7');
   const bannerBg = profileUser.discordBanner
@@ -3007,63 +3007,63 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
         <div class="p-name-row">
           <div>
             <div class="p-name">${_esc(profileUser.discordUsername)}</div>
-            <div class="p-sub">${profileUser.robloxUsername ? `🎮 <span style="color:var(--success);">${_esc(profileUser.robloxUsername)}</span>` : `<span style="color:var(--muted);">Roblox bağlı değil</span>`}</div>
+            <div class="p-sub">${profileUser.robloxUsername ? `ğŸ® <span style="color:var(--success);">${_esc(profileUser.robloxUsername)}</span>` : `<span style="color:var(--muted);">Roblox baÄŸlÄ± deÄŸil</span>`}</div>
             ${groupRoleHtml}
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
               ${profileUser.gunsLolUrl ? `
                 <a href="${_esc(profileUser.gunsLolUrl)}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg, #ff007f 0%, #7f00ff 100%);color:#fff;border:none;box-shadow:0 0 15px rgba(255,0,127,0.4);display:inline-flex;align-items:center;gap:0.4rem;margin-top:0.5rem;font-weight:700;padding: 0.35rem 0.75rem; border-radius: 8px;font-size:0.8rem;text-decoration:none;">
-                  <span>🔗 guns.lol</span>
+                  <span>ğŸ”— guns.lol</span>
                 </a>
               ` : ''}
               ${profileUser.profileMusicUrl ? `
                 <div style="margin-top: 0.5rem; padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; display: inline-flex; align-items: center; gap: 0.5rem; backdrop-filter: blur(8px);">
-                  <span style="font-size: 0.9rem;">🎵</span>
-                  <span style="font-size: 0.75rem; color: var(--muted);" id="music-status">Müzik: Durdu</span>
-                  <button onclick="toggleProfileMusic()" id="play-btn" style="background: var(--accent); border: none; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.65rem;">▶</button>
+                  <span style="font-size: 0.9rem;">ğŸµ</span>
+                  <span style="font-size: 0.75rem; color: var(--muted);" id="music-status">MÃ¼zik: Durdu</span>
+                  <button onclick="toggleProfileMusic()" id="play-btn" style="background: var(--accent); border: none; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.65rem;">â–¶</button>
                   <audio id="profile-audio" src="${_esc(profileUser.profileMusicUrl)}" loop></audio>
                 </div>
               ` : ''}
             </div>
           </div>
-          ${isOwn ? `<a href="/settings" class="btn btn-ghost btn-sm" style="flex-shrink:0;">✏️ Düzenle</a>` : ''}
+          ${isOwn ? `<a href="/settings" class="btn btn-ghost btn-sm" style="flex-shrink:0;">âœï¸ DÃ¼zenle</a>` : ''}
         </div>
         <div class="p-badges" id="p-badges">
           ${roleBadgesHtml}
         </div>
-        <div class="p-bio">${_esc(profileUser.profileBio || 'Henüz bir biyografi eklenmemiş.')}</div>
+        <div class="p-bio">${_esc(profileUser.profileBio || 'HenÃ¼z bir biyografi eklenmemiÅŸ.')}</div>
         <div class="p-coin-bar">
-          <div class="p-coin-icon">💰</div>
-          <div><div class="p-coin-val" id="p-balance">—</div><div class="p-coin-lbl">Bakiye</div></div>
+          <div class="p-coin-icon">ğŸ’°</div>
+          <div><div class="p-coin-val" id="p-balance">â€”</div><div class="p-coin-lbl">Bakiye</div></div>
           <div style="margin-left:auto;text-align:right;">
-            <div style="font-size:.85rem;font-weight:700;color:var(--success);" id="p-earned">—</div>
-            <div class="p-coin-lbl">Toplam kazanılan</div>
+            <div style="font-size:.85rem;font-weight:700;color:var(--success);" id="p-earned">â€”</div>
+            <div class="p-coin-lbl">Toplam kazanÄ±lan</div>
           </div>
-          ${isOwn ? `<a href="/shop" class="btn btn-sm" style="margin-left:1rem;flex-shrink:0;">🛒 Mağaza</a>` : ''}
+          ${isOwn ? `<a href="/shop" class="btn btn-sm" style="margin-left:1rem;flex-shrink:0;">ğŸ›’ MaÄŸaza</a>` : ''}
         </div>
-        <div class="p-section"><span class="p-section-title">İstatistikler</span><div class="p-section-line"></div></div>
+        <div class="p-section"><span class="p-section-title">Ä°statistikler</span><div class="p-section-line"></div></div>
         <div class="p-stats">
-          <div class="p-stat"><div class="p-stat-val" id="stat-tickets">—</div><div class="p-stat-lbl">Ticket</div></div>
-          <div class="p-stat"><div class="p-stat-val" id="stat-closed">—</div><div class="p-stat-lbl">Çözülen</div></div>
-          <div class="p-stat"><div class="p-stat-val" id="stat-items">—</div><div class="p-stat-lbl">Ürün</div></div>
-          <div class="p-stat"><div class="p-stat-val" id="stat-spent">—</div><div class="p-stat-lbl">Harcanan</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="stat-tickets">â€”</div><div class="p-stat-lbl">Ticket</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="stat-closed">â€”</div><div class="p-stat-lbl">Ã‡Ã¶zÃ¼len</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="stat-items">â€”</div><div class="p-stat-lbl">ÃœrÃ¼n</div></div>
+          <div class="p-stat"><div class="p-stat-val" id="stat-spent">â€”</div><div class="p-stat-lbl">Harcanan</div></div>
         </div>
         <div class="p-section"><span class="p-section-title">Envanter</span><div class="p-section-line"></div></div>
-        <div class="p-inv-grid" id="p-inv"><div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">Yükleniyor...</div></div>
+        <div class="p-inv-grid" id="p-inv"><div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">YÃ¼kleniyor...</div></div>
       </div>
     </div>`;
 
   const script = `<script>
     const TARGET_ID = ${JSON.stringify(profileUser.discordId || '')};
     const IS_OWN = ${isOwn ? 'true' : 'false'};
-    const BADGE_MAP={badge_supporter:{emoji:'💜',label:'Destekçi',color:'rgba(168,85,247,.15)',border:'rgba(168,85,247,.4)',text:'#c084fc'},badge_veteran:{emoji:'⚔️',label:'Veteran',color:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.4)',text:'#fbbf24'},badge_star:{emoji:'⭐',label:'Yıldız',color:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.3)',text:'#fde68a'},badge_crown:{emoji:'👑',label:'Kral',color:'rgba(255,107,247,.1)',border:'rgba(255,107,247,.4)',text:'var(--accent2)'}};
+    const BADGE_MAP={badge_supporter:{emoji:'ğŸ’œ',label:'DestekÃ§i',color:'rgba(168,85,247,.15)',border:'rgba(168,85,247,.4)',text:'#c084fc'},badge_veteran:{emoji:'âš”ï¸',label:'Veteran',color:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.4)',text:'#fbbf24'},badge_star:{emoji:'â­',label:'YÄ±ldÄ±z',color:'rgba(251,191,36,.1)',border:'rgba(251,191,36,.3)',text:'#fde68a'},badge_crown:{emoji:'ğŸ‘‘',label:'Kral',color:'rgba(255,107,247,.1)',border:'rgba(255,107,247,.4)',text:'var(--accent2)'}};
 
     async function loadProfile(){
       try{
-        // Ekonomi verisi — herkese açık endpoint (targetId ile)
+        // Ekonomi verisi â€” herkese aÃ§Ä±k endpoint (targetId ile)
         const eRes = await fetch('/api/economy/public/' + TARGET_ID);
         const ed = await eRes.json().catch(()=>({}));
 
-        // Ticket istatistikleri — sadece kendi profilinde
+        // Ticket istatistikleri â€” sadece kendi profilinde
         if(IS_OWN){
           const tRes = await fetch('/api/tickets');
           const td = await tRes.json().catch(()=>({}));
@@ -3071,8 +3071,8 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
           document.getElementById('stat-tickets').textContent=tickets.length;
           document.getElementById('stat-closed').textContent=tickets.filter(t=>t.status==='closed').length;
         } else {
-          document.getElementById('stat-tickets').textContent='—';
-          document.getElementById('stat-closed').textContent='—';
+          document.getElementById('stat-tickets').textContent='â€”';
+          document.getElementById('stat-closed').textContent='â€”';
         }
 
         if(ed.success){
@@ -3095,8 +3095,8 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
           const grid=document.getElementById('p-inv');
           if(!inv.length){
             grid.innerHTML=IS_OWN
-              ? '<div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">Henüz hiçbir şey satın almadınız. <a href=\\"/shop\\" style=\\"color:var(--accent)\\">Mağazaya git →</a></div>'
-              : '<div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">Envanter boş.</div>';
+              ? '<div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">HenÃ¼z hiÃ§bir ÅŸey satÄ±n almadÄ±nÄ±z. <a href=\\"/shop\\" style=\\"color:var(--accent)\\">MaÄŸazaya git â†’</a></div>'
+              : '<div style="grid-column:1/-1;color:var(--muted);font-size:.85rem;">Envanter boÅŸ.</div>';
           } else {
             grid.innerHTML=inv.map(item=>{
               const isActive=ed.profileEffect===item.itemId||ed.profileFrame===item.itemId;
@@ -3110,7 +3110,7 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
             }).join('');
           }
         }
-      }catch(err){console.warn('Profil yüklenemedi:',err.message);}
+      }catch(err){console.warn('Profil yÃ¼klenemedi:',err.message);}
     }
 
     async function equipItem(itemId){
@@ -3126,36 +3126,36 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
       if (!audio) return;
       if (audio.paused) {
         audio.play().then(() => {
-          btn.textContent = '⏸';
-          status.textContent = 'Müzik: Çalıyor';
+          btn.textContent = 'â¸';
+          status.textContent = 'MÃ¼zik: Ã‡alÄ±yor';
           btn.style.background = 'var(--danger)';
         }).catch(err => {
-          console.warn("Müzik çalınamadı:", err);
-          showToast("Tarayıcı engeli: Sayfada herhangi bir yere tıkladıktan sonra çal tuşuna tekrar basın.", "warning");
+          console.warn("MÃ¼zik Ã§alÄ±namadÄ±:", err);
+          showToast("TarayÄ±cÄ± engeli: Sayfada herhangi bir yere tÄ±kladÄ±ktan sonra Ã§al tuÅŸuna tekrar basÄ±n.", "warning");
         });
       } else {
         audio.pause();
-        btn.textContent = '▶';
-        status.textContent = 'Müzik: Durdu';
+        btn.textContent = 'â–¶';
+        status.textContent = 'MÃ¼zik: Durdu';
         btn.style.background = 'var(--accent)';
       }
     }
     loadProfile();
   <\/script>`;
 
-  const pageTitle = isOwn ? 'Profil' : _esc(profileUser.discordUsername) + ' — Profil';
+  const pageTitle = isOwn ? 'Profil' : _esc(profileUser.discordUsername) + ' â€” Profil';
   const content = css + html + script;
   return _layout(pageTitle, user, content);
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SETTINGS PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderSettingsPage(user) {
   const content = `
     <div class="card">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:2rem;">⚙️ Ayarlar</h1>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:2rem;">âš™ï¸ Ayarlar</h1>
 
       <div id="settings-form">
         <label>Profil Rengi (Hex)</label>
@@ -3170,41 +3170,41 @@ function renderSettingsPage(user) {
           <span id="bio-count">${(user.profileBio || '').length}</span>/500
         </div>
 
-        <label>Site Giriş Şifresi</label>
-        <input type="password" id="sitePassword" placeholder="Yeni site şifresi girin (Değiştirmek istemiyorsanız boş bırakın)">
+        <label>Site GiriÅŸ Åifresi</label>
+        <input type="password" id="sitePassword" placeholder="Yeni site ÅŸifresi girin (DeÄŸiÅŸtirmek istemiyorsanÄ±z boÅŸ bÄ±rakÄ±n)">
 
         <hr class="divider">
-        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">🎨 Guns.lol Tarzı Profil Özelleştirme</h2>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">ğŸ¨ Guns.lol TarzÄ± Profil Ã–zelleÅŸtirme</h2>
         
-        <label>Guns.lol Bağlantı Linki</label>
+        <label>Guns.lol BaÄŸlantÄ± Linki</label>
         <input type="text" id="gunsLolUrl" value="${_esc(user.gunsLolUrl || '')}" placeholder="https://guns.lol/kullaniciadi">
 
-        <label>Profil Özel Arkaplan Resim/GIF URL</label>
+        <label>Profil Ã–zel Arkaplan Resim/GIF URL</label>
         <input type="text" id="profileBgUrl" value="${_esc(user.profileBgUrl || '')}" placeholder="https://ornek.com/resim.gif">
 
-        <label>Profil Özel Arkaplan Müzik (.mp3) URL</label>
+        <label>Profil Ã–zel Arkaplan MÃ¼zik (.mp3) URL</label>
         <input type="text" id="profileMusicUrl" value="${_esc(user.profileMusicUrl || '')}" placeholder="https://ornek.com/muzik.mp3">
 
         <hr class="divider">
 
-        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">🔗 Bağlı Hesaplar</h2>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">ğŸ”— BaÄŸlÄ± Hesaplar</h2>
         <div style="background:rgba(255,255,255,0.025);padding:1rem 1.25rem;border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;backdrop-filter:blur(8px);">
           <div>
             <div style="font-weight:700;margin-bottom:0.2rem;">Discord</div>
-            <div style="color:var(--success);font-size:0.85rem;">✅ ${_esc(user.discordUsername)}</div>
+            <div style="color:var(--success);font-size:0.85rem;">âœ… ${_esc(user.discordUsername)}</div>
           </div>
         </div>
         <div style="background:rgba(255,255,255,0.025);padding:1rem 1.25rem;border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;backdrop-filter:blur(8px);">
           <div>
             <div style="font-weight:700;margin-bottom:0.2rem;">Roblox</div>
             <div style="color:${user.robloxUsername ? 'var(--success)' : 'var(--warning)'};font-size:0.85rem;">
-              ${user.robloxUsername ? '✅ ' + _esc(user.robloxUsername) : '⚠️ Bağlı değil'}
+              ${user.robloxUsername ? 'âœ… ' + _esc(user.robloxUsername) : 'âš ï¸ BaÄŸlÄ± deÄŸil'}
             </div>
           </div>
-          ${!user.robloxUsername ? `<a href="/auth/roblox" class="btn btn-sm">Bağla</a>` : `<a href="/auth/roblox/unlink" class="btn btn-sm btn-danger">Bağlantıyı Kes</a>`}
+          ${!user.robloxUsername ? `<a href="/auth/roblox" class="btn btn-sm">BaÄŸla</a>` : `<a href="/auth/roblox/unlink" class="btn btn-sm btn-danger">BaÄŸlantÄ±yÄ± Kes</a>`}
         </div>
 
-        <button class="btn w-full" id="save-btn" onclick="saveSettings()">💾 Kaydet</button>
+        <button class="btn w-full" id="save-btn" onclick="saveSettings()">ğŸ’¾ Kaydet</button>
       </div>
     </div>
 
@@ -3238,16 +3238,16 @@ function renderSettingsPage(user) {
             })
           });
           if (res.ok) {
-            showToast('Ayarlar başarıyla kaydedildi!', 'success');
+            showToast('Ayarlar baÅŸarÄ±yla kaydedildi!', 'success');
             document.getElementById('sitePassword').value = ''; // clear password input after success
           } else {
             const d = await res.json().catch(() => ({}));
-            showToast(d.error || 'Bir hata oluştu.', 'error');
+            showToast(d.error || 'Bir hata oluÅŸtu.', 'error');
           }
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         } finally {
-          btn.textContent = '💾 Kaydet';
+          btn.textContent = 'ğŸ’¾ Kaydet';
           btn.disabled = false;
         }
       }
@@ -3257,26 +3257,26 @@ function renderSettingsPage(user) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // LEGAL PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderLegalPage(title, text, lang = 'tr') {
   const content = `
     <div class="card" style="max-width:860px;margin:0 auto;">
-      <!-- Dil seçici -->
+      <!-- Dil seÃ§ici -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <h1 style="font-size:2rem;font-weight:800;color:var(--accent);">${_esc(title)}</h1>
         <div style="display:flex;gap:.5rem;">
-          <a href="?lang=tr" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'tr' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'tr' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'tr' ? 'transparent' : 'var(--border)'};">🇹🇷 TR</a>
-          <a href="?lang=en" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'en' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'en' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'en' ? 'transparent' : 'var(--border)'};">🇬🇧 EN</a>
+          <a href="?lang=tr" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'tr' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'tr' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'tr' ? 'transparent' : 'var(--border)'};">ğŸ‡¹ğŸ‡· TR</a>
+          <a href="?lang=en" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'en' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'en' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'en' ? 'transparent' : 'var(--border)'};">ğŸ‡¬ğŸ‡§ EN</a>
         </div>
       </div>
       <div style="line-height:2;color:var(--muted);font-size:.97rem;">${text}</div>
       <hr class="divider">
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
-        <a href="/legal/tos"     style="color:var(--accent);text-decoration:none;font-weight:600;">📄 Terms of Service / Hizmet Koşulları</a>
-        <a href="/legal/privacy" style="color:var(--accent);text-decoration:none;font-weight:600;">🔒 Privacy Policy / Gizlilik Politikası</a>
-        <a href="/"              style="color:var(--muted);text-decoration:none;">← Ana Sayfa</a>
+        <a href="/legal/tos"     style="color:var(--accent);text-decoration:none;font-weight:600;">ğŸ“„ Terms of Service / Hizmet KoÅŸullarÄ±</a>
+        <a href="/legal/privacy" style="color:var(--accent);text-decoration:none;font-weight:600;">ğŸ”’ Privacy Policy / Gizlilik PolitikasÄ±</a>
+        <a href="/"              style="color:var(--muted);text-decoration:none;">â† Ana Sayfa</a>
       </div>
     </div>
   `;
@@ -3284,23 +3284,23 @@ function renderLegalPage(title, text, lang = 'tr') {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // WIKI PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderWikiListPage(user, articles = [], canManage = false) {
   const adminForm = canManage ? `
     <div id="wa-form" style="display:none;background:rgba(124,106,247,0.06);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-bottom:2rem;">
-      <h3 style="margin-bottom:1rem;color:var(--accent);">➕ Yeni Makale</h3>
-      <label>Başlık <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="wa-title" maxlength="120" placeholder="Makale başlığı">
+      <h3 style="margin-bottom:1rem;color:var(--accent);">â• Yeni Makale</h3>
+      <label>BaÅŸlÄ±k <span style="color:var(--danger);">*</span></label>
+      <input type="text" id="wa-title" maxlength="120" placeholder="Makale baÅŸlÄ±ÄŸÄ±">
       <label>Kapak Resmi URL</label>
       <input type="url" id="wa-image" placeholder="https://...">
-      <label>İçerik <span style="color:var(--danger);">*</span></label>
-      <textarea id="wa-body" rows="10" maxlength="20000" placeholder="Makale içeriğini buraya yazın..."></textarea>
+      <label>Ä°Ã§erik <span style="color:var(--danger);">*</span></label>
+      <textarea id="wa-body" rows="10" maxlength="20000" placeholder="Makale iÃ§eriÄŸini buraya yazÄ±n..."></textarea>
       <div style="text-align:right;color:var(--muted);font-size:0.8rem;margin-top:-1rem;margin-bottom:1rem;"><span id="wa-count">0</span>/20000</div>
       <div style="display:flex;gap:0.75rem;">
-        <button class="btn" id="wa-create-btn" onclick="createWikiArticle()" style="flex:1;">📖 Yayınla</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('wa-form').style.display='none'" style="flex:1;">İptal</button>
+        <button class="btn" id="wa-create-btn" onclick="createWikiArticle()" style="flex:1;">ğŸ“– YayÄ±nla</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('wa-form').style.display='none'" style="flex:1;">Ä°ptal</button>
       </div>
     </div>` : '';
 
@@ -3308,7 +3308,7 @@ function renderWikiListPage(user, articles = [], canManage = false) {
     const preview = (a.body || '').replace(/\n/g, ' ').slice(0, 160);
     const img = a.imageUrl
       ? `<div style="width:100%;height:160px;background:url('${_esc(a.imageUrl)}') center/cover;border-radius:12px 12px 0 0;flex-shrink:0;"></div>`
-      : `<div style="width:100%;height:80px;background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(255,107,247,0.1));border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;">📖</div>`;
+      : `<div style="width:100%;height:80px;background:linear-gradient(135deg,rgba(124,106,247,0.15),rgba(255,107,247,0.1));border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-size:2rem;">ğŸ“–</div>`;
     const authorAvatar = a.authorAvatar
       ? `<img src="${_esc(a.authorAvatar)}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:4px;">`
       : '';
@@ -3322,24 +3322,24 @@ function renderWikiListPage(user, articles = [], canManage = false) {
         ${img}
         <div style="padding:1.25rem;flex:1;display:flex;flex-direction:column;gap:0.5rem;">
           <h3 style="font-weight:800;font-size:1.1rem;line-height:1.3;">${_esc(a.title)}</h3>
-          <p style="color:var(--muted);font-size:0.88rem;line-height:1.5;flex:1;">${_esc(preview)}${preview.length >= 160 ? '…' : ''}</p>
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.5;flex:1;">${_esc(preview)}${preview.length >= 160 ? 'â€¦' : ''}</p>
           <div style="display:flex;gap:1rem;font-size:0.78rem;color:var(--muted);margin-top:0.5rem;flex-wrap:wrap;">
-            <span>${authorAvatar}${_esc(a.authorName || '—')}</span>
-            <span>👁 ${(a.views || 0).toLocaleString('tr-TR')}</span>
-            <span>💬 ${(a.commentCount || 0)}</span>
+            <span>${authorAvatar}${_esc(a.authorName || 'â€”')}</span>
+            <span>ğŸ‘ ${(a.views || 0).toLocaleString('tr-TR')}</span>
+            <span>ğŸ’¬ ${(a.commentCount || 0)}</span>
           </div>
         </div>
       </a>`;
-  }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted);"><div style="font-size:3rem;margin-bottom:1rem;">📭</div><div>Henüz makale yok.</div></div>';
+  }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--muted);"><div style="font-size:3rem;margin-bottom:1rem;">ğŸ“­</div><div>HenÃ¼z makale yok.</div></div>';
 
   const content = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
-          <h1 style="font-size:2.2rem;font-weight:800;">📖 Wiki</h1>
+          <h1 style="font-size:2.2rem;font-weight:800;">ğŸ“– Wiki</h1>
           <p style="color:var(--muted);margin-top:0.25rem;">${articles.length} makale</p>
         </div>
-        ${canManage ? `<button class="btn" onclick="document.getElementById('wa-form').style.display=document.getElementById('wa-form').style.display==='none'?'block':'none'">➕ Yeni Makale</button>` : ''}
+        ${canManage ? `<button class="btn" onclick="document.getElementById('wa-form').style.display=document.getElementById('wa-form').style.display==='none'?'block':'none'">â• Yeni Makale</button>` : ''}
       </div>
       <hr class="divider">
       ${adminForm}
@@ -3355,7 +3355,7 @@ function renderWikiListPage(user, articles = [], canManage = false) {
 
       async function createWikiArticle() {
         const btn = document.getElementById('wa-create-btn');
-        btn.disabled = true; btn.textContent = 'Yayınlanıyor...';
+        btn.disabled = true; btn.textContent = 'YayÄ±nlanÄ±yor...';
         const res = await fetch('/api/wiki/articles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3367,7 +3367,7 @@ function renderWikiListPage(user, articles = [], canManage = false) {
         });
         const d = await res.json().catch(() => ({}));
         if (res.ok) { location.href = '/wiki/' + d.article._id; }
-        else { showToast(d.error || 'Hata', 'error'); btn.disabled = false; btn.textContent = '📖 Yayınla'; }
+        else { showToast(d.error || 'Hata', 'error'); btn.disabled = false; btn.textContent = 'ğŸ“– YayÄ±nla'; }
       }
     </script>
   `;
@@ -3377,17 +3377,17 @@ function renderWikiListPage(user, articles = [], canManage = false) {
 function renderWikiArticlePage(user, article, canManage = false) {
   const comments = (article.comments || []).slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   const reactions = article.reactions || {};
-  const EMOJIS = ["👍", "❤️", "🔥", "😂", "😮", "👏"];
+  const EMOJIS = ["ğŸ‘", "â¤ï¸", "ğŸ”¥", "ğŸ˜‚", "ğŸ˜®", "ğŸ‘"];
   const currentUserId = user ? _esc(user.discordId || '') : '';
 
-  // ── Kapak resmi ──
+  // â”€â”€ Kapak resmi â”€â”€
   const coverImg = article.imageUrl
     ? `<div style="width:100%;max-height:380px;overflow:hidden;border-radius:16px;margin-bottom:2rem;">
          <img src="${_esc(article.imageUrl)}" alt="" style="width:100%;object-fit:cover;display:block;">
        </div>`
     : '';
 
-  // ── Yazar satırı ──
+  // â”€â”€ Yazar satÄ±rÄ± â”€â”€
   const authorAvatar = article.authorAvatar
     ? `<img src="${_esc(article.authorAvatar)}" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;">`
     : `<div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;">
@@ -3398,20 +3398,20 @@ function renderWikiArticlePage(user, article, canManage = false) {
     : null;
   const authorNameHtml = authorLink
     ? `<a href="${authorLink}" style="color:var(--text);font-weight:600;text-decoration:none;transition:color .2s;"
-          onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${_esc(article.authorName || '—')}</a>`
-    : `<span style="color:var(--text);font-weight:600;">${_esc(article.authorName || '—')}</span>`;
+          onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${_esc(article.authorName || 'â€”')}</a>`
+    : `<span style="color:var(--text);font-weight:600;">${_esc(article.authorName || 'â€”')}</span>`;
   const createdTs = article.createdAt
     ? `<time title="${new Date(article.createdAt).toLocaleString('tr-TR')}">${new Date(article.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}</time>`
     : '';
   const editedLine = article.editedByName && article.editedAt
     ? `<span style="color:var(--muted);font-size:0.8rem;margin-left:0.75rem;">
-         • Düzenleyen: <a href="/profile/${_esc(article.editedById || '')}" style="color:var(--muted);font-weight:700;text-decoration:none;"
+         â€¢ DÃ¼zenleyen: <a href="/profile/${_esc(article.editedById || '')}" style="color:var(--muted);font-weight:700;text-decoration:none;"
              onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">${_esc(article.editedByName)}</a>
          <time title="${new Date(article.editedAt).toLocaleString('tr-TR')}">${new Date(article.editedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}</time>
        </span>`
     : '';
 
-  // ── Tepkiler ──
+  // â”€â”€ Tepkiler â”€â”€
   const reactionHtml = EMOJIS.map(e => {
     const r = reactions[e];
     const count = r ? r.count : 0;
@@ -3428,13 +3428,13 @@ function renderWikiArticlePage(user, article, canManage = false) {
     </button>`;
   }).join('');
 
-  // ── Yorumlar ──
+  // â”€â”€ Yorumlar â”€â”€
   const commentsHtml = comments.map(c => {
     const isOwner = user && (user.discordId === c.userId || canManage);
     const delBtn = isOwner
       ? `<button onclick="deleteComment('${_esc(c._id)}')"
            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:0.2rem 0.5rem;border-radius:6px;transition:color 0.2s;"
-           onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">🗑</button>`
+           onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">ğŸ—‘</button>`
       : '';
     const cAvatar = c.avatar
       ? `<img src="${_esc(c.avatar)}" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;">`
@@ -3448,7 +3448,7 @@ function renderWikiArticlePage(user, article, canManage = false) {
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;flex-wrap:wrap;">
             <a href="/profile/${_esc(c.userId || '')}" style="font-weight:700;color:var(--accent);text-decoration:none;"
-               onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">${_esc(c.username || '—')}</a>
+               onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">${_esc(c.username || 'â€”')}</a>
             ${cTime}
             ${delBtn}
           </div>
@@ -3459,30 +3459,30 @@ function renderWikiArticlePage(user, article, canManage = false) {
 
   const commentForm = user
     ? `<div style="margin-top:1.5rem;">
-         <textarea id="comment-body" rows="3" placeholder="Yorumunuzu yazın..." maxlength="2000"
+         <textarea id="comment-body" rows="3" placeholder="Yorumunuzu yazÄ±n..." maxlength="2000"
            style="resize:vertical;" oninput="document.getElementById('c-count').textContent=this.value.length"></textarea>
          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;">
            <span style="font-size:0.8rem;color:var(--muted);"><span id="c-count">0</span>/2000</span>
-           <button class="btn btn-sm" onclick="postComment()">💬 Yorum Yap</button>
+           <button class="btn btn-sm" onclick="postComment()">ğŸ’¬ Yorum Yap</button>
          </div>
        </div>`
     : `<div style="text-align:center;padding:1.5rem;color:var(--muted);">
-         Yorum yapmak için <a href="/login" style="color:var(--accent);">giriş yapın</a>.
+         Yorum yapmak iÃ§in <a href="/login" style="color:var(--accent);">giriÅŸ yapÄ±n</a>.
        </div>`;
 
-  // ── Admin düzenleme formu ──
+  // â”€â”€ Admin dÃ¼zenleme formu â”€â”€
   const editForm = canManage ? `
     <div id="edit-form" style="display:none;background:rgba(124,106,247,0.06);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-top:1.5rem;">
-      <h3 style="margin-bottom:1rem;color:var(--accent);">✏️ Makaleyi Düzenle</h3>
-      <label>Başlık</label>
+      <h3 style="margin-bottom:1rem;color:var(--accent);">âœï¸ Makaleyi DÃ¼zenle</h3>
+      <label>BaÅŸlÄ±k</label>
       <input type="text" id="edit-title" value="${_esc(article.title)}" maxlength="120">
       <label>Kapak Resmi URL</label>
       <input type="url" id="edit-image" value="${_esc(article.imageUrl || '')}" placeholder="https://...">
-      <label>İçerik</label>
+      <label>Ä°Ã§erik</label>
       <textarea id="edit-body" rows="12" maxlength="20000">${_esc(article.body || '')}</textarea>
       <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
-        <button class="btn" onclick="saveEdit()" style="flex:1;">💾 Kaydet</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('edit-form').style.display='none'" style="flex:1;">İptal</button>
+        <button class="btn" onclick="saveEdit()" style="flex:1;">ğŸ’¾ Kaydet</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('edit-form').style.display='none'" style="flex:1;">Ä°ptal</button>
       </div>
     </div>` : '';
 
@@ -3494,32 +3494,32 @@ function renderWikiArticlePage(user, article, canManage = false) {
       <!-- Geri butonu -->
       <a href="/wiki" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--muted);text-decoration:none;font-size:0.9rem;margin-bottom:1.5rem;transition:color 0.2s;"
          onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
-        ← Wiki'ye Dön
+        â† Wiki'ye DÃ¶n
       </a>
 
       <div class="card">
         <!-- Kapak -->
         ${coverImg}
 
-        <!-- Başlık + meta -->
+        <!-- BaÅŸlÄ±k + meta -->
         <div style="margin-bottom:1.5rem;">
           <h1 style="font-size:2rem;font-weight:800;line-height:1.2;margin-bottom:1rem;">${_esc(article.title)}</h1>
           <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;font-size:0.88rem;color:var(--muted);">
             ${authorAvatar}
             ${authorNameHtml}
-            <span>—</span>
+            <span>â€”</span>
             ${createdTs}
             ${editedLine}
             <span style="margin-left:auto;display:flex;gap:1rem;">
-              <span>👁 ${(article.views || 0).toLocaleString('tr-TR')} görüntülenme</span>
-              <span>💬 ${comments.length} yorum</span>
+              <span>ğŸ‘ ${(article.views || 0).toLocaleString('tr-TR')} gÃ¶rÃ¼ntÃ¼lenme</span>
+              <span>ğŸ’¬ ${comments.length} yorum</span>
             </span>
           </div>
         </div>
 
         <hr class="divider">
 
-        <!-- İçerik -->
+        <!-- Ä°Ã§erik -->
         <div style="line-height:1.85;font-size:1rem;white-space:pre-wrap;word-break:break-word;margin-bottom:2rem;">${_esc(article.body || '')}</div>
 
         <!-- Tepkiler -->
@@ -3527,11 +3527,11 @@ function renderWikiArticlePage(user, article, canManage = false) {
           ${reactionHtml}
         </div>
 
-        <!-- Admin butonları -->
+        <!-- Admin butonlarÄ± -->
         ${canManage ? `
         <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-          <button class="btn btn-sm btn-ghost" onclick="document.getElementById('edit-form').style.display=document.getElementById('edit-form').style.display==='none'?'block':'none'">✏️ Düzenle</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteArticle()">🗑 Sil</button>
+          <button class="btn btn-sm btn-ghost" onclick="document.getElementById('edit-form').style.display=document.getElementById('edit-form').style.display==='none'?'block':'none'">âœï¸ DÃ¼zenle</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteArticle()">ğŸ—‘ Sil</button>
         </div>
         ${editForm}` : ''}
 
@@ -3539,9 +3539,9 @@ function renderWikiArticlePage(user, article, canManage = false) {
 
         <!-- Yorumlar -->
         <div>
-          <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:1.25rem;">💬 Yorumlar <span style="color:var(--muted);font-size:0.9rem;font-weight:400;">(${comments.length})</span></h2>
+          <h2 style="font-size:1.3rem;font-weight:800;margin-bottom:1.25rem;">ğŸ’¬ Yorumlar <span style="color:var(--muted);font-size:0.9rem;font-weight:400;">(${comments.length})</span></h2>
           <div id="comments-list" style="display:flex;flex-direction:column;gap:0.75rem;">
-            ${commentsHtml || `<div style="text-align:center;padding:2rem;color:var(--muted);">Henüz yorum yok. İlk yorumu sen yap!</div>`}
+            ${commentsHtml || `<div style="text-align:center;padding:2rem;color:var(--muted);">HenÃ¼z yorum yok. Ä°lk yorumu sen yap!</div>`}
           </div>
           ${commentForm}
         </div>
@@ -3551,7 +3551,7 @@ function renderWikiArticlePage(user, article, canManage = false) {
     <script>
       const articleId = ${aid};
 
-      // ── Tepki ──
+      // â”€â”€ Tepki â”€â”€
       async function reactTo(emoji) {
         ${user ? `
         const res = await fetch('/api/wiki/articles/' + articleId + '/react', {
@@ -3561,16 +3561,16 @@ function renderWikiArticlePage(user, article, canManage = false) {
         });
         if (res.ok) location.reload();
         else { const d = await res.json().catch(()=>({})); showToast(d.error || 'Hata', 'error'); }
-        ` : `showToast('Tepki eklemek için giriş yapın.', 'warning');`}
+        ` : `showToast('Tepki eklemek iÃ§in giriÅŸ yapÄ±n.', 'warning');`}
       }
 
-      // ── Yorum gönder ──
+      // â”€â”€ Yorum gÃ¶nder â”€â”€
       async function postComment() {
         const body = document.getElementById('comment-body');
         const text = body.value.trim();
         if (!text) return;
         const btn = body.nextElementSibling.querySelector('button');
-        btn.disabled = true; btn.textContent = 'Gönderiliyor...';
+        btn.disabled = true; btn.textContent = 'GÃ¶nderiliyor...';
         const res = await fetch('/api/wiki/articles/' + articleId + '/comments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3580,13 +3580,13 @@ function renderWikiArticlePage(user, article, canManage = false) {
         else {
           const d = await res.json().catch(() => ({}));
           showToast(d.error || 'Hata', 'error');
-          btn.disabled = false; btn.textContent = '💬 Yorum Yap';
+          btn.disabled = false; btn.textContent = 'ğŸ’¬ Yorum Yap';
         }
       }
 
-      // ── Yorum sil ──
+      // â”€â”€ Yorum sil â”€â”€
       async function deleteComment(commentId) {
-        if (!confirm('Bu yorumu silmek istediğine emin misin?')) return;
+        if (!confirm('Bu yorumu silmek istediÄŸine emin misin?')) return;
         const res = await fetch('/api/wiki/articles/' + articleId + '/comments/' + commentId, { method: 'DELETE' });
         if (res.ok) {
           const el = document.getElementById('comment-' + commentId);
@@ -3598,15 +3598,15 @@ function renderWikiArticlePage(user, article, canManage = false) {
         }
       }
 
-      // ── Makale sil ──
+      // â”€â”€ Makale sil â”€â”€
       async function deleteArticle() {
-        if (!confirm('Bu makaleyi kalıcı olarak silmek istediğine emin misin?')) return;
+        if (!confirm('Bu makaleyi kalÄ±cÄ± olarak silmek istediÄŸine emin misin?')) return;
         const res = await fetch('/api/wiki/articles/' + articleId, { method: 'DELETE' });
         if (res.ok) location.href = '/wiki';
         else showToast('Silinemedi.', 'error');
       }
 
-      // ── Makale düzenle ──
+      // â”€â”€ Makale dÃ¼zenle â”€â”€
       async function saveEdit() {
         const res = await fetch('/api/wiki/articles/' + articleId, {
           method: 'PATCH',
@@ -3627,141 +3627,141 @@ function renderWikiArticlePage(user, article, canManage = false) {
 
 function renderAdminPage(user) {
   const content = `
-    <!-- Sekme başlıkları -->
+    <!-- Sekme baÅŸlÄ±klarÄ± -->
     <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;">
       <button class="adm-tab adm-tab-active" onclick="admTab('stats',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        📊 İstatistikler
+        ğŸ“Š Ä°statistikler
       </button>
       <button class="adm-tab" onclick="admTab('users',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        👥 Kullanıcılar
+        ğŸ‘¥ KullanÄ±cÄ±lar
       </button>
 
       <button class="adm-tab" onclick="admTab('coins',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        💰 Para Ver
+        ğŸ’° Para Ver
       </button>
       <button class="adm-tab" onclick="admTab('bans',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        🚫 Banlar
+        ğŸš« Banlar
       </button>
       <button class="adm-tab" onclick="admTab('forms',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        📋 Panel Formları
+        ğŸ“‹ Panel FormlarÄ±
       </button>
       <button class="adm-tab" onclick="admTab('automation',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
-        🤖 Otomasyon
+        ğŸ¤– Otomasyon
       </button>
     </div>
 
-    <!-- İstatistikler -->
+    <!-- Ä°statistikler -->
     <div id="adm-stats" class="card">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">📊 İstatistikler</h1>
-      <p class="text-muted mb-3">Sunucu ve kullanıcı aktiflik istatistikleri.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">ğŸ“Š Ä°statistikler</h1>
+      <p class="text-muted mb-3">Sunucu ve kullanÄ±cÄ± aktiflik istatistikleri.</p>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
         <div class="card" style="background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.3); padding: 1.5rem;">
           <div style="font-size: 2rem; font-weight: 800; color: var(--success); margin-bottom: 10px;" id="stat-active">0</div>
-          <div style="color: var(--muted); font-size: 0.9rem;">🟢 Aktif Kullanıcılar (24s)</div>
+          <div style="color: var(--muted); font-size: 0.9rem;">ğŸŸ¢ Aktif KullanÄ±cÄ±lar (24s)</div>
         </div>
         <div class="card" style="background: rgba(251, 113, 133, 0.1); border: 1px solid rgba(251, 113, 133, 0.3); padding: 1.5rem;">
           <div style="font-size: 2rem; font-weight: 800; color: var(--danger); margin-bottom: 10px;" id="stat-inactive">0</div>
-          <div style="color: var(--muted); font-size: 0.9rem;">🔴 İnaktif Kullanıcılar (24s+)</div>
+          <div style="color: var(--muted); font-size: 0.9rem;">ğŸ”´ Ä°naktif KullanÄ±cÄ±lar (24s+)</div>
         </div>
         <div class="card" style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); padding: 1.5rem;">
           <div style="font-size: 2rem; font-weight: 800; color: var(--accent); margin-bottom: 10px;" id="stat-rules">0</div>
-          <div style="color: var(--muted); font-size: 0.9rem;">📋 Kurallar Kabul</div>
+          <div style="color: var(--muted); font-size: 0.9rem;">ğŸ“‹ Kurallar Kabul</div>
         </div>
         <div class="card" style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); padding: 1.5rem;">
           <div style="font-size: 2rem; font-weight: 800; color: var(--warning); margin-bottom: 10px;" id="stat-activities">0</div>
-          <div style="color: var(--muted); font-size: 0.9rem;">📊 Toplam Aktiviteler</div>
+          <div style="color: var(--muted); font-size: 0.9rem;">ğŸ“Š Toplam Aktiviteler</div>
         </div>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
         <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">
-          <h3 style="margin-bottom: 15px; color: var(--success); font-size: 1.1rem; font-weight: 700;">🟢 Aktif Kullanıcılar (Son 24s)</h3>
+          <h3 style="margin-bottom: 15px; color: var(--success); font-size: 1.1rem; font-weight: 700;">ğŸŸ¢ Aktif KullanÄ±cÄ±lar (Son 24s)</h3>
           <div id="active-list" style="max-height: 300px; overflow-y: auto;"></div>
         </div>
         <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px;">
-          <h3 style="margin-bottom: 15px; color: var(--danger); font-size: 1.1rem; font-weight: 700;">🔴 İnaktif Kullanıcılar</h3>
+          <h3 style="margin-bottom: 15px; color: var(--danger); font-size: 1.1rem; font-weight: 700;">ğŸ”´ Ä°naktif KullanÄ±cÄ±lar</h3>
           <div id="inactive-list" style="max-height: 300px; overflow-y: auto;"></div>
         </div>
       </div>
     </div>
 
-    <!-- Kullanıcı yönetimi -->
+    <!-- KullanÄ±cÄ± yÃ¶netimi -->
     <div id="adm-users" class="card" style="display:none;">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">⚙️ Admin Paneli</h1>
-      <p class="text-muted mb-3">Kullanıcı yetkileri ve ban yönetimi.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">âš™ï¸ Admin Paneli</h1>
+      <p class="text-muted mb-3">KullanÄ±cÄ± yetkileri ve ban yÃ¶netimi.</p>
       <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-        <input type="text" id="admin-search" placeholder="Discord adı veya ID" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter') adminSearchUsers()">
+        <input type="text" id="admin-search" placeholder="Discord adÄ± veya ID" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter') adminSearchUsers()">
         <button type="button" class="btn" onclick="adminSearchUsers()">Ara</button>
       </div>
       <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <input type="text" id="restore-staff-query" placeholder="Geri almak istediğin kullanıcı adı veya ID" style="flex:1;min-width:220px;" />
-        <button type="button" class="btn btn-success" onclick="restoreStaffByQuery()">↩️ Personel Geri Al</button>
+        <input type="text" id="restore-staff-query" placeholder="Geri almak istediÄŸin kullanÄ±cÄ± adÄ± veya ID" style="flex:1;min-width:220px;" />
+        <button type="button" class="btn btn-success" onclick="restoreStaffByQuery()">â†©ï¸ Personel Geri Al</button>
       </div>
       <div style="display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <input type="text" id="restore-school-query" placeholder="Mod okulu için kullanıcı adı veya ID" style="flex:1;min-width:220px;" />
-        <button type="button" class="btn btn-success" onclick="restoreStaffWithAutoSchool()">🚀 Geri Al + Okulu Geç</button>
+        <input type="text" id="restore-school-query" placeholder="Mod okulu iÃ§in kullanÄ±cÄ± adÄ± veya ID" style="flex:1;min-width:220px;" />
+        <button type="button" class="btn btn-success" onclick="restoreStaffWithAutoSchool()">ğŸš€ Geri Al + Okulu GeÃ§</button>
       </div>
       <div id="restore-staff-result" style="margin-bottom:0.5rem;color:var(--success);"></div>
       <div id="restore-school-result" style="margin-bottom:1rem;color:var(--warning);"></div>
       <div id="admin-results"></div>
       <hr class="divider" style="margin-top:2rem;">
-      <a href="/debug" style="color:var(--accent);">🔍 Debug sayfası</a>
+      <a href="/debug" style="color:var(--accent);">ğŸ” Debug sayfasÄ±</a>
     </div>
 
 
 
-    <!-- Coin yönetimi -->
+    <!-- Coin yÃ¶netimi -->
     <div id="adm-coins" class="card" style="display:none;">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:.5rem;">💰 Coin Yönetimi</h1>
-      <p class="text-muted mb-3">Kullanıcılara coin verin. Maksimum tek seferde 1.000.000 coin.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:.5rem;">ğŸ’° Coin YÃ¶netimi</h1>
+      <p class="text-muted mb-3">KullanÄ±cÄ±lara coin verin. Maksimum tek seferde 1.000.000 coin.</p>
 
       <div style="background:rgba(251,191,36,.04);border:1px solid rgba(251,191,36,.12);border-radius:16px;padding:1.5rem;margin-bottom:2rem;backdrop-filter:blur(8px);">
-        <h3 style="font-size:1rem;font-weight:800;color:#fbbf24;margin-bottom:1rem;">➕ Kullanıcıya Coin Ver</h3>
+        <h3 style="font-size:1rem;font-weight:800;color:#fbbf24;margin-bottom:1rem;">â• KullanÄ±cÄ±ya Coin Ver</h3>
         <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.75rem;">
-          <input type="text" id="coin-id" placeholder="Discord ID veya kullanıcı adı" style="flex:1;min-width:200px;margin-bottom:0;">
+          <input type="text" id="coin-id" placeholder="Discord ID veya kullanÄ±cÄ± adÄ±" style="flex:1;min-width:200px;margin-bottom:0;">
           <input type="number" id="coin-amount" placeholder="Miktar" min="1" max="1000000" style="width:160px;margin-bottom:0;">
         </div>
         <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-          <input type="text" id="coin-reason" placeholder="Sebep (isteğe bağlı)" style="flex:1;min-width:200px;margin-bottom:0;">
-          <button class="btn" onclick="giveCoins()">💸 Ver</button>
+          <input type="text" id="coin-reason" placeholder="Sebep (isteÄŸe baÄŸlÄ±)" style="flex:1;min-width:200px;margin-bottom:0;">
+          <button class="btn" onclick="giveCoins()">ğŸ’¸ Ver</button>
         </div>
         <div id="coin-result" style="margin-top:1rem;"></div>
       </div>
 
-      <!-- Hızlı miktarlar -->
+      <!-- HÄ±zlÄ± miktarlar -->
       <div style="margin-bottom:1.5rem;">
-        <div style="font-size:.85rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">Hızlı Miktarlar:</div>
+        <div style="font-size:.85rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">HÄ±zlÄ± Miktarlar:</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
           ${[100, 500, 1000, 5000, 10000, 50000].map(n =>
-    `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('coin-amount').value=${n}">${n.toLocaleString('tr-TR')} 🪙</button>`
+    `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('coin-amount').value=${n}">${n.toLocaleString('tr-TR')} ğŸª™</button>`
   ).join('')}
         </div>
       </div>
     </div>
 
-    <!-- Ban yönetimi -->
+    <!-- Ban yÃ¶netimi -->
     <div id="adm-bans" class="card" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
-          <h1 style="font-size:2rem;font-weight:800;">🚫 Ban Yönetimi</h1>
-          <p class="text-muted" style="margin-top:.25rem;">Kullanıcıları site ve/veya Discord'dan yasaklayın.</p>
+          <h1 style="font-size:2rem;font-weight:800;">ğŸš« Ban YÃ¶netimi</h1>
+          <p class="text-muted" style="margin-top:.25rem;">KullanÄ±cÄ±larÄ± site ve/veya Discord'dan yasaklayÄ±n.</p>
         </div>
-        <button class="btn btn-sm" onclick="loadBans()">🔄 Yenile</button>
+        <button class="btn btn-sm" onclick="loadBans()">ğŸ”„ Yenile</button>
       </div>
 
       <!-- Yeni ban formu -->
       <div style="background:rgba(251,113,133,.04);border:1px solid rgba(251,113,133,.12);border-radius:16px;padding:1.5rem;margin-bottom:2rem;backdrop-filter:blur(8px);">
-        <h3 style="font-size:1rem;font-weight:800;color:var(--danger);margin-bottom:1rem;">➕ Kullanıcı Yasakla</h3>
+        <h3 style="font-size:1rem;font-weight:800;color:var(--danger);margin-bottom:1rem;">â• KullanÄ±cÄ± Yasakla</h3>
         <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:.75rem;">
-          <input type="text" id="ban-id" placeholder="Discord ID veya kullanıcı adı" style="flex:1;min-width:200px;margin-bottom:0;">
-          <input type="text" id="ban-reason" placeholder="Sebep (isteğe bağlı)" style="flex:2;min-width:200px;margin-bottom:0;">
+          <input type="text" id="ban-id" placeholder="Discord ID veya kullanÄ±cÄ± adÄ±" style="flex:1;min-width:200px;margin-bottom:0;">
+          <input type="text" id="ban-reason" placeholder="Sebep (isteÄŸe baÄŸlÄ±)" style="flex:2;min-width:200px;margin-bottom:0;">
         </div>
         <div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
           <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;color:var(--text);font-size:.9rem;">
@@ -3771,63 +3771,63 @@ function renderAdminPage(user) {
             <input type="checkbox" id="ban-site" checked style="width:auto;margin:0;"> Siteden yasakla
           </label>
         </div>
-        <button class="btn btn-danger" onclick="banUser()">🚫 Yasakla</button>
+        <button class="btn btn-danger" onclick="banUser()">ğŸš« Yasakla</button>
       </div>
 
       <!-- Aktif banlar listesi -->
-      <h3 style="font-size:1rem;font-weight:800;margin-bottom:1rem;">📋 Aktif Banlar</h3>
-      <div id="ban-list"><div style="color:var(--muted);text-align:center;padding:2rem;">Yükleniyor...</div></div>
+      <h3 style="font-size:1rem;font-weight:800;margin-bottom:1rem;">ğŸ“‹ Aktif Banlar</h3>
+      <div id="ban-list"><div style="color:var(--muted);text-align:center;padding:2rem;">YÃ¼kleniyor...</div></div>
     </div>
 
-    <!-- Otomasyon / Alımlar -->
+    <!-- Otomasyon / AlÄ±mlar -->
     <div id="adm-automation" class="card" style="display:none;">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">🤖 Otomasyon & Alımlar</h1>
-      <p class="text-muted mb-3">Sınavlı (AI) veya sınavsız olarak avukat alımı gerçekleştirin.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">ğŸ¤– Otomasyon & AlÄ±mlar</h1>
+      <p class="text-muted mb-3">SÄ±navlÄ± (AI) veya sÄ±navsÄ±z olarak avukat alÄ±mÄ± gerÃ§ekleÅŸtirin.</p>
 
       <div style="background:rgba(124,106,247,0.04);border:1px solid rgba(124,106,247,0.12);border-radius:16px;padding:1.5rem;margin-bottom:2rem;backdrop-filter:blur(8px);">
-        <h3 style="font-size:1.1rem;font-weight:800;color:var(--accent);margin-bottom:1rem;">⚖️ Avukat Alım Sistemi</h3>
+        <h3 style="font-size:1.1rem;font-weight:800;color:var(--accent);margin-bottom:1rem;">âš–ï¸ Avukat AlÄ±m Sistemi</h3>
         <div style="margin-bottom:1rem;">
-          <label style="display:block;margin-bottom:0.5rem;font-weight:700;">Discord Kullanıcı ID'si</label>
-          <input type="text" id="avukat-discord-id" placeholder="Örn: 1444656401216442497" style="width:100%;margin-bottom:0;">
+          <label style="display:block;margin-bottom:0.5rem;font-weight:700;">Discord KullanÄ±cÄ± ID'si</label>
+          <input type="text" id="avukat-discord-id" placeholder="Ã–rn: 1444656401216442497" style="width:100%;margin-bottom:0;">
         </div>
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <button class="btn" style="background:var(--accent);color:#fff;" onclick="startAvukatAI()">🧠 AI AVUKAT ALIMI BAŞLAT</button>
-          <button class="btn btn-ghost" style="border-color:#2ecc71;color:#2ecc71;" onclick="startAvukatDirect()">⚖️ SINAVSIZ ALIM (Rol Ver)</button>
+          <button class="btn" style="background:var(--accent);color:#fff;" onclick="startAvukatAI()">ğŸ§  AI AVUKAT ALIMI BAÅLAT</button>
+          <button class="btn btn-ghost" style="border-color:#2ecc71;color:#2ecc71;" onclick="startAvukatDirect()">âš–ï¸ SINAVSIZ ALIM (Rol Ver)</button>
         </div>
         <div id="avukat-result" style="margin-top:1.5rem;font-weight:700;display:none;padding:1rem;border-radius:8px;"></div>
       </div>
     </div>
 
-    <!-- Panel Formları -->
+    <!-- Panel FormlarÄ± -->
     <div id="adm-forms" class="card" style="display:none;">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">📋 Panel Formları</h1>
-      <p class="text-muted mb-3">Discord yetkili panelinde yer alan formları doğrudan web üzerinden doldurup gönderin.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">ğŸ“‹ Panel FormlarÄ±</h1>
+      <p class="text-muted mb-3">Discord yetkili panelinde yer alan formlarÄ± doÄŸrudan web Ã¼zerinden doldurup gÃ¶nderin.</p>
       
-      <!-- Form seçme butonları -->
+      <!-- Form seÃ§me butonlarÄ± -->
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('leave', this)" style="border-color:#f1c40f;color:#f1c40f;">🏖️ İzin Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('suggestion', this)" style="border-color:#2ecc71;color:#2ecc71;">💡 Tavsiye Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74c3c;color:#e74c3c;">🚪 İstifa Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('modaction', this)" style="border-color:#9b59b6;color:#9b59b6;">⚖️ Mod İşlem Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('ban_report', this)" style="border-color:#e74c3c;color:#e74c3c;">🔨 Ban Raporu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('mute_report', this)" style="border-color:#f39c12;color:#f39c12;">🔇 Mute Raporu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('mod_complain', this)" style="border-color:#d946ef;color:#d946ef;">⚠️ Mod Şikayeti</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('leave', this)" style="border-color:#f1c40f;color:#f1c40f;">ğŸ–ï¸ Ä°zin Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('suggestion', this)" style="border-color:#2ecc71;color:#2ecc71;">ğŸ’¡ Tavsiye Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74c3c;color:#e74c3c;">ğŸšª Ä°stifa Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('modaction', this)" style="border-color:#9b59b6;color:#9b59b6;">âš–ï¸ Mod Ä°ÅŸlem Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('ban_report', this)" style="border-color:#e74c3c;color:#e74c3c;">ğŸ”¨ Ban Raporu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('mute_report', this)" style="border-color:#f39c12;color:#f39c12;">ğŸ”‡ Mute Raporu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('mod_complain', this)" style="border-color:#d946ef;color:#d946ef;">âš ï¸ Mod Åikayeti</button>
       </div>
 
-      <!-- Form alanları (Dinamik) -->
+      <!-- Form alanlarÄ± (Dinamik) -->
       <div id="form-container" style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;padding:1.5rem;display:none;">
         <h3 id="form-title" style="font-size:1.2rem;font-weight:800;margin-bottom:1.5rem;"></h3>
         
         <div id="form-fields"></div>
         
         <div style="display:flex;justify-content:flex-end;margin-top:1.5rem;">
-          <button type="button" class="btn" id="form-submit-btn" onclick="submitAdminForm()">Gönder</button>
+          <button type="button" class="btn" id="form-submit-btn" onclick="submitAdminForm()">GÃ¶nder</button>
         </div>
       </div>
     </div>
 
     <script>
-      // ── Sekme geçişi ──────────────────────────────────────────────────────
+      // â”€â”€ Sekme geÃ§iÅŸi â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       function admTab(name, btn) {
         document.getElementById('adm-stats').style.display  = name === 'stats'  ? '' : 'none';
         document.getElementById('adm-users').style.display  = name === 'users'  ? '' : 'none';
@@ -3849,13 +3849,13 @@ function renderAdminPage(user) {
         const discordId = document.getElementById('avukat-discord-id').value.trim();
         const resDiv = document.getElementById('avukat-result');
         if (!discordId) {
-          alert('Lütfen geçerli bir Discord ID girin.');
+          alert('LÃ¼tfen geÃ§erli bir Discord ID girin.');
           return;
         }
         resDiv.style.display = 'block';
         resDiv.style.background = 'rgba(255,255,255,0.05)';
         resDiv.style.color = 'var(--text)';
-        resDiv.innerText = '⏳ AI Mülakatı başlatılıyor...';
+        resDiv.innerText = 'â³ AI MÃ¼lakatÄ± baÅŸlatÄ±lÄ±yor...';
 
         try {
           const res = await fetch('/api/avukat/ai', {
@@ -3867,16 +3867,16 @@ function renderAdminPage(user) {
           if (data.success) {
             resDiv.style.background = 'rgba(46,204,113,0.1)';
             resDiv.style.color = '#2ecc71';
-            resDiv.innerText = '✅ Başarılı: ' + data.message;
+            resDiv.innerText = 'âœ… BaÅŸarÄ±lÄ±: ' + data.message;
           } else {
             resDiv.style.background = 'rgba(231,76,60,0.1)';
             resDiv.style.color = '#e74c3c';
-            resDiv.innerText = '❌ Hata: ' + (data.error || 'Bilinmeyen hata');
+            resDiv.innerText = 'âŒ Hata: ' + (data.error || 'Bilinmeyen hata');
           }
         } catch (err) {
           resDiv.style.background = 'rgba(231,76,60,0.1)';
           resDiv.style.color = '#e74c3c';
-          resDiv.innerText = '❌ İstek hatası: ' + err.message;
+          resDiv.innerText = 'âŒ Ä°stek hatasÄ±: ' + err.message;
         }
       }
 
@@ -3884,13 +3884,13 @@ function renderAdminPage(user) {
         const discordId = document.getElementById('avukat-discord-id').value.trim();
         const resDiv = document.getElementById('avukat-result');
         if (!discordId) {
-          alert('Lütfen geçerli bir Discord ID girin.');
+          alert('LÃ¼tfen geÃ§erli bir Discord ID girin.');
           return;
         }
         resDiv.style.display = 'block';
         resDiv.style.background = 'rgba(255,255,255,0.05)';
         resDiv.style.color = 'var(--text)';
-        resDiv.innerText = '⏳ Avukat rolü tanımlanıyor...';
+        resDiv.innerText = 'â³ Avukat rolÃ¼ tanÄ±mlanÄ±yor...';
 
         try {
           const res = await fetch('/api/avukat/direct', {
@@ -3902,84 +3902,84 @@ function renderAdminPage(user) {
           if (data.success) {
             resDiv.style.background = 'rgba(46,204,113,0.1)';
             resDiv.style.color = '#2ecc71';
-            resDiv.innerText = '✅ Başarılı: ' + data.message;
+            resDiv.innerText = 'âœ… BaÅŸarÄ±lÄ±: ' + data.message;
           } else {
             resDiv.style.background = 'rgba(231,76,60,0.1)';
             resDiv.style.color = '#e74c3c';
-            resDiv.innerText = '❌ Hata: ' + (data.error || 'Bilinmeyen hata');
+            resDiv.innerText = 'âŒ Hata: ' + (data.error || 'Bilinmeyen hata');
           }
         } catch (err) {
           resDiv.style.background = 'rgba(231,76,60,0.1)';
           resDiv.style.color = '#e74c3c';
-          resDiv.innerText = '❌ İstek hatası: ' + err.message;
+          resDiv.innerText = 'âŒ Ä°stek hatasÄ±: ' + err.message;
         }
       }
 
-      // ── Panel Formları Mantığı ───────────────────────────────────────────
+      // â”€â”€ Panel FormlarÄ± MantÄ±ÄŸÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       let currentFormType = '';
       
       const formDefinitions = {
         leave: {
-          title: "🏖️ İzin Talebi Formu",
+          title: "ğŸ–ï¸ Ä°zin Talebi Formu",
           fields: [
-            { id: "leave_reason", apiKey: "reason", label: "İzin Sebebi", type: "textarea", placeholder: "İzin alma sebebinizi detaylıca açıklayın...", required: true },
-            { id: "leave_duration", apiKey: "duration", label: "Kaç Gün İzin", type: "number", placeholder: "Örn: 5", required: true }
+            { id: "leave_reason", apiKey: "reason", label: "Ä°zin Sebebi", type: "textarea", placeholder: "Ä°zin alma sebebinizi detaylÄ±ca aÃ§Ä±klayÄ±n...", required: true },
+            { id: "leave_duration", apiKey: "duration", label: "KaÃ§ GÃ¼n Ä°zin", type: "number", placeholder: "Ã–rn: 5", required: true }
           ],
-          submitText: "🏖️ Talebi Gönder (AI Değerlendirir)"
+          submitText: "ğŸ–ï¸ Talebi GÃ¶nder (AI DeÄŸerlendirir)"
         },
         suggestion: {
-          title: "💡 Tavsiye & Öneri Formu",
+          title: "ğŸ’¡ Tavsiye & Ã–neri Formu",
           fields: [
-            { id: "suggestion_text", apiKey: "suggestion", label: "Öneriniz", type: "textarea", placeholder: "Sunucu veya ekip için önerinizi yazın...", required: true }
+            { id: "suggestion_text", apiKey: "suggestion", label: "Ã–neriniz", type: "textarea", placeholder: "Sunucu veya ekip iÃ§in Ã¶nerinizi yazÄ±n...", required: true }
           ],
-          submitText: "💡 Öneriyi İlet"
+          submitText: "ğŸ’¡ Ã–neriyi Ä°let"
         },
         resign: {
-          title: "🚪 İstifa Bildirim Formu",
+          title: "ğŸšª Ä°stifa Bildirim Formu",
           fields: [
-            { id: "resign_reason", apiKey: "reason", label: "İstifa Sebebi", type: "textarea", placeholder: "Ayrılma gerekçenizi yazın...", required: true },
-            { id: "resign_confirm", apiKey: "confirm", label: "Onaylıyorum (Devam etmek için 'Evet' yazın)", type: "text", placeholder: "Evet", required: true }
+            { id: "resign_reason", apiKey: "reason", label: "Ä°stifa Sebebi", type: "textarea", placeholder: "AyrÄ±lma gerekÃ§enizi yazÄ±n...", required: true },
+            { id: "resign_confirm", apiKey: "confirm", label: "OnaylÄ±yorum (Devam etmek iÃ§in 'Evet' yazÄ±n)", type: "text", placeholder: "Evet", required: true }
           ],
-          submitText: "🚪 İstifayı Bildir"
+          submitText: "ğŸšª Ä°stifayÄ± Bildir"
         },
         modaction: {
-          title: "⚖️ Moderatör İşlem Rapor Formu",
+          title: "âš–ï¸ ModeratÃ¶r Ä°ÅŸlem Rapor Formu",
           fields: [
-            { id: "mod_user", apiKey: "user", label: "İşlem Yapılan Kullanıcı (Kullanıcı Adı veya ID)", type: "text", placeholder: "Örn: Ahmet / 123456789...", required: true },
-            { id: "mod_action", apiKey: "action", label: "Cezai İşlem Tipi (Ban, Mute, Kick vb.)", type: "text", placeholder: "Örn: Ban", required: true },
-            { id: "mod_reason", apiKey: "reason", label: "Sebep ve Kanıt Linki", type: "textarea", placeholder: "Açıklama ve kanıt ekran görüntüsü linkleri...", required: true }
+            { id: "mod_user", apiKey: "user", label: "Ä°ÅŸlem YapÄ±lan KullanÄ±cÄ± (KullanÄ±cÄ± AdÄ± veya ID)", type: "text", placeholder: "Ã–rn: Ahmet / 123456789...", required: true },
+            { id: "mod_action", apiKey: "action", label: "Cezai Ä°ÅŸlem Tipi (Ban, Mute, Kick vb.)", type: "text", placeholder: "Ã–rn: Ban", required: true },
+            { id: "mod_reason", apiKey: "reason", label: "Sebep ve KanÄ±t Linki", type: "textarea", placeholder: "AÃ§Ä±klama ve kanÄ±t ekran gÃ¶rÃ¼ntÃ¼sÃ¼ linkleri...", required: true }
           ],
-          submitText: "⚖️ İşlemi Raporla"
+          submitText: "âš–ï¸ Ä°ÅŸlemi Raporla"
         },
         ban_report: {
-          title: "🔨 Ban Rapor Formu",
+          title: "ğŸ”¨ Ban Rapor Formu",
           fields: [
-            { id: "ban_isim", apiKey: "isim", label: "İsminiz (Kendi Adınız)", type: "text", placeholder: "Adınız", required: true },
-            { id: "ban_kisi", apiKey: "kisi", label: "Banlanan/Banlanacak Kullanıcı", type: "text", placeholder: "Kullanıcı adı", required: true },
-            { id: "ban_id", apiKey: "kisiId", label: "Banlanacak Kişinin ID'si", type: "text", placeholder: "18 haneli Discord ID'si", required: true },
+            { id: "ban_isim", apiKey: "isim", label: "Ä°sminiz (Kendi AdÄ±nÄ±z)", type: "text", placeholder: "AdÄ±nÄ±z", required: true },
+            { id: "ban_kisi", apiKey: "kisi", label: "Banlanan/Banlanacak KullanÄ±cÄ±", type: "text", placeholder: "KullanÄ±cÄ± adÄ±", required: true },
+            { id: "ban_id", apiKey: "kisiId", label: "Banlanacak KiÅŸinin ID'si", type: "text", placeholder: "18 haneli Discord ID'si", required: true },
             { id: "ban_sebep", apiKey: "sebep", label: "Sebep", type: "textarea", placeholder: "Yasaklanma nedeni...", required: true },
-            { id: "ban_kanit", apiKey: "kanit", label: "Kanıt (Görsel/Video Linki)", type: "text", placeholder: "https://...", required: true }
+            { id: "ban_kanit", apiKey: "kanit", label: "KanÄ±t (GÃ¶rsel/Video Linki)", type: "text", placeholder: "https://...", required: true }
           ],
-          submitText: "🔨 Banı Rapor Et"
+          submitText: "ğŸ”¨ BanÄ± Rapor Et"
         },
         mute_report: {
-          title: "🔇 Mute Rapor Formu",
+          title: "ğŸ”‡ Mute Rapor Formu",
           fields: [
-            { id: "mute_isim", apiKey: "isim", label: "İsminiz (Kendi Adınız)", type: "text", placeholder: "Adınız", required: true },
-            { id: "mute_rutbe", apiKey: "rutbe", label: "Rütbeniz", type: "text", placeholder: "Örn: Kıdemli Moderatör", required: true },
-            { id: "mute_kisi", apiKey: "kisi", label: "Mute Atılan Kişi", type: "text", placeholder: "Kullanıcı adı", required: true },
-            { id: "mute_ihlal", apiKey: "ihlal", label: "Kaçıncı İhlali?", type: "text", placeholder: "Örn: 2. ihlali", required: true }
+            { id: "mute_isim", apiKey: "isim", label: "Ä°sminiz (Kendi AdÄ±nÄ±z)", type: "text", placeholder: "AdÄ±nÄ±z", required: true },
+            { id: "mute_rutbe", apiKey: "rutbe", label: "RÃ¼tbeniz", type: "text", placeholder: "Ã–rn: KÄ±demli ModeratÃ¶r", required: true },
+            { id: "mute_kisi", apiKey: "kisi", label: "Mute AtÄ±lan KiÅŸi", type: "text", placeholder: "KullanÄ±cÄ± adÄ±", required: true },
+            { id: "mute_ihlal", apiKey: "ihlal", label: "KaÃ§Ä±ncÄ± Ä°hlali?", type: "text", placeholder: "Ã–rn: 2. ihlali", required: true }
           ],
-          submitText: "🔇 Susturmayı Rapor Et"
+          submitText: "ğŸ”‡ SusturmayÄ± Rapor Et"
         },
         mod_complain: {
-          title: "⚠️ Mod Şikayet Formu",
+          title: "âš ï¸ Mod Åikayet Formu",
           fields: [
-            { id: "comp_mod", apiKey: "mod", label: "Şikayet Edilen Yetkili (Ad veya ID)", type: "text", placeholder: "Yetkili ismi veya ID'si", required: true },
-            { id: "comp_sebep", apiKey: "sebep", label: "Şikayet Nedeni", type: "textarea", placeholder: "Durumu açıklayın...", required: true },
-            { id: "comp_kanit", apiKey: "kanit", label: "Kanıt (Görsel veya Açıklama)", type: "textarea", placeholder: "Ekran görüntüsü linkleri, mesaj içerikleri vb...", required: true }
+            { id: "comp_mod", apiKey: "mod", label: "Åikayet Edilen Yetkili (Ad veya ID)", type: "text", placeholder: "Yetkili ismi veya ID'si", required: true },
+            { id: "comp_sebep", apiKey: "sebep", label: "Åikayet Nedeni", type: "textarea", placeholder: "Durumu aÃ§Ä±klayÄ±n...", required: true },
+            { id: "comp_kanit", apiKey: "kanit", label: "KanÄ±t (GÃ¶rsel veya AÃ§Ä±klama)", type: "textarea", placeholder: "Ekran gÃ¶rÃ¼ntÃ¼sÃ¼ linkleri, mesaj iÃ§erikleri vb...", required: true }
           ],
-          submitText: "⚠️ Şikayeti Gizlice Gönder"
+          submitText: "âš ï¸ Åikayeti Gizlice GÃ¶nder"
         }
       };
 
@@ -3988,7 +3988,7 @@ function renderAdminPage(user) {
         const form = formDefinitions[type];
         if (!form) return;
 
-        // Butonların aktiflik durumunu sıfırla
+        // ButonlarÄ±n aktiflik durumunu sÄ±fÄ±rla
         const buttons = btn.parentElement.querySelectorAll('button');
         buttons.forEach(b => {
           b.classList.add('btn-ghost');
@@ -4005,7 +4005,7 @@ function renderAdminPage(user) {
         document.getElementById('form-title').innerText = form.title;
         document.getElementById('form-submit-btn').innerText = form.submitText;
         
-        // Dinamik alanları çiz
+        // Dinamik alanlarÄ± Ã§iz
         const fieldsHtml = form.fields.map(f => {
           if (f.type === 'textarea') {
             return '<div style="margin-bottom: 1.2rem;">' +
@@ -4032,7 +4032,7 @@ function renderAdminPage(user) {
           const inputEl = document.getElementById(f.id);
           const val = inputEl ? inputEl.value.trim() : '';
           if (f.required && !val) {
-            showToast(\`\${f.label} alanı doldurulmalıdır!\`, 'warning');
+            showToast(\`\${f.label} alanÄ± doldurulmalÄ±dÄ±r!\`, 'warning');
             return;
           }
           data[f.apiKey] = val;
@@ -4040,17 +4040,17 @@ function renderAdminPage(user) {
 
         if (currentFormType === 'resign') {
           if (data.confirm.toLowerCase() !== 'evet') {
-            showToast("İşlemi onaylamak için kutuya tam olarak 'Evet' yazmalısınız.", 'warning');
+            showToast("Ä°ÅŸlemi onaylamak iÃ§in kutuya tam olarak 'Evet' yazmalÄ±sÄ±nÄ±z.", 'warning');
             return;
           }
-          const check = await confirmAction("İstifa etmek istediğinize emin misiniz? Bu işlem geri alınamaz ve sunucu rolleriniz temizlenecektir!");
+          const check = await confirmAction("Ä°stifa etmek istediÄŸinize emin misiniz? Bu iÅŸlem geri alÄ±namaz ve sunucu rolleriniz temizlenecektir!");
           if (!check) return;
         }
 
         const submitBtn = document.getElementById('form-submit-btn');
         const oldText = submitBtn.innerText;
         submitBtn.disabled = true;
-        submitBtn.innerText = 'Gönderiliyor...';
+        submitBtn.innerText = 'GÃ¶nderiliyor...';
 
         try {
           const res = await fetch('/api/admin/submit-form', {
@@ -4062,33 +4062,33 @@ function renderAdminPage(user) {
           const d = await res.json().catch(() => ({}));
           
           if (res.ok) {
-            showToast(d.message || 'Form başarıyla gönderildi.', 'success');
+            showToast(d.message || 'Form baÅŸarÄ±yla gÃ¶nderildi.', 'success');
             
-            // Eğer izin formuysa ve AI kararı varsa alert ile göster
+            // EÄŸer izin formuysa ve AI kararÄ± varsa alert ile gÃ¶ster
             if (currentFormType === 'leave' && d.aiResponse) {
-              const approvedText = d.approved ? '✅ ONAYLANDI' : '❌ REDDEDİLDİ';
+              const approvedText = d.approved ? 'âœ… ONAYLANDI' : 'âŒ REDDEDÄ°LDÄ°';
               setTimeout(() => {
-                alert(\`[Yapay Zeka IK Kararı] \${approvedText}\\n\\n\${d.aiResponse}\`);
+                alert(\`[Yapay Zeka IK KararÄ±] \${approvedText}\\n\\n\${d.aiResponse}\`);
               }, 400);
             }
             
-            // Alanları temizle
+            // AlanlarÄ± temizle
             form.fields.forEach(f => {
               const inputEl = document.getElementById(f.id);
               if (inputEl) inputEl.value = '';
             });
           } else {
-            showToast(d.error || 'Gönderim başarısız oldu.', 'error');
+            showToast(d.error || 'GÃ¶nderim baÅŸarÄ±sÄ±z oldu.', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası oluştu.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ± oluÅŸtu.', 'error');
         } finally {
           submitBtn.disabled = false;
           submitBtn.innerText = oldText;
         }
       }
 
-      // ── Kullanıcı arama ───────────────────────────────────────────────────
+      // â”€â”€ KullanÄ±cÄ± arama â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       function adminEsc(s) {
         const el = document.createElement('div');
         el.textContent = s == null ? '' : String(s);
@@ -4119,23 +4119,23 @@ function renderAdminPage(user) {
       window.adminSearchUsers = async function() {
         const q = document.getElementById('admin-search').value.trim();
         const box = document.getElementById('admin-results');
-        box.innerHTML = '<p style="color:var(--muted);">Aranıyor...</p>';
+        box.innerHTML = '<p style="color:var(--muted);">AranÄ±yor...</p>';
         try {
           const res = await fetch('/api/admin/users?q=' + encodeURIComponent(q));
           const d = await res.json();
           if (!res.ok) { box.innerHTML = '<p style="color:var(--danger);">' + adminEsc(d.error || 'Hata') + '</p>'; return; }
-          if (!d.users || !d.users.length) { box.innerHTML = '<p style="color:var(--muted);">Kullanıcı bulunamadı.</p>'; return; }
+          if (!d.users || !d.users.length) { box.innerHTML = '<p style="color:var(--muted);">KullanÄ±cÄ± bulunamadÄ±.</p>'; return; }
           box.innerHTML = d.users.map(function(u) {
             const banBtn = u.isBanned
-              ? '<button type="button" class="btn btn-sm btn-success" onclick="quickUnban(\\\''+adminEsc(u.discordId)+'\\\')">✅ Banı Kaldır</button>'
-              : '<button type="button" class="btn btn-sm btn-danger" onclick="quickBan(\\\''+adminEsc(u.discordId)+'\\\',\\\''+adminEsc(u.discordUsername)+'\\\')">🚫 Yasakla</button>';
+              ? '<button type="button" class="btn btn-sm btn-success" onclick="quickUnban(\\\''+adminEsc(u.discordId)+'\\\')">âœ… BanÄ± KaldÄ±r</button>'
+              : '<button type="button" class="btn btn-sm btn-danger" onclick="quickBan(\\\''+adminEsc(u.discordId)+'\\\',\\\''+adminEsc(u.discordUsername)+'\\\')">ğŸš« Yasakla</button>';
           const restoreBtn = !u.isStaff
-              ? '<button type="button" class="btn btn-sm btn-success" onclick="restoreStaff(\\\''+adminEsc(u.discordId)+'\\\')">↩️ Geri Al</button>'
+              ? '<button type="button" class="btn btn-sm btn-success" onclick="restoreStaff(\\\''+adminEsc(u.discordId)+'\\\')">â†©ï¸ Geri Al</button>'
               : '';
             return '<div class="admin-user-row" data-discord-id="' + adminEsc(u.discordId) + '" style="background:rgba(0,0,0,0.3);border:1px solid '+(u.isBanned?'rgba(248,113,113,.4)':'var(--border)')+';border-radius:14px;padding:1.25rem;margin-bottom:1rem;">' +
               '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap;">' +
               (u.discordAvatar ? '<img src="'+adminEsc(u.discordAvatar)+'" style="width:36px;height:36px;border-radius:50%;">' : '') +
-              '<div><div style="font-weight:800;">' + adminEsc(u.discordUsername) + (u.isBanned ? ' <span style="color:var(--danger);font-size:.75rem;">🚫 BANLANDI</span>' : '') + '</div>' +
+              '<div><div style="font-weight:800;">' + adminEsc(u.discordUsername) + (u.isBanned ? ' <span style="color:var(--danger);font-size:.75rem;">ğŸš« BANLANDI</span>' : '') + '</div>' +
               '<div style="font-size:0.8rem;color:var(--muted);">ID: ' + adminEsc(u.discordId) + '</div></div></div>' +
               '<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem;">' +
               '<label style="cursor:pointer;"><input type="checkbox" class="admin-cb-admin" ' + (u.isAdmin ? 'checked' : '') + '> Admin</label>' +
@@ -4143,22 +4143,22 @@ function renderAdminPage(user) {
               '<select class="admin-sel-modlevel" style="background:var(--bg3,#1e293b);color:var(--fg,#f8fafc);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:8px;padding:0.25rem 0.5rem;font-size:0.85rem;">' +
               '<option value="1" ' + (u.modLevel === 1 ? 'selected' : '') + '>Stajyer Personel (L1)</option>' +
               '<option value="2" ' + (u.modLevel === 2 ? 'selected' : '') + '>Personel (L2)</option>' +
-              '<option value="3" ' + (u.modLevel === 3 ? 'selected' : '') + '>⭐ Kıdemli Personel (L3)</option>' +
-              '<option value="4" ' + (u.modLevel === 4 ? 'selected' : '') + '>👑 Sekreter (L4)</option>' +
-              '<option value="5" ' + (u.modLevel === 5 ? 'selected' : '') + '>👨‍✈️ Kıdemli Sekreter (L5)</option>' +
-              '<option value="6" ' + (u.modLevel === 6 ? 'selected' : '') + '>💼 Genel Koordinatör (L6)</option>' +
+              '<option value="3" ' + (u.modLevel === 3 ? 'selected' : '') + '>â­ KÄ±demli Personel (L3)</option>' +
+              '<option value="4" ' + (u.modLevel === 4 ? 'selected' : '') + '>ğŸ‘‘ Sekreter (L4)</option>' +
+              '<option value="5" ' + (u.modLevel === 5 ? 'selected' : '') + '>ğŸ‘¨â€âœˆï¸ KÄ±demli Sekreter (L5)</option>' +
+              '<option value="6" ' + (u.modLevel === 6 ? 'selected' : '') + '>ğŸ’¼ Genel KoordinatÃ¶r (L6)</option>' +
               '</select>' +
               '<select class="admin-sel-modstatus" style="background:var(--bg3,#1e293b);color:var(--fg,#f8fafc);border:1px solid var(--border,rgba(255,255,255,0.15));border-radius:8px;padding:0.25rem 0.5rem;font-size:0.85rem;">' +
-              '<option value="active" ' + (u.modStatus === 'active' ? 'selected' : '') + '>🟢 Aktif Kadro</option>' +
-              '<option value="paused" ' + (u.modStatus === 'paused' ? 'selected' : '') + '>⏸️ Duraklatıldı</option>' +
-              '<option value="dismissed" ' + (u.modStatus === 'dismissed' ? 'selected' : '') + '>🔴 Ayrıldı</option>' +
+              '<option value="active" ' + (u.modStatus === 'active' ? 'selected' : '') + '>ğŸŸ¢ Aktif Kadro</option>' +
+              '<option value="paused" ' + (u.modStatus === 'paused' ? 'selected' : '') + '>â¸ï¸ DuraklatÄ±ldÄ±</option>' +
+              '<option value="dismissed" ' + (u.modStatus === 'dismissed' ? 'selected' : '') + '>ğŸ”´ AyrÄ±ldÄ±</option>' +
               '</select>' +
-              '<button type="button" class="btn btn-sm btn-primary" onclick="adminSaveRoles(this)">💾 Kaydet & Sync</button>' +
-              '<a href="/user-logs/' + adminEsc(u.discordId) + '" class="btn btn-sm btn-ghost" style="border-color:var(--accent);color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">📜 Loglar</a>' +
+              '<button type="button" class="btn btn-sm btn-primary" onclick="adminSaveRoles(this)">ğŸ’¾ Kaydet & Sync</button>' +
+              '<a href="/user-logs/' + adminEsc(u.discordId) + '" class="btn btn-sm btn-ghost" style="border-color:var(--accent);color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;">ğŸ“œ Loglar</a>' +
               restoreBtn + banBtn + '</div></div>';
           }).join('');
         } catch (err) {
-          box.innerHTML = '<p style="color:var(--danger);">Bağlantı hatası.</p>';
+          box.innerHTML = '<p style="color:var(--danger);">BaÄŸlantÄ± hatasÄ±.</p>';
         }
       }
 
@@ -4174,7 +4174,7 @@ function renderAdminPage(user) {
           body: JSON.stringify({ isAdmin, isStaff, modLevel, modStatus })
         });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) showToast('Rütbe & Yetkiler Güncellendi: ' + (d.user?.discordUsername || id), 'success');
+        if (res.ok) showToast('RÃ¼tbe & Yetkiler GÃ¼ncellendi: ' + (d.user?.discordUsername || id), 'success');
         else showToast(d.error || 'Kaydedilemedi', 'error');
       }
 
@@ -4184,13 +4184,13 @@ function renderAdminPage(user) {
       }
 
       window.quickUnban = async function(id) {
-        if (!confirm('Bu kullanıcının banını kaldırmak istiyor musun?')) return;
+        if (!confirm('Bu kullanÄ±cÄ±nÄ±n banÄ±nÄ± kaldÄ±rmak istiyor musun?')) return;
         const res = await fetch('/api/admin/users/' + encodeURIComponent(id) + '/unban', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ discordUnban: false })
         });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) { showToast(d.message || 'Ban kaldırıldı.', 'success'); adminSearchUsers(); }
+        if (res.ok) { showToast(d.message || 'Ban kaldÄ±rÄ±ldÄ±.', 'success'); adminSearchUsers(); }
         else showToast(d.error || 'Hata', 'error');
       }
 
@@ -4207,11 +4207,11 @@ function renderAdminPage(user) {
         const query = document.getElementById('restore-school-query').value.trim();
         const resultBox = document.getElementById('restore-school-result');
         if (!query) {
-          showToast('Discord kullanıcı adı veya ID girin.', 'warning');
+          showToast('Discord kullanÄ±cÄ± adÄ± veya ID girin.', 'warning');
           resultBox.innerText = '';
           return;
         }
-        resultBox.innerText = '⏳ Geri alınıyor ve mod okulu geçiliyor...';
+        resultBox.innerText = 'â³ Geri alÄ±nÄ±yor ve mod okulu geÃ§iliyor...';
         try {
           const res = await fetch('/api/admin/restore-staff', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4219,30 +4219,30 @@ function renderAdminPage(user) {
           });
           const d = await res.json().catch(() => ({}));
           if (res.ok) {
-            showToast(d.message || 'Kullanıcı başarıyla geri alındı ve okulu tamamlandı.', 'success');
+            showToast(d.message || 'KullanÄ±cÄ± baÅŸarÄ±yla geri alÄ±ndÄ± ve okulu tamamlandÄ±.', 'success');
             resultBox.style.color = 'var(--success)';
-            resultBox.innerText = d.message || '✅ Personel geri alındı ve okulu tamamlandı.';
+            resultBox.innerText = d.message || 'âœ… Personel geri alÄ±ndÄ± ve okulu tamamlandÄ±.';
             adminSearchUsers();
           } else {
-            showToast(d.error || 'İşlem başarısız.', 'error');
+            showToast(d.error || 'Ä°ÅŸlem baÅŸarÄ±sÄ±z.', 'error');
             resultBox.style.color = 'var(--danger)';
-            resultBox.innerText = d.error || '❌ Hata oluştu.';
+            resultBox.innerText = d.error || 'âŒ Hata oluÅŸtu.';
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
           resultBox.style.color = 'var(--danger)';
-          resultBox.innerText = 'Bağlantı hatası oluştu.';
+          resultBox.innerText = 'BaÄŸlantÄ± hatasÄ± oluÅŸtu.';
         }
       }
 
       async function restoreStaffQuery(query) {
         const resultBox = document.getElementById('restore-staff-result');
         if (!query) {
-          showToast('Discord kullanıcı adı veya ID girin.', 'warning');
+          showToast('Discord kullanÄ±cÄ± adÄ± veya ID girin.', 'warning');
           resultBox.innerText = '';
           return;
         }
-        resultBox.innerText = '⏳ Geri alınıyor...';
+        resultBox.innerText = 'â³ Geri alÄ±nÄ±yor...';
         try {
           const res = await fetch('/api/admin/restore-staff', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4250,32 +4250,32 @@ function renderAdminPage(user) {
           });
           const d = await res.json().catch(() => ({}));
           if (res.ok) {
-            showToast(d.message || 'Kullanıcı başarıyla geri alındı.', 'success');
+            showToast(d.message || 'KullanÄ±cÄ± baÅŸarÄ±yla geri alÄ±ndÄ±.', 'success');
             resultBox.style.color = 'var(--success)';
-            resultBox.innerText = d.message || '✅ Personel geri alındı.';
+            resultBox.innerText = d.message || 'âœ… Personel geri alÄ±ndÄ±.';
             adminSearchUsers();
           } else {
-            showToast(d.error || 'Geri alma başarısız.', 'error');
+            showToast(d.error || 'Geri alma baÅŸarÄ±sÄ±z.', 'error');
             resultBox.style.color = 'var(--danger)';
-            resultBox.innerText = d.error || '❌ Hata oluştu.';
+            resultBox.innerText = d.error || 'âŒ Hata oluÅŸtu.';
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
           resultBox.style.color = 'var(--danger)';
-          resultBox.innerText = 'Bağlantı hatası oluştu.';
+          resultBox.innerText = 'BaÄŸlantÄ± hatasÄ± oluÅŸtu.';
         }
       }
 
       adminSearchUsers();
 
-      // ── Ban işlemleri ─────────────────────────────────────────────────────
+      // â”€â”€ Ban iÅŸlemleri â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       async function banUser() {
         const idOrName = document.getElementById('ban-id').value.trim();
         const reason   = document.getElementById('ban-reason').value.trim();
         const discordBan = document.getElementById('ban-discord').checked;
         const siteBan = document.getElementById('ban-site').checked;
 
-        if (!idOrName) { showToast('Discord ID veya kullanıcı adı girin.', 'warning'); return; }
+        if (!idOrName) { showToast('Discord ID veya kullanÄ±cÄ± adÄ± girin.', 'warning'); return; }
 
         try {
           const sr = await fetch('/api/admin/users?q=' + encodeURIComponent(idOrName));
@@ -4286,7 +4286,7 @@ function renderAdminPage(user) {
           );
 
           if (!found) {
-            showToast('Kullanıcı bulunamadı.', 'error');
+            showToast('KullanÄ±cÄ± bulunamadÄ±.', 'error');
             return;
           }
 
@@ -4298,22 +4298,22 @@ function renderAdminPage(user) {
           const d = await res.json().catch(() => ({}));
 
           if (res.ok) {
-            showToast(d.message || 'Kullanıcı yasaklandı.', 'success');
+            showToast(d.message || 'KullanÄ±cÄ± yasaklandÄ±.', 'success');
             document.getElementById('ban-id').value = '';
             document.getElementById('ban-reason').value = '';
             loadBans();
           } else {
-            showToast(d.error || 'Yasaklanamadı', 'error');
+            showToast(d.error || 'YasaklanamadÄ±', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         }
       }
 
       async function loadBans() {
         const box = document.getElementById('ban-list');
         if (!box) return;
-        box.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Yükleniyor...</div>';
+        box.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">YÃ¼kleniyor...</div>';
         try {
           const res = await fetch('/api/admin/bans');
           const d = await res.json().catch(() => ({}));
@@ -4326,28 +4326,28 @@ function renderAdminPage(user) {
               '<div style="font-weight:700;">' + adminEsc(b.discordUsername) + ' <small style="color:var(--muted);font-weight:normal;">(ID: ' + adminEsc(b.discordId) + ')</small></div>' +
               '<div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">Sebep: ' + adminEsc(b.banReason || 'Belirtilmedi') + '</div>' +
               '</div>' +
-              '<button class="btn btn-sm btn-success" onclick="quickUnban(\\\'' + adminEsc(b.discordId) + '\\\')">Banı Kaldır</button>' +
+              '<button class="btn btn-sm btn-success" onclick="quickUnban(\\\'' + adminEsc(b.discordId) + '\\\')">BanÄ± KaldÄ±r</button>' +
               '</div>';
           }).join('');
         } catch (err) {
-          box.innerHTML = '<div style="color:var(--danger);padding:1rem;">Bağlantı hatası.</div>';
+          box.innerHTML = '<div style="color:var(--danger);padding:1rem;">BaÄŸlantÄ± hatasÄ±.</div>';
         }
       }
 
-      // ── Coin verme ────────────────────────────────────────────────────────
+      // â”€â”€ Coin verme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       async function giveCoins() {
         const idOrName = document.getElementById('coin-id').value.trim();
         const amount   = parseInt(document.getElementById('coin-amount').value, 10);
         const reason   = document.getElementById('coin-reason').value.trim();
         const resultBox = document.getElementById('coin-result');
 
-        if (!idOrName) { showToast('Discord ID veya kullanıcı adı girin.', 'warning'); return; }
-        if (isNaN(amount) || amount <= 0) { showToast('Geçerli bir miktar girin.', 'warning'); return; }
+        if (!idOrName) { showToast('Discord ID veya kullanÄ±cÄ± adÄ± girin.', 'warning'); return; }
+        if (isNaN(amount) || amount <= 0) { showToast('GeÃ§erli bir miktar girin.', 'warning'); return; }
         if (amount > 1000000) { showToast('Maksimum 1.000.000 coin verebilirsiniz.', 'warning'); return; }
 
-        resultBox.innerHTML = '<span style="color:var(--muted);">Kullanıcı aranıyor...</span>';
+        resultBox.innerHTML = '<span style="color:var(--muted);">KullanÄ±cÄ± aranÄ±yor...</span>';
 
-        // Kullanıcıyı ara
+        // KullanÄ±cÄ±yÄ± ara
         const sr = await fetch('/api/admin/users?q=' + encodeURIComponent(idOrName));
         const sd = await sr.json().catch(() => ({}));
         const found = (sd.users || []).find(u =>
@@ -4356,11 +4356,11 @@ function renderAdminPage(user) {
         );
 
         if (!found) {
-          resultBox.innerHTML = '<span style="color:var(--danger);">❌ Kullanıcı bulunamadı.</span>';
+          resultBox.innerHTML = '<span style="color:var(--danger);">âŒ KullanÄ±cÄ± bulunamadÄ±.</span>';
           return;
         }
 
-        resultBox.innerHTML = \`<span style="color:var(--muted);">\${adminEsc(found.discordUsername)} kullanıcısına \${amount.toLocaleString('tr-TR')} coin veriliyor...</span>\`;
+        resultBox.innerHTML = \`<span style="color:var(--muted);">\${adminEsc(found.discordUsername)} kullanÄ±cÄ±sÄ±na \${amount.toLocaleString('tr-TR')} coin veriliyor...</span>\`;
 
         const res = await fetch('/api/admin/users/' + encodeURIComponent(found.discordId) + '/give-coins', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -4370,12 +4370,12 @@ function renderAdminPage(user) {
 
         if (res.ok) {
           showToast(d.message || 'Coin verildi.', 'success');
-          resultBox.innerHTML = \`<span style="color:var(--success);">✅ \${adminEsc(d.message)} • Yeni bakiye: \${(d.newBalance || 0).toLocaleString('tr-TR')} 🪙</span>\`;
+          resultBox.innerHTML = \`<span style="color:var(--success);">âœ… \${adminEsc(d.message)} â€¢ Yeni bakiye: \${(d.newBalance || 0).toLocaleString('tr-TR')} ğŸª™</span>\`;
           document.getElementById('coin-id').value = '';
           document.getElementById('coin-amount').value = '';
           document.getElementById('coin-reason').value = '';
         } else {
-          resultBox.innerHTML = \`<span style="color:var(--danger);">❌ \${adminEsc(d.error || 'Hata')}</span>\`;
+          resultBox.innerHTML = \`<span style="color:var(--danger);">âŒ \${adminEsc(d.error || 'Hata')}</span>\`;
           showToast(d.error || 'Hata', 'error');
         }
       }
@@ -4395,18 +4395,18 @@ function renderAdminPage(user) {
           const activeData = await activeRes.json().catch(() => ({}));
           if (activeRes.ok && activeData.success) {
             const html = activeData.users.slice(0, 50).map(id => 
-              '<div style="padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>👤 ' + adminEsc(id) + '</span></div>'
+              '<div style="padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>ğŸ‘¤ ' + adminEsc(id) + '</span></div>'
             ).join('');
-            document.getElementById('active-list').innerHTML = html || '<p style="color:var(--muted); text-align:center; padding:1rem;">Aktif kullanıcı yok</p>';
+            document.getElementById('active-list').innerHTML = html || '<p style="color:var(--muted); text-align:center; padding:1rem;">Aktif kullanÄ±cÄ± yok</p>';
           }
 
           const inactiveRes = await fetch('/api/admin/inaktif-kullanicilar');
           const inactiveData = await inactiveRes.json().catch(() => ({}));
           if (inactiveRes.ok && inactiveData.success) {
             const html = inactiveData.users.slice(0, 50).map(id => 
-              '<div style="padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>👤 ' + adminEsc(id) + '</span></div>'
+              '<div style="padding:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;"><span>ğŸ‘¤ ' + adminEsc(id) + '</span></div>'
             ).join('');
-            document.getElementById('inactive-list').innerHTML = html || '<p style="color:var(--muted); text-align:center; padding:1rem;">İnaktif kullanıcı yok</p>';
+            document.getElementById('inactive-list').innerHTML = html || '<p style="color:var(--muted); text-align:center; padding:1rem;">Ä°naktif kullanÄ±cÄ± yok</p>';
           }
 
           const rulesRes = await fetch('/api/admin/kurallar-kabul');
@@ -4415,11 +4415,11 @@ function renderAdminPage(user) {
             document.getElementById('stat-rules').textContent = rulesData.count || 0;
           }
         } catch (error) {
-          console.error('Admin istatistik veri yükleme hatası:', error);
+          console.error('Admin istatistik veri yÃ¼kleme hatasÄ±:', error);
         }
       }
 
-      // İlk yükleme
+      // Ä°lk yÃ¼kleme
       document.addEventListener('DOMContentLoaded', loadStats);
       // Her 30 saniyede bir otomatik yenile
       setInterval(() => {
@@ -4436,25 +4436,25 @@ function renderAdminPage(user) {
 function renderGroupAdminPage(user, isOwner = false) {
   const tmtGroups = {
     "35212138": "TMT Akademi",
-    "33709461": "TMT Askeri İnzibat",
-    "35430592": "TMT Birimler Bölükler",
-    "5415548": "TMT Deniz Kuvvetleri Komutanlığı",
-    "35212127": "TMT Genel Branş Komutanlığı",
+    "33709461": "TMT Askeri Ä°nzibat",
+    "35430592": "TMT Birimler BÃ¶lÃ¼kler",
+    "5415548": "TMT Deniz Kuvvetleri KomutanlÄ±ÄŸÄ±",
+    "35212127": "TMT Genel BranÅŸ KomutanlÄ±ÄŸÄ±",
     "33709391": "TMT Hava Kuvvetleri",
-    "35432150": "TMT Hudut Müfettişleri",
-    "12008462": "TMT Jandarma Genel Komutanlığı",
-    "33714381": "TMT Kara Kuvvetleri Komutanlığı",
+    "35432150": "TMT Hudut MÃ¼fettiÅŸleri",
+    "12008462": "TMT Jandarma Genel KomutanlÄ±ÄŸÄ±",
+    "33714381": "TMT Kara Kuvvetleri KomutanlÄ±ÄŸÄ±",
     "35528574": "TMT Ministry of Foreign Affairs",
-    "33708598": "TMT Özel Kuvvetler Komutanlığı",
+    "33708598": "TMT Ã–zel Kuvvetler KomutanlÄ±ÄŸÄ±",
     "11517908": "TMT Turkish Armed Forces",
     "35528598": "TMT RAIDERS",
-    "35528556": "TMT Sürücü Okulu"
+    "35528556": "TMT SÃ¼rÃ¼cÃ¼ Okulu"
   };
 
   const groupListHtml = Object.entries(tmtGroups).map(([id, name]) => {
     return `
       <button class="btn btn-ghost w-full group-select-btn" data-group-id="${id}" onclick="selectGroup('${id}', '${_esc(name)}')" style="justify-content:flex-start;text-align:left;margin-bottom:0.4rem;padding:0.6rem 1rem;">
-        🏢 ${_esc(name)}
+        ğŸ¢ ${_esc(name)}
       </button>
     `;
   }).join('');
@@ -4462,7 +4462,7 @@ function renderGroupAdminPage(user, isOwner = false) {
   const ownerSection = isOwner ? `
     <div id="owner-panel" style="margin-top:2rem;background:rgba(124,106,247,0.05);border:1px solid rgba(124,106,247,0.12);border-radius:18px;padding:1.5rem;">
       <h3 style="font-size:1.15rem;font-weight:800;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
-        👑 Kurucu Özel Alanı (ekonqtx)
+        ğŸ‘‘ Kurucu Ã–zel AlanÄ± (ekonqtx)
       </h3>
       
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
@@ -4470,29 +4470,29 @@ function renderGroupAdminPage(user, isOwner = false) {
         <div style="flex:1;min-width:240px;">
           <label style="font-weight:700;">Grup Yetkilisi Ekle</label>
           <div style="display:flex;gap:0.5rem;">
-            <input type="text" id="new-admin-username" placeholder="Discord kullanıcı adı" style="margin-bottom:0;">
+            <input type="text" id="new-admin-username" placeholder="Discord kullanÄ±cÄ± adÄ±" style="margin-bottom:0;">
             <button class="btn btn-success" onclick="addGroupAdmin()">Ekle</button>
           </div>
         </div>
 
-        <!-- Tüm Grupları Düzenleme -->
+        <!-- TÃ¼m GruplarÄ± DÃ¼zenleme -->
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;justify-content:flex-end;">
-          <label style="font-weight:700;">Toplu İşlemler</label>
+          <label style="font-weight:700;">Toplu Ä°ÅŸlemler</label>
           <button class="btn btn-danger w-full" onclick="reorderAllGroups5by5()">
-            🔄 Tüm Grupları 5'erli Sırala (Teker Teker)
+            ğŸ”„ TÃ¼m GruplarÄ± 5'erli SÄ±rala (Teker Teker)
           </button>
         </div>
       </div>
 
       <!-- Yetkililer Listesi -->
-      <h4 style="font-size:0.95rem;font-weight:800;margin-bottom:0.75rem;">📋 Yetkili Discord Kullanıcıları</h4>
+      <h4 style="font-size:0.95rem;font-weight:800;margin-bottom:0.75rem;">ğŸ“‹ Yetkili Discord KullanÄ±cÄ±larÄ±</h4>
       <div id="admins-list" style="display:flex;flex-direction:column;gap:0.5rem;">
-        <p style="color:var(--muted);font-size:0.9rem;">Yükleniyor...</p>
+        <p style="color:var(--muted);font-size:0.9rem;">YÃ¼kleniyor...</p>
       </div>
 
-      <!-- Bulk Sıralama Log Paneli -->
+      <!-- Bulk SÄ±ralama Log Paneli -->
       <div id="bulk-log-container" style="display:none;margin-top:1.5rem;">
-        <h4 style="font-size:0.95rem;font-weight:800;margin-bottom:0.5rem;color:var(--danger);">🤖 İşlem Konsolu</h4>
+        <h4 style="font-size:0.95rem;font-weight:800;margin-bottom:0.5rem;color:var(--danger);">ğŸ¤– Ä°ÅŸlem Konsolu</h4>
         <div id="bulk-log" style="background:#000;font-family:monospace;font-size:0.8rem;color:#39ff14;padding:1rem;border-radius:12px;max-height:200px;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);line-height:1.4;">
         </div>
       </div>
@@ -4503,31 +4503,31 @@ function renderGroupAdminPage(user, isOwner = false) {
     <div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;position:relative;">
       <!-- Sol Panel: Gruplar -->
       <div class="card" style="flex:1;min-width:280px;max-width:320px;padding:1.5rem;position:sticky;top:6rem;">
-        <h3 style="font-size:1.15rem;font-weight:800;margin-bottom:1rem;color:var(--accent);">🏢 TMT Roblox Grupları</h3>
+        <h3 style="font-size:1.15rem;font-weight:800;margin-bottom:1rem;color:var(--accent);">ğŸ¢ TMT Roblox GruplarÄ±</h3>
         <div style="max-height:60vh;overflow-y:auto;padding-right:0.25rem;">
           ${groupListHtml}
         </div>
       </div>
 
-      <!-- Sağ Panel: Editör / Global Görünüm -->
+      <!-- SaÄŸ Panel: EditÃ¶r / Global GÃ¶rÃ¼nÃ¼m -->
       <div style="flex:3;min-width:320px;display:flex;flex-direction:column;gap:1.5rem;">
-        <!-- Global Bilgi / Başlangıç Paneli -->
+        <!-- Global Bilgi / BaÅŸlangÄ±Ã§ Paneli -->
         <div id="global-panel" class="card">
           <h1 style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem;">
-            ⚙️ Grup ve Rütbe Yönetimi
+            âš™ï¸ Grup ve RÃ¼tbe YÃ¶netimi
           </h1>
           <p class="text-muted" style="line-height:1.5;margin-bottom:1rem;">
-            Sol taraftaki listeden işlem yapmak istediğiniz grubu seçin. Yetkili olduğunuz grupların rütbe isimlerini, renklerini değiştirebilir, sıralarını sürükleyip bırakarak düzenleyebilir ve grup açıklamasını güncelleyebilirsiniz.
+            Sol taraftaki listeden iÅŸlem yapmak istediÄŸiniz grubu seÃ§in. Yetkili olduÄŸunuz gruplarÄ±n rÃ¼tbe isimlerini, renklerini deÄŸiÅŸtirebilir, sÄ±ralarÄ±nÄ± sÃ¼rÃ¼kleyip bÄ±rakarak dÃ¼zenleyebilir ve grup aÃ§Ä±klamasÄ±nÄ± gÃ¼ncelleyebilirsiniz.
           </p>
           <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1rem;font-size:0.88rem;color:var(--muted);line-height:1.5;">
-            <p><strong>💡 Bilgilendirme:</strong> Rütbe sıralamasını (Rank numaraları) değiştirmek için rütbe satırlarının başındaki sürükleme simgesinden tutup aşağı/yukarı taşıyabilirsiniz. Kaydet butonuna basılana kadar Roblox üzerinde rütbeler güncellenmez.</p>
+            <p><strong>ğŸ’¡ Bilgilendirme:</strong> RÃ¼tbe sÄ±ralamasÄ±nÄ± (Rank numaralarÄ±) deÄŸiÅŸtirmek iÃ§in rÃ¼tbe satÄ±rlarÄ±nÄ±n baÅŸÄ±ndaki sÃ¼rÃ¼kleme simgesinden tutup aÅŸaÄŸÄ±/yukarÄ± taÅŸÄ±yabilirsiniz. Kaydet butonuna basÄ±lana kadar Roblox Ã¼zerinde rÃ¼tbeler gÃ¼ncellenmez.</p>
           </div>
           ${ownerSection}
         </div>
 
-        <!-- Grup Rütbe Editörü -->
+        <!-- Grup RÃ¼tbe EditÃ¶rÃ¼ -->
         <div id="editor-panel" class="card" style="display:none;">
-          <!-- Grup Detayları Başlığı -->
+          <!-- Grup DetaylarÄ± BaÅŸlÄ±ÄŸÄ± -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
             <div>
               <h2 id="active-group-title" style="font-size:1.6rem;font-weight:800;color:#fff;"></h2>
@@ -4535,43 +4535,43 @@ function renderGroupAdminPage(user, isOwner = false) {
             </div>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
               <button class="btn btn-success" onclick="addNewRoleRow()">
-                ➕ Yeni Rol Ekle
+                â• Yeni Rol Ekle
               </button>
               <button class="btn btn-ghost" onclick="reorderCurrentGroup5by5()">
-                ⚡ 5'erli Sırala
+                âš¡ 5'erli SÄ±rala
               </button>
               <button class="btn" style="background:var(--accent);color:#fff;" onclick="saveGroupRoles()">
-                💾 Değişiklikleri Kaydet
+                ğŸ’¾ DeÄŸiÅŸiklikleri Kaydet
               </button>
             </div>
           </div>
 
-          <!-- Grup Açıklaması -->
+          <!-- Grup AÃ§Ä±klamasÄ± -->
           <div style="margin-bottom:1.5rem;background:rgba(255,255,255,0.015);border:1px solid var(--border);border-radius:14px;padding:1.25rem;">
-            <h3 style="font-size:1rem;font-weight:800;margin-bottom:0.75rem;color:var(--accent2);">✍️ Grup Açıklaması</h3>
-            <textarea id="group-description" rows="3" placeholder="Grup açıklaması..." style="margin-bottom:0.75rem;resize:vertical;"></textarea>
+            <h3 style="font-size:1rem;font-weight:800;margin-bottom:0.75rem;color:var(--accent2);">âœï¸ Grup AÃ§Ä±klamasÄ±</h3>
+            <textarea id="group-description" rows="3" placeholder="Grup aÃ§Ä±klamasÄ±..." style="margin-bottom:0.75rem;resize:vertical;"></textarea>
             <div style="display:flex;justify-content:flex-end;">
-              <button id="btn-save-desc" class="btn btn-sm btn-ghost" onclick="saveGroupDescription()">Açıklamayı Güncelle</button>
+              <button id="btn-save-desc" class="btn btn-sm btn-ghost" onclick="saveGroupDescription()">AÃ§Ä±klamayÄ± GÃ¼ncelle</button>
             </div>
           </div>
 
-          <!-- Rütbeler Listesi -->
-          <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem;color:var(--accent2);">🛡️ Rütbe Yapılandırması</h3>
+          <!-- RÃ¼tbeler Listesi -->
+          <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem;color:var(--accent2);">ğŸ›¡ï¸ RÃ¼tbe YapÄ±landÄ±rmasÄ±</h3>
           <div id="roles-headers" style="display:grid;grid-template-columns:50px 80px 1fr 80px auto;gap:1rem;padding:0.5rem 1rem;font-size:0.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:0.5rem;">
-            <div>Sıra</div>
+            <div>SÄ±ra</div>
             <div>Rank</div>
-            <div>Rütbe Adı</div>
+            <div>RÃ¼tbe AdÄ±</div>
             <div style="text-align:center;">Renk</div>
-            <div style="text-align:center;">İzinler</div>
+            <div style="text-align:center;">Ä°zinler</div>
           </div>
           <div id="roles-list" style="display:flex;flex-direction:column;gap:0.5rem;">
-            <!-- Rütbe Satırları -->
+            <!-- RÃ¼tbe SatÄ±rlarÄ± -->
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Sürükle Bırak CSS Stilleri -->
+    <!-- SÃ¼rÃ¼kle BÄ±rak CSS Stilleri -->
     <style>
       .role-row {
         display: grid;
@@ -4642,7 +4642,7 @@ function renderGroupAdminPage(user, isOwner = false) {
         return (s == null ? "" : String(s)).replace(/"/g, '&quot;');
       }
 
-      // ── Yetkilileri Yükle (Owner-only) ──
+      // â”€â”€ Yetkilileri YÃ¼kle (Owner-only) â”€â”€
       const isOwner = ${isOwner};
       async function loadAdmins() {
         if (!isOwner) return;
@@ -4652,27 +4652,27 @@ function renderGroupAdminPage(user, isOwner = false) {
           if (res.ok && d.admins) {
             const list = document.getElementById('admins-list');
             if (d.admins.length === 0) {
-              list.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">Kayıtlı grup yetkilisi bulunmuyor.</p>';
+              list.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">KayÄ±tlÄ± grup yetkilisi bulunmuyor.</p>';
               return;
             }
             list.innerHTML = d.admins.map(a => {
               return \`
                 <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.02);padding:0.75rem 1rem;border-radius:12px;border:1px solid var(--border);">
                   <div style="font-weight:600;color:var(--text);">\${a.username}</div>
-                  <button class="btn btn-sm btn-danger" onclick="removeGroupAdmin('\${a.username}')">Kaldır</button>
+                  <button class="btn btn-sm btn-danger" onclick="removeGroupAdmin('\${a.username}')">KaldÄ±r</button>
                 </div>
               \`;
             }).join('');
           }
         } catch (err) {
-          console.error("Yetkililer yüklenemedi:", err);
+          console.error("Yetkililer yÃ¼klenemedi:", err);
         }
       }
 
       async function addGroupAdmin() {
         const usernameEl = document.getElementById('new-admin-username');
         const username = usernameEl.value.trim();
-        if (!username) { showToast('Bir kullanıcı adı girin.', 'warning'); return; }
+        if (!username) { showToast('Bir kullanÄ±cÄ± adÄ± girin.', 'warning'); return; }
         
         try {
           const res = await fetch('/api/group-admin/admins', {
@@ -4682,32 +4682,32 @@ function renderGroupAdminPage(user, isOwner = false) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast('Yetkili başarıyla eklendi.', 'success');
+            showToast('Yetkili baÅŸarÄ±yla eklendi.', 'success');
             usernameEl.value = '';
             loadAdmins();
           } else {
-            showToast(d.error || 'Hata oluştu.', 'error');
+            showToast(d.error || 'Hata oluÅŸtu.', 'error');
           }
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         }
       }
 
       async function removeGroupAdmin(username) {
-        if (!confirm(username + ' yetkisini kaldırmak istediğinize emin misiniz?')) return;
+        if (!confirm(username + ' yetkisini kaldÄ±rmak istediÄŸinize emin misiniz?')) return;
         try {
           const res = await fetch('/api/group-admin/admins/' + encodeURIComponent(username), {
             method: 'DELETE'
           });
           const d = await res.json();
           if (res.ok) {
-            showToast('Yetkili kaldırıldı.', 'success');
+            showToast('Yetkili kaldÄ±rÄ±ldÄ±.', 'success');
             loadAdmins();
           } else {
-            showToast(d.error || 'Hata oluştu.', 'error');
+            showToast(d.error || 'Hata oluÅŸtu.', 'error');
           }
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         }
       }
 
@@ -4716,29 +4716,29 @@ function renderGroupAdminPage(user, isOwner = false) {
       }
     </script>
 
-    <!-- İzinler Modalı -->
+    <!-- Ä°zinler ModalÄ± -->
     <div id="permissions-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
       <div class="card" style="width:100%;max-width:500px;max-height:90vh;overflow-y:auto;">
-        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;color:var(--accent);">⚙️ Rol İzinleri</h2>
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;color:var(--accent);">âš™ï¸ Rol Ä°zinleri</h2>
         <p id="perm-role-name" style="color:var(--muted);margin-bottom:1.5rem;"></p>
         
         <div id="perm-loading" style="display:none;text-align:center;padding:2rem;">
-          <p style="color:var(--muted);">İzinler yükleniyor...</p>
+          <p style="color:var(--muted);">Ä°zinler yÃ¼kleniyor...</p>
         </div>
         
         <div id="perm-content" style="display:flex;flex-direction:column;gap:1rem;">
-          <!-- İzinler buraya JS ile yüklenecek -->
+          <!-- Ä°zinler buraya JS ile yÃ¼klenecek -->
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
-          <button class="btn btn-ghost" onclick="closePermissionsModal()">İptal</button>
-          <button class="btn btn-success" id="btn-save-perms" onclick="savePermissions()">💾 Kaydet</button>
+          <button class="btn btn-ghost" onclick="closePermissionsModal()">Ä°ptal</button>
+          <button class="btn btn-success" id="btn-save-perms" onclick="savePermissions()">ğŸ’¾ Kaydet</button>
         </div>
       </div>
     </div>
 
     <script>
-      // ── Grup Seçimi ve Veri Çekme ──
+      // â”€â”€ Grup SeÃ§imi ve Veri Ã‡ekme â”€â”€
       async function selectGroup(groupId, groupName) {
         currentGroupId = groupId;
         
@@ -4755,7 +4755,7 @@ function renderGroupAdminPage(user, isOwner = false) {
           activeBtn.style.borderColor = 'var(--accent)';
         }
 
-        // Arayüz geçişi
+        // ArayÃ¼z geÃ§iÅŸi
         document.getElementById('global-panel').style.display = 'none';
         const editor = document.getElementById('editor-panel');
         editor.style.display = 'block';
@@ -4764,7 +4764,7 @@ function renderGroupAdminPage(user, isOwner = false) {
         document.getElementById('active-group-id').innerText = 'ID: ' + groupId;
 
         const rolesList = document.getElementById('roles-list');
-        rolesList.innerHTML = '<div style="color:var(--muted);text-align:center;padding:3rem;">Rütbeler yükleniyor...</div>';
+        rolesList.innerHTML = '<div style="color:var(--muted);text-align:center;padding:3rem;">RÃ¼tbeler yÃ¼kleniyor...</div>';
         document.getElementById('group-description').value = '';
 
         try {
@@ -4775,18 +4775,18 @@ function renderGroupAdminPage(user, isOwner = false) {
             document.getElementById('group-description').value = d.description || '';
             renderRolesList();
           } else {
-            rolesList.innerHTML = \`<div style="color:var(--danger);text-align:center;padding:3rem;">❌ Hata: \${d.error || 'Rütbeler yüklenemedi.'}</div>\`;
+            rolesList.innerHTML = \`<div style="color:var(--danger);text-align:center;padding:3rem;">âŒ Hata: \${d.error || 'RÃ¼tbeler yÃ¼klenemedi.'}</div>\`;
           }
         } catch (err) {
-          rolesList.innerHTML = '<div style="color:var(--danger);text-align:center;padding:3rem;">❌ Bağlantı hatası.</div>';
+          rolesList.innerHTML = '<div style="color:var(--danger);text-align:center;padding:3rem;">âŒ BaÄŸlantÄ± hatasÄ±.</div>';
         }
       }
 
-      // Rütbeleri Arayüze Çiz
+      // RÃ¼tbeleri ArayÃ¼ze Ã‡iz
       function renderRolesList() {
         const list = document.getElementById('roles-list');
         if (rolesData.length === 0) {
-          list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Grupta rütbe bulunamadı.</div>';
+          list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Grupta rÃ¼tbe bulunamadÄ±.</div>';
           return;
         }
 
@@ -4797,7 +4797,7 @@ function renderGroupAdminPage(user, isOwner = false) {
           const isSystem = role.rank === 0 || role.rank === 255;
           const dragAttr = isSystem ? '' : 'draggable="true"';
           const dragClass = isSystem ? 'system-role' : 'draggable';
-          const handle = isSystem ? '🔒' : '☰';
+          const handle = isSystem ? 'ğŸ”’' : 'â˜°';
 
           return \`
             <div class="role-row \${dragClass}" data-role-id="\${role.id}" \${dragAttr}>
@@ -4810,7 +4810,7 @@ function renderGroupAdminPage(user, isOwner = false) {
                 <input type="color" value="\${role.color || '#7c6af7'}" onchange="updateRoleColor('\${role.id}', this.value)">
               </div>
               <div style="display:flex;align-items:center;justify-content:center;">
-                \${String(currentGroupId) !== "11517908" ? \`<button class="btn btn-sm btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem;" onclick="openPermissionsModal('\${role.id}', '\${cleanQuote(role.name)}')">İzinler</button>\` : \`<span style="color:var(--muted);font-size:0.75rem;">Kapalı</span>\`}
+                \${String(currentGroupId) !== "11517908" ? \`<button class="btn btn-sm btn-ghost" style="padding:0.35rem 0.6rem;font-size:0.8rem;" onclick="openPermissionsModal('\${role.id}', '\${cleanQuote(role.name)}')">Ä°zinler</button>\` : \`<span style="color:var(--muted);font-size:0.75rem;">KapalÄ±</span>\`}
               </div>
             </div>
           \`;
@@ -4838,13 +4838,13 @@ function renderGroupAdminPage(user, isOwner = false) {
         const newId = 'new_' + Date.now();
         rolesData.push({
           id: newId,
-          name: 'Yeni Rütbe',
+          name: 'Yeni RÃ¼tbe',
           rank: 1,
           color: '#ffffff'
         });
         recalculateRankNumbers();
         renderRolesList();
-        showToast('Yeni rol eklendi. Sırasını sürükleyerek ayarlayın ve kaydedin.', 'info');
+        showToast('Yeni rol eklendi. SÄ±rasÄ±nÄ± sÃ¼rÃ¼kleyerek ayarlayÄ±n ve kaydedin.', 'info');
       }
 
       function addDragAndDropEvents() {
@@ -4895,7 +4895,7 @@ function renderGroupAdminPage(user, isOwner = false) {
           const destIndex = rolesData.findIndex(r => r.id === destId);
           
           if (srcIndex > -1 && destIndex > -1) {
-            // Sadece taşınabilir rütbeleri değiştir
+            // Sadece taÅŸÄ±nabilir rÃ¼tbeleri deÄŸiÅŸtir
             const srcRole = rolesData[srcIndex];
             const destRole = rolesData[destIndex];
             
@@ -4903,8 +4903,8 @@ function renderGroupAdminPage(user, isOwner = false) {
               const [removed] = rolesData.splice(srcIndex, 1);
               rolesData.splice(destIndex, 0, removed);
               
-              // Sürükle bırak bittikten sonra rankleri 5'erli sıralayalım (veya koruyup güncelleyelim)
-              // Rütbeleri rank sırasına göre (büyükten küçüğe) tutup aradakileri 5erli sıralayabiliriz:
+              // SÃ¼rÃ¼kle bÄ±rak bittikten sonra rankleri 5'erli sÄ±ralayalÄ±m (veya koruyup gÃ¼ncelleyelim)
+              // RÃ¼tbeleri rank sÄ±rasÄ±na gÃ¶re (bÃ¼yÃ¼kten kÃ¼Ã§Ã¼ÄŸe) tutup aradakileri 5erli sÄ±ralayabiliriz:
               recalculateRankNumbers();
               renderRolesList();
             }
@@ -4920,15 +4920,15 @@ function renderGroupAdminPage(user, isOwner = false) {
         });
       }
 
-      // Drag and drop sonrasında rank numaralarını bozmadan 5erli aralıklara oturtalım
+      // Drag and drop sonrasÄ±nda rank numaralarÄ±nÄ± bozmadan 5erli aralÄ±klara oturtalÄ±m
       function recalculateRankNumbers() {
-        // rolesData şu an yeni sıralamasıyla (büyükten küçüğe) duruyor.
+        // rolesData ÅŸu an yeni sÄ±ralamasÄ±yla (bÃ¼yÃ¼kten kÃ¼Ã§Ã¼ÄŸe) duruyor.
         // En sondaki Owner veya Guest olabilir.
-        // Biz sadece rank > 0 && rank < 255 olanları sıralayacağız.
-        // Aşağıdan yukarıya (küçük rankten büyüğe) 5, 10, 15 şeklinde vermeliyiz.
-        // Bunun için diziyi ters çevirip işleyebiliriz.
+        // Biz sadece rank > 0 && rank < 255 olanlarÄ± sÄ±ralayacaÄŸÄ±z.
+        // AÅŸaÄŸÄ±dan yukarÄ±ya (kÃ¼Ã§Ã¼k rankten bÃ¼yÃ¼ÄŸe) 5, 10, 15 ÅŸeklinde vermeliyiz.
+        // Bunun iÃ§in diziyi ters Ã§evirip iÅŸleyebiliriz.
         let currentRank = 5;
-        // rolesData büyükten küçüğe sıralı. Sondan başa doğru gidersek küçükten büyüğe gitmiş oluruz.
+        // rolesData bÃ¼yÃ¼kten kÃ¼Ã§Ã¼ÄŸe sÄ±ralÄ±. Sondan baÅŸa doÄŸru gidersek kÃ¼Ã§Ã¼kten bÃ¼yÃ¼ÄŸe gitmiÅŸ oluruz.
         for (let i = rolesData.length - 1; i >= 0; i--) {
           const r = rolesData[i];
           if (r.rank > 0 && r.rank < 255) {
@@ -4938,7 +4938,7 @@ function renderGroupAdminPage(user, isOwner = false) {
         }
       }
 
-      // ── API İşlemleri (Description, Save Roles, Reorder 5) ──
+      // â”€â”€ API Ä°ÅŸlemleri (Description, Save Roles, Reorder 5) â”€â”€
 
       async function saveGroupDescription() {
         if (!currentGroupId) return;
@@ -4946,7 +4946,7 @@ function renderGroupAdminPage(user, isOwner = false) {
         const btn = document.getElementById('btn-save-desc');
         
         btn.disabled = true;
-        btn.innerText = 'Güncelleniyor...';
+        btn.innerText = 'GÃ¼ncelleniyor...';
 
         try {
           const res = await fetch(\`/api/group-admin/groups/\${currentGroupId}/description\`, {
@@ -4956,27 +4956,27 @@ function renderGroupAdminPage(user, isOwner = false) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast('Grup açıklaması başarıyla güncellendi.', 'success');
+            showToast('Grup aÃ§Ä±klamasÄ± baÅŸarÄ±yla gÃ¼ncellendi.', 'success');
           } else {
-            showToast(d.error || 'Açıklama güncellenemedi.', 'error');
+            showToast(d.error || 'AÃ§Ä±klama gÃ¼ncellenemedi.', 'error');
           }
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         } finally {
           btn.disabled = false;
-          btn.innerText = 'Açıklamayı Güncelle';
+          btn.innerText = 'AÃ§Ä±klamayÄ± GÃ¼ncelle';
         }
       }
 
       async function saveGroupRoles() {
         if (!currentGroupId) return;
-        if (!confirm('Rütbe düzenlemelerini kaydetmek istediğinize emin misiniz? Bu işlem Roblox API üzerinden rütbeleri güncelleyecektir.')) return;
+        if (!confirm('RÃ¼tbe dÃ¼zenlemelerini kaydetmek istediÄŸinize emin misiniz? Bu iÅŸlem Roblox API Ã¼zerinden rÃ¼tbeleri gÃ¼ncelleyecektir.')) return;
 
         // Buton kilitle
         const btns = document.querySelectorAll('.btn');
         btns.forEach(b => b.disabled = true);
 
-        showToast('Değişiklikler kaydediliyor, lütfen bekleyin...', 'info');
+        showToast('DeÄŸiÅŸiklikler kaydediliyor, lÃ¼tfen bekleyin...', 'info');
 
         try {
           const res = await fetch(\`/api/group-admin/groups/\${currentGroupId}/roles\`, {
@@ -4986,13 +4986,13 @@ function renderGroupAdminPage(user, isOwner = false) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast('Rütbeler başarıyla kaydedildi! Roblox sunucularına yansıması 1-2 dakika sürebilir.', 'success');
-            // Cache sorununu önlemek için hemen tekrar fetch atmıyoruz, mevcut görünüme dokunmuyoruz.
+            showToast('RÃ¼tbeler baÅŸarÄ±yla kaydedildi! Roblox sunucularÄ±na yansÄ±masÄ± 1-2 dakika sÃ¼rebilir.', 'success');
+            // Cache sorununu Ã¶nlemek iÃ§in hemen tekrar fetch atmÄ±yoruz, mevcut gÃ¶rÃ¼nÃ¼me dokunmuyoruz.
           } else {
-            showToast(d.error || 'Kaydetme hatası.', 'error');
+            showToast(d.error || 'Kaydetme hatasÄ±.', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası oluştu.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ± oluÅŸtu.', 'error');
         } finally {
           btns.forEach(b => b.disabled = false);
         }
@@ -5000,20 +5000,20 @@ function renderGroupAdminPage(user, isOwner = false) {
 
       async function reorderCurrentGroup5by5() {
         if (!currentGroupId) return;
-        if (!confirm('Grubun sıralarını bozmadan en aşağıdan başlayarak 5, 10, 15... şeklinde yeniden sıralamak istediğinize emin misiniz?')) return;
+        if (!confirm('Grubun sÄ±ralarÄ±nÄ± bozmadan en aÅŸaÄŸÄ±dan baÅŸlayarak 5, 10, 15... ÅŸeklinde yeniden sÄ±ralamak istediÄŸinize emin misiniz?')) return;
 
-        showToast('Sıralama işlemi başlatıldı...', 'info');
+        showToast('SÄ±ralama iÅŸlemi baÅŸlatÄ±ldÄ±...', 'info');
 
         try {
           const res = await fetch(\`/api/group-admin/groups/\${currentGroupId}/reorder-5\`, { method: 'POST' });
           const d = await res.json();
           if (res.ok) {
-            showToast("Grup rütbeleri başarıyla 5erli sıralandı. Roblox'un yansıtması 1-2 dakika sürebilir, ardından sayfayı yenileyebilirsiniz.", 'success');
+            showToast("Grup rÃ¼tbeleri baÅŸarÄ±yla 5erli sÄ±ralandÄ±. Roblox'un yansÄ±tmasÄ± 1-2 dakika sÃ¼rebilir, ardÄ±ndan sayfayÄ± yenileyebilirsiniz.", 'success');
           } else {
-            showToast(d.error || 'Sıralama hatası.', 'error');
+            showToast(d.error || 'SÄ±ralama hatasÄ±.', 'error');
           }
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         }
       }
 
@@ -5029,7 +5029,7 @@ function renderGroupAdminPage(user, isOwner = false) {
 
       async function openPermissionsModal(roleId, roleName) {
         if (String(currentGroupId) === "11517908") {
-          showToast("Bu grupta izin yönetimi devre dışıdır.", "warning");
+          showToast("Bu grupta izin yÃ¶netimi devre dÄ±ÅŸÄ±dÄ±r.", "warning");
           return;
         }
 
@@ -5043,12 +5043,12 @@ function renderGroupAdminPage(user, isOwner = false) {
         try {
           const res = await fetch(\`/api/group-admin/groups/\${currentGroupId}/roles/\${roleId}/permissions\`);
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'İzinler alınamadı');
+          if (!res.ok) throw new Error(data.error || 'Ä°zinler alÄ±namadÄ±');
 
           currentPermissionsData = data;
           renderPermissionsForm(data.permissions);
         } catch (err) {
-          document.getElementById('perm-content').innerHTML = \`<p style="color:var(--danger);">❌ \${err.message}</p>\`;
+          document.getElementById('perm-content').innerHTML = \`<p style="color:var(--danger);">âŒ \${err.message}</p>\`;
         } finally {
           document.getElementById('perm-loading').style.display = 'none';
           if (currentPermissionsData) document.getElementById('btn-save-perms').disabled = false;
@@ -5057,7 +5057,7 @@ function renderGroupAdminPage(user, isOwner = false) {
 
       function renderPermissionsForm(perms) {
         if (!perms) {
-          document.getElementById('perm-content').innerHTML = '<p>İzin bilgisi bulunamadı.</p>';
+          document.getElementById('perm-content').innerHTML = '<p>Ä°zin bilgisi bulunamadÄ±.</p>';
           return;
         }
 
@@ -5091,7 +5091,7 @@ function renderGroupAdminPage(user, isOwner = false) {
 
         const btn = document.getElementById('btn-save-perms');
         btn.disabled = true;
-        btn.textContent = '⏳ Kaydediliyor...';
+        btn.textContent = 'â³ Kaydediliyor...';
 
         // Gather checkbox values and update currentPermissionsData
         for (const [categoryName, categoryObj] of Object.entries(currentPermissionsData.permissions)) {
@@ -5112,77 +5112,77 @@ function renderGroupAdminPage(user, isOwner = false) {
           const data = await res.json();
 
           if (res.ok) {
-            showToast('İzinler başarıyla güncellendi.', 'success');
+            showToast('Ä°zinler baÅŸarÄ±yla gÃ¼ncellendi.', 'success');
             closePermissionsModal();
           } else {
-            showToast(data.error || 'İzinler güncellenemedi.', 'error');
+            showToast(data.error || 'Ä°zinler gÃ¼ncellenemedi.', 'error');
           }
         } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         } finally {
           btn.disabled = false;
-          btn.textContent = '💾 Kaydet';
+          btn.textContent = 'ğŸ’¾ Kaydet';
         }
       }
 
-      // ── Kurucu Toplu Sıralama Fonksiyonu (Owner-only) ──
+      // â”€â”€ Kurucu Toplu SÄ±ralama Fonksiyonu (Owner-only) â”€â”€
       async function reorderAllGroups5by5() {
         if (!isOwner) return;
-        if (!confirm('TMT grubunun sahip olduğu tüm grupları sıralarını bozmadan 5erli olarak sıralamak istiyor musunuz? Bu işlem her grup için sırayla çalışacaktır ve bir miktar zaman alacaktır.')) return;
+        if (!confirm('TMT grubunun sahip olduÄŸu tÃ¼m gruplarÄ± sÄ±ralarÄ±nÄ± bozmadan 5erli olarak sÄ±ralamak istiyor musunuz? Bu iÅŸlem her grup iÃ§in sÄ±rayla Ã§alÄ±ÅŸacaktÄ±r ve bir miktar zaman alacaktÄ±r.')) return;
 
         const logContainer = document.getElementById('bulk-log-container');
         const logBox = document.getElementById('bulk-log');
         logContainer.style.display = 'block';
-        logBox.innerHTML = '🤖 Toplu 5erli sıralama başlatıldı...\\n';
+        logBox.innerHTML = 'ğŸ¤– Toplu 5erli sÄ±ralama baÅŸlatÄ±ldÄ±...\\n';
         
-        // Butonları kilitle
+        // ButonlarÄ± kilitle
         const btns = document.querySelectorAll('.btn');
         btns.forEach(b => b.disabled = true);
 
         try {
-          // 1. Grupları listele
-          logBox.innerHTML += '👉 Gruplar listeleniyor...\\n';
+          // 1. GruplarÄ± listele
+          logBox.innerHTML += 'ğŸ‘‰ Gruplar listeleniyor...\\n';
           const groupsRes = await fetch('/api/group-admin/groups');
           const groupsData = await groupsRes.json();
           
           if (!groupsRes.ok || !groupsData.groups) {
-            logBox.innerHTML += '❌ Gruplar listelenemedi: ' + (groupsData.error || 'Bilinmeyen hata') + '\\n';
+            logBox.innerHTML += 'âŒ Gruplar listelenemedi: ' + (groupsData.error || 'Bilinmeyen hata') + '\\n';
             return;
           }
 
           const groups = groupsData.groups;
-          logBox.innerHTML += \`✅ Toplam \${groups.length} grup bulundu.\\n\\n\`;
+          logBox.innerHTML += \`âœ… Toplam \${groups.length} grup bulundu.\\n\\n\`;
 
-          // 2. Sırayla her grup için API'yi tetikle
+          // 2. SÄ±rayla her grup iÃ§in API'yi tetikle
           for (let i = 0; i < groups.length; i++) {
             const g = groups[i];
-            logBox.innerHTML += \`⏳ [\${i+1}/\${groups.length}] \${g.name} sıralanıyor...\\n\`;
+            logBox.innerHTML += \`â³ [\${i+1}/\${groups.length}] \${g.name} sÄ±ralanÄ±yor...\\n\`;
             logBox.scrollTop = logBox.scrollHeight;
 
             try {
               const res = await fetch(\`/api/group-admin/groups/\${g.id}/reorder-5\`, { method: 'POST' });
               const d = await res.json();
               if (res.ok) {
-                logBox.innerHTML += \`✅ \${g.name} başarıyla sıralandı!\\n\`;
+                logBox.innerHTML += \`âœ… \${g.name} baÅŸarÄ±yla sÄ±ralandÄ±!\\n\`;
               } else {
-                logBox.innerHTML += \`⚠️ \${g.name} hata aldı: \${d.error || 'Bilinmeyen hata'}\\n\`;
+                logBox.innerHTML += \`âš ï¸ \${g.name} hata aldÄ±: \${d.error || 'Bilinmeyen hata'}\\n\`;
               }
             } catch (err) {
-              logBox.innerHTML += \`❌ \${g.name} bağlantı hatası: \${err.message}\\n\`;
+              logBox.innerHTML += \`âŒ \${g.name} baÄŸlantÄ± hatasÄ±: \${err.message}\\n\`;
             }
             logBox.scrollTop = logBox.scrollHeight;
             
-            // Gruplar arası 1 saniye bekleme
+            // Gruplar arasÄ± 1 saniye bekleme
             if (i < groups.length - 1) {
               await new Promise(r => setTimeout(r, 1000));
             }
           }
 
-          logBox.innerHTML += '\\n🏁 Tüm grupların sıralama işlemi tamamlandı!';
+          logBox.innerHTML += '\\nğŸ TÃ¼m gruplarÄ±n sÄ±ralama iÅŸlemi tamamlandÄ±!';
           logBox.scrollTop = logBox.scrollHeight;
-          showToast('Toplu sıralama tamamlandı.', 'success');
+          showToast('Toplu sÄ±ralama tamamlandÄ±.', 'success');
         } catch (err) {
-          logBox.innerHTML += '\\n❌ Toplu işlem başarısız oldu: ' + err.message;
+          logBox.innerHTML += '\\nâŒ Toplu iÅŸlem baÅŸarÄ±sÄ±z oldu: ' + err.message;
           logBox.scrollTop = logBox.scrollHeight;
         } finally {
           btns.forEach(b => b.disabled = false);
@@ -5191,20 +5191,20 @@ function renderGroupAdminPage(user, isOwner = false) {
     </script>
   `;
 
-  return _layout('Grup Yönetimi', user, content, '', '/group-admin');
+  return _layout('Grup YÃ¶netimi', user, content, '', '/group-admin');
 }
 
 function renderLeaderboardPage(user, topUsers = []) {
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = ['ğŸ¥‡', 'ğŸ¥ˆ', 'ğŸ¥‰'];
   const rankColors = ['#fbbf24', '#9ca3af', '#b45309'];
 
   const content = `
     <div class="card">
       <h1 style="font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:0.5rem;
                  background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-        🏆 Liderlik Tablosu
+        ğŸ† Liderlik Tablosu
       </h1>
-      <p style="text-align:center;color:var(--muted);margin-bottom:2.5rem;">Sunucunun en zengin kullanıcıları</p>
+      <p style="text-align:center;color:var(--muted);margin-bottom:2.5rem;">Sunucunun en zengin kullanÄ±cÄ±larÄ±</p>
 
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
         ${topUsers.map((u, i) => {
@@ -5223,10 +5223,10 @@ function renderLeaderboardPage(user, topUsers = []) {
               <span style="font-weight:700;font-size:1.1rem;">${_esc(u.username)}</span>
             </div>
             <div style="font-size:1.1rem;font-weight:800;color:var(--success);">
-              💵 ${Number(u.balance).toLocaleString('tr-TR')}
+              ğŸ’µ ${Number(u.balance).toLocaleString('tr-TR')}
             </div>
           </div>`;
-  }).join('') || '<div style="text-align:center;padding:3rem;color:var(--muted);">Henüz veri yok.</div>'}
+  }).join('') || '<div style="text-align:center;padding:3rem;color:var(--muted);">HenÃ¼z veri yok.</div>'}
       </div>
     </div>
   `;
@@ -5234,14 +5234,14 @@ function renderLeaderboardPage(user, topUsers = []) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SHOP PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderShopPage(user, items = []) {
   const content = `
     <div class="card">
-      <h1 style="font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:0.5rem;color:var(--accent);">🛒 Mağaza</h1>
-      <p style="text-align:center;color:var(--muted);margin-bottom:3rem;">Ekonomi bakiyenizle satın alabileceğiniz özellikler</p>
+      <h1 style="font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:0.5rem;color:var(--accent);">ğŸ›’ MaÄŸaza</h1>
+      <p style="text-align:center;color:var(--muted);margin-bottom:3rem;">Ekonomi bakiyenizle satÄ±n alabileceÄŸiniz Ã¶zellikler</p>
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;">
         ${items.map(item => `
@@ -5249,21 +5249,21 @@ function renderShopPage(user, items = []) {
                       padding:2rem;text-align:center;transition:transform 0.3s,border-color 0.3s,box-shadow 0.3s;cursor:pointer;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(12px);"
                onmouseover="this.style.transform='translateY(-6px)';this.style.borderColor='rgba(167,139,250,0.2)';this.style.boxShadow='0 12px 30px rgba(0,0,0,0.3)'"
                onmouseout="this.style.transform='none';this.style.borderColor='rgba(255,255,255,0.06)';this.style.boxShadow='none'">
-            <div style="font-size:3.5rem;margin-bottom:1rem;">${_esc(item.icon || '📦')}</div>
+            <div style="font-size:3.5rem;margin-bottom:1rem;">${_esc(item.icon || 'ğŸ“¦')}</div>
             <h3 style="font-size:1.3rem;margin-bottom:0.5rem;">${_esc(item.name)}</h3>
             <p style="color:var(--muted);margin-bottom:1.5rem;font-size:0.9rem;line-height:1.5;flex:1;">${_esc(item.desc || '')}</p>
             <div style="font-size:1.5rem;font-weight:800;color:var(--success);margin-bottom:1.5rem;">
-              💵 ${Number(item.price).toLocaleString('tr-TR')}
+              ğŸ’µ ${Number(item.price).toLocaleString('tr-TR')}
             </div>
-            <button class="btn w-full" onclick="buyItem('${_esc(item.id || item.name)}','${_esc(item.name)}')">Satın Al</button>
+            <button class="btn w-full" onclick="buyItem('${_esc(item.id || item.name)}','${_esc(item.name)}')">SatÄ±n Al</button>
           </div>
-        `).join('') || '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">Mağazada henüz ürün yok.</div>'}
+        `).join('') || '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">MaÄŸazada henÃ¼z Ã¼rÃ¼n yok.</div>'}
       </div>
     </div>
 
     <script>
       async function buyItem(id, name) {
-        if (!confirm(name + ' satın almak istiyor musun?')) return;
+        if (!confirm(name + ' satÄ±n almak istiyor musun?')) return;
         try {
           const res = await fetch('/api/shop/buy', {
             method: 'POST',
@@ -5271,28 +5271,28 @@ function renderShopPage(user, items = []) {
             body: JSON.stringify({ itemId: id })
           });
           const d = await res.json().catch(() => ({}));
-          if (res.ok) showToast(d.message || 'Satın alındı!', 'success');
-          else showToast(d.error || 'İşlem başarısız.', 'error');
+          if (res.ok) showToast(d.message || 'SatÄ±n alÄ±ndÄ±!', 'success');
+          else showToast(d.error || 'Ä°ÅŸlem baÅŸarÄ±sÄ±z.', 'error');
         } catch {
-          showToast('Bağlantı hatası.', 'error');
+          showToast('BaÄŸlantÄ± hatasÄ±.', 'error');
         }
       }
     </script>
   `;
-  return _layout('Mağaza', user, content);
+  return _layout('MaÄŸaza', user, content);
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // 404 / ERROR PAGE
-// ─────────────────────────────────────────────
-function renderErrorPage(code = 404, message = 'Sayfa bulunamadı.') {
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderErrorPage(code = 404, message = 'Sayfa bulunamadÄ±.') {
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${code} — Sentara</title>
+  <title>${code} â€” Sentara</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root { --accent:#a78bfa; --accent2:#818cf8; --bg:#06060e; --muted:#7c7c9a; }
@@ -5333,47 +5333,47 @@ function renderErrorPage(code = 404, message = 'Sayfa bulunamadı.') {
 <body>
   <div>
     <div class="code">${code}</div>
-    <h1>Bir şeyler ters gitti.</h1>
+    <h1>Bir ÅŸeyler ters gitti.</h1>
     <p>${_esc(message)}</p>
-    <a href="/">Ana Sayfaya Dön</a>
+    <a href="/">Ana Sayfaya DÃ¶n</a>
   </div>
 </body>
 </html>`;
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CREATE TICKET PAGE  (yeni)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderCreateTicketPage(user, categories = []) {
-  const defaultCats = ['Genel Destek', 'Teknik Sorun', 'Hesap', 'Ödeme', 'Diğer'];
+  const defaultCats = ['Genel Destek', 'Teknik Sorun', 'Hesap', 'Ã–deme', 'DiÄŸer'];
   const cats = categories.length ? categories : defaultCats;
 
   const content = `
     <div class="card" style="max-width:640px;margin:0 auto;">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">➕ Yeni Ticket Oluştur</h1>
-      <p class="text-muted mb-3">Ekibimiz en kısa sürede sana dönecek.</p>
+      <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">â• Yeni Ticket OluÅŸtur</h1>
+      <p class="text-muted mb-3">Ekibimiz en kÄ±sa sÃ¼rede sana dÃ¶necek.</p>
       <hr class="divider">
 
       <div id="ticket-form">
         <label>Kategori <span style="color:var(--danger);">*</span></label>
         <select id="tc-category">
-          <option value="">— Seçiniz —</option>
-          <option value="ban">🔨 Ban / Şikayet Talebi</option>
-          <option value="reklam">📢 Reklam Satın Al</option>
-          <option value="report">🚨 Kullanıcı Şikayet</option>
-          <option value="billing">💳 Ödeme Sorunu</option>
-          <option value="technical">🔧 Teknik Sorun</option>
-          <option value="account">👤 Hesap Sorunu</option>
-          <option value="genel">💬 Genel Destek</option>
-          <option value="other">📝 Diğer</option>
+          <option value="">â€” SeÃ§iniz â€”</option>
+          <option value="ban">ğŸ”¨ Ban / Åikayet Talebi</option>
+          <option value="reklam">ğŸ“¢ Reklam SatÄ±n Al</option>
+          <option value="report">ğŸš¨ KullanÄ±cÄ± Åikayet</option>
+          <option value="billing">ğŸ’³ Ã–deme Sorunu</option>
+          <option value="technical">ğŸ”§ Teknik Sorun</option>
+          <option value="account">ğŸ‘¤ Hesap Sorunu</option>
+          <option value="genel">ğŸ’¬ Genel Destek</option>
+          <option value="other">ğŸ“ DiÄŸer</option>
         </select>
 
         <label>Konu <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="tc-subject" placeholder="Kısa bir konu başlığı girin" maxlength="100">
+        <input type="text" id="tc-subject" placeholder="KÄ±sa bir konu baÅŸlÄ±ÄŸÄ± girin" maxlength="100">
 
-        <label>Açıklama <span style="color:var(--danger);">*</span></label>
-        <textarea id="tc-desc" rows="6" placeholder="Sorununuzu veya talebinizi ayrıntılı olarak anlatın..." maxlength="2000"></textarea>
+        <label>AÃ§Ä±klama <span style="color:var(--danger);">*</span></label>
+        <textarea id="tc-desc" rows="6" placeholder="Sorununuzu veya talebinizi ayrÄ±ntÄ±lÄ± olarak anlatÄ±n..." maxlength="2000"></textarea>
         <div style="text-align:right;color:var(--muted);font-size:0.8rem;margin-top:-1rem;margin-bottom:1rem;">
           <span id="tc-count">0</span>/2000
         </div>
@@ -5381,8 +5381,8 @@ function renderCreateTicketPage(user, categories = []) {
         <div id="tc-error" style="display:none;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--danger);padding:0.8rem 1rem;border-radius:10px;margin-bottom:1rem;"></div>
 
         <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-          <button class="btn" id="tc-submit" onclick="submitTicket()" style="flex:1;">📨 Gönder</button>
-          <a href="/tickets" class="btn btn-ghost" style="flex:1;text-align:center;">İptal</a>
+          <button class="btn" id="tc-submit" onclick="submitTicket()" style="flex:1;">ğŸ“¨ GÃ¶nder</button>
+          <a href="/tickets" class="btn btn-ghost" style="flex:1;text-align:center;">Ä°ptal</a>
         </div>
       </div>
     </div>
@@ -5409,16 +5409,16 @@ function renderCreateTicketPage(user, categories = []) {
         const errEl    = document.getElementById('tc-error');
         const btn      = document.getElementById('tc-submit');
 
-        // Kategori bazlı otomatik öncelik
+        // Kategori bazlÄ± otomatik Ã¶ncelik
         const autoPriority = { ban: 'high', report: 'high', billing: 'high', reklam: 'medium', technical: 'medium', account: 'medium', genel: 'low', other: 'low' };
         const priority = autoPriority[cat] || 'medium';
 
         errEl.style.display = 'none';
-        if (!cat)     { errEl.textContent = 'Lütfen bir kategori seçin.';        errEl.style.display='block'; return; }
-        if (!subject) { errEl.textContent = 'Lütfen bir konu başlığı girin.';    errEl.style.display='block'; return; }
-        if (!desc)    { errEl.textContent = 'Lütfen açıklama kısmını doldurun.'; errEl.style.display='block'; return; }
+        if (!cat)     { errEl.textContent = 'LÃ¼tfen bir kategori seÃ§in.';        errEl.style.display='block'; return; }
+        if (!subject) { errEl.textContent = 'LÃ¼tfen bir konu baÅŸlÄ±ÄŸÄ± girin.';    errEl.style.display='block'; return; }
+        if (!desc)    { errEl.textContent = 'LÃ¼tfen aÃ§Ä±klama kÄ±smÄ±nÄ± doldurun.'; errEl.style.display='block'; return; }
 
-        btn.textContent = 'Gönderiliyor...';
+        btn.textContent = 'GÃ¶nderiliyor...';
         btn.disabled = true;
 
         try {
@@ -5430,20 +5430,20 @@ function renderCreateTicketPage(user, categories = []) {
           const d = await res.json().catch(() => ({}));
           if (res.ok) {
             const msg = d.discordChannel
-              ? \`Ticket oluşturuldu! 🎉 \${d.discordChannel}\`
-              : 'Ticket oluşturuldu! 🎉';
+              ? \`Ticket oluÅŸturuldu! ğŸ‰ \${d.discordChannel}\`
+              : 'Ticket oluÅŸturuldu! ğŸ‰';
             showToast(msg, 'success');
             setTimeout(() => window.location.href = '/tickets', 1500);
           } else {
-            errEl.textContent = d.error || 'Bir hata oluştu.';
+            errEl.textContent = d.error || 'Bir hata oluÅŸtu.';
             errEl.style.display = 'block';
-            btn.textContent = '📨 Gönder';
+            btn.textContent = 'ğŸ“¨ GÃ¶nder';
             btn.disabled = false;
           }
         } catch {
-          errEl.textContent = 'Bağlantı hatası. Lütfen tekrar deneyin.';
+          errEl.textContent = 'BaÄŸlantÄ± hatasÄ±. LÃ¼tfen tekrar deneyin.';
           errEl.style.display = 'block';
-          btn.textContent = '📨 Gönder';
+          btn.textContent = 'ğŸ“¨ GÃ¶nder';
           btn.disabled = false;
         }
       }
@@ -5453,13 +5453,13 @@ function renderCreateTicketPage(user, categories = []) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // NOTIFICATIONS PAGE  (yeni)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderNotificationsPage(user, notifications = []) {
   const notifHtml = notifications.map(n => {
-    const icons = { ticket: '🎫', system: '⚙️', staff: '👨‍💼', mention: '💬', warning: '⚠️' };
-    const icon = n.icon || icons[n.type] || '🔔';
+    const icons = { ticket: 'ğŸ«', system: 'âš™ï¸', staff: 'ğŸ‘¨â€ğŸ’¼', mention: 'ğŸ’¬', warning: 'âš ï¸' };
+    const icon = n.icon || icons[n.type] || 'ğŸ””';
     const isRead = n.read;
     return `
       <div style="display:flex;gap:1rem;align-items:flex-start;padding:1.25rem;
@@ -5484,16 +5484,16 @@ function renderNotificationsPage(user, notifications = []) {
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
-          <h1 style="font-size:2rem;font-weight:800;">🔔 Bildirimler</h1>
-          ${unreadCount > 0 ? `<div style="color:var(--accent);font-size:0.85rem;margin-top:0.25rem;">${unreadCount} okunmamış bildirim</div>` : ''}
+          <h1 style="font-size:2rem;font-weight:800;">ğŸ”” Bildirimler</h1>
+          ${unreadCount > 0 ? `<div style="color:var(--accent);font-size:0.85rem;margin-top:0.25rem;">${unreadCount} okunmamÄ±ÅŸ bildirim</div>` : ''}
         </div>
-        ${unreadCount > 0 ? `<button class="btn btn-ghost btn-sm" onclick="markAllRead()">✅ Tümünü Okundu İşaretle</button>` : ''}
+        ${unreadCount > 0 ? `<button class="btn btn-ghost btn-sm" onclick="markAllRead()">âœ… TÃ¼mÃ¼nÃ¼ Okundu Ä°ÅŸaretle</button>` : ''}
       </div>
 
       ${notifications.length > 0 ? notifHtml
       : `<div style="text-align:center;padding:4rem;color:var(--muted);">
-             <div style="font-size:3rem;margin-bottom:1rem;">🔕</div>
-             <div>Henüz bildiriminiz yok.</div>
+             <div style="font-size:3rem;margin-bottom:1rem;">ğŸ”•</div>
+             <div>HenÃ¼z bildiriminiz yok.</div>
            </div>`}
     </div>
 
@@ -5501,9 +5501,9 @@ function renderNotificationsPage(user, notifications = []) {
       async function markAllRead() {
         try {
           const res = await fetch('/api/notifications/read-all', { method: 'POST' });
-          if (res.ok) { showToast('Tüm bildirimler okundu işaretlendi.', 'success'); setTimeout(() => location.reload(), 600); }
-          else showToast('Bir hata oluştu.', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+          if (res.ok) { showToast('TÃ¼m bildirimler okundu iÅŸaretlendi.', 'success'); setTimeout(() => location.reload(), 600); }
+          else showToast('Bir hata oluÅŸtu.', 'error');
+        } catch { showToast('BaÄŸlantÄ± hatasÄ±.', 'error'); }
       }
     </script>
   `;
@@ -5511,9 +5511,9 @@ function renderNotificationsPage(user, notifications = []) {
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // WEBHOOK PROXY PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderWebhookPage(user) {
   const { BASE_URL } = require('../config');
   const proxyUrl = `${BASE_URL}/api/webhook/proxy`;
@@ -5521,60 +5521,60 @@ function renderWebhookPage(user) {
   const content = `
     <div class="card" style="max-width:800px;margin:0 auto;">
       <div style="text-align:center;margin-bottom:2rem;">
-        <div style="font-size:3rem;margin-bottom:.75rem;">🔗</div>
+        <div style="font-size:3rem;margin-bottom:.75rem;">ğŸ”—</div>
         <h1 style="font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
           Webhook Proxy
         </h1>
-        <p class="text-muted" style="margin-top:.5rem;">Roblox'tan Discord webhook'larına mesaj gönderin</p>
+        <p class="text-muted" style="margin-top:.5rem;">Roblox'tan Discord webhook'larÄ±na mesaj gÃ¶nderin</p>
       </div>
 
       <!-- Proxy URL -->
       <div style="background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.12);border-radius:16px;padding:1.5rem;margin-bottom:2rem;backdrop-filter:blur(8px);">
-        <div style="font-size:.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem;">📡 Proxy Endpoint URL</div>
+        <div style="font-size:.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem;">ğŸ“¡ Proxy Endpoint URL</div>
         <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
           <code id="proxy-url" style="flex:1;background:rgba(0,0,0,.4);padding:.75rem 1rem;border-radius:10px;font-size:.9rem;color:var(--accent);word-break:break-all;border:1px solid var(--border);">${_esc(proxyUrl)}</code>
-          <button class="btn btn-sm" onclick="copyProxyUrl()">📋 Kopyala</button>
+          <button class="btn btn-sm" onclick="copyProxyUrl()">ğŸ“‹ Kopyala</button>
         </div>
-        <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem;">Bu URL'yi Roblox scriptinizde kullanın. <code style="color:var(--accent);">POST</code> isteği atın.</p>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem;">Bu URL'yi Roblox scriptinizde kullanÄ±n. <code style="color:var(--accent);">POST</code> isteÄŸi atÄ±n.</p>
       </div>
 
-      <!-- Test aracı -->
+      <!-- Test aracÄ± -->
       <div style="margin-bottom:2rem;">
-        <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">🧪 Webhook Test Et</h2>
+        <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">ğŸ§ª Webhook Test Et</h2>
 
         <label>Discord Webhook URL</label>
         <input type="text" id="wh-url" placeholder="https://discord.com/api/webhooks/..." style="font-family:monospace;font-size:.85rem;">
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
           <div>
-            <label>Bot Adı (isteğe bağlı)</label>
+            <label>Bot AdÄ± (isteÄŸe baÄŸlÄ±)</label>
             <input type="text" id="wh-username" placeholder="Sentara Bot" style="margin-bottom:0;">
           </div>
           <div>
-            <label>Bot Avatar URL (isteğe bağlı)</label>
+            <label>Bot Avatar URL (isteÄŸe baÄŸlÄ±)</label>
             <input type="text" id="wh-avatar" placeholder="https://..." style="margin-bottom:0;">
           </div>
         </div>
 
-        <label style="margin-top:1rem;">Mesaj İçeriği</label>
-        <textarea id="wh-content" rows="3" placeholder="Merhaba Discord! Bu Roblox'tan gelen bir test mesajıdır." style="resize:vertical;"></textarea>
+        <label style="margin-top:1rem;">Mesaj Ä°Ã§eriÄŸi</label>
+        <textarea id="wh-content" rows="3" placeholder="Merhaba Discord! Bu Roblox'tan gelen bir test mesajÄ±dÄ±r." style="resize:vertical;"></textarea>
 
         <!-- Embed -->
         <details style="margin-bottom:1rem;">
-          <summary style="cursor:pointer;color:var(--accent);font-weight:700;font-size:.9rem;padding:.5rem 0;">➕ Embed Ekle (isteğe bağlı)</summary>
+          <summary style="cursor:pointer;color:var(--accent);font-weight:700;font-size:.9rem;padding:.5rem 0;">â• Embed Ekle (isteÄŸe baÄŸlÄ±)</summary>
           <div style="margin-top:1rem;background:rgba(0,0,0,.2);border-radius:12px;padding:1rem;border:1px solid var(--border);">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
               <div>
-                <label>Embed Başlık</label>
-                <input type="text" id="emb-title" placeholder="Başlık" style="margin-bottom:0;">
+                <label>Embed BaÅŸlÄ±k</label>
+                <input type="text" id="emb-title" placeholder="BaÅŸlÄ±k" style="margin-bottom:0;">
               </div>
               <div>
                 <label>Embed Renk (hex)</label>
                 <input type="color" id="emb-color" value="#7c6af7" style="height:46px;padding:.25rem;margin-bottom:0;">
               </div>
             </div>
-            <label style="margin-top:.75rem;">Embed Açıklama</label>
-            <textarea id="emb-desc" rows="2" placeholder="Embed açıklaması..." style="resize:vertical;margin-bottom:.5rem;"></textarea>
+            <label style="margin-top:.75rem;">Embed AÃ§Ä±klama</label>
+            <textarea id="emb-desc" rows="2" placeholder="Embed aÃ§Ä±klamasÄ±..." style="resize:vertical;margin-bottom:.5rem;"></textarea>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
               <div>
                 <label>Footer</label>
@@ -5588,16 +5588,16 @@ function renderWebhookPage(user) {
           </div>
         </details>
 
-        <button class="btn" onclick="testWebhook()" id="test-btn">🚀 Gönder</button>
+        <button class="btn" onclick="testWebhook()" id="test-btn">ğŸš€ GÃ¶nder</button>
         <div id="wh-result" style="margin-top:1rem;"></div>
       </div>
 
-      <!-- Roblox kod örneği -->
+      <!-- Roblox kod Ã¶rneÄŸi -->
       <div>
-        <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">📜 Roblox Lua Kod Örneği</h2>
+        <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">ğŸ“œ Roblox Lua Kod Ã–rneÄŸi</h2>
         <div style="position:relative;">
           <pre id="lua-code" style="background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:12px;padding:1.5rem;overflow-x:auto;font-size:.82rem;line-height:1.6;color:#e2e8f0;white-space:pre-wrap;word-break:break-all;"></pre>
-          <button class="btn btn-sm btn-ghost" onclick="copyLua()" style="position:absolute;top:.75rem;right:.75rem;">📋 Kopyala</button>
+          <button class="btn btn-sm btn-ghost" onclick="copyLua()" style="position:absolute;top:.75rem;right:.75rem;">ğŸ“‹ Kopyala</button>
         </div>
       </div>
     </div>
@@ -5605,15 +5605,15 @@ function renderWebhookPage(user) {
     <script>
       const PROXY_URL = ${JSON.stringify(proxyUrl)};
 
-      // Lua kod örneğini doldur
+      // Lua kod Ã¶rneÄŸini doldur
       function updateLuaCode() {
         const webhookUrl = document.getElementById('wh-url').value || 'WEBHOOK_URL_BURAYA';
         const code = \`local HttpService = game:GetService("HttpService")
 
--- Proxy URL (Discord webhook'larına Roblox'tan istek atmak için)
+-- Proxy URL (Discord webhook'larÄ±na Roblox'tan istek atmak iÃ§in)
 local PROXY_URL = "\${PROXY_URL}"
 
--- Webhook URL'nizi buraya yapıştırın
+-- Webhook URL'nizi buraya yapÄ±ÅŸtÄ±rÄ±n
 local WEBHOOK_URL = "\${webhookUrl}"
 
 local function sendWebhook(message, embedTitle, embedDesc, embedColor)
@@ -5646,12 +5646,12 @@ local function sendWebhook(message, embedTitle, embedDesc, embedColor)
     end)
     
     if not success then
-        warn("Webhook gönderilemedi: " .. tostring(err))
+        warn("Webhook gÃ¶nderilemedi: " .. tostring(err))
     end
 end
 
--- Kullanım örneği:
-sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya katıldı.", 5763719)\`;
+-- KullanÄ±m Ã¶rneÄŸi:
+sendWebhook("Merhaba Discord! ğŸ‘‹", "Oyun Bildirimi", "Bir oyuncu sunucuya katÄ±ldÄ±.", 5763719)\`;
         document.getElementById('lua-code').textContent = code;
       }
 
@@ -5659,12 +5659,12 @@ sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya kat�
       updateLuaCode();
 
       function copyProxyUrl() {
-        navigator.clipboard.writeText(PROXY_URL).then(() => showToast('URL kopyalandı!', 'success'));
+        navigator.clipboard.writeText(PROXY_URL).then(() => showToast('URL kopyalandÄ±!', 'success'));
       }
 
       function copyLua() {
         const code = document.getElementById('lua-code').textContent;
-        navigator.clipboard.writeText(code).then(() => showToast('Lua kodu kopyalandı!', 'success'));
+        navigator.clipboard.writeText(code).then(() => showToast('Lua kodu kopyalandÄ±!', 'success'));
       }
 
       async function testWebhook() {
@@ -5681,10 +5681,10 @@ sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya kat�
         const btn        = document.getElementById('test-btn');
 
         if (!webhookUrl) { showToast('Discord Webhook URL girin.', 'warning'); return; }
-        if (!content && !embTitle && !embDesc) { showToast('Mesaj içeriği veya embed girin.', 'warning'); return; }
+        if (!content && !embTitle && !embDesc) { showToast('Mesaj iÃ§eriÄŸi veya embed girin.', 'warning'); return; }
 
         btn.disabled = true;
-        btn.textContent = '⏳ Gönderiliyor...';
+        btn.textContent = 'â³ GÃ¶nderiliyor...';
         resultBox.innerHTML = '';
 
         const payload = { webhookUrl };
@@ -5693,7 +5693,7 @@ sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya kat�
         if (avatarUrl) payload.avatar_url = avatarUrl;
 
         if (embTitle || embDesc) {
-          // hex rengi integer'a çevir
+          // hex rengi integer'a Ã§evir
           const colorInt = parseInt(embColor.replace('#', ''), 16);
           const embed = { color: colorInt };
           if (embTitle)  embed.title       = embTitle;
@@ -5713,18 +5713,18 @@ sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya kat�
           const d = await res.json().catch(() => ({}));
 
           if (res.ok && d.success) {
-            resultBox.innerHTML = '<div style="color:var(--success);background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:.75rem 1rem;">✅ Webhook başarıyla gönderildi!</div>';
-            showToast('Webhook gönderildi!', 'success');
+            resultBox.innerHTML = '<div style="color:var(--success);background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:.75rem 1rem;">âœ… Webhook baÅŸarÄ±yla gÃ¶nderildi!</div>';
+            showToast('Webhook gÃ¶nderildi!', 'success');
           } else {
-            resultBox.innerHTML = \`<div style="color:var(--danger);background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:.75rem 1rem;">❌ Hata: \${d.error || 'Bilinmeyen hata'}\${d.discord_response ? '<br><small style=\\"opacity:.7\\">' + d.discord_response + '</small>' : ''}</div>\`;
+            resultBox.innerHTML = \`<div style="color:var(--danger);background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:.75rem 1rem;">âŒ Hata: \${d.error || 'Bilinmeyen hata'}\${d.discord_response ? '<br><small style=\\"opacity:.7\\">' + d.discord_response + '</small>' : ''}</div>\`;
             showToast(d.error || 'Hata', 'error');
           }
         } catch (err) {
-          resultBox.innerHTML = \`<div style="color:var(--danger);">❌ Bağlantı hatası: \${err.message}</div>\`;
+          resultBox.innerHTML = \`<div style="color:var(--danger);">âŒ BaÄŸlantÄ± hatasÄ±: \${err.message}</div>\`;
         }
 
         btn.disabled = false;
-        btn.textContent = '🚀 Gönder';
+        btn.textContent = 'ğŸš€ GÃ¶nder';
       }
     <\/script>
   `;
@@ -5732,9 +5732,9 @@ sendWebhook("Merhaba Discord! 👋", "Oyun Bildirimi", "Bir oyuncu sunucuya kat�
 }
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // BRIEFING ONBOARDING MODAL - Telefon UI
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderBriefingOnboardingModal(user = null) {
   const content = `
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 10px;">
@@ -5742,20 +5742,20 @@ function renderBriefingOnboardingModal(user = null) {
         
         <!-- Telefon Header -->
         <div style="background: linear-gradient(135deg, var(--accent) 0%, rgba(167,139,250,0.8) 100%); padding: 20px; text-align: center; border-radius: 20px 20px 0 0; color: #000; sticky; top: 0; z-index: 100;">
-          <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 5px;">🎯 Tanıştığımıza Memnun!</div>
-          <div style="font-size: 0.85rem; opacity: 0.9;">Seni biraz daha tanımak istiyoruz</div>
+          <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 5px;">ğŸ¯ TanÄ±ÅŸtÄ±ÄŸÄ±mÄ±za Memnun!</div>
+          <div style="font-size: 0.85rem; opacity: 0.9;">Seni biraz daha tanÄ±mak istiyoruz</div>
           <div style="margin-top: 10px; font-size: 0.8rem; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 20px; display: inline-block;">
             <span id="progress-text">Soru 1 / 5</span>
           </div>
         </div>
 
-        <!-- İçerik Alanı -->
+        <!-- Ä°Ã§erik AlanÄ± -->
         <div style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column;">
           <div id="questions-container" style="display: flex; flex-direction: column;"></div>
           <div id="form-container" style="display: none; flex-direction: column;">
             <div style="background: rgba(167,139,250,0.1); padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--accent);">
-              <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">📋 Özetini Kontrol Et</div>
-              <textarea id="answers-textarea" placeholder="Cevaplarınız burada görünecek..." 
+              <div style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">ğŸ“‹ Ã–zetini Kontrol Et</div>
+              <textarea id="answers-textarea" placeholder="CevaplarÄ±nÄ±z burada gÃ¶rÃ¼necek..." 
                 style="width: 100%; height: 150px; padding: 12px; background: rgba(255,255,255,0.05); 
                 border: 1px solid var(--border); border-radius: 8px; color: var(--text); 
                 font-family: 'Outfit', sans-serif; resize: none; font-size: 0.85rem;" readonly></textarea>
@@ -5767,11 +5767,11 @@ function renderBriefingOnboardingModal(user = null) {
         <div id="button-area" style="padding: 15px; background: rgba(255,255,255,0.02); border-top: 1px solid var(--border); border-radius: 0 0 20px 20px; display: flex; gap: 10px; justify-content: space-between;">
           <button id="prev-btn" onclick="prevQuestion()" 
             style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-weight: 600; cursor: pointer; transition: all 0.3s; display: none;">
-            ⬅️ Geri
+            â¬…ï¸ Geri
           </button>
           <button id="next-btn" onclick="nextQuestion()" 
             style="flex: 1; padding: 12px; background: var(--accent); border: none; border-radius: 10px; color: #000; font-weight: 600; cursor: pointer; transition: all 0.3s;">
-            ➡️ Devam Et
+            â¡ï¸ Devam Et
           </button>
         </div>
       </div>
@@ -5837,48 +5837,48 @@ function renderBriefingOnboardingModal(user = null) {
       // Kategorize sorular
       const questionCategories = [
         {
-          category: "🎮 Hobilerin & İlgilerin",
+          category: "ğŸ® Hobilerin & Ä°lgilerin",
           questions: [
             {
               id: "hobbies",
-              text: "🎮 Hobilerin neler?",
-              placeholder: "Müzik, oyun, spor, resim..."
+              text: "ğŸ® Hobilerin neler?",
+              placeholder: "MÃ¼zik, oyun, spor, resim..."
             },
             {
               id: "nocreen",
-              text: "📵 Ekranından uzakken ne yapıyorsun?",
-              placeholder: "Dışarı çık, kitap oku, spor yap..."
+              text: "ğŸ“µ EkranÄ±ndan uzakken ne yapÄ±yorsun?",
+              placeholder: "DÄ±ÅŸarÄ± Ã§Ä±k, kitap oku, spor yap..."
             }
           ]
         },
         {
-          category: "😊 Kişiliğin & Özelliklerin",
+          category: "ğŸ˜Š KiÅŸiliÄŸin & Ã–zelliklerin",
           questions: [
             {
               id: "personality",
-              text: "😊 Kendini 3 kelimeyle tanımlayabilir misin?",
-              placeholder: "Ör: Çalışkan, Komik, Sadık..."
+              text: "ğŸ˜Š Kendini 3 kelimeyle tanÄ±mlayabilir misin?",
+              placeholder: "Ã–r: Ã‡alÄ±ÅŸkan, Komik, SadÄ±k..."
             },
             {
               id: "music",
-              text: "🎵 Sevdiğin müzik türü nedir?",
+              text: "ğŸµ SevdiÄŸin mÃ¼zik tÃ¼rÃ¼ nedir?",
               placeholder: "Pop, Rap, Rock, Metal, Klasik..."
             }
           ]
         },
         {
-          category: "🎯 Sentara Hedeflerin",
+          category: "ğŸ¯ Sentara Hedeflerin",
           questions: [
             {
               id: "goals",
-              text: "🎯 Sentara'da ne yapmak istiyorsun?",
-              placeholder: "Kariyer yap, eğlen, ağ kur..."
+              text: "ğŸ¯ Sentara'da ne yapmak istiyorsun?",
+              placeholder: "Kariyer yap, eÄŸlen, aÄŸ kur..."
             }
           ]
         }
       ];
 
-      // Tüm soruları düzleştir
+      // TÃ¼m sorularÄ± dÃ¼zleÅŸtir
       let allQuestions = [];
       questionCategories.forEach(cat => {
         allQuestions = allQuestions.concat(cat.questions);
@@ -5891,10 +5891,10 @@ function renderBriefingOnboardingModal(user = null) {
         const container = document.getElementById('questions-container');
         const q = allQuestions[currentQuestion];
         
-        // Progress güncelle
+        // Progress gÃ¼ncelle
         document.getElementById('progress-text').textContent = \`Soru \${currentQuestion + 1} / \${allQuestions.length}\`;
         
-        // Kategori kontrolü - kategori değiştiğinde header göster
+        // Kategori kontrolÃ¼ - kategori deÄŸiÅŸtiÄŸinde header gÃ¶ster
         let categoryIndex = 0;
         let questionIndex = 0;
         let counter = 0;
@@ -5922,15 +5922,15 @@ function renderBriefingOnboardingModal(user = null) {
           </div>
         \`;
         
-        // Geri butonu kontrolü
+        // Geri butonu kontrolÃ¼
         document.getElementById('prev-btn').style.display = currentQuestion > 0 ? 'block' : 'none';
         
-        // İleri butonu metni
+        // Ä°leri butonu metni
         const nextBtn = document.getElementById('next-btn');
         if (currentQuestion === allQuestions.length - 1) {
-          nextBtn.innerHTML = '✅ Tamamla';
+          nextBtn.innerHTML = 'âœ… Tamamla';
         } else {
-          nextBtn.innerHTML = '➡️ Devam Et';
+          nextBtn.innerHTML = 'â¡ï¸ Devam Et';
         }
 
         setTimeout(() => {
@@ -5944,7 +5944,7 @@ function renderBriefingOnboardingModal(user = null) {
         const answer = input.value.trim();
         
         if (!answer) {
-          alert('Lütfen soruyu cevapla!');
+          alert('LÃ¼tfen soruyu cevapla!');
           return;
         }
 
@@ -5975,18 +5975,18 @@ function renderBriefingOnboardingModal(user = null) {
         document.getElementById('button-area').innerHTML = \`
           <button onclick="goBack()" 
             style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-weight: 600; cursor: pointer;">
-            ⬅️ Geri
+            â¬…ï¸ Geri
           </button>
           <button onclick="submitBriefingForm()" 
             style="flex: 1; padding: 12px; background: var(--accent); border: none; border-radius: 10px; color: #000; font-weight: 600; cursor: pointer;">
-            ✅ Gönder
+            âœ… GÃ¶nder
           </button>
         \`;
 
-        // Özet göster
+        // Ã–zet gÃ¶ster
         let summary = '';
         allQuestions.forEach((q, i) => {
-          summary += \`<b>S\${i+1}:</b> \${q.text}\\n<b>C:</b> \${answers[q.id] || '(Boş)'}\\n\\n\`;
+          summary += \`<b>S\${i+1}:</b> \${q.text}\\n<b>C:</b> \${answers[q.id] || '(BoÅŸ)'}\\n\\n\`;
         });
         document.getElementById('answers-textarea').value = summary;
       }
@@ -6009,26 +6009,26 @@ function renderBriefingOnboardingModal(user = null) {
           const data = await response.json();
           
           if (data.success) {
-            alert('✅ Formu gönderdin! Briefing sayfasına yönlendiriliyorsun...');
+            alert('âœ… Formu gÃ¶nderdin! Briefing sayfasÄ±na yÃ¶nlendiriliyorsun...');
             window.location.href = '/briefing';
           } else {
-            alert('❌ Hata: ' + (data.error || 'Bilinmeyen hata'));
+            alert('âŒ Hata: ' + (data.error || 'Bilinmeyen hata'));
           }
         } catch (err) {
-          alert('❌ Bağlantı hatası: ' + err.message);
+          alert('âŒ BaÄŸlantÄ± hatasÄ±: ' + err.message);
         }
       }
 
-      // İlk soruyu yükle
+      // Ä°lk soruyu yÃ¼kle
       loadQuestion();
     </script>
   `;
   return _layout('Briefing Formu', user, content, '', '/briefing-form');
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SENTARA SOCIAL PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderSocialPage(user) {
   const content = `
     <style>
@@ -6584,16 +6584,16 @@ function renderSocialPage(user) {
 
         <!-- Create Post Card -->
         <div class="card post-card" style="padding: 1.5rem;">
-          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;text-align:left;">✍️ Bir şeyler paylaş...</h3>
-          <textarea id="post-textarea" rows="3" placeholder="Bugün aklında ne var?" style="margin-bottom:0.75rem;resize:none;"></textarea>
+          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;text-align:left;">âœï¸ Bir ÅŸeyler paylaÅŸ...</h3>
+          <textarea id="post-textarea" rows="3" placeholder="BugÃ¼n aklÄ±nda ne var?" style="margin-bottom:0.75rem;resize:none;"></textarea>
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <button class="btn btn-sm" onclick="createPost()" id="post-btn">Paylaş</button>
+            <button class="btn btn-sm" onclick="createPost()" id="post-btn">PaylaÅŸ</button>
           </div>
         </div>
 
         <!-- Feed List -->
         <div id="social-feed">
-          <div style="color:var(--muted);font-size:0.9rem;padding:2rem;">Akış yükleniyor...</div>
+          <div style="color:var(--muted);font-size:0.9rem;padding:2rem;">AkÄ±ÅŸ yÃ¼kleniyor...</div>
         </div>
       </div>
 
@@ -6601,27 +6601,27 @@ function renderSocialPage(user) {
       <div>
         <!-- Status Widget -->
         <div class="status-box">
-          <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.8rem;text-align:left;">💬 Durumunu Ayarla</h3>
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.8rem;text-align:left;">ğŸ’¬ Durumunu Ayarla</h3>
           <div style="display:flex;gap:0.4rem;">
-            <input type="text" id="status-input" value="${_esc(user.customStatus || '')}" placeholder="Ne yapıyorsun?" style="margin-bottom:0;padding:0.6rem 0.85rem;font-size:0.85rem;">
+            <input type="text" id="status-input" value="${_esc(user.customStatus || '')}" placeholder="Ne yapÄ±yorsun?" style="margin-bottom:0;padding:0.6rem 0.85rem;font-size:0.85rem;">
             <button class="btn btn-sm" onclick="updateStatus()" style="padding:0 0.85rem;">Set</button>
           </div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.6rem;justify-content:center;">
-            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('☕ Kahve içiyor')">☕</span>
-            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('🔥 Bilet çözüyor')">🔥</span>
-            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('💤 Dinleniyor')">💤</span>
-            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('💻 Kod yazıyor')">💻</span>
+            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('â˜• Kahve iÃ§iyor')">â˜•</span>
+            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('ğŸ”¥ Bilet Ã§Ã¶zÃ¼yor')">ğŸ”¥</span>
+            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('ğŸ’¤ Dinleniyor')">ğŸ’¤</span>
+            <span style="cursor:pointer;font-size:1.1rem;background:rgba(255,255,255,0.03);padding:2px 6px;border-radius:6px;" onclick="setStatusEmoji('ğŸ’» Kod yazÄ±yor')">ğŸ’»</span>
           </div>
         </div>
 
         <!-- Live Streams Card -->
         <div class="streams-card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-            <h3 style="font-size:1rem;font-weight:700;text-align:left;">🔴 Canlı Yayınlar</h3>
-            <button class="btn btn-sm btn-danger" onclick="startStreamPrompt()" style="padding:0.3rem 0.6rem;font-size:0.75rem;">Yayın Aç</button>
+            <h3 style="font-size:1rem;font-weight:700;text-align:left;">ğŸ”´ CanlÄ± YayÄ±nlar</h3>
+            <button class="btn btn-sm btn-danger" onclick="startStreamPrompt()" style="padding:0.3rem 0.6rem;font-size:0.75rem;">YayÄ±n AÃ§</button>
           </div>
           <div id="streams-list">
-            <div style="color:var(--muted);font-size:0.8rem;">Aktif yayın bulunmuyor.</div>
+            <div style="color:var(--muted);font-size:0.8rem;">Aktif yayÄ±n bulunmuyor.</div>
           </div>
         </div>
       </div>
@@ -6631,7 +6631,7 @@ function renderSocialPage(user) {
     <div class="story-modal" id="story-modal" onclick="closeStory()">
       <div class="story-viewer-content" onclick="event.stopPropagation()">
         <div class="story-progress-container" id="story-progress-container"></div>
-        <button class="story-viewer-close" onclick="closeStory()">✕</button>
+        <button class="story-viewer-close" onclick="closeStory()">âœ•</button>
         <div class="story-viewer-header">
           <img src="" class="story-viewer-avatar" id="story-viewer-avatar">
           <strong id="story-viewer-name"></strong>
@@ -6648,20 +6648,20 @@ function renderSocialPage(user) {
         <div class="stream-video-pane">
           <div class="stream-visualizer"></div>
           <div style="position:absolute;z-index:2;text-align:center;color:#fff;">
-            <div style="font-size:3rem;margin-bottom:0.5rem;animation:float 3s ease-in-out infinite;">🎥</div>
+            <div style="font-size:3rem;margin-bottom:0.5rem;animation:float 3s ease-in-out infinite;">ğŸ¥</div>
             <h2 id="stream-pane-title" style="font-size:1.2rem;font-weight:800;"></h2>
-            <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-top:0.4rem;">Canlı Video Akışı</div>
+            <div style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-top:0.4rem;">CanlÄ± Video AkÄ±ÅŸÄ±</div>
           </div>
           
           <div class="stream-video-overlay">
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
               <span class="live-badge">Live</span>
-              <span style="background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:8px;font-size:0.75rem;color:#fff;pointer-events:auto;" id="stream-viewer-count">👁️ 0</span>
+              <span style="background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:8px;font-size:0.75rem;color:#fff;pointer-events:auto;" id="stream-viewer-count">ğŸ‘ï¸ 0</span>
             </div>
             
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;pointer-events:auto;">
-              <button class="btn btn-sm btn-danger" onclick="endCurrentStream()" id="stream-end-btn" style="display:none;padding:0.4rem 0.8rem;">Yayını Kapat</button>
-              <button class="btn btn-sm btn-ghost" onclick="closeStream()" style="padding:0.4rem 0.8rem;margin-left:auto;">Ayrıl</button>
+              <button class="btn btn-sm btn-danger" onclick="endCurrentStream()" id="stream-end-btn" style="display:none;padding:0.4rem 0.8rem;">YayÄ±nÄ± Kapat</button>
+              <button class="btn btn-sm btn-ghost" onclick="closeStream()" style="padding:0.4rem 0.8rem;margin-left:auto;">AyrÄ±l</button>
             </div>
           </div>
 
@@ -6674,9 +6674,9 @@ function renderSocialPage(user) {
           <div style="padding:0.85rem;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:700;font-size:0.85rem;text-align:left;">Sohbet</div>
           <div class="stream-chat-messages" id="stream-chat-messages"></div>
           <div class="stream-chat-input-row" style="position:relative;">
-            <input type="text" id="stream-chat-input" placeholder="Sohbete katıl..." style="margin-bottom:0;padding:0.5rem 0.75rem;font-size:0.82rem;" onkeydown="if(event.key==='Enter')sendStreamChat()">
-            <button class="btn btn-sm" onclick="sendStreamChat()" style="padding:0 0.75rem;">Gönder</button>
-            <button onclick="emitHeart()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0 5px;transition:transform 0.1s;" onmousedown="this.style.transform='scale(1.3)'" onmouseup="this.style.transform='scale(1)'">❤️</button>
+            <input type="text" id="stream-chat-input" placeholder="Sohbete katÄ±l..." style="margin-bottom:0;padding:0.5rem 0.75rem;font-size:0.82rem;" onkeydown="if(event.key==='Enter')sendStreamChat()">
+            <button class="btn btn-sm" onclick="sendStreamChat()" style="padding:0 0.75rem;">GÃ¶nder</button>
+            <button onclick="emitHeart()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0 5px;transition:transform 0.1s;" onmousedown="this.style.transform='scale(1.3)'" onmouseup="this.style.transform='scale(1)'">â¤ï¸</button>
           </div>
         </div>
       </div>
@@ -6789,7 +6789,7 @@ function renderSocialPage(user) {
       }
 
       async function openCreateStory() {
-        const text = prompt("Hikayenize yazmak istediğiniz metni girin:");
+        const text = prompt("Hikayenize yazmak istediÄŸiniz metni girin:");
         if (!text) return;
         try {
           const res = await fetch('/api/social/stories', {
@@ -6805,14 +6805,14 @@ function renderSocialPage(user) {
             showToast(d.error || "Hata", "error");
           }
         } catch {
-          showToast("Bağlantı hatası", "error");
+          showToast("BaÄŸlantÄ± hatasÄ±", "error");
         }
       }
 
       async function createPost() {
         const el = document.getElementById('post-textarea');
         const content = el.value.trim();
-        if (!content) return showToast("Gönderi içeriği yazmalısınız.", "warning");
+        if (!content) return showToast("GÃ¶nderi iÃ§eriÄŸi yazmalÄ±sÄ±nÄ±z.", "warning");
 
         const btn = document.getElementById('post-btn');
         btn.disabled = true;
@@ -6824,21 +6824,21 @@ function renderSocialPage(user) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast("Paylaşıldı!", "success");
+            showToast("PaylaÅŸÄ±ldÄ±!", "success");
             el.value = '';
             loadFeed();
           } else {
             showToast(d.error || "Hata", "error");
           }
         } catch {
-          showToast("Bağlantı hatası", "error");
+          showToast("BaÄŸlantÄ± hatasÄ±", "error");
         } finally {
           btn.disabled = false;
         }
       }
 
       async function repost(postId) {
-        if (!confirm("Bu gönderiyi kendi profilinizde yeniden paylaşmak istiyor musunuz?")) return;
+        if (!confirm("Bu gÃ¶nderiyi kendi profilinizde yeniden paylaÅŸmak istiyor musunuz?")) return;
         try {
           const res = await fetch('/api/social/posts', {
             method: 'POST',
@@ -6847,13 +6847,13 @@ function renderSocialPage(user) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast("Yeniden paylaşıldı (Repost)!", "success");
+            showToast("Yeniden paylaÅŸÄ±ldÄ± (Repost)!", "success");
             loadFeed();
           } else {
             showToast(d.error || "Hata", "error");
           }
         } catch {
-          showToast("Bağlantı hatası", "error");
+          showToast("BaÄŸlantÄ± hatasÄ±", "error");
         }
       }
 
@@ -6942,7 +6942,7 @@ function renderSocialPage(user) {
             body: JSON.stringify({ status: val })
           });
           if (res.ok) {
-            showToast("Durum güncellendi!", "success");
+            showToast("Durum gÃ¼ncellendi!", "success");
             loadFeed();
           }
         } catch {}
@@ -6951,7 +6951,7 @@ function renderSocialPage(user) {
       function renderFeed() {
         const list = document.getElementById('social-feed');
         if (!currentFeed.length) {
-          list.innerHTML = '<div class="card" style="padding:2rem;color:var(--muted)">Henüz hiçbir gönderi paylaşılmamış.</div>';
+          list.innerHTML = '<div class="card" style="padding:2rem;color:var(--muted)">HenÃ¼z hiÃ§bir gÃ¶nderi paylaÅŸÄ±lmamÄ±ÅŸ.</div>';
           return;
         }
 
@@ -6972,7 +6972,7 @@ function renderSocialPage(user) {
                   '<div class="post-body" style="margin-bottom:0;font-size:0.88rem;">' + _esc(orig.content) + '</div>' +
                 '</div>';
             } else {
-              repostContentHtml = '<div class="repost-card" style="color:var(--muted);font-size:0.8rem;">[Gönderi silinmiş veya bulunamadı]</div>';
+              repostContentHtml = '<div class="repost-card" style="color:var(--muted);font-size:0.8rem;">[GÃ¶nderi silinmiÅŸ veya bulunamadÄ±]</div>';
             }
           }
 
@@ -6998,7 +6998,7 @@ function renderSocialPage(user) {
                     '<div class="comment-text">' + _esc(c.content) + '</div>' +
                   '</div>' +
                   '<div class="comment-meta-row">' +
-                    '<button class="comment-action-btn" onclick="showReplyInput(\'' + p._id + '\', \'' + c.id + '\', \'' + c.userName + '\')">Yanıtla</button>' +
+                    '<button class="comment-action-btn" onclick="showReplyInput(\'' + p._id + '\', \'' + c.id + '\', \'' + c.userName + '\')">YanÄ±tla</button>' +
                   '</div>' +
                   '<div class="replies-list">' + repliesHtml + '</div>' +
                 '</div>' +
@@ -7009,7 +7009,7 @@ function renderSocialPage(user) {
 
           return 
             '<div class="card post-card">' +
-              (p.repostOf ? '<div style="font-size:0.75rem;color:var(--accent);font-weight:700;margin-bottom:0.5rem;text-align:left;">🔁 ' + p.repostedBy + ' Repost Etti</div>' : '') +
+              (p.repostOf ? '<div style="font-size:0.75rem;color:var(--accent);font-weight:700;margin-bottom:0.5rem;text-align:left;">ğŸ” ' + p.repostedBy + ' Repost Etti</div>' : '') +
               '<div class="post-header">' +
                 '<img src="' + (p.authorAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png') + '" class="post-avatar" style="border-color:' + p.authorColor + '">' +
                 '<div class="post-author-info">' +
@@ -7035,7 +7035,7 @@ function renderSocialPage(user) {
                 (!p.repostOf ? 
                   '<button class="post-action" onclick="repost(\'' + p._id + '\')">' +
                     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1v22M3 5h18M3 19h18"/></svg>' +
-                    '<span>Yeniden Paylaş</span>' +
+                    '<span>Yeniden PaylaÅŸ</span>' +
                   '</button>'
                  : '') +
               '</div>' +
@@ -7045,7 +7045,7 @@ function renderSocialPage(user) {
                 '<div class="comment-list">' + commentsHtml + '</div>' +
                 '<div class="comment-input-row">' +
                   '<input type="text" class="comment-input" id="comment-input-' + p._id + '" placeholder="Yorum yaz..." onkeydown="if(event.key===\'Enter\')addComment(\'' + p._id + '\')">' +
-                  '<button class="comment-send-btn" id="comment-btn-' + p._id + '" onclick="addComment(\'' + p._id + '\')">Gönder</button>' +
+                  '<button class="comment-send-btn" id="comment-btn-' + p._id + '" onclick="addComment(\'' + p._id + '\')">GÃ¶nder</button>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -7060,14 +7060,14 @@ function renderSocialPage(user) {
           if (d.success) {
             const list = document.getElementById('streams-list');
             if (!d.streams || !d.streams.length) {
-              list.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:0.5rem 0;">Aktif yayın bulunmuyor.</div>';
+              list.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:0.5rem 0;">Aktif yayÄ±n bulunmuyor.</div>';
             } else {
               list.innerHTML = d.streams.map(s => 
                 '<div class="stream-list-item" onclick="joinStream(\'' + s._id + '\')">' +
                   '<img src="' + (s.userAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png') + '" style="width:32px;height:32px;border-radius:50%;">' +
                   '<div style="flex:1;min-width:0;">' +
                     '<div class="stream-title">' + s.title + '</div>' +
-                    '<div style="font-size:0.7rem;color:var(--muted)">Yayıncı: ' + s.userName + '</div>' +
+                    '<div style="font-size:0.7rem;color:var(--muted)">YayÄ±ncÄ±: ' + s.userName + '</div>' +
                   '</div>' +
                   '<span class="stream-badge">LIVE</span>' +
                 '</div>'
@@ -7078,7 +7078,7 @@ function renderSocialPage(user) {
       }
 
       async function startStreamPrompt() {
-        const title = prompt("Canlı yayın başlığını girin:");
+        const title = prompt("CanlÄ± yayÄ±n baÅŸlÄ±ÄŸÄ±nÄ± girin:");
         if (!title) return;
         try {
           const res = await fetch('/api/social/streams', {
@@ -7088,14 +7088,14 @@ function renderSocialPage(user) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast("Canlı yayın başlatıldı!", "success");
+            showToast("CanlÄ± yayÄ±n baÅŸlatÄ±ldÄ±!", "success");
             joinStream(d.stream._id);
             loadStreams();
           } else {
             showToast(d.error || "Hata", "error");
           }
         } catch {
-          showToast("Bağlantı hatası", "error");
+          showToast("BaÄŸlantÄ± hatasÄ±", "error");
         }
       }
 
@@ -7105,12 +7105,12 @@ function renderSocialPage(user) {
           const d = await res.json();
           if (d.success) {
             const stream = d.streams.find(s => s._id === streamId);
-            if (!stream) return showToast("Yayın sona ermiş.", "error");
+            if (!stream) return showToast("YayÄ±n sona ermiÅŸ.", "error");
 
             activeStream = stream;
             document.getElementById('stream-modal').style.display = 'flex';
             document.getElementById('stream-pane-title').textContent = stream.title;
-            document.getElementById('stream-viewer-count').textContent = '👁️ ' + (stream.viewerCount || 1);
+            document.getElementById('stream-viewer-count').textContent = 'ğŸ‘ï¸ ' + (stream.viewerCount || 1);
             
             // Show End Stream button if owner
             const isOwner = stream.userId === MY_DISCORD_ID;
@@ -7134,12 +7134,12 @@ function renderSocialPage(user) {
           if (d.success) {
             const stream = d.streams.find(s => s._id === activeStream._id);
             if (!stream) {
-              showToast("Yayın sahibi yayını kapattı.", "info");
+              showToast("YayÄ±n sahibi yayÄ±nÄ± kapattÄ±.", "info");
               closeStream();
               return;
             }
             activeStream = stream;
-            document.getElementById('stream-viewer-count').textContent = '👁️ ' + (stream.viewerCount || 1);
+            document.getElementById('stream-viewer-count').textContent = 'ğŸ‘ï¸ ' + (stream.viewerCount || 1);
             renderStreamChat();
           }
         } catch {}
@@ -7181,12 +7181,12 @@ function renderSocialPage(user) {
 
       async function endCurrentStream() {
         if (!activeStream) return;
-        if (!confirm("Yayını sonlandırmak istediğinize emin misiniz?")) return;
+        if (!confirm("YayÄ±nÄ± sonlandÄ±rmak istediÄŸinize emin misiniz?")) return;
 
         try {
           const res = await fetch('/api/social/streams/' + activeStream._id + '/end', { method: 'POST' });
           if (res.ok) {
-            showToast("Yayın sonlandırıldı.", "info");
+            showToast("YayÄ±n sonlandÄ±rÄ±ldÄ±.", "info");
             closeStream();
             loadStreams();
           }
@@ -7203,7 +7203,7 @@ function renderSocialPage(user) {
         const emitter = document.getElementById('heart-emitter');
         const heart = document.createElement('div');
         heart.className = 'float-heart';
-        const hearts = ['❤️', '💖', '💝', '💕', '🧡', '💛', '💚', '💙', '💜'];
+        const hearts = ['â¤ï¸', 'ğŸ’–', 'ğŸ’', 'ğŸ’•', 'ğŸ§¡', 'ğŸ’›', 'ğŸ’š', 'ğŸ’™', 'ğŸ’œ'];
         heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
         heart.style.left = Math.floor(Math.random() * 20) + 'px';
         emitter.appendChild(heart);
@@ -7221,9 +7221,9 @@ function renderSocialPage(user) {
   return _layout('Sentara Sosyal', user, content, '', '/social');
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SETTINGS PAGE
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderSettingsPage(user, query = {}) {
   const isSetupPin = query.setupPin === '1' || !user.sitePinPassword;
   const hasPin = Boolean(user.sitePinPassword);
@@ -7236,20 +7236,20 @@ function renderSettingsPage(user, query = {}) {
       <!-- Title Header -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
         <div>
-          <div style="color:var(--muted); font-size:0.88rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">HESAP YÖNETİMİ</div>
-          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg, #fff, #fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Hesap Ayarları & Güvenlik</h1>
+          <div style="color:var(--muted); font-size:0.88rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">HESAP YÃ–NETÄ°MÄ°</div>
+          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg, #fff, #fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Hesap AyarlarÄ± & GÃ¼venlik</h1>
         </div>
-        <a href="/dashboard" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15);">← Dashboard'a Dön</a>
+        <a href="/dashboard" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15);">â† Dashboard'a DÃ¶n</a>
       </div>
 
       ${isSetupPin ? `
       <div style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.4); border-radius:20px; padding:1.5rem 2rem; margin-bottom:2rem; backdrop-filter:blur(16px); box-shadow:0 10px 30px rgba(244,63,94,0.2);">
         <div style="display:flex; align-items:center; gap:1rem;">
-          <span style="font-size:2rem;">🔑</span>
+          <span style="font-size:2rem;">ğŸ”‘</span>
           <div>
-            <div style="font-size:1.2rem; font-weight:800; color:#fff;">Site Şifresi (PIN) Tanımlamanız Gerekiyor</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#fff;">Site Åifresi (PIN) TanÄ±mlamanÄ±z Gerekiyor</div>
             <div style="font-size:0.92rem; color:var(--muted); margin-top:0.25rem;">
-              Hesap güvenliğiniz için lütfen aşağıdan 4 veya 6 haneli bir Site PIN Şifresi belirleyin.
+              Hesap gÃ¼venliÄŸiniz iÃ§in lÃ¼tfen aÅŸaÄŸÄ±dan 4 veya 6 haneli bir Site PIN Åifresi belirleyin.
             </div>
           </div>
         </div>
@@ -7262,27 +7262,27 @@ function renderSettingsPage(user, query = {}) {
         <!-- CARD 1: SITE PIN PASSWORD -->
         <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
           <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔑</div>
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">ğŸ”‘</div>
             <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">Site PIN / Şifresi</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Giriş yaparken veya hassas işlemlerde kullanılan şifreniz</p>
+              <h3 style="font-size:1.3rem; font-weight:700;">Site PIN / Åifresi</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">GiriÅŸ yaparken veya hassas iÅŸlemlerde kullanÄ±lan ÅŸifreniz</p>
             </div>
           </div>
 
           <div style="background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px; border:1px solid rgba(255,255,255,0.05); margin-bottom:1.5rem;">
-            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:0.4rem;">Mevcut Şifre Durumu:</div>
+            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:0.4rem;">Mevcut Åifre Durumu:</div>
             <div style="font-weight:700; color:${hasPin ? 'var(--success)' : 'var(--danger)'};">
-              ${hasPin ? `✅ Şifre Aktif (${pinLength} Haneli PIN)` : '⚠️ Şifre Belirlenmemiş'}
+              ${hasPin ? `âœ… Åifre Aktif (${pinLength} Haneli PIN)` : 'âš ï¸ Åifre BelirlenmemiÅŸ'}
             </div>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:1rem; max-width:420px;">
             <div>
-              <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">Yeni PIN Şifresi (4 veya 6 Haneli Rakam)</label>
-              <input type="password" id="settingsPinInput" class="input-field" placeholder="Örn: 123456" maxlength="6" style="font-size:1.2rem; letter-spacing:0.3rem;">
+              <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">Yeni PIN Åifresi (4 veya 6 Haneli Rakam)</label>
+              <input type="password" id="settingsPinInput" class="input-field" placeholder="Ã–rn: 123456" maxlength="6" style="font-size:1.2rem; letter-spacing:0.3rem;">
             </div>
             <button onclick="updateSitePin()" class="btn btn-primary" style="background:linear-gradient(135deg, #f43f5e, #e11d48); font-weight:700;">
-              💾 Şifreyi Kaydet
+              ğŸ’¾ Åifreyi Kaydet
             </button>
           </div>
         </div>
@@ -7290,61 +7290,61 @@ function renderSettingsPage(user, query = {}) {
         <!-- CARD 2: 2FA SECURITY -->
         <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
           <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(88,101,242,0.15); border:1px solid rgba(88,101,242,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🛡️</div>
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(88,101,242,0.15); border:1px solid rgba(88,101,242,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">ğŸ›¡ï¸</div>
             <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">2 Aşamalı Doğrulama (2FA)</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Hesabınıza ekstra güvenlik katmanı ekleyin</p>
+              <h3 style="font-size:1.3rem; font-weight:700;">2 AÅŸamalÄ± DoÄŸrulama (2FA)</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">HesabÄ±nÄ±za ekstra gÃ¼venlik katmanÄ± ekleyin</p>
             </div>
           </div>
 
           <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px;">
             <input type="checkbox" id="toggle2FA" ${is2FA ? 'checked' : ''} style="width:20px; height:20px; accent-color:#f43f5e; cursor:pointer;">
-            <label for="toggle2FA" style="font-weight:700; cursor:pointer;">2 Aşamalı Doğrulamayı Aktif Et</label>
+            <label for="toggle2FA" style="font-weight:700; cursor:pointer;">2 AÅŸamalÄ± DoÄŸrulamayÄ± Aktif Et</label>
           </div>
 
           <div style="margin-bottom:1.5rem; max-width:420px;">
-            <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">2FA Doğrulama Yöntemi</label>
+            <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">2FA DoÄŸrulama YÃ¶ntemi</label>
             <select id="select2FAMethod" class="input-field" style="background:#0a0a14; color:#fff;">
-              <option value="discord_dm" ${twoFactorMethod === 'discord_dm' ? 'selected' : ''}>📩 Discord DM 6 Haneli Kod ile</option>
-              <option value="roblox_oauth" ${twoFactorMethod === 'roblox_oauth' ? 'selected' : ''}>🌐 Roblox OAuth Doğrulaması ile</option>
+              <option value="discord_dm" ${twoFactorMethod === 'discord_dm' ? 'selected' : ''}>ğŸ“© Discord DM 6 Haneli Kod ile</option>
+              <option value="roblox_oauth" ${twoFactorMethod === 'roblox_oauth' ? 'selected' : ''}>ğŸŒ Roblox OAuth DoÄŸrulamasÄ± ile</option>
             </select>
           </div>
 
           <button onclick="update2FASettings()" class="btn btn-primary" style="max-width:420px; background:linear-gradient(135deg, #5865F2, #4752C4); font-weight:700;">
-            🛡️ 2FA Ayarlarını Kaydet
+            ğŸ›¡ï¸ 2FA AyarlarÄ±nÄ± Kaydet
           </button>
         </div>
 
         <!-- CARD 3: ACCOUNT CONNECTIONS -->
         <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
           <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔗</div>
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">ğŸ”—</div>
             <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">Hesap Bağlantıları</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Discord ve Roblox hesap entegrasyonlarınız</p>
+              <h3 style="font-size:1.3rem; font-weight:700;">Hesap BaÄŸlantÄ±larÄ±</h3>
+              <p style="font-size:0.88rem; color:var(--muted);">Discord ve Roblox hesap entegrasyonlarÄ±nÄ±z</p>
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem;">
             <!-- Roblox -->
             <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
-              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Roblox Hesabı:</div>
+              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Roblox HesabÄ±:</div>
               <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
-                ${user.robloxUsername ? `🎮 ${_esc(user.robloxUsername)}` : '❌ Bağlı Değil'}
+                ${user.robloxUsername ? `ğŸ® ${_esc(user.robloxUsername)}` : 'âŒ BaÄŸlÄ± DeÄŸil'}
               </div>
               <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
-                🔄 Roblox Hesabımı Değiştir / Eşle
+                ğŸ”„ Roblox HesabÄ±mÄ± DeÄŸiÅŸtir / EÅŸle
               </a>
             </div>
 
             <!-- Discord -->
             <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
-              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Discord Hesabı:</div>
+              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Discord HesabÄ±:</div>
               <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
-                💬 ${_esc(user.discordUsername || 'Bağlı')}
+                ğŸ’¬ ${_esc(user.discordUsername || 'BaÄŸlÄ±')}
               </div>
               <a href="/auth/discord" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
-                🔄 Discord Hesabımı Değiştir
+                ğŸ”„ Discord HesabÄ±mÄ± DeÄŸiÅŸtir
               </a>
             </div>
           </div>
@@ -7357,7 +7357,7 @@ function renderSettingsPage(user, query = {}) {
       async function updateSitePin() {
         const pin = document.getElementById('settingsPinInput').value.trim();
         if (!pin || (pin.length !== 4 && pin.length !== 6) || !/^\\d+$/.test(pin)) {
-          return alert('Lütfen 4 veya 6 haneli sadece rakamlardan oluşan bir PIN girin.');
+          return alert('LÃ¼tfen 4 veya 6 haneli sadece rakamlardan oluÅŸan bir PIN girin.');
         }
 
         try {
@@ -7368,13 +7368,13 @@ function renderSettingsPage(user, query = {}) {
           });
           const data = await res.json();
           if (data.success) {
-            alert(data.message || 'PIN başarıyla güncellendi!');
+            alert(data.message || 'PIN baÅŸarÄ±yla gÃ¼ncellendi!');
             window.location.href = '/settings';
           } else {
-            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+            alert('Hata: ' + (data.error || 'GÃ¼ncellenemedi.'));
           }
         } catch (e) {
-          alert('Sunucu hatası.');
+          alert('Sunucu hatasÄ±.');
         }
       }
 
@@ -7390,49 +7390,49 @@ function renderSettingsPage(user, query = {}) {
           });
           const data = await res.json();
           if (data.success) {
-            alert(data.message || '2FA ayarları kaydedildi!');
+            alert(data.message || '2FA ayarlarÄ± kaydedildi!');
           } else {
-            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+            alert('Hata: ' + (data.error || 'GÃ¼ncellenemedi.'));
           }
         } catch (e) {
-          alert('Sunucu hatası.');
+          alert('Sunucu hatasÄ±.');
         }
       }
     </script>
   `;
 
-  return _layout('Hesap Ayarları & Güvenlik', user, content, '', '/settings');
+  return _layout('Hesap AyarlarÄ± & GÃ¼venlik', user, content, '', '/settings');
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ACCOUNT TRANSFER PAGE (MODERATOR)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderAccountTransferPage(user, staffProgress) {
-  // Bu sayfa zaten EJS template olarak oluşturuldu
-  // Bu fonksiyon sadece uyumluluk için
+  // Bu sayfa zaten EJS template olarak oluÅŸturuldu
+  // Bu fonksiyon sadece uyumluluk iÃ§in
   return null;
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // USER LOGS PAGE & ADMIN USER IMPROVEMENTS
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], extraLogs = {}) {
-  const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen Kullanıcı";
+  const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen KullanÄ±cÄ±";
   const avatar = targetUser?.discordAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
   const discordId = targetUser?.discordId || trustRecord?.userId || "Bilinmiyor";
-  const robloxName = targetUser?.robloxUsername || "Bağlı Değil";
+  const robloxName = targetUser?.robloxUsername || "BaÄŸlÄ± DeÄŸil";
   const trustScore = trustRecord ? trustRecord.trustScore.toFixed(1) : "100.0";
   const scoreLogs = trustRecord?.scoreLogs || [];
 
   const combinedLogs = [];
 
-  // 1. Güven Puanı Hareketi
+  // 1. GÃ¼ven PuanÄ± Hareketi
   scoreLogs.forEach(l => {
     combinedLogs.push({
       type: "TRUST",
-      icon: "⭐",
-      title: "Güven Puanı Hareketi",
-      description: `${l.amount >= 0 ? '+' : ''}${l.amount.toFixed(1)} TS — ${_esc(l.reason || 'Sistem Güncellemesi')}`,
+      icon: "â­",
+      title: "GÃ¼ven PuanÄ± Hareketi",
+      description: `${l.amount >= 0 ? '+' : ''}${l.amount.toFixed(1)} TS â€” ${_esc(l.reason || 'Sistem GÃ¼ncellemesi')}`,
       amount: l.amount,
       operator: l.operatorId || 'SYSTEM',
       timestamp: new Date(l.timestamp).getTime(),
@@ -7440,33 +7440,33 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     });
   });
 
-  // 2. Discord Aktivite Logları (Komut Kullanımı & Moderasyon — Web Girişleri ve IP/Ülke kaldırıldı)
+  // 2. Discord Aktivite LoglarÄ± (Komut KullanÄ±mÄ± & Moderasyon â€” Web GiriÅŸleri ve IP/Ãœlke kaldÄ±rÄ±ldÄ±)
   webLogs.forEach(w => {
     const actType = w.activityType;
-    if (actType === "login" || actType === "page_view") return; // Web girişleri gösterilmez
+    if (actType === "login" || actType === "page_view") return; // Web giriÅŸleri gÃ¶sterilmez
 
-    let title = "📌 Discord Aktivitesi";
+    let title = "ğŸ“Œ Discord Aktivitesi";
     let type = "DISCORD";
-    let icon = "💬";
+    let icon = "ğŸ’¬";
     let desc = "Sistem Aktivitesi";
 
     if (actType === "command") {
-      title = "💬 Discord Komut Kullanımı";
+      title = "ğŸ’¬ Discord Komut KullanÄ±mÄ±";
       type = "DISCORD";
-      icon = "💬";
+      icon = "ğŸ’¬";
       desc = `Komut: /${_esc(w.details?.commandName || w.details?.command || 'komut')} ${w.details?.channelName ? '(# ' + _esc(w.details.channelName) + ')' : ''}`;
     } else if (actType === "profile_update") {
-      title = "⚙️ Profil Güncellemesi";
+      title = "âš™ï¸ Profil GÃ¼ncellemesi";
       type = "DISCORD";
-      icon = "⚙️";
-      desc = "Kullanıcı profil ayarlarını güncelledi";
+      icon = "âš™ï¸";
+      desc = "KullanÄ±cÄ± profil ayarlarÄ±nÄ± gÃ¼ncelledi";
     } else if (actType === "mod_action") {
-      title = "⚖️ Moderatör İşlemi";
+      title = "âš–ï¸ ModeratÃ¶r Ä°ÅŸlemi";
       type = "DISCORD";
-      icon = "⚖️";
-      desc = _esc(w.details?.action || w.details?.reason || "Moderatör işlemi yapıldı");
+      icon = "âš–ï¸";
+      desc = _esc(w.details?.action || w.details?.reason || "ModeratÃ¶r iÅŸlemi yapÄ±ldÄ±");
     } else {
-      desc = _esc(w.details?.action || w.details?.reason || "Aktivite kaydı");
+      desc = _esc(w.details?.action || w.details?.reason || "Aktivite kaydÄ±");
     }
 
     combinedLogs.push({
@@ -7481,14 +7481,14 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     });
   });
 
-  // 3. Destek Talepleri (Ticket) Logları
+  // 3. Destek Talepleri (Ticket) LoglarÄ±
   if (extraLogs.tickets && Array.isArray(extraLogs.tickets)) {
     extraLogs.tickets.forEach(t => {
       combinedLogs.push({
         type: "TICKET",
-        icon: "🎫",
-        title: `🎫 Destek Talebi: #${_esc(t.ticketId || t.channelName || 'ticket')}`,
-        description: `Kategori: ${_esc(t.category || 'Genel')} | Durum: ${t.status === 'closed' ? '🔒 Kapalı' : '🟢 Açık'}`,
+        icon: "ğŸ«",
+        title: `ğŸ« Destek Talebi: #${_esc(t.ticketId || t.channelName || 'ticket')}`,
+        description: `Kategori: ${_esc(t.category || 'Genel')} | Durum: ${t.status === 'closed' ? 'ğŸ”’ KapalÄ±' : 'ğŸŸ¢ AÃ§Ä±k'}`,
         amount: 0,
         operator: "DISCORD_TICKET",
         timestamp: new Date(t.createdAt || Date.now()).getTime(),
@@ -7497,13 +7497,13 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     });
   }
 
-  // 4. Mahkeme & Soruşturma Logları
+  // 4. Mahkeme & SoruÅŸturma LoglarÄ±
   if (extraLogs.courtCases && Array.isArray(extraLogs.courtCases)) {
     extraLogs.courtCases.forEach(c => {
       combinedLogs.push({
         type: "DISCORD",
-        icon: "🏛️",
-        title: `🏛️ Mahkeme Dosyası: #${_esc(c.caseId || c.caseCode || 'dava')}`,
+        icon: "ğŸ›ï¸",
+        title: `ğŸ›ï¸ Mahkeme DosyasÄ±: #${_esc(c.caseId || c.caseCode || 'dava')}`,
         description: `Sebep: ${_esc(c.reason || 'Dava')} | Durum: ${_esc(c.status || 'Aktif')}`,
         amount: 0,
         operator: "DISCORD_COURT",
@@ -7513,14 +7513,14 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     });
   }
 
-  // 5. Personel İzin Kayıtları
+  // 5. Personel Ä°zin KayÄ±tlarÄ±
   if (extraLogs.leaves && Array.isArray(extraLogs.leaves)) {
     extraLogs.leaves.forEach(lev => {
       combinedLogs.push({
         type: "LEAVE",
-        icon: "🏖️",
-        title: `🏖️ Personel İzin Talebi`,
-        description: `Süre: ${lev.durationDays || 1} gün | Nedeni: ${_esc(lev.reason || '-')} | Durum: ${lev.status === 'APPROVED' ? '✅ Onaylandı' : lev.status === 'REJECTED' ? '❌ Reddedildi' : '⏳ Bekliyor'}`,
+        icon: "ğŸ–ï¸",
+        title: `ğŸ–ï¸ Personel Ä°zin Talebi`,
+        description: `SÃ¼re: ${lev.durationDays || 1} gÃ¼n | Nedeni: ${_esc(lev.reason || '-')} | Durum: ${lev.status === 'APPROVED' ? 'âœ… OnaylandÄ±' : lev.status === 'REJECTED' ? 'âŒ Reddedildi' : 'â³ Bekliyor'}`,
         amount: 0,
         operator: lev.approvedBy ? `ONAY: ${lev.approvedBy}` : 'PERSONEL_FORM',
         timestamp: new Date(lev.createdAt || Date.now()).getTime(),
@@ -7535,10 +7535,10 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     <div style="max-width:1100px; margin:2rem auto; animation:fadeUp 0.5s ease;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
         <div>
-          <div style="color:var(--muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">KULLANICI AKTİVİTE & LOG İNCELEME</div>
-          <h1 style="font-size:2.2rem; font-weight:800; color:#fff;">${_esc(username)} — Tüm İncelemeler</h1>
+          <div style="color:var(--muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;">KULLANICI AKTÄ°VÄ°TE & LOG Ä°NCELEME</div>
+          <h1 style="font-size:2.2rem; font-weight:800; color:#fff;">${_esc(username)} â€” TÃ¼m Ä°ncelemeler</h1>
         </div>
-        <a href="/admin" class="btn btn-sm btn-ghost">← Admin Paneline Dön</a>
+        <a href="/admin" class="btn btn-sm btn-ghost">â† Admin Paneline DÃ¶n</a>
       </div>
 
       <!-- USER HEADER CARD -->
@@ -7549,16 +7549,16 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
             <div>
               <h2 style="font-size:1.8rem; font-weight:800; color:#fff; margin-bottom:0.3rem;">${_esc(username)}</h2>
               <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:0.88rem; color:var(--muted);">
-                <span>🆔 Discord ID: <code style="color:var(--text);">${discordId}</code></span>
-                <span>🎮 Roblox: <strong style="color:var(--accent2);">${_esc(robloxName)}</strong></span>
+                <span>ğŸ†” Discord ID: <code style="color:var(--text);">${discordId}</code></span>
+                <span>ğŸ® Roblox: <strong style="color:var(--accent2);">${_esc(robloxName)}</strong></span>
               </div>
             </div>
           </div>
           
           <div style="background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.3); border-radius:18px; padding:1rem 1.5rem; text-align:center;">
-            <div style="font-size:0.8rem; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">GÜVEN PUANI</div>
+            <div style="font-size:0.8rem; color:var(--muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">GÃœVEN PUANI</div>
             <div style="font-size:2.2rem; font-weight:800; color:${parseFloat(trustScore) >= 100 ? '#34d399' : parseFloat(trustScore) < 50 ? '#fb7185' : '#fbbf24'};">
-              ⭐ ${trustScore} <span style="font-size:1rem; color:var(--muted);">/ 500</span>
+              â­ ${trustScore} <span style="font-size:1rem; color:var(--muted);">/ 500</span>
             </div>
           </div>
         </div>
@@ -7567,14 +7567,14 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
       <!-- LOG FILTER & SEARCH BAR -->
       <div class="card" style="margin-bottom:1.5rem; padding:1.2rem 1.5rem; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:1rem;">
         <div style="flex:1; min-width:280px;">
-          <input type="text" id="log-search" class="input-field" style="margin-bottom:0;" oninput="filterLogsTimeline()" placeholder="🔍 Loglar içinde canlı ara (Sebep, İşlem, Komut, Tarih, Yetkili)...">
+          <input type="text" id="log-search" class="input-field" style="margin-bottom:0;" oninput="filterLogsTimeline()" placeholder="ğŸ” Loglar iÃ§inde canlÄ± ara (Sebep, Ä°ÅŸlem, Komut, Tarih, Yetkili)...">
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <button class="btn btn-sm" onclick="setLogCategory('ALL')" style="background:rgba(255,255,255,0.1);">Tüm Loglar</button>
-          <button class="btn btn-sm" onclick="setLogCategory('TRUST')" style="background:rgba(241,196,15,0.15); color:#f1c40f;">⭐ Güven Puanı</button>
-          <button class="btn btn-sm" onclick="setLogCategory('DISCORD')" style="background:rgba(155,89,182,0.15); color:#9b59b6;">💬 Discord Logları</button>
-          <button class="btn btn-sm" onclick="setLogCategory('TICKET')" style="background:rgba(46,204,113,0.15); color:#2ecc71;">🎫 Destek Talepleri</button>
-          <button class="btn btn-sm" onclick="setLogCategory('LEAVE')" style="background:rgba(52,152,219,0.15); color:#3498db;">🏖️ İzin Kayıtları</button>
+          <button class="btn btn-sm" onclick="setLogCategory('ALL')" style="background:rgba(255,255,255,0.1);">TÃ¼m Loglar</button>
+          <button class="btn btn-sm" onclick="setLogCategory('TRUST')" style="background:rgba(241,196,15,0.15); color:#f1c40f;">â­ GÃ¼ven PuanÄ±</button>
+          <button class="btn btn-sm" onclick="setLogCategory('DISCORD')" style="background:rgba(155,89,182,0.15); color:#9b59b6;">ğŸ’¬ Discord LoglarÄ±</button>
+          <button class="btn btn-sm" onclick="setLogCategory('TICKET')" style="background:rgba(46,204,113,0.15); color:#2ecc71;">ğŸ« Destek Talepleri</button>
+          <button class="btn btn-sm" onclick="setLogCategory('LEAVE')" style="background:rgba(52,152,219,0.15); color:#3498db;">ğŸ–ï¸ Ä°zin KayÄ±tlarÄ±</button>
         </div>
       </div>
 
@@ -7584,7 +7584,7 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
           <div class="log-card-item" data-type="${l.type}" data-text="${_esc((l.title + ' ' + l.description + ' ' + l.operator + ' ' + l.dateStr).toLowerCase())}" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:1.2rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; backdrop-filter:blur(12px);">
             <div style="display:flex; align-items:center; gap:1rem;">
               <div style="font-size:1.6rem; width:44px; height:44px; border-radius:14px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center;">
-                ${l.icon || '📌'}
+                ${l.icon || 'ğŸ“Œ'}
               </div>
               <div>
                 <div style="font-weight:700; font-size:1rem; color:#fff;">${_esc(l.title)}</div>
@@ -7597,7 +7597,7 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
               <div style="font-size:0.78rem; color:var(--accent2); margin-top:0.2rem;">Yetkili/Kaynak: <code>${_esc(l.operator)}</code></div>
             </div>
           </div>
-        `).join('') : '<div class="card" style="text-align:center; padding:3rem; color:var(--muted);">Kullanıcıya ait kaydedilmiş log işlemi bulunamadı.</div>'}
+        `).join('') : '<div class="card" style="text-align:center; padding:3rem; color:var(--muted);">KullanÄ±cÄ±ya ait kaydedilmiÅŸ log iÅŸlemi bulunamadÄ±.</div>'}
       </div>
 
     </div>
@@ -7631,14 +7631,14 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
     </script>
   `;
 
-  return _layout(`Log Geçmişi — ${username}`, currentUser, content, '', '/admin');
+  return _layout(`Log GeÃ§miÅŸi â€” ${username}`, currentUser, content, '', '/admin');
 }
 
 
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // APPLICATION FORMS HUB & EVENT STAFF FORM VIEWS
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function renderFormsHubPage(currentUser) {
   const content = `
@@ -7650,12 +7650,12 @@ function renderFormsHubPage(currentUser) {
 
         <div style="display:inline-flex; align-items:center; justify-content:center; gap:1rem; margin-bottom:1.5rem;">
           <div style="width:4px; height:48px; background:linear-gradient(to bottom, #a78bfa, #818cf8); border-radius:2px;"></div>
-          <h1 style="font-size:2.4rem; font-weight:800; color:#fff; letter-spacing:1px; margin:0;">Yetkili Formları</h1>
+          <h1 style="font-size:2.4rem; font-weight:800; color:#fff; letter-spacing:1px; margin:0;">Yetkili FormlarÄ±</h1>
           <div style="width:4px; height:48px; background:linear-gradient(to bottom, #818cf8, #a78bfa); border-radius:2px;"></div>
         </div>
 
         <h2 style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-bottom:2rem; opacity:0.9;">
-          EkoYıldız Yetkili Ekibi Başvuruları
+          EkoYÄ±ldÄ±z Yetkili Ekibi BaÅŸvurularÄ±
         </h2>
 
         <!-- BANNER IMAGE -->
@@ -7670,11 +7670,11 @@ function renderFormsHubPage(currentUser) {
           <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
               <img src="https://cdn.discordapp.com/emojis/1535974297829642301.png" style="height:22px; width:22px; object-fit:contain;">
-              <span>[ Discord Moderasyon Takımı ]</span>
-              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+              <span>[ Discord Moderasyon TakÄ±mÄ± ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">baÅŸvuru formu iÃ§in tÄ±klayÄ±n.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
-              <span>◦ Başvuru durumu:</span>
+              <span>â—¦ BaÅŸvuru durumu:</span>
               <div style="display:inline-flex; align-items:center; gap:0;">
                 <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
                 <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
@@ -7687,12 +7687,12 @@ function renderFormsHubPage(currentUser) {
           <!-- 2. OYUN MODERASYON -->
           <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
-              <span style="font-size:1.2rem;">🗡️</span>
-              <span>[ Oyun Moderasyon Takımı ]</span>
-              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+              <span style="font-size:1.2rem;">ğŸ—¡ï¸</span>
+              <span>[ Oyun Moderasyon TakÄ±mÄ± ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">baÅŸvuru formu iÃ§in tÄ±klayÄ±n.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
-              <span>◦ Başvuru durumu:</span>
+              <span>â—¦ BaÅŸvuru durumu:</span>
               <div style="display:inline-flex; align-items:center; gap:0;">
                 <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
                 <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
@@ -7702,15 +7702,15 @@ function renderFormsHubPage(currentUser) {
             </div>
           </div>
 
-          <!-- 3. ETKİNLİK YETKİLİSİ (AÇIK) -->
+          <!-- 3. ETKÄ°NLÄ°K YETKÄ°LÄ°SÄ° (AÃ‡IK) -->
           <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(52,211,153,0.03); border-radius:12px; padding:1rem;">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
               <img src="https://cdn.discordapp.com/emojis/1535974991382978641.png" style="height:22px; width:22px; object-fit:contain;">
               <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Etkinlik Yetkilisi ]</a>
-              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">başvuru formu için <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline;">tıklayın</a>.</span>
+              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">baÅŸvuru formu iÃ§in <a href="/forms/event-staff" style="color:#34d399; text-decoration:underline;">tÄ±klayÄ±n</a>.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
-              <span>◦ Başvuru durumu:</span>
+              <span>â—¦ BaÅŸvuru durumu:</span>
               <div style="display:inline-flex; align-items:center; gap:0;">
                 <img src="https://cdn.discordapp.com/emojis/1535973588031635608.png" style="height:24px; display:block;">
                 <img src="https://cdn.discordapp.com/emojis/1535973586706108416.png" style="height:24px; display:block;">
@@ -7720,15 +7720,15 @@ function renderFormsHubPage(currentUser) {
             </div>
           </div>
 
-          <!-- 4. TOPLULUK ELÇİLİĞİ -->
+          <!-- 4. TOPLULUK ELÃ‡Ä°LÄ°ÄÄ° -->
           <div style="margin-bottom:1rem;">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
-              <span style="font-size:1.2rem;">⚜️</span>
-              <span>[ Topluluk Elçiliği ]</span>
-              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu için tıklayın.</span>
+              <span style="font-size:1.2rem;">âšœï¸</span>
+              <span>[ Topluluk ElÃ§iliÄŸi ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">baÅŸvuru formu iÃ§in tÄ±klayÄ±n.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
-              <span>◦ Başvuru durumu:</span>
+              <span>â—¦ BaÅŸvuru durumu:</span>
               <div style="display:inline-flex; align-items:center; gap:0;">
                 <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
                 <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
@@ -7741,14 +7741,14 @@ function renderFormsHubPage(currentUser) {
         </div>
 
         <div style="margin-top:1.8rem; font-size:0.85rem; color:var(--muted); font-style:italic;">
-          Başvuru durumları otomatik olarak güncellenmektedir. Yeni bir bölümün başvuruları açıldığında sizleri bilgilendireceğiz.
+          BaÅŸvuru durumlarÄ± otomatik olarak gÃ¼ncellenmektedir. Yeni bir bÃ¶lÃ¼mÃ¼n baÅŸvurularÄ± aÃ§Ä±ldÄ±ÄŸÄ±nda sizleri bilgilendireceÄŸiz.
         </div>
 
       </div>
     </div>
   `;
 
-  return _layout('Yetkili Formları', currentUser, content, '', '/forms');
+  return _layout('Yetkili FormlarÄ±', currentUser, content, '', '/forms');
 }
 
 
@@ -7769,34 +7769,34 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
       <div class="card" style="background:rgba(20,20,35,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:2rem; backdrop-filter:blur(20px); margin-bottom:1.5rem; border-top:4px solid #34d399;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
           <div>
-            <div style="color:#34d399; font-size:0.85rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">✳️ ETKİNLİK YETKİLİSİ ALIM FORMU</div>
-            <h1 style="font-size:1.8rem; font-weight:800; color:#fff;">Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu</h1>
+            <div style="color:#34d399; font-size:0.85rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">âœ³ï¸ ETKÄ°NLÄ°K YETKÄ°LÄ°SÄ° ALIM FORMU</div>
+            <h1 style="font-size:1.8rem; font-weight:800; color:#fff;">Etkinlik SorumluluÄŸu // [A-1] 1. Nesil Sorumlu BaÅŸvuru Formu</h1>
           </div>
-          <a href="/forms" class="btn btn-sm btn-ghost">← Tüm Formlara Dön</a>
+          <a href="/forms" class="btn btn-sm btn-ghost">â† TÃ¼m Formlara DÃ¶n</a>
         </div>
       </div>
 
       ${!isLoggedIn ? `
         <div class="card" style="background:rgba(251,113,133,0.1); border:1px solid rgba(251,113,133,0.3); border-radius:20px; padding:2.5rem; text-align:center;">
-          <div style="font-size:2.5rem; margin-bottom:1rem;">🔒</div>
-          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
+          <div style="font-size:2.5rem; margin-bottom:1rem;">ğŸ”’</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">BaÅŸvuru Yapabilmek Ä°Ã§in GiriÅŸ YapmalÄ±sÄ±nÄ±z</h2>
           <p style="color:var(--muted); max-width:600px; margin:0 auto 1.5rem; line-height:1.6;">
-            Bu formu doldurabilmek için Discord hesabınızla giriş yapmanız gerekmektedir.
+            Bu formu doldurabilmek iÃ§in Discord hesabÄ±nÄ±zla giriÅŸ yapmanÄ±z gerekmektedir.
           </p>
           <a href="/login?redirect=/forms/event-staff" class="btn" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;font-weight:800;padding:0.8rem 2rem;border-radius:30px;font-size:1.05rem;display:inline-block;box-shadow:0 6px 20px rgba(244,63,94,0.4);">
-            🔑 Discord ile Giriş Yap / Kayıt Ol
+            ğŸ”‘ Discord ile GiriÅŸ Yap / KayÄ±t Ol
           </a>
         </div>
       ` : existingSubmission ? `
         <div class="card" style="background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.3); border-radius:20px; padding:2.5rem; text-align:center;">
-          <div style="font-size:2.5rem; margin-bottom:1rem;">⏳</div>
-          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvurunuz Değerlendirilme Aşamasında!</h2>
+          <div style="font-size:2.5rem; margin-bottom:1rem;">â³</div>
+          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">BaÅŸvurunuz DeÄŸerlendirilme AÅŸamasÄ±nda!</h2>
           <p style="color:var(--muted); max-width:650px; margin:0 auto 1.5rem; line-height:1.6;">
-            Sayın <strong>${_esc(usernameStr)}</strong>, başvurunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde ulaşmıştır.
+            SayÄ±n <strong>${_esc(usernameStr)}</strong>, baÅŸvurunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde ulaÅŸmÄ±ÅŸtÄ±r.
           </p>
           <div style="display:inline-block;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem 1.5rem;text-align:left;font-size:0.9rem;color:var(--muted);">
-            <div>📌 <strong>Durum:</strong> <span style="color:#fbbf24;font-weight:700;">⏳ İNCELENİYOR</span></div>
-            <div>🆔 <strong>ID:</strong> <code>${existingSubmission._id}</code></div>
+            <div>ğŸ“Œ <strong>Durum:</strong> <span style="color:#fbbf24;font-weight:700;">â³ Ä°NCELENÄ°YOR</span></div>
+            <div>ğŸ†” <strong>ID:</strong> <code>${existingSubmission._id}</code></div>
           </div>
         </div>
       ` : `
@@ -7805,8 +7805,8 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         <div id="step-progress" class="card" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">
             ${[
-              ['1','Ön Bilgiler','#818cf8'],
-              ['2','Kişisel','#a78bfa'],
+              ['1','Ã–n Bilgiler','#818cf8'],
+              ['2','KiÅŸisel','#a78bfa'],
               ['3','Teknik','#34d399'],
               ['4','Senaryolar','#fbbf24'],
               ['5','Onaylar','#fb7185']
@@ -7818,35 +7818,24 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               ${i < 4 ? `<div style="flex:1;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;"><div id="step-bar-${n}" style="height:100%;width:0%;background:${color};border-radius:1px;transition:width 0.4s;"></div></div>` : ''}
             `).join('')}
           </div>
-          <div style="font-size:0.8rem;color:var(--muted);">Bölüm <span id="step-current-label">1</span>/5 — <span id="step-name-label" style="color:var(--accent);">Ön Bilgiler</span></div>
+          <div style="font-size:0.8rem;color:var(--muted);">BÃ¶lÃ¼m <span id="step-current-label">1</span>/5 â€” <span id="step-name-label" style="color:var(--accent);">Ã–n Bilgiler</span></div>
         </div>
 
         <form id="event-staff-form" autocomplete="off" style="display:flex;flex-direction:column;gap:1.2rem;">
 
-          <!-- ═══ BÖLÜM 1: ÖN BİLGİLER ═══ -->
+          <!-- â• â• â•  BÃ–LÃœM 1: Ã–N BÄ°LGÄ°LER â• â• â•  -->
           <div id="form-step-1" class="form-step card" style="border-radius:20px;border-left:4px solid #818cf8;">
-            <h3 style="font-size:1.1rem;font-weight:800;color:#818cf8;margin-bottom:0.3rem;">BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER</h3>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz talep edilmektedir.</p>
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="field-label">DISCORD HESABI *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Discord kullanıcı adınız (İsim#etiket şeklinde yazabilirsiniz)</span></label>
-              <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
-              <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
-            </div>
-            <div class="step-nav" style="display:flex;justify-content:flex-end;margin-top:1.5rem;">
-              <button type="button" onclick="nextStep(1)" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
-            </div>
-          </div>
 
-          <!-- ═══ BÖLÜM 2: KİŞİSEL BİLGİLER ═══ -->
+          <!-- â•â•â• BÃ–LÃœM 2: KÄ°ÅÄ°SEL BÄ°LGÄ°LER â•â•â• -->
           <div id="form-step-2" class="form-step card" style="border-radius:20px;border-left:4px solid #a78bfa;display:none;">
-            <h3 style="font-size:1.1rem;font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">BÖLÜM 2 — İSTENİLEN KİŞİSEL BİLGİLER</h3>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Akademik geçmiş, deneyimler ve kişisel tercihleriniz değerlendirilecektir.</p>
+            <h3 style="font-size:1.1rem;font-weight:800;color:#a78bfa;margin-bottom:0.3rem;">BÃ–LÃœM 2 â€” Ä°STENÄ°LEN KÄ°ÅÄ°SEL BÄ°LGÄ°LER</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Akademik geÃ§miÅŸ, deneyimler ve kiÅŸisel tercihleriniz deÄŸerlendirilecektir.</p>
             ${[
-              ['q_p1','1. Bize biraz kendinizden bahseder misiniz?','Kendiniz, ilgi alanlarınız ve yaşınızdan bahsedin...'],
-              ['q_p2','2. Hangi becerilerinizin takım içinde en çok değer taşıdığını düşünüyorsunuz?','Becerilerinizi ve güçlü yönlerinizi detaylandırın...'],
-              ['q_p3','3. Takıma ne gibi özellikler getirebilirsiniz?','Takıma katacağınız değerleri açıklayın...'],
-              ['q_p4','4. Neden Etkinlik Sorumluluğunda görev almak istiyorsunuz?','Motivasyonunuzu ve amacınızı açıklayın...'],
-              ['q_p5','5. Üstlerinizden direktif alma konusunda ne kadar rahatsınız?','Yönergeleri anlama ve uygulama yeteneğinizi açıklayın...']
+              ['q_p1','1. Bize biraz kendinizden bahseder misiniz?','Kendiniz, ilgi alanlarÄ±nÄ±z ve yaÅŸÄ±nÄ±zdan bahsedin...'],
+              ['q_p2','2. Hangi becerilerinizin takÄ±m iÃ§inde en Ã§ok deÄŸer taÅŸÄ±dÄ±ÄŸÄ±nÄ± dÃ¼ÅŸÃ¼nÃ¼yorsunuz?','Becerilerinizi ve gÃ¼Ã§lÃ¼ yÃ¶nlerinizi detaylandÄ±rÄ±n...'],
+              ['q_p3','3. TakÄ±ma ne gibi Ã¶zellikler getirebilirsiniz?','TakÄ±ma katacaÄŸÄ±nÄ±z deÄŸerleri aÃ§Ä±klayÄ±n...'],
+              ['q_p4','4. Neden Etkinlik SorumluluÄŸunda gÃ¶rev almak istiyorsunuz?','Motivasyonunuzu ve amacÄ±nÄ±zÄ± aÃ§Ä±klayÄ±n...'],
+              ['q_p5','5. Ãœstlerinizden direktif alma konusunda ne kadar rahatsÄ±nÄ±z?','YÃ¶nergeleri anlama ve uygulama yeteneÄŸinizi aÃ§Ä±klayÄ±n...']
             ].map(([id, label, ph]) => `
               <div class="form-group" style="margin-bottom:1.2rem;">
                 <label class="field-label">${label} *</label>
@@ -7855,23 +7844,23 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               </div>
             `).join('')}
             <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1rem;">
-              <button type="button" onclick="prevStep(2)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
-              <button type="button" onclick="nextStep(2)" class="btn" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+              <button type="button" onclick="prevStep(2)" class="btn btn-ghost" style="font-size:0.9rem;">â† Ã–nceki</button>
+              <button type="button" onclick="nextStep(2)" class="btn" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki BÃ¶lÃ¼m â†’</button>
             </div>
           </div>
 
-          <!-- ═══ BÖLÜM 3: TEKNİK BİLGİLER ═══ -->
+          <!-- â•â•â• BÃ–LÃœM 3: TEKNÄ°K BÄ°LGÄ°LER â•â•â• -->
           <div id="form-step-3" class="form-step card" style="border-radius:20px;border-left:4px solid #34d399;display:none;">
-            <h3 style="font-size:1.1rem;font-weight:800;color:#34d399;margin-bottom:0.3rem;">BÖLÜM 3 — İSTENİLEN TEKNİK BİLGİLER</h3>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">EkoYıldız topluluk standartlarına uygun teknik ve yönetsel bilgi ölçümü.</p>
+            <h3 style="font-size:1.1rem;font-weight:800;color:#34d399;margin-bottom:0.3rem;">BÃ–LÃœM 3 â€” Ä°STENÄ°LEN TEKNÄ°K BÄ°LGÄ°LER</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">EkoYÄ±ldÄ±z topluluk standartlarÄ±na uygun teknik ve yÃ¶netsel bilgi Ã¶lÃ§Ã¼mÃ¼.</p>
             ${[
-              ['q_t1','1. Etkinlik Sorumlusunun moderasyon ve yönetim kadrosundan farkları nelerdir?','Hangi konularda doğrudan yetkili veya yetkisiz olduğunu açıklayın...'],
-              ['q_t2','2. Etkinlik sırasında tutulması gereken teknik kayıtlar nelerdir?','Log, ekran görüntüsü vs. hangi durumlarda tutulmalıdır...'],
-              ['q_t3','3. Sunucu dışı platformlarda temsil yetkisi ve iletişim dili nasıl belirlenmelidir?','Dış sunucu ve ortak etkinlik alanlarında prosedürler...'],
-              ['q_t4','4. Bir başka yetkilinin kararlarınıza müdahale etmesi durumunda nasıl yönetirsiniz?','Yetki karmaşası durumunda atılacak adımlar...'],
-              ['q_t5','5. Etkinlik kuralları sunucu genel kurallarıyla çeliştiğinde yaklaşımınız ne olur?','Hangi birimlerle koordinasyon kurulmalıdır...'],
-              ['q_t6','6. Adil olmadığı eleştirilen etkinlikte raporlama sürecini nasıl yürütürsünüz?','Raporlama ve iyileştirme adımlarınız...'],
-              ['q_t7','7. Etkinlik Sorumlusunun performansı hangi kriterlerle değerlendirilmelidir?','Ölçülebilir teknik kriterler (akışa uyum, kriz müdahale süresi vs.)...']
+              ['q_t1','1. Etkinlik Sorumlusunun moderasyon ve yÃ¶netim kadrosundan farklarÄ± nelerdir?','Hangi konularda doÄŸrudan yetkili veya yetkisiz olduÄŸunu aÃ§Ä±klayÄ±n...'],
+              ['q_t2','2. Etkinlik sÄ±rasÄ±nda tutulmasÄ± gereken teknik kayÄ±tlar nelerdir?','Log, ekran gÃ¶rÃ¼ntÃ¼sÃ¼ vs. hangi durumlarda tutulmalÄ±dÄ±r...'],
+              ['q_t3','3. Sunucu dÄ±ÅŸÄ± platformlarda temsil yetkisi ve iletiÅŸim dili nasÄ±l belirlenmelidir?','DÄ±ÅŸ sunucu ve ortak etkinlik alanlarÄ±nda prosedÃ¼rler...'],
+              ['q_t4','4. Bir baÅŸka yetkilinin kararlarÄ±nÄ±za mÃ¼dahale etmesi durumunda nasÄ±l yÃ¶netirsiniz?','Yetki karmaÅŸasÄ± durumunda atÄ±lacak adÄ±mlar...'],
+              ['q_t5','5. Etkinlik kurallarÄ± sunucu genel kurallarÄ±yla Ã§eliÅŸtiÄŸinde yaklaÅŸÄ±mÄ±nÄ±z ne olur?','Hangi birimlerle koordinasyon kurulmalÄ±dÄ±r...'],
+              ['q_t6','6. Adil olmadÄ±ÄŸÄ± eleÅŸtirilen etkinlikte raporlama sÃ¼recini nasÄ±l yÃ¼rÃ¼tÃ¼rsÃ¼nÃ¼z?','Raporlama ve iyileÅŸtirme adÄ±mlarÄ±nÄ±z...'],
+              ['q_t7','7. Etkinlik Sorumlusunun performansÄ± hangi kriterlerle deÄŸerlendirilmelidir?','Ã–lÃ§Ã¼lebilir teknik kriterler (akÄ±ÅŸa uyum, kriz mÃ¼dahale sÃ¼resi vs.)...']
             ].map(([id, label, ph]) => `
               <div class="form-group" style="margin-bottom:1.2rem;">
                 <label class="field-label">${label} *</label>
@@ -7880,52 +7869,52 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               </div>
             `).join('')}
 
-            <!-- TEST SORUSU (Çoktan Seçmeli) -->
+            <!-- TEST SORUSU (Ã‡oktan SeÃ§meli) -->
             <div class="form-group" style="margin-bottom:1.2rem;background:rgba(0,0,0,0.25);padding:1.1rem;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-              <label class="field-label">8. (Test) Geçici ses kanallarında karmaşa yaşanmasında öncelikli teknik müdahale nedir? *</label>
+              <label class="field-label">8. (Test) GeÃ§ici ses kanallarÄ±nda karmaÅŸa yaÅŸanmasÄ±nda Ã¶ncelikli teknik mÃ¼dahale nedir? *</label>
               <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="A" required> A) Etkinliği durdurarak tüm kanalları kapatıp sorunu sonra incelemek</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;color:#34d399;font-weight:600;"><input type="radio" name="q_mc8" value="B"> B) Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="C"> C) Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="D"> D) Moderasyon ekibine bildirip hiçbir müdahalede bulunmamak</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="E"> E) Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="A" required> A) EtkinliÄŸi durdurarak tÃ¼m kanallarÄ± kapatÄ±p sorunu sonra incelemek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;color:#34d399;font-weight:600;"><input type="radio" name="q_mc8" value="B"> B) Kanal izinlerini hÄ±zlÄ±ca dÃ¼zenleyerek yalnÄ±zca ilgili rollerin eriÅŸimine izin vermek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="C"> C) Yetkisiz eriÅŸimi olan kullanÄ±cÄ±larÄ± doÄŸrudan etkinlikten Ã§Ä±karmak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="D"> D) Moderasyon ekibine bildirip hiÃ§bir mÃ¼dahalede bulunmamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="radio" name="q_mc8" value="E"> E) KatÄ±lÄ±mcÄ±lardan kanallarÄ± kendi isteÄŸiyle terk etmelerini rica etmek</label>
               </div>
             </div>
 
-            <!-- ÇOKLU SEÇİM -->
+            <!-- Ã‡OKLU SEÃ‡Ä°M -->
             <div class="form-group" style="margin-bottom:1.2rem;background:rgba(0,0,0,0.25);padding:1.1rem;border-radius:14px;border:1px solid rgba(255,255,255,0.06);">
-              <label class="field-label">9. (Çoklu Seçim) Teknik aksaklık ve itiraz durumunda atılması gereken DOĞRU adımlar: *</label>
+              <label class="field-label">9. (Ã‡oklu SeÃ§im) Teknik aksaklÄ±k ve itiraz durumunda atÄ±lmasÄ± gereken DOÄRU adÄ±mlar: *</label>
               <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="explain"> Yaşanan sorunu katılımcılara kısa ve net şekilde açıklamak</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="rules_remind"> Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="argue"> İtiraz eden katılımcılarla tartışmaya girmek</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="coord"> Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak</label>
-                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="abort"> Etkinliği gerekçesiz şekilde sonlandırmak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="explain"> YaÅŸanan sorunu katÄ±lÄ±mcÄ±lara kÄ±sa ve net ÅŸekilde aÃ§Ä±klamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="rules_remind"> Etkinlik kurallarÄ±nÄ± ve akÄ±ÅŸÄ± yazÄ±lÄ± olarak yeniden hatÄ±rlatmak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="argue"> Ä°tiraz eden katÄ±lÄ±mcÄ±larla tartÄ±ÅŸmaya girmek</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="coord"> Gerekli durumlarda yÃ¶netim veya moderasyon ekibiyle koordinasyon saÄŸlamak</label>
+                <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;"><input type="checkbox" name="q_cb9" value="abort"> EtkinliÄŸi gerekÃ§esiz ÅŸekilde sonlandÄ±rmak</label>
               </div>
             </div>
 
             <div class="form-group" style="margin-bottom:0;">
-              <label class="field-label">10. Görev sırasında yetkiyi aşmak ile inisiyatif almak arasındaki farkı açıklayınız. *</label>
-              <textarea id="q_t10" class="input-field track-field" data-field="q_t10" rows="3" required placeholder="EkoYıldız etkinlik yapısı özelinde detaylandırın..."></textarea>
+              <label class="field-label">10. GÃ¶rev sÄ±rasÄ±nda yetkiyi aÅŸmak ile inisiyatif almak arasÄ±ndaki farkÄ± aÃ§Ä±klayÄ±nÄ±z. *</label>
+              <textarea id="q_t10" class="input-field track-field" data-field="q_t10" rows="3" required placeholder="EkoYÄ±ldÄ±z etkinlik yapÄ±sÄ± Ã¶zelinde detaylandÄ±rÄ±n..."></textarea>
               <div class="field-hint" id="hint-q_t10" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
             </div>
             <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1.2rem;">
-              <button type="button" onclick="prevStep(3)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
-              <button type="button" onclick="nextStep(3)" class="btn" style="background:linear-gradient(135deg,#34d399,#059669);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+              <button type="button" onclick="prevStep(3)" class="btn btn-ghost" style="font-size:0.9rem;">â† Ã–nceki</button>
+              <button type="button" onclick="nextStep(3)" class="btn" style="background:linear-gradient(135deg,#34d399,#059669);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki BÃ¶lÃ¼m â†’</button>
             </div>
           </div>
 
-          <!-- ═══ BÖLÜM 4: SENARYO BİLGİLERİ ═══ -->
+          <!-- â•â•â• BÃ–LÃœM 4: SENARYO BÄ°LGÄ°LERÄ° â•â•â• -->
           <div id="form-step-4" class="form-step card" style="border-radius:20px;border-left:4px solid #fbbf24;display:none;">
-            <h3 style="font-size:1.1rem;font-weight:800;color:#fbbf24;margin-bottom:0.3rem;">BÖLÜM 4 — İSTENİLEN SENARYO BİLGİLERİ</h3>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Gerçekleşmesi muhtemel kriz senaryolarına yaklaşımınız.</p>
+            <h3 style="font-size:1.1rem;font-weight:800;color:#fbbf24;margin-bottom:0.3rem;">BÃ–LÃœM 4 â€” Ä°STENÄ°LEN SENARYO BÄ°LGÄ°LERÄ°</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">GerÃ§ekleÅŸmesi muhtemel kriz senaryolarÄ±na yaklaÅŸÄ±mÄ±nÄ±z.</p>
             ${[
-              ['q_s1','Senaryo 1: Büyük ölçekli etkinlik kriz yönetimi & dış iletişim','Katılımcı sayısı aşırı artması, RP bozulması ve yanlış bilgi yayılımı...'],
-              ['q_s2','Senaryo 2: Adaletsizlik iddiaları, teknik kanal sorunları ve itiraz yönetimi','Hangi öncelik sırasıyla adımlar atarsınız...'],
-              ['q_s3','Senaryo 3: Dış topluluklardaki bilgi kirliliği ve topluluk güveni','İletişim adımları, yetki sınırları ve güveni tesis etme stratejiniz...'],
-              ['q_s4','Senaryo 4: Rol akışını kasıtlı bozan oyuncular ve kriz müdahalesi','Hangi müdahaleleri uygular, hangi bilgileri paylaşırsınız...'],
-              ['q_s5','Senaryo 5: Etkinlik sonrası sosyal medya eleştirileri ve log raporlaması','Hangi belge ve logları kullanarak raporlama sağlarsınız...'],
-              ['q_ss','Tekli Senaryo: Sunucu bakımı, kural ihlali ve dış platform eleştirileri','Genel kriz yönetim öncelikleriniz ve adımlarınız...']
+              ['q_s1','Senaryo 1: BÃ¼yÃ¼k Ã¶lÃ§ekli etkinlik kriz yÃ¶netimi & dÄ±ÅŸ iletiÅŸim','KatÄ±lÄ±mcÄ± sayÄ±sÄ± aÅŸÄ±rÄ± artmasÄ±, RP bozulmasÄ± ve yanlÄ±ÅŸ bilgi yayÄ±lÄ±mÄ±...'],
+              ['q_s2','Senaryo 2: Adaletsizlik iddialarÄ±, teknik kanal sorunlarÄ± ve itiraz yÃ¶netimi','Hangi Ã¶ncelik sÄ±rasÄ±yla adÄ±mlar atarsÄ±nÄ±z...'],
+              ['q_s3','Senaryo 3: DÄ±ÅŸ topluluklardaki bilgi kirliliÄŸi ve topluluk gÃ¼veni','Ä°letiÅŸim adÄ±mlarÄ±, yetki sÄ±nÄ±rlarÄ± ve gÃ¼veni tesis etme stratejiniz...'],
+              ['q_s4','Senaryo 4: Rol akÄ±ÅŸÄ±nÄ± kasÄ±tlÄ± bozan oyuncular ve kriz mÃ¼dahalesi','Hangi mÃ¼dahaleleri uygular, hangi bilgileri paylaÅŸÄ±rsÄ±nÄ±z...'],
+              ['q_s5','Senaryo 5: Etkinlik sonrasÄ± sosyal medya eleÅŸtirileri ve log raporlamasÄ±','Hangi belge ve loglarÄ± kullanarak raporlama saÄŸlarsÄ±nÄ±z...'],
+              ['q_ss','Tekli Senaryo: Sunucu bakÄ±mÄ±, kural ihlali ve dÄ±ÅŸ platform eleÅŸtirileri','Genel kriz yÃ¶netim Ã¶ncelikleriniz ve adÄ±mlarÄ±nÄ±z...']
             ].map(([id, label, ph]) => `
               <div class="form-group" style="margin-bottom:1.2rem;">
                 <label class="field-label">${label} *</label>
@@ -7934,46 +7923,46 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               </div>
             `).join('')}
             <div class="step-nav" style="display:flex;justify-content:space-between;margin-top:1rem;">
-              <button type="button" onclick="prevStep(4)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
-              <button type="button" onclick="nextStep(4)" class="btn" style="background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>
+              <button type="button" onclick="prevStep(4)" class="btn btn-ghost" style="font-size:0.9rem;">â† Ã–nceki</button>
+              <button type="button" onclick="nextStep(4)" class="btn" style="background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki BÃ¶lÃ¼m â†’</button>
             </div>
           </div>
 
-          <!-- ═══ BÖLÜM 5: SON BİLGİLER (ONAYLAR) ═══ -->
+          <!-- â•â•â• BÃ–LÃœM 5: SON BÄ°LGÄ°LER (ONAYLAR) â•â•â• -->
           <div id="form-step-5" class="form-step card" style="border-radius:20px;border-left:4px solid #fb7185;display:none;">
-            <h3 style="font-size:1.1rem;font-weight:800;color:#fb7185;margin-bottom:0.3rem;">BÖLÜM 5 — İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR)</h3>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">Başvurunuzu tamamlamak için aşağıdaki zorunlu onayları verin.</p>
+            <h3 style="font-size:1.1rem;font-weight:800;color:#fb7185;margin-bottom:0.3rem;">BÃ–LÃœM 5 â€” Ä°STENÄ°LEN SON BÄ°LGÄ°LER (ZORUNLU ONAYLAR)</h3>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.3rem;">BaÅŸvurunuzu tamamlamak iÃ§in aÅŸaÄŸÄ±daki zorunlu onaylarÄ± verin.</p>
 
             <div class="form-group" style="margin-bottom:1.3rem;">
-              <label class="field-label">1. Yetkilerinizi kötüye kullanırsanız soruşturma altına alınacağınızı kabul ediyor musunuz? *</label>
+              <label class="field-label">1. Yetkilerinizi kÃ¶tÃ¼ye kullanÄ±rsanÄ±z soruÅŸturma altÄ±na alÄ±nacaÄŸÄ±nÄ±zÄ± kabul ediyor musunuz? *</label>
               <div style="display:flex;gap:1.5rem;font-size:0.95rem;color:#fff;margin-top:0.4rem;">
                 <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_abuse" value="EVET" required> Evet, kabul ediyorum.</label>
-                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_abuse" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_abuse" value="HAYIR"> HayÄ±r, kabul etmiyorum.</label>
               </div>
             </div>
 
             <div class="form-group" style="margin-bottom:1.3rem;">
-              <label class="field-label">2. Başka bir çalışana saygısızlık ederseniz yetkililik haklarınızın alınabileceğini kabul ediyor musunuz? *</label>
+              <label class="field-label">2. BaÅŸka bir Ã§alÄ±ÅŸana saygÄ±sÄ±zlÄ±k ederseniz yetkililik haklarÄ±nÄ±zÄ±n alÄ±nabileceÄŸini kabul ediyor musunuz? *</label>
               <div style="display:flex;gap:1.5rem;font-size:0.95rem;color:#fff;margin-top:0.4rem;">
                 <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_respect" value="EVET" required> Evet, kabul ediyorum.</label>
-                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_respect" value="HAYIR"> Hayır, kabul etmiyorum.</label>
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;"><input type="radio" name="opt_respect" value="HAYIR"> HayÄ±r, kabul etmiyorum.</label>
               </div>
             </div>
 
             <div class="form-group" style="margin-bottom:0;">
-              <label class="field-label">3. TALİMATNAME: El kitapçığına uyacağınızı teyit eder misiniz? *</label>
+              <label class="field-label">3. TALÄ°MATNAME: El kitapÃ§Ä±ÄŸÄ±na uyacaÄŸÄ±nÄ±zÄ± teyit eder misiniz? *</label>
               <div style="font-size:0.95rem;color:#34d399;font-weight:600;margin-top:0.4rem;">
                 <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
                   <input type="radio" name="opt_rules" value="EVET" required checked>
-                  Kurallara uyacağım, talimat kitapçığına göre ilerleyeceğim.
+                  Kurallara uyacaÄŸÄ±m, talimat kitapÃ§Ä±ÄŸÄ±na gÃ¶re ilerleyeceÄŸim.
                 </label>
               </div>
             </div>
 
             <div style="margin-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-              <button type="button" onclick="prevStep(5)" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki</button>
+              <button type="button" onclick="prevStep(5)" class="btn btn-ghost" style="font-size:0.9rem;">â† Ã–nceki</button>
               <button type="submit" id="submit-btn" class="btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:1.1rem;padding:0.9rem 2.8rem;border-radius:30px;box-shadow:0 8px 25px rgba(16,185,129,0.4);border:none;cursor:pointer;font-family:inherit;">
-                🚀 Başvuruyu Gönder
+                ğŸš€ BaÅŸvuruyu GÃ¶nder
               </button>
             </div>
           </div>
@@ -7981,10 +7970,10 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         </form>
 
         <script>
-          // ─── DAVRANIŞSAL TAKİP SİSTEMİ ───────────────────────────
+          // â”€â”€â”€ DAVRANIÅSAL TAKÄ°P SÄ°STEMÄ° â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           const _beh = {};  // { fieldId: { type, typed_chars, paste_count, focus_time_ms, idle_events, last_char_at } }
           let _currentStep = 1;
-          const STEP_NAMES = {1:'Ön Bilgiler',2:'Kişisel Bilgiler',3:'Teknik Bilgiler',4:'Senaryo Bilgileri',5:'Son Bilgiler (Onaylar)'};
+          const STEP_NAMES = {1:'Ã–n Bilgiler',2:'KiÅŸisel Bilgiler',3:'Teknik Bilgiler',4:'Senaryo Bilgileri',5:'Son Bilgiler (Onaylar)'};
 
           function _initTracking() {
             document.querySelectorAll('.track-field').forEach(el => {
@@ -8020,12 +8009,12 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
             const parts = [];
             const len = (el.value || '').length;
             if (len > 0) {
-              if (b.paste_count > 0) parts.push('📋 Yapıştırıldı');
-              else parts.push('✍️ Yazıldı');
+              if (b.paste_count > 0) parts.push('ğŸ“‹ YapÄ±ÅŸtÄ±rÄ±ldÄ±');
+              else parts.push('âœï¸ YazÄ±ldÄ±');
             }
-            if (b.idle_events > 1) parts.push('⏸️ Bekleme var');
+            if (b.idle_events > 1) parts.push('â¸ï¸ Bekleme var');
             if (len > 0) parts.push(len + ' karakter');
-            hint.textContent = parts.join(' • ');
+            hint.textContent = parts.join(' â€¢ ');
             hint.style.color = b.paste_count > 0 ? '#fbbf24' : 'var(--muted)';
           }
 
@@ -8035,11 +8024,11 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               const el = document.querySelector('[data-field="' + fid + '"]');
               const len = el ? (el.value || '').length : 0;
               let type = 'bilinmiyor';
-              if (len === 0) { type = 'boş'; }
-              else if (b.paste_count > 0 && b.typed_chars < 5) { type = 'kopyala-yapıştır'; }
-              else if (b.paste_count > 0) { type = 'yapıştır + düzenleme'; }
-              else if (b.idle_events >= 3) { type = 'yazdı (uzun bekleme)'; }
-              else { type = 'yazdı'; }
+              if (len === 0) { type = 'boÅŸ'; }
+              else if (b.paste_count > 0 && b.typed_chars < 5) { type = 'kopyala-yapÄ±ÅŸtÄ±r'; }
+              else if (b.paste_count > 0) { type = 'yapÄ±ÅŸtÄ±r + dÃ¼zenleme'; }
+              else if (b.idle_events >= 3) { type = 'yazdÄ± (uzun bekleme)'; }
+              else { type = 'yazdÄ±'; }
               result[fid] = {
                 type,
                 chars: len,
@@ -8052,13 +8041,13 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
             return result;
           }
 
-          // ─── STEP NAVİGASYONU ───────────────────────────────────
+          // â”€â”€â”€ STEP NAVÄ°GASYONU â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           function nextStep(current) {
             const step = document.getElementById('form-step-' + current);
             const fields = step.querySelectorAll('[required]');
             let valid = true;
             fields.forEach(f => { if (!f.value.trim() && !f.checked) { f.style.borderColor = '#fb7185'; valid = false; } else { f.style.borderColor = ''; } });
-            if (!valid) { showToast('⚠️ Lütfen tüm zorunlu alanları doldurun.', 'error'); return; }
+            if (!valid) { showToast('âš ï¸ LÃ¼tfen tÃ¼m zorunlu alanlarÄ± doldurun.', 'error'); return; }
 
             step.style.display = 'none';
             _currentStep = current + 1;
@@ -8091,12 +8080,12 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
             if (curEl) curEl.textContent = _currentStep;
           }
 
-          // ─── FORM GÖNDERİM ──────────────────────────────────────
+          // â”€â”€â”€ FORM GÃ–NDERÄ°M â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           document.getElementById('event-staff-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
             btn.disabled = true;
-            btn.innerHTML = '⏳ Gönderiliyor...';
+            btn.innerHTML = 'â³ GÃ¶nderiliyor...';
 
             const cb9 = Array.from(document.querySelectorAll('input[name="q_cb9"]:checked')).map(c => c.value);
 
@@ -8114,17 +8103,17 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
               const res = await fetch('/api/forms/event-staff/submit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
               const data = await res.json();
               if (data && data.success) {
-                showToast('✅ Başvurunuz başarıyla alındı!', 'success');
+                showToast('âœ… BaÅŸvurunuz baÅŸarÄ±yla alÄ±ndÄ±!', 'success');
                 setTimeout(() => window.location.reload(), 1500);
               } else {
-                showToast('❌ ' + (data.error || 'Başvuru gönderilemedi'), 'error');
+                showToast('âŒ ' + (data.error || 'BaÅŸvuru gÃ¶nderilemedi'), 'error');
                 btn.disabled = false;
-                btn.innerHTML = '🚀 Başvuruyu Gönder';
+                btn.innerHTML = 'ğŸš€ BaÅŸvuruyu GÃ¶nder';
               }
             } catch (err) {
-              showToast('❌ Bağlantı hatası yaşandı.', 'error');
+              showToast('âŒ BaÄŸlantÄ± hatasÄ± yaÅŸandÄ±.', 'error');
               btn.disabled = false;
-              btn.innerHTML = '🚀 Başvuruyu Gönder';
+              btn.innerHTML = 'ğŸš€ BaÅŸvuruyu GÃ¶nder';
             }
           });
 
@@ -8135,7 +8124,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
     </div>
   `;
 
-  return _layout('Etkinlik Yetkilisi Başvuru Formu', currentUser, content, '', '/forms');
+  return _layout('Etkinlik Yetkilisi BaÅŸvuru Formu', currentUser, content, '', '/forms');
 }
 
 
@@ -8143,374 +8132,21 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form') {
   const content = `
     <div style="max-width:720px; margin:4rem auto; text-align:center; animation:fadeUp 0.5s ease;">
       <div class="card" style="background:rgba(251,113,133,0.06); border:1px solid rgba(251,113,133,0.25); border-radius:24px; padding:3.5rem 2.5rem;">
-        <div style="font-size:4rem; margin-bottom:1.5rem; opacity:0.85;">🔒</div>
-        <h1 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:0.8rem;">${_esc(formName)} Şu An Kapalı</h1>
+        <div style="font-size:4rem; margin-bottom:1.5rem; opacity:0.85;">ğŸ”’</div>
+        <h1 style="font-size:2rem; font-weight:800; color:#fff; margin-bottom:0.8rem;">${_esc(formName)} Åu An KapalÄ±</h1>
         <p style="color:var(--muted); font-size:1.05rem; line-height:1.7; max-width:500px; margin:0 auto 2rem;">
-          Başvurular şu anda alınmamaktadır. Yeni bir alım dönemi açıldığında duyurulacaktır.
+          BaÅŸvurular ÅŸu anda alÄ±nmamaktadÄ±r. Yeni bir alÄ±m dÃ¶nemi aÃ§Ä±ldÄ±ÄŸÄ±nda duyurulacaktÄ±r.
         </p>
         <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-          <a href="/forms" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-weight:700; padding:0.75rem 1.8rem; border-radius:24px;">← Tüm Formlar</a>
+          <a href="/forms" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1); color:#fff; font-weight:700; padding:0.75rem 1.8rem; border-radius:24px;">â† TÃ¼m Formlar</a>
           <a href="/dashboard" class="btn btn-ghost" style="padding:0.75rem 1.8rem; border-radius:24px;">Ana Sayfa</a>
         </div>
       </div>
     </div>
   `;
-  return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
+  return _layout(formName + ' â€” KapalÄ±', currentUser, content, '', '/forms');
 }
 
-  const content = `
-    <div style="max-width:960px; margin:1.5rem auto; animation:fadeUp 0.5s ease;">
-      
-      <!-- FORM BANNER HEADER IMAGE -->
-      <div style="width:100%; border-radius:24px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:1.5rem; box-shadow:0 12px 35px rgba(0,0,0,0.5);">
-        <img src="https://docs.google.com/forms-images-rt/AI1Qifi6RTS6PDzvi6a0bY9erFb8VZ8H7zBQ3lbq0WpKc8I-prOFObR_0yZwd1vgSry6L_ldDqBEIrBad_uCrsTOKTvA-LQuYCjCHd0Glpd219NaL7YzX3RYZynprJMAzfcbQI8EX-0i4g7ulIaeuk9FxXV6ttl0w3mZKGoBUz2xtvvjZEWhXRKRD8FcRb3vYtDb5g7OLWORbWwkJQ89YfAaLg7i5cOIB13cq_pWVmY=w1920" style="width:100%; display:block; max-height:280px; object-fit:cover;">
-      </div>
-
-      <!-- FORM HEADER TITLE CARD -->
-      <div class="card" style="background:rgba(20,20,35,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:2rem; backdrop-filter:blur(20px); margin-bottom:1.5rem; border-top:4px solid #34d399;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <div style="color:#34d399; font-size:0.85rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;">✳️ ETKİNLİK YETKİLİSİ ALIM FORMU</div>
-            <h1 style="font-size:1.8rem; font-weight:800; color:#fff;">Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu</h1>
-          </div>
-          <a href="/forms" class="btn btn-sm btn-ghost">← Tüm Formlara Dön</a>
-        </div>
-      </div>
-
-      ${!isLoggedIn ? `
-        <!-- LOGIN REQUIRED BANNER -->
-        <div class="card" style="background:rgba(251,113,133,0.1); border:1px solid rgba(251,113,133,0.3); border-radius:20px; padding:2.5rem; text-align:center; margin-bottom:2rem;">
-          <div style="font-size:2.5rem; margin-bottom:1rem;">🔒</div>
-          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
-          <p style="color:var(--muted); max-width:600px; margin:0 auto 1.5rem; line-height:1.6;">
-            Etkinlik Yetkilisi başvuru formunu doldurabilmek için öncelikle Discord hesabınızla web portalına giriş yapmanız veya kayıt olmanız gerekmektedir.
-          </p>
-          <a href="/login?redirect=/forms/event-staff" class="btn" style="background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; font-weight:800; padding:0.8rem 2rem; border-radius:30px; font-size:1.05rem; display:inline-block; box-shadow:0 6px 20px rgba(244,63,94,0.4);">
-            🔑 Discord ile Giriş Yap / Kayıt Ol
-          </a>
-        </div>
-      ` : existingSubmission ? `
-        <!-- ALREADY SUBMITTED BANNER -->
-        <div class="card" style="background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.3); border-radius:20px; padding:2.5rem; text-align:center; margin-bottom:2rem;">
-          <div style="font-size:2.5rem; margin-bottom:1rem;">⏳</div>
-          <h2 style="font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">Başvurunuz Değerlendirilme Aşamasında!</h2>
-          <p style="color:var(--muted); max-width:650px; margin:0 auto 1.5rem; line-height:1.6;">
-            Sayın <strong>${_esc(usernameStr)}</strong>, Etkinlik Yetkilisi başvuru formunuz <strong>${new Date(existingSubmission.createdAt).toLocaleString('tr-TR')}</strong> tarihinde tarafımıza ulaşmıştır. 
-            Başvurunuz yetkili komite tarafından incelenmektedir.
-          </p>
-          <div style="display:inline-block; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:1rem 1.5rem; text-align:left; font-size:0.9rem; color:var(--muted);">
-            <div>📌 <strong>Başvuru Durumu:</strong> <span style="color:#fbbf24; font-weight:700;">⏳ İNCELENİYOR (PENDING)</span></div>
-            <div>🆔 <strong>Başvuru ID:</strong> <code>${existingSubmission._id}</code></div>
-          </div>
-        </div>
-      ` : `
-
-        <!-- DOCUMENTATION & RULES INFO SECTION -->
-        <div class="card" style="margin-bottom:1.5rem; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:20px; padding:1.8rem;">
-          <h3 style="font-size:1.2rem; font-weight:800; color:var(--accent); margin-bottom:1rem;">📖 FORMUN AMACI, SÜRECİ VE KURALLARI</h3>
-
-          <div style="display:flex; flex-direction:column; gap:1rem; font-size:0.92rem; color:var(--muted); line-height:1.7;">
-            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #818cf8; padding:1rem 1.2rem; border-radius:0 12px 12px 0;">
-              <strong style="color:#fff;">BİRİNCİL ALIM FORMU:</strong> Birincil değerlendirme formumuz, adayların başvuru sürecinde ilk adımı attıkları ve başvurularının ön değerlendirmesinin yapıldığı önemli bir belgedir. Bu form, "Etkinlik Sorumlusu" pozisyonuna başvuran adayların ilk değerlendirmeye tabi tutulduğu bir araçtır.
-            </div>
-
-            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #34d399; padding:1rem 1.2rem; border-radius:0 12px 12px 0;">
-              <strong style="color:#fff;">ÖN ALIMLAR MÜLAKATI:</strong> Başvurduğunuz departmanı harici olarak yöneten komite, sizinle iletişime geçecektir. Regülasyon Komitesi, size özel hazırlanmış soruları yanıtlamanızı isteyecektir. Yalnızca Etkinlik Organizatörü'nün onayını alırsanız, departmana katılma hakkına sahip olacaksınız.
-            </div>
-
-            <div style="background:rgba(255,255,255,0.02); border-left:3px solid #fbbf24; padding:1rem 1.2rem; border-radius:0 12px 12px 0; font-size:0.88rem;">
-              <strong style="color:#fff;">📌 ÖNEMLİ FORM KURALLARI:</strong><br>
-              • Başvuru formunu sadece bir kez göndermelisiniz. Birden fazla gönderilen başvurular değerlendirilmeyecektir.<br>
-              • Form doldururken dil bilgisi ve imla kurallarına tam uyum gösteriniz.<br>
-              • Trolleme veya toksik başvurularda bulunan kişiler EkoYıldız tarafından kara listeye alınacaktır.<br>
-              • Başvuru cevaplarının özgün olması zorunludur. Yapay zekâ (AI) veya başkasından kopyalanmış içerikler tespit edildiğinde başvuru kalıcı olarak reddedilir.<br>
-              • Formda 25 soru mevcut olup, istenilen tüm alanların eksiksiz doldurulması zorunludur.
-            </div>
-          </div>
-        </div>
-
-        <!-- APPLICATION FORM CONTAINER -->
-        <form id="event-staff-form" onsubmit="handleFormSubmit(event)" style="display:flex; flex-direction:column; gap:1.5rem;">
-
-          <!-- 1. İSTENİLEN ÖN BİLGİLER -->
-          <div class="card" style="border-radius:20px; border-left:4px solid #818cf8;">
-            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN ÖN BİLGİLER・</h3>
-            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
-              Başvuru formunun ilk bölümünde, kimliğinizin doğrulanabilmesi için temel ön bilgileriniz talep edilmektedir.
-            </p>
-
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">DISCORD HESABI *</label>
-              <div style="font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem;">DISCORD hesabınızın kullanıcı adı nedir? İsim#(etiket) şeklinde yazabilirsiniz.</div>
-              <input type="text" id="q_discord_username" class="input-field" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
-            </div>
-          </div>
-
-          <!-- 2. İSTENİLEN KİŞİSEL BİLGİLER -->
-          <div class="card" style="border-radius:20px; border-left:4px solid #a78bfa;">
-            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN KİŞİSEL BİLGİLER・</h3>
-            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
-              Sunduğunuz akademik geçmiş, deneyimler ve kişisel tercihler EkoYıldız Yetkili Ekipleri tarafından değerlendirilecektir.
-            </p>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">1. Bize biraz kendinizden bahseder misiniz? *</label>
-              <textarea id="q_personal_1" class="input-field" rows="3" required placeholder="Kendiniz, ilgi alanlarınız ve yaşınızdan bahsedin..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">2. Hangi becerilerinizin takım içinde en çok değer taşıdığını düşünüyorsunuz? *</label>
-              <textarea id="q_personal_2" class="input-field" rows="3" required placeholder="Becerilerinizi ve güçlü yönlerinizi detaylandırın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">3. Takıma ne gibi özellikler getirebilirsiniz? *</label>
-              <textarea id="q_personal_3" class="input-field" rows="3" required placeholder="Takıma katacağınız değerleri açıklayın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">4. Neden Etkinlik Sorumluluğu'nda görev almak istediğinizi açıklar mısınız? *</label>
-              <textarea id="q_personal_4" class="input-field" rows="3" required placeholder="Etkinlik Yetkililiğinde çalışmanın sizin için anlamı nedir?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">5. Üstlerinizden direktif alma konusunda ne kadar rahat hissedersiniz? *</label>
-              <textarea id="q_personal_5" class="input-field" rows="3" required placeholder="Yönergeleri anlama, uygulama ve adapte etme yeteneğinizi açıklayın..."></textarea>
-            </div>
-          </div>
-
-          <!-- 3. İSTENİLEN TEKNİK BİLGİLER -->
-          <div class="card" style="border-radius:20px; border-left:4px solid #34d399;">
-            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN TEKNİK BİLGİLER・</h3>
-            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
-              EkoYıldız topluluk standartlarına uygun teknik ve yönetsel bilgi ölçümü.
-            </p>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">1. Etkinlik Sorumlusunun, moderasyon ve yönetim kadrosundan farkları nelerdir? *</label>
-              <textarea id="q_tech_1" class="input-field" rows="3" required placeholder="Hangi konularda doğrudan yetkili, hangi konularda yetkisiz olduğunu teknik açıdan açıklayın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">2. Etkinlik sırasında tutulması gereken teknik kayıtlar (log, ekran görüntüsü vb.) nelerdir? *</label>
-              <textarea id="q_tech_2" class="input-field" rows="3" required placeholder="Bu kayıtlar hangi durumlarda tutulmalı ve kullanılmalıdır?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">3. Sunucu dışı platformlarda temsil yetkisi ve iletişim dili nasıl belirlenmelidir? *</label>
-              <textarea id="q_tech_3" class="input-field" rows="3" required placeholder="Dış sunucu ve ortak etkinlik alanlarında temsil prosedürlerini açıklayın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">4. Bir başka yetkilinin kararlarınıza açıkça müdahale etmesi durumunu nasıl yönetirsiniz? *</label>
-              <textarea id="q_tech_4" class="input-field" rows="3" required placeholder="Yetki karmaşası durumunda atılacak adımları açıklayın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">5. Etkinlik kurallarının sunucu genel kurallarıyla çeliştiği iddiasında yaklaşımınız ne olmalıdır? *</label>
-              <textarea id="q_tech_5" class="input-field" rows="3" required placeholder="Hangi birimlerle koordinasyon kurulmalıdır?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">6. Etkinliğin adil olmadığı eleştirilerine karşı geri bildirim ve teknik raporlama sürecini nasıl yürütürsünüz? *</label>
-              <textarea id="q_tech_6" class="input-field" rows="3" required placeholder="Raporlama ve iyileştirme adımlarını açıklayın..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">7. Etkinlik Sorumlusunun performansı hangi ölçülebilir teknik kriterler üzerinden değerlendirilmelidir? *</label>
-              <textarea id="q_tech_7" class="input-field" rows="3" required placeholder="Örn: Akışa uyum, kriz müdahale süresi, iletişim netliği..."></textarea>
-            </div>
-
-            <!-- MULTIPLE CHOICE QUESTION -->
-            <div class="form-group" style="margin-bottom:1.5rem; background:rgba(0,0,0,0.25); padding:1.2rem; border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.6rem;">8. (Test Sorusu) Geçici ses kanallarında karmaşa yaşanması durumunda öncelikli teknik müdahale nedir? *</label>
-              <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; color:var(--muted);">
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="A" required> A) Etkinliği durdurarak tüm kanalları kapatmak ve sorunu daha sonra incelemek</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; color:#34d399; font-weight:600;"><input type="radio" name="q_tech_8_mc" value="B"> B) Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="C"> C) Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="D"> D) Moderasyon ekibine durumu bildirip hiçbir müdahalede bulunmamak</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="radio" name="q_tech_8_mc" value="E"> E) Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek</label>
-              </div>
-            </div>
-
-            <!-- CHECKBOXES QUESTION -->
-            <div class="form-group" style="margin-bottom:1.5rem; background:rgba(0,0,0,0.25); padding:1.2rem; border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.6rem;">9. (Çoklu Seçim) Teknik aksaklık ve itiraz durumunda atılması gereken DOĞRU adımları seçiniz: *</label>
-              <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.9rem; color:var(--muted);">
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="explain"> Yaşanan teknik sorunu katılımcılara kısa ve net şekilde açıklamak</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="rules_remind"> Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="argue"> İtiraz eden katılımcılarla tartışmaya girmek</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="coord"> Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak</label>
-                <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;"><input type="checkbox" name="q_tech_9_cb" value="abort"> Etkinliği gerekçesiz şekilde sonlandırmak</label>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">10. Görev sırasında yetkisini aşması ile inisiyatif alması arasındaki farkı açıklayınız? *</label>
-              <textarea id="q_tech_10" class="input-field" rows="3" required placeholder="EkoYıldız etkinlik yapısı özelinde detaylandırın..."></textarea>
-            </div>
-          </div>
-
-          <!-- 4. İSTENİLEN SENARYO BİLGİLERİ -->
-          <div class="card" style="border-radius:20px; border-left:4px solid #fbbf24;">
-            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN SENARYO BİLGİLERİ・</h3>
-            <p style="font-size:0.88rem; color:var(--muted); margin-bottom:1.2rem;">
-              Gerçekleşmesi muhtemel organizasyon odaklı kriz senaryolarına yaklaşımınız.
-            </p>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 1: Büyük ölçekli etkinlik kriz yönetimi & dış iletişim *</label>
-              <textarea id="q_scenario_1" class="input-field" rows="3" required placeholder="Katılımcı sayısının aşırı artması, RP bozulması ve yanlış bilgi yayılımına karşı stratejileriniz..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 2: Adaletsizlik iddiaları, teknik kanal sorunları ve itiraz yönetimi *</label>
-              <textarea id="q_scenario_2" class="input-field" rows="3" required placeholder="Hangi öncelik sırasıyla adımlar atarsınız?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 3: Dış topluluklardaki bilgi kirliliği ve topluluk güveni *</label>
-              <textarea id="q_scenario_3" class="input-field" rows="3" required placeholder="İletişim adımları, yetki sınırları ve topluluk güvenini tesis etme stratejiniz..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 4: Rol akışını kasıtlı bozan oyuncular ve kriz müdahalesi *</label>
-              <textarea id="q_scenario_4" class="input-field" rows="3" required placeholder="Hangi müdahaleleri uygular, hangi bilgileri paylaşırsınız?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Senaryo 5: Etkinlik sonrası sosyal medya eleştirileri ve log raporlaması *</label>
-              <textarea id="q_scenario_5" class="input-field" rows="3" required placeholder="Hangi belge ve logları kullanarak raporlama sağlarsınız?"></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.4rem;">Tekli Senaryo: Sunucu bakımı, kural ihlali ve dış platform eleştirileri *</label>
-              <textarea id="q_scenario_single" class="input-field" rows="4" required placeholder="Genel kriz yönetim öncelikleriniz ve adımlarınız..."></textarea>
-            </div>
-          </div>
-
-          <!-- 5. İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR) -->
-          <div class="card" style="border-radius:20px; border-left:4px solid #fb7185;">
-            <h3 style="font-size:1.2rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">・İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR)・</h3>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
-                1. Yetkilerinizi kötüye kullanırsanız sorumluluk haklarınızın alınabileceğini ve soruşturma altına olacağınızı kabul ediyor musunuz? *
-              </label>
-              <div style="display:flex; gap:1.5rem; font-size:0.95rem; color:#fff;">
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_abuse" value="EVET" required> Evet, kabul ediyorum.</label>
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_abuse" value="HAYIR"> Hayır, kabul etmiyorum.</label>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:1.2rem;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
-                2. Başka bir çalışana saygısızlık ederseniz yetkililik haklarınızın elinizden alınabileceğini kabul ediyor musunuz? *
-              </label>
-              <div style="display:flex; gap:1.5rem; font-size:0.95rem; color:#fff;">
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_respect" value="EVET" required> Evet, kabul ediyorum.</label>
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;"><input type="radio" name="opt_respect" value="HAYIR"> Hayır, kabul etmiyorum.</label>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-              <label style="display:block; font-weight:700; color:#fff; margin-bottom:0.5rem;">
-                3. TALİMATNAME: Yetkilendirme kuralları gereğince el kitapçığına uyacağınızı teyit eder misiniz? *
-              </label>
-              <div style="font-size:0.95rem; color:#34d399; font-weight:600;">
-                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
-                  <input type="radio" name="opt_rules" value="EVET" required checked> 
-                  Kurallara uyacağım, Talimat kitapçığına göre ilerleyecek ve vazifemi yerine getireceğim.
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- SUBMIT BUTTON -->
-          <div style="text-align:center; margin-top:1rem;">
-            <button type="submit" id="submit-btn" class="btn" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-weight:800; font-size:1.15rem; padding:1rem 3rem; border-radius:30px; box-shadow:0 8px 25px rgba(16,185,129,0.4); border:none; cursor:pointer; font-family:inherit; transition:transform 0.2s;">
-              🚀 Başvuru Formunu Gönder
-            </button>
-          </div>
-
-        </form>
-
-        <script>
-          async function handleFormSubmit(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Gönderiliyor...';
-
-            const checkboxes = Array.from(document.querySelectorAll('input[name="q_tech_9_cb"]:checked')).map(c => c.value);
-
-            const payload = {
-              formType: 'event_staff',
-              discordUsername: document.getElementById('q_discord_username').value.trim(),
-              personal: {
-                q1: document.getElementById('q_personal_1').value.trim(),
-                q2: document.getElementById('q_personal_2').value.trim(),
-                q3: document.getElementById('q_personal_3').value.trim(),
-                q4: document.getElementById('q_personal_4').value.trim(),
-                q5: document.getElementById('q_personal_5').value.trim()
-              },
-              technical: {
-                q1: document.getElementById('q_tech_1').value.trim(),
-                q2: document.getElementById('q_tech_2').value.trim(),
-                q3: document.getElementById('q_tech_3').value.trim(),
-                q4: document.getElementById('q_tech_4').value.trim(),
-                q5: document.getElementById('q_tech_5').value.trim(),
-                q6: document.getElementById('q_tech_6').value.trim(),
-                q7: document.getElementById('q_tech_7').value.trim(),
-                mc8: document.querySelector('input[name="q_tech_8_mc"]:checked')?.value || '',
-                cb9: checkboxes,
-                q10: document.getElementById('q_tech_10').value.trim()
-              },
-              scenarios: {
-                s1: document.getElementById('q_scenario_1').value.trim(),
-                s2: document.getElementById('q_scenario_2').value.trim(),
-                s3: document.getElementById('q_scenario_3').value.trim(),
-                s4: document.getElementById('q_scenario_4').value.trim(),
-                s5: document.getElementById('q_scenario_5').value.trim(),
-                single: document.getElementById('q_scenario_single').value.trim()
-              },
-              confirmations: {
-                abuse: document.querySelector('input[name="opt_abuse"]:checked')?.value || '',
-                respect: document.querySelector('input[name="opt_respect"]:checked')?.value || '',
-                rules: document.querySelector('input[name="opt_rules"]:checked')?.value || ''
-              }
-            };
-
-            try {
-              const res = await fetch('/api/forms/event-staff/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-
-              const data = await res.json();
-              if (data && data.success) {
-                showToast('✅ Başvurunuz başarıyla alındı!', 'success');
-                setTimeout(() => window.location.reload(), 1500);
-              } else {
-                showToast('❌ Error: ' + (data.error || 'Başvuru gönderilemedi'), 'error');
-                btn.disabled = false;
-                btn.innerHTML = '🚀 Başvuru Formunu Gönder';
-              }
-            } catch (err) {
-              showToast('❌ Bağlantı hatası yaşandı.', 'error');
-              btn.disabled = false;
-              btn.innerHTML = '🚀 Başvuru Formunu Gönder';
-            }
-          }
-        </script>
-      `}
-
-    </div>
-  `;
-
-  return _layout('Etkinlik Yetkilisi Başvuru Formu', currentUser, content, '', '/forms');
-}
 module.exports = {
   renderMainPage,
   renderLoginPage,
