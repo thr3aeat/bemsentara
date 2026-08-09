@@ -4187,7 +4187,7 @@ function renderAdminPage(user) {
 
           box.innerHTML = filtered.map(s => {
             const dateStr = s.createdAt ? new Date(s.createdAt).toLocaleString('tr-TR') : '—';
-            return '<div onclick="openSubModal(\'' + subEsc(s._id) + '\')" style="cursor:pointer;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.025)\'">' +
+            return '<div onclick="openSubModal(this.dataset.id)" data-id="' + subEsc(s._id) + '" style="cursor:pointer;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.025)\'">' +
               '<div style="display:flex;align-items:center;gap:1rem;">' +
                 '<div style="width:40px;height:40px;border-radius:12px;background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📋</div>' +
                 '<div>' +
