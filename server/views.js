@@ -1622,22 +1622,24 @@ function renderLoginPage(errorMsg = null) {
           const btn = document.getElementById('btn-request');
           btn.disabled = true; btn.innerText = "Kontrol Ediliyor...";
           try {
-            const res = await fetch('/api/auth/request-code', {
+            const res = await fetch('/auth/send-discord-dm-code', {
               method: 'POST', headers:{'Content-Type':'application/json'},
               body: JSON.stringify({ username })
             });
             const data = await res.json();
             if(data.success) {
-              document.getElementById('otp-resolved-id').value = data.discordId;
+              document.getElementById('otp-resolved-id').value = data.targetId || data.discordId || username;
               document.getElementById('otp-step-1').style.display = 'none';
               document.getElementById('otp-step-2').style.display = 'block';
-            } else if (data.isNewUser) {
-              // NO POPUP ALERT! Smoothly start interactive registration wizard
+            } else if (data.isNewUser || res.status === 404) {
+              // HİÇBİR UYARI/ALERT POPUP GÖSTERMEDEN DOĞRUDAN ADIM ADIM KAYIT WIZARDINA AKTAR
               startRegisterWizard(username);
             } else {
               showError(data.error || "Giriş hatası.");
             }
-          } catch(e) { showError("Bağlantı hatası."); }
+          } catch(e) { 
+            startRegisterWizard(username);
+          }
           btn.disabled = false; btn.innerText = "Kod Gönder";
         }
 

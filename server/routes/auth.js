@@ -308,7 +308,7 @@ router.post("/auth/send-discord-dm-code", async (req, res) => {
     }
 
     if (!discordUser) {
-      return res.status(404).json({ error: "Discord kullanıcısı bulunamadı." });
+      return res.json({ success: false, isNewUser: true, username: username, error: "Discord kullanıcısı bulunamadı." });
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
