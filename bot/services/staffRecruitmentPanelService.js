@@ -4,6 +4,7 @@
  */
 
 const { BASE_URL } = require("../../config");
+const ComponentsV2Factory = require("../utils/componentsV2Factory");
 
 const RECRUITMENT_CHANNEL_ID = "1535967551874670693";
 const RECRUITMENT_GUILD_ID = "1367646464804655104";
@@ -14,15 +15,15 @@ const BADGE_KAPALI = "<:k1:1535976282947453009><:k2:1535976281479319583><:k3:153
 
 const BANNER_IMAGE_URL = "https://i.imgur.com/bSVh4Rl.png";
 
+const RESOLVED_BASE_URL = BASE_URL || "https://ekoyildiz.duckdns.org";
+
 /**
  * Components V2 ile Yetkili Formları paneli — görseldeki gibi:
  * Üstte banner görseli, altında başvuru listesi ve durumlar.
  */
 function getRecruitmentPanelPayload() {
-  const formsUrl      = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms`;
-  const eventStaffUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/forms/event-staff`;
-
-  const ComponentsV2Factory = require('../utils/componentsV2Factory');
+  const formsUrl      = `${RESOLVED_BASE_URL}/forms`;
+  const eventStaffUrl = `${RESOLVED_BASE_URL}/forms/event-staff`;
 
   return {
     flags: ComponentsV2Factory.FLAGS,
@@ -32,35 +33,34 @@ function getRecruitmentPanelPayload() {
         ComponentsV2Factory.mediaGallery([BANNER_IMAGE_URL]),
         ComponentsV2Factory.separator(false),
 
-        // Başlık satırı — görseldeki "│ Yetkili Formları │" tarzı
-        ComponentsV2Factory.section(
-         //buraya banner gelecek
-          '**EkoYıldız Yetkili Ekibi Başvuruları**'
+        // Başlık satırı — görseldeki gibi büyük punto
+        ComponentsV2Factory.text(
+          '## EkoYıldız Yetkili Ekibi Başvuruları'
         ),
 
         ComponentsV2Factory.separator(false),
 
         // Discord Moderasyon Takımı
-        ComponentsV2Factory.section(
-          `• <:mod:1535976277654249562> **[ Discord Moderasyon Takımı ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
+        ComponentsV2Factory.text(
+          `• <:mod:1535976277654249562> [**[ Discord Moderasyon Takımı ]**](${formsUrl}) başvuru formu için [tıklayın](${formsUrl}).\n` +
           `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
         ),
 
         // Oyun Moderasyon Takımı
-        ComponentsV2Factory.section(
-          `• 🗡️ **[ Oyun Moderasyon Takımı ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
+        ComponentsV2Factory.text(
+          `• 🗡️ [**[ Oyun Moderasyon Takımı ]**](${formsUrl}) başvuru formu için [tıklayın](${formsUrl}).\n` +
           `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
         ),
 
         // Etkinlik Yetkilisi — AÇIK
-        ComponentsV2Factory.section(
-          `• <:etkinlik:1535976275317891194> **[ Etkinlik Yetkilisi ]** başvuru formu için [tıklayın](${eventStaffUrl}).\n` +
+        ComponentsV2Factory.text(
+          `• <:etkinlik:1535976275317891194> [**[ Etkinlik Yetkilisi ]**](${eventStaffUrl}) başvuru formu için [tıklayın](${eventStaffUrl}).\n` +
           `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
         // Topluluk Elçiliği
-        ComponentsV2Factory.section(
-          `• ⚜️ **[ Topluluk Elçiliği ]** başvuru formu için [tıklayın](${formsUrl}).\n` +
+        ComponentsV2Factory.text(
+          `• ✨ [**[ Topluluk Elçiliği ]**](${formsUrl}) başvuru formu için [tıklayın](${formsUrl}).\n` +
           `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
         ),
 
@@ -75,7 +75,11 @@ function getRecruitmentPanelPayload() {
 }
 
 /**
- * Ensures the recruitment panel message exists in channel 1535967551874670693
+ * Ensures the recruitment panel message exists in channel 1535967551874670693.
+ * Discord, bir mesajın IS_COMPONENTS_V2 flag'ini gönderildikten sonra edit ile
+ * değiştirmenize izin vermez. Eski mesaj bu flag olmadan gönderilmişse (ör. eski
+ * embed tabanlı panel), edit() 50035 hatasıyla patlar. Bu durumda mesajı silip
+ * yeniden gönderiyoruz.
  */
 async function ensureRecruitmentPanelMessage(client) {
   try {
@@ -90,7 +94,9 @@ async function ensureRecruitmentPanelMessage(client) {
     try {
       const guild = await client.guilds.fetch(RECRUITMENT_GUILD_ID);
       channel = await guild.channels.fetch(RECRUITMENT_CHANNEL_ID);
-    } catch (_) {}
+    } catch (err) {
+      console.warn(`[RecruitmentPanel] Guild üzerinden kanal alınamadı: ${err.message}`);
+    }
 
     // Fallback: doğrudan client üzerinden dene
     if (!channel) {
@@ -102,10 +108,15 @@ async function ensureRecruitmentPanelMessage(client) {
       return;
     }
 
+    if (!channel.isTextBased || !channel.isTextBased()) {
+      console.error(`[RecruitmentPanel] Kanal metin tabanlı değil: ${RECRUITMENT_CHANNEL_ID}`);
+      return;
+    }
+
     const messages = await channel.messages.fetch({ limit: 20 }).catch(() => null);
     const existingMessage = messages
       ? messages.find(m =>
-          m.author.id === client.user.id &&
+          m.author?.id === client.user.id &&
           (m.components?.length > 0 || m.embeds?.length > 0)
         )
       : null;
@@ -113,8 +124,16 @@ async function ensureRecruitmentPanelMessage(client) {
     const payload = getRecruitmentPanelPayload();
 
     if (existingMessage) {
-      await existingMessage.edit(payload);
-      console.log(`✅ [RecruitmentPanel] Panel güncellendi (#${channel.name})`);
+      try {
+        await existingMessage.edit(payload);
+        console.log(`✅ [RecruitmentPanel] Panel güncellendi (#${channel.name})`);
+      } catch (editErr) {
+        // IS_COMPONENTS_V2 flag'i sonradan eklenemez -> eski mesajı sil, yenisini gönder
+        console.warn(`[RecruitmentPanel] Edit başarısız (${editErr.message}), mesaj yeniden gönderiliyor.`);
+        await existingMessage.delete().catch(() => {});
+        await channel.send(payload);
+        console.log(`✅ [RecruitmentPanel] Panel yeniden gönderildi (#${channel.name})`);
+      }
     } else {
       await channel.send(payload);
       console.log(`✅ [RecruitmentPanel] Panel gönderildi (#${channel.name})`);
@@ -130,22 +149,39 @@ async function ensureRecruitmentPanelMessage(client) {
 async function sendNewApplicationLog(client, submission) {
   try {
     if (!client || !client.isReady()) return;
+    if (!submission || !submission.userId) {
+      console.warn("[RecruitmentPanel] sendNewApplicationLog: geçersiz submission verisi.");
+      return;
+    }
 
-    let channel = await client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
-    if (!channel) return;
+    let channel = null;
+    try {
+      const guild = await client.guilds.fetch(RECRUITMENT_GUILD_ID);
+      channel = await guild.channels.fetch(RECRUITMENT_CHANNEL_ID);
+    } catch (_) {}
 
-    const ComponentsV2Factory = require('../utils/componentsV2Factory');
+    if (!channel) {
+      channel = await client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
+    }
+
+    if (!channel) {
+      console.error(`[RecruitmentPanel] Log kanalı bulunamadı: ${RECRUITMENT_CHANNEL_ID}`);
+      return;
+    }
+
+    const username = submission.discordUsername || "Bilinmiyor";
+    const submissionId = submission._id ?? "N/A";
 
     const payload = {
       flags: ComponentsV2Factory.FLAGS,
       components: [
         ComponentsV2Factory.container(0x818cf8, [
-          ComponentsV2Factory.section(
+          ComponentsV2Factory.text(
             '## 📥 Yeni Başvuru Gönderildi!\n\n' +
-            `**${submission.discordUsername}** (\`${submission.userId}\`) adlı kullanıcı **Etkinlik Yetkilisi Alım Formunu** doldurdu.\n\n` +
+            `**${username}** (\`${submission.userId}\`) adlı kullanıcı **Etkinlik Yetkilisi Alım Formunu** doldurdu.\n\n` +
             `📋 **Form:** ✳️ Etkinlik Yetkilisi [A-1]\n` +
             `👤 **Başvuran:** <@${submission.userId}>\n` +
-            `🆔 **Başvuru ID:** \`${submission._id}\``
+            `🆔 **Başvuru ID:** \`${submissionId}\``
           ),
         ]),
       ],
@@ -163,5 +199,3 @@ module.exports = {
   ensureRecruitmentPanelMessage,
   sendNewApplicationLog,
 };
-
-
