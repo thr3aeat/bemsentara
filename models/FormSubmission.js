@@ -11,10 +11,19 @@ if (!collections.formSubmissions) {
 
 const formSubmissions = collections.formSubmissions;
 
+const VALID_STATUSES = ["PENDING", "APPROVED", "REJECTED", "AI_DETECTED"];
+
 const FormSubmission = {
+  STATUSES: {
+    PENDING: "PENDING",
+    APPROVED: "APPROVED",
+    REJECTED: "REJECTED",
+    AI_DETECTED: "AI_DETECTED",
+  },
+
   create(data) {
     const defaults = {
-      status: "PENDING", // PENDING, APPROVED, REJECTED
+      status: "PENDING", // PENDING, APPROVED, REJECTED, AI_DETECTED
       reviewedBy: null,
       reviewNote: null,
       reviewedAt: null,
@@ -47,6 +56,9 @@ const FormSubmission = {
   },
 
   updateStatus(id, status, reviewedBy, reviewNote = "") {
+    if (!VALID_STATUSES.includes(status)) {
+      return Promise.reject(new Error(`Geçersiz status: "${status}". Geçerli değerler: ${VALID_STATUSES.join(", ")}`));
+    }
     const record = formSubmissions.findById(id);
     if (!record) return Promise.resolve(null);
 

@@ -69,7 +69,57 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
-  // ── Kullanıcı Log / Audit Sorgulama Modali ──────────────────────────────
+  // ── Form Başvurusu — Soru Cevabı ─────────────────────────────────────────
+  if (interaction.customId.startsWith('formask_modal_')) {
+    try {
+      await interaction.deferReply({ ephemeral: true });
+      const token = interaction.customId.replace('formask_modal_', '');
+      const answer = interaction.fields.getTextInputValue('formask_answer');
+
+      // Token decode: base64 → submissionId|questionKey
+      let submissionId = null, questionKey = null;
+      try {
+        const decoded = Buffer.from(token.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+        const parts = decoded.split('|');
+        submissionId = parts[0];
+        questionKey = parts[1] || 'q';
+      } catch (_) {}
+
+      if (!submissionId) {
+        return interaction.editReply({ content: '❌ Geçersiz token, cevap iletilemedi.' });
+      }
+
+      // Admin kanalına cevabı ilet
+      const ComponentsV2Factory = require('../utils/componentsV2Factory');
+      const { RECRUITMENT_CHANNEL_ID } = require('../services/staffRecruitmentPanelService');
+      const channel = await interaction.client.channels.fetch(RECRUITMENT_CHANNEL_ID).catch(() => null);
+      if (channel) {
+        const payload = {
+          flags: ComponentsV2Factory.FLAGS,
+          components: [
+            ComponentsV2Factory.container(0x34d399, [
+              ComponentsV2Factory.section(
+                '## 📩 Form Sorusuna Cevap Geldi\n\n' +
+                '**Kullanıcı:** <@' + interaction.user.id + '> (' + interaction.user.tag + ')\n' +
+                '**Başvuru ID:** `' + submissionId + '`\n' +
+                '**Soru anahtarı:** `' + questionKey + '`\n\n' +
+                '**Cevap:**\n> ' + answer.trim()
+              ),
+            ]),
+          ],
+        };
+        await channel.send(payload).catch(() => {});
+      }
+
+      await interaction.editReply({ content: '✅ Cevabınız iletildi, teşekkür ederiz!' });
+    } catch (err) {
+      console.error('[formask_modal] Error:', err);
+      try { await interaction.editReply({ content: '❌ Cevap iletilirken hata oluştu.' }); } catch (_) {}
+    }
+    return;
+  }
+
+  // ── Kullanıcı Log / Audit Sorgulama Modali ───────────────────────────────────────────────────────────
   if (interaction.customId.startsWith('user_audit_')) {
     const { handleUserAuditModal } = require("../services/userAuditPanelService");
     const handled = await handleUserAuditModal(interaction);

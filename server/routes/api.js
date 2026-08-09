@@ -2329,8 +2329,8 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
   if (!requireAdmin(req, res)) return;
   try {
     const { status, note } = req.body;
-    if (!["APPROVED", "REJECTED"].includes(status)) {
-      return res.status(400).json({ error: "Geçersiz durum (APPROVED veya REJECTED olmalı)." });
+    if (!["APPROVED", "REJECTED", "AI_DETECTED"].includes(status)) {
+      return res.status(400).json({ error: "Geçersiz durum (APPROVED, REJECTED veya AI_DETECTED olmalı)." });
     }
 
     const FormSubmission = require("../../models/FormSubmission");
@@ -2339,8 +2339,104 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
       return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
     }
 
+    // Kullanıcıya bot DM gönder
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const client = getDiscordClient();
+      if (client && client.isReady()) {
+        const user = await client.users.fetch(updated.userId).catch(() => null);
+        if (user) {
+          const { ButtonStyle } = require("discord.js");
+          const ComponentsV2Factory = require("../../bot/utils/componentsV2Factory");
+
+          const statusMessages = {
+            APPROVED:    { emoji: '✅', title: 'Başvurunuz Kabul Edildi!', color: 0x34d399, msg: 'Tebrikler! Etkinlik Yetkilisi başvurunuz değerlendirildi ve **kabul edildi**. Ekibimize hoş geldiniz!' },
+            REJECTED:    { emoji: '❌', title: 'Başvurunuz Reddedildi', color: 0xfb7185, msg: 'Etkinlik Yetkilisi başvurunuz incelendi ve maalesef **reddedildi**. Gelecekte yeni başvurular açıldığında tekrar başvurabilirsiniz.' },
+            AI_DETECTED: { emoji: '🤖', title: 'Başvurunuzda AI İçerik Tespit Edildi', color: 0xa78bfa, msg: 'Başvurunuz incelendi ve yanıtlarınızda **yapay zekâ kullanımı tespit edildi**. Bu nedenle başvurunuz geçersiz sayılmıştır. Özgün yanıtlarla yeniden başvurabilirsiniz.' },
+          };
+          const sm = statusMessages[status];
+          const noteSection = note ? '\n\n📝 **Not:** ' + note : '';
+
+          const payload = {
+            flags: ComponentsV2Factory.FLAGS,
+            components: [
+              ComponentsV2Factory.container(sm.color, [
+                ComponentsV2Factory.section(
+                  '## ' + sm.emoji + ' ' + sm.title + '\n\n' +
+                  sm.msg + noteSection + '\n\n' +
+                  '**Form:** ' + (updated.formTitle || 'Etkinlik Yetkilisi Başvurusu') + '\n' +
+                  '**Değerlendiren:** ' + req.user.discordUsername
+                ),
+              ]),
+            ],
+          };
+          await user.send(payload).catch(() => {});
+        }
+      }
+    } catch (_) {}
+
     res.json({ success: true, submission: updated });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Forma soru sor (kullanıcıya DM) ────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { questionKey, questionLabel, questionText } = req.body;
+    if (!questionText || !questionText.trim()) {
+      return res.status(400).json({ error: "Soru metni boş olamaz." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const submission = await FormSubmission.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ error: "Başvuru bulunamadı." });
+    }
+
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient();
+    if (!client || !client.isReady()) {
+      return res.status(503).json({ error: "Bot bağlı değil, DM gönderilemiyor." });
+    }
+
+    const user = await client.users.fetch(submission.userId).catch(() => null);
+    if (!user) {
+      return res.status(404).json({ error: "Kullanıcı Discord'da bulunamadı. DM gönderilemedi." });
+    }
+
+    const ComponentsV2Factory = require("../../bot/utils/componentsV2Factory");
+    const { ButtonStyle } = require("discord.js");
+
+    // Cevap vermek için token — submission ID + question key
+    const replyToken = Buffer.from(req.params.id + '|' + (questionKey || 'q')).toString('base64').replace(/=/g,'');
+
+    const payload = {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container(0x818cf8, [
+          ComponentsV2Factory.section(
+            '## 💬 Moderatörümüz Size Soru Sordu\n\n' +
+            '**Form:** ' + (submission.formTitle || 'Etkinlik Yetkilisi Başvurusu') + '\n' +
+            '**Sorulan konu:** ' + (questionLabel || questionKey || '—') + '\n\n' +
+            '**Soru:**\n> ' + questionText.trim()
+          ),
+          ComponentsV2Factory.separator(false),
+          ComponentsV2Factory.text('Cevaplamak veya cevaplamayı reddetmek için aşağıdaki butona tıklayın.'),
+          ComponentsV2Factory.actionRow([
+            { custom_id: 'formask_reply_' + replyToken, label: '✍️ Cevap Ver', style: ButtonStyle.Primary },
+            { custom_id: 'formask_decline_' + replyToken, label: 'Cevap Vermek İstemiyorum', style: ButtonStyle.Secondary },
+          ]),
+        ]),
+      ],
+    };
+
+    await user.send(payload);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[form-ask] Error:', err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -3654,6 +3654,10 @@ function renderAdminPage(user) {
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
         🤖 Otomasyon
       </button>
+      <button class="adm-tab" onclick="admTab('submissions',this)"
+        style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
+        📥 Doldurulan Formlar
+      </button>
     </div>
 
     <!-- İstatistikler -->
@@ -3798,6 +3802,88 @@ function renderAdminPage(user) {
       </div>
     </div>
 
+    <!-- ── DOLDURULAN FORMLAR ────────────────────────────────────────────── -->
+    <div id="adm-submissions" class="card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <h1 style="font-size:2rem;font-weight:800;">📥 Doldurulan Formlar</h1>
+          <p class="text-muted" style="margin-top:.25rem;">Kullanıcıların doldurduğu başvuru formlarını inceleyin ve değerlendirin.</p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+          <select id="sub-filter-status" onchange="loadSubmissions()" style="padding:0.5rem 0.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.9rem;">
+            <option value="">Tüm Durumlar</option>
+            <option value="PENDING">⏳ Beklemede</option>
+            <option value="APPROVED">✅ Onaylandı</option>
+            <option value="REJECTED">❌ Reddedildi</option>
+            <option value="AI_DETECTED">🤖 AI Tespit</option>
+          </select>
+          <button class="btn btn-sm" onclick="loadSubmissions()">🔄 Yenile</button>
+        </div>
+      </div>
+
+      <!-- İstatistik kartları -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;" id="sub-stats-row">
+        <div class="card" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);padding:1rem;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#fbbf24;" id="sub-count-pending">0</div>
+          <div style="font-size:0.8rem;color:var(--muted);">⏳ Beklemede</div>
+        </div>
+        <div class="card" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);padding:1rem;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#34d399;" id="sub-count-approved">0</div>
+          <div style="font-size:0.8rem;color:var(--muted);">✅ Onaylandı</div>
+        </div>
+        <div class="card" style="background:rgba(251,113,133,0.08);border:1px solid rgba(251,113,133,0.2);padding:1rem;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#fb7185;" id="sub-count-rejected">0</div>
+          <div style="font-size:0.8rem;color:var(--muted);">❌ Reddedildi</div>
+        </div>
+        <div class="card" style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);padding:1rem;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#a78bfa;" id="sub-count-ai">0</div>
+          <div style="font-size:0.8rem;color:var(--muted);">🤖 AI Tespit</div>
+        </div>
+      </div>
+
+      <!-- Liste -->
+      <div id="sub-list">
+        <div style="color:var(--muted);text-align:center;padding:3rem;">Yükleniyor...</div>
+      </div>
+    </div>
+
+    <!-- ── FORM DETAY MODAL ───────────────────────────────────────────────── -->
+    <div id="sub-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;overflow-y:auto;padding:2rem 1rem;" onclick="if(event.target===this)closeSubModal()">
+      <div style="max-width:860px;margin:0 auto;background:#0f0f1a;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:0;overflow:hidden;" onclick="event.stopPropagation()">
+        <!-- Modal header -->
+        <div style="background:linear-gradient(135deg,rgba(129,140,248,0.15),rgba(52,211,153,0.1));padding:1.5rem 2rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.78rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;">BAŞVURU DETAYI</div>
+            <h2 style="font-size:1.3rem;font-weight:800;color:#fff;margin:0;" id="modal-title">—</h2>
+          </div>
+          <button onclick="closeSubModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:var(--muted);border-radius:10px;padding:0.4rem 0.8rem;cursor:pointer;font-size:1.2rem;font-family:inherit;">✕</button>
+        </div>
+
+        <!-- Meta bilgi -->
+        <div style="padding:1.2rem 2rem;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;flex-wrap:wrap;gap:1.5rem;font-size:0.85rem;color:var(--muted);">
+          <span>👤 <strong id="modal-user">—</strong></span>
+          <span>📅 <strong id="modal-date">—</strong></span>
+          <span>🆔 <strong id="modal-id" style="font-family:monospace;">—</strong></span>
+          <span id="modal-status-badge"></span>
+        </div>
+
+        <!-- Değerlendirme aksiyonları -->
+        <div style="padding:1.2rem 2rem;background:rgba(255,255,255,0.015);border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:0.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.8rem;">DEĞERLENDİRME</div>
+          <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+            <button onclick="reviewSubmission('APPROVED')" class="btn btn-sm" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);color:#34d399;font-weight:700;">✅ Başvuruyu Onayla</button>
+            <button onclick="reviewSubmission('REJECTED')" class="btn btn-sm" style="background:rgba(251,113,133,0.15);border:1px solid rgba(251,113,133,0.4);color:#fb7185;font-weight:700;">❌ Başvuruyu Reddet</button>
+            <button onclick="reviewSubmission('AI_DETECTED')" class="btn btn-sm" style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);color:#a78bfa;font-weight:700;">🤖 AI Tespit Edildi</button>
+          </div>
+          <input id="review-note" type="text" placeholder="Not ekleyin (isteğe bağlı, kullanıcıya DM olarak gidecek)..." style="margin-top:0.8rem;width:100%;font-size:0.88rem;">
+          <div id="review-result" style="margin-top:0.6rem;font-size:0.85rem;min-height:20px;"></div>
+        </div>
+
+        <!-- Form içeriği (sorular ve cevaplar) -->
+        <div id="modal-body" style="padding:1.5rem 2rem;max-height:60vh;overflow-y:auto;"></div>
+      </div>
+    </div>
+
     <!-- Panel Formları -->
     <div id="adm-forms" class="card" style="display:none;">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">📋 Panel Formları</h1>
@@ -3807,7 +3893,7 @@ function renderAdminPage(user) {
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('leave', this)" style="border-color:#f1c40f;color:#f1c40f;">🏖️ İzin Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('suggestion', this)" style="border-color:#2ecc71;color:#2ecc71;">💡 Tavsiye Formu</button>
-        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74c3c;color:#e74c3c;">🚪 İstifa Formu</button>
+        <button class="btn btn-ghost btn-sm" onclick="showSubForm('resign', this)" style="border-color:#e74crrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr 3c;color:#e74c3c;">🚪 İstifa Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('modaction', this)" style="border-color:#9b59b6;color:#9b59b6;">⚖️ Mod İşlem Formu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('ban_report', this)" style="border-color:#e74c3c;color:#e74c3c;">🔨 Ban Raporu</button>
         <button class="btn btn-ghost btn-sm" onclick="showSubForm('mute_report', this)" style="border-color:#f39c12;color:#f39c12;">🔇 Mute Raporu</button>
@@ -3829,12 +3915,13 @@ function renderAdminPage(user) {
     <script>
       // ── Sekme geçişi ──────────────────────────────────────────────────────
       function admTab(name, btn) {
-        document.getElementById('adm-stats').style.display  = name === 'stats'  ? '' : 'none';
-        document.getElementById('adm-users').style.display  = name === 'users'  ? '' : 'none';
-        document.getElementById('adm-coins').style.display  = name === 'coins'  ? '' : 'none';
-        document.getElementById('adm-bans').style.display   = name === 'bans'   ? '' : 'none';
-        document.getElementById('adm-forms').style.display  = name === 'forms'  ? '' : 'none';
-        document.getElementById('adm-automation').style.display = name === 'automation' ? '' : 'none';
+        document.getElementById('adm-stats').style.display       = name === 'stats'       ? '' : 'none';
+        document.getElementById('adm-users').style.display       = name === 'users'       ? '' : 'none';
+        document.getElementById('adm-coins').style.display       = name === 'coins'       ? '' : 'none';
+        document.getElementById('adm-bans').style.display        = name === 'bans'        ? '' : 'none';
+        document.getElementById('adm-forms').style.display       = name === 'forms'       ? '' : 'none';
+        document.getElementById('adm-automation').style.display  = name === 'automation'  ? '' : 'none';
+        document.getElementById('adm-submissions').style.display = name === 'submissions' ? '' : 'none';
         document.querySelectorAll('.adm-tab').forEach(t => {
           t.style.borderBottomColor = 'transparent';
           t.style.color = 'var(--muted)';
@@ -3843,6 +3930,7 @@ function renderAdminPage(user) {
         btn.style.color = 'var(--text)';
         if (name === 'bans') loadBans();
         if (name === 'stats') loadStats();
+        if (name === 'submissions') loadSubmissions();
       }
 
       async function startAvukatAI() {
@@ -4022,6 +4110,257 @@ function renderAdminPage(user) {
 
         document.getElementById('form-fields').innerHTML = fieldsHtml;
       }
+
+      // ── DOLDURULAN FORMLAR ─────────────────────────────────────────────
+      let _currentSubId = null;
+      let _allSubs = [];
+
+      const FORM_QUESTION_LABELS = {
+        // Kişisel sorular
+        'personal.q1': 'KİŞİSEL — Kendinizden bahsedin',
+        'personal.q2': 'KİŞİSEL — En değerli becerileriniz',
+        'personal.q3': 'KİŞİSEL — Takıma katkılarınız',
+        'personal.q4': 'KİŞİSEL — Neden bu görevi istiyorsunuz?',
+        'personal.q5': 'KİŞİSEL — Direktif alma konusunda görüşünüz',
+        // Teknik sorular
+        'technical.q1': 'TEKNİK — Moderasyon/yönetim farkı',
+        'technical.q2': 'TEKNİK — Teknik kayıt tutma',
+        'technical.q3': 'TEKNİK — Sunucu dışı platform temsili',
+        'technical.q4': 'TEKNİK — Yetki karmaşası yönetimi',
+        'technical.q5': 'TEKNİK — Kural çelişkisi çözümü',
+        'technical.q6': 'TEKNİK — Geri bildirim & raporlama',
+        'technical.q7': 'TEKNİK — Performans kriterleri',
+        'technical.mc8': 'TEKNİK — Çoktan seçmeli cevabı',
+        'technical.cb9': 'TEKNİK — Çoklu seçim cevapları',
+        'technical.q10': 'TEKNİK — Yetki aşımı vs inisiyatif',
+        // Senaryo soruları
+        'scenarios.s1': 'SENARYO 1 — Büyük etkinlik karmaşası',
+        'scenarios.s2': 'SENARYO 2 — Adaletsizlik iddiaları',
+        'scenarios.s3': 'SENARYO 3 — Yanıltıcı bilgi yayılması',
+        'scenarios.s4': 'SENARYO 4 — Rol akışı bozulması',
+        'scenarios.s5': 'SENARYO 5 — Etkinlik sonrası eleştiriler',
+        'scenarios.single': 'TEKLİ SENARYO — Sunucu bakım krizi',
+        // Onaylar
+        'confirmations.abuse': 'ONAY — Yetki kötüye kullanımı',
+        'confirmations.respect': 'ONAY — Çalışana saygısızlık',
+        'confirmations.rules': 'ONAY — Talimatname',
+      };
+
+      function subEsc(s) {
+        const el = document.createElement('div');
+        el.textContent = s == null ? '' : String(s);
+        return el.innerHTML;
+      }
+
+      function subStatusBadge(status) {
+        const map = {
+          PENDING:     { label: '⏳ Beklemede',    bg: 'rgba(251,191,36,0.15)',  border: 'rgba(251,191,36,0.4)',  color: '#fbbf24' },
+          APPROVED:    { label: '✅ Onaylandı',    bg: 'rgba(52,211,153,0.15)',  border: 'rgba(52,211,153,0.4)',  color: '#34d399' },
+          REJECTED:    { label: '❌ Reddedildi',   bg: 'rgba(251,113,133,0.15)', border: 'rgba(251,113,133,0.4)', color: '#fb7185' },
+          AI_DETECTED: { label: '🤖 AI Tespit',   bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', color: '#a78bfa' },
+        };
+        const s = map[status] || map['PENDING'];
+        return '<span style="display:inline-block;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:800;background:' + s.bg + ';border:1px solid ' + s.border + ';color:' + s.color + ';">' + s.label + '</span>';
+      }
+
+      async function loadSubmissions() {
+        const statusFilter = document.getElementById('sub-filter-status').value;
+        const box = document.getElementById('sub-list');
+        box.innerHTML = '<div style="color:var(--muted);text-align:center;padding:3rem;">Yükleniyor...</div>';
+        try {
+          const res = await fetch('/api/admin/form-submissions');
+          const d = await res.json();
+          if (!res.ok || !d.submissions) { box.innerHTML = '<div style="color:var(--danger);text-align:center;padding:2rem;">Hata: ' + subEsc(d.error || 'Bilinmeyen hata') + '</div>'; return; }
+          _allSubs = d.submissions;
+          const filtered = statusFilter ? _allSubs.filter(s => s.status === statusFilter) : _allSubs;
+
+          // İstatistikler
+          document.getElementById('sub-count-pending').textContent   = _allSubs.filter(s => s.status === 'PENDING').length;
+          document.getElementById('sub-count-approved').textContent  = _allSubs.filter(s => s.status === 'APPROVED').length;
+          document.getElementById('sub-count-rejected').textContent  = _allSubs.filter(s => s.status === 'REJECTED').length;
+          document.getElementById('sub-count-ai').textContent        = _allSubs.filter(s => s.status === 'AI_DETECTED').length;
+
+          if (!filtered.length) {
+            box.innerHTML = '<div style="color:var(--muted);text-align:center;padding:3rem;">Bu durumda başvuru bulunamadı.</div>';
+            return;
+          }
+
+          box.innerHTML = filtered.map(s => {
+            const dateStr = s.createdAt ? new Date(s.createdAt).toLocaleString('tr-TR') : '—';
+            return '<div onclick="openSubModal(\'' + subEsc(s._id) + '\')" style="cursor:pointer;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.025)\'">' +
+              '<div style="display:flex;align-items:center;gap:1rem;">' +
+                '<div style="width:40px;height:40px;border-radius:12px;background:rgba(129,140,248,0.15);border:1px solid rgba(129,140,248,0.3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📋</div>' +
+                '<div>' +
+                  '<div style="font-weight:700;color:#fff;font-size:0.95rem;">' + subEsc(s.discordUsername || s.userId) + '</div>' +
+                  '<div style="font-size:0.78rem;color:var(--muted);margin-top:0.1rem;">' + subEsc(s.formTitle || s.formType) + ' &nbsp;·&nbsp; ' + dateStr + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div style="display:flex;align-items:center;gap:0.75rem;">' +
+                subStatusBadge(s.status) +
+                '<span style="font-size:0.78rem;color:var(--muted);font-family:monospace;">' + subEsc(s._id) + '</span>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        } catch (err) {
+          box.innerHTML = '<div style="color:var(--danger);text-align:center;padding:2rem;">İstek hatası: ' + subEsc(err.message) + '</div>';
+        }
+      }
+
+      function buildFormQA(formData, behavior) {
+        if (!formData) return '<p style="color:var(--muted);">Form verisi bulunamadı.</p>';
+        const sections = [];
+
+        function section(title, color, fields) {
+          const rows = fields.map(([key, val]) => {
+            const label = FORM_QUESTION_LABELS[key] || key;
+            const displayVal = Array.isArray(val) ? val.join(', ') : (val || '—');
+            const beh = behavior && behavior[key.split('.').pop()] || null;
+            const behHtml = beh ? '<div style="font-size:0.7rem;color:' + (beh.type === 'kopyala-yapıştır' ? '#fbbf24' : 'var(--muted)') + ';margin-top:0.3rem;">🔍 ' + subEsc(beh.type) + ' &nbsp;·&nbsp; ' + beh.chars + ' karakter</div>' : '';
+            return '<div style="margin-bottom:1rem;padding:0.9rem 1rem;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">' +
+                '<div style="flex:1;">' +
+                  '<div style="font-size:0.75rem;font-weight:700;color:' + color + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.4rem;">' + subEsc(label) + '</div>' +
+                  '<div style="font-size:0.9rem;color:var(--text);line-height:1.6;white-space:pre-wrap;">' + subEsc(displayVal) + '</div>' +
+                  behHtml +
+                '</div>' +
+                '<button onclick="openAskModal(\'' + subEsc(_currentSubId) + '\',\'' + subEsc(key) + '\',\'' + subEsc(label) + '\')" style="flex-shrink:0;padding:0.3rem 0.8rem;border-radius:10px;background:rgba(129,140,248,0.12);border:1px solid rgba(129,140,248,0.3);color:#818cf8;font-size:0.75rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;" title="Bu soru hakkında kullanıcıya DM ile soru sor">💬 Soru Sor</button>' +
+              '</div>' +
+            '</div>';
+          });
+          return '<div style="margin-bottom:1.5rem;"><div style="font-size:0.8rem;font-weight:800;color:' + color + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:1px solid ' + color + '30;">' + title + '</div>' + rows.join('') + '</div>';
+        }
+
+        const p = formData.personal || {};
+        const t = formData.technical || {};
+        const sc = formData.scenarios || {};
+        const c = formData.confirmations || {};
+
+        sections.push(section('📝 Kişisel Bilgiler', '#818cf8', [
+          ['personal.q1', p.q1], ['personal.q2', p.q2], ['personal.q3', p.q3], ['personal.q4', p.q4], ['personal.q5', p.q5]
+        ]));
+        sections.push(section('⚙️ Teknik Bilgiler', '#34d399', [
+          ['technical.q1', t.q1], ['technical.q2', t.q2], ['technical.q3', t.q3], ['technical.q4', t.q4],
+          ['technical.q5', t.q5], ['technical.q6', t.q6], ['technical.q7', t.q7],
+          ['technical.mc8', t.mc8], ['technical.cb9', t.cb9], ['technical.q10', t.q10]
+        ]));
+        sections.push(section('🎭 Senaryo Cevapları', '#fbbf24', [
+          ['scenarios.s1', sc.s1], ['scenarios.s2', sc.s2], ['scenarios.s3', sc.s3],
+          ['scenarios.s4', sc.s4], ['scenarios.s5', sc.s5], ['scenarios.single', sc.single]
+        ]));
+        sections.push(section('✅ Onaylar', '#fb7185', [
+          ['confirmations.abuse', c.abuse], ['confirmations.respect', c.respect], ['confirmations.rules', c.rules]
+        ]));
+
+        return sections.join('');
+      }
+
+      function openSubModal(id) {
+        const sub = _allSubs.find(s => s._id === id);
+        if (!sub) return;
+        _currentSubId = id;
+        document.getElementById('modal-title').textContent    = sub.formTitle || sub.formType || 'Başvuru';
+        document.getElementById('modal-user').textContent     = (sub.discordUsername || sub.userId) + ' (' + (sub.userId || '?') + ')';
+        document.getElementById('modal-date').textContent     = sub.createdAt ? new Date(sub.createdAt).toLocaleString('tr-TR') : '—';
+        document.getElementById('modal-id').textContent       = sub._id;
+        document.getElementById('modal-status-badge').innerHTML = subStatusBadge(sub.status);
+        document.getElementById('review-note').value          = '';
+        document.getElementById('review-result').textContent  = '';
+        document.getElementById('modal-body').innerHTML       = buildFormQA(sub.formData, sub.behavior);
+        document.getElementById('sub-modal-overlay').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeSubModal() {
+        document.getElementById('sub-modal-overlay').style.display = 'none';
+        document.body.style.overflow = '';
+        _currentSubId = null;
+      }
+
+      async function reviewSubmission(status) {
+        if (!_currentSubId) return;
+        const note = document.getElementById('review-note').value.trim();
+        const resDiv = document.getElementById('review-result');
+        const labels = { APPROVED: '✅ Onaylanıyor...', REJECTED: '❌ Reddediliyor...', AI_DETECTED: '🤖 AI tespit işleniyor...' };
+        resDiv.style.color = 'var(--muted)';
+        resDiv.textContent = labels[status] || 'İşleniyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, note })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399';
+            resDiv.textContent = '✅ Güncellendi. Kullanıcıya Discord DM gönderildi.';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) { sub.status = status; document.getElementById('modal-status-badge').innerHTML = subStatusBadge(status); }
+            setTimeout(loadSubmissions, 800);
+          } else {
+            resDiv.style.color = '#fb7185';
+            resDiv.textContent = '❌ ' + (d.error || 'Hata oluştu');
+          }
+        } catch (err) {
+          resDiv.style.color = '#fb7185';
+          resDiv.textContent = '❌ İstek hatası: ' + err.message;
+        }
+      }
+
+      // ── Soru sor modal ───────────────────────────────────────────────────
+      let _askSubId = null, _askKey = null, _askLabel = null;
+
+      function openAskModal(subId, key, label) {
+        _askSubId = subId; _askKey = key; _askLabel = label;
+        const overlay = document.getElementById('ask-modal-overlay');
+        if (!overlay) { _buildAskModal(); }
+        document.getElementById('ask-modal-overlay').style.display = 'block';
+        document.getElementById('ask-question-label').textContent = label;
+        document.getElementById('ask-question-text').value = '';
+        document.getElementById('ask-result').textContent = '';
+      }
+
+      function _buildAskModal() {
+        const div = document.createElement('div');
+        div.id = 'ask-modal-overlay';
+        div.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9500;display:flex;align-items:center;justify-content:center;padding:1rem;';
+        div.innerHTML = '<div style="background:#0f0f1a;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:2rem;max-width:560px;width:100%;" onclick="event.stopPropagation()">' +
+          '<div style="font-size:0.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.5rem;">KULLANICIYA SORU SOR — Discord DM</div>' +
+          '<div style="font-size:0.85rem;color:#818cf8;font-weight:700;margin-bottom:1rem;padding:0.5rem 0.8rem;background:rgba(129,140,248,0.1);border-radius:8px;border-left:3px solid #818cf8;" id="ask-question-label"></div>' +
+          '<textarea id="ask-question-text" rows="4" placeholder="Kullanıcıya sormak istediğiniz soruyu yazın... (Bot DM üzerinden iletecek)" style="width:100%;margin-bottom:1rem;font-size:0.9rem;"></textarea>' +
+          '<div style="display:flex;gap:0.75rem;justify-content:flex-end;">' +
+            '<button onclick="document.getElementById(\'ask-modal-overlay\').style.display=\'none\'" style="padding:0.6rem 1.2rem;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--muted);cursor:pointer;font-family:inherit;">İptal</button>' +
+            '<button onclick="sendAskQuestion()" style="padding:0.6rem 1.4rem;border-radius:10px;background:linear-gradient(135deg,#818cf8,#6366f1);border:none;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">💬 DM Gönder</button>' +
+          '</div>' +
+          '<div id="ask-result" style="margin-top:0.8rem;font-size:0.85rem;min-height:18px;"></div>' +
+        '</div>';
+        div.addEventListener('click', function(e) { if (e.target === div) div.style.display = 'none'; });
+        document.body.appendChild(div);
+      }
+
+      async function sendAskQuestion() {
+        if (!_askSubId) return;
+        const q = document.getElementById('ask-question-text').value.trim();
+        const resDiv = document.getElementById('ask-result');
+        if (!q) { resDiv.style.color = '#fbbf24'; resDiv.textContent = '⚠️ Soru boş olamaz.'; return; }
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = '⏳ Gönderiliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _askSubId + '/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questionKey: _askKey, questionLabel: _askLabel, questionText: q })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ Soru Discord DM olarak kullanıcıya gönderildi!';
+            setTimeout(() => { document.getElementById('ask-modal-overlay').style.display = 'none'; }, 1500);
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) {
+          resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message;
+        }
+      }
+      // ── /DOLDURULAN FORMLAR ─────────────────────────────────────────────
 
       async function submitAdminForm() {
         if (!currentFormType) return;

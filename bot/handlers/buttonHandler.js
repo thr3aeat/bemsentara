@@ -98,6 +98,33 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── Form Başvurusu — Soru Cevaplama ──────────────────────────────────────
+  if (customId.startsWith('formask_reply_') || customId.startsWith('formask_decline_')) {
+    const isDecline = customId.startsWith('formask_decline_');
+    if (isDecline) {
+      await interaction.reply({ content: '👍 Tamam, bu soruyu cevaplamak istemediğiniz kaydedildi.', ephemeral: true });
+      return;
+    }
+    // Cevap ver → modal aç
+    const token = customId.replace('formask_reply_', '');
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+    const modal = new ModalBuilder()
+      .setCustomId('formask_modal_' + token)
+      .setTitle('Soruya Cevabınız');
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('formask_answer')
+          .setLabel('Cevabınızı buraya yazın')
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMaxLength(1000)
+      )
+    );
+    await interaction.showModal(modal);
+    return;
+  }
+
   if (customId.startsWith("user_audit_")) {
     const { handleUserAuditButton } = require("../services/userAuditPanelService");
     const handled = await handleUserAuditButton(interaction);

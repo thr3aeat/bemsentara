@@ -128,11 +128,21 @@ class ComponentsV2Factory {
    * Ana Kapsayıcı Konteyner (Container) oluşturur
    * @param {Array} innerComponents - Konteyner içi bileşenler listesi
    */
-  static container(innerComponents = []) {
-    return {
+  static container(innerComponentsOrColor = [], innerComponentsArg = null) {
+    // Overload: container(color, components) veya container(components)
+    let innerComponents, accentColor;
+    if (typeof innerComponentsOrColor === 'number') {
+      accentColor = innerComponentsOrColor;
+      innerComponents = innerComponentsArg || [];
+    } else {
+      innerComponents = innerComponentsOrColor;
+    }
+    const obj = {
       type: TYPE_CONTAINER,
       components: innerComponents,
     };
+    if (accentColor !== undefined) obj.accent_color = accentColor;
+    return obj;
   }
 
   /**
