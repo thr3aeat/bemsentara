@@ -3744,7 +3744,7 @@ function renderAdminPage(user) {
         <div style="font-size:.85rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">Hızlı Miktarlar:</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
           ${[100, 500, 1000, 5000, 10000, 50000].map(n =>
-    `<button class="btn btn-ghost btn-sm" onclick="document.getElementById('coin-amount').value=${n}">${n.toLocaleString('tr-TR')} 🪙</button>`
+    \`<button class="btn btn-ghost btn-sm" onclick="document.getElementById('coin-amount').value=${n}">${n.toLocaleString('tr-TR')} 🪙</button>\`
   ).join('')}
         </div>
       </div>
