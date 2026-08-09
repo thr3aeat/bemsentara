@@ -154,8 +154,21 @@ const posts          = collections.posts;
 const stories        = collections.stories;
 const liveStreams    = collections.liveStreams;
 const appMeta        = collections.appMeta;
+const formSubmissions = collections.formSubmissions;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
+
+function getRawCollectionsMap() {
+  return rawCollectionsMap;
+}
+
+const ALL_COLLECTION_NAMES = [
+  "users", "tickets", "economies", "courtCases", "investigations",
+  "wikiArticles", "errorReports", "groupAdmins", "rankMetadata",
+  "posts", "stories", "liveStreams", "appMeta", "formSubmissions",
+  "modInterviews", "staffLeaves", "staffShifts", "modPerformances",
+  "marketAuctions", "userTrustScores"
+];
 
 /**
  * Uygulama başlangıcında çağrılır.
@@ -167,7 +180,7 @@ async function initStore() {
 
   if (mongoOk) {
     // MongoDB'den yükle
-    const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
+    const colNames = ALL_COLLECTION_NAMES;
     const counts = {};
 
     for (const name of colNames) {
@@ -212,7 +225,7 @@ async function initStore() {
 
 /** Dosyadaki tüm verileri MongoDB'ye toplu yazar */
 async function migrateFileToMongo() {
-  const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "appMeta"];
+  const colNames = ALL_COLLECTION_NAMES;
   for (const name of colNames) {
     if (collections[name]?.data) {
       await db.saveCollectionToMongo(name, collections[name].data);
@@ -224,7 +237,7 @@ async function saveStoreNow() {
   // Her iki sisteme de yaz
   flushSave(collections);
   if (db.isMongoActive()) {
-    const colNames = ["users", "tickets", "economies", "courtCases", "investigations", "wikiArticles", "groupAdmins", "rankMetadata", "posts", "stories", "liveStreams", "appMeta"];
+    const colNames = ALL_COLLECTION_NAMES;
     const promises = colNames
       .filter(name => collections[name]?.data)
       .map(name => 
@@ -279,9 +292,11 @@ module.exports = {
   posts,
   stories,
   liveStreams,
+  appMeta,
+  formSubmissions,
   wikis,
   InMemoryCollection,
   initStore,
   saveStoreNow,
-  appMeta,
+  getRawCollectionsMap,
 };

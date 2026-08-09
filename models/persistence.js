@@ -76,19 +76,33 @@ function flushSave(collections) {
     const payload = {
       version: 2,
       savedAt: new Date().toISOString(),
-      users: serializeMap(collections.users.data),
-      tickets: serializeMap(collections.tickets.data),
-      economies: serializeMap(collections.economies.data),
-      courtCases: collections.courtCases ? serializeMap(collections.courtCases.data) : {},
-      wikiArticles: serializeMap(collections.wikiArticles.data),
-      errorReports: serializeMap(collections.errorReports.data),
-      groupAdmins: serializeMap(collections.groupAdmins.data),
-      rankMetadata: serializeMap(collections.rankMetadata.data),
-      posts: serializeMap(collections.posts.data),
-      stories: serializeMap(collections.stories.data),
-      liveStreams: serializeMap(collections.liveStreams.data),
-      appMeta: serializeMap(collections.appMeta.data),
     };
+
+    // Dynamically serialize ALL collections in the store (including formSubmissions, modInterviews, etc.)
+    const { getRawCollectionsMap } = require("./Store");
+    const rawMap = getRawCollectionsMap ? getRawCollectionsMap() : null;
+
+    if (rawMap && rawMap.size > 0) {
+      for (const [colName, colInstance] of rawMap.entries()) {
+        if (colInstance && colInstance.data) {
+          payload[colName] = serializeMap(colInstance.data);
+        }
+      }
+    } else {
+      const knownKeys = [
+        "users", "tickets", "economies", "courtCases", "investigations",
+        "wikiArticles", "errorReports", "groupAdmins", "rankMetadata",
+        "posts", "stories", "liveStreams", "appMeta", "formSubmissions",
+        "modInterviews", "staffLeaves", "staffShifts", "modPerformances",
+        "marketAuctions", "userTrustScores"
+      ];
+      for (const key of knownKeys) {
+        if (collections[key]?.data) {
+          payload[key] = serializeMap(collections[key].data);
+        }
+      }
+    }
+
     const tmp = `${STORE_FILE}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), "utf8");
     fs.renameSync(tmp, STORE_FILE);
@@ -140,25 +154,21 @@ function migrateLegacyWikis(collections, saved) {
 
 function loadIntoCollections(collections) {
   const saved = loadStoreFromDisk();
-  if (!saved) return { users: 0, tickets: 0, economies: 0, wikiArticles: 0, courtCases: 0 };
+  if (!saved) return { users: 0, tickets: 0, economies: 0, wikiArticles: 0, courtCases: 0, formSubmissions: 0 };
 
-  const counts = {
-    users: hydrateCollection(collections.users, saved.users),
-    tickets: hydrateCollection(collections.tickets, saved.tickets),
-    economies: hydrateCollection(collections.economies, saved.economies),
-    courtCases: hydrateCollection(collections.courtCases, saved.courtCases),
-    wikiArticles: hydrateCollection(
-      collections.wikiArticles,
-      saved.wikiArticles || saved.wikis
-    ),
-    errorReports: hydrateCollection(collections.errorReports, saved.errorReports),
-    groupAdmins: hydrateCollection(collections.groupAdmins, saved.groupAdmins),
-    rankMetadata: hydrateCollection(collections.rankMetadata, saved.rankMetadata),
-    posts: hydrateCollection(collections.posts, saved.posts),
-    stories: hydrateCollection(collections.stories, saved.stories),
-    liveStreams: hydrateCollection(collections.liveStreams, saved.liveStreams),
-    appMeta: hydrateCollection(collections.appMeta, saved.appMeta),
-  };
+  const counts = {};
+
+  // Dynamically load ALL collections present in store.json
+  for (const [key, records] of Object.entries(saved)) {
+    if (key === "version" || key === "savedAt" || key === "wikis") continue;
+    if (records && typeof records === "object") {
+      counts[key] = hydrateCollection(collections[key], records);
+    }
+  }
+
+  if (saved.wikis && (!saved.wikiArticles || Object.keys(saved.wikiArticles).length === 0)) {
+    counts.wikiArticles = hydrateCollection(collections.wikiArticles, saved.wikis);
+  }
 
   migrateLegacyWikis(collections, saved);
   return counts;
