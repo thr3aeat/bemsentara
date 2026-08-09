@@ -222,6 +222,28 @@ async function handleButtonInteraction(interaction) {
     }
   }
 
+  // ── Moderatör Özel Ticket Butonları (DM Bildirimi, AI Kavga İnceleme, AI Hapis) ──
+  if (customId.startsWith("ticket_notify_user_")) {
+    const ticketId = customId.replace("ticket_notify_user_", "");
+    const { sendUserNotificationDM } = require("../services/ticketAIDisputeService");
+    return sendUserNotificationDM(interaction, ticketId);
+  }
+
+  if (customId.startsWith("ticket_ai_dispute_")) {
+    const ticketId = customId.replace("ticket_ai_dispute_", "");
+    const { analyzeTicketDisputeWithAI } = require("../services/ticketAIDisputeService");
+    return analyzeTicketDisputeWithAI(interaction, ticketId);
+  }
+
+  if (customId.startsWith("ticket_apply_ai_jail_")) {
+    const parts = customId.replace("ticket_apply_ai_jail_", "").split("_");
+    const ticketId = parts[0];
+    const offenderId = parts[1];
+    const durationMinutes = parts[2];
+    const { applyAIJailPenalty } = require("../services/ticketAIDisputeService");
+    return applyAIJailPenalty(interaction, ticketId, offenderId, durationMinutes);
+  }
+
   // ── Moderatör Seçim Onay Butonları ──────────────────────────────────────────
   if (customId.startsWith("mod_confirm_weekly_") || customId.startsWith("mod_confirm_monthly_")) {
     const isWeekly = customId.startsWith("mod_confirm_weekly_");

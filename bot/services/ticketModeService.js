@@ -147,7 +147,7 @@ async function createDualModeTicket(interaction, ticketId, ticket) {
       .setFooter({ text: 'Destek Sistemi • Ekoyıldız' })
       .setTimestamp();
 
-    const actionRow = new ActionRowBuilder().addComponents(
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`close_ticket_${ticketId}`)
         .setLabel('❌ Talebi Kapat')
@@ -158,10 +158,21 @@ async function createDualModeTicket(interaction, ticketId, ticket) {
         .setStyle(ButtonStyle.Success)
     );
 
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`ticket_notify_user_${ticketId}`)
+        .setLabel('🔔 DM Bildirimi Gönder')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`ticket_ai_dispute_${ticketId}`)
+        .setLabel('🚨 Tickette Kavga Var!')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
     await ticketChannel.send({
       content: `${user.toString()} Hoş geldiniz!`,
       embeds: [ticketEmbed],
-      components: [actionRow],
+      components: [row1, row2],
     });
 
     ticket.channelId = ticketChannel.id;

@@ -150,7 +150,7 @@ async function handleEpostaModalSubmit(interaction, category) {
       .setColor(0x3498DB)
       .setTimestamp();
 
-    const row = new ActionRowBuilder().addComponents(
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`close_ticket_${ticketId}`)
         .setLabel("❌ Talebi Kapat")
@@ -161,10 +161,21 @@ async function handleEpostaModalSubmit(interaction, category) {
         .setStyle(ButtonStyle.Success)
     );
 
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`ticket_notify_user_${ticketId}`)
+        .setLabel("🔔 DM Bildirimi Gönder")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`ticket_ai_dispute_${ticketId}`)
+        .setLabel("🚨 Tickette Kavga Var!")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
     await ticketChannel.send({
       content: `Merhaba <@${interaction.user.id}>, hoş geldiniz!`,
       embeds: [welcomeEmbed],
-      components: [row]
+      components: [row1, row2]
     });
 
     // AI Smart Auto-Resolver check
