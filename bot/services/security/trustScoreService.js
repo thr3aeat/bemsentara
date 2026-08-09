@@ -75,12 +75,13 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
     
     if (!record) {
       isNew = true;
-      const user = await client.users.fetch(userId).catch(() => null);
-      if (!user) return null;
+      const dbUser = await User.findOne({ discordId: userId });
+      const fetchedUser = await client.users.fetch(userId).catch(() => null);
+      const username = fetchedUser ? fetchedUser.username : (dbUser ? (dbUser.discordUsername || dbUser.username) : `user_${userId.slice(-4)}`);
 
       record = await UserTrustScore.create({
         userId,
-        username: user.username,
+        username,
         trustScore: 100.0,
         scoreLogs: [],
         createdAt: new Date(),
@@ -199,8 +200,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         }
       }
 
-      // Create channel if forceCreate or if profile channel does not exist and isn't closed
-      const shouldCreate = forceCreate || (!record.profileChannelClosed && !record.profileChannelId);
+      // Create channel if forceCreate or isNew or if profile channel does not exist and isn't closed
+      const shouldCreate = forceCreate || isNew || (!record.profileChannelClosed && !record.profileChannelId);
 
       if (!channel && shouldCreate) {
         // Prevent race condition duplicate channel creation via in-memory lock

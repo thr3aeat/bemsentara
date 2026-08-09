@@ -473,8 +473,8 @@ function initializeTrustScoreHandlers(client) {
   // ── 5. Member Join Event Handler (Yan Hesap & Hesap Yaşı Kalkanı) ─────────────
   client.on("guildMemberAdd", async (member) => {
     try {
-      if (member.guild.id !== ACTIVE_GUILD_ID || member.user.bot) return;
-      const record = await ensureUserTrustScore(member.id, ACTIVE_GUILD_ID, client);
+      if (member.user.bot) return;
+      const record = await ensureUserTrustScore(member.id, member.guild.id, client, true);
       if (!record) return;
 
       if (!record.altAccountChecked) {

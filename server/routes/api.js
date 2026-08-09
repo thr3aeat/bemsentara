@@ -1002,12 +1002,20 @@ router.get("/api/admin/users", async (req, res) => {
   const { users } = require("../../models/Store");
   let list = users.find({});
 
+  // Sort by newest registered / updated first
+  list.sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.updatedAt || a.joinedAt || 0).getTime();
+    const timeB = new Date(b.createdAt || b.updatedAt || b.joinedAt || 0).getTime();
+    return timeB - timeA;
+  });
+
   if (q) {
     list = list.filter(
       (u) =>
-        String(u.discordId).includes(q) ||
+        String(u.discordId || "").includes(q) ||
         (u.discordUsername || "").toLowerCase().includes(q) ||
-        (u.robloxUsername || "").toLowerCase().includes(q)
+        (u.robloxUsername || "").toLowerCase().includes(q) ||
+        String(u.robloxId || "").includes(q)
     );
   }
 
@@ -1016,7 +1024,7 @@ router.get("/api/admin/users", async (req, res) => {
   const staffMap = new Map();
   staffRecords.forEach(s => staffMap.set(String(s.userId), s));
 
-  list = list.slice(0, 50).map((u) => {
+  list = list.slice(0, 100).map((u) => {
     const sp = staffMap.get(String(u.discordId));
     return {
       _id: u._id,
@@ -1024,6 +1032,7 @@ router.get("/api/admin/users", async (req, res) => {
       discordUsername: u.discordUsername,
       discordAvatar: u.discordAvatar,
       robloxUsername: u.robloxUsername,
+      robloxId: u.robloxId,
       isAdmin: Boolean(u.isAdmin),
       isStaff: Boolean(u.isStaff),
       roles: u.roles || [],
@@ -1032,6 +1041,7 @@ router.get("/api/admin/users", async (req, res) => {
       banReason: u.banReason || null,
       modLevel: sp ? (sp.level || 1) : 1,
       modStatus: sp ? (sp.status || 'active') : 'active',
+      createdAt: u.createdAt || u.joinedAt || null
     };
   });
 
