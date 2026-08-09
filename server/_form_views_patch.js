@@ -219,14 +219,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         </div>
       </div>
 
-      ${!isLoggedIn ? `
-        <div class="card" style="background:rgba(251,113,133,0.1);border:1px solid rgba(251,113,133,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>
-          <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
-          <p style="color:var(--muted);max-width:600px;margin:0 auto 1.5rem;line-height:1.6;">Bu formu doldurabilmek için Discord hesabınızla giriş yapmanız gerekmektedir.</p>
-          <a href="/login?redirect=/forms/event-staff" class="btn" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;font-weight:800;padding:0.8rem 2rem;border-radius:30px;font-size:1.05rem;display:inline-block;box-shadow:0 6px 20px rgba(244,63,94,0.4);">🔑 Discord ile Giriş Yap / Kayıt Ol</a>
-        </div>
-      ` : existingSubmission ? `
+      ${existingSubmission ? `
         <div class="card" style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
           <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Başvurunuz Değerlendirilme Aşamasında!</h2>
@@ -773,14 +766,7 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
         </div>
       </div>
 
-      ${!isLoggedIn ? `
-        <div class="card" style="background:rgba(251,113,133,0.1);border:1px solid rgba(251,113,133,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">🔒</div>
-          <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Başvuru Yapabilmek İçin Giriş Yapmalısınız</h2>
-          <p style="color:var(--muted);max-width:600px;margin:0 auto 1.5rem;line-height:1.6;">Bu formu doldurabilmek için Discord hesabınızla giriş yapmanız gerekmektedir.</p>
-          <a href="/login?redirect=/forms/community-ambassador" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:800;padding:0.8rem 2rem;border-radius:30px;font-size:1.05rem;display:inline-block;box-shadow:0 6px 20px rgba(245,158,11,0.4);">🔑 Discord ile Giriş Yap / Kayıt Ol</a>
-        </div>
-      ` : existingSubmission ? `
+      ${existingSubmission ? `
         <div class="card" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
           <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.6rem;">Topluluk Elçiliği Başvurunuz İncelemede!</h2>

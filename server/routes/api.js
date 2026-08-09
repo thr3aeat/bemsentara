@@ -2262,20 +2262,17 @@ router.get("/api/admin/bans", async (req, res) => {
 // ── Etkinlik Yetkilisi Formu Gönderme ───────────────────────────────────────
 router.post("/api/forms/event-staff/submit", async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Başvuru yapabilmek için öncelikle giriş yapmalısınız." });
-    }
-
     const FormSubmission = require("../../models/FormSubmission");
-    const userId = req.user.discordId;
-
-    // Check existing pending application
-    const existing = await FormSubmission.findPendingByUser(userId, "event_staff");
-    if (existing) {
-      return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir başvurunuz bulunmaktadır." });
-    }
-
     const { discordUsername, personal, technical, scenarios, confirmations } = req.body;
+    const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+
+    // Check existing pending application if user is logged in
+    if (req.user) {
+      const existing = await FormSubmission.findPendingByUser(userId, "event_staff");
+      if (existing) {
+        return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir başvurunuz bulunmaktadır." });
+      }
+    }
 
     if (!personal || !technical || !scenarios || !confirmations) {
       return res.status(400).json({ error: "Lütfen tüm zorunlu soruları doldurun." });
@@ -2284,7 +2281,7 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
     // Save submission
     const submission = await FormSubmission.create({
       userId,
-      discordUsername: discordUsername || req.user.discordUsername || req.user.username,
+      discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
       formType: "event_staff",
       formTitle: "Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu",
       formData: {
@@ -2315,20 +2312,17 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
 // ── Topluluk Elçisi Formu Gönderme ───────────────────────────────────────────
 router.post("/api/forms/community-ambassador/submit", async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Başvuru yapabilmek için öncelikle giriş yapmalısınız." });
-    }
-
     const FormSubmission = require("../../models/FormSubmission");
-    const userId = req.user.discordId;
-
-    // Check existing pending application
-    const existing = await FormSubmission.findPendingByUser(userId, "community_ambassador");
-    if (existing) {
-      return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir Topluluk Elçiliği başvurunuz bulunmaktadır." });
-    }
-
     const { discordUsername, section1, section2, section3, section4, section5, section6, behavior } = req.body;
+    const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+
+    // Check existing pending application if user is logged in
+    if (req.user) {
+      const existing = await FormSubmission.findPendingByUser(userId, "community_ambassador");
+      if (existing) {
+        return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir Topluluk Elçiliği başvurunuz bulunmaktadır." });
+      }
+    }
 
     if (!section1 || !section2 || !section3 || !section4 || !section5 || !section6) {
       return res.status(400).json({ error: "Lütfen tüm zorunlu bölüm ve soruları doldurunuz." });
@@ -2337,7 +2331,7 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
     // Save submission
     const submission = await FormSubmission.create({
       userId,
-      discordUsername: discordUsername || req.user.discordUsername || req.user.username,
+      discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
       formType: "community_ambassador",
       formTitle: "EkoYıldız Topluluk Elçisi // Mülakat Başvuru Formu",
       formData: {
