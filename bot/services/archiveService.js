@@ -148,4 +148,66 @@ async function handleArchiveChannel(channel) {
   }
 }
 
-module.exports = { handleArchiveChannel, applyPrivateArchivePermissions };
+/**
+ * Scans all guilds on bot startup ONCE to find closed and archived ticket channels/categories,
+ * and enforces strict privacy permissions (Deny ViewChannel for @everyone, all Mod/Staff roles, and all target users).
+ * Only Administrators and the Bot can view!
+ */
+async function scanAndFixArchivedTicketPermissions(client) {
+  try {
+    console.log("[ArchiveService] 🔍 Kapatılan ve arşive alınan ticket kanalları tek seferlik taranıyor...");
+    if (!client || !client.guilds) return;
+
+    for (const guild of client.guilds.cache.values()) {
+      try {
+        await guild.channels.fetch().catch(() => {});
+        await guild.roles.fetch().catch(() => {});
+
+        // 1. Find all archive / closed categories
+        const archiveCategories = guild.channels.cache.filter(c => {
+          if (c.type !== ChannelType.GuildCategory) return false;
+          const norm = normalizeString(c.name);
+          return norm.includes("arsiv") || norm.includes("arşiv") || norm.includes("kapali") || norm.includes("closed");
+        });
+
+        for (const cat of archiveCategories.values()) {
+          await applyPrivateArchivePermissions(cat).catch(() => {});
+        }
+
+        // 2. Find all closed/archived ticket channels
+        const targetChannels = guild.channels.cache.filter(c => {
+          if (c.type === ChannelType.GuildCategory || c.isThread?.()) return false;
+          const norm = normalizeString(c.name);
+          const parentNorm = c.parent ? normalizeString(c.parent.name) : "";
+
+          const isArchiveOrClosedName = norm.endsWith("-arsiv") || norm.endsWith("-arşiv") ||
+                                       norm.includes("kapali") || norm.includes("closed") ||
+                                       norm.startsWith("kapali-") || norm.startsWith("closed-") ||
+                                       norm.startsWith("arsiv-") || norm.startsWith("arşiv-");
+
+          const isInArchiveCategory = parentNorm.includes("arsiv") || parentNorm.includes("arşiv") ||
+                                      parentNorm.includes("kapali") || parentNorm.includes("closed");
+
+          return isArchiveOrClosedName || isInArchiveCategory;
+        });
+
+        console.log(`[ArchiveService] ${guild.name} sunucusunda ${targetChannels.size} adet kapatılmış/arşivlenmiş ticket kanalı bulundu. Yetkiler düzenleniyor...`);
+
+        for (const ch of targetChannels.values()) {
+          await applyPrivateArchivePermissions(ch).catch(() => {});
+        }
+      } catch (gErr) {
+        console.error(`[ArchiveService] Guild ${guild.id} scan error:`, gErr.message);
+      }
+    }
+    console.log("[ArchiveService] ✅ Kapatılan ve arşive alınan ticket izinleri tek seferlik başarıyla tarandı ve kilitlendi.");
+  } catch (err) {
+    console.error("[ArchiveService] scanAndFixArchivedTicketPermissions error:", err.message);
+  }
+}
+
+module.exports = {
+  handleArchiveChannel,
+  applyPrivateArchivePermissions,
+  scanAndFixArchivedTicketPermissions
+};

@@ -247,6 +247,18 @@ function initializeDiscordHandlers(client) {
     startAtaturkHistoryScheduler(client);
     startEkoYildizHistoryScheduler(client);
 
+    // Kapatılan & Arşive alınan ticket kanalları izin tarayıcısı (Tek seferlik)
+    try {
+      const { scanAndFixArchivedTicketPermissions } = require("../services/archiveService");
+      setTimeout(() => {
+        scanAndFixArchivedTicketPermissions(client).catch(err => {
+          console.error("[ready] Ticket arşivi izin kontrolü hatası:", err.message);
+        });
+      }, 10000);
+    } catch (arcErr) {
+      console.error("[ready] ArchiveService yüklenemedi:", arcErr.message);
+    }
+
     // Aras AI soruşturma botu (DISCORDTOKENVERY token ile)
     try {
       const { initVeryBot } = require("../services/banInvestigationAI");
