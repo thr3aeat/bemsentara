@@ -4463,6 +4463,7 @@ function renderAdminPage(user) {
             '<label style="display:block;font-size:0.82rem;font-weight:700;color:#34d399;margin-bottom:0.4rem;">⏰ MÜLAKAT SAATİ İŞLEMLERİ</label>' +
             '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:0.6rem;">' +
               '<input type="text" id="int-scheduled-time" value="' + subEsc(sub.interviewScheduledTime || '') + '" placeholder="Örn: 2026-08-11 20:00" style="flex:1;min-width:200px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;">' +
+              '<button type="button" onclick="setTomorrowInterviewTime()" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,0.3);">📅 YARIN</button>' +
               '<button type="button" onclick="approveInterviewTime()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟢 SAAT ONAYLANDI</button>' +
               '<button type="button" onclick="proposeInterviewTime()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟡 FARKLI SAAT TEKLİF ET</button>' +
             '</div>' +
@@ -4567,6 +4568,36 @@ function renderAdminPage(user) {
             resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
           }
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      window.setTomorrowInterviewTime = function() {
+        const input = document.getElementById('int-scheduled-time');
+        const resDiv = document.getElementById('time-action-res');
+        if (!input) return;
+
+        let currentVal = input.value.trim();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        const tomorrowDateStr = yyyy + '-' + mm + '-' + dd;
+
+        const timeMatch = currentVal.match(/(\d{1,2})[:.](\d{2})/);
+        let timePart = '20:00';
+        if (timeMatch) {
+          const hh = String(timeMatch[1]).padStart(2, '0');
+          const min = String(timeMatch[2]).padStart(2, '0');
+          timePart = hh + ':' + min;
+        }
+
+        const newScheduledTime = tomorrowDateStr + ' ' + timePart;
+        input.value = newScheduledTime;
+        if (resDiv) {
+          resDiv.style.color = '#38bdf8';
+          resDiv.textContent = '📅 Mülakat saati yarın olarak ayarlandı: ' + newScheduledTime;
+        }
       }
 
       window.approveInterviewTime = async function() {
