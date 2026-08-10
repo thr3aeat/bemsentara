@@ -9,6 +9,59 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
+  if (customId.startsWith('elcisi_select_user_')) {
+    const awardType = customId.replace('elcisi_select_user_', '');
+    const selectedUserId = interaction.values[0];
+    const targetUser = await interaction.client.users.fetch(selectedUserId).catch(() => null);
+
+    const StaffProgress = require('../../models/StaffProgress');
+    let p = await StaffProgress.findOne({ userId: selectedUserId });
+    if (!p) {
+      p = new StaffProgress({ userId: selectedUserId, guildId: interaction.guild?.id || '1367646464804655104', level: 1 });
+    }
+
+    let title = '';
+    let boost = 0;
+    if (awardType === 'mod') {
+      title = '👑 AYIN MODERATÖRÜ';
+      boost = 0.5;
+      p.gamification = p.gamification || {};
+      p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + 1000;
+      p.gamification.currentXP = (p.gamification.currentXP || 0) + 500;
+    } else if (awardType === 'chat') {
+      title = '💬 AYIN EN İYİ SOHBET EDENİ';
+      boost = 0.05;
+    } else if (awardType === 'voice') {
+      title = '🎤 AYIN EN İYİ SESTE DURANI';
+      boost = 0.05;
+    }
+
+    p.monthlyBoostMultiplier = (p.monthlyBoostMultiplier || 1.0) + boost;
+    p.monthlyAwardTitle = title;
+    await p.save();
+
+    await interaction.reply({
+      content: `🎉 **${title}** olarak <@${selectedUserId}> başarıyla seçildi!\n` +
+        `⚡ **Gelişim Çarpanı:** +${boost}x (Toplam: ${p.monthlyBoostMultiplier}x)\n` +
+        `🏆 Ödülleri kaydedildi ve StaffSystem'e işlendi.`,
+      ephemeral: true
+    });
+
+    if (targetUser) {
+      const dmEmbed = new EmbedBuilder()
+        .setColor(0xf1c40f)
+        .setTitle(`🏆 TEBRİKLER! ${title} SEÇİLDİNİZ!`)
+        .setDescription(
+          `Topluluk Elçisi tarafından **${title}** unvanına layık görüldünüz! 🎉\n\n` +
+          `⚡ **Bonus Gelişim Çarpanınız:** +${boost}x (${p.monthlyBoostMultiplier}x Toplam)\n` +
+          `Ödülleriniz hesabınıza tanımlandı. Katkılarınız için teşekkürler!`
+        )
+        .setTimestamp();
+      await targetUser.send({ embeds: [dmEmbed] }).catch(() => {});
+    }
+    return;
+  }
+
   // ══════════════════════════════════════════════════════════════════════
   // TEMP VOICE SELECT MENUS
   // ══════════════════════════════════════════════════════════════════════

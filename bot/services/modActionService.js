@@ -541,6 +541,17 @@ async function handleModActionApproval(interaction) {
       } catch (errScore) {
         console.error("[approval] Puan güncelleme hatası:", errScore.message);
       }
+      // Topluluk Elçisine DM Bildirimi Gönder
+      try {
+        const { sendModAuditToAmbassador } = require("./toplulukElcisiService");
+        const modUser = await interaction.client.users.fetch(pending.moderatorId).catch(() => null);
+        const targetUserObj = targetUser || await interaction.client.users.fetch(pending.targetUserId).catch(() => null);
+        if (modUser && targetUserObj) {
+          await sendModAuditToAmbassador(interaction.client, guild, modUser, targetUserObj, reason.label, appliedPenalties.join(", ") || reason.label);
+        }
+      } catch (errElci) {
+        console.warn("[modAction] Topluluk elçisi bildirim hatası:", errElci.message);
+      }
     } catch (err) {
       console.error("[modAction] DB kayıt hatası:", err.message);
     }

@@ -37,6 +37,7 @@ const GENERAL_COMMANDS = new Set([
   "leaderboard",
   "profil",
   "challenge",
+  "topluluk-elcisi",
   "ekobang",
   "ekobangerial",
   "izin_iste",
@@ -98,6 +99,27 @@ const GENERAL_COMMANDS = new Set([
 async function handleGeneralCommand(interaction) {
   if (!interaction.isChatInputCommand()) return null;
   const { commandName } = interaction;
+
+  // ── topluluk-elcisi: Ayın Elemanları Panelini Topluluk Elçisine DM'le gönder ─
+  if (commandName === "topluluk-elcisi") {
+    // Sadece sunucu yöneticileri tetikleyebilir
+    if (!interaction.memberPermissions?.has('Administrator')) {
+      return interaction.reply({ content: '❌ Bu komut yalnızca **sunucu yöneticileri** tarafından kullanılabilir.', ephemeral: true });
+    }
+    await interaction.deferReply({ ephemeral: true });
+    try {
+      const { sendAwardPanelDM } = require('../services/toplulukElcisiService');
+      const sent = await sendAwardPanelDM(interaction.client);
+      return interaction.editReply({
+        content: sent > 0
+          ? `✅ Ödül seçim paneli **${sent}** Topluluk Elçisine DM olarak gönderildi.`
+          : '⚠️ Topluluk Elçisi rolüne sahip hiçbir üyeye DM gönderilemedi. (DM kapalı olabilir veya rol atanmamış)'
+      });
+    } catch (err) {
+      console.error('[topluluk-elcisi command error]:', err.message);
+      return interaction.editReply({ content: `❌ DM gönderilirken hata oluştu: ${err.message}` });
+    }
+  }
 
   // ── mod-anasayfa: Moderatör Anasayfası Gönderme Komutu ─────────────────────
   if (commandName === "mod-anasayfa") {

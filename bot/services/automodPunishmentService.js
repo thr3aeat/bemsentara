@@ -174,6 +174,12 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
       await interaction.deferUpdate().catch(() => {});
       if (member) await issueWarning(interaction, member.user, "Automod: Uygunsuz İçerik", interaction.user).catch(() => {});
 
+      // Topluluk Elçisine DM Bildirimi
+      try {
+        const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
+        if (member) await sendModAuditToAmbassador(interaction.client, guild, interaction.user, member.user, 'Automod Uyarısı (Warn)', msgContent);
+      } catch (_) {}
+
       const updatedEmbed = EmbedBuilder.from(originalEmbed)
         .setColor(0xf1c40f)
         .setTitle("⚠️ UYARI GÖNDERİLDİ")
@@ -189,6 +195,12 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
       if (member) await member.timeout(duration * 60 * 1000, "Automod: Uygunsuz İçerik").catch(() => {});
 
       logTrustUserActivity(interaction.client, userId, "Susturma (Mute) Uygulandı", `🔇 **Süre:** ${duration} dakika. Yetkili: <@${interaction.user.id}>`, "🔇").catch(() => {});
+
+      // Topluluk Elçisine DM Bildirimi
+      try {
+        const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
+        if (member) await sendModAuditToAmbassador(interaction.client, guild, interaction.user, member.user, `Automod Susturma ${duration}dk`, msgContent);
+      } catch (_) {}
 
       const updatedEmbed = EmbedBuilder.from(originalEmbed)
         .setColor(0xe67e22)

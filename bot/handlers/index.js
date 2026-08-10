@@ -4289,18 +4289,35 @@ function initializeDiscordHandlers(client) {
 
 async function handleInteraction(interaction) {
   if (interaction.isButton()) {
+    if (interaction.customId?.startsWith('elcisi_audit_') || interaction.customId?.startsWith('elcisi_req_')) {
+      const { handleAmbassadorAuditButton, handleAmbassadorRequestButton } = require("../services/toplulukElcisiService");
+      if (interaction.customId.startsWith('elcisi_audit_')) return handleAmbassadorAuditButton(interaction, interaction.client);
+      if (interaction.customId.startsWith('elcisi_req_')) return handleAmbassadorRequestButton(interaction, interaction.client);
+    }
+    if (interaction.customId?.startsWith('mod_interview_comment_')) {
+      const { handleInterviewCommentButton } = require("../services/modInterview");
+      return handleInterviewCommentButton(interaction);
+    }
     const voiceResult = await handleVoiceButton(interaction);
     if (voiceResult !== null) return voiceResult;
     return handleButtonInteraction(interaction);
   }
 
   if (interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {
+    if (interaction.customId?.startsWith('elcisi_fix_penalty_')) {
+      const { handleAmbassadorFixSelect } = require("../services/toplulukElcisiService");
+      return handleAmbassadorFixSelect(interaction, interaction.client);
+    }
     const voiceSel = await handleVoiceSelect(interaction);
     if (voiceSel !== null) return voiceSel;
     return handleSelectInteraction(interaction);
   }
 
   if (interaction.isModalSubmit()) {
+    if (interaction.customId?.startsWith('modal_mod_interview_comment_')) {
+      const { handleInterviewCommentModal } = require("../services/modInterview");
+      return handleInterviewCommentModal(interaction, interaction.client);
+    }
     const voiceModal = await handleVoiceModal(interaction);
     if (voiceModal !== null) return voiceModal;
     return handleModalSubmit(interaction);

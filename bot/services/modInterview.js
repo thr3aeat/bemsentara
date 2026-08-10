@@ -491,16 +491,32 @@ async function finalizeInterview(userId, accepted, summary, client) {
       console.warn('[modInterview] Staff kayıt hatası:', err.message);
     }
 
+    // ── Ekoyıldız Sunucusunda Rollerin Tanımlanması (1536432300194136176, 1518904809078526043) ──
+    try {
+      const GUILD2_ID = process.env.GUILD2_ID || '1367646464804655104';
+      const ekoGuild = client.guilds.cache.get(GUILD2_ID);
+      if (ekoGuild) {
+        const member = await ekoGuild.members.fetch(userId).catch(() => null);
+        if (member) {
+          await member.roles.add(['1536432300194136176', '1518904809078526043'], 'Mülakat onaylandı & Oryantasyon verildi.').catch(() => {});
+          roleOk = true;
+          console.log(`[modInterview] ${userId} için 1536432300194136176 ve 1518904809078526043 roller verildi.`);
+        }
+      }
+    } catch (errRole) {
+      console.warn('[modInterview] Ekoyıldız rol tanımlama hatası:', errRole.message);
+    }
+
     // ── Kullanıcıya tebrik ──
     if (user) {
       await safeSend(user, {
         embeds: [new EmbedBuilder()
           .setColor(0x4ade80)
-          .setTitle('🎉 TEBRİKLER! MÜLAKATI GEÇTİNİZ!')
+          .setTitle('🎉 TEBRİKLER! MÜLAKATINIZ ONAYLANDI!')
           .setThumbnail(user.avatarURL() || null)
           .setDescription(
-            `Mülakatı **başarıyla geçtiniz**! 🏆\n\n` +
-            `Moderatör ekibine katılmadan önce kısa süreli bir eğitim kampımız (Moderatör Okulu) bulunuyor. Eğitim detayları ve sözleşmeniz DM üzerinden size iletildi.`
+            `Mülakatınız ve oryantasyonunuz **başarıyla onaylandı**! 🏆\n\n` +
+            `**Ekoyıldız** sunucusundaki tüm moderatör rolleriniz ve yetkileriniz tanımlanmıştır.`
           )
           .addFields(
             { name: '📊 Mülakat Sonuçları', value: `Ortalama Puan: **${avgScore}/10**\nSüre: **${minutes}d ${seconds}s**`, inline: false },
@@ -511,19 +527,25 @@ async function finalizeInterview(userId, accepted, summary, client) {
       }, 'tebrik');
     }
 
-    // ── Yöneticiye bildir ──
+    // ── Yöneticiye bildir (Yorumla & Onayla Butonlu) ──
     const admin = await client.users.fetch(info.adminId).catch(() => null);
     if (admin) {
-      const statusLine = `Rol: ${roleOk ? '✅' : '❌'}  |  Staff Kaydı: ${staffOk ? '✅' : '❌'}`;
+      const statusLine = `Ekoyıldız Rolleri: ${roleOk ? '✅' : '❌'}  |  Staff Kaydı: ${staffOk ? '✅' : '❌'}`;
+
+      const commentRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`mod_interview_comment_${userId}`).setLabel('💬 Mülakatı Yorumla').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId(`mod_interview_confirm_final_${userId}`).setLabel('✅ Oryantasyon Verildi & Tamamla').setStyle(ButtonStyle.Success)
+      );
+
       await safeSend(admin, {
         embeds: [new EmbedBuilder()
           .setColor(0x4ade80)
-          .setTitle('✅ MÜLAKAT SONUCU: KABUL')
+          .setTitle('✅ MÜLAKAT TAMAMLANTI: ONAY BEKLİYOR')
           .setThumbnail(user?.avatarURL() || null)
           .setDescription(
             `**Aday:** ${user?.tag || `<@${userId}>`}\n` +
-            `**Yönetici:** <@${info.adminId}>\n` +
-            `**Mod Rolü:** <@&${MOD_ROLE_ID}>`
+            `**Yönetici:** <@${info.adminId}>\n\n` +
+            `👇 Onaylamadan önce aday mülakatını yorumlayabilir veya doğrudan oryantasyonu tamamlayabilirsiniz.`
           )
           .addFields(
             { name: '📊 Sonuçlar', value: `**Ortalama Puan:** ${avgScore}/10\n**Toplam Soru:** ${answered}/7\n**Süre:** ${minutes}d ${seconds}s`, inline: false },
@@ -532,6 +554,7 @@ async function finalizeInterview(userId, accepted, summary, client) {
           )
           .setFooter({ text: 'Sistem Tarihi: ' + new Date().toLocaleString('tr-TR') })
           .setTimestamp()],
+        components: [commentRow]
       }, 'admin-kabul');
     }
 
@@ -580,8 +603,63 @@ async function finalizeInterview(userId, accepted, summary, client) {
   }
 }
 
+async function handleInterviewCommentButton(interaction) {
+  const cid = interaction.customId;
+  if (!cid.startsWith('mod_interview_comment_')) return false;
+
+  const targetUserId = cid.replace('mod_interview_comment_', '');
+
+  const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+  const modal = new ModalBuilder()
+    .setCustomId(`modal_mod_interview_comment_${targetUserId}`)
+    .setTitle('💬 Mülakatı Yorumla & Adaya Bildir');
+
+  const commentInput = new TextInputBuilder()
+    .setCustomId('interview_comment_text')
+    .setLabel('Mülakat Değerlendirmesi & Yorumunuz')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('Aday hakkında değerlendirmenizi ve tavsiyelerinizi yazın...')
+    .setRequired(true);
+
+  modal.addComponents(new ActionRowBuilder().addComponents(commentInput));
+  await interaction.showModal(modal);
+  return true;
+}
+
+async function handleInterviewCommentModal(interaction, client) {
+  const cid = interaction.customId;
+  if (!cid.startsWith('modal_mod_interview_comment_')) return false;
+
+  const targetUserId = cid.replace('modal_mod_interview_comment_', '');
+  const commentText = interaction.fields.getTextInputValue('interview_comment_text');
+
+  const targetUser = await client.users.fetch(targetUserId).catch(() => null);
+  if (targetUser) {
+    const commentEmbed = new EmbedBuilder()
+      .setColor(0x7c6af7)
+      .setTitle('💬 MÜLAKAT DEĞERLENDİRMESİ VE YORUMU')
+      .setDescription(
+        `Merhaba **${targetUser.username}**,\n\n` +
+        `Yöneticiniz mülakatınız hakkında aşağıdaki değerlendirme yorumunu eklemiştir:\n\n` +
+        `📝 **Yönetici Yorumu:**\n\`\`\`\n${commentText}\n\`\`\``
+      )
+      .setFooter({ text: 'Eko Yıldız • Moderatör Mülakat Değerlendirmesi' })
+      .setTimestamp();
+
+    await safeSend(targetUser, { embeds: [commentEmbed] }, 'mülakat-yorum-dm');
+  }
+
+  await interaction.reply({
+    content: `✅ Mülakat yorumunuz yazıldı ve aday <@${targetUserId}> kullanıcısına DM üzerinden iletildi!`,
+    ephemeral: true
+  });
+  return true;
+}
+
 module.exports = {
   startModInterview,
   handleInterviewButton,
   handleInterviewReply,
+  handleInterviewCommentButton,
+  handleInterviewCommentModal
 };

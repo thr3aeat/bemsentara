@@ -6,6 +6,121 @@ function _esc(str) {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * Sosyal Kanıt Bildirimi Sistemi — tüm formlara inject edilecek HTML+JS bloğu
+ * Gerçekçi RP bildirimleri gösterir: "4 kişi daha dolduruyor", "1 kişi gönderdi", "Toplam: X"
+ */
+function _socialProofScript(formLabel = 'bu formu') {
+  const names = ['Alper_xz','Raven_TR','stormcloud','elora42','ByteKing','NovaStar','mirela.d','0xGhost','SkyBreaker','kiral_','zephyr99','nocturn_','veilstrike','emre.sys','Phantom_K','LunaBot','IronMark','Serafino','d4rkv0id','QuantumNx'];
+  const submitMessages = [
+    'formu doldurdu ve gönderdi.',
+    'başvurusunu tamamlayıp gönderdi.',
+    'son bölümü bitirip başvurusunu iletti.',
+    'tüm aşamaları geçip gönderdi.',
+    'değerlendirme için başvurusunu teslim etti.'
+  ];
+  const fillMessages = [
+    'şu an bu formu dolduruyor.',
+    'formu inceliyor ve dolduruyor.',
+    'başvurusunu aktif olarak hazırlıyor.',
+    'formla ilgileniyor.',
+    'başvuruyu şu an yazıyor.'
+  ];
+
+  return `
+<div id="sp-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:320px;"></div>
+<div id="sp-counter" style="position:fixed;bottom:24px;left:24px;z-index:9999;background:rgba(15,15,25,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:10px 16px;backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.5);pointer-events:none;display:flex;flex-direction:column;gap:4px;">
+  <div style="font-size:0.7rem;color:#818cf8;font-weight:800;letter-spacing:1px;text-transform:uppercase;">📊 ALIM İSTATİSTİKLERİ</div>
+  <div style="font-size:0.78rem;color:#a0aec0;">Şu an dolduruyor: <span id="sp-active" style="color:#34d399;font-weight:700;">…</span></div>
+  <div style="font-size:0.78rem;color:#a0aec0;">Toplam gönderilen: <span id="sp-total" style="color:#fbbf24;font-weight:700;">…</span></div>
+  <div style="font-size:0.78rem;color:#a0aec0;">Tahmini kalan kontenjan: <span id="sp-quota" style="color:#fb7185;font-weight:700;">…</span></div>
+</div>
+<style>
+@keyframes sp-slidein { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes sp-fadeout { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(40px); } }
+.sp-toast { animation: sp-slidein 0.35s cubic-bezier(.22,1,.36,1) forwards; background:rgba(15,15,25,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:10px 14px; display:flex; align-items:flex-start; gap:10px; backdrop-filter:blur(24px); box-shadow:0 8px 32px rgba(0,0,0,0.5); pointer-events:none; }
+.sp-toast.leaving { animation: sp-fadeout 0.35s ease forwards; }
+.sp-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#818cf8,#6366f1); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:800; color:#fff; flex-shrink:0; }
+</style>
+<script>
+(function() {
+  var names = ${JSON.stringify(names)};
+  var submitMsgs = ${JSON.stringify(submitMessages)};
+  var fillMsgs = ${JSON.stringify(fillMessages)};
+  var container = document.getElementById('sp-container');
+  var elActive = document.getElementById('sp-active');
+  var elTotal = document.getElementById('sp-total');
+  var elQuota = document.getElementById('sp-quota');
+
+  // Başlangıç sayıları — formun "hareketli" hissi için rastgele ama gerçekçi
+  var totalSent = Math.floor(Math.random() * 18) + 14;  // 14-31 arası
+  var activeNow = Math.floor(Math.random() * 5) + 2;    // 2-6 arası
+  var quota = Math.floor(Math.random() * 4) + 2;        // 2-5 arası
+
+  function updateCounter() {
+    if (elActive) elActive.textContent = activeNow + ' kişi';
+    if (elTotal) elTotal.textContent = totalSent + ' kişi';
+    if (elQuota) elQuota.textContent = quota + ' kişi';
+  }
+  updateCounter();
+
+  function randName() { return names[Math.floor(Math.random() * names.length)]; }
+  function randColor() { var c=['#818cf8','#a78bfa','#34d399','#fbbf24','#fb7185','#38bdf8']; return c[Math.floor(Math.random()*c.length)]; }
+
+  function showToastSP(icon, text, subtext, color) {
+    if (!container) return;
+    var t = document.createElement('div');
+    t.className = 'sp-toast';
+    var initials = (text.split('_')[0]||'?').substring(0,2).toUpperCase();
+    t.innerHTML = '<div class="sp-avatar" style="background:linear-gradient(135deg,'+color+','+color+'99);">' + initials + '</div>' +
+      '<div><div style="font-size:0.82rem;color:#e2e8f0;font-weight:700;margin-bottom:2px;">' + text + '</div>' +
+      '<div style="font-size:0.74rem;color:#718096;">' + subtext + '</div></div>';
+    container.appendChild(t);
+    setTimeout(function() {
+      t.classList.add('leaving');
+      setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 400);
+    }, 5000);
+  }
+
+  // İlk yüklemede 8-15sn sonra başla
+  var delay = (Math.random() * 7000) + 8000;
+
+  function scheduleNext() {
+    var interval = (Math.random() * 22000) + 12000; // 12-34sn arası
+    setTimeout(function() {
+      var name = randName();
+      var color = randColor();
+      var type = Math.random();
+      if (type < 0.35) {
+        // Birisi gönderdi
+        totalSent++;
+        if (quota > 1) quota--;
+        if (activeNow > 0) activeNow--;
+        showToastSP('✅', name, '✅ ' + submitMsgs[Math.floor(Math.random()*submitMsgs.length)], color);
+      } else if (type < 0.75) {
+        // Birisi dolduruyor
+        activeNow = Math.max(1, activeNow + (Math.random() > 0.5 ? 1 : 0));
+        var n2 = Math.floor(Math.random()*3)+1;
+        showToastSP('✍️', name, '✍️ '+n2+' kişi daha ${formLabel} dolduruyor.', color);
+      } else {
+        // Birinin başvurusu incelemeye alındı
+        showToastSP('🔍', name, '🔍 Başvurusu inceleme sürecine alındı.', color);
+      }
+      updateCounter();
+      scheduleNext();
+    }, interval);
+  }
+
+  setTimeout(function() {
+    // İlk bildirim: kaç kişinin aktif olduğu
+    showToastSP('👥', activeNow + ' kişi', '👥 Şu an ${formLabel} dolduruyor.', '#818cf8');
+    updateCounter();
+    scheduleNext();
+  }, delay);
+})();
+</script>`;
+}
+
 function renderEventStaffFormPage(currentUser, existingSubmission = null) {
   const _layout = require('./views')._layout;
   const isLoggedIn = Boolean(currentUser);
@@ -51,35 +166,44 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
   // ═══ BÖLÜM 1 ═══
   const step1Body = `
-    <div style="background:rgba(255,255,255,0.02);border-left:3px solid #818cf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Başvuru formunun ilk bölümünde, kimliğinizin doğrulanabilmesi ve sürecin düzenli bir şekilde ilerleyebilmesi için bazı temel ön bilgiler talep edilmektedir. Bu bilgiler, yalnızca başvurunun değerlendirilmesi ve iletişim sürecinin sağlıklı yürütülmesi amacıyla kullanılacaktır.<br><br>
-      Lütfen sizden istenen bilgileri eksiksiz, güncel ve doğru bir biçimde doldurunuz. Bilgilerin doğruluğundan başvuru sahibi sorumludur. Eksik veya hatalı bilgi girişi, başvurunun geçersiz sayılmasına neden olabilir.
+    <div style="background:rgba(129,140,248,0.06);border-left:3px solid #818cf8;padding:1.2rem 1.5rem;border-radius:0 14px 14px 0;font-size:0.9rem;color:var(--muted);line-height:1.85;margin-bottom:1.5rem;">
+      <strong style="color:#818cf8;font-size:0.95rem;">1.1 — KİMLİK VE İLETİŞİM BİLGİLERİ</strong><br><br>
+      Başvuru formunun ilk ve en kritik bölümünde, kimliğinizin güvenilir biçimde doğrulanabilmesi, mülakat takviminin oluşturulabilmesi, sistem bildirimleri ve bot entegrasyonunun hatasız çalışabilmesi için bazı temel ön bilgiler talep edilmektedir. Bu bilgiler; yalnızca EkoYıldız Etkinlik Yönetim Komisyonu tarafından, başvurunuzun değerlendirilmesi, iletişim sürecinin sağlıklı yürütülmesi ve idari arşiv kayıtlarının tutulması amacıyla kullanılacaktır.<br><br>
+      Lütfen sizden istenen tüm bilgileri eksiksiz, güncel, tutarlı ve doğru bir biçimde doldurunuz. Bilgilerin doğruluğundan ve güncelliğinden yalnızca başvuru sahibi sorumludur. Eksik, hatalı, tutarsız veya yanıltıcı bilgi girişi; başvurunun hiçbir açıklama yapılmaksızın geçersiz sayılmasına ve kara liste kaydına alınmanıza neden olabilir.<br><br>
+      <span style="color:#fbbf24;">⚠️ Önemli Uyarı:</span> Discord Kullanıcı Adı ve Discord ID bilgileriniz, başvurunuzun sisteme kayıt edilmesi ve mülakat bildirimlerinin gönderilebilmesi açısından zorunludur. Bu bilgiler eksik veya yanlış girildiğinde başvurunuz <strong>değerlendirmeye alınmayacaktır.</strong>
     </div>
-    <div class="form-group" style="margin-bottom:1rem;">
-      <label class="field-label">DISCORD HESABI *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Discord hesabınızın kullanıcı adı nedir? Eğer herhangi bir etiket (tag) özelliğine sahipseniz "İSİM#(etiket)" şeklinde yazın.</span></label>
-      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
+    <div class="form-group" style="margin-bottom:1.2rem;">
+      <label class="field-label">DISCORD KULLANICI ADI (USERNAME) *<br><span style="font-weight:400;font-size:0.8rem;color:var(--muted);line-height:1.7;">Discord hesabınızın tam ve güncel kullanıcı adını giriniz. Yeni Discord sistemi (2023 sonrası) kullanıcı adı formatında ise yalnızca kullanıcı adınızı (örn: ekonqtx), eski format kullanıyorsanız "İSİM#ETIKET" şeklinde (örn: ekonqtx#1234) yazınız. Sunucuda farklı bir görünen ad (display name) kullanıyorsanız, lütfen bunu da parantez içinde belirtiniz.</span></label>
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx — veya — ekonqtx#1234">
       <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>
-    <div class="form-group" style="margin-bottom:0;">
-      <label class="field-label">DISCORD ID *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Mülakat saatleri ve bot bildirimleri için 18 haneli Discord ID'niz.</span></label>
-      <input type="text" id="q_discord_id" class="input-field track-field" data-field="discord_id" value="${_esc(currentUser ? (currentUser.discordId || '') : '')}" required placeholder="Örn: 123456789012345678">
+    <div class="form-group" style="margin-bottom:1.2rem;">
+      <label class="field-label">DISCORD ID (18 HANE — NUMERİK KOD) *<br><span style="font-weight:400;font-size:0.8rem;color:var(--muted);line-height:1.7;">Discord ID'niz, hesabınıza ait 18 haneli benzersiz numerik tanımlayıcıdır. Bu bilgi; mülakat takvimi bildirimleri, bot sistemi entegrasyonu ve idari kayıt amacıyla kullanılmaktadır. Discord ID'nizi öğrenmek için: Discord'da Geliştirici Modu'nu etkinleştirin (Ayarlar → Gelişmiş → Geliştirici Modu = Açık), ardından profilinize sağ tıklayıp "Kullanıcı ID'sini Kopyala" seçeneğini kullanınız. ID rakamsal (numerik) formatta olmalı; @ işareti veya harf içermemelidir.</span></label>
+      <input type="text" id="q_discord_id" class="input-field track-field" data-field="discord_id" value="${_esc(currentUser ? (currentUser.discordId || '') : '')}" required placeholder="Örn: 123456789012345678 (18 rakam)">
       <div class="field-hint" id="hint-q_discord_id" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label class="field-label">EkoYıldız SUNUCUSUNDA KULLANDIĞINIZ GÖRÜNEN AD (DISPLAY NAME) *<br><span style="font-weight:400;font-size:0.8rem;color:var(--muted);line-height:1.7;">EkoYıldız Discord sunucusunda profilinizde görünen ad nedir? Bu bilgi, komisyonun sizi sunucu içinde tanıyabilmesi ve değerlendirme sürecinde doğru profili inceleyebilmesi için gerekmektedir. Sunucuda birden fazla görünen ad kullandıysanız, en son güncellediğiniz ad ile yazınız.</span></label>
+      <input type="text" id="q_display_name" class="input-field track-field" data-field="display_name" required placeholder="Örn: eko.nqtx veya Nqtx" value="${_esc(usernameStr)}">
+      <div class="field-hint" id="hint-q_display_name" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>`;
-  const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER', 'Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
+  const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — KİMLİK VE İLETİŞİM BİLGİLERİ', 'Discord kimliği, ID ve sunucu içi profil bilgileri — değerlendirme sürecinin temeli.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
 
   // ═══ BÖLÜM 2 ═══
   const step2Body = `
-    <div style="background:rgba(255,255,255,0.02);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Kişisel bilgi paylaşımı, bireylerin özel ve hassas bilgilerini güvenli bir şekilde sunma sürecidir. Bu süreçte gizlilik, veri güvenliği ve yasal sorumluluklar öncelikli olarak gözetilmektedir. Paylaştığınız bilgiler, başvuru ve değerlendirme sürecinin doğru, adil ve etkili bir şekilde yürütülmesini sağlamak amacıyla kullanılacaktır.<br><br>
-      Sunduğunuz akademik geçmiş, deneyimler, yetkinlikler ve kişisel tercihler, Etkinlik Sorumluluğu ve ilgili yetkili ekipler tarafından, sizin için en uygun görev ve sorumluluk alanlarını belirlemek ve sunucumuzun standartlarına uygun çözümler geliştirmek amacıyla değerlendirilecektir.<br><br>
-      Tüm paylaşımlarınız sadece Etkinlik Organizatörü tarafından merkezi değerlendirme birimine iletilecek ve gizlilik politikalarımız doğrultusunda korunacaktır.
+    <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1.2rem 1.5rem;border-radius:0 14px 14px 0;font-size:0.9rem;color:var(--muted);line-height:1.85;margin-bottom:1.5rem;">
+      <strong style="color:#a78bfa;font-size:0.95rem;">2.1 — KİŞİSEL SORU HAVUZU & ADAYLIK PORTFÖYÜ</strong><br><br>
+      Bu bölümde sizinle daha yakından tanışmayı hedefliyoruz. Aşağıdaki kişisel sorular; adayın bireysel kimliğini, motivasyon kaynaklarını, öz farkındalık düzeyini, takım dinamiklerine uyum kapasitesini ve EkoYıldız topluluğuna sağlayabileceği somut katma değeri ölçmek amacıyla tasarlanmıştır.<br><br>
+      Verilen yanıtlar; yüzeysel, genel geçer veya birkaç cümleyle geçiştirilmiş olmayıp aday hakkında gerçek bir fikir edinilmesini sağlayacak özgün, içten ve bütünlüklü bir nitelik taşımalıdır. Yapay zekâ yardımıyla oluşturulmuş, kopyala-yapıştır yöntemiyle doldurulan veya şablondan uyarlanan cevaplar sistem tarafından otomatik olarak tespit edilmekte ve bu tür başvurular değerlendirme dışı bırakılmaktadır.<br><br>
+      <span style="color:#fbbf24;">📌 Değerlendirme Notu:</span> Kişisel bölümdeki sorulara verilen yanıtların uzunluğu ve derinliği, komisyonun adayın kendini ifade etme kapasitesi hakkında fikir edinmesi açısından kritik önem taşımaktadır. Her soru için en az 4-6 cümle yazmanız beklenmektedir.
     </div>
-    ${_field('q_p1', 'KİŞİSEL SORU — Bize biraz kendinizden bahseder misiniz?', 'Kendiniz, ilgi alanlarınız ve yaşınızdan bahsedin...', 3)}
-    ${_field('q_p2', 'KİŞİSEL SORU — Hangi becerilerinizin takım içinde en çok değer taşıdığını düşünüyorsunuz?', 'Becerilerinizi ve güçlü yönlerinizi detaylandırın...', 3)}
-    ${_field('q_p3', 'KİŞİSEL SORU — Takıma ne gibi özellikler getirebilirsiniz?', 'Takıma katacağınız değerleri açıklayın...', 3)}
-    ${_field('q_p4', 'KİŞİSEL SORU — Neden Etkinlik Sorumluluğunda görev almak istiyorsunuz?', 'Etkinlik Yetkililiğinde çalışmanın sizin için anlamı nedir ve burada görev alarak nasıl bir katma değer sağlayacağınızı düşünüyorsunuz?', 4)}
-    ${_field('q_p5', 'KİŞİSEL SORU — Üstlerinizden direktif alma konusunda ne kadar rahat hissedersiniz?', 'Bu süreçte yönergeleri anlama, uygulama ve gerektiğinde adapte etme yeteneğiniz hakkında neler söyleyebilirsiniz?', 3)}`;
-  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — İSTENİLEN KİŞİSEL BİLGİLER', 'Akademik geçmiş, deneyimler ve kişisel tercihleriniz.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa', '#a78bfa,#8b5cf6'));
+    ${_field('q_p1', 'KİŞİSEL SORU 1 — Lütfen bize biraz kendinizden bahsediniz: Yaşınız, ilgi alanlarınız, günlük rutininiz ve EkoYıldız topluluğuna ilk kez ne zaman, nasıl adım attığınızı anlatınız. Toplulukta geçirdiğiniz süre zarfında en çok hangi etkinlik ya da etkileşimler sizi olumlu yönde etkiledi ve bu deneyimler sizi Etkinlik Sorumluluğu pozisyonuna başvurmaya nasıl yöneltti?', 'Yaşınız, ilgi alanlarınız, EkoYıldız macerınızın başlangıcı, toplulukta yaşadığınız en güzel deneyimler ve bu başvuruya sizi getiren süreç hakkında dürüst ve samimi bir anlatım yapınız. En az 5-6 cümle yazmanız beklenmektedir...', 5)}
+    ${_field('q_p2', 'KİŞİSEL SORU 2 — Takım içindeki en güçlü yönleriniz ve katkı sağlayabileceğiniz alanlar nelerdir? Bunu destekleyen somut bir örnek ya da geçmişte bir toplulukta/sunucuda gerçekleştirdiğiniz ve gurur duyduğunuz bir katkıyı da paylaşınız. Güçlü yönlerinizin yanı sıra, kendinizde geliştirmek istediğiniz bir eksikliğinizi de dürüstçe belirtiniz.', 'Güçlü yönleriniz ve bunları destekleyen somut örnekler, ayrıca kendinizde farkında olduğunuz bir zayıf nokta ve bu konuda ne yaptığınızı detaylıca açıklayınız. Yüzeysel kalmayınız...', 5)}
+    ${_field('q_p3', 'KİŞİSEL SORU 3 — EkoYıldız Etkinlik Sorumluluğu kadrosuna katıldığınızda takıma somut olarak ne getireceksiniz? Kuru bir liste yazmak yerine, bu özelliklerin pratikte nasıl yansıyacağını örneklerle açıklayınız. Takım içi uyum, iletişim tarzı ve çatışma yönetimi konularında kendinizi nasıl tanımlarsınız?', 'Takıma katkınızın somut tezahürleri, iletişim tarzınız ve farklı kişiliklerle çalışma deneyimlerinizi gerçekçi örneklerle açıklayınız...', 5)}
+    ${_field('q_p4', 'KİŞİSEL SORU 4 — Neden Etkinlik Sorumluluğu pozisyonuna başvuruyorsunuz ve bu rolün size neden uygun olduğunu düşünüyorsunuz? EkoYıldız özelinde, mevcut etkinlik yapısını gözlemleyerek fark ettiğiniz eksiklikler veya geliştirilebilecek alanlar var mı? Eğer varsa bunları ve bu konuda nasıl bir katkı sağlayabileceğinizi açıklayınız. Bu rolü üstlenmenizin, kişisel gelişiminize ve EkoYıldız topluluğuna uzun vadede nasıl bir değer katacağını düşünüyorsunuz?', 'Bu rolü seçme motivasyonunuz, EkoYıldız etkinlik yapısına yönelik gözlemleriniz, olası katkılarınız ve uzun vadeli hedeflerinizi kapsamlı biçimde açıklayınız...', 6)}
+    ${_field('q_p5', 'KİŞİSEL SORU 5 — Görev hiyerarşisine, direktiflere ve üst kademe kararlarına uyum konusunda kendinizi nasıl değerlendirirsiniz? Geçmişte bir otorite figürü veya üstünüzle yaşadığınız bir anlaşmazlık durumunu ve bu durumu nasıl yönettiğinizi örnek vererek anlatınız. Katılmadığınız bir karara nasıl yaklaşırsınız; direniş mi, ikna çabası mı yoksa uyum mu?', 'Hiyerarşiye uyum tarzınız, geçmişte yaşadığınız bir otorite/anlaşmazlık deneyimi ve katılmadığınız kararlara yaklaşımınızı dürüstçe açıklayınız...', 5)}
+    ${_field('q_p6', 'KİŞİSEL SORU 6 — Başvurduğunuz Etkinlik Sorumluluğu pozisyonunun hangi sorumluluklarını taşıdığını tam olarak biliyor musunuz? Görevin sizi en çok hangi yönüyle zorladığını öngörüyorsunuz ve bu zorluğu aşmak için şu an hangi adımları atmaya hazırsınız? Ayrıca bu göreve ayırabileceğiniz haftalık aktif zaman dilimlerini ve aktivite planınızı belirtiniz.', 'Görevin beklentileri ve sorumluluklarına ilişkin farkındalığınız, öngördüğünüz zorluklar ve bunlara hazırlığınız ile haftalık müsaitlik planınızı detaylıca yazınız...', 5)}`;
+  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — KİŞİSEL SORU HAVUZU & ADAYLIK PORTFÖYÜ', 'Motivasyon, öz farkındalık, takım uyumu ve somut katkı kapasitesi değerlendirmesi.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa', '#a78bfa,#8b5cf6'));
 
   // ═══ BÖLÜM 3 ═══
   const step3Body = `
@@ -148,9 +272,11 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
   // ═══ BÖLÜM 4 ═══
   const step4Body = `
-    <div style="background:rgba(255,255,255,0.02);border-left:3px solid #fbbf24;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Etkinlik Sorumluluğu kapsamında kullanılan senaryolar; EkoYıldız sunucusu içerisinde ve sunucu dışı platformlarda düzenlenen etkinliklerde karşılaşılması muhtemel gerçekçi durumları, operasyonel aksaklıkları ve organizasyon odaklı krizleri simüle eden, Etkinlik Sorumlularının planlama, yönetim, karar alma ve kriz müdahale yetkinliklerini çok yönlü biçimde değerlendirmeyi amaçlayan stratejik ölçüm araçlarıdır.<br><br>
-      Bu senaryolar; etkinlik akışında yaşanan bir aksama, teknik bir problem, katılımcı itirazları, görevli yetkililer arasında yaşanan yetki karmaşası, kurallara uyumsuzluk veya etkinliğin genel düzenini ve algısını etkileyebilecek bir kriz durumu üzerine kurgulanır.
+    <div style="background:rgba(251,191,36,0.06);border-left:3px solid #fbbf24;padding:1.2rem 1.5rem;border-radius:0 14px 14px 0;font-size:0.9rem;color:var(--muted);line-height:1.85;margin-bottom:1.5rem;">
+      <strong style="color:#fbbf24;font-size:0.95rem;">4.1 — SENARYO TEMELLİ DEĞERLENDİRME (Kriz Yönetimi & Operasyonel Yetkinlik)</strong><br><br>
+      Etkinlik Sorumluluğu kapsamında kullanılan senaryolar; EkoYıldız sunucusu içerisinde ve sunucu dışı platformlarda düzenlenen etkinliklerde karşılaşılması muhtemel gerçekçi durumları, operasyonel aksaklıkları ve organizasyon odaklı krizleri birebir simüle eden, Etkinlik Sorumlularının planlama, yönetim, anlık karar alma ve kriz müdahale yetkinliklerini çok yönlü ve derinlemesine biçimde değerlendirmeyi amaçlayan stratejik ölçüm araçlarıdır.<br><br>
+      Bu senaryolar; etkinlik akışında yaşanan kritik bir aksama, beklenmedik teknik arızalar, katılımcı itirazları ve şikâyetleri, görevli yetkililer arasında yaşanan yetki karmaşası ve koordinasyon bozukluğu, sunucu içi veya dışı kurallara açık uyumsuzluk, bilgi sızdırılması ile etkinliğin genel düzenini, bütünlüğünü ve kamuoyu algısını kalıcı olarak olumsuz etkileyebilecek her türlü kriz senaryosu üzerine kurgulanır.<br><br>
+      <span style="color:#fbbf24;">📋 Beklenti:</span> Her senaryo için yanıtınız en az 6-8 cümle uzunluğunda olmalı; "ne yapardım" değil, <strong>"hangi sırayla, hangi gerekçeyle, hangi adımları atardım"</strong> sorusuna yanıt vermelidir. Yüzeysel yanıtlar değerlendirme puanını düşürmektedir.
     </div>
     ${_field('q_s1', 'SENARYO SORUSU 1 — Büyük ölçekli etkinlik sırasında katılımcı sayısı beklenenden fazla oluyor, sunucu performansı düşüyor. Bazı oyuncular RP senaryosunu önceden bildiklerini iddia ederek etkinlik akışını bozuyor, bazı yetkililer kendi inisiyatifleriyle RP görevlerini değiştiriyor ve dış topluluklarda yanıltıcı bilgiler yayılmakta. Etkinlik Sorumlusu olarak nasıl yönetirsiniz?', 'Etkinlik akışı, RP bütünlüğü, sunucu performansı ve katılımcı deneyimini korumak için stratejileriniz...', 5)}
     ${_field('q_s2', 'SENARYO SORUSU 2 — Etkinlik sırasında bazı oyuncular, RP senaryosu ve ödül dağıtımı hakkında adaletsizlik ve ayrıcalık iddialarında bulunuyor. Teknik aksaklıklar nedeniyle bazı kanallar doğru çalışmıyor ve katılımcılar karmaşa yaşamaya başlıyor. Hangi adımları hangi öncelik sırasıyla atarsınız?', 'RP bütünlüğü, katılımcı memnuniyeti, teknik sorun çözümü ve koordinasyon...', 5)}
@@ -162,49 +288,66 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
   // ═══ BÖLÜM 5 ═══
   const step5Body = `
-    <div style="background:rgba(255,255,255,0.02);border-left:3px solid #fb7185;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Bu bölümdeki soruların cevapları, idari politikalarımızın güçlendirilmesi ve ekibimizin daha etkin bir şekilde işleyebilmesi için önemli bir katkı sağlayacaktır.
+    <div style="background:rgba(251,113,133,0.06);border-left:3px solid #fb7185;padding:1.2rem 1.5rem;border-radius:0 14px 14px 0;font-size:0.9rem;color:var(--muted);line-height:1.85;margin-bottom:1.5rem;">
+      <strong style="color:#fb7185;font-size:0.95rem;">5.1 — ZORUNLU ONAYLAR, ETİK TAAHHÜTLER VE NİHAİ BEYANLAR</strong><br><br>
+      Bu son bölüm; başvuru sürecinin yasal, idari ve etik boyutlarını kapsamaktadır. Aşağıda yer alan tüm onay, taahhüt ve beyan maddeleri; EkoYıldız Etkinlik Yönetim Komisyonu'nun standart personel alma prosedürlerinin ayrılmaz bir parçasını oluşturmakta olup başvurunun geçerli sayılabilmesi için eksiksiz ve doğru biçimde beyan edilmesi zorunludur.<br><br>
+      Her maddeyi dikkatlice okuyunuz; yalnızca gerçekten katıldığınız ve uygulamaya koymaya hazır olduğunuz maddeleri onaylayınız. Yanlış beyan veya onay verdiğiniz taahhütlere uymadığınız tespit edildiğinde göreviniz sona erdirilecek ve sistemde kayıt altına alınacaktır.<br><br>
+      <span style="color:#fb7185;">⚠️ Son Uyarı:</span> Bu formu gönderdikten sonra verilen yanıtlar değiştirilemez. Gönder butonuna basmadan önce tüm bölümleri son bir kez gözden geçiriniz.
     </div>
 
-    <div class="form-group" style="margin-bottom:1.3rem;">
-      <label class="field-label">SON SORU — Yetkilerinizi kötüye kullanırsanız sorumluluk haklarınızın alınabileceğini ve teknik olarak sunucu içinde soruşturma altına olacağınızı kabul ediyor musunuz? *</label>
+    <div class="form-group" style="margin-bottom:1.4rem;">
+      <label class="field-label" style="font-size:0.92rem;line-height:1.7;">ONAY 1 — YETKİ KÖTÜYE KULLANIMI VE SORUŞTURMA HAKKI *<br><span style="font-weight:400;font-size:0.82rem;color:var(--muted);">EkoYıldız Etkinlik Sorumlusu sıfatıyla tarafınıza tanınan yetki ve ayrıcalıkların kötüye kullanılması, sistematik ihlal edilmesi veya kasıtlı olarak sınır dışına çıkılması durumunda; sorumluluk haklarınızın herhangi bir ön bildirim yapılmaksızın askıya alınabileceğini ya da kalıcı olarak iptal edilebileceğini, ayrıca sunucu içi idari soruşturma prosedürü kapsamında soruşturmaya alınabileceğinizi ve bu kararların nihai ve itiraz kabul etmez nitelik taşıdığını kabul ediyor musunuz?</span></label>
       <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
-        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(52,211,153,0.12)'" onmouseout="this.style.background='rgba(52,211,153,0.06)'">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(52,211,153,0.12)'" onmouseout="this.style.background='rgba(52,211,153,0.06)'">
           <input type="radio" name="opt_abuse" value="EVET" required style="accent-color:#34d399;width:18px;height:18px;">
-          <span style="font-size:0.92rem;color:#34d399;font-weight:600;">Evet, kabul ediyorum.</span>
+          <span style="font-size:0.92rem;color:#34d399;font-weight:600;">Evet, okudum, anladım ve tüm maddelerini kabul ediyorum.</span>
         </label>
-        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(251,113,133,0.12)'" onmouseout="this.style.background='rgba(251,113,133,0.06)'">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(251,113,133,0.12)'" onmouseout="this.style.background='rgba(251,113,133,0.06)'">
           <input type="radio" name="opt_abuse" value="HAYIR" style="accent-color:#fb7185;width:18px;height:18px;">
-          <span style="font-size:0.92rem;color:#fb7185;font-weight:600;">Hayır, kabul etmiyorum.</span>
+          <span style="font-size:0.92rem;color:#fb7185;font-weight:600;">Hayır, bu koşulları kabul etmiyorum.</span>
         </label>
       </div>
     </div>
 
-    <div class="form-group" style="margin-bottom:1.3rem;">
-      <label class="field-label">SON SORU — Başka bir çalışana saygısızlık ederseniz yetkililik haklarınızın elinizden alınabileceğini kabul ediyor musunuz? *</label>
+    <div class="form-group" style="margin-bottom:1.4rem;">
+      <label class="field-label" style="font-size:0.92rem;line-height:1.7;">ONAY 2 — SAYGILILIK, ETİK İLETİŞİM VE KURUMSAL TEMSİL *<br><span style="font-weight:400;font-size:0.82rem;color:var(--muted);">Görev süresince ekip üyelerine, katılımcılara, moderatörlere ve yönetim kademesine karşı her koşulda saygılı, yapıcı ve kurumsal iletişim standartlarına uygun davranmayı taahhüt ettiğinizi; hakaret, aşağılama, ötekileştirme veya kışkırtıcı tutum sergilemeniz hâlinde, durumun ağırlığına göre uyarı, rol askıya alma veya kalıcı olarak görevden el çektirme yaptırımlarının uygulanabileceğini kabul ediyor musunuz?</span></label>
       <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
-        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(52,211,153,0.12)'" onmouseout="this.style.background='rgba(52,211,153,0.06)'">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(52,211,153,0.12)'" onmouseout="this.style.background='rgba(52,211,153,0.06)'">
           <input type="radio" name="opt_respect" value="EVET" required style="accent-color:#34d399;width:18px;height:18px;">
-          <span style="font-size:0.92rem;color:#34d399;font-weight:600;">Evet, kabul ediyorum.</span>
+          <span style="font-size:0.92rem;color:#34d399;font-weight:600;">Evet, okudum, anladım ve saygılı iletişim standartlarına uymayı taahhüt ediyorum.</span>
         </label>
-        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(251,113,133,0.12)'" onmouseout="this.style.background='rgba(251,113,133,0.06)'">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(251,113,133,0.12)'" onmouseout="this.style.background='rgba(251,113,133,0.06)'">
           <input type="radio" name="opt_respect" value="HAYIR" style="accent-color:#fb7185;width:18px;height:18px;">
+          <span style="font-size:0.92rem;color:#fb7185;font-weight:600;">Hayır, bu koşulları kabul etmiyorum.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.4rem;">
+      <label class="field-label" style="font-size:0.92rem;line-height:1.7;">ONAY 3 — GİZLİLİK, VERİ KORUMA VE BİLGİ GÜVENLİĞİ TAAHHÜDÜ *<br><span style="font-weight:400;font-size:0.82rem;color:var(--muted);">Etkinlik Sorumlusu sıfatıyla erişim sağlayacağınız idari bilgiler, katılımcı verileri, yönetim iletişim içerikleri, planlama dökümanları ve ekip içi koordinasyon bilgilerinin; sunucu dışına çıkarılmaması, üçüncü taraflarla paylaşılmaması ve herhangi bir sosyal platform üzerinde ifşa edilmemesi gerektiğini kabul ediyor musunuz? Gizlilik ihlalinin disiplin prosedürü kapsamında değerlendirileceğini onaylıyor musunuz?</span></label>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(52,211,153,0.12)'" onmouseout="this.style.background='rgba(52,211,153,0.06)'">
+          <input type="radio" name="opt_privacy" value="EVET" required style="accent-color:#34d399;width:18px;height:18px;">
+          <span style="font-size:0.92rem;color:#34d399;font-weight:600;">Evet, gizlilik ve veri güvenliği taahhütlerini okudum ve kabul ediyorum.</span>
+        </label>
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.7rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(251,113,133,0.06);border:1px solid rgba(251,113,133,0.15);transition:all 0.2s;" onmouseover="this.style.background='rgba(251,113,133,0.12)'" onmouseout="this.style.background='rgba(251,113,133,0.06)'">
+          <input type="radio" name="opt_privacy" value="HAYIR" style="accent-color:#fb7185;width:18px;height:18px;">
           <span style="font-size:0.92rem;color:#fb7185;font-weight:600;">Hayır, kabul etmiyorum.</span>
         </label>
       </div>
     </div>
 
     <div class="form-group" style="margin-bottom:0;">
-      <label class="field-label">TALİMATNAME — Personel sınıfına bağlı belirli kurallar mevcut. El kitapçığına uyacağınızı teyit eder misiniz? *</label>
+      <label class="field-label" style="font-size:0.92rem;line-height:1.7;">NİHAİ TAAHHÜT — PERSONEL TALİMATNAMESİ, GÖREV YÖNETMELİĞİ VE EKİP EL KİTABINA UYUM *<br><span style="font-weight:400;font-size:0.82rem;color:var(--muted);">EkoYıldız Etkinlik Sorumluluğu Personel Talimatnamesi, Görev Yönetmeliği ve Ekip El Kitabı'nın tüm maddelerini; göreve başlamadan önce eksiksiz biçimde okumayı, içeriğini özümsemeyi ve görev süresince kurallara harfiyen uymayı taahhüt ettiğinizi, söz konusu belgelerin güncellenmesi hâlinde güncel versiyona uyum sağlamakla yükümlü olduğunuzu ve bu kurallara aykırı her türlü eylemin disiplin sürecini başlatacağını kabul ediyor musunuz?</span></label>
       <div style="margin-top:0.5rem;">
-        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.08);border:1.5px solid rgba(52,211,153,0.25);transition:all 0.2s;">
+        <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.85rem 1.1rem;border-radius:12px;cursor:pointer;background:rgba(52,211,153,0.08);border:1.5px solid rgba(52,211,153,0.3);transition:all 0.2s;">
           <input type="radio" name="opt_rules" value="EVET" required checked style="accent-color:#34d399;width:18px;height:18px;">
-          <span style="font-size:0.92rem;color:#34d399;font-weight:700;">Kurallara uyacağım, Talimat kitapçığına göre ilerleyecek ve vazifemi yerine getireceğim.</span>
+          <span style="font-size:0.92rem;color:#34d399;font-weight:700;">Evet, talimatname ve el kitabını okuyacağımı, kurallara harfiyen uyacağımı, üzerime düşen tüm görev ve sorumlulukları eksiksiz yerine getireceğimi beyan ve taahhüt ediyorum.</span>
         </label>
       </div>
     </div>`;
   const step5Nav = prevBtn(5) + `<button type="submit" id="submit-btn" class="btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:1.1rem;padding:0.9rem 2.8rem;border-radius:30px;box-shadow:0 8px 25px rgba(16,185,129,0.4);border:none;cursor:pointer;font-family:inherit;">🚀 Başvuruyu Gönder</button>`;
-  const step5 = _step(5, '#fb7185', 'BÖLÜM 5 — İSTENİLEN SON BİLGİLER (ZORUNLU ONAYLAR)', 'Başvurunuzu tamamlamak için aşağıdaki zorunlu onayları verin.', step5Body, step5Nav);
+  const step5 = _step(5, '#fb7185', 'BÖLÜM 5 — ZORUNLU ONAYLAR, ETİK TAAHHÜTLER & NİHAİ BEYANLAR', 'Yasal, idari ve etik taahhütlerinizi onaylayarak başvuruyu tamamlayın.', step5Body, step5Nav);
 
   const content = `
     <div style="max-width:960px; margin:1.5rem auto; animation:fadeUp 0.5s ease;">
@@ -240,29 +383,28 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
         <!-- DOCUMENTATION CARD -->
         <div class="card" style="margin-bottom:1.5rem;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:1.8rem;">
-          <h3 style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:1rem;">📖 BİRİNCİL ALIM FORMU</h3>
+          <h3 style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:1rem;">📖 ETKİNLİK SORUMLULUĞU BİRİNCİL ALIM FORMU</h3>
           <div style="display:flex;flex-direction:column;gap:1rem;font-size:0.88rem;color:var(--muted);line-height:1.7;">
             <div style="border-left:3px solid #818cf8;padding:0.8rem 1.2rem;border-radius:0 12px 12px 0;background:rgba(255,255,255,0.02);">
-              Birincil değerlendirme formumuz, adayların başvuru sürecinde ilk adımı attıkları ve başvurularının ön değerlendirmesinin yapıldığı önemli bir belgedir. Bu form, "Etkinlik Sorumlusu" pozisyonuna başvuran adayların ilk değerlendirmeye tabi tutulduğu bir araçtır.
+              Bu birincil değerlendirme formu, EkoYıldız Etkinlik Sorumluluğu pozisyonuna başvuran adayların ilk aşama değerlendirmesine tabi tutulduğu resmi belgedir. Formun eksiksiz, samimi ve özenli biçimde doldurulması, aday hakkında komisyonun doğru ve kapsamlı bir değerlendirme yapabilmesi açısından kritik öneme sahiptir. Eksik, yüzeysel veya tutarsız yanıtlar; başvurunun ilk aşamada elenme ihtimalini doğrudan artırmaktadır.
             </div>
             <div style="border-left:3px solid #34d399;padding:0.8rem 1.2rem;border-radius:0 12px 12px 0;background:rgba(255,255,255,0.02);">
-              <strong style="color:#fff;">FORMUN AMACI VE SÜRECİ:</strong> Formun temel amacı, adayların pozisyona uygunluğunu ilk aşamada değerlendirmektir. Başvurunun incelenmesi → Koşullu nihai değerlendirme → Mülakat daveti → Kurula alım kararı.
+              <strong style="color:#fff;">FORMUN AMACI VE İZLEYECEĞİ SÜREÇ:</strong> Formun birincil amacı, adayların bu pozisyona uygunluğunu ilk aşamada niteliksel düzeyde değerlendirmektir. Süreç şu adımları izler: <em>① Başvuru Formu Gönderimi → ② Komisyon Tarafından Ön İnceleme → ③ Yapay Zekâ Destekli Metin Analizi → ④ Koşullu Nihai Değerlendirme → ⑤ Mülakat Daveti → ⑥ Mülakat Süreci → ⑦ Nihai Alım Kararı.</em> Her adım bağımsız kriterler doğrultusunda gerçekleştirilmekte olup sürecin herhangi bir aşamasında başvuru reddedilebilir.
             </div>
             <div style="border-left:3px solid #a78bfa;padding:0.8rem 1.2rem;border-radius:0 12px 12px 0;background:rgba(255,255,255,0.02);">
-              <strong style="color:#fff;">ÖN ALIMLAR MÜLAKATI:</strong> Başvurduğunuz departmanı harici olarak yöneten komite, sizinle iletişime geçecektir. Regülasyon Komitesi, size özel hazırlanmış soruları yanıtlamanızı isteyecektir. Yalnızca Etkinlik Organizatörünün onayını alırsanız, departmana katılma hakkına sahip olacaksınız.
+              <strong style="color:#fff;">ÖN ALIMLAR MÜLAKATı:</strong> Başvurduğunuz departmanı harici olarak denetleyen Regülasyon Komitesi, inceleme sürecinin tamamlanmasının ardından sizinle özel olarak iletişime geçecektir. Komite üyeleri, formdaki yanıtlarınızdan hareketle size özel hazırlanmış detaylı sorular yöneltecektir. <strong>Yalnızca Etkinlik Organizatörü'nün nihai onayını alan adaylar departmana katılma hakkı elde edecektir.</strong> Mülakat daveti Discord üzerinden DM yoluyla iletilecek; davet gelen süre zarfında yanıt verilmemesi başvuruyu otomatik olarak geçersiz kılacaktır.
             </div>
             <div style="border-left:3px solid #fbbf24;padding:0.8rem 1.2rem;border-radius:0 12px 12px 0;background:rgba(255,255,255,0.02);font-size:0.82rem;">
-              <strong style="color:#fff;">📌 FORM KURALLARI:</strong><br>
-              • Başvuru formunu sadece bir kez göndermelisiniz.<br>
-              • Trolleme veya toksik başvurularda bulunan kişiler EkoYıldız tarafından kara listeye alınacaktır.<br>
-              • Başvuru cevaplarının özgün olması zorunludur. Yapay zekâ veya başkasından kopyalanmış içerikler tespit edildiğinde başvuru reddedilir.<br>
-              • Koordinatörün değerlendirme süreci gizlilik esasına dayanır.<br>
-              • Başvuru formu yalnızca kişisel değerlendirme amacı taşımakta olup paylaşılması yasaktır.<br>
-              • Formun doldurulması, ilgili yönetmelik ve kuralları okuduğunuz ve kabul ettiğiniz anlamına gelir.<br>
+              <strong style="color:#fff;">📌 FORM KURALLARI VE ETİK İLKELER:</strong><br>
+              • Başvuru formu her aday tarafından yalnızca bir kez doldurulup gönderilebilir. Mükerrer başvurular sistem tarafından otomatik olarak reddedilir.<br>
+              • Trol, eksik, kasıtlı yanıltıcı veya amaç dışı başvurularda bulunan adaylar EkoYıldız sisteminde kalıcı olarak kara listeye alınacaktır.<br>
+              • Başvuru cevaplarının özgün ve tamamen size ait olması zorunludur. Yapay zekâ, başka bir kişinin metni veya çevrimiçi kaynaklardan kopyalanmış içerikler sistem tarafından yüksek doğrulukla tespit edilmekte ve bu tür başvurular herhangi bir bildirim yapılmaksızın reddedilmektedir.<br>
+              • Değerlendirme süreci tam gizlilik esasına dayanır. Komisyon kararları ve değerlendirme kriterleri hiçbir koşulda paylaşılmaz.<br>
+              • Bu formu doldurmak; EkoYıldız ilgili tüm yönetmelik, talimatname ve kuralları okuduğunuz, içeriğini anladığınız ve tüm koşulları kabul ettiğiniz anlamına gelmektedir.<br>
               <span style="color:#818cf8;font-style:italic;">— Kurucu ekonqt</span>
             </div>
             <div style="border-left:3px solid #fb7185;padding:0.6rem 1.2rem;border-radius:0 12px 12px 0;background:rgba(255,255,255,0.02);font-size:0.82rem;font-style:italic;">
-              ・EK NOT: Etkinlik Organizatörü her başvuruyu dikkatle inceler. Bu sürece adım atan adaylara, disiplin ve kararlılık içinde ilerlemeleri temenni edilir.
+              ・ EK NOT: Her başvuru, Etkinlik Organizatörü ve Regülasyon Komitesi tarafından özenle ve bireysel olarak incelenmektedir. Bu sürece adım atan tüm adaylara, kararlılık ve özgünlük içinde ilerlemeleri temenni edilir. Formun görünür kısmında yalnızca yanıtlarınız yer almakla birlikte, sistemimiz arka planda yazım davranışı, süre ve içerik tutarlılığı gibi ek parametreleri de kayıt altına almaktadır.
             </div>
           </div>
         </div>
@@ -493,6 +635,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
 
           _initTracking();
         </script>
+        ${_socialProofScript('bu başvuru formunu')}
       `}
     </div>
   `;
@@ -1186,6 +1329,7 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
             _initTracking();
           });
         </script>
+        ${_socialProofScript('Topluluk Elçisi başvuru formunu')}
       `}
     </div>
   `;

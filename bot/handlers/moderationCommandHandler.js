@@ -61,6 +61,14 @@ async function handleModerationCommand(interaction) {
       const duration = parseDuration(sure || "10m");
       await member.timeout(duration, `Sebep: ${sebep}`);
 
+      // Topluluk Elçisine DM Bildirimi Gönder
+      try {
+        const { sendModAuditToAmbassador } = require("../services/toplulukElcisiService");
+        await sendModAuditToAmbassador(interaction.client, interaction.guild, interaction.user, kullanici, "Susturma (Mute)", `Süre: ${sure || "10m"}, Sebep: ${sebep}`);
+      } catch (errElci) {
+        console.warn("[sustur] Topluluk elçisi bildirim hatası:", errElci.message);
+      }
+
       // Güven ve Performans Puanı Güncelleme
       try {
         const { updateTrustScore, addModPoints } = require("../services/security/trustScoreService");

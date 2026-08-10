@@ -142,6 +142,10 @@ const staffProgressSchema = new mongoose.Schema({
     totalTippedCoins: { type: Number, default: 0 }
   },
 
+  // Topluluk Elçisi Ayın Elemanları & Boost Çarpanları
+  monthlyBoostMultiplier: { type: Number, default: 1.0 },
+  monthlyAwardTitle: { type: String, default: '' },
+
   // Moderasyon Rapor Takip Sistemi
   modReports: {
     unloggedCount: { type: Number, default: 0 },     // Loglanmamış işlem sayısı

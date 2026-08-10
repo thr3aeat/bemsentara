@@ -98,6 +98,29 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── Topluluk Elçisi Ayın Elemanları Butonları ────────────────────────────
+  if (customId.startsWith('elcisi_award_')) {
+    const awardType = customId.replace('elcisi_award_', '');
+    const { UserSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+    
+    let label = 'Ayın Moderatörünü Seçin';
+    if (awardType === 'chat') label = 'Ayın En İyi Sohbet Edenini Seçin';
+    if (awardType === 'voice') label = 'Ayın En İyi Seste Duranını Seçin';
+
+    const userSelect = new UserSelectMenuBuilder()
+      .setCustomId(`elcisi_select_user_${awardType}`)
+      .setPlaceholder(label)
+      .setMaxValues(1);
+
+    const row = new ActionRowBuilder().addComponents(userSelect);
+    await interaction.reply({
+      content: `🏆 **${label}**: Lütfen aşağıdaki menüden kullanıcıyı seçin:`,
+      components: [row],
+      ephemeral: true
+    });
+    return;
+  }
+
   // ── Form Başvurusu — Soru Cevaplama ──────────────────────────────────────
   if (customId.startsWith('formask_reply_') || customId.startsWith('formask_decline_')) {
     const isDecline = customId.startsWith('formask_decline_');

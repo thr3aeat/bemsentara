@@ -60,6 +60,14 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
 
   await dbUser.save();
 
+  // Topluluk Elçisine DM Bildirimi Gönder
+  try {
+    const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
+    await sendModAuditToAmbassador(interactionOrMessage.client, guild, executorUser, targetUser, 'Resmi Disiplin Uyarısı', reason);
+  } catch (errElci) {
+    console.warn('[issueWarning] Topluluk elçisi bildirim hatası:', errElci.message);
+  }
+
   // Güven ve Performans Puanı Güncelleme (Uyarı)
   try {
     const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
@@ -175,6 +183,14 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
   const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
   if (targetMember && targetMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
     await targetMember.roles.remove(YAVRU_DINAZOR_ROLE_ID, 'Hapis cezası sebebiyle Yavru Dinazor rolü alındı.').catch(() => {});
+  }
+
+  // Topluluk Elçisine DM Bildirimi Gönder
+  try {
+    const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
+    await sendModAuditToAmbassador(interactionOrMessage.client, guild, executorUser, targetUser, 'Hapis Cezası', reason);
+  } catch (errElci) {
+    console.warn('[issueJail] Topluluk elçisi bildirim hatası:', errElci.message);
   }
 
   // Güven ve Performans Puanı Güncelleme (Hapis)

@@ -1,6 +1,10 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 const generalCommands = [
+  new SlashCommandBuilder()
+    .setName("topluluk-elcisi")
+    .setDescription("🛡️ Topluluk Elçisi denetim, ayın elemanları ve moderatör yönetim paneli")
+    .setDMPermission(true),
   
   new SlashCommandBuilder()
     .setName("grafikler")
