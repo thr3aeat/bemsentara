@@ -74,7 +74,33 @@ async function applyPrivateArchivePermissions(channelOrCategory) {
 }
 
 /**
- * Checks if a channel ends with "-arşiv" or "-arsiv" and processes it accordingly.
+ * Determines whether a channel or category is specifically a ticket channel or ticket archive category.
+ * Prevents touching non-ticket server channels (e.g. kurallar-ve-ilkeler-arşiv, hikaye-arsiv, vb.)
+ */
+function isTicketChannel(channel) {
+  if (!channel || !channel.name) return false;
+  const norm = normalizeString(channel.name);
+  const parentNorm = channel.parent ? normalizeString(channel.parent.name) : "";
+
+  // Exclude normal static server channels
+  if (norm.includes("kurallar") || norm.includes("hikaye") || norm.includes("sakinles") || 
+      norm.includes("duyuru") || norm.includes("bilgi") || norm.includes("sohbet") || norm.includes("genel")) {
+    return false;
+  }
+
+  // Must have a ticket keyword OR be inside a ticket category
+  const isTicketKeyword = norm.includes("ticket") || norm.includes("bilet") || norm.includes("destek") || 
+                          norm.includes("talep") || norm.includes("sorusturma") || norm.includes("sikayet") ||
+                          norm.startsWith("kapali-") || norm.startsWith("closed-");
+
+  const isTicketParent = parentNorm.includes("ticket") || parentNorm.includes("bilet") || parentNorm.includes("destek") || 
+                         parentNorm.includes("talep") || parentNorm.includes("sorusturma") || parentNorm.includes("sikayet");
+
+  return isTicketKeyword || isTicketParent;
+}
+
+/**
+ * Checks if a channel is a closed/archived ticket channel and processes it accordingly.
  * Makes the channel strictly private: @everyone and ALL moderators CANNOT view it!
  * @param {import("discord.js").GuildChannel} channel
  */
@@ -96,7 +122,10 @@ async function handleArchiveChannel(channel) {
   if (!name) return;
 
   const normalizedName = normalizeString(name);
-  if (!normalizedName.endsWith("-arsiv")) return;
+  if (!normalizedName.endsWith("-arsiv") && !normalizedName.endsWith("-arşiv") && !normalizedName.includes("kapali") && !normalizedName.includes("closed")) return;
+
+  // Only process if it is a ticket channel
+  if (!isTicketChannel(channel)) return;
 
   // Check if @everyone is already denied ViewChannel
   const everyoneOverwrite = channel.permissionOverwrites?.cache?.get(channel.guild.id);
@@ -106,7 +135,7 @@ async function handleArchiveChannel(channel) {
   let archiveCategory = channel.guild.channels.cache.find(c => {
     if (c.type !== ChannelType.GuildCategory) return false;
     const normalizedCatName = normalizeString(c.name);
-    return normalizedCatName.includes("arsiv") || normalizedCatName.includes("arşiv");
+    return (normalizedCatName.includes("arsiv") || normalizedCatName.includes("arşiv")) && (normalizedCatName.includes("ticket") || normalizedCatName.includes("destek") || normalizedCatName.includes("bilet"));
   });
 
   const isInArchiveCategory = archiveCategory && channel.parentId === archiveCategory.id;
@@ -120,13 +149,13 @@ async function handleArchiveChannel(channel) {
   processedCooldowns.set(channel.id, Date.now());
 
   try {
-    console.log(`[ArchiveService] 🔒 Private Archive action initiated for channel: "${channel.name}" (${channel.id}) in guild: "${channel.guild.name}"`);
+    console.log(`[ArchiveService] 🔒 Private Archive action initiated for ticket channel: "${channel.name}" (${channel.id}) in guild: "${channel.guild.name}"`);
 
     if (!archiveCategory) {
       archiveCategory = await channel.guild.channels.create({
-        name: "🗂️ Arşiv",
+        name: "🗂️ Ticket Arşivi",
         type: ChannelType.GuildCategory,
-        reason: "Gizli Otomatik Arşiv Kategorisi"
+        reason: "Gizli Otomatik Ticket Arşiv Kategorisi"
       }).catch(() => null);
     }
 
@@ -140,7 +169,7 @@ async function handleArchiveChannel(channel) {
 
     // Apply strict privacy overwrites to the Archive Channel
     await applyPrivateArchivePermissions(channel);
-    console.log(`[ArchiveService] ✅ Channel "${channel.name}" is now completely private (@everyone & Moderators hidden).`);
+    console.log(`[ArchiveService] ✅ Ticket Channel "${channel.name}" is now completely private (@everyone & Moderators hidden).`);
   } catch (error) {
     console.error(`[ArchiveService] Error processing archive channel "${channel?.name}":`, error.message || error);
   } finally {
@@ -163,11 +192,12 @@ async function scanAndFixArchivedTicketPermissions(client) {
         await guild.channels.fetch().catch(() => {});
         await guild.roles.fetch().catch(() => {});
 
-        // 1. Find all archive / closed categories
+        // 1. Find all ticket archive / closed categories
         const archiveCategories = guild.channels.cache.filter(c => {
           if (c.type !== ChannelType.GuildCategory) return false;
           const norm = normalizeString(c.name);
-          return norm.includes("arsiv") || norm.includes("arşiv") || norm.includes("kapali") || norm.includes("closed");
+          return (norm.includes("arsiv") || norm.includes("arşiv") || norm.includes("kapali") || norm.includes("closed")) &&
+                 (norm.includes("ticket") || norm.includes("destek") || norm.includes("bilet") || norm.includes("talep"));
         });
 
         for (const cat of archiveCategories.values()) {
@@ -177,18 +207,7 @@ async function scanAndFixArchivedTicketPermissions(client) {
         // 2. Find all closed/archived ticket channels
         const targetChannels = guild.channels.cache.filter(c => {
           if (c.type === ChannelType.GuildCategory || c.isThread?.()) return false;
-          const norm = normalizeString(c.name);
-          const parentNorm = c.parent ? normalizeString(c.parent.name) : "";
-
-          const isArchiveOrClosedName = norm.endsWith("-arsiv") || norm.endsWith("-arşiv") ||
-                                       norm.includes("kapali") || norm.includes("closed") ||
-                                       norm.startsWith("kapali-") || norm.startsWith("closed-") ||
-                                       norm.startsWith("arsiv-") || norm.startsWith("arşiv-");
-
-          const isInArchiveCategory = parentNorm.includes("arsiv") || parentNorm.includes("arşiv") ||
-                                      parentNorm.includes("kapali") || parentNorm.includes("closed");
-
-          return isArchiveOrClosedName || isInArchiveCategory;
+          return isTicketChannel(c);
         });
 
         console.log(`[ArchiveService] ${guild.name} sunucusunda ${targetChannels.size} adet kapatılmış/arşivlenmiş ticket kanalı bulundu. Yetkiler düzenleniyor...`);
