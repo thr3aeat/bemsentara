@@ -164,8 +164,14 @@ function initializeDiscordHandlers(client) {
     const { ensureAlliedVerifyHelpMessage, ensureAlliedSupportMessage } = require("../services/alliedRoleSyncService");
     const { ensureAdminPanels } = require("../services/panelManager");
     const { startJailScheduler } = require("../services/jailService");
+    const { startScheduler: startFormInterviewScheduler } = require("../services/formInterviewScheduler");
 
     startJailScheduler(client);
+    try {
+      startFormInterviewScheduler();
+    } catch (schedErr) {
+      console.error("[formInterviewScheduler] Start error:", schedErr.message);
+    }
 
     // Tüm Kategorilerin Büyük Harfe Dönüştürülmesi (Startup - İsteğe Bağlı)
     if (process.env.SYNC_CHANNEL_AESTHETICS === "true") {
@@ -3955,6 +3961,12 @@ function initializeDiscordHandlers(client) {
       if (interaction.isButton() && (interaction.customId?.startsWith('mod_interview_yes_') || interaction.customId?.startsWith('mod_interview_no_'))) {
         await handleInterviewButton(interaction, client);
         return;
+      }
+      // ── Form Mülakatı butonları (fint_) ────────────────────────────────────
+      if (interaction.isButton() && interaction.customId?.startsWith('fint_')) {
+        const { handleFormInterviewButton } = require('../services/formInterviewService');
+        const handled = await handleFormInterviewButton(interaction);
+        if (handled) return;
       }
       // ── Koç butonları ────────────────────────────────────────────────────
       if (interaction.isButton() && interaction.customId?.startsWith('coach_')) {

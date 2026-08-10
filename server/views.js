@@ -4396,20 +4396,181 @@ function renderAdminPage(user) {
         return htmlSections.length > 0 ? htmlSections.join('') : '<p style="color:var(--muted);text-align:center;padding:2rem;">Görüntülenecek form verisi bulunamadı.</p>';
       }
 
+      function buildInterviewPanel(sub) {
+        if (!sub) return '';
+
+        const ans = sub.interviewAnswers || {};
+        const starsStr = sub.consultantRating ? '⭐'.repeat(sub.consultantRating) + ' (' + sub.consultantRating + '/5)' : 'Henüz değerlendirilmedi';
+        const commentStr = sub.consultantComment ? subEsc(sub.consultantComment) : 'Henüz yorum yapılmadı';
+        const timeApprovedBadge = sub.interviewTimeApproved
+          ? '<span style="color:#34d399;font-weight:800;padding:0.2rem 0.6rem;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:12px;">✅ SAAT ONAYLANDI</span>'
+          : '<span style="color:#fbbf24;font-weight:800;padding:0.2rem 0.6rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);border-radius:12px;">⏳ SAAT ONAY BEKLİYOR</span>';
+
+        return '<div style="background:rgba(15,23,42,0.6);border:1px solid rgba(129,140,248,0.25);border-radius:16px;padding:1.4rem;margin-bottom:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.3);">' +
+          '<div style="font-size:1rem;font-weight:800;color:#818cf8;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">' +
+            '<span>🎮 MÜLAKAT YÖNETİMİ & BOT OTOMASYONU</span>' +
+            timeApprovedBadge +
+          '</div>' +
+
+          // Discord ID & Info Row
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin-bottom:1.2rem;background:rgba(255,255,255,0.02);padding:0.8rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05);">' +
+            '<div><span style="color:var(--muted);font-size:0.78rem;">DISCORD KULLANICI / ID:</span><br><strong style="color:#fff;font-size:0.88rem;">' + subEsc(sub.discordUsername || sub.userId) + ' (' + subEsc(sub.discordId || sub.userId) + ')</strong></div>' +
+            '<div><span style="color:var(--muted);font-size:0.78rem;">MÜLAKAT SAATİ:</span><br><strong style="color:#fbbf24;font-size:0.88rem;">' + subEsc(sub.interviewScheduledTime || 'Belirtilmedi') + '</strong></div>' +
+            '<div><span style="color:var(--muted);font-size:0.78rem;">BOT MÜLAKAT DURUMU:</span><br><strong style="color:#38bdf8;font-size:0.88rem;">' + subEsc(sub.interviewState || 'NOT_STARTED') + '</strong></div>' +
+          '</div>' +
+
+          // Roblox Mülakat Oyun Linki Input Section
+          '<div style="margin-bottom:1.2rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">' +
+            '<label style="display:block;font-size:0.82rem;font-weight:700;color:#a78bfa;margin-bottom:0.4rem;">🔗 ROBLOX MÜLAKAT OYUN LİNKİ GİRME YERİ</label>' +
+            '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;">' +
+              '<input type="text" id="int-game-link" value="' + subEsc(sub.robloxGameLink || '') + '" placeholder="https://www.roblox.com/games/..." style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;">' +
+              '<button type="button" onclick="saveRobloxGameLink()" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">💾 Linki Kaydet</button>' +
+            '</div>' +
+            '<div id="game-link-res" style="font-size:0.78rem;margin-top:0.3rem;min-height:16px;"></div>' +
+          '</div>' +
+
+          // Mülakat Saati Onay & Teklif Section
+          '<div style="margin-bottom:1.2rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">' +
+            '<label style="display:block;font-size:0.82rem;font-weight:700;color:#34d399;margin-bottom:0.4rem;">⏰ MÜLAKAT SAATİ İŞLEMLERİ</label>' +
+            '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:0.6rem;">' +
+              '<input type="text" id="int-scheduled-time" value="' + subEsc(sub.interviewScheduledTime || '') + '" placeholder="Örn: 2026-08-11 20:00" style="flex:1;min-width:200px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;">' +
+              '<button type="button" onclick="approveInterviewTime()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟢 SAAT ONAYLANDI</button>' +
+              '<button type="button" onclick="proposeInterviewTime()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟡 FARKLI SAAT TEKLİF ET</button>' +
+            '</div>' +
+            '<div id="time-action-res" style="font-size:0.78rem;min-height:16px;"></div>' +
+          '</div>' +
+
+          // Mülakat Ön Cevapları Grid
+          '<div style="margin-bottom:1.2rem;">' +
+            '<div style="font-size:0.85rem;font-weight:700;color:#e2e8f0;margin-bottom:0.6rem;">📋 BOT DM MÜLAKAT ÖN CEVAPLARI:</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.6rem;">' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Müsaitlik Saati:</span> <br><strong style="color:#fff;">' + subEsc(ans.availability || 'Henüz Yanıtlamadı') + (ans.userRequestedTime ? ' (' + subEsc(ans.userRequestedTime) + ')' : '') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Mikrofon Var Mı?:</span> <br><strong style="color:#fff;">' + subEsc(ans.mic || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Yaş Sınırı 21+ Mı?:</span> <br><strong style="color:#fff;">' + subEsc(ans.age21 || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Roblox 16+ Erişimi:</span> <br><strong style="color:#fff;">' + subEsc(ans.roblox16 || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Mülakat Türü Tercihi:</span> <br><strong style="color:#818cf8;">' + subEsc(ans.mode || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Roblox Lagsız Katılım:</span> <br><strong style="color:#fff;">' + subEsc(ans.noLag || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">İtiraz Etmeme Kabulü:</span> <br><strong style="color:#fff;">' + subEsc(ans.agreeNoAppeal || '—') + '</strong></div>' +
+              '<div style="background:rgba(255,255,255,0.03);padding:0.6rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-size:0.8rem;"><span style="color:var(--muted);">Oyuna Katılım Teyidi:</span> <br><strong style="color:#34d399;">' + subEsc(sub.joinedGameStatus || '—') + '</strong></div>' +
+            '</div>' +
+          '</div>' +
+
+          // Mülakatı Bitir & Danışman Yorum / Değerlendirmesi Section
+          '<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);padding:1rem;border-radius:12px;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.8rem;margin-bottom:0.6rem;">' +
+              '<div>' +
+                '<h4 style="margin:0;font-size:0.9rem;color:#fbbf24;">⭐ MÜLAKAT DANIŞMANI HAKKINDA YORUMLAR VE DEĞERLENDİRME</h4>' +
+                '<p style="margin:0.2rem 0 0 0;font-size:0.78rem;color:var(--muted);">Kullanıcının mülakat sonrası girdiği danışman değerlendirmesi ve yıldız puanı.</p>' +
+              '</div>' +
+              '<button type="button" onclick="finishInterview()" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:10px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(239,68,68,0.3);">🏁 MÜLAKATI BİTİR</button>' +
+            '</div>' +
+            '<div style="background:rgba(0,0,0,0.3);padding:0.8rem 1rem;border-radius:10px;font-size:0.85rem;margin-top:0.6rem;">' +
+              '<div style="font-weight:700;color:#fbbf24;margin-bottom:0.2rem;">Yıldız Puanı: ' + starsStr + '</div>' +
+              '<div style="color:#e2e8f0;line-height:1.5;">Yorum: ' + commentStr + '</div>' +
+            '</div>' +
+            '<div id="finish-int-res" style="font-size:0.78rem;margin-top:0.4rem;min-height:16px;"></div>' +
+          '</div>' +
+        '</div>';
+      }
+
       function openSubModal(id) {
         const sub = _allSubs.find(s => s._id === id);
         if (!sub) return;
         _currentSubId = id;
         document.getElementById('modal-title').textContent    = sub.formTitle || sub.formType || 'Başvuru';
-        document.getElementById('modal-user').textContent     = (sub.discordUsername || sub.userId) + ' (' + (sub.userId || '?') + ')';
+        document.getElementById('modal-user').textContent     = (sub.discordUsername || sub.userId) + ' (ID: ' + (sub.discordId || sub.userId || '?') + ')';
         document.getElementById('modal-date').textContent     = sub.createdAt ? new Date(sub.createdAt).toLocaleString('tr-TR') : '—';
         document.getElementById('modal-id').textContent       = sub._id;
         document.getElementById('modal-status-badge').innerHTML = subStatusBadge(sub.status);
         document.getElementById('review-note').value          = '';
         document.getElementById('review-result').textContent  = '';
-        document.getElementById('modal-body').innerHTML       = buildFormQA(sub.formData, sub.behavior);
+        document.getElementById('modal-body').innerHTML       = buildInterviewPanel(sub) + buildFormQA(sub.formData, sub.behavior);
         document.getElementById('sub-modal-overlay').style.display = 'block';
         document.body.style.overflow = 'hidden';
+      }
+
+      async function saveRobloxGameLink() {
+        if (!_currentSubId) return;
+        const link = document.getElementById('int-game-link').value.trim();
+        const resDiv = document.getElementById('game-link-res');
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Kaydediliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/set-game-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gameLink: link })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ Roblox Oyun Linki kaydedildi!';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) sub.robloxGameLink = link;
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      async function approveInterviewTime() {
+        if (!_currentSubId) return;
+        const scheduledTime = document.getElementById('int-scheduled-time').value.trim();
+        const resDiv = document.getElementById('time-action-res');
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Saati onaylanıyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/approve-time', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scheduledTime })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ SAAT ONAYLANDI! Kullanıcıya Discord DM gönderildi.';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) { sub.interviewScheduledTime = scheduledTime; sub.interviewTimeApproved = true; }
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      async function proposeInterviewTime() {
+        if (!_currentSubId) return;
+        const proposedTime = document.getElementById('int-scheduled-time').value.trim();
+        const resDiv = document.getElementById('time-action-res');
+        if (!proposedTime) { resDiv.style.color = '#fbbf24'; resDiv.textContent = '⚠️ Lütfen bir saat yazın.'; return; }
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Yeni saat kullanıcıya teklif ediliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/propose-time', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proposedTime })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ Yeni mülakat saati teklifi kullanıcının DM\'ine gönderildi!';
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      async function finishInterview() {
+        if (!_currentSubId) return;
+        if (!confirm('Mülakatı bitirmek ve kullanıcıya Danışman Değerlendirme (Yıldız & Yorum) DM\'i göndermek istediğinize emin misiniz?')) return;
+        const resDiv = document.getElementById('finish-int-res');
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Mülakat bitiriliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/finish-interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '🏁 MÜLAKAT BİTİRİLDİ! Kullanıcıya "MÜLAKAT DANIŞMANI HAKKINDA YORUMLARINIZ" değerlendirme formu DM gönderildi.';
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
       function closeSubModal() {

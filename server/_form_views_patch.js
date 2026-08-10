@@ -55,11 +55,17 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
       Başvuru formunun ilk bölümünde, kimliğinizin doğrulanabilmesi ve sürecin düzenli bir şekilde ilerleyebilmesi için bazı temel ön bilgiler talep edilmektedir. Bu bilgiler, yalnızca başvurunun değerlendirilmesi ve iletişim sürecinin sağlıklı yürütülmesi amacıyla kullanılacaktır.<br><br>
       Lütfen sizden istenen bilgileri eksiksiz, güncel ve doğru bir biçimde doldurunuz. Bilgilerin doğruluğundan başvuru sahibi sorumludur. Eksik veya hatalı bilgi girişi, başvurunun geçersiz sayılmasına neden olabilir.
     </div>
-    <div class="form-group" style="margin-bottom:0;">
+    <div class="form-group" style="margin-bottom:1rem;">
       <label class="field-label">DISCORD HESABI *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Discord hesabınızın kullanıcı adı nedir? Eğer herhangi bir etiket (tag) özelliğine sahipseniz "İSİM#(etiket)" şeklinde yazın.</span></label>
       <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
       <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label class="field-label">DISCORD ID *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Mülakat saatleri ve bot bildirimleri için 18 haneli Discord ID'niz.</span></label>
+      <input type="text" id="q_discord_id" class="input-field track-field" data-field="discord_id" value="${_esc(currentUser ? (currentUser.discordId || '') : '')}" required placeholder="Örn: 123456789012345678">
+      <div class="field-hint" id="hint-q_discord_id" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>`;
+,StartLine:58,TargetContent:
   const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER', 'Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
 
   // ═══ BÖLÜM 2 ═══
@@ -462,6 +468,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
             const payload = {
               formType: 'event_staff',
               discordUsername: document.getElementById('q_discord').value.trim(),
+              discordId: ((document.getElementById('q_discord_id')||{}).value||'').trim(),
               personal:  { q1: (document.getElementById('q_p1')||{}).value||'', q2: (document.getElementById('q_p2')||{}).value||'', q3: (document.getElementById('q_p3')||{}).value||'', q4: (document.getElementById('q_p4')||{}).value||'', q5: (document.getElementById('q_p5')||{}).value||'' },
               technical: { q1: (document.getElementById('q_t1')||{}).value||'', q2: (document.getElementById('q_t2')||{}).value||'', q3: (document.getElementById('q_t3')||{}).value||'', q4: (document.getElementById('q_t4')||{}).value||'', q5: (document.getElementById('q_t5')||{}).value||'', q6: (document.getElementById('q_t6')||{}).value||'', q7: (document.getElementById('q_t7')||{}).value||'', mc8: (document.querySelector('input[name="q_mc8"]:checked')||{}).value||'', cb9, q10: (document.getElementById('q_t10')||{}).value||'' },
               scenarios: { s1: (document.getElementById('q_s1')||{}).value||'', s2: (document.getElementById('q_s2')||{}).value||'', s3: (document.getElementById('q_s3')||{}).value||'', s4: (document.getElementById('q_s4')||{}).value||'', s5: (document.getElementById('q_s5')||{}).value||'', single: (document.getElementById('q_ss')||{}).value||'' },

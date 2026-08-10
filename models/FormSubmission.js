@@ -72,6 +72,20 @@ const FormSubmission = {
     saveStoreNow();
 
     return Promise.resolve(record);
+  },
+
+  update(id, patch) {
+    const record = formSubmissions.findById(id);
+    if (!record) return Promise.resolve(null);
+
+    Object.assign(record, patch);
+    record.updatedAt = new Date();
+
+    formSubmissions.data.set(id, record);
+    formSubmissions.persist();
+    saveStoreNow();
+
+    return Promise.resolve(record);
   }
 };
 

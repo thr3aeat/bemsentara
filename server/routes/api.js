@@ -2263,8 +2263,9 @@ router.get("/api/admin/bans", async (req, res) => {
 router.post("/api/forms/event-staff/submit", async (req, res) => {
   try {
     const FormSubmission = require("../../models/FormSubmission");
-    const { discordUsername, personal, technical, scenarios, confirmations } = req.body;
+    const { discordUsername, discordId: bodyDiscordId, personal, technical, scenarios, confirmations } = req.body;
     const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+    const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
 
     // Check existing pending application if user is logged in
     if (req.user) {
@@ -2281,6 +2282,7 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
     // Save submission
     const submission = await FormSubmission.create({
       userId,
+      discordId: targetDiscordId,
       discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
       formType: "event_staff",
       formTitle: "Etkinlik Sorumluluğu // [A-1] 1. Nesil Sorumlu Başvuru Formu",
@@ -2302,6 +2304,12 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
       }
     } catch (_) {}
 
+    // Start automated Bot DM interview preliminary question flow
+    try {
+      const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
+      startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
+    } catch (_) {}
+
     res.json({ success: true, message: "Başvurunuz başarıyla gönderildi!", submissionId: submission._id });
   } catch (err) {
     console.error("[event-staff-submit] Error:", err.message);
@@ -2313,8 +2321,9 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
 router.post("/api/forms/community-ambassador/submit", async (req, res) => {
   try {
     const FormSubmission = require("../../models/FormSubmission");
-    const { discordUsername, section1, section2, section3, section4, section5, section6, behavior } = req.body;
+    const { discordUsername, discordId: bodyDiscordId, section1, section2, section3, section4, section5, section6, behavior } = req.body;
     const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+    const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
 
     // Check existing pending application if user is logged in
     if (req.user) {
@@ -2331,6 +2340,7 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
     // Save submission
     const submission = await FormSubmission.create({
       userId,
+      discordId: targetDiscordId,
       discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
       formType: "community_ambassador",
       formTitle: "EkoYıldız Topluluk Elçisi // Mülakat Başvuru Formu",
@@ -2353,6 +2363,12 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
       if (botClient && botClient.isReady()) {
         sendNewApplicationLog(botClient, submission).catch(() => {});
       }
+    } catch (_) {}
+
+    // Start automated Bot DM interview preliminary question flow
+    try {
+      const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
+      startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
     } catch (_) {}
 
     res.json({ success: true, message: "Topluluk Elçiliği başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
@@ -2516,6 +2532,141 @@ router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[form-ask] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Roblox Oyun Linki Kaydet ──────────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/set-game-link", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { gameLink } = req.body;
+    if (!gameLink || !gameLink.trim()) {
+      return res.status(400).json({ error: "Roblox oyun linki boş olamaz." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, { robloxGameLink: gameLink.trim() });
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Mülakat Saatini Onayla ─────────────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/approve-time", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { scheduledTime } = req.body;
+    const FormSubmission = require("../../models/FormSubmission");
+    const submission = await FormSubmission.findById(req.params.id);
+    if (!submission) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    const finalTime = scheduledTime || submission.interviewScheduledTime || "Belirtilen Saat";
+    const updated = await FormSubmission.update(req.params.id, {
+      interviewScheduledTime: finalTime,
+      interviewTimeApproved: true,
+      interviewState: "TIME_APPROVED",
+    });
+
+    // Kullanıcıya Discord DM gönder
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const client = getDiscordClient();
+      if (client && client.isReady()) {
+        const discordId = updated.discordId || updated.userId;
+        const user = await client.users.fetch(discordId).catch(() => null);
+        if (user) {
+          const { EmbedBuilder } = require("discord.js");
+          const embed = new EmbedBuilder()
+            .setColor(0x34d399)
+            .setTitle("✅ MÜLAKAT SAATİNİZ ONAYLANDI!")
+            .setDescription(
+              `Merhaba **${updated.discordUsername || "Aday"}**,\n\n` +
+              `Başvurunuz için belirlenen mülakat saati yetkili ekibimiz tarafından **ONAYLANMIŞTIR**.\n\n` +
+              `⏰ **Onaylanan Mülakat Saati:** \`${finalTime}\`\n\n` +
+              `📌 Lütfen belirtilen saatten 15 dakika önce Discord ve Roblox ortamınızda hazır bulununuz.\n` +
+              `Mülakat saatinize yakın sürede botumuz tarafından bildirim ve RP tavsiyeleri alacaksınız.`
+            )
+            .setFooter({ text: "Sentara Mülakat Yönetimi" });
+
+          await user.send({ embeds: [embed] }).catch(() => {});
+        }
+      }
+    } catch (_) {}
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Farklı Mülakat Saati Teklif Et ───────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/propose-time", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { proposedTime } = req.body;
+    if (!proposedTime || !proposedTime.trim()) {
+      return res.status(400).json({ error: "Teklif edilecek mülakat saati belirtilmelidir." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, {
+      interviewScheduledTime: proposedTime.trim(),
+      interviewTimeApproved: false,
+      interviewState: "SCHEDULE_QUESTION",
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    // Bot DM ile kullanıcıya yeni saati sor
+    try {
+      const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
+      await startFormInterviewFlow(updated._id);
+    } catch (_) {}
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Mülakatı Bitir (Danışman Yorum DM Tetikle) ─────────────────────────
+router.post("/api/admin/form-submissions/:id/finish-interview", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, {
+      interviewState: "FINISHED",
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    // Send Danışman Yorum / Yıldız Değerlendirmesi DM to user
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendConsultantReviewDM } = require("../../bot/services/formInterviewService");
+      const client = getDiscordClient();
+      if (client && client.isReady()) {
+        const discordId = updated.discordId || updated.userId;
+        await sendConsultantReviewDM(client, discordId, updated._id);
+      }
+    } catch (dmErr) {
+      console.error("[finish-interview] DM error:", dmErr.message);
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
