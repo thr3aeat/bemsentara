@@ -408,13 +408,22 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Success)
     );
 
-    // ROW 3: MOD-ALIM ve Restart
+    // ROW 3: MOD-ALIM ve Mod Okulu Geçme
     const row3 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("panel_mod_alim")
         .setLabel("🛡️ MOD-ALIM")
         .setStyle(ButtonStyle.Danger)
         .setDisabled(!auth.isAdmin),
+      new ButtonBuilder()
+        .setCustomId("panel_sys_mod_school_pass")
+        .setLabel("🎓 Mod Okulu Geçme")
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(!auth.isAdmin)
+    );
+
+    // ROW 4: Restart ve Ana Menü
+    const row4 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("panel_sys_restart")
         .setLabel("🔄 Restart")
@@ -426,7 +435,7 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    components.push(row1, row2, row3);
+    components.push(row1, row2, row3, row4);
   }
 
   else if (tabName === "toggles") {
@@ -580,6 +589,38 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
         .setCustomId("panel_mod_alim_direct")
         .setLabel("⚡ Direkt Mod Alım")
         .setStyle(ButtonStyle.Danger)
+        .setDisabled(!auth.isAdmin),
+      new ButtonBuilder()
+        .setCustomId("panel_tab_system")
+        .setLabel("⬅️ Geri Dön")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    components.push(row);
+  }
+
+  else if (tabName === "mod_school_pass") {
+    embed
+      .setTitle("🎓 Moderatör Okulu Geçme Paneli")
+      .setColor(0x3498DB)
+      .setDescription(
+        "Moderatör adaylarını okulu tamamladı olarak işaretleyin ve diploma verin.\n\n" +
+        "**Kullanım Adımları:**\n" +
+        "1️⃣ **Kullanıcı Ara** — Discord ID veya kullanıcı adı ile aday bulun\n" +
+        "2️⃣ **Okulu Tamamla** — Seçilen adayı okulu başarıyla tamamladı olarak işaretleyin\n\n" +
+        "⚠️ *Bu işlem geri alınamaz. Yalnızca okulu tamamlamış adaylara uygulayınız.*"
+      );
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("panel_sys_modschool_search")
+        .setLabel("👤 Kullanıcı Ara")
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(!auth.isAdmin),
+      new ButtonBuilder()
+        .setCustomId("panel_sys_modschool_graduate")
+        .setLabel("✅ Okulu Tamamla")
+        .setStyle(ButtonStyle.Success)
         .setDisabled(!auth.isAdmin),
       new ButtonBuilder()
         .setCustomId("panel_tab_system")
@@ -1027,7 +1068,8 @@ async function handlePanelButton(interaction) {
     panel_sys_roblox_ranks: "roblox_ranks",
     panel_sys_birim: "birim",
     panel_sys_giveaway_ai: "giveaway_ai",
-    panel_mod_alim: "mod_alim"
+    panel_mod_alim: "mod_alim",
+    panel_sys_mod_school_pass: "mod_school_pass"
   };
 
   if (subTabs[customId]) {
@@ -1826,6 +1868,66 @@ async function handlePanelButton(interaction) {
         return interaction.reply(`❌ Hata: ${err.message}`);
       }
       return interaction.editReply(`❌ Hata: ${err.message}`);
+    }
+  }
+
+  // ── MOD OKULU GEÇME: Kullanıcı Ara Modal ────────────────────────────────────
+  if (customId === "panel_sys_modschool_search") {
+    try {
+      const modal = new ModalBuilder()
+        .setCustomId("panel_modal_modschool_search")
+        .setTitle("🎓 Mod Okulu Geçme — Kullanıcı Ara");
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("modschool_user")
+            .setLabel("Discord ID veya Kullanıcı Adı")
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+            .setPlaceholder("Örn: @kullanici veya 1234567890")
+        )
+      );
+
+      return showModalSafely(modal);
+    } catch (err) {
+      console.error("[panel_sys_modschool_search]", err);
+      if (!interaction.replied && !interaction.deferred) {
+        return interaction.reply(`❌ Hata: ${err.message}`);
+      }
+      return interaction.editReply(`❌ Hata: ${err.message}`);
+    }
+  }
+
+  // ── MOD OKULU GEÇME: Okulu Tamamla Butonu (seçilen kullanıcıyı işle) ────────
+  if (customId === "panel_sys_modschool_graduate") {
+    await interaction.deferReply({ ephemeral: true }).catch(() => { });
+
+    try {
+      // Eğer önceki arama yapılmışsa, kullanıcı bilgisi depolanmıştır
+      const targetUserId = interaction.user._modschoolSearchResult;
+      
+      if (!targetUserId) {
+        return await interaction.editReply({
+          content: "❌ Önce **👤 Kullanıcı Ara** butonuna basarak bir kullanıcı seçiniz."
+        });
+      }
+
+      const { graduateStudent } = require('./moderatorSchool');
+      
+      await graduateStudent(targetUserId, interaction.user.tag, client, {
+        score: 100,
+        reason: 'Panel üzerinden manuel olarak mod okulu tamamlandı.'
+      });
+
+      return await interaction.editReply({
+        content: `✅ **${targetUserId}** kullanıcısı başarıyla moderatör okulu tamamlandı olarak işaretlendi!`
+      });
+    } catch (err) {
+      console.error("[panel_sys_modschool_graduate]", err);
+      return await interaction.editReply({
+        content: `❌ Hata oluştu: ${err.message}`
+      });
     }
   }
 
@@ -2772,6 +2874,46 @@ async function handlePanelModal(interaction) {
     } catch (err) {
       console.error('[panel_modal_mod_alim_direct]', err);
       return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+    }
+  }
+
+  // ── MOD OKULU GEÇME: Kullanıcı Ara Modal Submit ────────────────────────────
+  if (customId === "panel_modal_modschool_search") {
+    const userVal = interaction.fields.getTextInputValue("modschool_user").trim();
+    const targetUserId = userVal.replace(/[<@!>]/g, "");
+
+    try {
+      const targetUser = await client.users.fetch(targetUserId).catch(() => null);
+      if (!targetUser) {
+        return interaction.editReply({ 
+          content: "❌ Kullanıcı bulunamadı. Geçerli bir Discord ID veya kullanıcı adı girin." 
+        });
+      }
+
+      if (targetUser.bot) {
+        return interaction.editReply({ content: "❌ Botlara okul tamamlama işlemi yapılamaz." });
+      }
+
+      // Kullanıcı bilgisini interaction'a depolayalım (şu anda seçili)
+      interaction.user._modschoolSearchResult = targetUserId;
+      
+      // Seçilen kullanıcı hakkında bilgi embed'i
+      const resultEmbed = new EmbedBuilder()
+        .setColor(0x3498DB)
+        .setTitle("🎓 Mod Okulu Geçme — Seçim Onayı")
+        .setDescription(`Seçilen kullanıcı: **${targetUser.username}** (#${targetUser.discriminator})`)
+        .addFields(
+          { name: 'Discord ID', value: `\`${targetUser.id}\``, inline: true },
+          { name: 'Durum', value: '✅ Seçildi', inline: true }
+        )
+        .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
+        .setFooter({ text: 'Şimdi "✅ Okulu Tamamla" butonuna basabilirsiniz.' })
+        .setTimestamp();
+
+      return interaction.editReply({ embeds: [resultEmbed] });
+    } catch (err) {
+      console.error('[panel_modal_modschool_search]', err);
+      return interaction.editReply({ content: `❌ Hata oluştu: ${err.message}` });
     }
   }
 

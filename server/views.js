@@ -4949,7 +4949,10 @@ function renderAdminPage(user) {
           body: JSON.stringify({ isAdmin, isStaff, modLevel, modStatus })
         });
         const d = await res.json().catch(() => ({}));
-        if (res.ok) showToast('Rütbe & Yetkiler Güncellendi: ' + (d.user?.discordUsername || id), 'success');
+        if (res.ok) {
+          showToast('Rütbe & Yetkiler Güncellendi: ' + (d.user?.discordUsername || id), 'success');
+          adminSearchUsers();
+        }
         else showToast(d.error || 'Kaydedilemedi', 'error');
       }
 
