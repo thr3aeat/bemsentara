@@ -65,7 +65,6 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
       <input type="text" id="q_discord_id" class="input-field track-field" data-field="discord_id" value="${_esc(currentUser ? (currentUser.discordId || '') : '')}" required placeholder="Örn: 123456789012345678">
       <div class="field-hint" id="hint-q_discord_id" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>`;
-,StartLine:58,TargetContent:
   const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER', 'Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
 
   // ═══ BÖLÜM 2 ═══
