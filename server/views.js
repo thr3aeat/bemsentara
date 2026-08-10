@@ -4406,10 +4406,24 @@ function renderAdminPage(user) {
           ? '<span style="color:#34d399;font-weight:800;padding:0.2rem 0.6rem;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:12px;">✅ SAAT ONAYLANDI</span>'
           : '<span style="color:#fbbf24;font-weight:800;padding:0.2rem 0.6rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);border-radius:12px;">⏳ SAAT ONAY BEKLİYOR</span>';
 
+        const retryBadge = sub.retryRequested
+          ? '<span style="color:#38bdf8;font-weight:800;padding:0.2rem 0.6rem;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);border-radius:12px;">🔄 TEKRAR MÜLAKAT İSTİYOR: EVET</span>'
+          : '';
+
         return '<div style="background:rgba(15,23,42,0.6);border:1px solid rgba(129,140,248,0.25);border-radius:16px;padding:1.4rem;margin-bottom:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.3);">' +
           '<div style="font-size:1rem;font-weight:800;color:#818cf8;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">' +
             '<span>🎮 MÜLAKAT YÖNETİMİ & BOT OTOMASYONU</span>' +
-            timeApprovedBadge +
+            '<div style="display:flex;gap:0.4rem;align-items:center;">' + timeApprovedBadge + retryBadge + '</div>' +
+          '</div>' +
+
+          // Accept / Reject Decision Buttons
+          '<div style="display:flex;gap:0.8rem;margin-bottom:1.2rem;background:rgba(0,0,0,0.25);padding:0.8rem 1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);align-items:center;justify-content:space-between;flex-wrap:wrap;">' +
+            '<div style="font-size:0.88rem;font-weight:700;color:#fff;">MÜLAKAT SONUÇ KARARI:</div>' +
+            '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;">' +
+              '<button type="button" onclick="acceptInterview()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:10px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,0.3);">🟢 MÜLAKATI KABUL ET</button>' +
+              '<button type="button" onclick="rejectInterview()" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:0.6rem 1.4rem;border-radius:10px;font-size:0.85rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(239,68,68,0.3);">🔴 MÜLAKATI REDDET</button>' +
+            '</div>' +
+            '<div id="decision-action-res" style="width:100%;font-size:0.78rem;margin-top:0.3rem;min-height:16px;"></div>' +
           '</div>' +
 
           // Discord ID & Info Row
@@ -4548,6 +4562,50 @@ function renderAdminPage(user) {
           const d = await res.json();
           if (res.ok && d.success) {
             resDiv.style.color = '#34d399'; resDiv.textContent = '✅ Yeni mülakat saati teklifi kullanıcının DM\'ine gönderildi!';
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      async function acceptInterview() {
+        if (!_currentSubId) return;
+        if (!confirm('Bu adayın mülakatını KABUL etmek ve oryantasyon sürecini başlatmak istiyor musunuz?')) return;
+        const resDiv = document.getElementById('decision-action-res');
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Mülakat kabul ediliyor ve kullanıcının DM oryantasyonu başlatılıyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/accept-interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '🎉 MÜLAKAT KABUL EDİLDİ! Kullanıcıya tebrikler ve oryantasyon DM\'i gönderildi.';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) { sub.status = 'APPROVED'; sub.interviewState = 'ACCEPTED_WAITING_VERIFY'; }
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      async function rejectInterview() {
+        if (!_currentSubId) return;
+        const reason = prompt('Mülakat reddetme sebebini giriniz:', 'Belirtilmeyen Neden');
+        if (reason === null) return;
+        const resDiv = document.getElementById('decision-action-res');
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Mülakat reddediliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/reject-interview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ MÜLAKAT REDDEDİLDİ. Kullanıcıya ret bildirimi ve tekrar mülakat teklifi DM\'i atıldı.';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) { sub.status = 'REJECTED'; sub.interviewState = 'REJECTED'; }
           } else {
             resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
           }

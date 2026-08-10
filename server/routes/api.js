@@ -2671,6 +2671,78 @@ router.post("/api/admin/form-submissions/:id/finish-interview", async (req, res)
   }
 });
 
+// ── Admin: Mülakatı Kabul Et ──────────────────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/accept-interview", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, {
+      status: "APPROVED",
+      interviewState: "ACCEPTED_WAITING_VERIFY",
+      reviewedBy: req.user.discordUsername || "Admin",
+      reviewedAt: new Date(),
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    // Send DM to candidate
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendInterviewAcceptedDM } = require("../../bot/services/formInterviewService");
+      const client = getDiscordClient();
+      if (client && client.isReady()) {
+        const discordId = updated.discordId || updated.userId;
+        await sendInterviewAcceptedDM(client, discordId, updated._id);
+      }
+    } catch (dmErr) {
+      console.error("[accept-interview] DM error:", dmErr.message);
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Mülakatı Reddet ───────────────────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/reject-interview", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { reason } = req.body;
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, {
+      status: "REJECTED",
+      interviewState: "REJECTED",
+      reviewNote: reason || "Belirtilmeyen Neden",
+      reviewedBy: req.user.discordUsername || "Admin",
+      reviewedAt: new Date(),
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    // Send DM to candidate
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendInterviewRejectedDM } = require("../../bot/services/formInterviewService");
+      const client = getDiscordClient();
+      if (client && client.isReady()) {
+        const discordId = updated.discordId || updated.userId;
+        await sendInterviewRejectedDM(client, discordId, updated._id, reason);
+      }
+    } catch (dmErr) {
+      console.error("[reject-interview] DM error:", dmErr.message);
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Admin: panel form gönder ────────────────────────────────────────────────
 router.post("/api/admin/submit-form", async (req, res) => {
   if (!requireAdmin(req, res)) return;

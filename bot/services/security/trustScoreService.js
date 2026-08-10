@@ -238,10 +238,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
           for (const role of modRoles.values()) {
             permissionOverwrites.push({
               id: role.id,
-              allow: [
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory
+              deny: [
+                PermissionFlagsBits.ViewChannel
               ]
             });
           }
@@ -1141,6 +1139,111 @@ async function logTrustUserActivity(client, userId, actionTitle, actionDetails, 
   }
 }
 
+/**
+ * Fixes trust channel permissions on startup, enforces one person one channel,
+ * and merges logs from deleted/duplicate channels into DB scoreLogs.
+ */
+async function fixAndMergeTrustChannels(client) {
+  try {
+    const recordGuild = await getRecordGuild(client);
+    if (!recordGuild) return;
+
+    const category = await getRecordCategory(recordGuild);
+    const categoryId = category ? category.id : null;
+
+    // Fetch mod roles to deny ViewChannel
+    let modRoles = [];
+    if (recordGuild.roles && recordGuild.roles.cache) {
+      modRoles = Array.from(recordGuild.roles.cache.values()).filter(r =>
+        (r.permissions && typeof r.permissions.has === 'function' &&
+         !r.permissions.has(PermissionFlagsBits.Administrator) &&
+         (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
+        (r.name && (
+          r.name.toLowerCase().includes("mod") ||
+          r.name.toLowerCase().includes("yetkili") ||
+          r.name.toLowerCase().includes("staff")
+        ) && !r.name.toLowerCase().includes("kurucu") && !r.name.toLowerCase().includes("admin"))
+      );
+    }
+
+    // Get all channels in record category or record guild
+    const channels = Array.from(recordGuild.channels.cache.values()).filter(c => 
+      c.type === ChannelType.GuildText && (categoryId ? c.parentId === categoryId : true)
+    );
+
+    const allRecords = await UserTrustScore.find({});
+    const recordByChannelId = new Map();
+    const recordByUserId = new Map();
+
+    for (const rec of allRecords) {
+      if (rec.profileChannelId) {
+        recordByChannelId.set(rec.profileChannelId, rec);
+      }
+      recordByUserId.set(rec.userId, rec);
+    }
+
+    const userChannelsMap = new Map(); // userId -> Array<{ channel, record }>
+
+    for (const ch of channels) {
+      let matchedRecord = recordByChannelId.get(ch.id);
+      if (!matchedRecord) {
+        matchedRecord = allRecords.find(r => r.username && ch.name.toLowerCase().includes(r.username.toLowerCase()));
+      }
+
+      if (matchedRecord) {
+        const uId = matchedRecord.userId;
+        if (!userChannelsMap.has(uId)) userChannelsMap.set(uId, []);
+        userChannelsMap.get(uId).push({ channel: ch, record: matchedRecord });
+      }
+
+      // Fix channel permissions: Deny ViewChannel for modRoles and @everyone
+      try {
+        const overwrites = [
+          { id: recordGuild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }
+        ];
+        for (const role of modRoles) {
+          overwrites.push({ id: role.id, deny: [PermissionFlagsBits.ViewChannel] });
+        }
+        await ch.permissionOverwrites.set(overwrites, "Moderatör görme yetkisi kaldırıldı").catch(() => {});
+      } catch (_) {}
+    }
+
+    // Enforce ONE PERSON ONE CHANNEL & Merge Logs
+    for (const [userId, items] of userChannelsMap.entries()) {
+      if (items.length > 1) {
+        const primaryRecord = recordByUserId.get(userId) || items[0].record;
+        let primaryItem = items.find(i => i.channel.id === primaryRecord.profileChannelId) || items[0];
+
+        for (const item of items) {
+          if (item.channel.id === primaryItem.channel.id) continue;
+
+          // Duplicate channel found! Merge messages into scoreLogs
+          try {
+            const messages = await item.channel.messages.fetch({ limit: 50 }).catch(() => null);
+            if (messages) {
+              for (const msg of messages.values()) {
+                if (msg.author.bot && msg.embeds.length > 0) {
+                  const logTitle = msg.embeds[0].title || "Eski Kanal Logu";
+                  const logDesc = msg.embeds[0].description || "";
+                  pushScoreLog(primaryRecord, `[Birleştirilen Log] ${logTitle}: ${logDesc.slice(0, 100)}`);
+                }
+              }
+            }
+          } catch (_) {}
+
+          // Delete duplicate channel
+          await item.channel.delete("Çift güven kanalı temizlendi & loglar birleştirildi").catch(() => {});
+        }
+
+        primaryRecord.profileChannelId = primaryItem.channel.id;
+        await primaryRecord.save();
+      }
+    }
+  } catch (err) {
+    console.error("[trustScoreService] fixAndMergeTrustChannels error:", err.message);
+  }
+}
+
 module.exports = {
   ensureUserTrustScore,
   updateTrustScore,
@@ -1151,6 +1254,7 @@ module.exports = {
   handleTrustModals,
   scanVoiceChannels,
   startTrustScoreDecayScheduler,
-  cleanupDuplicateTrustChannels,
+  cleanupDuplicateTrustChannels: fixAndMergeTrustChannels,
+  fixAndMergeTrustChannels,
   logTrustUserActivity
 };

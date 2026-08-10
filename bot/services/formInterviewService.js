@@ -516,10 +516,425 @@ async function handleFormInterviewButton(interaction) {
       return true;
     }
 
+    // ── Rejection Retry: fint_retry_yes_ID or fint_retry_no_ID ────────────────
+    if (customId.startsWith("fint_retry_yes_") || customId.startsWith("fint_retry_no_")) {
+      const isYes = customId.startsWith("fint_retry_yes_");
+      const submissionId = customId.replace(isYes ? "fint_retry_yes_" : "fint_retry_no_", "");
+
+      if (isYes) {
+        await FormSubmission.update(submissionId, { retryRequested: true, retryRequestedText: "EVET" });
+        await interaction.update({
+          content: "✅ **Tekrar mülakat isteğiniz kaydedildi!** Sitemizdeki başvuru panelinde isteğiniz *EVET* olarak görüntülenecektir. Dilediğiniz zaman web sitemiz üzerinden yeniden başvuruda bulunabilirsiniz.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+      } else {
+        await FormSubmission.update(submissionId, { retryRequested: false, retryRequestedText: "HAYIR" });
+        await interaction.update({
+          content: "Tercihiniz kaydedildi. Gelecekteki süreçlerde başarılar dileriz.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    // ── Orientation Verification: fint_orientation_verify_ID ──────────────────
+    if (customId.startsWith("fint_orientation_verify_")) {
+      const submissionId = customId.replace("fint_orientation_verify_", "");
+      const submission = await FormSubmission.findById(submissionId);
+      const User = require("../../models/User");
+      const dbUser = await User.findOne({ discordId: discordId });
+
+      if (dbUser || (submission && submission.discordId)) {
+        await interaction.update({
+          content: "✅ **Hesap doğrulamanız onaylandı!** Şimdi Roblox ve Discord oryantasyon adımlarına geçiyoruz...",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+
+        await sendGroupStep1DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({
+          content: "⚠️ Hesabınız henüz sitemizde tamamen doğrulanmamış görünüyor. Lütfen giriş yapıp profil bilgilerinizi bağladıktan sonra tekrar **DOĞRULADIM** butonuna basınız.",
+          ephemeral: true,
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    // ── Roblox Group 1: fint_grp1_yes_ID or fint_grp1_no_ID ────────────────────
+    if (customId.startsWith("fint_grp1_yes_") || customId.startsWith("fint_grp1_no_")) {
+      const isYes = customId.startsWith("fint_grp1_yes_");
+      const submissionId = customId.replace(isYes ? "fint_grp1_yes_" : "fint_grp1_no_", "");
+
+      if (isYes) {
+        const robloxId = await getTargetRobloxId(discordId, submissionId);
+        if (robloxId) {
+          const noblox = require("noblox.js");
+          await noblox.handleJoinRequest(35431216, parseInt(robloxId), true).catch(() => {});
+          await noblox.setRank({ group: 35431216, target: parseInt(robloxId), rank: 33 }).catch(e => console.warn("[Grp1 Rank] Error:", e.message));
+        }
+        await interaction.update({
+          content: "✅ **EkoYıldız Ana Gruba katıldınız!** Gruptaki **Rank 33** rütbeniz verildi.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+        await sendGroupStep2DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({ content: "Lütfen gruba katıldıktan sonra 'KATILDIM' butonuna basınız: https://www.roblox.com/groups/35431216/EkoY-ld-z#!/about", ephemeral: true });
+      }
+      return true;
+    }
+
+    // ── Roblox Group 2 (Video Ekibi): fint_grp2_yes_ID ────────────────────────
+    if (customId.startsWith("fint_grp2_yes_") || customId.startsWith("fint_grp2_no_")) {
+      const isYes = customId.startsWith("fint_grp2_yes_");
+      const submissionId = customId.replace(isYes ? "fint_grp2_yes_" : "fint_grp2_no_", "");
+
+      if (isYes) {
+        const robloxId = await getTargetRobloxId(discordId, submissionId);
+        if (robloxId) {
+          const noblox = require("noblox.js");
+          await noblox.handleJoinRequest(995918688, parseInt(robloxId), true).catch(() => {});
+          await noblox.setRank({ group: 995918688, target: parseInt(robloxId), rank: 14 }).catch(e => console.warn("[Grp2 Rank] Error:", e.message));
+        }
+        await interaction.update({
+          content: "✅ **EkoYıldız Video Ekibi grubuna katıldınız!** Gruptaki **Rank 14** rütbeniz verildi.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+        await sendGroupStep3DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({ content: "Lütfen gruba katıldıktan sonra 'KATILDIM' butonuna basınız: https://www.roblox.com/communities/995918688/EkoY-ld-z-Video-Ekibi#!/affiliates", ephemeral: true });
+      }
+      return true;
+    }
+
+    // ── Roblox Group 3 (Moderatör Ekibi): fint_grp3_yes_ID ───────────────────
+    if (customId.startsWith("fint_grp3_yes_") || customId.startsWith("fint_grp3_no_")) {
+      const isYes = customId.startsWith("fint_grp3_yes_");
+      const submissionId = customId.replace(isYes ? "fint_grp3_yes_" : "fint_grp3_no_", "");
+
+      if (isYes) {
+        const robloxId = await getTargetRobloxId(discordId, submissionId);
+        if (robloxId) {
+          const noblox = require("noblox.js");
+          await noblox.handleJoinRequest(130659145, parseInt(robloxId), true).catch(() => {});
+          await noblox.setRank({ group: 130659145, target: parseInt(robloxId), rank: 14 }).catch(e => console.warn("[Grp3 Rank] Error:", e.message));
+        }
+        await interaction.update({
+          content: "✅ **EkoYıldız Moderatör Ekibi grubuna katıldınız!** Gruptaki **Rank 14** rütbeniz verildi.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+        await sendGroupStep4DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({ content: "Lütfen gruba katıldıktan sonra 'KATILDIM' butonuna basınız: https://www.roblox.com/communities/130659145/EkoY-ld-z-Moderat-r-Ekibi#!/about", ephemeral: true });
+      }
+      return true;
+    }
+
+    // ── Roblox Group 4 (Moderatör Okulu): fint_grp4_yes_ID ────────────────────
+    if (customId.startsWith("fint_grp4_yes_") || customId.startsWith("fint_grp4_no_")) {
+      const isYes = customId.startsWith("fint_grp4_yes_");
+      const submissionId = customId.replace(isYes ? "fint_grp4_yes_" : "fint_grp4_no_", "");
+
+      if (isYes) {
+        const robloxId = await getTargetRobloxId(discordId, submissionId);
+        if (robloxId) {
+          const noblox = require("noblox.js");
+          await noblox.handleJoinRequest(813826297, parseInt(robloxId), true).catch(() => {});
+          await noblox.setRank({ group: 813826297, target: parseInt(robloxId), rank: 19 }).catch(e => console.warn("[Grp4 Rank] Error:", e.message));
+        }
+        await interaction.update({
+          content: "✅ **EkoYıldız Moderatör Okulu grubuna katıldınız!** Gruptaki **Rank 19** rütbeniz verildi.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+        await sendGroupStep5DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({ content: "Lütfen gruba katıldıktan sonra 'KATILDIM' butonuna basınız: https://www.roblox.com/communities/813826297/EkoY-ld-z-Moderat-r-Okulu#!/about", ephemeral: true });
+      }
+      return true;
+    }
+
+    // ── Roblox Group 5 (Müttefik Ordular): fint_grp5_yes_ID ───────────────────
+    if (customId.startsWith("fint_grp5_yes_") || customId.startsWith("fint_grp5_no_")) {
+      const isYes = customId.startsWith("fint_grp5_yes_");
+      const submissionId = customId.replace(isYes ? "fint_grp5_yes_" : "fint_grp5_no_", "");
+
+      if (isYes) {
+        const robloxId = await getTargetRobloxId(discordId, submissionId);
+        if (robloxId) {
+          const noblox = require("noblox.js");
+          await noblox.handleJoinRequest(564097968, parseInt(robloxId), true).catch(() => {});
+          await noblox.setRank({ group: 564097968, target: parseInt(robloxId), rank: 10 }).catch(e => console.warn("[Grp5 Rank] Error:", e.message));
+        }
+        await interaction.update({
+          content: "✅ **Müttefik Ordular grubuna katıldınız!** Gruptaki **Rank 10** rütbeniz verildi.",
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+        await sendDiscordServer1DM(client, discordId, submissionId);
+      } else {
+        await interaction.reply({ content: "Lütfen gruba katıldıktan sonra 'KATILDIM' butonuna basınız: https://www.roblox.com/communities/564097968/M-ttefik-Ordular#!/about", ephemeral: true });
+      }
+      return true;
+    }
+
+    // ── Discord Server 1: fint_dc1_yes_ID ─────────────────────────────────────
+    if (customId.startsWith("fint_dc1_yes_")) {
+      const submissionId = customId.replace("fint_dc1_yes_", "");
+      await interaction.update({
+        content: "✅ **1. Discord Sunucusu katılımınız kaydedildi!**",
+        embeds: [],
+        components: [],
+      }).catch(() => {});
+      await sendDiscordServer2DM(client, discordId, submissionId);
+      return true;
+    }
+
+    // ── Discord Server 2: fint_dc2_yes_ID ─────────────────────────────────────
+    if (customId.startsWith("fint_dc2_yes_")) {
+      const submissionId = customId.replace("fint_dc2_yes_", "");
+      await interaction.update({
+        content: "✅ **2. Discord Sunucusu katılımınız kaydedildi!**",
+        embeds: [],
+        components: [],
+      }).catch(() => {});
+      await sendDiscordServer3DM(client, discordId, submissionId);
+      return true;
+    }
+
+    // ── Discord Server 3: fint_dc3_yes_ID ─────────────────────────────────────
+    if (customId.startsWith("fint_dc3_yes_")) {
+      const submissionId = customId.replace("fint_dc3_yes_", "");
+      await FormSubmission.update(submissionId, { interviewState: "ORIENTATION_COMPLETED" });
+      await interaction.update({
+        content: "🎉 **TEBRİKLER! Tüm Roblox ve Discord oryantasyon aşamalarınız tamamlanmış ve rütbeleriniz verilmiştir.** Ekibimize resmi olarak hoş geldiniz!",
+        embeds: [],
+        components: [],
+      }).catch(() => {});
+      return true;
+    }
+
   } catch (err) {
     console.error("[handleFormInterviewButton] Error:", err);
   }
   return false;
+}
+
+/**
+ * Helper to fetch target user's Roblox ID from User DB or Rowifi
+ */
+async function getTargetRobloxId(discordId, submissionId) {
+  try {
+    const User = require("../../models/User");
+    const u = await User.findOne({ discordId });
+    if (u && u.robloxId) return u.robloxId;
+
+    const RowifiBind = require("../../models/RowifiBind");
+    const bind = await RowifiBind.findOne({ discordId });
+    if (bind && bind.robloxId) return bind.robloxId;
+
+    const sub = await FormSubmission.findById(submissionId);
+    if (sub && sub.robloxId) return sub.robloxId;
+  } catch (_) {}
+  return null;
+}
+
+/**
+ * Send DM when admin accepts interview
+ */
+async function sendInterviewAcceptedDM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x34d399)
+    .setTitle("🎉 TEBRİKLER KABUL EDİLDİNİZ!")
+    .setDescription(
+      "Mülakatınız başarıyla sonuçlanmış ve **KABUL EDİLMİŞTİR**!\n\n" +
+      "Şimdi oryantasyonunuzu sağlayalım. İlk önce Discord hesabınızı ve Roblox hesabınızı site paneli üzerinden yetkilendirin.\n\n" +
+      "Aşağıdaki **BANA BAS!** butonuna basarak siteye gidin, iki hesabınızı da doğrulayın ve ardından **DOĞRULADIM** butonuna basın."
+    )
+    .setFooter({ text: "Sentara Oryantasyon Sistemi" });
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel("BANA BAS!")
+      .setStyle(ButtonStyle.Link)
+      .setURL("https://bemsentara.onrender.com/settings"),
+    new ButtonBuilder()
+      .setCustomId(`fint_orientation_verify_${submissionId}`)
+      .setLabel("DOĞRULADIM")
+      .setStyle(ButtonStyle.Success)
+  );
+
+  await FormSubmission.update(submissionId, { interviewState: "ACCEPTED_WAITING_VERIFY" });
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+/**
+ * Send DM when admin rejects interview
+ */
+async function sendInterviewRejectedDM(client, discordId, submissionId, reason) {
+  const reasonText = reason ? reason.trim() : "Görülen lüzum üzerine";
+
+  const embed = new EmbedBuilder()
+    .setColor(0xef4444)
+    .setTitle("❌ MÜLAKATINIZ REDDEDİLDİ")
+    .setDescription(
+      `Mülakatınız **${reasonText}** sebebi ile **REDDEDİLMİŞTİR**.\n\n` +
+      `Bir sonraki mülakat isteyerek şansınızı denemek ister misiniz?`
+    )
+    .setFooter({ text: "Seçiminizi yapmak için aşağıdaki butonları kullanınız." });
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`fint_retry_yes_${submissionId}`)
+      .setLabel("EVET")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`fint_retry_no_${submissionId}`)
+      .setLabel("HAYIR")
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  await FormSubmission.update(submissionId, { interviewState: "REJECTED", rejectionReason: reasonText });
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+// ── Onboarding Group Step DMs ────────────────────────────────────────────────
+async function sendGroupStep1DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x818cf8)
+    .setTitle("1️⃣ AŞAMA 1 — ROBLOX EKOYILDIZ ANA GRUP")
+    .setDescription(
+      "Lütfen aşağıdaki Roblox ana grubuna katılım sağlayınız:\n" +
+      "🔗 https://www.roblox.com/groups/35431216/EkoY-ld-z#!/about\n\n" +
+      "**Gruba katıldınız mı?** (Katılınca otomatik olarak **Rank 33** rütbeniz verilecektir)."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_grp1_yes_${submissionId}`).setLabel("KATILDIM").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`fint_grp1_no_${submissionId}`).setLabel("KATILMADIM").setStyle(ButtonStyle.Danger)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendGroupStep2DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0xa855f7)
+    .setTitle("2️⃣ AŞAMA 2 — EKOYILDIZ VİDEO EKİBİ")
+    .setDescription(
+      "Lütfen aşağıdaki EkoYıldız Video Ekibi grubuna katılım sağlayınız:\n" +
+      "🔗 https://www.roblox.com/communities/995918688/EkoY-ld-z-Video-Ekibi#!/affiliates\n\n" +
+      "**Gruba katıldınız mı?** (Katılınca otomatik olarak **Rank 14** rütbeniz verilecektir)."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_grp2_yes_${submissionId}`).setLabel("KATILDIM").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`fint_grp2_no_${submissionId}`).setLabel("KATILMADIM").setStyle(ButtonStyle.Danger)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendGroupStep3DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0xec4899)
+    .setTitle("3️⃣ AŞAMA 3 — EKOYILDIZ MODERATÖR EKİBİ")
+    .setDescription(
+      "Lütfen aşağıdaki Moderatör Ekibi grubuna katılım sağlayınız:\n" +
+      "🔗 https://www.roblox.com/communities/130659145/EkoY-ld-z-Moderat-r-Ekibi#!/about\n\n" +
+      "**Gruba katıldınız mı?** (Katılınca otomatik olarak **Rank 14** rütbeniz verilecektir)."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_grp3_yes_${submissionId}`).setLabel("KATILDIM").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`fint_grp3_no_${submissionId}`).setLabel("KATILMADIM").setStyle(ButtonStyle.Danger)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendGroupStep4DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x3b82f6)
+    .setTitle("4️⃣ AŞAMA 4 — EKOYILDIZ MODERATÖR OKULU")
+    .setDescription(
+      "Lütfen aşağıdaki Moderatör Okulu grubuna katılım sağlayınız:\n" +
+      "🔗 https://www.roblox.com/communities/813826297/EkoY-ld-z-Moderat-r-Okulu#!/about\n\n" +
+      "**Gruba katıldınız mı?** (Katılınca otomatik olarak **Rank 19** rütbeniz verilecektir)."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_grp4_yes_${submissionId}`).setLabel("KATILDIM").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`fint_grp4_no_${submissionId}`).setLabel("KATILMADIM").setStyle(ButtonStyle.Danger)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendGroupStep5DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0xf59e0b)
+    .setTitle("5️⃣ AŞAMA 5 — MÜTTEFİK ORDULAR GRUBU")
+    .setDescription(
+      "Lütfen aşağıdaki Müttefik Ordular grubuna katılım sağlayınız:\n" +
+      "🔗 https://www.roblox.com/communities/564097968/M-ttefik-Ordular#!/about\n\n" +
+      "**Gruba katıldınız mı?** (Katılınca otomatik olarak **Rank 10** rütbeniz verilecektir)."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_grp5_yes_${submissionId}`).setLabel("KATILDIM").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`fint_grp5_no_${submissionId}`).setLabel("KATILMADIM").setStyle(ButtonStyle.Danger)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendDiscordServer1DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x5865f2)
+    .setTitle("6️⃣ AŞAMA 6 — DİSCORD SUNUCUSU 1")
+    .setDescription(
+      "Lütfen 1. Discord sunucusuna katılım sağlayınız:\n" +
+      "🔗 https://discord.gg/t8HJa82AnA\n\n" +
+      "Katıldıktan sonra aşağıdaki butona tıklayınız."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_dc1_yes_${submissionId}`).setLabel("SUNUCUYA KATILDIM & GÜNCELLE").setStyle(ButtonStyle.Primary)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendDiscordServer2DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x5865f2)
+    .setTitle("7️⃣ AŞAMA 7 — DİSCORD SUNUCUSU 2")
+    .setDescription(
+      "Lütfen 2. Discord sunucusuna katılım sağlayınız:\n" +
+      "🔗 https://discord.gg/FyjkgfCSKZ\n\n" +
+      "Katıldıktan sonra aşağıdaki butona tıklayınız."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_dc2_yes_${submissionId}`).setLabel("SUNUCUYA KATILDIM & GÜNCELLE").setStyle(ButtonStyle.Primary)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
+}
+
+async function sendDiscordServer3DM(client, discordId, submissionId) {
+  const embed = new EmbedBuilder()
+    .setColor(0x5865f2)
+    .setTitle("8️⃣ AŞAMA 8 — DİSCORD SUNUCUSU 3")
+    .setDescription(
+      "Lütfen 3. Discord sunucusuna katılım sağlayınız:\n" +
+      "🔗 https://discord.gg/vY4XYDkdAv\n\n" +
+      "Katıldıktan sonra aşağıdaki butona tıklayınız."
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`fint_dc3_yes_${submissionId}`).setLabel("SUNUCUYA KATILDIM & GÜNCELLE").setStyle(ButtonStyle.Success)
+  );
+  return sendUserDM(client, discordId, { embeds: [embed], components: [row] });
 }
 
 /**
@@ -588,6 +1003,8 @@ module.exports = {
   askAgreeQuestion,
   completePreQuestions,
   sendConsultantReviewDM,
+  sendInterviewAcceptedDM,
+  sendInterviewRejectedDM,
   handleFormInterviewButton,
   handleFormInterviewDMReply,
 };
