@@ -612,6 +612,38 @@ router.get("/forms/topluluk-elcisi", (req, res) => {
   res.redirect("/forms/community-ambassador");
 });
 
+router.get("/forms/developer", async (req, res) => {
+  const { renderDeveloperFormPage } = require("../views");
+  const FormSubmission = require("../../models/FormSubmission");
+  
+  let existingSubmission = null;
+  if (req.user) {
+    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "developer");
+  }
+
+  res.send(renderDeveloperFormPage(req.user, existingSubmission));
+});
+
+router.get("/forms/gelistirici", (req, res) => {
+  res.redirect("/forms/developer");
+});
+
+router.get("/forms/debug-office", async (req, res) => {
+  const { renderDebugOfficeFormPage } = require("../views");
+  const FormSubmission = require("../../models/FormSubmission");
+  
+  let existingSubmission = null;
+  if (req.user) {
+    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "debug_office");
+  }
+
+  res.send(renderDebugOfficeFormPage(req.user, existingSubmission));
+});
+
+router.get("/forms/hata-ayiklama", (req, res) => {
+  res.redirect("/forms/debug-office");
+});
+
 // Briefing Onboarding
 router.get("/briefing-form", (req, res) => {
   if (!req.user) return res.redirect("/login");

@@ -1115,9 +1115,495 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
   return _layout('Topluluk Elçisi Mülakat Başvuru Formu', currentUser, content, '', '/forms');
 }
 
+function renderDeveloperFormPage(currentUser, existingSubmission = null) {
+  const _layout = require('./views')._layout;
+  const isLoggedIn = Boolean(currentUser);
+  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username || '') : '';
+  const BANNER = 'https://i.imgur.com/Iruh2AD.jpeg';
+
+  function _step(num, color, title, subtitle, bodyHtml, navHtml) {
+    const hidden = num > 1 ? 'display:none;' : '';
+    return `
+      <div id="form-step-${num}" class="form-step card" style="border-radius:20px;border-left:4px solid ${color};${hidden}transition:all 0.3s;margin-bottom:1.5rem;background:rgba(20,20,35,0.7);backdrop-filter:blur(20px);padding:2rem;">
+        <div class="step-header-bar" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleStep(${num})">
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:800;color:${color};margin-bottom:0.2rem;">${title}</h3>
+            <p style="font-size:0.78rem;color:var(--muted);margin:0;">${subtitle}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="step-done-badge" style="display:none;background:${color}20;color:${color};font-size:0.72rem;font-weight:800;padding:0.25rem 0.7rem;border-radius:20px;border:1px solid ${color}40;">✓ TAMAMLANDI</span>
+            <span class="step-expand-btn" style="display:none;color:${color};font-size:1.2rem;cursor:pointer;" title="Genişlet / Daralt">▼</span>
+          </div>
+        </div>
+        <div class="step-body" style="margin-top:1.2rem;">
+          ${bodyHtml}
+          <div class="step-nav" style="display:flex;justify-content:${num === 1 ? 'flex-end' : 'space-between'};margin-top:1.8rem;">
+            ${navHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function _field(id, label, placeholder, rows, hint = '') {
+    return `
+      <div class="form-group" style="margin-bottom:1.2rem;">
+        <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">${label} *</label>
+        <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="${rows || 3}" required placeholder="${placeholder}" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;font-family:inherit;line-height:1.5;"></textarea>
+        ${hint ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">${hint}</div>` : ''}
+        <div class="field-hint" id="hint-${id}" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+      </div>`;
+  }
+
+  const prevBtn = (n) => `<button type="button" onclick="prevStep(${n})" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki Bölüm</button>`;
+  const nextBtn = (n, grad) => `<button type="button" onclick="nextStep(${n})" class="btn" style="background:linear-gradient(135deg,${grad});color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>`;
+
+  // ═══ BÖLÜM 1 ═══
+  const step1Body = `
+    <div style="background:rgba(129,140,248,0.06);border-left:3px solid #818cf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Aşağıdaki sorular, adayların temel kimlik, iletişim, zaman yönetimi ve topluluk geçmişini detaylı bir şekilde analiz etmek üzere hazırlanmıştır. <strong>"Geliştirici Adayı"</strong> statüsünün gerektirdiği sorumluluk bilinci, gizlilik ilkelerine bağlılık ve iletişim yetkinliklerinin ilk değerlendirmesi bu bölüm üzerinden yapılacaktır.
+    </div>
+    <div class="form-group" style="margin-bottom:1.2rem;">
+      <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">DISCORD HESABI VE USER ID *</label>
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx / 123456789012345678" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;">
+    </div>
+    ${_field('q_dev_1_1', '1.1. Adınız ve Soyadınız', 'Resmi kayıtlarda yer alan tam adınız ve soyadınız...', 2)}
+    ${_field('q_dev_1_2', '1.2. Yaşınız ve Doğum Tarihiniz', 'Örn: 18 / 15.05.2008', 2)}
+    ${_field('q_dev_1_4', '1.4. Çalıştığınız / Yaşadığınız Saat Dilimi ve Şehir', 'Örn: UTC+3 / İstanbul', 2)}
+    ${_field('q_dev_2_1', '2.1. Günlük Aktiflik Süreniz ve Müsaitlik Saatleriniz', 'Hafta içi ve hafta sonu aktiflik saatleriniz...', 3)}
+    ${_field('q_dev_2_2', '2.2. Acil Durum İletişim Kanallarınız', 'İkincil iletişim kanallarınız (E-posta, Telegram vb.)...', 2)}
+    ${_field('q_dev_2_3', '2.3. Sesli İletişim Yetkinliğiniz', 'Mikrofon kullanımı ve sesli iletişim durumunuz...', 2)}
+    ${_field('q_dev_3_1', '3.1. Eğitim Durumunuz veya Mesleki Statünüz', 'Öğrenci/çalışan durumu...', 2)}
+    ${_field('q_dev_3_2', '3.2. Projeye Ayırabileceğiniz Günlük ve Haftalık Zaman', 'Haftada ortalama kaç saat kesintisiz ayırabilirsiniz...', 2)}
+    ${_field('q_dev_3_3', '3.3. Gelecek Planlarınız ve Olası Yoğunluk Dönemleriniz', 'Önümüzdeki 6 ay içindeki sınav, iş, tatil vb. durumlar...', 3)}
+    ${_field('q_dev_4_1', '4.1. Kendinizi ve Çalışma Tarzınızı Detaylıca Tanımlayınız', 'Güçlü/gelişime açık yönleriniz ve çalışma disiplininiz...', 3)}
+    ${_field('q_dev_4_2', '4.2. Baskı, Stres ve Yoğun Çalışma Temposu Altındaki Tutumunuz', 'Kriz anlarındaki tutumunuz ve stres yönetimi...', 3)}
+    ${_field('q_dev_4_3', '4.3. Ekip Çalışması ve İletişim Anlayışınız', 'Farklı görüşteki geliştiricilerle çalışma ve fikir ayrılığı yönetimi...', 3)}
+    ${_field('q_dev_5_1', '5.1. Daha Önce Görev Aldığınız Projeler ve Sunucular', 'Daha önceki geliştirici deneyimleriniz...', 3)}
+    ${_field('q_dev_5_2', '5.2. Geçmiş Referanslarınız', 'Referans alınabilecek kişilerin Discord adları ve unvanları...', 2)}
+    ${_field('q_dev_5_3', '5.3. Disiplin ve İhlal Geçmişi', 'Daha önce aldığınız ceza, uyarı veya ihraç durumları...', 2)}
+  `;
+  const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — KİŞİSEL BİLGİLER VE KİMLİK DOĞRULAMA', 'Temel kimlik, zaman yönetimi ve topluluk geçmişiniz.', step1Body, nextBtn(1, '#818cf8,#6366f1'));
+
+  // ═══ BÖLÜM 2 ═══
+  const step2Body = `
+    <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Bu bölüm, <strong>Geliştirici Adayı</strong> pozisyonuna başvuran adayların teknik altyapısını, hakim oldukları programlama dillerini, geliştirme mimarilerini ve kod kalitesini ölçmek amacıyla hazırlanmıştır.
+    </div>
+    ${_field('q_dev_t1_1', '1.1. Hakim Olduğunuz Programlama ve İşaretleme Dilleri', 'Lua, JS, TS, C#, Python, HTML/CSS seviyeleriniz ve tecrübe süreniz...', 3)}
+    ${_field('q_dev_t1_2', '1.2. Nesne Yönelimli Programlama (OOP) ve Fonksiyonel Programlama', 'OOP ilkeleri (Inheritance, Encapsulation vb.) hakimiyetiniz...', 3)}
+    ${_field('q_dev_t1_3', '1.3. Asenkron Programlama ve Veri Yapıları', 'Async/Await, Promises, Thread/Coroutine ve karmaşık veri yapıları...', 3)}
+    ${_field('q_dev_t2_1', '2.1. Kullanılan Framework ve Ekosistem Deneyimi', 'QBCore, ESX, QBox, vRP veya Custom altyapı tecrübeleri...', 3)}
+    ${_field('q_dev_t2_2', '2.2. Client-Side ve Server-Side Mimarisi', 'Client-Server veri akışı ve güvenlik kriterleriniz...', 3)}
+    ${_field('q_dev_t2_3', '2.3. NUI ve Ön Yüz (Frontend) Geliştirme', 'React, Vue, Svelte veya Vanilla JS/CSS ile NUI deneyimi...', 3)}
+    ${_field('q_dev_t3_1', '3.1. Veritabanı Teknolojileri ve Sorgu Optimizasyonu', 'MySQL, MariaDB, MongoDB ve sorgu sürelerini düşürme yöntemleri...', 3)}
+    ${_field('q_dev_t3_2', '3.2. Caching (Önbellekleme) ve Veri Saklama Stratejileri', 'RAM/Local State veri saklama ve Save Interval mekanizmaları...', 3)}
+    ${_field('q_dev_t3_3', '3.3. Kod Optimizasyonu ve Profiling (Resmon / Performance Analysis)', 'Script ms (tick/resmon) değerlerini optimize etme yöntemleriniz...', 3)}
+    ${_field('q_dev_t4_1', '4.1. Git ve Versiyon Kontrol Sistemleri', 'Git, GitHub, Branch yönetimi, PR ve Conflict çözümü...', 3)}
+    ${_field('q_dev_t4_2', '4.2. Geliştirme Ortamı (IDE) ve Yardımcı Araçlar', 'VS Code, Linter, Formatter, Debugger ve eklentiler...', 2)}
+    ${_field('q_dev_t4_3', '4.3. API ve Entegrasyon Deneyimi', 'REST API, Webhook (Discord API vb.) entegrasyonları...', 3)}
+    ${_field('q_dev_t5_1', '5.1. Server-Side Doğrulama ve Güvenlik', 'Event Triggering, Net Event Exploits ve Injection önleme...', 3)}
+    ${_field('q_dev_t5_2', '5.2. Veri Doğrulama (Sanitization & Validation)', 'Client\'tan gelen verilerin (Item, Para, Koord) güvenliği...', 3)}
+  `;
+  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — TEKNİK BECERİLER, YAZILIM DENEYİMİ VE KODLAMA STANDARTLARI', 'Teknik altyapı, diller ve mimari deneyimleriniz.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa,#8b5cf6'));
+
+  // ═══ BÖLÜM 3 ═══
+  const step3Body = `
+    <div style="background:rgba(52,211,153,0.06);border-left:3px solid #34d399;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Aşağıdaki senaryolar, bir geliştirmecinin günlük süreçte karşılaşabileceği gerçek mimari problemler, performans krizleri ve güvenlik açıkları dikkate alınarak kurgulanmıştır.
+    </div>
+    ${_field('q_dev_s1_1', '1.1. Yüksek Resmon (Tick Rate) Sorunu', '0.15-0.20 ms çalışan mesafe döngüsünü 0.01 ms altına çekme revizyonunuz...', 4)}
+    ${_field('q_dev_s1_2', '1.2. Sunucu Çökmesi ve Bellek Sızıntısı (Memory Leak)', 'RAM yükselişi ve çöküş durumlarında izleyeceğiniz debug prosedürü...', 4)}
+    ${_field('q_dev_s1_3', '1.3. Toplu İşlemlerde Veritabanı Kilitlenmesi (Deadlock & Lag Spikes)', '50 oyuncu veritabanı kaydı sırasındaki lag spikelerini önleme mimariniz...', 4)}
+    ${_field('q_dev_s2_1', '2.1. Yetkisiz Event Tetikleme (Unprotected Net Event)', 'Inject edilen TriggerServerEvent yetkisiz çağırmalarını engelleme...', 4)}
+    ${_field('q_dev_s2_2', '2.2. Envanter ve Eşya Çoğaltma (Dupe Exploit) Analizi', 'Race condition kaynaklı eşya çoğaltma açıklarını kapatma yöntemleri...', 4)}
+    ${_field('q_dev_s2_3', '2.3. Hileli Veri Paketleri ve Sanitize İşlemleri', 'NaN, nil veya SQL Injection denemelerini süzgeçten geçirme...', 4)}
+    ${_field('q_dev_s3_1', '3.1. Sıfırdan Modüler Sistem Tasarımı', 'Özgün Birlik/Grup Yönetim Sistemi mimari taslağı...', 4)}
+    ${_field('q_dev_s3_2', '3.2. Çakışan Script\'leri ve Kütüphaneleri Entegre Etme', 'Çakışan iki farklı sistemi merge etme adımları...', 4)}
+    ${_field('q_dev_s4_1', '4.1. Mantıksal Hata Analizi (Örnek Durum)', 'Benzin seviyesinin sıfırlanması gibi hatasız mantık ошибокını debug etme...', 4)}
+    ${_field('q_dev_s4_2', '4.2. Dış Servis Kesintileri (API / Discord Webhook Outage)', 'Discord API yavaşlamasında kilitlenmeyi önleyici Try-Catch / Fallback kurgusu...', 4)}
+  `;
+  const step3 = _step(3, '#34d399', 'BÖLÜM 3 — PRATİK KODLAMA, PROBLEM ÇÖZME VE SENARYO ANALİZLERİ', 'Saha problemleri, performans krizleri ve güvenlik senaryoları.', step3Body, prevBtn(3) + nextBtn(3, '#34d399,#059669'));
+
+  // ═══ BÖLÜM 4 ═══
+  const step4Body = `
+    <div style="background:rgba(245,158,11,0.06);border-left:3px solid #f59e0b;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Bu bölüm, Eko Yıldız ve Eko Creations vizyonuna uyumunuzu, ekip içi iletişim dinamiklerinizi ve çalışma kültürünüzü değerlendirmek üzere hazırlanmıştır.
+    </div>
+    ${_field('q_dev_v1_1', '1.1. Eko Yıldız Bünyesine Katılma Motivasyonunuz', 'Eko Yıldız projesini tercih etme sebebiniz ve katacağınız fark...', 3)}
+    ${_field('q_dev_v1_2', '1.2. Kısa ve Uzun Vadeli Geliştirici Hedefleriniz', 'İlk 1 ay ve 6+ aydaki hedefleriniz...', 3)}
+    ${_field('q_dev_v1_3', '1.3. Proje Mimarisine Bakış Açınız ve İnovasyon', 'Ekosistemdeki teknik eksiklikler ve çözüm hedefleriniz...', 3)}
+    ${_field('q_dev_v2_1', '2.1. Temiz Kod (Clean Code) ve Okunabilirlik İlkeleri', 'İsimlendirme standartlarınız ve kod okunabilirliği ilkeleriniz...', 3)}
+    ${_field('q_dev_v2_2', '2.2. Dokümantasyon ve Bilgi Paylaşımı', 'API/Export dokümantasyon çıkarma süreciniz...', 3)}
+    ${_field('q_dev_v2_3', '2.3. Eski/Verimsiz Kodları Yenileme (Refactoring) Yaklaşımınız', 'Eski koda müdahale ve refactoring yaklaşımınız...', 3)}
+    ${_field('q_dev_v3_1', '3.1. Yönetim Kurulu ve Üst Merci Talimatlarına Uyum', 'Acil geliştirme taleplerini önceliklendirme tarzınız...', 3)}
+    ${_field('q_dev_v3_2', '3.2. Eleştiriye Açıklık ve Kod İncelemesi (Code Review)', 'Kod incelemelerine ve yapıcı eleştirilere yaklaşımınız...', 3)}
+    ${_field('q_dev_v3_3', '3.3. Fikir Ayrılıkları ve Çatışma Yönetimi', 'Ekip arkadaşıyla anlaşmazlıkları çözme tarzınız...', 3)}
+    ${_field('q_dev_v4_1', '4.1. Gizlilik Sözleşmesi ve Fikri Mülkiyet (NDA & IP Security)', 'Kod ve veri gizliliği konusundaki hassasiyetiniz...', 3)}
+    ${_field('q_dev_v4_2', '4.2. Sorumluluk Bilinci ve Teslim Tarihleri (Deadlines)', 'Teslim tarihlerine uyum ve gecikme durumunda iletişiminiz...', 3)}
+    ${_field('q_dev_v4_3', '4.3. Topluluk Önündeki Duruş ve Temsil Yeteneği', 'Geliştirici olarak topluluk önündeki temsil bilinciniz...', 3)}
+  `;
+  const step4 = _step(4, '#f59e0b', 'BÖLÜM 4 — PROJE UYUM STANDARTLARI, VİZYON VE EKİP ÇALIŞMASI', 'Vizyon, okunabilirlik, iletişim ve gizlilik anlayışınız.', step4Body, prevBtn(4) + nextBtn(4, '#f59e0b,#d97706'));
+
+  // ═══ BÖLÜM 5 ═══
+  const step5Body = `
+    <div style="background:rgba(239,68,68,0.06);border-left:3px solid #ef4444;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Bu bölüm, başvuru sürecinin hukuki, disipliner ve idari açıdan bağlayıcı olan son aşamasıdır. Form boyunca beyan ettiğiniz tüm bilgilerin doğruluğunu ve Gizlilik İlkesi (NDA) hükümlerini kabul ettiğinizi beyan ediniz.
+    </div>
+
+    <div style="background:rgba(0,0,0,0.3);padding:1.2rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin-bottom:1.2rem;">
+      <h4 style="color:#ef4444;margin:0 0 0.6rem 0;font-size:0.95rem;">📜 TAAHHÜTNAME VE NİHAİ ONAYLAR</h4>
+      
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dev_nda_1" required style="margin-top:0.2rem;">
+          <span><strong>1.1. Bilgilerin Doğruluğu ve Özgünlük Onayı:</strong> Formda verdiğim tüm bilgilerin eksiksiz, doğru ve şahsıma ait olduğunu; özgün olmayan/yapay zeka ürünü içerik barındırmadığını kabul ediyorum.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dev_nda_2" required style="margin-top:0.2rem;">
+          <span><strong>1.2. Yanıltıcı Beyan Yaptırımı:</strong> Yanlış veya yanıltıcı bilgi tespiti halinde başvurumun iptal edileceğini ve Eko Creations bünyesinde kara listeye alınacağımı kabul ediyorum.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dev_nda_3" required style="margin-top:0.2rem;">
+          <span><strong>2.1. Fikri Mülkiyet ve Kod Gizliliği (NDA):</strong> Eko Yıldız bünyesinde geliştirilen tüm script, kod, veritabanı ve dokümanların mülkiyetinin projeye ait olduğunu, izinsiz paylaşmayacağımı taahhüt ederim.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dev_nda_4" required style="margin-top:0.2rem;">
+          <span><strong>3.1. Yönetmelik ve Kurallara Uyum:</strong> Kurallar ve Yönetmelik Bilgilendirmesi ile Eko Creations Yönetmeliği protokollerini kabul ederim.</span>
+        </label>
+      </div>
+    </div>
+
+    ${_field('q_dev_sign_name', '4.1. Başvuru Sahibinin Adı Soyadı', 'Tam Ad Soyad...', 1)}
+    ${_field('q_dev_sign_signature', '4.3. Onay İmzası (Discord ID / Kullanıcı Adı)', 'Örn: ekonqt / ekonqtx', 1)}
+  `;
+  const step5 = _step(5, '#ef4444', 'BÖLÜM 5 — TAAHHÜTNAME, YÖNETMELİK ONAYI VE NİHAİ BAŞVURU ONAYI', 'Hukuki, disipliner ve idari taahhütleriniz.', step5Body, prevBtn(5) + `<button type="submit" id="btn-submit-dev" class="btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;padding:0.8rem 2.2rem;border-radius:24px;border:none;cursor:pointer;font-size:1rem;box-shadow:0 4px 15px rgba(16,185,129,0.4);">🚀 Geliştirici Başvurusunu Tamamla ve Gönder</button>`);
+
+  const content = `
+    <div style="max-width:860px;margin:2rem auto;animation:fadeUp 0.5s ease;">
+      <div style="width:100%;border-radius:20px;overflow:hidden;margin-bottom:1.8rem;box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+        <img src="${BANNER}" style="width:100%;display:block;max-height:240px;object-fit:cover;">
+      </div>
+
+      <div style="text-align:center;margin-bottom:2rem;">
+        <h1 style="font-size:2rem;font-weight:800;color:#fff;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;">
+          <img src="https://cdn.discordapp.com/emojis/1536405010466742415.png" style="height:32px;width:32px;object-fit:contain;" onerror="this.style.display='none'">
+          <span>Geliştirici Ekibi // Geliştirici Ofisi Alım Formu</span>
+        </h1>
+        <p style="color:var(--muted);font-size:0.95rem;max-width:650px;margin:0 auto;">
+          Birincil Alım Formu — Geliştirici Adayı Pozisyonu Ön Değerlendirme Belgesi. Lütfen tüm bölümleri eksiksiz ve özgün yanıtlarla doldurunuz.
+        </p>
+      </div>
+
+      <form id="dev-form">
+        ${step1}
+        ${step2}
+        ${step3}
+        ${step4}
+        ${step5}
+      </form>
+    </div>
+
+    <script>
+      function toggleStep(n) {
+        const body = document.querySelector('#form-step-' + n + ' .step-body');
+        if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+      }
+      function nextStep(n) {
+        document.getElementById('form-step-' + n).style.display = 'none';
+        const next = document.getElementById('form-step-' + (n + 1));
+        if (next) { next.style.display = 'block'; window.scrollTo({top: next.offsetTop - 80, behavior: 'smooth'}); }
+      }
+      function prevStep(n) {
+        document.getElementById('form-step-' + n).style.display = 'none';
+        const prev = document.getElementById('form-step-' + (n - 1));
+        if (prev) { prev.style.display = 'block'; window.scrollTo({top: prev.offsetTop - 80, behavior: 'smooth'}); }
+      }
+
+      document.getElementById('dev-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-dev');
+        btn.disabled = true; btn.innerHTML = '⏳ Gönderiliyor...';
+
+        const data = {
+          discordUsername: document.getElementById('q_discord')?.value || '',
+          q_dev_1_1: document.getElementById('q_dev_1_1')?.value || '',
+          q_dev_1_2: document.getElementById('q_dev_1_2')?.value || '',
+          q_dev_1_4: document.getElementById('q_dev_1_4')?.value || '',
+          q_dev_2_1: document.getElementById('q_dev_2_1')?.value || '',
+          q_dev_2_2: document.getElementById('q_dev_2_2')?.value || '',
+          q_dev_2_3: document.getElementById('q_dev_2_3')?.value || '',
+          q_dev_3_1: document.getElementById('q_dev_3_1')?.value || '',
+          q_dev_3_2: document.getElementById('q_dev_3_2')?.value || '',
+          q_dev_3_3: document.getElementById('q_dev_3_3')?.value || '',
+          q_dev_4_1: document.getElementById('q_dev_4_1')?.value || '',
+          q_dev_4_2: document.getElementById('q_dev_4_2')?.value || '',
+          q_dev_4_3: document.getElementById('q_dev_4_3')?.value || '',
+          q_dev_5_1: document.getElementById('q_dev_5_1')?.value || '',
+          q_dev_5_2: document.getElementById('q_dev_5_2')?.value || '',
+          q_dev_5_3: document.getElementById('q_dev_5_3')?.value || '',
+          q_dev_t1_1: document.getElementById('q_dev_t1_1')?.value || '',
+          q_dev_t1_2: document.getElementById('q_dev_t1_2')?.value || '',
+          q_dev_t1_3: document.getElementById('q_dev_t1_3')?.value || '',
+          q_dev_t2_1: document.getElementById('q_dev_t2_1')?.value || '',
+          q_dev_t2_2: document.getElementById('q_dev_t2_2')?.value || '',
+          q_dev_t2_3: document.getElementById('q_dev_t2_3')?.value || '',
+          q_dev_t3_1: document.getElementById('q_dev_t3_1')?.value || '',
+          q_dev_t3_2: document.getElementById('q_dev_t3_2')?.value || '',
+          q_dev_t3_3: document.getElementById('q_dev_t3_3')?.value || '',
+          q_dev_t4_1: document.getElementById('q_dev_t4_1')?.value || '',
+          q_dev_t4_2: document.getElementById('q_dev_t4_2')?.value || '',
+          q_dev_t4_3: document.getElementById('q_dev_t4_3')?.value || '',
+          q_dev_t5_1: document.getElementById('q_dev_t5_1')?.value || '',
+          q_dev_t5_2: document.getElementById('q_dev_t5_2')?.value || '',
+          q_dev_s1_1: document.getElementById('q_dev_s1_1')?.value || '',
+          q_dev_s1_2: document.getElementById('q_dev_s1_2')?.value || '',
+          q_dev_s1_3: document.getElementById('q_dev_s1_3')?.value || '',
+          q_dev_s2_1: document.getElementById('q_dev_s2_1')?.value || '',
+          q_dev_s2_2: document.getElementById('q_dev_s2_2')?.value || '',
+          q_dev_s2_3: document.getElementById('q_dev_s2_3')?.value || '',
+          q_dev_s3_1: document.getElementById('q_dev_s3_1')?.value || '',
+          q_dev_s3_2: document.getElementById('q_dev_s3_2')?.value || '',
+          q_dev_s4_1: document.getElementById('q_dev_s4_1')?.value || '',
+          q_dev_s4_2: document.getElementById('q_dev_s4_2')?.value || '',
+          q_dev_v1_1: document.getElementById('q_dev_v1_1')?.value || '',
+          q_dev_v1_2: document.getElementById('q_dev_v1_2')?.value || '',
+          q_dev_v1_3: document.getElementById('q_dev_v1_3')?.value || '',
+          q_dev_v2_1: document.getElementById('q_dev_v2_1')?.value || '',
+          q_dev_v2_2: document.getElementById('q_dev_v2_2')?.value || '',
+          q_dev_v2_3: document.getElementById('q_dev_v2_3')?.value || '',
+          q_dev_v3_1: document.getElementById('q_dev_v3_1')?.value || '',
+          q_dev_v3_2: document.getElementById('q_dev_v3_2')?.value || '',
+          q_dev_v3_3: document.getElementById('q_dev_v3_3')?.value || '',
+          q_dev_v4_1: document.getElementById('q_dev_v4_1')?.value || '',
+          q_dev_v4_2: document.getElementById('q_dev_v4_2')?.value || '',
+          q_dev_v4_3: document.getElementById('q_dev_v4_3')?.value || '',
+          q_dev_sign_name: document.getElementById('q_dev_sign_name')?.value || '',
+          q_dev_sign_signature: document.getElementById('q_dev_sign_signature')?.value || '',
+        };
+
+        try {
+          const res = await fetch('/api/forms/developer/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const resData = await res.json();
+          if (res.ok && resData.success) {
+            alert('✅ Geliştirici başvurunuz başarıyla alındı! Discord üzerindeki Mülakat botu üzerinden bilgilendirileceksiniz.');
+            window.location.href = '/forms';
+          } else {
+            alert('❌ Hata: ' + (resData.error || 'Başvuru gönderilemedi.'));
+            btn.disabled = false; btn.innerHTML = '🚀 Geliştirici Başvurusunu Tamamla ve Gönder';
+          }
+        } catch (err) {
+          alert('❌ Bağlantı hatası: ' + err.message);
+          btn.disabled = false; btn.innerHTML = '🚀 Geliştirici Başvurusunu Tamamla ve Gönder';
+        }
+      });
+    </script>
+  `;
+
+  return _layout('Geliştirici Ekibi Alım Formu', currentUser, content, '', '/forms');
+}
+
+function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
+  const _layout = require('./views')._layout;
+  const isLoggedIn = Boolean(currentUser);
+  const usernameStr = currentUser ? (currentUser.discordUsername || currentUser.username || '') : '';
+  const BANNER = 'https://i.imgur.com/juSekgU.jpeg';
+
+  function _step(num, color, title, subtitle, bodyHtml, navHtml) {
+    const hidden = num > 1 ? 'display:none;' : '';
+    return `
+      <div id="form-step-${num}" class="form-step card" style="border-radius:20px;border-left:4px solid ${color};${hidden}transition:all 0.3s;margin-bottom:1.5rem;background:rgba(20,20,35,0.7);backdrop-filter:blur(20px);padding:2rem;">
+        <div class="step-header-bar" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleStep(${num})">
+          <div>
+            <h3 style="font-size:1.1rem;font-weight:800;color:${color};margin-bottom:0.2rem;">${title}</h3>
+            <p style="font-size:0.78rem;color:var(--muted);margin:0;">${subtitle}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="step-done-badge" style="display:none;background:${color}20;color:${color};font-size:0.72rem;font-weight:800;padding:0.25rem 0.7rem;border-radius:20px;border:1px solid ${color}40;">✓ TAMAMLANDI</span>
+            <span class="step-expand-btn" style="display:none;color:${color};font-size:1.2rem;cursor:pointer;" title="Genişlet / Daralt">▼</span>
+          </div>
+        </div>
+        <div class="step-body" style="margin-top:1.2rem;">
+          ${bodyHtml}
+          <div class="step-nav" style="display:flex;justify-content:${num === 1 ? 'flex-end' : 'space-between'};margin-top:1.8rem;">
+            ${navHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function _field(id, label, placeholder, rows, hint = '') {
+    return `
+      <div class="form-group" style="margin-bottom:1.2rem;">
+        <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">${label} *</label>
+        <textarea id="${id}" class="input-field track-field" data-field="${id}" rows="${rows || 3}" required placeholder="${placeholder}" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;font-family:inherit;line-height:1.5;"></textarea>
+        ${hint ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">${hint}</div>` : ''}
+        <div class="field-hint" id="hint-${id}" style="font-size:0.72rem;color:var(--muted);margin-top:0.25rem;min-height:16px;"></div>
+      </div>`;
+  }
+
+  const prevBtn = (n) => `<button type="button" onclick="prevStep(${n})" class="btn btn-ghost" style="font-size:0.9rem;">← Önceki Bölüm</button>`;
+  const nextBtn = (n, grad) => `<button type="button" onclick="nextStep(${n})" class="btn" style="background:linear-gradient(135deg,${grad});color:#fff;font-weight:700;padding:0.7rem 1.8rem;border-radius:24px;border:none;cursor:pointer;font-family:inherit;">Sonraki Bölüm →</button>`;
+
+  // ═══ BÖLÜM 1 ═══
+  const step1Body = `
+    <div style="background:rgba(56,189,248,0.06);border-left:3px solid #38bdf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Hata Ayıklama Ofisi (Bug Hunter / Tester), sistemdeki açıkları, mantık hatalarını ve performans sorunlarını tespit edip teknik ekibe raporlayan özel birimdir.
+    </div>
+    <div class="form-group" style="margin-bottom:1.2rem;">
+      <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">DISCORD HESABI VE USER ID *</label>
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx / 123456789012345678" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;">
+    </div>
+    ${_field('q_dbg_1_1', '1.1. Adınız ve Soyadınız', 'Tam Ad Soyad...', 2)}
+    ${_field('q_dbg_1_2', '1.2. Yaşınız ve Doğum Tarihiniz', 'Örn: 19 / 12.04.2007', 2)}
+    ${_field('q_dbg_1_3', '1.3. Aktiflik Saatleriniz ve Günlük Bilgisayar Başındaki Süreniz', 'Aktiflik süreniz...', 3)}
+    ${_field('q_dbg_1_4', '1.4. Sesli ve Yazılı İletişim Yetkinliğiniz', 'İletişim ortamınız ve mikrofon durumu...', 2)}
+  `;
+  const step1 = _step(1, '#38bdf8', 'BÖLÜM 1 — TEMEL ÖN BİLGİLER VE KİMLİK DOĞRULAMA', 'Temel kimlik ve aktiflik bilgileriniz.', step1Body, nextBtn(1, '#38bdf8,#0284c7'));
+
+  // ═══ BÖLÜM 2 ═══
+  const step2Body = `
+    <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Hata tespiti, log inceleme ve hataları adım adım yeniden oluşturma (reproduce) becerilerinizi değerlendiren teknik aşamadır.
+    </div>
+    ${_field('q_dbg_2_1', '2.1. Geçmiş Bug Hunting ve Hata Tespit Deneyimleriniz', 'Daha önce hangi projelerde hata ayıklama / testerlık yaptınız?', 3)}
+    ${_field('q_dbg_2_2', '2.2. F8 Console ve Log İnceleme Hakimiyetiniz', 'F8 konsolu, Client Traceback ve Server Logları okuma seviyeniz...', 3)}
+    ${_field('q_dbg_2_3', '2.3. Hata Adımlarını Yeniden Oluşturma (Reproduce) Metodolojiniz', 'Bir hatayı adım adım (step-by-step) tekrarlanabilir kılma yöntemleriniz...', 3)}
+  `;
+  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — HATA AYIKLAMA (DEBUGGING) VE TEST DENEYİMİ', 'Log okuma, test ve bug kurgusu tecrübeleriniz.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa,#8b5cf6'));
+
+  // ═══ BÖLÜM 3 ═══
+  const step3Body = `
+    <div style="background:rgba(52,211,153,0.06);border-left:3px solid #34d399;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Geliştirici ekibine raporlama standartları ve kriz anı prosedürleri.
+    </div>
+    ${_field('q_dbg_3_1', '3.1. Oyun İçi Çökme / Dupe / Yetki Açığı Bulduğunuzda İzleyeceğiniz Prosedür', 'Öncelikli kriz raporlama ve gizlilik adımlarınız...', 4)}
+    ${_field('q_dbg_3_2', '3.2. Geliştirici Ekibine Teknik Bug Raporlama ve Detaylandırma Standartları', 'Hangi detayları (video, log, resmon, adımlar) rapora eklersiniz?', 4)}
+  `;
+  const step3 = _step(3, '#34d399', 'BÖLÜM 3 — SENARYO VE PROBLEM ÇÖZME', 'Raporlama standartları ve kriz açığı süreçleri.', step3Body, prevBtn(3) + nextBtn(3, '#34d399,#059669'));
+
+  // ═══ BÖLÜM 4 ═══
+  const step4Body = `
+    <div style="background:rgba(245,158,11,0.06);border-left:3px solid #f59e0b;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Tüm bulunan açıkların gizlilik ilkesi doğrultusunda saklanması taahhüdü.
+    </div>
+
+    <div style="background:rgba(0,0,0,0.3);padding:1.2rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin-bottom:1.2rem;">
+      <h4 style="color:#f59e0b;margin:0 0 0.6rem 0;font-size:0.95rem;">📜 GİZLİLİK VE ETİK TAAHHÜTNAMESİ</h4>
+      
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_1" required style="margin-top:0.2rem;">
+          <span><strong>Gizlilik Garantisi:</strong> Tespit ettiğim hiçbir hatayı, açığı (exploit) veya güvenlik ihlalini 3. kişilerle paylaşmayacağımı, oyuncular lehine kullanmayacağımı kabul ve taahhüt ederim.</span>
+        </label>
+      </div>
+    </div>
+
+    ${_field('q_dbg_sign_name', 'Başvuru Sahibinin Adı Soyadı ve İmzası', 'Tam Ad Soyad...', 1)}
+  `;
+  const step4 = _step(4, '#f59e0b', 'BÖLÜM 4 — GİZLİLİK VE ETİK TAAHHÜTLERİ', 'Gizlilik, etik ilkelere sadakat ve nihai onay.', step4Body, prevBtn(4) + `<button type="submit" id="btn-submit-dbg" class="btn" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;font-weight:800;padding:0.8rem 2.2rem;border-radius:24px;border:none;cursor:pointer;font-size:1rem;box-shadow:0 4px 15px rgba(56,189,248,0.4);">🚀 Hata Ayıklama Ofisi Başvurusunu Gönder</button>`);
+
+  const content = `
+    <div style="max-width:860px;margin:2rem auto;animation:fadeUp 0.5s ease;">
+      <div style="width:100%;border-radius:20px;overflow:hidden;margin-bottom:1.8rem;box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+        <img src="${BANNER}" style="width:100%;display:block;max-height:240px;object-fit:cover;">
+      </div>
+
+      <div style="text-align:center;margin-bottom:2rem;">
+        <h1 style="font-size:2rem;font-weight:800;color:#fff;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;">
+          <img src="https://cdn.discordapp.com/emojis/1536405009187602482.png" style="height:32px;width:32px;object-fit:contain;" onerror="this.style.display='none'">
+          <span>Hata Ayıklama Ofisi Alım Formu</span>
+        </h1>
+        <p style="color:var(--muted);font-size:0.95rem;max-width:650px;margin:0 auto;">
+          Hata Ayıklama Ofisi (Bug Hunter / Tester) Başvuru Belgesi. Sistem açıklarını ve hataları tespit etme yetkinliklerinizi detaylandırınız.
+        </p>
+      </div>
+
+      <form id="dbg-form">
+        ${step1}
+        ${step2}
+        ${step3}
+        ${step4}
+      </form>
+    </div>
+
+    <script>
+      function toggleStep(n) {
+        const body = document.querySelector('#form-step-' + n + ' .step-body');
+        if (body) body.style.display = body.style.display === 'none' ? 'block' : 'none';
+      }
+      function nextStep(n) {
+        document.getElementById('form-step-' + n).style.display = 'none';
+        const next = document.getElementById('form-step-' + (n + 1));
+        if (next) { next.style.display = 'block'; window.scrollTo({top: next.offsetTop - 80, behavior: 'smooth'}); }
+      }
+      function prevStep(n) {
+        document.getElementById('form-step-' + n).style.display = 'none';
+        const prev = document.getElementById('form-step-' + (n - 1));
+        if (prev) { prev.style.display = 'block'; window.scrollTo({top: prev.offsetTop - 80, behavior: 'smooth'}); }
+      }
+
+      document.getElementById('dbg-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit-dbg');
+        btn.disabled = true; btn.innerHTML = '⏳ Gönderiliyor...';
+
+        const data = {
+          discordUsername: document.getElementById('q_discord')?.value || '',
+          q_dbg_1_1: document.getElementById('q_dbg_1_1')?.value || '',
+          q_dbg_1_2: document.getElementById('q_dbg_1_2')?.value || '',
+          q_dbg_1_3: document.getElementById('q_dbg_1_3')?.value || '',
+          q_dbg_1_4: document.getElementById('q_dbg_1_4')?.value || '',
+          q_dbg_2_1: document.getElementById('q_dbg_2_1')?.value || '',
+          q_dbg_2_2: document.getElementById('q_dbg_2_2')?.value || '',
+          q_dbg_2_3: document.getElementById('q_dbg_2_3')?.value || '',
+          q_dbg_3_1: document.getElementById('q_dbg_3_1')?.value || '',
+          q_dbg_3_2: document.getElementById('q_dbg_3_2')?.value || '',
+          q_dbg_sign_name: document.getElementById('q_dbg_sign_name')?.value || '',
+        };
+
+        try {
+          const res = await fetch('/api/forms/debug-office/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const resData = await res.json();
+          if (res.ok && resData.success) {
+            alert('✅ Hata Ayıklama Ofisi başvurunuz başarıyla alındı!');
+            window.location.href = '/forms';
+          } else {
+            alert('❌ Hata: ' + (resData.error || 'Başvuru gönderilemedi.'));
+            btn.disabled = false; btn.innerHTML = '🚀 Hata Ayıklama Ofisi Başvurusunu Gönder';
+          }
+        } catch (err) {
+          alert('❌ Bağlantı hatası: ' + err.message);
+          btn.disabled = false; btn.innerHTML = '🚀 Hata Ayıklama Ofisi Başvurusunu Gönder';
+        }
+      });
+    </script>
+  `;
+
+  return _layout('Hata Ayıklama Ofisi Alım Formu', currentUser, content, '', '/forms');
+}
+
 module.exports = {
   renderEventStaffFormPage,
   renderClosedFormPage,
   renderCommunityAmbassadorFormPage,
+  renderDeveloperFormPage,
+  renderDebugOfficeFormPage,
 };
 

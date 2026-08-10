@@ -8465,11 +8465,47 @@ function renderFormsHubPage(currentUser) {
           </div>
 
           <!-- 4. TOPLULUK ELÇİLİĞİ (AÇIK) -->
-          <div style="margin-bottom:1rem; background:rgba(245,158,11,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(245,158,11,0.2);">
+          <div style="margin-bottom:1.5rem; background:rgba(245,158,11,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(245,158,11,0.2);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
               <span style="font-size:1.2rem;">👑</span>
               <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Topluluk Elçisi ]</a>
               <span style="color:var(--text); font-size:0.9rem; font-weight:600;">mülakat & başvuru formu için <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline;">tıklayın</a>.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973588031635608.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973586706108416.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973585083175063.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973583485009940.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. GELİŞTİRİCİ EKİBİ // GELİŞTİRİCİ OFİSİ (AÇIK) -->
+          <div style="margin-bottom:1.5rem; background:rgba(129,140,248,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(129,140,248,0.2);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
+              <img src="https://cdn.discordapp.com/emojis/1536405010466742415.png" style="height:24px; width:24px; object-fit:contain;" onerror="this.src='https://cdn.discordapp.com/emojis/1535974991382978641.png'">
+              <a href="/forms/developer" style="color:#818cf8; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Geliştirici Ekibi // Geliştirici Ofisi ]</a>
+              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">alım formu için <a href="/forms/developer" style="color:#818cf8; text-decoration:underline;">tıklayın</a>.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973588031635608.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973586706108416.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973585083175063.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973583485009940.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. HATA AYIKLAMA OFİSİ (AÇIK) -->
+          <div style="margin-bottom:1rem; background:rgba(56,189,248,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(56,189,248,0.2);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
+              <img src="https://cdn.discordapp.com/emojis/1536405009187602482.png" style="height:24px; width:24px; object-fit:contain;" onerror="this.src='https://cdn.discordapp.com/emojis/1535974991382978641.png'">
+              <a href="/forms/debug-office" style="color:#38bdf8; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Hata Ayıklama Ofisi ]</a>
+              <span style="color:var(--text); font-size:0.9rem; font-weight:600;">alım formu için <a href="/forms/debug-office" style="color:#38bdf8; text-decoration:underline;">tıklayın</a>.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
               <span>◦ Başvuru durumu:</span>
@@ -9004,7 +9040,7 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
   return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
 }
 
-const { renderCommunityAmbassadorFormPage } = require("./_form_views_patch");
+const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugOfficeFormPage } = require("./_form_views_patch");
 
 module.exports = {
   renderMainPage,
@@ -9026,6 +9062,8 @@ module.exports = {
   renderFormsHubPage,
   renderEventStaffFormPage,
   renderCommunityAmbassadorFormPage,
+  renderDeveloperFormPage,
+  renderDebugOfficeFormPage,
   renderBriefingOnboardingModal,
   renderGroupAdminPage,
   renderLeaderboardPage,

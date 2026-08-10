@@ -2396,6 +2396,98 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
   }
 });
 
+// ── Geliştirici Alım Formu Gönderme ─────────────────────────────────────────────
+router.post("/api/forms/developer/submit", async (req, res) => {
+  try {
+    const FormSubmission = require("../../models/FormSubmission");
+    const { discordUsername, discordId: bodyDiscordId } = req.body;
+    const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+    const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
+
+    if (req.user) {
+      const existing = await FormSubmission.findPendingByUser(userId, "developer");
+      if (existing) {
+        return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir Geliştirici başvurunuz bulunmaktadır." });
+      }
+    }
+
+    const submission = await FormSubmission.create({
+      userId,
+      discordId: targetDiscordId,
+      targetDiscordId: targetDiscordId,
+      discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
+      formType: "developer",
+      formTitle: "Geliştirici Ekibi // Geliştirici Ofisi Alım Formu",
+      formData: req.body
+    });
+
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
+      const botClient = getDiscordClient();
+      if (botClient && botClient.isReady()) {
+        sendNewApplicationLog(botClient, submission).catch(() => {});
+      }
+    } catch (_) {}
+
+    try {
+      const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
+      startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
+    } catch (_) {}
+
+    res.json({ success: true, message: "Geliştirici başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
+  } catch (err) {
+    console.error("[developer-submit] Error:", err.message);
+    res.status(500).json({ error: "Sunucu hatası: " + err.message });
+  }
+});
+
+// ── Hata Ayıklama Ofisi Formu Gönderme ─────────────────────────────────────────
+router.post("/api/forms/debug-office/submit", async (req, res) => {
+  try {
+    const FormSubmission = require("../../models/FormSubmission");
+    const { discordUsername, discordId: bodyDiscordId } = req.body;
+    const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
+    const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
+
+    if (req.user) {
+      const existing = await FormSubmission.findPendingByUser(userId, "debug_office");
+      if (existing) {
+        return res.status(400).json({ error: "Zaten incelenmekte olan aktif bir Hata Ayıklama Ofisi başvurunuz bulunmaktadır." });
+      }
+    }
+
+    const submission = await FormSubmission.create({
+      userId,
+      discordId: targetDiscordId,
+      targetDiscordId: targetDiscordId,
+      discordUsername: discordUsername || (req.user ? (req.user.discordUsername || req.user.username) : "Misafir"),
+      formType: "debug_office",
+      formTitle: "Hata Ayıklama Ofisi Alım Formu",
+      formData: req.body
+    });
+
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
+      const botClient = getDiscordClient();
+      if (botClient && botClient.isReady()) {
+        sendNewApplicationLog(botClient, submission).catch(() => {});
+      }
+    } catch (_) {}
+
+    try {
+      const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
+      startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
+    } catch (_) {}
+
+    res.json({ success: true, message: "Hata Ayıklama Ofisi başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
+  } catch (err) {
+    console.error("[debug-office-submit] Error:", err.message);
+    res.status(500).json({ error: "Sunucu hatası: " + err.message });
+  }
+});
+
 // ── Admin: Form Başvurularını Listele ─────────────────────────────────────────
 router.get("/api/admin/form-submissions", async (req, res) => {
   if (!requireAdmin(req, res)) return;

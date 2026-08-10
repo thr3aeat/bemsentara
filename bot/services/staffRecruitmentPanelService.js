@@ -26,6 +26,8 @@ function getRecruitmentPanelPayload() {
   const formsUrl               = `${RESOLVED_BASE_URL}/forms`;
   const eventStaffUrl          = `${RESOLVED_BASE_URL}/forms/event-staff`;
   const communityAmbassadorUrl = `${RESOLVED_BASE_URL}/forms/community-ambassador`;
+  const developerUrl           = `${RESOLVED_BASE_URL}/forms/developer`;
+  const debugOfficeUrl         = `${RESOLVED_BASE_URL}/forms/debug-office`;
 
   return {
     flags: ComponentsV2Factory.FLAGS,
@@ -63,6 +65,18 @@ function getRecruitmentPanelPayload() {
         // Topluluk Elçiliği — AÇIK
         ComponentsV2Factory.text(
           `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
+          `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+        ),
+
+        // Geliştirici Ekibi // Geliştirici Ofisi — AÇIK
+        ComponentsV2Factory.text(
+          `• <:dev:1536405010466742415> [**[ Geliştirici Ekibi // Geliştirici Ofisi ]**](${developerUrl}) başvuru formu için [tıklayın](${developerUrl}).\n` +
+          `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+        ),
+
+        // Hata Ayıklama Ofisi — AÇIK
+        ComponentsV2Factory.text(
+          `• <:hhata:1536405009187602482> [**[ Hata Ayıklama Ofisi ]**](${debugOfficeUrl}) başvuru formu için [tıklayın](${debugOfficeUrl}).\n` +
           `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
@@ -174,8 +188,15 @@ async function sendNewApplicationLog(client, submission) {
 
     const username = submission.discordUsername || "Bilinmiyor";
     const submissionId = submission._id ?? "N/A";
-    const formTitle = submission.formTitle || (submission.formType === 'community_ambassador' ? "Topluluk Elçisi Mülakat Başvuru Formu" : "Etkinlik Yetkilisi Başvuru Formu");
-    const embedColor = submission.formType === 'community_ambassador' ? 0xf59e0b : 0x818cf8;
+    const formTitle = submission.formTitle || 
+      (submission.formType === 'community_ambassador' ? "Topluluk Elçisi Mülakat Başvuru Formu" :
+       submission.formType === 'developer' ? "Geliştirici Ekibi // Geliştirici Ofisi Alım Formu" :
+       submission.formType === 'debug_office' ? "Hata Ayıklama Ofisi Alım Formu" : "Etkinlik Yetkilisi Başvuru Formu");
+    
+    let embedColor = 0x818cf8;
+    if (submission.formType === 'community_ambassador') embedColor = 0xf59e0b;
+    else if (submission.formType === 'developer') embedColor = 0x818cf8;
+    else if (submission.formType === 'debug_office') embedColor = 0x38bdf8;
 
     const payload = {
       flags: ComponentsV2Factory.FLAGS,
