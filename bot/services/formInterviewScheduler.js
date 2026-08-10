@@ -43,8 +43,48 @@ const RP_ADVICE = {
 function parseTimeToDate(timeVal) {
   if (!timeVal) return null;
   if (timeVal instanceof Date) return timeVal;
-  const d = new Date(timeVal);
+  if (typeof timeVal !== "string") return null;
+
+  const str = timeVal.trim();
+  if (!str) return null;
+
+  // 1. Time only: "20:00" or "20.00"
+  const timeOnlyMatch = str.match(/^(\d{1,2})[:.](\d{2})$/);
+  if (timeOnlyMatch) {
+    const hours = parseInt(timeOnlyMatch[1], 10);
+    const minutes = parseInt(timeOnlyMatch[2], 10);
+    const target = new Date();
+    target.setHours(hours, minutes, 0, 0);
+    return target;
+  }
+
+  // 2. Turkish Date Format: "11.08.2026 20:00" or "11/08/2026 20:00" or "11.08.2026 20.00"
+  const trMatch = str.match(/^(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{4})\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
+  if (trMatch) {
+    const day = parseInt(trMatch[1], 10);
+    const month = parseInt(trMatch[2], 10) - 1;
+    const year = parseInt(trMatch[3], 10);
+    const hours = parseInt(trMatch[4], 10);
+    const minutes = parseInt(trMatch[5], 10);
+    const seconds = trMatch[6] ? parseInt(trMatch[6], 10) : 0;
+    return new Date(year, month, day, hours, minutes, seconds);
+  }
+
+  // 3. Standard ISO / YYYY-MM-DD HH:mm: "2026-08-11 20:00" or "2026-08-11T20:00"
+  const isoMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[\sT](\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    const hours = parseInt(isoMatch[4], 10);
+    const minutes = parseInt(isoMatch[5], 10);
+    const seconds = isoMatch[6] ? parseInt(isoMatch[6], 10) : 0;
+    return new Date(year, month, day, hours, minutes, seconds);
+  }
+
+  const d = new Date(str);
   if (!isNaN(d.getTime())) return d;
+
   return null;
 }
 
@@ -57,7 +97,7 @@ async function checkAndSendReminders() {
     const now = new Date();
 
     for (const sub of submissions) {
-      if (!sub.interviewScheduledTime || sub.status === "REJECTED" || sub.interviewState === "COMPLETED") {
+      if (!sub.interviewScheduledTime || sub.status === "REJECTED" || sub.interviewState === "COMPLETED" || sub.interviewState === "FINISHED") {
         continue;
       }
 
@@ -101,7 +141,7 @@ async function checkAndSendReminders() {
       }
 
       // ── Exact Time (0 min or link dispatch) ──────────────────────────────
-      if (diffMin <= 0 && diffMin >= -15 && !sub.remindersSent.includes("exact")) {
+      if (diffMin <= 0 && diffMin >= -30 && !sub.remindersSent.includes("exact")) {
         await sendGameLinkAndJoinStatusDM(client, discordId, sub);
         sub.remindersSent.push("exact");
         await FormSubmission.update(sub._id, {
@@ -118,7 +158,10 @@ async function checkAndSendReminders() {
 async function sendReminderDM(client, discordId, minutesLeft, adviceText) {
   try {
     const user = await client.users.fetch(discordId).catch(() => null);
-    if (!user) return;
+    if (!user) {
+      console.warn(`[formInterviewScheduler] User fetch failed for Discord ID: ${discordId}`);
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setColor(0x818cf8)
@@ -132,7 +175,11 @@ async function sendReminderDM(client, discordId, minutesLeft, adviceText) {
       )
       .setFooter({ text: "Sentara Otomatik Mülakat Hatırlatıcısı" });
 
-    await user.send({ embeds: [embed] }).catch(() => {});
+    await user.send({ embeds: [embed] }).then(() => {
+      console.log(`[formInterviewScheduler] ✅ ${minutesLeft}m reminder DM sent to ${user.tag} (${discordId})`);
+    }).catch(dmErr => {
+      console.warn(`[formInterviewScheduler] ❌ Could not send DM to ${user.tag} (${discordId}):`, dmErr.message);
+    });
   } catch (err) {
     console.error(`[formInterviewScheduler] Reminder send error to ${discordId}:`, err.message);
   }
@@ -141,7 +188,10 @@ async function sendReminderDM(client, discordId, minutesLeft, adviceText) {
 async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
   try {
     const user = await client.users.fetch(discordId).catch(() => null);
-    if (!user) return;
+    if (!user) {
+      console.warn(`[formInterviewScheduler] User fetch failed for Discord ID: ${discordId}`);
+      return;
+    }
 
     const gameLink = submission.robloxGameLink || "https://www.roblox.com/";
 
@@ -185,7 +235,11 @@ async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
     }
     components.push(joinStatusRow);
 
-    await user.send({ embeds: [embed], components }).catch(() => {});
+    await user.send({ embeds: [embed], components }).then(() => {
+      console.log(`[formInterviewScheduler] ✅ Game link DM sent to ${user.tag} (${discordId})`);
+    }).catch(dmErr => {
+      console.warn(`[formInterviewScheduler] ❌ Could not send Game Link DM to ${user.tag} (${discordId}):`, dmErr.message);
+    });
   } catch (err) {
     console.error(`[formInterviewScheduler] Game link send error to ${discordId}:`, err.message);
   }
@@ -194,7 +248,7 @@ async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
 function startScheduler() {
   if (schedulerInterval) return;
   console.log("[formInterviewScheduler] Starting interview reminder interval...");
-  // Check every 30 seconds
+  checkAndSendReminders().catch(err => console.error("[formInterviewScheduler] Initial check error:", err.message));
   schedulerInterval = setInterval(checkAndSendReminders, 30000);
 }
 

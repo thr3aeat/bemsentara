@@ -2583,6 +2583,12 @@ router.post("/api/admin/form-submissions/:id/set-target-discord-id", async (req,
       return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
     }
 
+    // Anında zamanlayıcı kontrolünü tetikle
+    try {
+      const { checkAndSendReminders } = require("../../bot/services/formInterviewScheduler");
+      checkAndSendReminders().catch(() => {});
+    } catch (_) {}
+
     res.json({ success: true, submission: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
