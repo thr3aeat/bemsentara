@@ -40,7 +40,7 @@ const RP_ADVICE = {
   ].join("\n"),
 };
 
-function parseTimeToDate(timeVal) {
+function parseTurkeyTimeToDate(timeVal) {
   if (!timeVal) return null;
   if (timeVal instanceof Date) return timeVal;
   if (typeof timeVal !== "string") return null;
@@ -48,42 +48,78 @@ function parseTimeToDate(timeVal) {
   const str = timeVal.trim();
   if (!str) return null;
 
-  // 1. Time only: "20:00" or "20.00"
-  const timeOnlyMatch = str.match(/^(\d{1,2})[:.](\d{2})$/);
-  if (timeOnlyMatch) {
-    const hours = parseInt(timeOnlyMatch[1], 10);
-    const minutes = parseInt(timeOnlyMatch[2], 10);
-    const target = new Date();
-    target.setHours(hours, minutes, 0, 0);
-    return target;
+  const now = new Date();
+
+  // 1. TR Full Date format: "10.08.2026 - 20:00" or "10/08/2026 20:00" or "10.08.2026 20.00"
+  let match = str.match(/(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4}).*?(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const year = parseInt(match[3], 10);
+    const hours = parseInt(match[4], 10);
+    const minutes = parseInt(match[5], 10);
+    return new Date(Date.UTC(year, month - 1, day, hours - 3, minutes, 0));
   }
 
-  // 2. Turkish Date Format: "11.08.2026 20:00" or "11/08/2026 20:00" or "11.08.2026 20.00"
-  const trMatch = str.match(/^(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{4})\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
-  if (trMatch) {
-    const day = parseInt(trMatch[1], 10);
-    const month = parseInt(trMatch[2], 10) - 1;
-    const year = parseInt(trMatch[3], 10);
-    const hours = parseInt(trMatch[4], 10);
-    const minutes = parseInt(trMatch[5], 10);
-    const seconds = trMatch[6] ? parseInt(trMatch[6], 10) : 0;
-    return new Date(year, month, day, hours, minutes, seconds);
+  // 2. ISO format: "2026-08-10 20:00" or "2026-08-10T20:00"
+  match = str.match(/(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2}).*?(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const day = parseInt(match[3], 10);
+    const hours = parseInt(match[4], 10);
+    const minutes = parseInt(match[5], 10);
+    return new Date(Date.UTC(year, month - 1, day, hours - 3, minutes, 0));
   }
 
-  // 3. Standard ISO / YYYY-MM-DD HH:mm: "2026-08-11 20:00" or "2026-08-11T20:00"
-  const isoMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[\sT](\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
-  if (isoMatch) {
-    const year = parseInt(isoMatch[1], 10);
-    const month = parseInt(isoMatch[2], 10) - 1;
-    const day = parseInt(isoMatch[3], 10);
-    const hours = parseInt(isoMatch[4], 10);
-    const minutes = parseInt(isoMatch[5], 10);
-    const seconds = isoMatch[6] ? parseInt(isoMatch[6], 10) : 0;
-    return new Date(year, month, day, hours, minutes, seconds);
+  // 3. Time only: "20:00", "20.00", "Saat 20:00", "20:00'da"
+  match = str.match(/(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+
+    // Use current Turkey date (UTC + 3)
+    const nowTrMs = now.getTime() + (3 * 3600 * 1000);
+    const trNowDate = new Date(nowTrMs);
+    const year = trNowDate.getUTCFullYear();
+    const month = trNowDate.getUTCMonth();
+    const day = trNowDate.getUTCDate();
+
+    return new Date(Date.UTC(year, month, day, hours - 3, minutes, 0));
   }
 
   const d = new Date(str);
   if (!isNaN(d.getTime())) return d;
+
+  return null;
+}
+
+async function resolveDiscordUser(client, identifier) {
+  if (!client || !identifier) return null;
+  const str = String(identifier).trim().replace(/^@/, "");
+  if (!str) return null;
+
+  // 1. If 17-20 digit Snowflake ID, fetch directly
+  if (/^\d{17,20}$/.test(str)) {
+    const user = await client.users.fetch(str).catch(() => null);
+    if (user) return user;
+  }
+
+  // 2. Fallback: Search across all guilds for username/tag/displayName match
+  try {
+    const lower = str.toLowerCase();
+    for (const guild of client.guilds.cache.values()) {
+      const members = await guild.members.fetch({ query: lower, limit: 10 }).catch(() => null);
+      if (members && members.size > 0) {
+        const found = members.find(m => 
+          m.user.username.toLowerCase() === lower ||
+          m.user.tag.toLowerCase() === lower ||
+          (m.displayName && m.displayName.toLowerCase() === lower)
+        );
+        if (found) return found.user;
+      }
+    }
+  } catch (_) {}
 
   return null;
 }
@@ -101,7 +137,7 @@ async function checkAndSendReminders() {
         continue;
       }
 
-      const scheduledDate = parseTimeToDate(sub.interviewScheduledTime);
+      const scheduledDate = parseTurkeyTimeToDate(sub.interviewScheduledTime);
       if (!scheduledDate) continue;
 
       const diffMs = scheduledDate.getTime() - now.getTime();
@@ -109,40 +145,46 @@ async function checkAndSendReminders() {
 
       sub.remindersSent = sub.remindersSent || [];
       const { extractTargetDiscordId } = require("./formInterviewService");
-      const discordId = extractTargetDiscordId(sub);
-      if (!discordId) continue;
+      const targetId = extractTargetDiscordId(sub);
+      if (!targetId) continue;
+
+      const user = await resolveDiscordUser(client, targetId);
+      if (!user) {
+        console.warn(`[formInterviewScheduler] Discord user could not be resolved for identifier: ${targetId}`);
+        continue;
+      }
 
       // ── 15 Minutes Reminder ──────────────────────────────────────────────
-      if (diffMin <= 15 && diffMin > 10 && !sub.remindersSent.includes("15m")) {
-        await sendReminderDM(client, discordId, 15, RP_ADVICE["15m"]);
+      if (diffMin <= 15 && diffMin >= 0 && !sub.remindersSent.includes("15m")) {
+        await sendReminderDM(user, 15, RP_ADVICE["15m"]);
         sub.remindersSent.push("15m");
         await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
       }
 
       // ── 10 Minutes Reminder ──────────────────────────────────────────────
-      if (diffMin <= 10 && diffMin > 5 && !sub.remindersSent.includes("10m")) {
-        await sendReminderDM(client, discordId, 10, RP_ADVICE["10m"]);
+      if (diffMin <= 10 && diffMin >= -5 && !sub.remindersSent.includes("10m")) {
+        await sendReminderDM(user, 10, RP_ADVICE["10m"]);
         sub.remindersSent.push("10m");
         await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
       }
 
       // ── 5 Minutes Reminder ───────────────────────────────────────────────
-      if (diffMin <= 5 && diffMin > 1 && !sub.remindersSent.includes("5m")) {
-        await sendReminderDM(client, discordId, 5, RP_ADVICE["5m"]);
+      if (diffMin <= 5 && diffMin >= -10 && !sub.remindersSent.includes("5m")) {
+        await sendReminderDM(user, 5, RP_ADVICE["5m"]);
         sub.remindersSent.push("5m");
         await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
       }
 
       // ── 1 Minute Reminder ────────────────────────────────────────────────
-      if (diffMin <= 1 && diffMin > -2 && !sub.remindersSent.includes("1m")) {
-        await sendReminderDM(client, discordId, 1, RP_ADVICE["1m"]);
+      if (diffMin <= 1 && diffMin >= -15 && !sub.remindersSent.includes("1m")) {
+        await sendReminderDM(user, 1, RP_ADVICE["1m"]);
         sub.remindersSent.push("1m");
         await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
       }
 
       // ── Exact Time (0 min or link dispatch) ──────────────────────────────
       if (diffMin <= 0 && diffMin >= -30 && !sub.remindersSent.includes("exact")) {
-        await sendGameLinkAndJoinStatusDM(client, discordId, sub);
+        await sendGameLinkAndJoinStatusDM(user, sub);
         sub.remindersSent.push("exact");
         await FormSubmission.update(sub._id, {
           remindersSent: sub.remindersSent,
@@ -155,14 +197,8 @@ async function checkAndSendReminders() {
   }
 }
 
-async function sendReminderDM(client, discordId, minutesLeft, adviceText) {
+async function sendReminderDM(user, minutesLeft, adviceText) {
   try {
-    const user = await client.users.fetch(discordId).catch(() => null);
-    if (!user) {
-      console.warn(`[formInterviewScheduler] User fetch failed for Discord ID: ${discordId}`);
-      return;
-    }
-
     const embed = new EmbedBuilder()
       .setColor(0x818cf8)
       .setTitle(`⏳ MÜLAKATINIZ ${minutesLeft} DAKİKA SONRA BAŞLAYACAK!`)
@@ -176,23 +212,17 @@ async function sendReminderDM(client, discordId, minutesLeft, adviceText) {
       .setFooter({ text: "Sentara Otomatik Mülakat Hatırlatıcısı" });
 
     await user.send({ embeds: [embed] }).then(() => {
-      console.log(`[formInterviewScheduler] ✅ ${minutesLeft}m reminder DM sent to ${user.tag} (${discordId})`);
+      console.log(`[formInterviewScheduler] ✅ ${minutesLeft}m reminder DM sent to ${user.tag} (${user.id})`);
     }).catch(dmErr => {
-      console.warn(`[formInterviewScheduler] ❌ Could not send DM to ${user.tag} (${discordId}):`, dmErr.message);
+      console.warn(`[formInterviewScheduler] ❌ Could not send DM to ${user.tag} (${user.id}):`, dmErr.message);
     });
   } catch (err) {
-    console.error(`[formInterviewScheduler] Reminder send error to ${discordId}:`, err.message);
+    console.error(`[formInterviewScheduler] Reminder send error to ${user?.id}:`, err.message);
   }
 }
 
-async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
+async function sendGameLinkAndJoinStatusDM(user, submission) {
   try {
-    const user = await client.users.fetch(discordId).catch(() => null);
-    if (!user) {
-      console.warn(`[formInterviewScheduler] User fetch failed for Discord ID: ${discordId}`);
-      return;
-    }
-
     const gameLink = submission.robloxGameLink || "https://www.roblox.com/";
 
     const embed = new EmbedBuilder()
@@ -209,7 +239,6 @@ async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
     const components = [];
     const linkRow = new ActionRowBuilder();
 
-    // Try adding URL button if valid URL
     if (gameLink.startsWith("http://") || gameLink.startsWith("https://")) {
       linkRow.addComponents(
         new ButtonBuilder()
@@ -236,12 +265,12 @@ async function sendGameLinkAndJoinStatusDM(client, discordId, submission) {
     components.push(joinStatusRow);
 
     await user.send({ embeds: [embed], components }).then(() => {
-      console.log(`[formInterviewScheduler] ✅ Game link DM sent to ${user.tag} (${discordId})`);
+      console.log(`[formInterviewScheduler] ✅ Game link DM sent to ${user.tag} (${user.id})`);
     }).catch(dmErr => {
-      console.warn(`[formInterviewScheduler] ❌ Could not send Game Link DM to ${user.tag} (${discordId}):`, dmErr.message);
+      console.warn(`[formInterviewScheduler] ❌ Could not send Game Link DM to ${user.tag} (${user.id}):`, dmErr.message);
     });
   } catch (err) {
-    console.error(`[formInterviewScheduler] Game link send error to ${discordId}:`, err.message);
+    console.error(`[formInterviewScheduler] Game link send error to ${user?.id}:`, err.message);
   }
 }
 
@@ -249,7 +278,7 @@ function startScheduler() {
   if (schedulerInterval) return;
   console.log("[formInterviewScheduler] Starting interview reminder interval...");
   checkAndSendReminders().catch(err => console.error("[formInterviewScheduler] Initial check error:", err.message));
-  schedulerInterval = setInterval(checkAndSendReminders, 30000);
+  schedulerInterval = setInterval(checkAndSendReminders, 15000);
 }
 
 function stopScheduler() {
@@ -263,4 +292,6 @@ module.exports = {
   startScheduler,
   stopScheduler,
   checkAndSendReminders,
+  parseTurkeyTimeToDate,
+  resolveDiscordUser,
 };
