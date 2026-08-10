@@ -1460,60 +1460,140 @@ function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
   // ═══ BÖLÜM 1 ═══
   const step1Body = `
     <div style="background:rgba(56,189,248,0.06);border-left:3px solid #38bdf8;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Hata Ayıklama Ofisi (Bug Hunter / Tester), sistemdeki açıkları, mantık hatalarını ve performans sorunlarını tespit edip teknik ekibe raporlayan özel birimdir.
+      Bu bölüm, <strong>Hata Ayıklama Ofisi</strong> bünyesinde "Hata Denetçisi" olarak görev alacak adayların temel kimlik, iletişim, zaman yönetimi, oyun/platform birikimi ve genel çalışma disiplinini ayrıntılı bir şekilde analiz etmek amacıyla hazırlanmıştır.
     </div>
+
+    ${_field('q_dbg_email', '1.1. E-posta Adresiniz', 'Resmi iletişim için geçerli e-posta adresiniz...', 1)}
+    ${_field('q_dbg_1_2', '1.2. Adınız ve Soyadınız', 'Resmi kayıtlarda yer alan tam adınız ve soyadınız...', 2)}
+    ${_field('q_dbg_1_3', '1.3. Yaşınız ve Doğum Tarihiniz (Gün/Ay/Yıl)', 'Örn: 18 / 15.05.2008', 2)}
+    ${_field('q_dbg_roblox', '1.4. Roblox Kullanıcı Adınız ve Kullanıcı Kimliğiniz (User ID)', 'Roblox kullanıcı adınız ve ID numaranız...', 2)}
+    
     <div class="form-group" style="margin-bottom:1.2rem;">
-      <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">DISCORD HESABI VE USER ID *</label>
+      <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">1.5. DISCORD KULLANICI ADINIZ VE USER ID *</label>
       <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx / 123456789012345678" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;">
     </div>
-    ${_field('q_dbg_1_1', '1.1. Adınız ve Soyadınız', 'Tam Ad Soyad...', 2)}
-    ${_field('q_dbg_1_2', '1.2. Yaşınız ve Doğum Tarihiniz', 'Örn: 19 / 12.04.2007', 2)}
-    ${_field('q_dbg_1_3', '1.3. Aktiflik Saatleriniz ve Günlük Bilgisayar Başındaki Süreniz', 'Aktiflik süreniz...', 3)}
-    ${_field('q_dbg_1_4', '1.4. Sesli ve Yazılı İletişim Yetkinliğiniz', 'İletişim ortamınız ve mikrofon durumu...', 2)}
+
+    ${_field('q_dbg_2_1', '2.1. Yaşadığınız Şehir ve Çalıştığınız Saat Dilimi (Timezone)', 'Örn: İstanbul / UTC+3', 2)}
+    ${_field('q_dbg_2_2', '2.2. Günlük ve Haftalık Aktiflik Süreniz', 'Hafta içi ve hafta sonu ayırabileceğiniz süreler...', 3)}
+    ${_field('q_dbg_2_3', '2.3. Acil Durum İletişim Kanallarınız', 'Discord dışındaki alternatif ulaşım kanalınız...', 2)}
+    ${_field('q_dbg_2_4', '2.4. Sesli ve Yazılı İletişim Becerileriniz', 'Mikrofon kullanımınız ve sesli iletişim durumunuz...', 2)}
+    ${_field('q_dbg_3_1', '3.1. Eğitim Durumunuz veya Mesleki Çalışma Hayatınız', 'Okul/bölüm veya meslek/mesai saatleriniz...', 2)}
+    ${_field('q_dbg_3_2', '3.2. Önümüzdeki 6 Aylık Zaman Planlamanız', 'Aktifliğinizi etkileyebilecek durumlar...', 3)}
+    ${_field('q_dbg_4_1', '4.1. Kendinizi, Çalışma Disiplininizi ve Analitik Yönünüzü Tanımlayınız', 'Gözlem yeteneğiniz ve test sabrınız...', 3)}
+    ${_field('q_dbg_4_2', '4.2. Baskı, Stres ve Yoğun Güncelleme Dönemlerindeki Tutumunuz', 'Yoğun hata arama süreçlerindeki soğukkanlılığınız...', 3)}
+    ${_field('q_dbg_4_3', '4.3. Ekip İçi Uyum ve İletişim Anlayışınız', 'Ofis amiri ve geliştiricilerle iletişim üslubunuz...', 3)}
+    ${_field('q_dbg_5_1', '5.1. Daha Önce Görev Aldığınız Projeler ve Deneyimleriniz', 'Geçmiş Hata Denetçisi / Tester rolleriniz...', 3)}
+    ${_field('q_dbg_5_2', '5.2. Geçmiş Referanslarınız', 'Referans alınabilecek kişilerin adları ve görevleri...', 2)}
+    ${_field('q_dbg_5_3', '5.3. Disiplin ve İhlal Geçmişiniz', 'Daha önce aldığınız ceza, uyarı veya kara liste durumları...', 2)}
   `;
-  const step1 = _step(1, '#38bdf8', 'BÖLÜM 1 — TEMEL ÖN BİLGİLER VE KİMLİK DOĞRULAMA', 'Temel kimlik ve aktiflik bilgileriniz.', step1Body, nextBtn(1, '#38bdf8,#0284c7'));
+  const step1 = _step(1, '#38bdf8', 'BÖLÜM 1 — KİŞİSEL BİLGİLER, İLETİŞİM VE DİSİPLİN DEĞERLENDİRMESİ', 'Temel kimlik, hesap doğrulama ve zaman yönetimi.', step1Body, nextBtn(1, '#38bdf8,#0284c7'));
 
   // ═══ BÖLÜM 2 ═══
   const step2Body = `
     <div style="background:rgba(167,139,250,0.06);border-left:3px solid #a78bfa;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Hata tespiti, log inceleme ve hataları adım adım yeniden oluşturma (reproduce) becerilerinizi değerlendiren teknik aşamadır.
+      Bu bölüm, "Hata Denetçisi" pozisyonuna başvuran adayların Roblox platformu altyapısına, Eko Yıldız oyun içi sistemlerine ve teknik test metodolojilerine hakimiyetini ölçer.
     </div>
-    ${_field('q_dbg_2_1', '2.1. Geçmiş Bug Hunting ve Hata Tespit Deneyimleriniz', 'Daha önce hangi projelerde hata ayıklama / testerlık yaptınız?', 3)}
-    ${_field('q_dbg_2_2', '2.2. F8 Console ve Log İnceleme Hakimiyetiniz', 'F8 konsolu, Client Traceback ve Server Logları okuma seviyeniz...', 3)}
-    ${_field('q_dbg_2_3', '2.3. Hata Adımlarını Yeniden Oluşturma (Reproduce) Metodolojiniz', 'Bir hatayı adım adım (step-by-step) tekrarlanabilir kılma yöntemleriniz...', 3)}
+    ${_field('q_dbg_t1_1', '1.1. Roblox Platformu ve Client/Server İşleyiş Deneyiminiz', 'ReplicatedStorage, ServerScriptService ve RemoteEvent mantığı...', 3)}
+    ${_field('q_dbg_t1_2', '1.2. Eko Yıldız Oyun İçi Mekanikleri ve Sistem Bilgisi', 'Envanter, garaj, ekonomi vb. hakim olduğunuz sistemler...', 3)}
+    ${_field('q_dbg_t1_3', '1.3. UI / UX (Arayüz ve Kullanıcı Deneyimi) Test Deneyimi', 'Çözünürlük, cihaz ölçekleme ve UI kilitlenme testleriniz...', 3)}
+    ${_field('q_dbg_t2_1', '2.1. Fonksiyonel Test ve Sınır Değer Analizi (Boundary Value Testing)', 'Eksi değer, 0 girdisi ve spam tıklama test senaryolarınız...', 3)}
+    ${_field('q_dbg_t2_2', '2.2. Sıra Dışı Kullanıcı Davranışları (Edge Cases) Tespiti', 'Beklenmedik kullanıcı adımlarını kurgulama ve deneme...', 3)}
+    ${_field('q_dbg_t2_3', '2.3. Regresyon Testi (Regression Testing) Yaklaşımınız', 'Düzeltilen hatanın başka sistemleri bozup bozmadığını kontrol etme...', 3)}
+    ${_field('q_dbg_t3_1', '3.1. Roblox Developer Console (F9) ve Hata Kayıtları (Logs)', 'Output, Memory, Network sekmelerini okuma ve traceback analizi...', 3)}
+    ${_field('q_dbg_t3_2', '3.2. Ağ (Network) ve Ping/Lag Analizi', 'Ping/lag etkisi ile kod hatasını ayırt etme yöntemleriniz...', 3)}
+    ${_field('q_dbg_t3_3', '3.3. Test Araçları ve Ekran Kaydı/Görsel Belgeleme', 'Kullandığınız kayıt ve görsel belgeleme yazılımları...', 2)}
+    ${_field('q_dbg_t4_1', '4.1. Sunucu ve Veri Güvenliği Açıkları (Exploit / Dupe)', 'Eşya çoğaltma ve yetkisiz erişim açıklarını tespit mantığınız...', 3)}
+    ${_field('q_dbg_t4_2', '4.2. Dış Müdahale ve Hile Tespiti Gözlem Yeteneği', '3. parti yazılımlar (Speed, Noclip, Remote Inject) farkındalığınız...', 3)}
   `;
-  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — HATA AYIKLAMA (DEBUGGING) VE TEST DENEYİMİ', 'Log okuma, test ve bug kurgusu tecrübeleriniz.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa,#8b5cf6'));
+  const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — OYUN/PLATFORM BİLGİSİ, TEKNİK DENEYİM VE HATA TESPİT YETKİNLİĞİ', 'Roblox altyapısı, test metodolojileri ve F9 konsol hakimiyeti.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa,#8b5cf6'));
 
   // ═══ BÖLÜM 3 ═══
   const step3Body = `
     <div style="background:rgba(52,211,153,0.06);border-left:3px solid #34d399;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Geliştirici ekibine raporlama standartları ve kriz anı prosedürleri.
+      Bu bölüm, teorik bilginizin gerçek test süreçlerinde ve kriz anlarında nasıl pratiğe dönüştüğünü ölçer.
     </div>
-    ${_field('q_dbg_3_1', '3.1. Oyun İçi Çökme / Dupe / Yetki Açığı Bulduğunuzda İzleyeceğiniz Prosedür', 'Öncelikli kriz raporlama ve gizlilik adımlarınız...', 4)}
-    ${_field('q_dbg_3_2', '3.2. Geliştirici Ekibine Teknik Bug Raporlama ve Detaylandırma Standartları', 'Hangi detayları (video, log, resmon, adımlar) rapora eklersiniz?', 4)}
+    ${_field('q_dbg_s1_1', '1.1. Senaryo 1 - Envanter ve Eşya Çoğaltma (Dupe)', 'Ortak depodan iki oyuncunun aynı anda eşya çekme hatasını doğrulama adımlarınız...', 4)}
+    ${_field('q_dbg_s1_2', '1.2. Senaryo 2 - Arayüz (UI) Kilitlenmesi ve Veri Kaybı', 'Market alışverişindeki kilitlenme ve F9 konsol verisi analizi...', 4)}
+    ${_field('q_dbg_s1_3', '1.3. Senaryo 3 - Görsel ve Fiziksel Çakışmalar (Clipping & Collision)', 'Harita altına düşme ve çakışma hatalarını belgeleme adımlarınız...', 4)}
+    ${_field('q_dbg_s2_1', '2.1. Örnek Hata Raporu Oluşturma (Bug Report)', 'Açıklayıcı Hata Başlığı, Öncelik Seviyesi, Reproduction Steps, Beklenen ve Gerçekleşen Sonuç, Konsol Çıktısı...', 5)}
+    ${_field('q_dbg_s3_1', '3.1. Hata Derecelendirme ve Önceliklendirme', 'Dokusu bozuk kıyafet, para sıfırlayan ekonomi açığı ve görevdeki yazım hatasını sıralama ve gerekçeniz...', 4)}
+    ${_field('q_dbg_s3_2', '3.2. Acil Durum/Kritik Açık İletişim Prosedürü', 'Kritik açık tespiti sonrasında Ofis Amiri ve Geliştirici Ekibine güvenli bildirim süreci...', 3)}
   `;
-  const step3 = _step(3, '#34d399', 'BÖLÜM 3 — SENARYO VE PROBLEM ÇÖZME', 'Raporlama standartları ve kriz açığı süreçleri.', step3Body, prevBtn(3) + nextBtn(3, '#34d399,#059669'));
+  const step3 = _step(3, '#34d399', 'BÖLÜM 3 — PRATİK SENARYOLAR, HATA ANALİZİ VE RAPOR OLUŞTURMA', 'Saha senaryoları, bug raporu şablonu ve önceliklendirme.', step3Body, prevBtn(3) + nextBtn(3, '#34d399,#059669'));
 
   // ═══ BÖLÜM 4 ═══
   const step4Body = `
     <div style="background:rgba(245,158,11,0.06);border-left:3px solid #f59e0b;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
-      Tüm bulunan açıkların gizlilik ilkesi doğrultusunda saklanması taahhüdü.
+      Hata Ayıklama Ofisi içerisindeki çalışma kültürüne, kurum içi hiyerarşiye ve etik ilkelere uyum değerlendirmesi.
+    </div>
+    ${_field('q_dbg_v1_1', '1.1. Ofis Amiri ve Komite İletişimi', 'Ofis Amiri (endof) ve Regülasyon Komitesi talimatlarına yaklaşımınız...', 3)}
+    ${_field('q_dbg_v1_2', '1.2. Geliştirici Ekibi ile İlişkiler ve Üslup', 'Geliştiricilere yapıcı, net ve çözüm odaklı rapor sunma tarzınız...', 3)}
+    ${_field('q_dbg_v1_3', '1.3. Görev Sorumluluğu ve Kesintisiz Takip', 'Düzeltilen hatayı tekrar test etme (re-test) takibiniz...', 3)}
+    ${_field('q_dbg_v2_1', '2.1. Yetkilerin ve Bilginin Kötüye Kullanımı (Exploit Abuse)', 'Açıkları çıkar için kullanmanın kara liste sebebi olduğunu kabul ve bilinciniz...', 3)}
+    ${_field('q_dbg_v2_2', '2.2. Tarafsızlık ve Objektiflik', 'Yakın arkadaşınızın hatayı bildirmemesi durumundaki profesyonel tutumunuz...', 3)}
+    ${_field('q_dbg_v2_3', '2.3. Bilgi Gizliliği ve Sızdırma (Leak) Hassasiyeti', 'Henüz yayınlanmamış test güncellemelerinin gizliliği...', 3)}
+    ${_field('q_dbg_v3_1', '3.1. Geribildirim ve Eleştiri Toleransı', 'Raporunuz eksik bulunduğundaki revize yaklaşımınız...', 3)}
+    ${_field('q_dbg_v3_2', '3.2. Ekip Çalışması ve Fikir Ayrılıkları', 'Başka bir denetçiyle ciddiyet seviyesinde yaşanan anlaşmazlıkları çözme...', 3)}
+  `;
+  const step4 = _step(4, '#f59e0b', 'BÖLÜM 4 — OFİS HİYERARŞİSİ, EKİP İÇİ İLETİŞİM VE ETİK KURALLAR', 'Hiyerarşi, etik ilkeler, tarafsızlık ve sızdırma hassasiyeti.', step4Body, prevBtn(4) + nextBtn(4, '#f59e0b,#d97706'));
+
+  // ═══ BÖLÜM 5 ═══
+  const step5Body = `
+    <div style="background:rgba(239,68,68,0.06);border-left:3px solid #ef4444;padding:1rem 1.2rem;border-radius:0 12px 12px 0;font-size:0.88rem;color:var(--muted);line-height:1.7;margin-bottom:1.3rem;">
+      Bu bölüm, Hata Ayıklama Ofisi // [A-0] Geçici Personel Alım Formu başvuru sürecinin hukuki, idari ve disipliner bağlayıcı son aşamasıdır.
     </div>
 
     <div style="background:rgba(0,0,0,0.3);padding:1.2rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);margin-bottom:1.2rem;">
-      <h4 style="color:#f59e0b;margin:0 0 0.6rem 0;font-size:0.95rem;">📜 GİZLİLİK VE ETİK TAAHHÜTNAMESİ</h4>
+      <h4 style="color:#ef4444;margin:0 0 0.6rem 0;font-size:0.95rem;">📜 TAAHHÜTNAME VE NİHAİ BAŞVURU ONAYLARI</h4>
       
       <div style="margin-bottom:1rem;">
         <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
           <input type="checkbox" id="q_dbg_nda_1" required style="margin-top:0.2rem;">
-          <span><strong>Gizlilik Garantisi:</strong> Tespit ettiğim hiçbir hatayı, açığı (exploit) veya güvenlik ihlalini 3. kişilerle paylaşmayacağımı, oyuncular lehine kullanmayacağımı kabul ve taahhüt ederim.</span>
+          <span><strong>1.1. Bilgilerin Doğruluğu ve Özgünlük Onayı:</strong> Verdiğim bilgilerin eksiksiz, doğru ve şahsıma ait olduğunu; özgün olmayan/yapay zeka ürünü içerik barındırmadığını kabul ediyorum.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_2" required style="margin-top:0.2rem;">
+          <span><strong>1.2. Yanıltıcı Beyan Yaptırımı:</strong> Yanlış veya yanıltıcı bilgi tespiti durumunda başvurumun derhal iptal edileceğini ve Eko Creations bünyesinde kara listeye alınacağımı kabul ediyorum.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_3" required style="margin-top:0.2rem;">
+          <span><strong>2.1. İç Bilgi ve Hata Gizliliği (NDA):</strong> Oyun içi açıkları, hataları ve yayınlanmamış test güncellemelerini 3. kişilerle kesinlikle paylaşmayacağımı taahhüt ederim.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_4" required style="margin-top:0.2rem;">
+          <span><strong>2.2. Açık ve Yetki İstismar Etmeme (Exploit / Dupe Abuse):</strong> Sistem açıklarını kendi veya başkalarının çıkarı için kullanmayacağımı, derhal bildireceğimi kabul ederim.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_5" required style="margin-top:0.2rem;">
+          <span><strong>3.1. Yönetmelik ve Kurallara Uyum:</strong> Kurallar ve Yönetmelik Bilgilendirmesi ile Eko Creations Yönetmeliği prosedürlerini okuduğumu ve uyacağımı kabul ederim.</span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#e2e8f0;">
+          <input type="checkbox" id="q_dbg_nda_6" required style="margin-top:0.2rem;">
+          <span><strong>3.2. Ofis Amiri ve Komite Nihai Yetki Beyanı:</strong> Tek yetkili mercinin Regülasyon Komitesi ve Ofis Amiri olduğunu ve kararın bağlayıcılığını kabul ederim.</span>
         </label>
       </div>
     </div>
 
-    ${_field('q_dbg_sign_name', 'Başvuru Sahibinin Adı Soyadı ve İmzası', 'Tam Ad Soyad...', 1)}
+    ${_field('q_dbg_sign_name', '4.1. Başvuru Sahibinin Adı Soyadı', 'Tam Ad Soyad...', 1)}
+    ${_field('q_dbg_sign_date', '4.2. Başvuru Tarihi ve Saat', 'Örn: 10/08/2026 - 20:00', 1)}
+    ${_field('q_dbg_sign_signature', '4.3. Onay İmzası (Discord & Roblox Kullanıcı Adı / ID)', 'Örn: cyhnoz / 123456789012345678', 1)}
   `;
-  const step4 = _step(4, '#f59e0b', 'BÖLÜM 4 — GİZLİLİK VE ETİK TAAHHÜTLERİ', 'Gizlilik, etik ilkelere sadakat ve nihai onay.', step4Body, prevBtn(4) + `<button type="submit" id="btn-submit-dbg" class="btn" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;font-weight:800;padding:0.8rem 2.2rem;border-radius:24px;border:none;cursor:pointer;font-size:1rem;box-shadow:0 4px 15px rgba(56,189,248,0.4);">🚀 Hata Ayıklama Ofisi Başvurusunu Gönder</button>`);
+  const step5 = _step(5, '#ef4444', 'BÖLÜM 5 — TAAHHÜTNAME, YÖNETMELİK ONAYI VE NİHAİ BAŞVURU ONAYI', 'Hukuki, idari ve disipliner taahhütleriniz.', step5Body, prevBtn(5) + `<button type="submit" id="btn-submit-dbg" class="btn" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;font-weight:800;padding:0.8rem 2.2rem;border-radius:24px;border:none;cursor:pointer;font-size:1rem;box-shadow:0 4px 15px rgba(56,189,248,0.4);">🚀 Hata Ayıklama Ofisi Başvurusunu Gönder</button>`);
 
   const content = `
     <div style="max-width:860px;margin:2rem auto;animation:fadeUp 0.5s ease;">
@@ -1522,12 +1602,12 @@ function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
       </div>
 
       <div style="text-align:center;margin-bottom:2rem;">
-        <h1 style="font-size:2rem;font-weight:800;color:#fff;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;">
+        <h1 style="font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;">
           <img src="https://cdn.discordapp.com/emojis/1536405009187602482.png" style="height:32px;width:32px;object-fit:contain;" onerror="this.style.display='none'">
-          <span>Hata Ayıklama Ofisi Alım Formu</span>
+          <span>HATA AYIKLAMA OFİSİ // [A-0] GEÇİCİ PERSONEL ALIM FORMU</span>
         </h1>
-        <p style="color:var(--muted);font-size:0.95rem;max-width:650px;margin:0 auto;">
-          Hata Ayıklama Ofisi (Bug Hunter / Tester) Başvuru Belgesi. Sistem açıklarını ve hataları tespit etme yetkinliklerinizi detaylandırınız.
+        <p style="color:var(--muted);font-size:0.95rem;max-width:680px;margin:0 auto;">
+          Hata Denetçisi Ön Değerlendirme Belgesi. Lütfen tüm bölümleri eksiksiz ve özgün yanıtlarla doldurunuz.
         </p>
       </div>
 
@@ -1536,6 +1616,7 @@ function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
         ${step2}
         ${step3}
         ${step4}
+        ${step5}
       </form>
     </div>
 
@@ -1562,16 +1643,50 @@ function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
 
         const data = {
           discordUsername: document.getElementById('q_discord')?.value || '',
-          q_dbg_1_1: document.getElementById('q_dbg_1_1')?.value || '',
+          q_dbg_email: document.getElementById('q_dbg_email')?.value || '',
           q_dbg_1_2: document.getElementById('q_dbg_1_2')?.value || '',
           q_dbg_1_3: document.getElementById('q_dbg_1_3')?.value || '',
-          q_dbg_1_4: document.getElementById('q_dbg_1_4')?.value || '',
+          q_dbg_roblox: document.getElementById('q_dbg_roblox')?.value || '',
           q_dbg_2_1: document.getElementById('q_dbg_2_1')?.value || '',
           q_dbg_2_2: document.getElementById('q_dbg_2_2')?.value || '',
           q_dbg_2_3: document.getElementById('q_dbg_2_3')?.value || '',
+          q_dbg_2_4: document.getElementById('q_dbg_2_4')?.value || '',
           q_dbg_3_1: document.getElementById('q_dbg_3_1')?.value || '',
           q_dbg_3_2: document.getElementById('q_dbg_3_2')?.value || '',
+          q_dbg_4_1: document.getElementById('q_dbg_4_1')?.value || '',
+          q_dbg_4_2: document.getElementById('q_dbg_4_2')?.value || '',
+          q_dbg_4_3: document.getElementById('q_dbg_4_3')?.value || '',
+          q_dbg_5_1: document.getElementById('q_dbg_5_1')?.value || '',
+          q_dbg_5_2: document.getElementById('q_dbg_5_2')?.value || '',
+          q_dbg_5_3: document.getElementById('q_dbg_5_3')?.value || '',
+          q_dbg_t1_1: document.getElementById('q_dbg_t1_1')?.value || '',
+          q_dbg_t1_2: document.getElementById('q_dbg_t1_2')?.value || '',
+          q_dbg_t1_3: document.getElementById('q_dbg_t1_3')?.value || '',
+          q_dbg_t2_1: document.getElementById('q_dbg_t2_1')?.value || '',
+          q_dbg_t2_2: document.getElementById('q_dbg_t2_2')?.value || '',
+          q_dbg_t2_3: document.getElementById('q_dbg_t2_3')?.value || '',
+          q_dbg_t3_1: document.getElementById('q_dbg_t3_1')?.value || '',
+          q_dbg_t3_2: document.getElementById('q_dbg_t3_2')?.value || '',
+          q_dbg_t3_3: document.getElementById('q_dbg_t3_3')?.value || '',
+          q_dbg_t4_1: document.getElementById('q_dbg_t4_1')?.value || '',
+          q_dbg_t4_2: document.getElementById('q_dbg_t4_2')?.value || '',
+          q_dbg_s1_1: document.getElementById('q_dbg_s1_1')?.value || '',
+          q_dbg_s1_2: document.getElementById('q_dbg_s1_2')?.value || '',
+          q_dbg_s1_3: document.getElementById('q_dbg_s1_3')?.value || '',
+          q_dbg_s2_1: document.getElementById('q_dbg_s2_1')?.value || '',
+          q_dbg_s3_1: document.getElementById('q_dbg_s3_1')?.value || '',
+          q_dbg_s3_2: document.getElementById('q_dbg_s3_2')?.value || '',
+          q_dbg_v1_1: document.getElementById('q_dbg_v1_1')?.value || '',
+          q_dbg_v1_2: document.getElementById('q_dbg_v1_2')?.value || '',
+          q_dbg_v1_3: document.getElementById('q_dbg_v1_3')?.value || '',
+          q_dbg_v2_1: document.getElementById('q_dbg_v2_1')?.value || '',
+          q_dbg_v2_2: document.getElementById('q_dbg_v2_2')?.value || '',
+          q_dbg_v2_3: document.getElementById('q_dbg_v2_3')?.value || '',
+          q_dbg_v3_1: document.getElementById('q_dbg_v3_1')?.value || '',
+          q_dbg_v3_2: document.getElementById('q_dbg_v3_2')?.value || '',
           q_dbg_sign_name: document.getElementById('q_dbg_sign_name')?.value || '',
+          q_dbg_sign_date: document.getElementById('q_dbg_sign_date')?.value || '',
+          q_dbg_sign_signature: document.getElementById('q_dbg_sign_signature')?.value || '',
         };
 
         try {
