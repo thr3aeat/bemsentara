@@ -4439,7 +4439,7 @@ function renderAdminPage(user) {
           '<div style="margin-bottom:1.2rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(56,189,248,0.3);box-shadow:0 4px 16px rgba(56,189,248,0.1);">' +
             '<label style="display:block;font-size:0.85rem;font-weight:800;color:#38bdf8;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;">' +
               '<span>🆔 DM ATILACAK DİSCORD ID GİRME YERİ</span>' +
-              '<span style="font-size:0.75rem;font-weight:600;color:var(--muted);">(Tüm Bot DM mesajları bu ID\'ye atılacaktır)</span>' +
+              '<span style="font-size:0.75rem;font-weight:600;color:var(--muted);">(Tüm Bot DM mesajları bu ID adresine gönderilecektir)</span>' +
             '</label>' +
             '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;">' +
               '<input type="text" id="int-target-discord-id" value="' + subEsc(sub.targetDiscordId || sub.discordId || sub.userId || '') + '" placeholder="Örn: 123456789012345678" style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(56,189,248,0.3);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.88rem;font-family:monospace;font-weight:700;">' +
