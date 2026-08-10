@@ -18,6 +18,9 @@ const BANNER_IMAGE_URL = "https://i.imgur.com/bSVh4Rl.png";
 
 const RESOLVED_BASE_URL = BASE_URL || "https://ekoyildiz.duckdns.org";
 
+const COMMUNITY_AMBASSADOR_DEADLINE_MS = 1786455128000;
+const COMMUNITY_AMBASSADOR_DEADLINE_SEC = 1786455128;
+
 /**
  * Components V2 ile Yetkili Formları paneli — görseldeki gibi:
  * Üstte banner görseli, altında başvuru listesi ve durumlar.
@@ -28,6 +31,13 @@ function getRecruitmentPanelPayload() {
   const communityAmbassadorUrl = `${RESOLVED_BASE_URL}/forms/community-ambassador`;
   const developerUrl           = `${RESOLVED_BASE_URL}/forms/developer`;
   const debugOfficeUrl         = `${RESOLVED_BASE_URL}/forms/debug-office`;
+
+  const isAmbassadorOpen = Date.now() < COMMUNITY_AMBASSADOR_DEADLINE_MS;
+  const ambassadorText = isAmbassadorOpen
+    ? `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) ⏰ **(20 SAAT SONRA KAPANACAK)** başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK} • ⏰ Kapanış: <t:${COMMUNITY_AMBASSADOR_DEADLINE_SEC}:R>`
+    : `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) başvuru formu kapandı.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_KAPALI}`;
 
   return {
     flags: ComponentsV2Factory.FLAGS,
@@ -62,11 +72,8 @@ function getRecruitmentPanelPayload() {
           `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
-        // Topluluk Elçiliği — AÇIK (20 SAAT SONRA KAPANACAK)
-        ComponentsV2Factory.text(
-          `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) ⏰ **(20 SAAT SONRA KAPANACAK)** başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
-          `  ◦ Başvuru durumu: ${BADGE_ACIK} • ⏰ Kapanış: <t:1786455128:R>`
-        ),
+        // Topluluk Elçiliği — Dinamik (AÇIK / KAPALI)
+        ComponentsV2Factory.text(ambassadorText),
 
         // Geliştirici Ekibi // Geliştirici Ofisi — AÇIK
         ComponentsV2Factory.text(
@@ -152,7 +159,15 @@ async function ensureRecruitmentPanelMessage(client) {
       }
     } else {
       await channel.send(payload);
-      console.log(`✅ [RecruitmentPanel] Panel gönderildi (#${channel.name})`);
+      console.log(`✅ [RecruitmentPanel] Panel oluşturuldu (#${channel.name})`);
+    }
+
+    const msUntilDeadline = COMMUNITY_AMBASSADOR_DEADLINE_MS - Date.now();
+    if (msUntilDeadline > 0 && msUntilDeadline < 2147483647 && !global._ambassadorCloseTimer) {
+      global._ambassadorCloseTimer = setTimeout(() => {
+        console.log("⏰ [RecruitmentPanel] Topluluk Elçisi 20 saatlik süre doldu! Panel KAPALI olarak güncelleniyor...");
+        ensureRecruitmentPanelMessage(client).catch(() => {});
+      }, msUntilDeadline);
     }
   } catch (err) {
     console.error("[RecruitmentPanel] ensureRecruitmentPanelMessage error:", err.message);

@@ -8495,6 +8495,7 @@ function renderFormsHubPage(currentUser) {
             </div>
           </div>
 
+          ${(Date.now() < 1786455128000) ? `
           <!-- 4. TOPLULUK ELÇİLİĞİ (AÇIK - 20 SAAT SONRA KAPANACAK) -->
           <div style="margin-bottom:1.5rem; background:rgba(245,158,11,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(245,158,11,0.2);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
@@ -8515,6 +8516,25 @@ function renderFormsHubPage(currentUser) {
               </div>
             </div>
           </div>
+          ` : `
+          <!-- 4. TOPLULUK ELÇİLİĞİ (KAPALI) -->
+          <div style="margin-bottom:1.5rem; padding-bottom:1.2rem; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff;">
+              <span style="font-size:1.2rem;">👑</span>
+              <span>[ Topluluk Elçisi ]</span>
+              <span style="color:var(--muted); font-size:0.9rem; font-weight:400;">başvuru formu kapandı.</span>
+            </div>
+            <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+              <span>◦ Başvuru durumu:</span>
+              <div style="display:inline-flex; align-items:center; gap:0;">
+                <img src="https://cdn.discordapp.com/emojis/1535973581995909170.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973580343611442.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973578816880690.png" style="height:24px; display:block;">
+                <img src="https://cdn.discordapp.com/emojis/1535973577042567178.png" style="height:24px; display:block;">
+              </div>
+            </div>
+          </div>
+          `}
 
           <!-- 5. GELİŞTİRİCİ EKİBİ // GELİŞTİRİCİ OFİSİ (AÇIK) -->
           <div style="margin-bottom:1.5rem; background:rgba(129,140,248,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(129,140,248,0.2);">

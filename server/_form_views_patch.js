@@ -808,6 +808,17 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
             <div>🆔 <strong>ID:</strong> <code>${existingSubmission._id}</code></div>
           </div>
         </div>
+      ` : (Date.now() >= 1786455128000) ? `
+        <div class="card" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:20px;padding:3rem;text-align:center;">
+          <div style="font-size:3.5rem;margin-bottom:1rem;">🔒</div>
+          <h2 style="font-size:1.8rem;font-weight:800;color:#f87171;margin-bottom:0.8rem;">Topluluk Elçiliği Başvuruları Kapandı!</h2>
+          <p style="color:var(--muted);max-width:650px;margin:0 auto 1.5rem;line-height:1.6;font-size:1rem;">
+            20 saatlik başvuru süresi dolduğu için Topluluk Elçisi mülakat başvuru formu gönderime resmen kapatılmıştır. İlginiz için teşekkür ederiz!
+          </p>
+          <div style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:0.7rem 1.4rem;font-weight:800;font-size:0.9rem;">
+            <span>🚫 BAŞVURU DURUMU: KAPALI</span>
+          </div>
+        </div>
       ` : `
 
         <!-- DOCUMENTATION & ROLE DESCRIPTION CARD -->
@@ -1152,6 +1163,7 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
                     submitBtn.style.opacity = "0.5";
                     submitBtn.style.cursor = "not-allowed";
                   }
+                  setTimeout(() => { window.location.reload(); }, 1000);
                   return;
                 }
                 
