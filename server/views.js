@@ -3104,7 +3104,7 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
                 (isActive?'<div class="p-inv-active-tag">Aktif</div>':'')+
                 '<div class="p-inv-icon">'+item.icon+'</div>'+
                 '<div class="p-inv-name">'+item.name+'</div>'+
-                (canEquip&&!isActive?'<button onclick="equipItem(\''+item.itemId+'\')" style="margin-top:.4rem;background:rgba(124,106,247,.2);border:1px solid rgba(124,106,247,.4);color:var(--accent);border-radius:8px;padding:2px 10px;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:700;">Tak</button>':'')+
+                (canEquip&&!isActive?'<button onclick="equipItem(\\\''+item.itemId+'\\\')" style="margin-top:.4rem;background:rgba(124,106,247,.2);border:1px solid rgba(124,106,247,.4);color:var(--accent);border-radius:8px;padding:2px 10px;font-size:.7rem;cursor:pointer;font-family:inherit;font-weight:700;">Tak</button>':'')+
                 '</div>';
             }).join('');
           }
@@ -4616,7 +4616,7 @@ function renderAdminPage(user) {
 
       window.finishInterview = async function() {
         if (!_currentSubId) return;
-        if (!confirm('Mülakatı bitirmek ve kullanıcıya Danışman Değerlendirme (Yıldız & Yorum) DM\'i göndermek istediğinize emin misiniz?')) return;
+        if (!confirm("Mülakatı bitirmek ve kullanıcıya Danışman Değerlendirme (Yıldız & Yorum) DM'i göndermek istediğinize emin misiniz?")) return;
         const resDiv = document.getElementById('finish-int-res');
         resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Mülakat bitiriliyor...';
         try {
