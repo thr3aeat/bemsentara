@@ -4770,7 +4770,7 @@ function renderAdminPage(user) {
             if (currentFormType === 'leave' && d.aiResponse) {
               const approvedText = d.approved ? '✅ ONAYLANDI' : '❌ REDDEDİLDİ';
               setTimeout(() => {
-                alert('[Yapay Zeka IK Kararı] ' + approvedText + '\n\n' + d.aiResponse);
+                alert('[Yapay Zeka IK Kararı] ' + approvedText + '\\n\\n' + d.aiResponse);
               }, 400);
             }
             
