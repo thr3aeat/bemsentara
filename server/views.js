@@ -3913,7 +3913,7 @@ function renderAdminPage(user) {
 
     <script>
       // ── Sekme geçişi ──────────────────────────────────────────────────────
-      function admTab(name, btn) {
+      window.admTab = function(name, btn) {
         document.getElementById('adm-stats').style.display       = name === 'stats'       ? '' : 'none';
         document.getElementById('adm-users').style.display       = name === 'users'       ? '' : 'none';
         document.getElementById('adm-coins').style.display       = name === 'coins'       ? '' : 'none';
@@ -3925,14 +3925,16 @@ function renderAdminPage(user) {
           t.style.borderBottomColor = 'transparent';
           t.style.color = 'var(--muted)';
         });
-        btn.style.borderBottomColor = 'var(--accent)';
-        btn.style.color = 'var(--text)';
+        if (btn && btn.style) {
+          btn.style.borderBottomColor = 'var(--accent)';
+          btn.style.color = 'var(--text)';
+        }
         if (name === 'bans') loadBans();
         if (name === 'stats') loadStats();
         if (name === 'submissions') loadSubmissions();
       }
 
-      async function startAvukatAI() {
+      window.startAvukatAI = async function() {
         const discordId = document.getElementById('avukat-discord-id').value.trim();
         const resDiv = document.getElementById('avukat-result');
         if (!discordId) {
@@ -4162,7 +4164,7 @@ function renderAdminPage(user) {
         return '<span style="display:inline-block;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:800;background:' + s.bg + ';border:1px solid ' + s.border + ';color:' + s.color + ';">' + s.label + '</span>';
       }
 
-      async function loadSubmissions() {
+      window.loadSubmissions = async function() {
         const statusFilter = document.getElementById('sub-filter-status').value;
         const box = document.getElementById('sub-list');
         box.innerHTML = '<div style="color:var(--muted);text-align:center;padding:3rem;">Yükleniyor...</div>';
@@ -4732,7 +4734,7 @@ function renderAdminPage(user) {
           const inputEl = document.getElementById(f.id);
           const val = inputEl ? inputEl.value.trim() : '';
           if (f.required && !val) {
-            showToast(\`\${f.label} alanı doldurulmalıdır!\`, 'warning');
+            showToast(f.label + ' alanı doldurulmalıdır!', 'warning');
             return;
           }
           data[f.apiKey] = val;
@@ -4768,7 +4770,7 @@ function renderAdminPage(user) {
             if (currentFormType === 'leave' && d.aiResponse) {
               const approvedText = d.approved ? '✅ ONAYLANDI' : '❌ REDDEDİLDİ';
               setTimeout(() => {
-                alert(\`[Yapay Zeka IK Kararı] \${approvedText}\\n\\n\${d.aiResponse}\`);
+                alert('[Yapay Zeka IK Kararı] ' + approvedText + '\n\n' + d.aiResponse);
               }, 400);
             }
             
