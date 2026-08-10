@@ -1026,6 +1026,8 @@ router.get("/api/admin/users", async (req, res) => {
 
   list = list.slice(0, 100).map((u) => {
     const sp = staffMap.get(String(u.discordId));
+    const finalLevel = (sp && sp.level !== undefined) ? sp.level : (u.modLevel || u.modRank || 1);
+    const finalStatus = (sp && sp.status) ? sp.status : (u.modStatus || (u.isLeft ? 'dismissed' : 'active'));
     return {
       _id: u._id,
       discordId: u.discordId,
@@ -1035,12 +1037,13 @@ router.get("/api/admin/users", async (req, res) => {
       robloxId: u.robloxId,
       isAdmin: Boolean(u.isAdmin),
       isStaff: Boolean(u.isStaff),
+      isLeft: Boolean(u.isLeft || finalStatus === 'dismissed'),
       roles: u.roles || [],
       isAuthorized: Boolean(u.isAuthorized),
       isBanned: Boolean(u.isBanned),
       banReason: u.banReason || null,
-      modLevel: sp ? (sp.level || 1) : 1,
-      modStatus: sp ? (sp.status || 'active') : 'active',
+      modLevel: Number(finalLevel),
+      modStatus: String(finalStatus),
       createdAt: u.createdAt || u.joinedAt || null
     };
   });
@@ -1067,6 +1070,21 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
     if (req.body.isAdmin !== undefined) user.isAdmin = Boolean(req.body.isAdmin);
     if (req.body.isStaff !== undefined) user.isStaff = Boolean(req.body.isStaff);
     if (user.isAdmin) user.isStaff = true;
+  }
+
+  if (req.body.modLevel !== undefined) {
+    user.modLevel = Number(req.body.modLevel);
+    user.modRank = Number(req.body.modLevel);
+  }
+  if (req.body.modStatus !== undefined) {
+    user.modStatus = String(req.body.modStatus);
+    if (user.modStatus === "dismissed") {
+      user.isLeft = true;
+      user.isStaff = false;
+    } else if (user.modStatus === "active") {
+      user.isLeft = false;
+      user.isStaff = true;
+    }
   }
 
   await user.save();

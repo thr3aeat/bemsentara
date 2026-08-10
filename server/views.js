@@ -4487,7 +4487,7 @@ function renderAdminPage(user) {
         '</div>';
       }
 
-      function openSubModal(id) {
+      window.openSubModal = function(id) {
         const sub = _allSubs.find(s => s._id === id);
         if (!sub) return;
         _currentSubId = id;
@@ -4503,7 +4503,7 @@ function renderAdminPage(user) {
         document.body.style.overflow = 'hidden';
       }
 
-      async function saveRobloxGameLink() {
+      window.saveRobloxGameLink = async function() {
         if (!_currentSubId) return;
         const link = document.getElementById('int-game-link').value.trim();
         const resDiv = document.getElementById('game-link-res');
@@ -4525,7 +4525,7 @@ function renderAdminPage(user) {
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
-      async function approveInterviewTime() {
+      window.approveInterviewTime = async function() {
         if (!_currentSubId) return;
         const scheduledTime = document.getElementById('int-scheduled-time').value.trim();
         const resDiv = document.getElementById('time-action-res');
@@ -4547,7 +4547,7 @@ function renderAdminPage(user) {
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
-      async function proposeInterviewTime() {
+      window.proposeInterviewTime = async function() {
         if (!_currentSubId) return;
         const proposedTime = document.getElementById('int-scheduled-time').value.trim();
         const resDiv = document.getElementById('time-action-res');
@@ -4568,7 +4568,7 @@ function renderAdminPage(user) {
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
-      async function acceptInterview() {
+      window.acceptInterview = async function() {
         if (!_currentSubId) return;
         if (!confirm('Bu adayın mülakatını KABUL etmek ve oryantasyon sürecini başlatmak istiyor musunuz?')) return;
         const resDiv = document.getElementById('decision-action-res');
@@ -4589,7 +4589,7 @@ function renderAdminPage(user) {
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
-      async function rejectInterview() {
+      window.rejectInterview = async function() {
         if (!_currentSubId) return;
         const reason = prompt('Mülakat reddetme sebebini giriniz:', 'Belirtilmeyen Neden');
         if (reason === null) return;
@@ -4612,7 +4612,7 @@ function renderAdminPage(user) {
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
-      async function finishInterview() {
+      window.finishInterview = async function() {
         if (!_currentSubId) return;
         if (!confirm('Mülakatı bitirmek ve kullanıcıya Danışman Değerlendirme (Yıldız & Yorum) DM\'i göndermek istediğinize emin misiniz?')) return;
         const resDiv = document.getElementById('finish-int-res');
