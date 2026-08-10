@@ -4563,7 +4563,7 @@ function renderAdminPage(user) {
           });
           const d = await res.json();
           if (res.ok && d.success) {
-            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ Yeni mülakat saati teklifi kullanıcının DM\'ine gönderildi!';
+            resDiv.style.color = '#34d399'; resDiv.textContent = "✅ Yeni mülakat saati teklifi kullanıcının DM'ine gönderildi!";
           } else {
             resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
           }
@@ -4582,7 +4582,7 @@ function renderAdminPage(user) {
           });
           const d = await res.json();
           if (res.ok && d.success) {
-            resDiv.style.color = '#34d399'; resDiv.textContent = '🎉 MÜLAKAT KABUL EDİLDİ! Kullanıcıya tebrikler ve oryantasyon DM\'i gönderildi.';
+            resDiv.style.color = '#34d399'; resDiv.textContent = "🎉 MÜLAKAT KABUL EDİLDİ! Kullanıcıya tebrikler ve oryantasyon DM'i gönderildi.";
             const sub = _allSubs.find(s => s._id === _currentSubId);
             if (sub) { sub.status = 'APPROVED'; sub.interviewState = 'ACCEPTED_WAITING_VERIFY'; }
           } else {
@@ -4605,7 +4605,7 @@ function renderAdminPage(user) {
           });
           const d = await res.json();
           if (res.ok && d.success) {
-            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ MÜLAKAT REDDEDİLDİ. Kullanıcıya ret bildirimi ve tekrar mülakat teklifi DM\'i atıldı.';
+            resDiv.style.color = '#fb7185'; resDiv.textContent = "❌ MÜLAKAT REDDEDİLDİ. Kullanıcıya ret bildirimi ve tekrar mülakat teklifi DM'i atıldı.";
             const sub = _allSubs.find(s => s._id === _currentSubId);
             if (sub) { sub.status = 'REJECTED'; sub.interviewState = 'REJECTED'; }
           } else {
