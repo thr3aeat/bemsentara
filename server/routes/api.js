@@ -2596,10 +2596,11 @@ router.post("/api/admin/form-submissions/:id/approve-time", async (req, res) => 
     // Kullanıcıya Discord DM gönder
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
+      const { extractTargetDiscordId } = require("../../bot/services/formInterviewService");
       const client = getDiscordClient();
       if (client && client.isReady()) {
-        const discordId = updated.discordId || updated.userId;
-        const user = await client.users.fetch(discordId).catch(() => null);
+        const discordId = extractTargetDiscordId(updated);
+        const user = discordId ? await client.users.fetch(discordId).catch(() => null) : null;
         if (user) {
           const { EmbedBuilder } = require("discord.js");
           const embed = new EmbedBuilder()
@@ -2673,11 +2674,11 @@ router.post("/api/admin/form-submissions/:id/finish-interview", async (req, res)
     // Send Danışman Yorum / Yıldız Değerlendirmesi DM to user
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
-      const { sendConsultantReviewDM } = require("../../bot/services/formInterviewService");
+      const { sendConsultantReviewDM, extractTargetDiscordId } = require("../../bot/services/formInterviewService");
       const client = getDiscordClient();
       if (client && client.isReady()) {
-        const discordId = updated.discordId || updated.userId;
-        await sendConsultantReviewDM(client, discordId, updated._id);
+        const discordId = extractTargetDiscordId(updated);
+        if (discordId) await sendConsultantReviewDM(client, discordId, updated._id);
       }
     } catch (dmErr) {
       console.error("[finish-interview] DM error:", dmErr.message);
@@ -2708,11 +2709,11 @@ router.post("/api/admin/form-submissions/:id/accept-interview", async (req, res)
     // Send DM to candidate
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
-      const { sendInterviewAcceptedDM } = require("../../bot/services/formInterviewService");
+      const { sendInterviewAcceptedDM, extractTargetDiscordId } = require("../../bot/services/formInterviewService");
       const client = getDiscordClient();
       if (client && client.isReady()) {
-        const discordId = updated.discordId || updated.userId;
-        await sendInterviewAcceptedDM(client, discordId, updated._id);
+        const discordId = extractTargetDiscordId(updated);
+        if (discordId) await sendInterviewAcceptedDM(client, discordId, updated._id);
       }
     } catch (dmErr) {
       console.error("[accept-interview] DM error:", dmErr.message);
@@ -2745,11 +2746,11 @@ router.post("/api/admin/form-submissions/:id/reject-interview", async (req, res)
     // Send DM to candidate
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
-      const { sendInterviewRejectedDM } = require("../../bot/services/formInterviewService");
+      const { sendInterviewRejectedDM, extractTargetDiscordId } = require("../../bot/services/formInterviewService");
       const client = getDiscordClient();
       if (client && client.isReady()) {
-        const discordId = updated.discordId || updated.userId;
-        await sendInterviewRejectedDM(client, discordId, updated._id, reason);
+        const discordId = extractTargetDiscordId(updated);
+        if (discordId) await sendInterviewRejectedDM(client, discordId, updated._id, reason);
       }
     } catch (dmErr) {
       console.error("[reject-interview] DM error:", dmErr.message);

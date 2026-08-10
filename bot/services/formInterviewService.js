@@ -9,14 +9,55 @@ const FormSubmission = require("../../models/FormSubmission");
 const { getDiscordClient } = require("../discordClient");
 
 /**
+ * Extracts real 18-digit numeric Discord ID from form submission,
+ * handling guest sessions (guest_...) where user entered their Discord ID in form fields.
+ */
+function extractTargetDiscordId(submission) {
+  if (!submission) return null;
+
+  const candidates = [
+    submission.q_discord_id,
+    submission.discordId,
+    submission.userId,
+    submission.answers?.q_discord_id,
+    submission.answers?.discordId,
+    submission.answers?.discord_id,
+    submission.answers?.q_discord,
+    submission.answers?.discord
+  ];
+
+  for (const c of candidates) {
+    if (c && typeof c === 'string') {
+      const trimmed = c.trim();
+      if (/^\d{17,20}$/.test(trimmed)) {
+        return trimmed;
+      }
+    }
+  }
+
+  if (submission.discordId && !String(submission.discordId).startsWith("guest_")) {
+    return String(submission.discordId).trim();
+  }
+  if (submission.userId && !String(submission.userId).startsWith("guest_")) {
+    return String(submission.userId).trim();
+  }
+
+  return null;
+}
+
+/**
  * Send DM payload safely with fallback for embeds/components
  */
 async function sendUserDM(client, discordId, payload) {
   if (!discordId) return false;
   try {
     const user = await client.users.fetch(discordId).catch(() => null);
-    if (!user) return false;
+    if (!user) {
+      console.warn(`[formInterviewService] User ${discordId} not found or invalid.`);
+      return false;
+    }
     await user.send(payload);
+    console.log(`[formInterviewService] ✅ DM successfully sent to ${user.tag} (${discordId})`);
     return true;
   } catch (err) {
     console.error(`[formInterviewService] DM send error to ${discordId}:`, err.message);
@@ -37,8 +78,11 @@ async function startFormInterviewFlow(submissionId) {
   const submission = await FormSubmission.findById(submissionId);
   if (!submission) return false;
 
-  const discordId = submission.discordId || submission.userId;
-  if (!discordId || String(discordId).startsWith("guest_")) return false;
+  const discordId = extractTargetDiscordId(submission);
+  if (!discordId) {
+    console.warn(`[formInterviewService] ${submissionId} kaydı için geçerli Discord ID bulunamadı.`);
+    return false;
+  }
 
   // Initialize interview fields if not set
   submission.interviewState = "SCHEDULE_QUESTION";
@@ -994,6 +1038,7 @@ async function handleFormInterviewDMReply(message) {
 }
 
 module.exports = {
+  extractTargetDiscordId,
   startFormInterviewFlow,
   askMicQuestion,
   askAgeQuestion,

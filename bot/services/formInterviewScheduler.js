@@ -68,8 +68,9 @@ async function checkAndSendReminders() {
       const diffMin = Math.round(diffMs / 60000);
 
       sub.remindersSent = sub.remindersSent || [];
-      const discordId = sub.discordId || sub.userId;
-      if (!discordId || String(discordId).startsWith("guest_")) continue;
+      const { extractTargetDiscordId } = require("./formInterviewService");
+      const discordId = extractTargetDiscordId(sub);
+      if (!discordId) continue;
 
       // ── 15 Minutes Reminder ──────────────────────────────────────────────
       if (diffMin <= 15 && diffMin > 10 && !sub.remindersSent.includes("15m")) {
