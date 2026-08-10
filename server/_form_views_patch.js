@@ -772,6 +772,30 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
         </div>
       </div>
 
+      <!-- COUNTDOWN BANNER CARD -->
+      <div class="card" style="background:linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.08));border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:1.5rem;margin-bottom:1.5rem;backdrop-filter:blur(20px);box-shadow:0 8px 30px rgba(245,158,11,0.15);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.2rem;">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="font-size:2.2rem;">⏰</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.3rem;flex-wrap:wrap;">
+                <span style="background:#f59e0b;color:#000;font-weight:900;font-size:0.75rem;padding:0.25rem 0.75rem;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;">
+                  ⏰ (20 SAAT SONRA KAPANACAK)
+                </span>
+                <span style="color:#fbbf24;font-size:0.85rem;font-weight:700;">SÜRELİ BAŞVURU</span>
+              </div>
+              <h3 id="countdown-banner-title" style="font-size:1.15rem;font-weight:800;color:#fff;margin:0;">Topluluk Elçiliği Başvuruları Kapanıyor</h3>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4);border:1px solid rgba(245,158,11,0.3);border-radius:16px;padding:0.8rem 1.4rem;text-align:center;min-width:240px;">
+            <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:0.3rem;">KAPANMASINA KALAN SÜRE</div>
+            <div id="ambassador-countdown" style="font-family:monospace,Consolas,'Courier New';font-size:1.5rem;font-weight:900;color:#fbbf24;letter-spacing:1px;text-shadow:0 0 10px rgba(245,158,11,0.4);">
+              -- : -- : --
+            </div>
+          </div>
+        </div>
+      </div>
+
       ${existingSubmission ? `
         <div class="card" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:20px;padding:2.5rem;text-align:center;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
@@ -1104,6 +1128,48 @@ function renderCommunityAmbassadorFormPage(currentUser, existingSubmission = nul
                 btn.innerHTML = '🚀 Başvuruyu Resmen Gönder';
               }
             });
+
+            (function() {
+              const targetTime = 1786455128000;
+              const countdownEl = document.getElementById('ambassador-countdown');
+              
+              function updateCountdown() {
+                const now = Date.now();
+                const diff = targetTime - now;
+                
+                if (diff <= 0) {
+                  if (countdownEl) {
+                    countdownEl.innerText = "00 Sa 00 Dk 00 Sn";
+                    countdownEl.style.color = "#f43f5e";
+                  }
+                  const bannerTitle = document.getElementById('countdown-banner-title');
+                  if (bannerTitle) bannerTitle.innerText = "❌ Başvurular Sona Erdi / Kapatıldı";
+                  
+                  const submitBtn = document.getElementById('ambassador-submit-btn');
+                  if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "❌ BAŞVURU SÜRESİ DOLDU (KAPANDI)";
+                    submitBtn.style.opacity = "0.5";
+                    submitBtn.style.cursor = "not-allowed";
+                  }
+                  return;
+                }
+                
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                const formatted = 
+                  String(hours).padStart(2, '0') + " Sa " + 
+                  String(minutes).padStart(2, '0') + " Dk " + 
+                  String(seconds).padStart(2, '0') + " Sn";
+                  
+                if (countdownEl) countdownEl.innerText = formatted;
+              }
+              
+              updateCountdown();
+              setInterval(updateCountdown, 1000);
+            })();
 
             _initTracking();
           });

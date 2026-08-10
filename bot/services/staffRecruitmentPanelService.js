@@ -62,10 +62,10 @@ function getRecruitmentPanelPayload() {
           `  ◦ Başvuru durumu: ${BADGE_ACIK}`
         ),
 
-        // Topluluk Elçiliği — AÇIK
+        // Topluluk Elçiliği — AÇIK (20 SAAT SONRA KAPANACAK)
         ComponentsV2Factory.text(
-          `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
-          `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+          `• 👑 [**[ Topluluk Elçisi ]**](${communityAmbassadorUrl}) ⏰ **(20 SAAT SONRA KAPANACAK)** başvuru formu için [tıklayın](${communityAmbassadorUrl}).\n` +
+          `  ◦ Başvuru durumu: ${BADGE_ACIK} • ⏰ Kapanış: <t:1786455128:R>`
         ),
 
         // Geliştirici Ekibi // Geliştirici Ofisi — AÇIK

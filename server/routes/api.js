@@ -2343,6 +2343,12 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
     const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
     const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
 
+    // Check 20-hour application deadline
+    const DEADLINE_MS = 1786455128000;
+    if (Date.now() > DEADLINE_MS) {
+      return res.status(400).json({ error: "Topluluk Elçiliği başvuruları 20 saatlik sürenin dolması nedeniyle kapanmıştır." });
+    }
+
     // Check existing pending application if user is logged in
     if (req.user) {
       const existing = await FormSubmission.findPendingByUser(userId, "community_ambassador");

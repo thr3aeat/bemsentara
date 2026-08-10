@@ -8495,11 +8495,14 @@ function renderFormsHubPage(currentUser) {
             </div>
           </div>
 
-          <!-- 4. TOPLULUK ELÇİLİĞİ (AÇIK) -->
+          <!-- 4. TOPLULUK ELÇİLİĞİ (AÇIK - 20 SAAT SONRA KAPANACAK) -->
           <div style="margin-bottom:1.5rem; background:rgba(245,158,11,0.05); border-radius:12px; padding:1rem; border:1px solid rgba(245,158,11,0.2);">
             <div style="display:flex; align-items:center; gap:0.6rem; font-weight:700; color:#fff; flex-wrap:wrap;">
               <span style="font-size:1.2rem;">👑</span>
               <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline; font-weight:800; font-size:1.1rem;">[ Topluluk Elçisi ]</a>
+              <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:0.75rem; font-weight:800; padding:0.2rem 0.6rem; border-radius:12px; display:inline-flex; align-items:center; gap:0.3rem;">
+                ⏰ (20 SAAT SONRA KAPANACAK)
+              </span>
               <span style="color:var(--text); font-size:0.9rem; font-weight:600;">mülakat & başvuru formu için <a href="/forms/community-ambassador" style="color:#f59e0b; text-decoration:underline;">tıklayın</a>.</span>
             </div>
             <div style="margin-left:2rem; font-size:0.9rem; color:var(--muted); display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
