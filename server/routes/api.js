@@ -2426,9 +2426,11 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
     // Kullanıcıya bot DM gönder
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
+      const { extractTargetDiscordId } = require("../../bot/services/formInterviewService");
       const client = getDiscordClient();
       if (client && client.isReady()) {
-        const user = await client.users.fetch(updated.userId).catch(() => null);
+        const targetId = extractTargetDiscordId(updated) || updated.userId;
+        const user = targetId ? await client.users.fetch(targetId).catch(() => null) : null;
         if (user) {
           const { ButtonStyle } = require("discord.js");
           const ComponentsV2Factory = require("../../bot/utils/componentsV2Factory");
@@ -2481,12 +2483,14 @@ router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
     }
 
     const { getDiscordClient } = require("../../bot/discordClient");
+    const { extractTargetDiscordId } = require("../../bot/services/formInterviewService");
     const client = getDiscordClient();
     if (!client || !client.isReady()) {
       return res.status(503).json({ error: "Bot bağlı değil, DM gönderilemiyor." });
     }
 
-    const user = await client.users.fetch(submission.userId).catch(() => null);
+    const targetId = extractTargetDiscordId(submission) || submission.userId;
+    const user = targetId ? await client.users.fetch(targetId).catch(() => null) : null;
     if (!user) {
       return res.status(404).json({ error: "Kullanıcı Discord'da bulunamadı. DM gönderilemedi." });
     }
@@ -2550,6 +2554,37 @@ router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[form-ask] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: DM Atılacak Discord ID Kaydet ───────────────────────────────────────
+router.post("/api/admin/form-submissions/:id/set-target-discord-id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const { targetDiscordId } = req.body;
+    if (!targetDiscordId || !targetDiscordId.trim()) {
+      return res.status(400).json({ error: "Discord ID alanı boş olamaz." });
+    }
+
+    const cleanedId = targetDiscordId.trim();
+    if (!/^\d{17,20}$/.test(cleanedId)) {
+      return res.status(400).json({ error: "Geçersiz Discord ID formatı. 17-20 haneli sayısal ID giriniz." });
+    }
+
+    const FormSubmission = require("../../models/FormSubmission");
+    const updated = await FormSubmission.update(req.params.id, {
+      targetDiscordId: cleanedId,
+      discordId: cleanedId,
+      q_discord_id: cleanedId,
+    });
+
+    if (!updated) {
+      return res.status(404).json({ error: "Başvuru kaydı bulunamadı." });
+    }
+
+    res.json({ success: true, submission: updated });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

@@ -4430,9 +4430,22 @@ function renderAdminPage(user) {
 
           // Discord ID & Info Row
           '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin-bottom:1.2rem;background:rgba(255,255,255,0.02);padding:0.8rem;border-radius:12px;border:1px solid rgba(255,255,255,0.05);">' +
-            '<div><span style="color:var(--muted);font-size:0.78rem;">DISCORD KULLANICI / ID:</span><br><strong style="color:#fff;font-size:0.88rem;">' + subEsc(sub.discordUsername || sub.userId) + ' (' + subEsc(sub.discordId || sub.userId) + ')</strong></div>' +
+            '<div><span style="color:var(--muted);font-size:0.78rem;">DISCORD KULLANICI / DM ALICI ID:</span><br><strong style="color:#fff;font-size:0.88rem;">' + subEsc(sub.discordUsername || sub.userId) + ' (' + subEsc(sub.targetDiscordId || sub.discordId || sub.userId) + ')</strong></div>' +
             '<div><span style="color:var(--muted);font-size:0.78rem;">MÜLAKAT SAATİ:</span><br><strong style="color:#fbbf24;font-size:0.88rem;">' + subEsc(sub.interviewScheduledTime || 'Belirtilmedi') + '</strong></div>' +
             '<div><span style="color:var(--muted);font-size:0.78rem;">BOT MÜLAKAT DURUMU:</span><br><strong style="color:#38bdf8;font-size:0.88rem;">' + subEsc(sub.interviewState || 'NOT_STARTED') + '</strong></div>' +
+          '</div>' +
+
+          // Discord ID Girme ve DM Alıcısı Belirleme Section
+          '<div style="margin-bottom:1.2rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(56,189,248,0.3);box-shadow:0 4px 16px rgba(56,189,248,0.1);">' +
+            '<label style="display:block;font-size:0.85rem;font-weight:800;color:#38bdf8;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;">' +
+              '<span>🆔 DM ATILACAK DİSCORD ID GİRME YERİ</span>' +
+              '<span style="font-size:0.75rem;font-weight:600;color:var(--muted);">(Tüm Bot DM mesajları bu ID\'ye atılacaktır)</span>' +
+            '</label>' +
+            '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;">' +
+              '<input type="text" id="int-target-discord-id" value="' + subEsc(sub.targetDiscordId || sub.discordId || sub.userId || '') + '" placeholder="Örn: 123456789012345678" style="flex:1;min-width:240px;background:rgba(0,0,0,0.4);border:1px solid rgba(56,189,248,0.3);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.88rem;font-family:monospace;font-weight:700;">' +
+              '<button type="button" onclick="saveTargetDiscordId()" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#fff;border:none;padding:0.5rem 1.4rem;border-radius:8px;font-size:0.82rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(56,189,248,0.3);">💾 Discord ID Kaydet</button>' +
+            '</div>' +
+            '<div id="target-discord-id-res" style="font-size:0.78rem;margin-top:0.4rem;min-height:16px;"></div>' +
           '</div>' +
 
           // Roblox Mülakat Oyun Linki Input Section
@@ -4503,6 +4516,35 @@ function renderAdminPage(user) {
         document.getElementById('modal-body').innerHTML       = buildInterviewPanel(sub) + buildFormQA(sub.formData, sub.behavior);
         document.getElementById('sub-modal-overlay').style.display = 'block';
         document.body.style.overflow = 'hidden';
+      }
+
+      window.saveTargetDiscordId = async function() {
+        if (!_currentSubId) return;
+        const targetId = document.getElementById('int-target-discord-id').value.trim();
+        const resDiv = document.getElementById('target-discord-id-res');
+        if (!targetId) {
+          resDiv.style.color = '#fbbf24'; resDiv.textContent = '⚠️ Lütfen geçerli bir Discord ID giriniz.'; return;
+        }
+        resDiv.style.color = 'var(--muted)'; resDiv.textContent = 'Discord ID kaydediliyor...';
+        try {
+          const res = await fetch('/api/admin/form-submissions/' + _currentSubId + '/set-target-discord-id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetDiscordId: targetId })
+          });
+          const d = await res.json();
+          if (res.ok && d.success) {
+            resDiv.style.color = '#34d399'; resDiv.textContent = '✅ DM atılacak Discord ID başarıyla güncellendi! (' + targetId + ')';
+            const sub = _allSubs.find(s => s._id === _currentSubId);
+            if (sub) {
+              sub.targetDiscordId = targetId;
+              sub.discordId = targetId;
+              sub.q_discord_id = targetId;
+            }
+          } else {
+            resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
+          }
+        } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
       }
 
       window.saveRobloxGameLink = async function() {

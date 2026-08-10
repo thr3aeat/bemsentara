@@ -16,6 +16,8 @@ function extractTargetDiscordId(submission) {
   if (!submission) return null;
 
   const candidates = [
+    submission.targetDiscordId,
+    submission.customDiscordId,
     submission.q_discord_id,
     submission.discordId,
     submission.userId,
@@ -35,6 +37,9 @@ function extractTargetDiscordId(submission) {
     }
   }
 
+  if (submission.targetDiscordId && !String(submission.targetDiscordId).startsWith("guest_")) {
+    return String(submission.targetDiscordId).trim();
+  }
   if (submission.discordId && !String(submission.discordId).startsWith("guest_")) {
     return String(submission.discordId).trim();
   }
