@@ -35,6 +35,11 @@ router.post("/api/settings/update-pin", async (req, res) => {
     await req.user.save();
     const { saveStoreNow } = require("../../models/Store");
     saveStoreNow();
+    try {
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      const { getDiscordClient } = require("../../bot/discordClient");
+      logTrustUserActivity(getDiscordClient(), req.user.discordId, "Site PIN Şifresi Güncellendi", "Kullanıcı web hesabı için PIN güvenlik şifresini başarıyla güncelledi.", "🔑", 0x3b82f6);
+    } catch (_) {}
     res.json({ success: true, message: "Site PIN şifreniz başarıyla kaydedildi." });
   } catch (err) {
     res.status(500).json({ error: "Şifre güncellenirken hata oluştu." });
@@ -52,6 +57,12 @@ router.post("/api/settings/update-2fa", async (req, res) => {
     await req.user.save();
     const { saveStoreNow } = require("../../models/Store");
     saveStoreNow();
+    try {
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const isAct = Boolean(enabled);
+      logTrustUserActivity(getDiscordClient(), req.user.discordId, "2FA Güvenlik Ayarları Güncellendi", `İki faktörlü doğrulama durumu: **${isAct ? 'AKTİF' : 'PASİF'}** (Yöntem: ${method || 'Varsayılan'})`, "🛡️", isAct ? 0x2ecc71 : 0xe74c3c);
+    } catch (_) {}
     res.json({ success: true, message: "2FA güvenlik ayarlarınız güncellendi." });
   } catch (err) {
     res.status(500).json({ error: "Ayarlar güncellenirken hata oluştu." });
@@ -628,9 +639,11 @@ router.post("/api/tickets/:ticketId/close", async (req, res) => {
     try {
       const { getDiscordClient } = require("../../bot/discordClient");
       const { sendTicketCloseRatingDM } = require("../../bot/services/ticketRatingService");
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
       const botClient = getDiscordClient ? getDiscordClient() : null;
       if (botClient) {
         sendTicketCloseRatingDM(ticket, req.user.discordUsername, reason, botClient).catch(() => {});
+        logTrustUserActivity(botClient, ticket.userId, "Bilet Kapatıldı (Web)", `\`${ticket.ticketId}\` numaralı bilet kapatıldı.\n**Kapatan:** ${req.user.discordUsername}\n**Sebep:** ${reason || 'Belirtilmedi'}`, "🔒", 0xef4444);
       }
     } catch (_) {}
 
@@ -666,6 +679,12 @@ router.post("/api/tickets/:ticketId/rate", async (req, res) => {
     ticket.ratingScore = ratingScore;
     ticket.ratingNote = note ? String(note).trim() : null;
     await ticket.save();
+
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      logTrustUserActivity(getDiscordClient(), ticket.userId, "Bilet Değerlendirildi (Web)", `\`${ticket.ticketId}\` numaralı destek bileti için **${ratingScore}/5 Yıldız** değerlendirmesi yapıldı.\n**Yorum:** ${note || 'Not yok'}`, "⭐", 0xf59e0b);
+    } catch (_) {}
 
     // Ödül: Moderatöre yıldız başına 100 Coin ekle
     const staffId = ticket.claimedBy || ticket.closedBy;

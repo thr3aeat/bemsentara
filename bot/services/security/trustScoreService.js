@@ -221,27 +221,55 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
             }
           ];
 
-          let modRoles = [];
-          if (recordGuild.roles && recordGuild.roles.cache && typeof recordGuild.roles.cache.filter === 'function') {
-            modRoles = recordGuild.roles.cache.filter(r => 
-              (r.permissions && typeof r.permissions.has === 'function' && 
-               (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
-              (r.name && (
+          if (recordGuild.roles && recordGuild.roles.cache) {
+            let rolesList = [];
+            if (typeof recordGuild.roles.cache.values === 'function') {
+              rolesList = Array.from(recordGuild.roles.cache.values());
+            } else if (Array.isArray(recordGuild.roles.cache)) {
+              rolesList = recordGuild.roles.cache;
+            } else if (typeof recordGuild.roles.cache === 'object') {
+              rolesList = Object.values(recordGuild.roles.cache);
+            }
+            
+            // Allow Admin roles
+            for (const role of rolesList) {
+              if (role.permissions && typeof role.permissions.has === 'function' && role.permissions.has(PermissionFlagsBits.Administrator)) {
+                permissionOverwrites.push({
+                  id: role.id,
+                  allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.SendMessages]
+                });
+              }
+            }
+
+            // Deny Mod / Staff roles
+            const modRoles = rolesList.filter(r => {
+              const isAdmin = r.permissions && typeof r.permissions.has === 'function' && r.permissions.has(PermissionFlagsBits.Administrator);
+              if (isAdmin) return false;
+
+              const hasModPerm = r.permissions && typeof r.permissions.has === 'function' && (
+                r.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+                r.permissions.has(PermissionFlagsBits.ManageMessages) ||
+                r.permissions.has(PermissionFlagsBits.KickMembers) ||
+                r.permissions.has(PermissionFlagsBits.BanMembers)
+              );
+
+              const nameMatch = r.name && (
                 r.name.toLowerCase().includes("mod") ||
                 r.name.toLowerCase().includes("yetkili") ||
                 r.name.toLowerCase().includes("staff") ||
-                r.name.toLowerCase().includes("admin")
-              ))
-            );
-          }
+                r.name.toLowerCase().includes("rehber") ||
+                r.name.toLowerCase().includes("destek")
+              ) && !r.name.toLowerCase().includes("kurucu") && !r.name.toLowerCase().includes("admin");
 
-          for (const role of modRoles.values()) {
-            permissionOverwrites.push({
-              id: role.id,
-              deny: [
-                PermissionFlagsBits.ViewChannel
-              ]
+              return hasModPerm || nameMatch;
             });
+
+            for (const role of modRoles) {
+              permissionOverwrites.push({
+                id: role.id,
+                deny: [PermissionFlagsBits.ViewChannel]
+              });
+            }
           }
 
           const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
@@ -1107,31 +1135,38 @@ async function cleanupDuplicateTrustChannels(client) {
 /**
  * Sends a detailed activity log to the user's dedicated personal channel (#username).
  */
-async function logTrustUserActivity(client, userId, actionTitle, actionDetails, emoji = "📝") {
+async function logTrustUserActivity(client, userId, actionTitle, actionDetails, emoji = "📝", color = 0x3b82f6, fields = []) {
   try {
-    if (!client || !userId) return;
-    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
+    if (!userId) return;
+    const discordClient = client || (require("../../discordClient").getDiscordClient ? require("../../discordClient").getDiscordClient() : null);
+    if (!discordClient || !discordClient.isReady()) return;
+
+    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, discordClient);
     if (!record || !record.profileChannelId) return;
 
-    const recordGuild = await getRecordGuild(client).catch(() => null);
+    const recordGuild = await getRecordGuild(discordClient).catch(() => null);
     if (!recordGuild) return;
 
     const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
     if (!channel || (!channel.isTextBased && typeof channel.send !== 'function')) return;
 
     // Auto-rename if channel still starts with g-
-    if (channel.name.startsWith('g-')) {
+    if (channel.name && typeof channel.name === 'string' && channel.name.startsWith('g-')) {
       const cleanName = (record.username || 'kullanici').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100);
       await channel.setName(cleanName, 'g- ön eki kaldırıldı').catch(() => {});
     }
 
     const timestamp = `<t:${Math.floor(Date.now() / 1000)}:F>`;
     const embed = new EmbedBuilder()
-      .setColor(0x3b82f6)
+      .setColor(color)
       .setTitle(`${emoji} ${actionTitle}`)
       .setDescription(`**Zaman:** ${timestamp}\n\n${actionDetails}`)
       .setFooter({ text: `Kullanıcı Aktivite Logu • ${record.username || userId}` })
       .setTimestamp();
+
+    if (Array.isArray(fields) && fields.length > 0) {
+      embed.addFields(fields);
+    }
 
     await channel.send({ embeds: [embed] }).catch(() => {});
   } catch (err) {
@@ -1154,7 +1189,15 @@ async function fixAndMergeTrustChannels(client) {
     // Fetch mod roles to deny ViewChannel
     let modRoles = [];
     if (recordGuild.roles && recordGuild.roles.cache) {
-      modRoles = Array.from(recordGuild.roles.cache.values()).filter(r =>
+      let rValues = [];
+      if (typeof recordGuild.roles.cache.values === 'function') {
+        rValues = Array.from(recordGuild.roles.cache.values());
+      } else if (Array.isArray(recordGuild.roles.cache)) {
+        rValues = recordGuild.roles.cache;
+      } else if (typeof recordGuild.roles.cache === 'object') {
+        rValues = Object.values(recordGuild.roles.cache);
+      }
+      modRoles = rValues.filter(r =>
         (r.permissions && typeof r.permissions.has === 'function' &&
          !r.permissions.has(PermissionFlagsBits.Administrator) &&
          (r.permissions.has(PermissionFlagsBits.ModerateMembers) || r.permissions.has(PermissionFlagsBits.ManageMessages))) ||
@@ -1167,7 +1210,17 @@ async function fixAndMergeTrustChannels(client) {
     }
 
     // Get all channels in record category or record guild
-    const channels = Array.from(recordGuild.channels.cache.values()).filter(c => 
+    let chValues = [];
+    if (recordGuild.channels && recordGuild.channels.cache) {
+      if (typeof recordGuild.channels.cache.values === 'function') {
+        chValues = Array.from(recordGuild.channels.cache.values());
+      } else if (Array.isArray(recordGuild.channels.cache)) {
+        chValues = recordGuild.channels.cache;
+      } else if (typeof recordGuild.channels.cache === 'object') {
+        chValues = Object.values(recordGuild.channels.cache);
+      }
+    }
+    const channels = chValues.filter(c => 
       c.type === ChannelType.GuildText && (categoryId ? c.parentId === categoryId : true)
     );
 

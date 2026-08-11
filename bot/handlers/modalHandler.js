@@ -2785,12 +2785,14 @@ async function handleCloseReasonModal(interaction) {
       source: "Discord Kapat Butonu",
     });
 
-    // 3) Ticket sahibine DM ve değerlendirme butonlarını gönder
+    // 3) Ticket sahibine DM ve değerlendirme butonlarını gönder + Güven Kanalına Log At
     try {
       const { sendTicketCloseRatingDM } = require("../services/ticketRatingService");
+      const { logTrustUserActivity } = require("../services/security/trustScoreService");
       await sendTicketCloseRatingDM(ticket, interaction.user.username, reason, interaction.client);
+      logTrustUserActivity(interaction.client, ticket.userId, "Bilet Kapatıldı", `\`${ticket.ticketId}\` numaralı bilet kapatıldı.\n**Kapatan:** ${interaction.user.username}\n**Sebep:** ${reason || 'Belirtilmedi'}`, "🔒", 0xef4444);
     } catch (dmErr) {
-      console.warn("[closeTicket] Kullanıcıya DM gönderilemedi:", dmErr.message);
+      console.warn("[closeTicket] DM veya Log hatası:", dmErr.message);
     }
 
     // 4) Kanalı kapat (izinleri kaldır ve kapatıldı mesajı gönder)
@@ -2856,6 +2858,11 @@ async function handleRatingModal(interaction) {
   ticket.ratingScore = score;
   ticket.ratingNote = note;
   await ticket.save();
+
+  try {
+    const { logTrustUserActivity } = require("../services/security/trustScoreService");
+    logTrustUserActivity(interaction.client, ticket.userId, "Bilet Değerlendirildi (Discord)", `\`${ticket.ticketId}\` numaralı bilet için **${score}/5 Yıldız** değerlendirmesi yapıldı.\n**Yorum Notu:** ${note || 'Not girilmedi'}`, "⭐", 0xf59e0b);
+  } catch (_) {}
 
   // Ticket'ı üstlenen kişiye DM gönder + bakiye ver
   const staffId = ticket.claimedBy || ticket.closedBy;
