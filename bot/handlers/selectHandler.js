@@ -9,12 +9,6 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
-  if (customId.startsWith('eko_res_')) {
-    const { handleInteraction } = require('../services/ekoReservationService');
-    const handled = await handleInteraction(interaction, interaction.client);
-    if (handled) return;
-  }
-
   if (customId.startsWith('elcisi_select_user_')) {
     const awardType = customId.replace('elcisi_select_user_', '');
     const selectedUserId = interaction.values[0];

@@ -2487,15 +2487,6 @@ function initializeDiscordHandlers(client) {
         const handled = await handleCoachReply(message, client);
         if (handled) return;
       } catch (_) { }
-      // Eko Kişisel DM / AI Rezervasyon Servisi
-      try {
-        const { handleIncomingDM } = require('../services/ekoReservationService');
-        const handled = await handleIncomingDM(message, client);
-        if (handled) return;
-      } catch (err) {
-        console.error('[messageCreate] Eko reservation DM error:', err.message);
-      }
-
       // AI konus sohbeti cevabı mı?
       try {
         const { handleKonusReply } = require('../services/aiTalkService');

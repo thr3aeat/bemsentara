@@ -148,12 +148,6 @@ async function handleButtonInteraction(interaction) {
     return;
   }
 
-  if (customId.startsWith("eko_res_")) {
-    const { handleInteraction } = require("../services/ekoReservationService");
-    const handled = await handleInteraction(interaction, interaction.client);
-    if (handled) return;
-  }
-
   if (customId.startsWith("user_audit_")) {
     const { handleUserAuditButton } = require("../services/userAuditPanelService");
     const handled = await handleUserAuditButton(interaction);
