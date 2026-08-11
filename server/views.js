@@ -4980,7 +4980,7 @@ function renderAdminPage(user) {
         const resultBox = document.getElementById('transfer-result');
 
         if (!oldId || !newId) {
-          showToast('Eski ve yeni Discord ID\'lerini girin.', 'warning');
+          showToast("Eski ve yeni Discord ID'lerini girin.", 'warning');
           resultBox.style.color = 'var(--warning)';
           resultBox.innerText = '⚠ Lütfen her iki alanı da doldurun.';
           return;
@@ -5008,7 +5008,7 @@ function renderAdminPage(user) {
             resultBox.innerHTML = '<strong>✅ Başarılı!</strong><br>' +
               'Eski ID: <code>' + adminEsc(oldId) + '</code><br>' +
               'Yeni ID: <code>' + adminEsc(newId) + '</code><br>' +
-              'Transfer edilen veriler: Personel, Ekonomi, Ticket\'lar, Tüm Mod Paneli Verileri';
+              'Transfer edilen veriler: Personel, Ekonomi, Ticketlar, Tüm Mod Paneli Verileri';
             document.getElementById('transfer-old-id').value = '';
             document.getElementById('transfer-new-id').value = '';
             setTimeout(() => { resultBox.innerText = ''; }, 5000);
