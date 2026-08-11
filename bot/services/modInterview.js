@@ -150,14 +150,17 @@ async function startModInterview(targetUser, adminId, guildId, client) {
     .setTitle('🎉 MODERATÖRLÜĞE KABUL EDİLDİN!')
     .setThumbnail(targetUser.avatarURL() || null)
     .setDescription(
-      `Merhaba **${targetUser.username}**! 👋\n\n` +
-      `**Eko Yıldız** sunucusu moderatör ekibine **KABUL EDİLDİN!** 🎉\n\n` +
-      `🛡️ Moderatör rolün ve yetkilerin aktif edilecek.\n` +
-      `📊 Personel sistemine kaydedileceksin.\n` +
-      `🎖️ Moderatör rozetlerin verilecek.\n\n` +
-      `Hoş geldin! Ekibe katkılarını bekliyoruz! 💪`
+      `# 🏆 TEBRİKLER! MODERATÖR EKİBİNE KATILDIN\n\n` +
+      `Sayın **${targetUser.username}** 👋,\n\n` +
+      `> **Eko Yıldız Yönetim Kurulu** kararıyla **Moderatörlük Başvurunuz Doğrudan Onaylanmıştır!** 🎉\n\n` +
+      `### 🛡️ Sağlanan Haklar & Yetkiler:\n` +
+      `• **Moderatör Rolleri:** Tüm yönetim yetkileriniz aktif edildi.\n` +
+      `• **Personel Kaydı:** Statünüz aktif edilip İK sistemine eklendiniz.\n` +
+      `• **Yetkili Rozeti:** Profilinize resmi yetkili nişanı tanımlandı.\n\n` +
+      `### 🚀 Sonraki Adım:\n` +
+      `Lütfen yetkili kanallarındaki talimatları takip edin. Aramıza hoş geldin! 💪`
     )
-    .setFooter({ text: 'Eko Yıldız • MOD-ALIM Sistemi' })
+    .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları & MOD-ALIM Sistemi' })
     .setTimestamp();
 
   try {
@@ -388,15 +391,15 @@ async function askNextQuestion(userId, previousAnswer, client) {
 
   await safeSend(user, {
     embeds: [new EmbedBuilder()
-      .setColor(0x7c6af7)
-      .setAuthor({ name: `🛡️ MOD-ALIM MÜLAKATı • Soru ${progress}/7` })
-      .setDescription(cleanReply)
-      .addFields({
-        name: '📊 İlerleme',
-        value: `\`${progressBar}\` ${progress}/7`,
-        inline: false,
-      })
-      .setFooter({ text: 'Cevabını yazarak gönder. DM bağlantını açık tut.' })
+      .setColor(0x5865F2)
+      .setTitle(`🛡️ MASTER MODERATÖR MÜLAKATI • Soru ${progress} / 7`)
+      .setDescription(
+        `# 📋 Mülakat Sorusu ${progress}\n\n` +
+        `> **${cleanReply}**\n\n` +
+        `### 📊 Mülakat İlerlemesi:\n` +
+        `\`${progressBar}\` **(${progress}/7 Tamamlandı)**`
+      )
+      .setFooter({ text: '💬 Cevabınızı bu mesaja yanıt olarak yazıp doğrudan gönderebilirsiniz.' })
       .setTimestamp()],
   }, `soru-${progress}`);
 
@@ -511,18 +514,23 @@ async function finalizeInterview(userId, accepted, summary, client) {
     if (user) {
       await safeSend(user, {
         embeds: [new EmbedBuilder()
-          .setColor(0x4ade80)
-          .setTitle('🎉 TEBRİKLER! MÜLAKATINIZ ONAYLANDI!')
+          .setColor(0x2ecc71)
+          .setTitle('🎉 TEBRİKLER! MÜLAKATINIZ BÜYÜK BAŞARIYLA ONAYLANDI!')
           .setThumbnail(user.avatarURL() || null)
           .setDescription(
-            `Mülakatınız ve oryantasyonunuz **başarıyla onaylandı**! 🏆\n\n` +
-            `**Ekoyıldız** sunucusundaki tüm moderatör rolleriniz ve yetkileriniz tanımlanmıştır.`
+            `# 🏆 MODERATÖRLÜK MÜLAKATINI GEÇTİNİZ!\n\n` +
+            `Sayın **${user.username}** 👋,\n\n` +
+            `> Master Moderatör mülakatını **başarıyla tamamladınız!**\n` +
+            `> EkoYıldız sunucusundaki tüm moderatör yetkileriniz ve personel statünüz aktif edilmiştir.\n\n` +
+            `### 📊 Mülakat Karne Özeti:\n` +
+            `• **Ortalama Başarı Puanı:** \`${avgScore} / 10\` ⭐\n` +
+            `• **Tamamlanan Soru Sayısı:** \`${answered} / 7\`\n` +
+            `• **Mülakat Süresi:** \`${minutes}d ${seconds}s\`\n\n` +
+            `### 💬 Yapay Zekâ & İK Değerlendirmesi:\n` +
+            `\`\`\`\n${cleanSummary || 'Başarılı analiz ve mükemmel kural bilgisi.'}\n\`\`\`\n\n` +
+            `🚀 **Moderatör Okulu ve oryantasyon süreciniz başlatılmıştır.**`
           )
-          .addFields(
-            { name: '📊 Mülakat Sonuçları', value: `Ortalama Puan: **${avgScore}/10**\nSüre: **${minutes}d ${seconds}s**`, inline: false },
-            { name: '✨ Değerlendirme', value: cleanSummary || '—', inline: false }
-          )
-          .setFooter({ text: 'Eko Yıldız • MOD-ALIM Sistemi' })
+          .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları & MOD-ALIM Sistemi' })
           .setTimestamp()],
       }, 'tebrik');
     }
@@ -530,29 +538,32 @@ async function finalizeInterview(userId, accepted, summary, client) {
     // ── Yöneticiye bildir (Yorumla & Onayla Butonlu) ──
     const admin = await client.users.fetch(info.adminId).catch(() => null);
     if (admin) {
-      const statusLine = `Ekoyıldız Rolleri: ${roleOk ? '✅' : '❌'}  |  Staff Kaydı: ${staffOk ? '✅' : '❌'}`;
+      const statusLine = `Ekoyıldız Rolleri: ${roleOk ? '✅ Aktif' : '❌ Beklemede'}  |  Staff Kaydı: ${staffOk ? '✅ Tamamlandı' : '❌ Beklemede'}`;
 
       const commentRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`mod_interview_comment_${userId}`).setLabel('💬 Mülakatı Yorumla').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId(`mod_interview_confirm_final_${userId}`).setLabel('✅ Oryantasyon Verildi & Tamamla').setStyle(ButtonStyle.Success)
+        new ButtonBuilder().setCustomId(`mod_interview_confirm_final_${userId}`).setLabel('✅ Oryantasyonu Onayla & Tamamla').setStyle(ButtonStyle.Success)
       );
 
       await safeSend(admin, {
         embeds: [new EmbedBuilder()
-          .setColor(0x4ade80)
-          .setTitle('✅ MÜLAKAT TAMAMLANTI: ONAY BEKLİYOR')
+          .setColor(0x2ecc71)
+          .setTitle('✅ MÜLAKAT TAMAMLANTI: YÖNETİCİ ONAY MASASI')
           .setThumbnail(user?.avatarURL() || null)
           .setDescription(
-            `**Aday:** ${user?.tag || `<@${userId}>`}\n` +
-            `**Yönetici:** <@${info.adminId}>\n\n` +
-            `👇 Onaylamadan önce aday mülakatını yorumlayabilir veya doğrudan oryantasyonu tamamlayabilirsiniz.`
+            `# 📋 Moderatör Mülakat Değerlendirme Raporu\n\n` +
+            `> **Aday:** ${user?.tag || `<@${userId}>`}\n` +
+            `> **Sorumlu Yönetici:** <@${info.adminId}>\n\n` +
+            `### 📊 Detaylı Mülakat İstatistikleri:\n` +
+            `• **Ortalama Puan:** \`${avgScore} / 10\`\n` +
+            `• **Cevaplanan Soru:** \`${answered} / 7\`\n` +
+            `• **Tamamlanma Süresi:** \`${minutes}d ${seconds}s\`\n\n` +
+            `### ⚙️ Entegrasyon Durumu:\n` +
+            `\`${statusLine}\`\n\n` +
+            `### 📝 Yapay Zeka Özeti:\n` +
+            `\`\`\`\n${cleanSummary || 'Başarılı mülakat performansı.'}\n\`\`\``
           )
-          .addFields(
-            { name: '📊 Sonuçlar', value: `**Ortalama Puan:** ${avgScore}/10\n**Toplam Soru:** ${answered}/7\n**Süre:** ${minutes}d ${seconds}s`, inline: false },
-            { name: '🔧 Sistem Durumu', value: statusLine, inline: false },
-            { name: '💬 Değerlendirme', value: cleanSummary || '—', inline: false }
-          )
-          .setFooter({ text: 'Sistem Tarihi: ' + new Date().toLocaleString('tr-TR') })
+          .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları Otomasyonu' })
           .setTimestamp()],
         components: [commentRow]
       }, 'admin-kabul');
@@ -564,16 +575,19 @@ async function finalizeInterview(userId, accepted, summary, client) {
       await safeSend(user, {
         embeds: [new EmbedBuilder()
           .setColor(0xed4245)
-          .setTitle('❌ MÜLAKAT SONUCU: REDDEDİLDİ')
+          .setTitle('❌ MÜLAKAT SONUCU: BAŞARISIZ')
           .setThumbnail(user.avatarURL() || null)
           .setDescription(
-            `Bu sefer moderatör kriterlerini karşılayamadınız.\n\n` +
-            `Ama bu son değil! Kendini geliştirerek tekrar başvurabilirsin. 💪`
-          )
-          .addFields(
-            { name: '📊 Sonuçlar', value: `Ortalama Puan: **${avgScore}/10**\nSüre: **${minutes}d ${seconds}s**`, inline: false },
-            { name: '💬 Geri Bildirim', value: cleanSummary || '—', inline: false },
-            { name: '💡 Sonraki Adımlar', value: 'Değerlendirmede belirtilen alanlara odaklanarak kendini geliştir. Daha sonra tekrar başvurabilirsin!', inline: false }
+            `# 📋 Moderatörlük Mülakat Sonucu\n\n` +
+            `Sayın **${user.username}**,\n\n` +
+            `> Bu mülakat turunda belirlenen moderatörlük kriterlerinin gerisinde kaldığınız tespit edilmiştir.\n\n` +
+            `### 📊 Mülakat İstatistikleriniz:\n` +
+            `• **Ortalama Puan:** \`${avgScore} / 10\`\n` +
+            `• **Tamamlanan Soru:** \`${answered} / 7\`\n` +
+            `• **Toplam Süre:** \`${minutes}d ${seconds}s\`\n\n` +
+            `### 💬 Geri Bildirim ve Değerlendirme:\n` +
+            `\`\`\`\n${cleanSummary || 'Yetersiz puan veya değerlendirme kriteri.'}\n\`\`\`\n\n` +
+            `💡 *Kendinizi geliştirip daha sonra tekrar başvurabilirsiniz. Başarılar!*`
           )
           .setFooter({ text: 'Eko Yıldız • MOD-ALIM Sistemi' })
           .setTimestamp()],
@@ -589,12 +603,15 @@ async function finalizeInterview(userId, accepted, summary, client) {
           .setTitle('❌ MÜLAKAT SONUCU: RET')
           .setThumbnail(user?.avatarURL() || null)
           .setDescription(
-            `**Aday:** ${user?.tag || `<@${userId}>`}\n` +
-            `**Yönetici:** <@${info.adminId}>`
-          )
-          .addFields(
-            { name: '📊 Sonuçlar', value: `**Ortalama Puan:** ${avgScore}/10\n**Toplam Soru:** ${answered}/7\n**Süre:** ${minutes}d ${seconds}s`, inline: false },
-            { name: '💬 Değerlendirme', value: cleanSummary || '—', inline: false }
+            `# ❌ Mülakat Başarısız Oldu\n\n` +
+            `> **Aday:** ${user?.tag || `<@${userId}>`}\n` +
+            `> **Yönetici:** <@${info.adminId}>\n\n` +
+            `### 📊 Sonuçlar:\n` +
+            `• **Ortalama Puan:** \`${avgScore} / 10\`\n` +
+            `• **Tamamlanan Soru:** \`${answered} / 7\`\n` +
+            `• **Süre:** \`${minutes}d ${seconds}s\`\n\n` +
+            `### 💬 Değerlendirme:\n` +
+            `\`\`\`\n${cleanSummary || 'Kriterler sağlanamadı.'}\n\`\`\``
           )
           .setFooter({ text: 'Sistem Tarihi: ' + new Date().toLocaleString('tr-TR') })
           .setTimestamp()],

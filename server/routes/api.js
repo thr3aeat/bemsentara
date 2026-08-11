@@ -2555,6 +2555,16 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
             ],
           };
           await user.send(payload).catch(() => {});
+
+          // Etkinlik Sorumlusu (Event Staff) oryantasyonunu başlat
+          if (status === 'APPROVED' && updated.formType === 'event_staff') {
+            try {
+              const { startEventStaffOnboarding } = require("../../bot/services/eventStaffOnboarding");
+              await startEventStaffOnboarding(targetId, client);
+            } catch (err) {
+              console.error('[EventStaffOnboarding] Integration error:', err.message);
+            }
+          }
         }
       }
     } catch (_) {}

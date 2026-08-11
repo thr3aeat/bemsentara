@@ -341,6 +341,57 @@ async function handleButtonInteraction(interaction) {
     return handleSchoolButtons(interaction, interaction.client);
   }
 
+  // ── Etkinlik Sorumlusu (Event Staff) Oryantasyonu Butonları ────────────────
+  if (customId.startsWith("event_onboard_step_")) {
+    const { getOnboardingStepContent, completeEventStaffOnboarding } = require("../services/eventStaffOnboarding");
+    const parts = customId.replace("event_onboard_step_", "").split("_");
+    const stepNumber = parseInt(parts[0]);
+    const userId = parts[1];
+
+    // Kullanıcı kontrolü
+    if (interaction.user.id !== userId) {
+      return interaction.reply({ content: "❌ Bu oryantasyon size ait değil.", ephemeral: true });
+    }
+
+    try {
+      const stepContent = getOnboardingStepContent(stepNumber);
+      await interaction.reply({ embeds: [stepContent.embed], ephemeral: true });
+    } catch (err) {
+      console.error('[EventStaffOnboarding] Step error:', err.message);
+      await interaction.reply({ content: "❌ Hata: " + err.message, ephemeral: true });
+    }
+    return;
+  }
+
+  if (customId.startsWith("event_onboard_complete_")) {
+    const userId = customId.replace("event_onboard_complete_", "");
+
+    // Kullanıcı kontrolü
+    if (interaction.user.id !== userId) {
+      return interaction.reply({ content: "❌ Bu oryantasyon size ait değil.", ephemeral: true });
+    }
+
+    try {
+      const { completeEventStaffOnboarding } = require("../services/eventStaffOnboarding");
+      await interaction.deferReply({ ephemeral: true });
+      
+      const success = await completeEventStaffOnboarding(userId, interaction.client);
+      if (success) {
+        await interaction.editReply({ 
+          content: "✅ **Oryantasyon Tamamlandı!** Etkinlik Sorumlusu rolü başarıyla verildi. 🎉" 
+        });
+      } else {
+        await interaction.editReply({ 
+          content: "❌ Rol verme sırasında hata oluştu. Lütfen yönetim ekibiyle iletişime geçin." 
+        });
+      }
+    } catch (err) {
+      console.error('[EventStaffOnboarding] Completion error:', err.message);
+      await interaction.reply({ content: "❌ Hata: " + err.message, ephemeral: true });
+    }
+    return;
+  }
+
   if (customId.startsWith("staff_claim_accept_")) {
     const parts = customId.replace("staff_claim_accept_", "").split("_");
     const ticketId = parts[0];

@@ -2882,19 +2882,20 @@ async function getMorningBriefingComponents(progress) {
 /**
  * Rütbeye özel toleranslı görev yapmama sınırı (gün cinsinden)
  * Level 1 (Stajyer): 3 gün
- * Level 2 (Personel): 5 gün
- * Level 3 (Kıdemli Personel): 25 gün
- * Level 4 (Sekreter): 30 gün
- * Level 5 (Kıdemli Sekreter): 35 gün
- * Level 6 (Genel Koordinatör): 40 gün
+ * Level 1 (Stajyer): 10 gün
+ * Level 2 (Personel): 15 gün
+ * Level 3 (Kıdemli Personel): 35 gün
+ * Level 4 (Sekreter): 45 gün
+ * Level 5 (Kıdemli Sekreter): 60 gün
+ * Level 6 (Genel Koordinatör): 90 gün
  */
 function getInactivityLimit(level) {
-  if (level <= 1) return 3;
-  if (level === 2) return 5;
-  if (level === 3) return 25;
-  if (level === 4) return 30;
-  if (level === 5) return 35;
-  return 40;
+  if (level <= 1) return 10;
+  if (level === 2) return 15;
+  if (level === 3) return 35;
+  if (level === 4) return 45;
+  if (level === 5) return 60;
+  return 90;
 }
 
 // ── Uyarı DM ──────────────────────────────────────────────────────────────
@@ -4004,7 +4005,16 @@ async function runDailyCheck(client) {
       const isOnLeave = p.leaves?.usedDays?.includes(checkDate);
       const isUserInactive = isOnLeave || (await hasInactivityRole(p.userId, client));
 
+      const hasPartialActivity = p.daily?.date === checkDate &&
+        ((p.daily?.greetCount || 0) > 0 || (p.daily?.voiceMinutes || 0) >= 15);
+
       if (!completedToday && !isUserInactive) {
+        if (hasPartialActivity) {
+          console.log(`[staffSystem] ${p.userId} kısmi aktiflik sağladığı için inaktiflik cezası ertelendi.`);
+          await p.save();
+          continue;
+        }
+
         p.warnings.inactivityCount = (p.warnings.inactivityCount || 0) + 1;
         p.warnings.count = p.warnings.inactivityCount;
         p.stats.consecutiveDays = 0;
@@ -4035,8 +4045,11 @@ async function runDailyCheck(client) {
                 .setColor(0x3498db)
                 .setTitle("🛡️ Otomatik İzin Kredisi Kullanıldı (Auto-Leave Catch)")
                 .setDescription(
+                  `# 🛡️ Otomatik İzin Kredisi Devreye Girdi\n\n` +
                   `Sayın Yetkili <@${p.userId}>,\n\n` +
-                  `Üst üste görevlerinizi aksattığınız tespit edildi. Ancak hesabınızda **İzin Kredisi** bulunduğu için **1 günlük İzin Krediniz otomatik harcandı** ve ceza almanız / PIP kontratına girmeniz engellendi!\n\n` +
+                  `> **İnaktiflik Durumu:** Uzun süredir görevlerinizi aksattığınız tespit edildi.\n` +
+                  `> **Koruma Devrede:** Hesabınızda bulunan **İzin Kredisi** sayesinde **1 günlük İzin Krediniz otomatik harcandı** ve PIP/Ceza kontratı **ertelendi!**\n\n` +
+                  `### 📊 Güncel Durum Bilgileri:\n` +
                   `• **Kalan İzin Krediniz:** \`${totalLeaveCredits - 1} gün\`\n` +
                   `• **İzin / Mazeret Bildirimi:** Panel üzerinden resmi inaktiflik talebi açabilirsiniz.\n` +
                   `• **Görev Erteleme:** Yoğun olduğunuz günlerde uyarılardaki **[⏩ Görevi Ertele]** butonunu kullanabilirsiniz.`
@@ -4046,12 +4059,12 @@ async function runDailyCheck(client) {
               await user.send({ embeds: [autoLeaveEmbed] }).catch(() => {});
             } catch (_) {}
           } else {
-            // PIP başlat — 24 Saatlik Grace Period toleransı ver
+            // PIP başlat — 72 Saatlik Grace Period esnek toleransı ver
             p.pip = p.pip || {};
             p.pip.isActive = true;
             p.pip.signed = false;
             p.pip.startedAt = new Date();
-            p.pip.gracePeriodEnd = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat tolerans
+            p.pip.gracePeriodEnd = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 saat (3 gün) geniş tolerans
             p.pip.consecutiveSuccessDays = 0;
             await p.save();
 
@@ -4061,11 +4074,13 @@ async function runDailyCheck(client) {
                 .setColor(0xe67e22)
                 .setTitle("⚠️ Performans İyileştirme Planı (PIP) Kontratı")
                 .setDescription(
+                  `# ⚠️ Performans İyileştirme Planı (PIP)\n\n` +
                   `Sayın Yetkili <@${p.userId}>,\n\n` +
-                  `Günlük hedeflerinizi ${maxLimit} gün boyunca aksattığınız tespit edilmiştir. Sistem tarafından kadronuzun duraklatılması üzeresiniz.\n\n` +
-                  `İnsan Kaynakları politikalarımız gereği size **24 saatlik tolerans süresi** verilerek **Performans İyileştirme Planı (PIP)** başlatılmıştır.\n\n` +
-                  `• **Ne Yapmalısınız?** 24 saat içinde panelinizdeki **[📋 PIP Kontratını İmzala]** butonuna tıklayarak kontratı imzalamalı ve 3 gün boyunca hedefleri başarmalısınız.\n` +
-                  `• **İmzalamazsanız?** Rolünüz geçici olarak duraklatılacaktır (Paused status).`
+                  `Günlük hedeflerinizi **${maxLimit} gün** boyunca üst üste aksattığınız tespit edilmiştir. Kadronuz duraklatılmadan önce size genişletilmiş **72 saatlik (3 gün) tolerans süresi** tanınmıştır.\n\n` +
+                  `### 📋 Yapılması Gerekenler:\n` +
+                  `• **İmza:** 72 saat içinde panelinizdeki **[📋 PIP Kontratını İmzala]** butonuna tıklayarak kontratı onaylayın.\n` +
+                  `• **Hedef:** Kontrat sonrasında 3 gün boyunca günlük hedefleri başarmalısınız.\n` +
+                  `• **İmzalanmazsa:** 72 saat sonunda rolünüz geçici olarak duraklatılacaktır (*Paused* status).`
                 )
                 .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları' })
                 .setTimestamp();

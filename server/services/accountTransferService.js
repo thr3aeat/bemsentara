@@ -81,6 +81,13 @@ async function transferAccount(oldDiscordId, newDiscordId, newDiscordUsername, m
         modReports: oldStaffProgress.modReports,
         duty: oldStaffProgress.duty,
         settings: oldStaffProgress.settings,
+        // ✅ Mod paneli puanları ve tüm veriler
+        adminOverride: oldStaffProgress.adminOverride,
+        promotedAt: oldStaffProgress.promotedAt,
+        score: oldStaffProgress.score,
+        totalScore: oldStaffProgress.totalScore,
+        warnings: oldStaffProgress.warnings,
+        infractions: oldStaffProgress.infractions,
         metadata: {
           ...oldStaffProgress.metadata,
           transferredFrom: oldDiscordId,

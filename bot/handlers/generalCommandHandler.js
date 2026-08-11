@@ -1351,18 +1351,19 @@ async function handleGeneralCommand(interaction) {
 
       if (sent) {
         const successEmbed = new EmbedBuilder()
-          .setColor(0x4ade80)
-          .setTitle('✅ MOD-ALIM Mülakatı Gönderildi')
+          .setColor(0x2ecc71)
+          .setTitle('✅ MOD-ALIM: Moderatör Mülakat Daveti İletildi')
           .setDescription(
-            `**Aday:** ${target}\n` +
-            `**Tarih:** ${new Date().toLocaleString('tr-TR')}\n\n` +
-            `Kullanıcıya mülakat daveti DM'de gönderildi.`
+            `# 🛡️ MÜLAKAT DAVETİ BAŞARIYLA GÖNDERİLDİ\n\n` +
+            `> **Hedef Aday:** ${target} (\`${target.id}\`)\n` +
+            `> **Gönderen Yönetici:** <@${interaction.user.id}>\n` +
+            `> **İşlem Tarihi:** ${new Date().toLocaleString('tr-TR')}\n\n` +
+            `### 📋 Mülakat Süreç Detayları:\n` +
+            `• **Mülakat Tipi:** Master Moderatör Mülakatı (7 Soru)\n` +
+            `• **Kanal:** Özel DM Kutusu (AI Gözetmenli)\n` +
+            `• **Tahmini Süre:** 5-10 dakika`
           )
-          .addFields(
-            { name: '⏱️ Beklenen Süre', value: '5-10 dakika', inline: false },
-            { name: '📋 Mülakat Turu', value: 'MOD-ALIM: 7 Soru - Master Moderatör Mülakatı', inline: false }
-          )
-          .setFooter({ text: 'Eko Yıldız • MOD-ALIM Sistemi' })
+          .setFooter({ text: 'Eko Yıldız • İnsan Kaynakları & MOD-ALIM Sistemi' })
           .setTimestamp();
 
         return interaction.editReply({ embeds: [successEmbed] });

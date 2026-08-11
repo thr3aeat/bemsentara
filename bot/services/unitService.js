@@ -265,21 +265,23 @@ async function postUnitIntroductions(client) {
     for (const [key, config] of Object.entries(UNIT_CONFIG)) {
       const unitEmbed = new EmbedBuilder()
         .setColor(config.color)
-        .setTitle(`${config.icon} ${config.label}`)
+        .setTitle(`${config.icon} ${config.label} — YETKİLİ VE RESMİ BİRİM ALIMI`)
         .setDescription(
-          `**Açıklama:**\n${config.description}\n\n` +
-          `🔒 **Birim Yetkileri & Ayrıcalıkları:**\n` +
-          `- **${config.label}** üyelerine özel rol ve rütbe hiyerarşisi.\n` +
-          `- Günlük brifinglerine eklenen özel birim görevleri ve **%25 ekstra terfi katkısı** fırsatları.\n` +
-          `- 15 kademeli rütbe ilerlemesi. En yüksek rütbedekiler (Rütbe 13-15) alt rütbeleri denetleme ve terfi ettirme yetkisine sahiptir.\n\n` +
-          `📋 **Birim Günlük Görevi:**\n*${config.tasks}*`
+          `# ${config.icon} ${config.label} KADROSU\n\n` +
+          `> **Birim Görev Alanı:** ${config.description}\n\n` +
+          `### 🔒 Birim Yetkileri & Ayrıcalıkları:\n` +
+          `• **Özel Rol Hiyerarşisi:** 15 kademeli rütbe ve yetkilendirme sistemi.\n` +
+          `• **Terfi Avantajı:** Özel brifing görevleriyle **+%25 ekstra XP/terfi katkısı**.\n` +
+          `• **Yönetim Yetkisi:** Üst rütbeler (Rütbe 13-15) alt rütbeleri denetleyebilir.\n\n` +
+          `### 📋 Günlük Birim Sorumluluğu:\n` +
+          `\`\`\`\n${config.tasks}\n\`\`\``
         )
-        .setFooter({ text: `EkoYıldız Birim Tanıtım Sistemi` });
+        .setFooter({ text: `EkoYıldız Birim Tanıtım ve Alım Yönetimi` });
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`apply_unit_${key}`)
-          .setLabel(`📝 ${config.label} Sınavını Başlat`)
+          .setLabel(`🚀 ${config.label} Sınavını ve Başvurusunu Başlat`)
           .setStyle(ButtonStyle.Success)
       );
 
@@ -380,29 +382,29 @@ JSON formatında cevap ver: {"questions": [{"question": "...", "options": ["A", 
       
       const embed = new EmbedBuilder()
         .setColor(config.color)
-        .setTitle(`📢 HEMEN BAŞLIYORUZ: ${config.label} Alımları!`)
+        .setTitle(`📢 RESMEN BAŞLADI: ${config.label} ALIMLARI!`)
         .setDescription(
-          `Değerli EkoYıldız Üyeleri,\n\n` +
-          `**${config.label}** kadrolarımızı güçlendirmek amacıyla alım süreci **HEMEN** başlatılmıştır!\n\n` +
-          `🎯 **Sınav Detayları:**\n` +
-          `- **Başlangıç:** Şu anda (Hemen)\n` +
-          `- **Sınavı Başlat:** Aşağıdaki butonuna tıkla\n` +
-          `- **Geçiş Notu:** Minimum 8/10 doğru\n` +
-          `- **Toplam Soru:** 10 adet\n\n` +
-          `🎓 **Başvuru Süreci:**\n` +
-          `1. "📥 Başvur" butonuna tıkla\n` +
-          `2. AI sınav gözetmeni yanına gelecek\n` +
-          `3. DM'de soruları cevapla\n` +
-          `4. Sonuçları öğren\n\n` +
-          `⏰ **Zamanı Boşa Harcama!** Alım süreleri sınırlıdır. Başarılar dileriz! 🚀`
+          `# 🛡️ ${config.label} YETKİLİ ALIMI BAŞLADI!\n\n` +
+          `Sayın EkoYıldız Üyeleri,\n\n` +
+          `> **${config.label}** kadromuzu güçlendirmek amacıyla AI destekli sınav ve mülakat başvuruları **RESMEN AÇILMIŞTIR!**\n\n` +
+          `### 🎯 Sınav ve Başvuru Detayları:\n` +
+          `• **Sınav Modu:** Yapay Zekâ Destekli Canlı Gözetmen\n` +
+          `• **Geçiş Notu:** En az **8 / 10** doğru yanıt\n` +
+          `• **Soru Sayısı:** 10 adet özel alan sorusu\n` +
+          `• **Geçerlilik:** Sınırlı süre ve sınırlı kontenjan\n\n` +
+          `### 🎓 Başvuru Adımları:\n` +
+          `1️⃣ Aşağıdaki **[🚀 Şimdi Başvur ve Sınava Gir]** butonuna tıklayın.\n` +
+          `2️⃣ AI Gözetmeni DM kutunuz üzerinden sınav sorularını aktaracaktır.\n` +
+          `3️⃣ Sınavı tamamlayıp sonucunuzu anında öğrenin!\n\n` +
+          `⏰ *Kontenjanlar dolmadan hemen başvurunuzu gerçekleştirin. Başarılar dileriz!* 🚀`
         )
-        .setFooter({ text: 'EkoYıldız Yapay Zeka Sınav ve Birim Alım Sistemi' })
+        .setFooter({ text: 'EkoYıldız Yapay Zeka Sınav ve Birim Alım Otomasyonu' })
         .setTimestamp();
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`apply_unit_${recruitment._id}`)
-          .setLabel('📥 Şimdi Başla')
+          .setLabel('🚀 Şimdi Başvur ve Sınava Gir')
           .setStyle(ButtonStyle.Success)
       );
 

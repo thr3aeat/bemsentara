@@ -3713,6 +3713,23 @@ function renderAdminPage(user) {
       </div>
       <div id="restore-staff-result" style="margin-bottom:0.5rem;color:var(--success);"></div>
       <div id="restore-school-result" style="margin-bottom:1rem;color:var(--warning);"></div>
+
+      <!-- Account Transfer Bölümü -->
+      <div style="background:rgba(129,140,248,0.05);border:1px solid rgba(129,140,248,0.15);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;backdrop-filter:blur(8px);">
+        <h3 style="font-size:1.1rem;font-weight:800;color:#818cf8;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+          🔄 Hesap Geçişi (Account Transfer)
+        </h3>
+        <p style="font-size:0.9rem;color:var(--muted);margin-bottom:1rem;line-height:1.5;">
+          Bir kullanıcının <strong>tüm verileri</strong> (staff puanları, ekonomi, ticket'ları, mod paneli verisi vb.) başka bir Discord hesabına aktarır.
+        </p>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+          <input type="text" id="transfer-old-id" placeholder="Eski Discord ID veya kullanıcı adı" style="flex:1;min-width:220px;" />
+          <input type="text" id="transfer-new-id" placeholder="Yeni Discord ID" style="flex:1;min-width:220px;" />
+          <button type="button" class="btn btn-warning" onclick="performAccountTransfer()" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);color:#fb923c;">🔄 Hesap Geçir</button>
+        </div>
+        <div id="transfer-result" style="font-size:0.9rem;min-height:20px;color:var(--muted);"></div>
+      </div>
+
       <div id="admin-results"></div>
       <hr class="divider" style="margin-top:2rem;">
       <a href="/debug" style="color:var(--accent);">🔍 Debug sayfası</a>
@@ -4954,6 +4971,57 @@ function renderAdminPage(user) {
           adminSearchUsers();
         }
         else showToast(d.error || 'Kaydedilemedi', 'error');
+      }
+
+      // ── ACCOUNT TRANSFER ────────────────────────────────────────────────────
+      window.performAccountTransfer = async function() {
+        const oldId = document.getElementById('transfer-old-id').value.trim();
+        const newId = document.getElementById('transfer-new-id').value.trim();
+        const resultBox = document.getElementById('transfer-result');
+
+        if (!oldId || !newId) {
+          showToast('Eski ve yeni Discord ID\'lerini girin.', 'warning');
+          resultBox.style.color = 'var(--warning)';
+          resultBox.innerText = '⚠ Lütfen her iki alanı da doldurun.';
+          return;
+        }
+
+        resultBox.style.color = 'var(--muted)';
+        resultBox.innerText = '⏳ Hesap geçişi yapılıyor...';
+
+        try {
+          const res = await fetch('/api/account-transfer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              oldDiscordId: oldId,
+              newDiscordId: newId,
+              reason: 'Admin panelinden manuel transfer'
+            })
+          });
+
+          const d = await res.json().catch(() => ({}));
+
+          if (res.ok && d.success) {
+            showToast('✅ Hesap başarıyla geçirildi!', 'success');
+            resultBox.style.color = '#34d399';
+            resultBox.innerHTML = '<strong>✅ Başarılı!</strong><br>' +
+              'Eski ID: <code>' + adminEsc(oldId) + '</code><br>' +
+              'Yeni ID: <code>' + adminEsc(newId) + '</code><br>' +
+              'Transfer edilen veriler: Personel, Ekonomi, Ticket\'lar, Tüm Mod Paneli Verileri';
+            document.getElementById('transfer-old-id').value = '';
+            document.getElementById('transfer-new-id').value = '';
+            setTimeout(() => { resultBox.innerText = ''; }, 5000);
+          } else {
+            showToast(d.error || 'Transfer başarısız', 'error');
+            resultBox.style.color = '#fb7185';
+            resultBox.innerText = '❌ ' + (d.error || 'Hata oluştu');
+          }
+        } catch (err) {
+          showToast('Bağlantı hatası', 'error');
+          resultBox.style.color = '#fb7185';
+          resultBox.innerText = '❌ İstek hatası: ' + err.message;
+        }
       }
 
       window.quickBan = function(id, name) {

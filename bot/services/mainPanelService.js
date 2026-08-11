@@ -570,29 +570,31 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
 
   else if (tabName === "mod_alim") {
     embed
-      .setTitle("🛡️ MOD-ALIM: Moderatör Seçim & Başvuru Sistemi")
+      .setTitle("🛡️ MOD-ALIM: Moderatör Seçim & Yetkili Başvuru Paneli")
       .setColor(0xE74C3C)
       .setDescription(
-        "Moderatör alımı ve mülakat işlemlerini buradan yönetin.\n\n" +
-        "**Seçenekler:**\n" +
-        "📝 **Mülakat Gönder** — Adaya DM üzerinden 7 soruluk mülakat daveti gönderir.\n" +
-        "⚡ **Direkt Mod Alım** — Mülakatsız direkt olarak moderatör olarak atar ve okula yönlendirir."
+        `# 🛡️ YETKİLİ VE MODERATÖR ALIM MERKEZİ\n\n` +
+        `> **Eko Yıldız Moderasyon Komisyonu** tarafından adayların mülakat ve oryantasyon süreçlerini yönetin.\n\n` +
+        `### 📋 Kullanılabilir Yönetim İşlemleri:\n` +
+        `• 📝 **AI Mülakat Gönder** — Adaya DM üzerinden 7 soruluk Master Moderatör Mülakatı başlatır.\n` +
+        `• ⚡ **Direkt Moderatör Ataması** — Mülakatı atlayarak adayı doğrudan Moderatör Okulu'na kaydeder.\n` +
+        `• 🎓 **Oryantasyon & Okul Takibi** — Adayın okul ve sözleşme sürecini denetleyin.`
       );
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("panel_mod_alim_search")
-        .setLabel("📝 Mülakat Gönder")
+        .setLabel("📝 Mülakat Daveti Gönder")
         .setStyle(ButtonStyle.Primary)
         .setDisabled(!auth.isAdmin),
       new ButtonBuilder()
         .setCustomId("panel_mod_alim_direct")
-        .setLabel("⚡ Direkt Mod Alım")
+        .setLabel("⚡ Direkt Moderatör Ataması")
         .setStyle(ButtonStyle.Danger)
         .setDisabled(!auth.isAdmin),
       new ButtonBuilder()
         .setCustomId("panel_tab_system")
-        .setLabel("⬅️ Geri Dön")
+        .setLabel("⬅️ Ana Menüye Dön")
         .setStyle(ButtonStyle.Secondary)
     );
 
