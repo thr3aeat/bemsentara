@@ -625,7 +625,77 @@ router.post("/api/tickets/:ticketId/close", async (req, res) => {
       source: "Web Panel",
     });
 
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { sendTicketCloseRatingDM } = require("../../bot/services/ticketRatingService");
+      const botClient = getDiscordClient ? getDiscordClient() : null;
+      if (botClient) {
+        sendTicketCloseRatingDM(ticket, req.user.discordUsername, reason, botClient).catch(() => {});
+      }
+    } catch (_) {}
+
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/tickets/:ticketId/rate", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekli." });
+
+  const { score, note } = req.body;
+  const ratingScore = parseInt(score, 10);
+
+  if (isNaN(ratingScore) || ratingScore < 1 || ratingScore > 5) {
+    return res.status(400).json({ error: "Lütfen 1 ile 5 arasında geçerli bir puan verin." });
+  }
+
+  try {
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) return res.status(404).json({ error: "Ticket bulunamadı." });
+
+    if (ticket.userId !== req.user.discordId) {
+      return res.status(403).json({ error: "Bu ticket size ait değil." });
+    }
+
+    if (ticket.rated) {
+      return res.status(400).json({ error: "Bu ticket'ı zaten değerlendirdiniz." });
+    }
+
+    ticket.rated = true;
+    ticket.ratingScore = ratingScore;
+    ticket.ratingNote = note ? String(note).trim() : null;
+    await ticket.save();
+
+    // Ödül: Moderatöre yıldız başına 100 Coin ekle
+    const staffId = ticket.claimedBy || ticket.closedBy;
+    if (staffId) {
+      try {
+        const Economy = require("../../models/Economy");
+        const { saveStoreNow } = require("../../models/Store");
+        const earned = ratingScore * 100;
+
+        let eco = await Economy.findOne({ userId: staffId });
+        if (!eco) {
+          eco = new Economy({ userId: staffId });
+        }
+        eco.balance = (eco.balance || 0) + earned;
+        eco.totalEarned = (eco.totalEarned || 0) + earned;
+        await eco.save();
+        saveStoreNow();
+
+        const { addNotification } = require("../../utils/notification");
+        await addNotification(staffId, {
+          title: "⭐ Yeni Puan ve Ödül",
+          message: `\`${ticket.ticketId}\` numaralı ticket için ${ratingScore} yıldız aldınız (+${earned} coin).`,
+          icon: "⭐"
+        });
+      } catch (ecoErr) {
+        console.warn("[web-rating] Ödül verilemedi:", ecoErr.message);
+      }
+    }
+
+    res.json({ success: true, message: "Değerlendirmeniz başarıyla kaydedildi! Teşekkür ederiz." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

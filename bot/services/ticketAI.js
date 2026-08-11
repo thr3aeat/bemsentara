@@ -434,21 +434,10 @@ async function autoResolveTicket(channel, ticket, resolveMsg, client) {
     await ticket.save().catch(() => {});
   }
 
-  // Kullanıcıya DM bildir
+  // Kullanıcıya DM bildir (Yıldız ve Değerlendirme butonları ile)
   try {
-    const u = await client.users.fetch(ticket?.userId);
-    await u.send({
-      embeds: [new EmbedBuilder()
-        .setColor(0x4ade80)
-        .setTitle('✅ Destek Talebiniz Çözüldü!')
-        .setDescription(
-          `**Çözüm:** ${resolveMsg}\n\n` +
-          `Sorunuz yapay zeka tarafından yanıtlandı.\n` +
-          `⭐ Hizmetimizi değerlendirmeyi unutmayın!`
-        )
-        .setFooter({ text: 'Eko Yıldız • AI Destek' })
-        .setTimestamp()],
-    });
+    const { sendTicketCloseRatingDM } = require("./ticketRatingService");
+    await sendTicketCloseRatingDM(ticket, "Sentara AI", `AI oto-çözüm: ${resolveMsg.slice(0, 100)}`, client);
   } catch (_) {}
 
   // 3 dakika sonra kanalı sil

@@ -188,7 +188,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
         if (channel) {
           const cleanName = (record.username || 'kullanici').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100);
-          if (channel.name.startsWith('g-')) {
+          if (channel.name && typeof channel.name === 'string' && channel.name.startsWith('g-')) {
             await channel.setName(cleanName, "g- ön eki kaldırıldı").catch(() => {});
           }
         } else {

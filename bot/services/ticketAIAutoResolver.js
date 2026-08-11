@@ -193,6 +193,11 @@ async function handleSmartResolveButton(interaction) {
         }, 5000);
       }
 
+      try {
+        const { sendTicketCloseRatingDM } = require("./ticketRatingService");
+        await sendTicketCloseRatingDM(ticket, "AI Auto-Resolver", ticket.closeReason, client);
+      } catch (_) {}
+
       return interaction.editReply({ content: '✅ Biletiniz otomatik olarak çözüldü olarak işaretlendi ve kapatıldı. İletişiminiz için teşekkür ederiz!' });
     }
 

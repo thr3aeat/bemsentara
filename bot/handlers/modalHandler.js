@@ -2785,26 +2785,10 @@ async function handleCloseReasonModal(interaction) {
       source: "Discord Kapat Butonu",
     });
 
-    // 3) Ticket sahibine DM gönder
+    // 3) Ticket sahibine DM ve değerlendirme butonlarını gönder
     try {
-      const ticketOwner = await interaction.client.users.fetch(ticket.userId);
-      const dmEmbed = new EmbedBuilder()
-        .setColor(0xed4245)
-        .setTitle("🔒 Ticket'ınız Kapatıldı")
-        .setDescription(
-          `Ticket'ınız **${interaction.user.username}** adlı kişi tarafından kapatıldı.\n\n` +
-          `**Sebep:** ${reason}\n\n` +
-          `Ticket'ı yeniden açmak veya destek ekibini değerlendirmek için aşağıdaki butonları kullanabilirsiniz.`
-        )
-        .addFields(
-          { name: "🎫 Ticket ID", value: `\`${ticket.ticketId}\``, inline: true },
-          { name: "📋 Konu", value: ticket.subject, inline: true }
-        )
-        .setFooter({ text: "Sentara Support • Gizlilik politikamız gereği değerlendirme notunuz anonim tutulur." })
-        .setTimestamp();
-
-      const dmButtons = buildReopenAndRateRow(ticketId);
-      await ticketOwner.send({ embeds: [dmEmbed], components: [dmButtons] });
+      const { sendTicketCloseRatingDM } = require("../services/ticketRatingService");
+      await sendTicketCloseRatingDM(ticket, interaction.user.username, reason, interaction.client);
     } catch (dmErr) {
       console.warn("[closeTicket] Kullanıcıya DM gönderilemedi:", dmErr.message);
     }

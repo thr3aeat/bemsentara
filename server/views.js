@@ -2237,59 +2237,7 @@ function renderDashboard(user, staffProgress) {
           const res = await fetch('/api/auth/roblox/friend-verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ robloxId: pendingRobloxId, username: pendingUsername })
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            showToast('Doğrulama başarılı! Sayfa yenileniyor...', 'success');
-            setTimeout(() => window.location.reload(), 1500);
-          } else {
-            showToast(data.error || 'Arkadaşlık isteği henüz kabul edilmemiş.', 'error');
-          }
-        } catch (err) {
-          showToast('Bağlantı hatası.', 'error');
-        } finally {
-          btn.textContent = '✅ Doğrulamayı Tamamla';
-          btn.disabled = false;
-        }
-      }
-    </script>
-  `;
-  return _layout('Dashboard', user, content, '', '/dashboard');
-}
-
-
-// ─────────────────────────────────────────────
-// TICKETS PAGE
-// ─────────────────────────────────────────────
-function renderTicketsPage(user) {
-  const content = `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
-        <h1 style="font-size:2rem;font-weight:800;">🎫 Ticket'larım</h1>
-        <a href="/tickets/new" class="btn btn-sm">➕ Yeni Ticket</a>
-      </div>
-
-      <!-- Search + Filter bar -->
-      <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-        <input id="search-input" type="text" placeholder="🔍 Ticket ara..." style="flex:1;min-width:180px;margin-bottom:0;">
-        <select id="filter-status" style="width:auto;margin-bottom:0;font-size:0.9rem;">
-          <option value="">Tümü</option>
-          <option value="open">Açık</option>
-          <option value="closed">Kapalı</option>
-        </select>
-        <select id="filter-cat" style="width:auto;margin-bottom:0;font-size:0.9rem;">
-          <option value="">Tüm Kategoriler</option>
-        </select>
-      </div>
-
-      <div id="ticket-count" style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;"></div>
-      <div id="tickets-container">
-        <div style="color:var(--muted);text-align:center;padding:3rem;">Yükleniyor...</div>
-      </div>
-    </div>
-
-    <!-- Kapatma sebebi modal -->
+            body    <!-- Kapatma sebebi modal -->
     <div id="close-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
       <div style="background:rgba(14,14,26,0.9);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:2rem;max-width:480px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.4);">
         <h3 style="margin-bottom:1rem;">🔒 Ticket'ı Kapat</h3>
@@ -2297,6 +2245,32 @@ function renderTicketsPage(user) {
         <div style="display:flex;gap:0.75rem;">
           <button class="btn btn-danger" onclick="confirmClose()" style="flex:1;">Kapat</button>
           <button class="btn btn-ghost" onclick="document.getElementById('close-modal').style.display='none'" style="flex:1;">İptal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⭐ Yıldız ve Yorum Değerlendirme Modalı -->
+    <div id="rate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+      <div style="background:rgba(15,23,42,0.95);backdrop-filter:blur(24px);border:1px solid rgba(251,191,36,0.3);border-radius:20px;padding:2rem;max-width:500px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.5);">
+        <h3 style="margin-bottom:0.5rem;color:#fbbf24;display:flex;align-items:center;gap:0.5rem;">⭐ Destek Talebini Değerlendir</h3>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">Aldığınız destek hizmeti hakkındaki düşüncelerinizi ve puanınızı paylaşın.</p>
+        
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;color:#e2e8f0;">Puanınız (1-5 Yıldız):</label>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+          <button type="button" class="star-btn" onclick="selectStar(1)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">1 ⭐</button>
+          <button type="button" class="star-btn" onclick="selectStar(2)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">2 ⭐</button>
+          <button type="button" class="star-btn" onclick="selectStar(3)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">3 ⭐</button>
+          <button type="button" class="star-btn" onclick="selectStar(4)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">4 ⭐</button>
+          <button type="button" class="star-btn star-active" onclick="selectStar(5)" style="flex:1;padding:0.6rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.5);border-radius:10px;color:#fbbf24;font-weight:800;cursor:pointer;">5 ⭐</button>
+        </div>
+        <input type="hidden" id="rate-score-input" value="5">
+
+        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;color:#e2e8f0;">Değerlendirme Notu / Görüşünüz (İsteğe Bağlı):</label>
+        <textarea id="rate-note-input" rows="3" placeholder="Destek hakkında düşüncelerinizi yazın..." style="width:100%;margin-bottom:1.5rem;"></textarea>
+
+        <div style="display:flex;gap:0.75rem;">
+          <button class="btn" onclick="confirmRate()" style="flex:1;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:800;border:none;">⭐ Gönder</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('rate-modal').style.display='none'" style="flex:1;">İptal</button>
         </div>
       </div>
     </div>
@@ -2313,12 +2287,13 @@ function renderTicketsPage(user) {
       .ticket-item:last-child { margin-bottom:0; }
       .ticket-header { display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem; }
       .ticket-meta { display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;font-size:0.8rem;color:var(--muted); }
-      .ticket-actions { display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap; }
+      .ticket-actions { display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;align-items:center; }
     </style>
 
     <script>
       let allTickets = [];
       let pendingCloseId = null;
+      let pendingRateId = null;
 
       async function loadTickets() {
         try {
@@ -2385,11 +2360,21 @@ function renderTicketsPage(user) {
           const hasChannel = t.channelId && !t.channelDeleted;
           const source = t.source === 'web' ? '🌐 Web' : '💬 Discord';
 
+          let rateButton = '';
+          if (!isOpen) {
+            if (t.rated) {
+              rateButton = \`<span style="font-size:0.8rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;padding:0.3rem 0.7rem;border-radius:12px;font-weight:700;" title="\${t.ratingNote || 'Not yok'}">⭐ \${t.ratingScore}/5 Yıldız Verildi</span>\`;
+            } else {
+              rateButton = \`<button class="btn btn-sm" onclick="openRateModal('\${t.ticketId}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;font-weight:700;">⭐ Değerlendir</button>\`;
+            }
+          }
+
           const actions = isOpen
             ? \`<button class="btn btn-sm btn-danger" onclick="openCloseModal('\${t.ticketId}')">🔒 Kapat</button>
                \${hasChannel ? \`<a href="https://discord.com/channels/\${t.guildId || ''}/\${t.channelId}" target="_blank" class="btn btn-sm btn-ghost">💬 Kanala Git</a>\` : ''}
                <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`
-            : \`<button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">🔓 Tekrar Aç</button>
+            : \`\${rateButton}
+               <button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">🔓 Tekrar Aç</button>
                <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`;
 
           return \`<div class="ticket-item" id="ticket-\${t.ticketId}">
@@ -2407,7 +2392,7 @@ function renderTicketsPage(user) {
             <div class="ticket-meta">
               \${ago ? \`<span>🕐 \${ago}</span>\` : ''}
               \${!isOpen && closedAgo ? \`<span>🔒 \${closedAgo} kapatıldı</span>\` : ''}
-              \${t.closeReason ? \`<span title="\${t.closeReason}">� \${t.closeReason.slice(0,40)}\${t.closeReason.length>40?'…':''}</span>\` : ''}
+              \${t.closeReason ? \`<span title="\${t.closeReason}">💬 \${t.closeReason.slice(0,40)}\${t.closeReason.length>40?'…':''}</span>\` : ''}
             </div>
             <div class="ticket-actions">\${actions}</div>
           </div>\`;
@@ -2417,6 +2402,100 @@ function renderTicketsPage(user) {
       // ── Kapatma ──
       function openCloseModal(ticketId) {
         pendingCloseId = ticketId;
+        document.getElementById('close-reason-input').value = '';
+        document.getElementById('close-modal').style.display = 'flex';
+      }
+
+      async function confirmClose() {
+        if (!pendingCloseId) return;
+        const reason = document.getElementById('close-reason-input').value.trim() || 'Web üzerinden kapatıldı';
+        document.getElementById('close-modal').style.display = 'none';
+        try {
+          const res = await fetch('/api/tickets/' + pendingCloseId + '/close', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+          });
+          if (res.ok) { showToast('Ticket kapatıldı.', 'success'); await loadTickets(); }
+          else { const d = await res.json().catch(()=>({})); showToast(d.error || 'Hata', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+        pendingCloseId = null;
+      }
+
+      // ── ⭐ Yıldız Değerlendirme ──
+      function selectStar(score) {
+        document.getElementById('rate-score-input').value = score;
+        document.querySelectorAll('.star-btn').forEach((btn, idx) => {
+          if (idx + 1 === score) {
+            btn.style.background = 'rgba(251,191,36,0.2)';
+            btn.style.borderColor = 'rgba(251,191,36,0.5)';
+            btn.style.color = '#fbbf24';
+          } else {
+            btn.style.background = 'rgba(255,255,255,0.05)';
+            btn.style.borderColor = 'rgba(255,255,255,0.1)';
+            btn.style.color = '#fff';
+          }
+        });
+      }
+
+      function openRateModal(ticketId) {
+        pendingRateId = ticketId;
+        selectStar(5);
+        document.getElementById('rate-note-input').value = '';
+        document.getElementById('rate-modal').style.display = 'flex';
+      }
+
+      async function confirmRate() {
+        if (!pendingRateId) return;
+        const score = document.getElementById('rate-score-input').value;
+        const note = document.getElementById('rate-note-input').value.trim();
+        document.getElementById('rate-modal').style.display = 'none';
+
+        try {
+          const res = await fetch('/api/tickets/' + pendingRateId + '/rate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score, note })
+          });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok) {
+            showToast(d.message || 'Değerlendirmeniz alındı!', 'success');
+            await loadTickets();
+          } else {
+            showToast(d.error || 'Değerlendirme gönderilemedi.', 'error');
+          }
+        } catch {
+          showToast('Bağlantı hatası.', 'error');
+        }
+        pendingRateId = null;
+      }
+
+      // ── Tekrar Aç ──
+      async function reopenTicket(ticketId) {
+        if (!confirm('Bu ticket\\'ı yeniden açmak istiyor musun?')) return;
+        try {
+          const res = await fetch('/api/tickets/' + ticketId + '/reopen', { method: 'POST' });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok) { showToast(d.message || 'Ticket yeniden açıldı.', 'success'); await loadTickets(); }
+          else showToast(d.error || 'Hata', 'error');
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+      }
+
+      // ── Sil ──
+      async function deleteTicket(ticketId) {
+        if (!confirm('Bu ticket\\'ı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
+        try {
+          const res = await fetch('/api/tickets/' + ticketId, { method: 'DELETE' });
+          const d = await res.json().catch(() => ({}));
+          if (res.ok) { showToast(d.message || 'Ticket başarıyla tamamen silindi.', 'success'); await loadTickets(); }
+          else showToast(d.error || 'Hata', 'error');
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+      }
+
+      document.getElementById('filter-status').addEventListener('change', renderTickets);
+      document.getElementById('filter-cat').addEventListener('change', renderTickets);
+      document.getElementById('search-input').addEventListener('input', renderTickets);
+      loadTickets();      pendingCloseId = ticketId;
         document.getElementById('close-reason-input').value = '';
         document.getElementById('close-modal').style.display = 'flex';
       }
