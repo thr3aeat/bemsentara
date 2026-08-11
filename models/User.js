@@ -100,10 +100,23 @@ function UserConstructor(data) {
   return merged;
 }
 
-// Support both: User.findOne() and new User()
-UserConstructor.findOne = User.findOne;
-UserConstructor.findById = User.findById;
-UserConstructor.find = User.find;
+UserConstructor.findOne = function (query) {
+  const found = users.findOne(query);
+  if (!found) return Promise.resolve(null);
+  return Promise.resolve(UserConstructor(found));
+};
+
+UserConstructor.findById = function (id) {
+  const found = users.findById(id);
+  if (!found) return Promise.resolve(null);
+  return Promise.resolve(UserConstructor(found));
+};
+
+UserConstructor.find = function (query) {
+  const list = users.find(query);
+  return Promise.resolve((list || []).map((u) => UserConstructor(u)));
+};
+
 UserConstructor.create = User.create;
 
 module.exports = UserConstructor;

@@ -1167,8 +1167,11 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
   }
   if (req.body.modStatus !== undefined) {
     user.modStatus = String(req.body.modStatus);
-    if (user.modStatus === "dismissed") {
+    if (user.modStatus === "dismissed" || user.modStatus === "resigned") {
       user.isLeft = true;
+      user.isStaff = false;
+    } else if (user.modStatus === "paused") {
+      user.isLeft = false;
       user.isStaff = false;
     } else if (user.modStatus === "active") {
       user.isLeft = false;
@@ -1176,11 +1179,16 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
     }
   }
 
+  // Double-check: if modStatus is dismissed/paused/resigned, enforce isStaff = false
+  if (user.modStatus === "dismissed" || user.modStatus === "resigned" || user.modStatus === "paused") {
+    user.isStaff = false;
+  }
+
   await user.save();
   saveStoreNow();
 
   // 🛡️ Web Admin Panel — Staff Progress Mod Seviyesi & Statü Yönetimi
-  if (req.body.modLevel !== undefined || req.body.modStatus !== undefined) {
+  if (req.body.modLevel !== undefined || req.body.modStatus !== undefined || req.body.isStaff !== undefined) {
     try {
       const StaffProgress = require("../../models/StaffProgress");
       const { getOrCreate, ROLES } = require("../../bot/services/staffSystem");
@@ -1199,7 +1207,13 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
           p.level = Number(req.body.modLevel);
           p.adminOverride = true;
         }
-        if (req.body.modStatus !== undefined) p.status = String(req.body.modStatus);
+        if (req.body.modStatus !== undefined) {
+          p.status = String(req.body.modStatus);
+          if (p.status === 'dismissed' || p.status === 'resigned') {
+            p.dismissedAt = new Date();
+            p.dismissReason = 'Web Admin Panel tarafından görevden ayrıldı yapıldı';
+          }
+        }
         p.promotedAt = new Date();
         await p.save();
 
@@ -1210,15 +1224,24 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
           if (guild) {
             const member = await guild.members.fetch(targetId).catch(() => null);
             if (member) {
-              const newLevel = p.level;
-              const oldRoleId = ROLES[oldLevel];
-              const newRoleId = ROLES[newLevel];
+              // Eğer kullanıcı ayrıldı, duraklatıldı veya staff yetkisi kaldırıldıysa tüm mod rollerini kaldır
+              if (p.status === 'dismissed' || p.status === 'resigned' || p.status === 'paused' || !user.isStaff) {
+                for (const rId of Object.values(ROLES)) {
+                  if (rId && member.roles.cache.has(rId)) {
+                    await member.roles.remove(rId, 'Kadro dışı / Ayrıldı yapıldı').catch(() => {});
+                  }
+                }
+              } else {
+                const newLevel = p.level;
+                const oldRoleId = ROLES[oldLevel];
+                const newRoleId = ROLES[newLevel];
 
-              if (oldRoleId && oldRoleId !== newRoleId) {
-                await member.roles.remove(oldRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
-              }
-              if (newRoleId) {
-                await member.roles.add(newRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+                if (oldRoleId && oldRoleId !== newRoleId) {
+                  await member.roles.remove(oldRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+                }
+                if (newRoleId) {
+                  await member.roles.add(newRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+                }
               }
             }
           }

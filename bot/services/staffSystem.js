@@ -4281,10 +4281,19 @@ async function syncInvalidPromotionsOnStartup(client) {
     for (const p of allStaff) {
       const currentLvl = p.level || 1;
       
-      // Admin/Yönetici atamaları ve seviyeler kalıcıdır; restart esnasında asla düşürülmez.
       if (guild) {
         const member = await guild.members.fetch(p.userId).catch(() => null);
         if (member) {
+          // Eğer kullanıcı ayrıldı, istifa etti veya aktif değilse mod rollerini kaldır
+          if (p.status && p.status !== 'active') {
+            for (const rId of Object.values(ROLES)) {
+              if (rId && member.roles.cache.has(rId)) {
+                await member.roles.remove(rId, 'Bot Başlatma Temizliği: Kadro Dışı Personel Rolü').catch(() => {});
+              }
+            }
+            continue;
+          }
+
           const targetRoleId = ROLES[currentLvl];
           if (targetRoleId && !member.roles.cache.has(targetRoleId)) {
             console.log(`[staffSystem] 👑 Rütbe Koruması: ${p.userId} kullanıcısına Level ${currentLvl} rolü veriliyor...`);
