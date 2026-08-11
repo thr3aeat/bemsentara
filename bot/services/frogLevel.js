@@ -28,10 +28,10 @@ const FROG_ROLES = [
   { level: 16, name: '🦖 Kral Penguen', id: '1518695643063910541' },
 ];
 
-// ── Her seviye için gereken XP (Dengeli Artış Eğrisi) ────────────────────────
-// 150 base XP, her seviyede %35 artış + seviye başı bonus XP (1.35 çarpan)
+// ── Her seviye için gereken XP (Dengeli Artış Eğrisi - Az Daha Zorlaştırılmış) ──
+// 180 base XP, her seviyede %40 artış + seviye başı bonus XP (1.40 çarpan)
 function xpToNextLevel(currentLevel) {
-  return Math.floor(150 * Math.pow(1.35, currentLevel) + (currentLevel * 100));
+  return Math.floor(180 * Math.pow(1.40, currentLevel) + (currentLevel * 125));
 }
 
 // Toplam seviyeye ulaşmak için gereken XP
@@ -46,7 +46,7 @@ function totalXpForLevel(level) {
 // ── XP kaynakları ─────────────────────────────────────────────────────────
 const XP_PER_MESSAGE = 5;   // Her mesajda kazanılan XP
 const XP_PER_VOICE_MIN = 3;   // Her ses dakikasında kazanılan XP
-const MSG_COOLDOWN_MS = 45 * 1000; // 45 saniye mesaj cooldown (sohbet kalitesi için ideal)
+const MSG_COOLDOWN_MS = 60 * 1000; // 60 saniye (1 dakika) mesaj cooldown
 
 function todayStr() {
   const d = new Date(Date.now() + 3 * 60 * 60 * 1000); // TR Time UTC+3
