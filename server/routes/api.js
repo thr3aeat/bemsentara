@@ -4557,6 +4557,32 @@ module.exports = router;
  * Hesap geçişi yap - POST /api/account-transfer
  * Moderatör bir kullanıcının tüm verilerini başka bir Discord hesabına aktarır
  */
+// Helper: Hesap transferi yetki kontrolü
+async function isAccountTransferAuthorized(reqUser) {
+  if (!reqUser) return false;
+  if (reqUser.isAdmin || reqUser.isStaff) return true;
+  if (process.env.DISCORD_OWNER_ID && reqUser.discordId === process.env.DISCORD_OWNER_ID) return true;
+
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    const staffProgress = await StaffProgress.findOne({ userId: reqUser.discordId });
+    if (staffProgress && (staffProgress.adminOverride || (staffProgress.level || 0) >= 2 || staffProgress.status === 'active')) {
+      return true;
+    }
+
+    const User = require("../../models/User");
+    const dbUser = await User.findOne({ discordId: reqUser.discordId });
+    if (dbUser && (dbUser.isAdmin || dbUser.isStaff)) return true;
+  } catch (e) {
+    console.error('[AccountTransfer] Auth check error:', e.message);
+  }
+  return false;
+}
+
+/**
+ * Hesap geçişi yap - POST /api/account-transfer
+ * Moderatör bir kullanıcının tüm verilerini başka bir Discord hesabına aktarır
+ */
 router.post("/api/account-transfer", async (req, res) => {
   try {
     // Oturum kontrolü
@@ -4564,12 +4590,10 @@ router.post("/api/account-transfer", async (req, res) => {
       return res.status(401).json({ error: "Oturum açmalısınız." });
     }
 
-    // Moderatör yetkisi kontrolü
-    const StaffProgress = require("../../models/StaffProgress");
-    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
-    
-    if (!staffProgress || staffProgress.level < 5) {
-      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    // Yetki kontrolü
+    const authorized = await isAccountTransferAuthorized(req.user);
+    if (!authorized) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör veya Yönetici yetkisine sahip olmalısınız." });
     }
 
     const { oldDiscordId, newDiscordId, newDiscordUsername, reason } = req.body;
@@ -4657,12 +4681,9 @@ router.get("/api/account-transfer/history", async (req, res) => {
       return res.status(401).json({ error: "Oturum açmalısınız." });
     }
 
-    // Moderatör yetkisi kontrolü
-    const StaffProgress = require("../../models/StaffProgress");
-    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
-    
-    if (!staffProgress || staffProgress.level < 5) {
-      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    const authorized = await isAccountTransferAuthorized(req.user);
+    if (!authorized) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör veya Yönetici yetkisine sahip olmalısınız." });
     }
 
     const { getTransferHistory } = require("../services/accountTransferService");
@@ -4685,12 +4706,9 @@ router.get("/api/account-transfer/user/:discordId", async (req, res) => {
       return res.status(401).json({ error: "Oturum açmalısınız." });
     }
 
-    // Moderatör yetkisi kontrolü
-    const StaffProgress = require("../../models/StaffProgress");
-    const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
-    
-    if (!staffProgress || staffProgress.level < 5) {
-      return res.status(403).json({ error: "Bu işlem için Moderatör (Level 5+) yetkisine sahip olmalısınız." });
+    const authorized = await isAccountTransferAuthorized(req.user);
+    if (!authorized) {
+      return res.status(403).json({ error: "Bu işlem için Moderatör veya Yönetici yetkisine sahip olmalısınız." });
     }
 
     const { discordId } = req.params;

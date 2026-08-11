@@ -95,11 +95,12 @@ router.get("/account-transfer", async (req, res) => {
   if (!req.user) return res.redirect("/login");
   
   try {
-    // Moderatör yetkisi kontrolü
+    // Moderatör / Yönetici yetkisi kontrolü
     const StaffProgress = require("../../models/StaffProgress");
     const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
+    const isAuthorized = req.user.isAdmin || req.user.isStaff || (process.env.DISCORD_OWNER_ID && req.user.discordId === process.env.DISCORD_OWNER_ID) || (staffProgress && (staffProgress.adminOverride || (staffProgress.level || 0) >= 2 || staffProgress.status === 'active'));
     
-    if (!staffProgress || staffProgress.level < 5) {
+    if (!isAuthorized) {
       return res.status(403).send(`
         <!DOCTYPE html>
         <html lang="tr">
@@ -114,7 +115,7 @@ router.get("/account-transfer", async (req, res) => {
         </head>
         <body>
           <h1>⛔ Yetkisiz Erişim</h1>
-          <p>Bu sayfaya erişmek için Moderatör (Level 5+) yetkisine sahip olmalısınız.</p>
+          <p>Bu sayfaya erişmek için Moderatör veya Yönetici yetkisine sahip olmalısınız.</p>
           <a href="/">← Ana Sayfaya Dön</a>
         </body>
         </html>
