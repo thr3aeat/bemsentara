@@ -105,6 +105,46 @@ async function sendModAuditToAmbassador(client, guild, moderatorUser, targetUser
 }
 
 /**
+ * 🚨 Elçi bir moderatörün cezasını iptal/düzeltme yaptığında moderatörün siciline işler
+ * 3 Hatalı işlemde Moderatör otomatik PIP (Sıkı Takip) sürecine alınır.
+ */
+async function processModMistake(moderatorId, client) {
+  try {
+    const p = await StaffProgress.findOne({ userId: moderatorId });
+    if (!p) return;
+
+    p.stats = p.stats || {};
+    p.stats.invalidActions = (p.stats.invalidActions || 0) + 1;
+
+    // 3 Hatalı işlemde Moderatör otomatik PIP (Sıkı Takip) sürecine alınır
+    if (p.stats.invalidActions >= 3 && !p.pip?.isActive) {
+      p.pip = {
+        isActive: true,
+        signed: false,
+        startedAt: new Date(),
+        gracePeriodEnd: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 Saat tolerans
+        consecutiveSuccessDays: 0
+      };
+      await p.save();
+
+      // Moderatöre DM Gönder
+      const modUser = await client.users.fetch(moderatorId).catch(() => null);
+      if (modUser) {
+        await modUser.send(
+          `⚠️ **DİKKAT:** Topluluk Elçisi tarafından 3 adet hatalı/haksız ceza verdiğiniz tespit edildi.\n` +
+          `Hesabınız otomatik olarak **PIP (Performans İyileştirme) Soruşturmasına** alınmıştır. Lütfen dikkatli olun!`
+        ).catch(() => {});
+      }
+      console.log(`[toplulukElcisi] Moderator ${moderatorId} placed under PIP due to 3 invalid actions.`);
+    } else {
+      await p.save();
+    }
+  } catch (err) {
+    console.error('[toplulukElcisi] processModMistake error:', err.message);
+  }
+}
+
+/**
  * Topluluk Elçisinin denetim butonuna tıklamasını işler
  */
 async function handleAmbassadorAuditButton(interaction, client) {
@@ -174,6 +214,11 @@ async function handleAmbassadorAuditButton(interaction, client) {
           await dbUser.save();
         }
       }
+
+      // Moderatöre hatalı ceza kaydı işle (PIP kontrolü)
+      if (auditObj.moderatorId) {
+        await processModMistake(auditObj.moderatorId, client);
+      }
     } catch (errRev) {
       console.error('[toplulukElcisi] Revert error:', errRev.message);
     }
@@ -237,6 +282,10 @@ async function handleAmbassadorFixSelect(interaction, client) {
     } else if (selectedOption === 'JAIL_30M' && targetUser) {
       await jailUser(guild, targetUser.id, `Topluluk Elçisi Düzeltmesi: ${auditObj.reason}`, 30, 500);
       newActionText = '30 Dk Hapis';
+    }
+
+    if (auditObj.moderatorId) {
+      await processModMistake(auditObj.moderatorId, client);
     }
 
     // Mod loguna yazdır
@@ -388,15 +437,6 @@ async function handleAmbassadorRequestButton(interaction, client) {
   if (isApprove) {
     if (reqObj.onApprove) await reqObj.onApprove();
 
-    // Terfi ise StaffProgress level artır
-    if (reqObj.requestType.toLowerCase().includes('terfi')) {
-      let p = await StaffProgress.findOne({ userId: reqObj.requesterId });
-      if (p) {
-        p.level = (p.level || 1) + 1;
-        await p.save();
-      }
-    }
-
     const updated = EmbedBuilder.from(interaction.message.embeds[0])
       .setColor(0x2ecc71)
       .setTitle(`✅ TALEP ONAYLANDI (${reqObj.requestType.toUpperCase()})`)
@@ -417,13 +457,632 @@ async function handleAmbassadorRequestButton(interaction, client) {
   return true;
 }
 
+// ── ⚖️ MODERATÖR YÜKSEK MAHKEMESİ & İTİRAZ JÜRİSİ (JURY CHIEF) ────────────────
+
+const pendingAppeals = new Map();
+
+/**
+ * İtiraz veya kovulma soruşturmasını Yüksek Mahkeme Paneline düşürür
+ */
+async function sendModAppealToAmbassador(client, appealObj) {
+  try {
+    const appealId = 'appeal_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+    pendingAppeals.set(appealId, { ...appealObj, appealId, createdAt: Date.now() });
+
+    const ambassadors = await getAmbassadors(client);
+    if (ambassadors.length === 0) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setTitle('⚖️ TOPLULUK ELÇİSİ YÜKSEK MAHKEMESİ & İTİRAZ PANELDEDİR')
+      .setDescription(
+        `Sayın Topluluk Elçisi (Baş Yargıç),\n\n` +
+        `<@${appealObj.userId}> kullanıcısı **${appealObj.appealType || 'Cezaya/İşten Çıkarılmaya İtiraz'}** talebinde bulunmuştur.\n\n` +
+        `**İtiraz Nedeni:** ${appealObj.reason || 'Belirtilmedi'}`
+      )
+      .addFields(
+        { name: '👤 İtiraz Eden Üye/Yetkili', value: `<@${appealObj.userId}> (\`${appealObj.userId}\`)`, inline: true },
+        { name: '📋 İtiraz Türü', value: appealObj.appealType || 'İtiraz', inline: true },
+        { name: '👮 İlgili Moderatör/Sistem', value: appealObj.modId ? `<@${appealObj.modId}>` : 'Otomasyon', inline: true }
+      )
+      .setFooter({ text: 'Eko Yıldız • Yüksek Mahkeme & Ombudsman Paneli' })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`elcisi_court_reinstate_${appealId}`).setLabel('⚖️ İşe İade Et / Cezayı İptal Et').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`elcisi_court_clearwarn_${appealId}`).setLabel('🧹 Sicil & Uyarıları Temizle').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`elcisi_court_reject_${appealId}`).setLabel('❌ İtirazı Reddet (Onayla)').setStyle(ButtonStyle.Danger)
+    );
+
+    for (const ambassador of ambassadors) {
+      await ambassador.send({ embeds: [embed], components: [row] }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[toplulukElcisi] sendModAppealToAmbassador error:', err.message);
+  }
+}
+
+/**
+ * Yetkiliyi işe iade eder (p.dismissedAt resetler ve yetkileri verir)
+ */
+async function reinstateStaff(userId, client, ambassadorUser) {
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p) return false;
+
+    p.status = 'active';
+    p.dismissedAt = null;
+    p.dismissReason = null;
+    p.resignedAt = null;
+    p.resignReason = null;
+
+    if (p.warnings) {
+      p.warnings.count = 0;
+      p.warnings.warnedDays = [];
+    }
+
+    await p.save();
+
+    // Yetki rolünü geri ver
+    for (const [, guild] of client.guilds.cache) {
+      const member = await guild.members.fetch(userId).catch(() => null);
+      if (member) {
+        const { ROLES } = require('./staffSystem');
+        const roleId = ROLES[p.level || 1];
+        if (roleId) await member.roles.add(roleId, 'Topluluk Elçisi Yüksek Mahkemesi İşe İade Kararı').catch(() => {});
+      }
+    }
+
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (user) {
+      await user.send(
+        `🏛️ **YÜKSEK MAHKEME KARARI:** Topluluk Elçisi <@${ambassadorUser.id}> tarafından yapılan inceleme sonucunda ` +
+        `haksız çıkarılma/ceza tespit edilmiş olup **işe iadeniz ve yetkileriniz eksiksiz onaylanmıştır!**`
+      ).catch(() => {});
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] reinstateStaff error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Kullanıcının sicil uyarısını siler
+ */
+async function clearStaffWarnings(userId, client, ambassadorUser) {
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (p && p.warnings) {
+      p.warnings.count = 0;
+      p.warnings.warnedDays = [];
+      p.warnings.inactivityCount = 0;
+      await p.save();
+    }
+
+    const u = await User.findOne({ discordId: userId });
+    if (u) {
+      u.warnCount = 0;
+      u.warnings = [];
+      await u.save();
+    }
+
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (user) {
+      await user.send(
+        `🧹 **YÜKSEK MAHKEME KARARI:** Topluluk Elçisi <@${ambassadorUser.id}> kararıyla ` +
+        `disiplin sicilinizdeki tüm uyarılar ve cezalar temizlenmiştir.`
+      ).catch(() => {});
+    }
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] clearStaffWarnings error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Yüksek Mahkeme buton etkileşimlerini işler
+ */
+async function handleAmbassadorCourtButton(interaction, client) {
+  const { customId, user } = interaction;
+  if (!customId.startsWith('elcisi_court_')) return false;
+
+  let appealId = '';
+  let action = '';
+
+  if (customId.startsWith('elcisi_court_reinstate_')) {
+    action = 'reinstate';
+    appealId = customId.replace('elcisi_court_reinstate_', '');
+  } else if (customId.startsWith('elcisi_court_clearwarn_')) {
+    action = 'clearwarn';
+    appealId = customId.replace('elcisi_court_clearwarn_', '');
+  } else if (customId.startsWith('elcisi_court_reject_')) {
+    action = 'reject';
+    appealId = customId.replace('elcisi_court_reject_', '');
+  }
+
+  const appealObj = pendingAppeals.get(appealId);
+  if (!appealObj) {
+    await interaction.reply({ content: '❌ Bu mahkeme dosyası karara bağlanmış veya bulunamadı.', ephemeral: true });
+    return true;
+  }
+
+  pendingAppeals.delete(appealId);
+
+  if (action === 'reinstate') {
+    await reinstateStaff(appealObj.userId, client, user);
+    const updated = EmbedBuilder.from(interaction.message.embeds[0])
+      .setColor(0x2ecc71)
+      .setTitle('⚖️ YÜKSEK MAHKEME KARARI: İŞE İADE EDİLDİ')
+      .addFields({ name: '️ Kararı Veren Yargıç Elçi', value: `<@${user.id}>`, inline: false });
+    await interaction.update({ embeds: [updated], components: [] }).catch(() => {});
+  } else if (action === 'clearwarn') {
+    await clearStaffWarnings(appealObj.userId, client, user);
+    const updated = EmbedBuilder.from(interaction.message.embeds[0])
+      .setColor(0x3498db)
+      .setTitle('🧹 YÜKSEK MAHKEME KARARI: SİCİL TEMİZLENDİ')
+      .addFields({ name: '️ Kararı Veren Yargıç Elçi', value: `<@${user.id}>`, inline: false });
+    await interaction.update({ embeds: [updated], components: [] }).catch(() => {});
+  } else {
+    const targetUser = await client.users.fetch(appealObj.userId).catch(() => null);
+    if (targetUser) {
+      await targetUser.send(`❌ **Yüksek Mahkeme Kararı:** İtiraz talebiniz Topluluk Elçisi (<@${user.id}>) tarafından reddedildi ve ceza sabit tutuldu.`).catch(() => {});
+    }
+    const updated = EmbedBuilder.from(interaction.message.embeds[0])
+      .setColor(0xed4245)
+      .setTitle('❌ YÜKSEK MAHKEME KARARI: İTİRAZ REDDEDİLDİ')
+      .addFields({ name: '️ Kararı Veren Yargıç Elçi', value: `<@${user.id}>`, inline: false });
+    await interaction.update({ embeds: [updated], components: [] }).catch(() => {});
+  }
+
+  return true;
+}
+
+// ── 💼 BİRİM VE LONCA FON YÖNETİCİSİ (BÜTÇE ŞEFİ) ──────────────────────────
+
+const UnitBudget = require('../../models/UnitBudget');
+
+/**
+ * Birim Liderinin Topluluk Elçisinden Bütçe/Elmas talep etmesini sağlar
+ */
+async function requestUnitBudgetFromAmbassador(client, requesterUser, unitName, requestedAmount, reason = '') {
+  try {
+    await sendModRequestToAmbassador(
+      client,
+      'Birim Bütçe & Elmas Talebi',
+      requesterUser,
+      { reason: `**${unitName}** için **${requestedAmount} TL/Elmas** bütçe talep ediyor.\n**Açıklama:** ${reason || 'Etkinlik ve Ödül Havuzu'}` },
+      async () => {
+        // Onaylandığında Birim Kasasına Bütçe Ekle
+        let ub = await UnitBudget.findOne({ unitName });
+        if (!ub) {
+          ub = new UnitBudget({ unitName, budget: 0, diamonds: 0 });
+        }
+        ub.budget = (ub.budget || 0) + requestedAmount;
+        await ub.save();
+
+        await requesterUser.send(
+          `✅ **BÜTÇE ONAYLANDI!** Topluluk Elçisi (Bütçe Şefi) tarafından **${unitName}** kasasına ` +
+          `**${requestedAmount} TL/Elmas** başarıyla aktarıldı!`
+        ).catch(() => {});
+      },
+      async () => {
+        await requesterUser.send(
+          `❌ **BÜTÇE REDDEDİLDİ:** **${unitName}** için yaptığınız **${requestedAmount} TL/Elmas** bütçe talebi Topluluk Elçisi tarafından uygun görülmedi.`
+        ).catch(() => {});
+      }
+    );
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] requestUnitBudgetFromAmbassador error:', err.message);
+    return false;
+  }
+}
+
+// ── 🛡️ ELÇİ VETO HAKKI & SUNUCU KİLİDİ (LOCKDOWN) ───────────────────────────
+
+let isLockdownActive = false;
+
+/**
+ * Elçi aşırı yetki kullanımında veya kitlesel ban/mute durumlarında Lockdown modunu dondurur/açar
+ */
+async function toggleAmbassadorLockdown(client, ambassadorUser, guild, reason = 'Aşırı Yetki Kullanımı / Güvenlik Tedbiri') {
+  try {
+    isLockdownActive = !isLockdownActive;
+
+    const embed = new EmbedBuilder()
+      .setColor(isLockdownActive ? 0xed4245 : 0x2ecc71)
+      .setTitle(isLockdownActive ? '🚨 SUNUCU KORUMA KİLİDİ (LOCKDOWN) AKTİF!' : '🛡️ SUNUCU KORUMA KİLİDİ KALDIRILDI')
+      .setDescription(
+        isLockdownActive
+          ? `Topluluk Elçisi Veto Hakkı tetiklendi! <@${ambassadorUser.id}> tarafından sunucu koruma kilidi devreye sokuldu.\n\n**Gerekçe:** ${reason}`
+          : `Topluluk Elçisi <@${ambassadorUser.id}> tarafından sunucu koruma kilidi kaldırıldı. Normal operasyona dönüldü.`
+      )
+      .setTimestamp();
+
+    if (guild) {
+      const logChannel = guild.channels.cache.get(MOD_CEZA_LOG_CHANNEL_ID)
+        || guild.channels.cache.find(c => c.name.includes('ceza') || c.name.includes('mod-log') || c.name.includes('duyuru'));
+      if (logChannel && logChannel.isTextBased()) {
+        await logChannel.send({ embeds: [embed] }).catch(() => {});
+      }
+    }
+
+    return isLockdownActive;
+  } catch (err) {
+    console.error('[toplulukElcisi] toggleAmbassadorLockdown error:', err.message);
+    return isLockdownActive;
+  }
+}
+
+function getLockdownState() {
+  return isLockdownActive;
+}
+
+// ── 🏛️ 1. SENATO & KRİZ KABİNESİ (SHADOW CABINET) ──────────────────────────
+
+const recentModActions = new Map();
+
+/**
+ * 60 saniyede 5+ moderasyon işlemi tespit edildiğinde Protocol Zero uyarısı verir
+ */
+async function trackProtocolZeroAction(client, guild, moderatorUser, actionType) {
+  try {
+    const modId = moderatorUser.id;
+    const now = Date.now();
+    let timestamps = recentModActions.get(modId) || [];
+    timestamps = timestamps.filter(t => now - t < 60 * 1000);
+    timestamps.push(now);
+    recentModActions.set(modId, timestamps);
+
+    if (timestamps.length >= 5) {
+      const ambassadors = await getAmbassadors(client);
+      const embed = new EmbedBuilder()
+        .setColor(0xed4245)
+        .setTitle('🚨 PROTOCOL ZERO: ŞÜPHELİ KİTLESEL MODERASYON UYARISI')
+        .setDescription(
+          `**DİKKAT!** <@${modId}> (${moderatorUser.tag}) 1 dakika içinde **${timestamps.length} adet** moderasyon işlemi gerçekleştirdi!\n\n` +
+          `Hesabın hacklenmiş veya aşırı yetki kötüye kullanımı ihtimaline karşı sunucuyu **Karantina Moduna** alabilir ve yetkilinin erişimini askıya alabilirsiniz.`
+        )
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`elcisi_protocol0_quarantine_${modId}`).setLabel('🛑 KARANTİNAYA AL & YETKİLERİ DONDUR').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId(`elcisi_protocol0_ignore_${modId}`).setLabel('✅ Yoksay (Normal İşlem)').setStyle(ButtonStyle.Secondary)
+      );
+
+      for (const ambassador of ambassadors) {
+        await ambassador.send({ embeds: [embed], components: [row] }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.error('[toplulukElcisi] trackProtocolZeroAction error:', err.message);
+  }
+}
+
+/**
+ * Protocol Zero karantinasını aktif eder ve yetkilinin erişimini askıya alır
+ */
+async function activateProtocolZero(client, ambassadorUser, moderatorId, guild) {
+  try {
+    const p = await StaffProgress.findOne({ userId: moderatorId });
+    if (p) {
+      p.status = 'suspended';
+      await p.save();
+    }
+
+    if (guild) {
+      const member = await guild.members.fetch(moderatorId).catch(() => null);
+      if (member) {
+        const { ROLES } = require('./staffSystem');
+        const roleIds = Object.values(ROLES);
+        for (const rId of roleIds) {
+          if (member.roles.cache.has(rId)) {
+            await member.roles.remove(rId, 'Protocol Zero Karantina').catch(() => {});
+          }
+        }
+      }
+    }
+
+    await toggleAmbassadorLockdown(client, ambassadorUser, guild, `<@${moderatorId}> şüpheli kitlesel işlem nedeniyle karantinaya alındı.`);
+
+    const modUser = await client.users.fetch(moderatorId).catch(() => null);
+    if (modUser) {
+      await modUser.send(
+        `🚨 **PROTOCOL ZERO UYARISI:** Kısa süre içerisinde yaptığınız yoğun moderasyon işlemleri nedeniyle ` +
+        `Topluluk Elçisi (<@${ambassadorUser.id}>) tarafından hesabınız **Karantinaya Alınmış** ve yetkileriniz geçici olarak dondurulmuştur.`
+      ).catch(() => {});
+    }
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] activateProtocolZero error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Merkez Bankası Kriz Vergisi Müdahale Oylaması Başlatır
+ */
+async function triggerCentralBankVote(client, marketSnapshot) {
+  try {
+    const ambassadors = await getAmbassadors(client);
+    if (ambassadors.length === 0) return;
+
+    const embed = new EmbedBuilder()
+      .setColor(0xe74c3c)
+      .setTitle('🏛️ SENATO & MERKEZ BANKASI MÜDAHALE OYLAMASI')
+      .setDescription(
+        `Sayın Topluluk Elçisi,\n\n` +
+        `Sunucu ekonomisi ikaz veriyor! **Piyasa Durumu:** \`${marketSnapshot.state}\` (Risk Puanı: ${marketSnapshot.riskScore})\n\n` +
+        `Kriz Vergisini düşürerek yetkilileri ve ekonomiyi teşvik etmek ister misiniz?`
+      )
+      .addFields(
+        { name: 'Mevcut Çarpan', value: `${marketSnapshot.multiplier}x`, inline: true },
+        { name: 'Mevcut Kriz Vergisi', value: `%${(marketSnapshot.crisisTaxRate * 100).toFixed(0)}`, inline: true }
+      )
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('elcisi_senate_tax_low').setLabel('📉 Kriz Vergisini İndir (%5) & Teşvik Ver (2.0x)').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('elcisi_senate_tax_high').setLabel('📈 Kriz Vergisini Artır (%20)').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('elcisi_senate_tax_normal').setLabel('⚖️ Mevcut Piyasayı Koru').setStyle(ButtonStyle.Secondary)
+    );
+
+    for (const ambassador of ambassadors) {
+      await ambassador.send({ embeds: [embed], components: [row] }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[toplulukElcisi] triggerCentralBankVote error:', err.message);
+  }
+}
+
+// ── 🎭 2. YERALTI TEŞKİLATI & GİZLİ MÜŞTERİ OPERASYONLARI (UNDERCOVER AUDITS) ─
+
+async function generateGhostReport(client, ambassadorUser, targetModId) {
+  try {
+    const p = await StaffProgress.findOne({ userId: targetModId });
+    if (!p) return null;
+
+    const invalidActions = p.stats?.invalidActions || 0;
+    const ticketsSolved = p.stats?.ticketsSolved || 0;
+    const warnings = p.warnings?.count || 0;
+
+    let grade = '🟢 A (Mükemmel)';
+    let recommendation = 'Yetkili başarıyla görev yapmaktadır.';
+    if (invalidActions > 1 || warnings > 0) {
+      grade = '🟡 C (Orta - Riskli)';
+      recommendation = 'Hatalı işlemler mevcut. Yakın takip önerilir.';
+    }
+    if (invalidActions >= 3 || p.pip?.isActive) {
+      grade = '🔴 F (Yetersiz - PIP Sürecinde)';
+      recommendation = 'Zorunlu AI Pratik Senaryosu atanması önerilir.';
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0x8e44ad)
+      .setTitle(`🕵️ GİZLİ DENETİM & PERFORMANS KARNESİ`)
+      .setDescription(`**Hedef Moderatör:** <@${targetModId}>\n**Performans Notu:** ${grade}`)
+      .addFields(
+        { name: '🎫 Çözülen Ticket', value: `${ticketsSolved}`, inline: true },
+        { name: '⚠️ Disiplin Uyarısı', value: `${warnings}`, inline: true },
+        { name: '❌ Hatalı Ceza Sayısı', value: `${invalidActions}`, inline: true },
+        { name: '📝 Değerlendirme Notu', value: recommendation, inline: false }
+      )
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`elcisi_ghost_pass_${targetModId}`).setLabel('⭐ Başarılı (+500 XP Bonus)').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`elcisi_ghost_fail_${targetModId}`).setLabel('📚 Zorunlu AI Pratik Eğitimi Ata').setStyle(ButtonStyle.Danger)
+    );
+
+    return { embeds: [embed], components: [row] };
+  } catch (err) {
+    console.error('[toplulukElcisi] generateGhostReport error:', err.message);
+    return null;
+  }
+}
+
+async function assignAIPracticeScenario(targetModId, client, ambassadorUser) {
+  try {
+    const p = await StaffProgress.findOne({ userId: targetModId });
+    if (p) {
+      p.schoolSystem = p.schoolSystem || {};
+      p.schoolSystem.status = 'phase1_blocks_completed';
+      await p.save();
+    }
+
+    const modUser = await client.users.fetch(targetModId).catch(() => null);
+    if (modUser) {
+      await modUser.send(
+        `📚 **TOPLULUK ELÇİSİ TALİMATI:** Topluluk Elçisi <@${ambassadorUser.id}> tarafından yapılan gizli denetim sonucunda ` +
+        `hesabınıza **Zorunlu AI Pratik Moderasyon Senaryosu** tanımlanmıştır. Lütfen en kısa sürede eğitim sınavınızı tamamlayın.`
+      ).catch(() => {});
+    }
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] assignAIPracticeScenario error:', err.message);
+    return false;
+  }
+}
+
+// ── ⚔️ 3. LONCA SAVAŞLARI & DEVLET HAZİNESİ (GUILD MASTER & TREASURY) ─────────
+
+async function requestStateTreasuryFund(client, requesterUser, unitName, amount = 5000, reason = '') {
+  try {
+    await sendModRequestToAmbassador(
+      client,
+      'Devlet Hazinesi Ödül Fonu',
+      requesterUser,
+      { reason: `**${unitName}** için Devlet Hazinesinden **${amount} E.C./Elmas** fon talep ediliyor.\n**Gerekçe:** ${reason || 'Etkinlik Ödülü'}` },
+      async () => {
+        let ub = await UnitBudget.findOne({ unitName });
+        if (!ub) ub = new UnitBudget({ unitName, budget: 0, diamonds: 0 });
+        ub.budget = (ub.budget || 0) + amount;
+        ub.diamonds = (ub.diamonds || 0) + Math.floor(amount / 100);
+        await ub.save();
+
+        let p = await StaffProgress.findOne({ userId: requesterUser.id });
+        if (p) {
+          p.gamification = p.gamification || {};
+          p.gamification.ecoCoins = (p.gamification.ecoCoins || 0) + amount;
+          await p.save();
+        }
+
+        await requesterUser.send(`💰 **DEVLET HAZİNESİ FONU AKTARILDI!** Topluluk Elçisi tarafından **${unitName}** biriminize **${amount} E.C. / Elmas** başarıyla aktarıldı!`).catch(() => {});
+      },
+      async () => {
+        await requesterUser.send(`❌ **DEVLET HAZİNESİ FONU REDDEDİLDİ:** Hazine talebiniz Topluluk Elçisi tarafından uygun görülmedi.`).catch(() => {});
+      }
+    );
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] requestStateTreasuryFund error:', err.message);
+    return false;
+  }
+}
+
+// ── 🕯️ 4. YÜKSEK MAHKEME & KAMU HİZMETİ BERAATİ & PIP REHABILITATION ───────────
+
+async function grantPardonWithCommunityService(userId, client, ambassadorUser, serviceTaskName = 'task_chat') {
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p) return false;
+
+    p.status = 'active';
+    p.dismissedAt = null;
+    p.dismissReason = null;
+
+    if (p.pip) {
+      p.pip.isActive = false;
+      p.pip.signed = false;
+    }
+
+    p.daily = p.daily || {};
+    p.daily.chosenTask = serviceTaskName;
+    p.daily.chosenTaskCompleted = false;
+
+    await p.save();
+
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (user) {
+      await user.send(
+        `🕯️ **YÜKSEK MAHKEME BERAAT KARARI:** Topluluk Elçisi <@${ambassadorUser.id}> kararıyla cezanız ` +
+        `**Kamu Hizmeti Görevine** çevrilmiştir! Görevinizi (${serviceTaskName}) tamamladığınızda beraatiniz kesinleşecektir.`
+      ).catch(() => {});
+    }
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] grantPardonWithCommunityService error:', err.message);
+    return false;
+  }
+}
+
+async function releaseFromPIP(userId, client, ambassadorUser) {
+  try {
+    const p = await StaffProgress.findOne({ userId });
+    if (p) {
+      p.pip = { isActive: false, signed: false };
+      p.stats = p.stats || {};
+      p.stats.invalidActions = 0;
+      await p.save();
+    }
+
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (user) {
+      await user.send(
+        `🛡️ **TOPLULUK ELÇİSİ KARARI:** <@${ambassadorUser.id}> kararıyla **PIP (Performans Takibi)** süreciniz sonlandırılmış ` +
+        `ve sicilinizdeki hatalı ceza puanları sıfırlanmıştır!`
+      ).catch(() => {});
+    }
+    return true;
+  } catch (err) {
+    console.error('[toplulukElcisi] releaseFromPIP error:', err.message);
+    return false;
+  }
+}
+
+/**
+ * Yeni Senato, Protocol Zero ve Ghost buton etkileşimlerini yönlendirir
+ */
+async function handleAmbassadorAdvancedButton(interaction, client) {
+  const { customId, user, guild } = interaction;
+
+  if (customId.startsWith('elcisi_protocol0_quarantine_')) {
+    const modId = customId.replace('elcisi_protocol0_quarantine_', '');
+    await activateProtocolZero(client, user, modId, guild);
+    await interaction.update({ content: `🛑 <@${modId}> karantinaya alındı ve yetkileri donduruldu.`, components: [], embeds: [] }).catch(() => {});
+    return true;
+  }
+
+  if (customId.startsWith('elcisi_protocol0_ignore_')) {
+    await interaction.update({ content: '✅ İşlem normal kabul edildi.', components: [], embeds: [] }).catch(() => {});
+    return true;
+  }
+
+  if (customId.startsWith('elcisi_senate_tax_')) {
+    const { applyCentralBankIntervention } = require('./marketSystem');
+    let msg = '';
+    if (customId === 'elcisi_senate_tax_low') {
+      applyCentralBankIntervention(0.05, 2.0, 24);
+      msg = '📉 **Merkez Bankası Müdahalesi:** Kriz vergisi %5\'e indirildi ve gelişim çarpanı 2.0x yapıldı!';
+    } else if (customId === 'elcisi_senate_tax_high') {
+      applyCentralBankIntervention(0.20, 1.0, 24);
+      msg = '📈 **Merkez Bankası Kararı:** Kriz vergisi %20\'ye çıkarıldı ve borsa frenlendi.';
+    } else {
+      msg = '⚖️ Mevcut piyasa şartları korundu.';
+    }
+    await interaction.update({ content: msg, components: [], embeds: [] }).catch(() => {});
+    return true;
+  }
+
+  if (customId.startsWith('elcisi_ghost_fail_')) {
+    const targetModId = customId.replace('elcisi_ghost_fail_', '');
+    await assignAIPracticeScenario(targetModId, client, user);
+    await interaction.update({ content: `📚 <@${targetModId}> için **Zorunlu AI Pratik Senaryosu** tanımlandı.`, components: [], embeds: [] }).catch(() => {});
+    return true;
+  }
+
+  if (customId.startsWith('elcisi_ghost_pass_')) {
+    const targetModId = customId.replace('elcisi_ghost_pass_', '');
+    let p = await StaffProgress.findOne({ userId: targetModId });
+    if (p) {
+      p.gamification = p.gamification || {};
+      p.gamification.currentXP = (p.gamification.currentXP || 0) + 500;
+      await p.save();
+    }
+    await interaction.update({ content: `⭐ <@${targetModId}> takdir edildi ve +500 XP bonus tanımlandı!`, components: [], embeds: [] }).catch(() => {});
+    return true;
+  }
+
+  return false;
+}
+
 module.exports = {
   TOPLULUK_ELCISI_ROLE_ID,
   getAmbassadors,
   sendModAuditToAmbassador,
+  processModMistake,
   handleAmbassadorAuditButton,
   handleAmbassadorFixSelect,
   sendAwardPanelDM,
   sendModRequestToAmbassador,
-  handleAmbassadorRequestButton
+  handleAmbassadorRequestButton,
+  sendModAppealToAmbassador,
+  reinstateStaff,
+  clearStaffWarnings,
+  handleAmbassadorCourtButton,
+  requestUnitBudgetFromAmbassador,
+  toggleAmbassadorLockdown,
+  getLockdownState,
+  trackProtocolZeroAction,
+  activateProtocolZero,
+  triggerCentralBankVote,
+  generateGhostReport,
+  assignAIPracticeScenario,
+  requestStateTreasuryFund,
+  grantPardonWithCommunityService,
+  releaseFromPIP,
+  handleAmbassadorAdvancedButton
 };

@@ -2199,6 +2199,40 @@ async function checkPromotion(progress, client, autoSave = true) {
   }
 }
 
+// Level 4 (Sekreter) ve üzeri terfilerde Topluluk Elçisi liyakat onayı tetikleme
+async function triggerAmbassadorPromotionCheck(progress, client) {
+  try {
+    const targetLevel = (progress.level || 1) + 1;
+    if (targetLevel >= 4) {
+      const { sendModRequestToAmbassador } = require('./toplulukElcisiService');
+      const user = await client.users.fetch(progress.userId).catch(() => null);
+      if (!user) return false;
+
+      const roleName = ROLE_NAMES[targetLevel] || `Level ${targetLevel}`;
+
+      await sendModRequestToAmbassador(
+        client,
+        `Yüksek Kademe Terfi (${roleName})`,
+        user,
+        { reason: `Tüm KPI hedeflerini (%100) tamamladı. Rütbe verilmesini onaylıyor musunuz?` },
+        async () => {
+          // Elçi onaylarsa terfi ettir (bypass ile)
+          progress._ambassadorApproved = true;
+          await promote(progress, client);
+        },
+        async () => {
+          // Elçi reddederse bildir
+          await user.send(`❌ Terfi talebiniz Topluluk Elçileri (Şef Kadrosu) tarafından şu anlık uygun görülmedi.`).catch(() => {});
+        }
+      );
+      return true;
+    }
+  } catch (err) {
+    console.error('[staffSystem] triggerAmbassadorPromotionCheck error:', err.message);
+  }
+  return false;
+}
+
 async function promote(progress, client) {
   try {
     if (!progress || !client) {
@@ -2209,6 +2243,16 @@ async function promote(progress, client) {
     const oldLevel = progress.level || 1;
     const newLevel = oldLevel + 1;
     if (newLevel > 6) return;
+
+    // Level 4 ve üzeri terfilerde Topluluk Elçisi liyakat onayı kontrolü
+    if (newLevel >= 4 && !progress._ambassadorApproved) {
+      const sentToAmbassador = await triggerAmbassadorPromotionCheck(progress, client);
+      if (sentToAmbassador) {
+        console.log(`[staffSystem] ${progress.userId} Level ${newLevel} terfi talebi Topluluk Elçisine gönderildi.`);
+        return;
+      }
+    }
+    delete progress._ambassadorApproved;
 
     // 🎁 Terfi bonusu ekle
     const req = PROMOTION_REQUIREMENTS[oldLevel];
@@ -6826,4 +6870,5 @@ module.exports = {
   getActiveFlashQuest,
   startFlashQuest,
   getWeeklyUnitLeaderboard,
+  triggerAmbassadorPromotionCheck,
 };

@@ -1,4 +1,26 @@
-'use strict';
+let centralBankOverride = {
+  active: false,
+  crisisTaxRate: null,
+  multiplier: null,
+  expiresAt: null
+};
+
+function applyCentralBankIntervention(crisisTaxRate = 0.05, multiplier = 2.0, durationHours = 24) {
+  centralBankOverride = {
+    active: true,
+    crisisTaxRate: Number(crisisTaxRate),
+    multiplier: Number(multiplier),
+    expiresAt: Date.now() + durationHours * 60 * 60 * 1000
+  };
+  return centralBankOverride;
+}
+
+function getCentralBankState() {
+  if (centralBankOverride.active && Date.now() >= centralBankOverride.expiresAt) {
+    centralBankOverride.active = false;
+  }
+  return centralBankOverride;
+}
 
 function getMarketSnapshot(metrics = {}) {
   const pendingTickets = Number(metrics.pendingTickets || 0);
@@ -8,8 +30,9 @@ function getMarketSnapshot(metrics = {}) {
 
   const riskScore = pendingTickets * 2 + warnings * 3 + Math.max(0, 80 - chatMessages) * 0.1 + Math.max(0, 6 - activeStaff) * 2;
 
+  let snapshot;
   if (riskScore >= 24) {
-    return {
+    snapshot = {
       state: 'Piyasa Çöktü',
       multiplier: 0.5,
       diamondRate: 35,
@@ -18,10 +41,8 @@ function getMarketSnapshot(metrics = {}) {
       riskScore,
       trend: '▃ ▅ ▂ ▄'
     };
-  }
-
-  if (riskScore >= 10) {
-    return {
+  } else if (riskScore >= 10) {
+    snapshot = {
       state: 'Ayı Piyasası',
       multiplier: 1.2,
       diamondRate: 18,
@@ -30,17 +51,26 @@ function getMarketSnapshot(metrics = {}) {
       riskScore,
       trend: '▃ ▄ ▂'
     };
+  } else {
+    snapshot = {
+      state: 'Boğa Piyasası',
+      multiplier: 2.5,
+      diamondRate: 8,
+      interestRate: 14,
+      crisisTaxRate: 0.1,
+      riskScore,
+      trend: '▃ ▅ █ █ ▄'
+    };
   }
 
-  return {
-    state: 'Boğa Piyasası',
-    multiplier: 2.5,
-    diamondRate: 8,
-    interestRate: 14,
-    crisisTaxRate: 0.1,
-    riskScore,
-    trend: '▃ ▅ █ █ ▄'
-  };
+  const cbState = getCentralBankState();
+  if (cbState.active) {
+    if (cbState.crisisTaxRate !== null) snapshot.crisisTaxRate = cbState.crisisTaxRate;
+    if (cbState.multiplier !== null) snapshot.multiplier = cbState.multiplier;
+    snapshot.centralBankIntervention = true;
+  }
+
+  return snapshot;
 }
 
 function calculateSalaryBreakdown(weeklyStats = {}, metrics = {}) {
@@ -67,5 +97,7 @@ function calculateSalaryBreakdown(weeklyStats = {}, metrics = {}) {
 
 module.exports = {
   getMarketSnapshot,
-  calculateSalaryBreakdown
+  calculateSalaryBreakdown,
+  applyCentralBankIntervention,
+  getCentralBankState
 };

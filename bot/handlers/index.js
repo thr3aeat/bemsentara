@@ -4289,10 +4289,19 @@ function initializeDiscordHandlers(client) {
 
 async function handleInteraction(interaction) {
   if (interaction.isButton()) {
-    if (interaction.customId?.startsWith('elcisi_audit_') || interaction.customId?.startsWith('elcisi_req_')) {
-      const { handleAmbassadorAuditButton, handleAmbassadorRequestButton } = require("../services/toplulukElcisiService");
+    if (interaction.customId?.startsWith('elcisi_')) {
+      const {
+        handleAmbassadorAuditButton,
+        handleAmbassadorRequestButton,
+        handleAmbassadorCourtButton,
+        handleAmbassadorAdvancedButton
+      } = require("../services/toplulukElcisiService");
       if (interaction.customId.startsWith('elcisi_audit_')) return handleAmbassadorAuditButton(interaction, interaction.client);
       if (interaction.customId.startsWith('elcisi_req_')) return handleAmbassadorRequestButton(interaction, interaction.client);
+      if (interaction.customId.startsWith('elcisi_court_')) return handleAmbassadorCourtButton(interaction, interaction.client);
+      if (interaction.customId.startsWith('elcisi_protocol0_') || interaction.customId.startsWith('elcisi_senate_') || interaction.customId.startsWith('elcisi_ghost_')) {
+        return handleAmbassadorAdvancedButton(interaction, interaction.client);
+      }
     }
     if (interaction.customId?.startsWith('mod_interview_comment_')) {
       const { handleInterviewCommentButton } = require("../services/modInterview");
