@@ -341,17 +341,23 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       }
     }
 
-    // ── 6. Dinamik Ceza Katlayıcısı (Risk Scaled Penalty) ──
+    // ── 6. Dinamik Ceza Katlayıcısı & Kademeli İhlal Scaler ──
     let finalAmount = amount;
-    if (finalAmount < 0 && operatorId === "SYSTEM") {
+    if (finalAmount < 0) {
       record.lastViolationDate = new Date();
-      if (record.trustScore < 30.0) {
-        // Yüksek Risk (< 30 TS): 1.5x ceza katlayıcısı
-        finalAmount = parseFloat((finalAmount * 1.5).toFixed(2));
-      } else if (record.trustScore >= 80.0) {
-        // Güvenilir Üye (>= 80 TS): İlk ihlallerde 0.8x yumuşatma
-        finalAmount = parseFloat((finalAmount * 0.8).toFixed(2));
+      record.violationCount = (record.violationCount || 0) + 1;
+      
+      // Escalating Penalty Multipliers (1. İhlal: 1x, 2. İhlal: 2.5x, 3.+ İhlal: 5.0x)
+      let mult = 1.0;
+      if (record.violationCount === 2) mult = 2.5;
+      else if (record.violationCount >= 3) mult = 5.0;
+
+      if (operatorId === "SYSTEM") {
+        if (record.trustScore < 30.0) mult *= 1.5;
+        else if (record.trustScore >= 80.0 && record.violationCount === 1) mult *= 0.8;
       }
+
+      finalAmount = parseFloat((finalAmount * mult).toFixed(2));
     }
 
     // Reset af progress if they get penalized
@@ -361,12 +367,17 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       record.afProgress.lastPenaltyDate = new Date();
     }
 
-    // Calculate new score
+    // Calculate new score and Tier
     const oldScore = record.trustScore;
     let newScore = parseFloat((oldScore + finalAmount).toFixed(2));
     newScore = Math.max(0.0, Math.min(newScore, 500.0)); // Constraint: 0 to 500
 
+    const oldTier = calculateTrustTier(oldScore);
+    const newTier = calculateTrustTier(newScore);
+
     record.trustScore = newScore;
+    record.tier = newTier;
+
     pushScoreLog(record, {
       amount: finalAmount,
       reason,
@@ -398,6 +409,11 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
     }
 
     await record.save();
+
+    if (oldTier !== newTier) {
+      const tierNames = ["🛑 Tier 0 (Riskli)", "👥 Tier 1 (Standart)", "⭐ Tier 2 (Güvenilir)", "👑 Tier 3 (Lider)"];
+      logTrustUserActivity(client, userId, "🏅 Güven Seviyesi (Tier) Güncellendi", `Güven Seviyesi **${tierNames[oldTier]}** ➔ **${tierNames[newTier]}** olarak güncellendi.`, newTier > oldTier ? "🎉" : "⚠️", newTier > oldTier ? 0x2ecc71 : 0xef4444);
+    }
 
     // Log to their profile channel
     if (record.profileChannelId) {
@@ -1297,6 +1313,75 @@ async function fixAndMergeTrustChannels(client) {
   }
 }
 
+/**
+ * Calculates current trust tier (0 to 3) based on trust score.
+ */
+function calculateTrustTier(score) {
+  if (score <= 30.0) return 0; // Tier 0: Riskli
+  if (score <= 70.0) return 1; // Tier 1: Standart
+  if (score <= 100.0) return 2; // Tier 2: Güvenilir
+  return 3; // Tier 3: Kıdemli Lider
+}
+
+/**
+ * Handles manual mod score adjustments with mandatory proof & dual control for >= 50 TS.
+ */
+async function requestModTrustAction(modId, targetUserId, amount, reason, proofUrl, client) {
+  if (!modId || !targetUserId || amount === undefined) {
+    return { success: false, error: "Eksik parametre." };
+  }
+
+  // 1. Kanıt Bağlantısı Zorunluluğu
+  if (!proofUrl || typeof proofUrl !== 'string' || proofUrl.trim().length < 5) {
+    return {
+      success: false,
+      error: "Moderatör puan müdahalelerinde zorunlu olarak kanıt (ekran görüntüsü bağlantısı veya mesaj ID) girilmelidir."
+    };
+  }
+
+  const numAmount = parseFloat(amount);
+  const record = await ensureUserTrustScore(targetUserId, ACTIVE_GUILD_ID, client);
+  if (!record) return { success: false, error: "Kullanıcı kaydı bulunamadı." };
+
+  // 2. Çift Onay (Dual Control) Mekanizması (>= 50 TS)
+  if (Math.abs(numAmount) >= 50.0) {
+    record.pendingModAction = {
+      modId,
+      targetUserId,
+      amount: numAmount,
+      reason: reason || "Yüksek Miktarlı Puan Müdahalesi",
+      proofUrl: proofUrl.trim(),
+      requestedAt: new Date()
+    };
+    await record.save();
+
+    logTrustUserActivity(
+      client,
+      targetUserId,
+      "⚖️ Çift Onay Bekliyor (Dual Control)",
+      `Moderatör <@${modId}> tarafından **${numAmount >= 0 ? '+' : ''}${numAmount} TS** puan müdahalesi istendi.\nMiktar yüksek olduğu için Üst Yönetici onayına sunuldu.\n**Kanıt:** ${proofUrl.trim()}`,
+      "⏳",
+      0xf59e0b
+    );
+
+    return {
+      success: true,
+      pendingApproval: true,
+      message: "İşlem miktarı yüksek (±50 TS üstü) olduğu için Çift Onay (Dual Control) onay mekanizmasına gönderildi."
+    };
+  }
+
+  // 3. Standart İşlem (< 50 TS)
+  await updateTrustScore(targetUserId, numAmount, `${reason} (Kanıt: ${proofUrl.trim()})`, modId, client);
+  await addModPoints(modId, 2.0, `Puan Düzenleme (${numAmount >= 0 ? '+' : ''}${numAmount} TS)`);
+
+  return {
+    success: true,
+    pendingApproval: false,
+    message: "Puan düzenlemesi başarıyla uygulandı."
+  };
+}
+
 module.exports = {
   ensureUserTrustScore,
   updateTrustScore,
@@ -1309,5 +1394,7 @@ module.exports = {
   startTrustScoreDecayScheduler,
   cleanupDuplicateTrustChannels: fixAndMergeTrustChannels,
   fixAndMergeTrustChannels,
-  logTrustUserActivity
+  logTrustUserActivity,
+  calculateTrustTier,
+  requestModTrustAction
 };

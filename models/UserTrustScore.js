@@ -41,6 +41,12 @@ const UserTrustScore = {
         lastPenaltyDate: null
       },
       
+      tier: 1,
+      cleanSheetLastAwarded: null,
+      violationCount: 0,
+      pendingModAction: null,
+      activeVoiceSeconds: 0,
+      cameraScreenSeconds: 0,
       profileChannelId: null,
       profileMessageId: null,
       profileChannelClosed: false,
@@ -86,6 +92,12 @@ function UserTrustScoreConstructor(data) {
       lastPenaltyDate: null
     },
     
+    tier: 1,
+    cleanSheetLastAwarded: null,
+    violationCount: 0,
+    pendingModAction: null,
+    activeVoiceSeconds: 0,
+    cameraScreenSeconds: 0,
     profileChannelId: null,
     profileMessageId: null,
     profileChannelClosed: false,

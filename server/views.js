@@ -9241,7 +9241,179 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
       </div>
     </div>
   `;
-  return _layout(formName + ' — Kapalı', currentUser, content, '', '/forms');
+async function renderTicketsPage(user) {
+  const Ticket = require("./models/Ticket");
+  let userTickets = [];
+  try {
+    userTickets = await Ticket.find({ userId: user.discordId }).sort({ createdAt: -1 });
+  } catch (err) {
+    console.error("renderTicketsPage load error:", err.message);
+  }
+
+  const ticketsHtml = userTickets.length === 0
+    ? `<div style="text-align:center;padding:3rem;color:var(--muted);">Henüz bir biletiniz (destek talebiniz) bulunmamaktadır.</div>`
+    : userTickets.map(t => {
+        const isClosed = t.status === 'closed';
+        const statusBadge = isClosed
+          ? `<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🔒 Kapatıldı</span>`
+          : `<span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🟢 Açık</span>`;
+        
+        let rateAction = '';
+        if (isClosed) {
+          if (t.rated) {
+            rateAction = `<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:0.35rem 0.8rem;border-radius:12px;font-size:0.85rem;font-weight:700;">⭐ ${t.ratingScore}/5 Yıldız Verildi</span>`;
+          } else {
+            rateAction = `<button class="btn btn-sm" onclick="openRateModal('${t.ticketId}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;border:none;border-radius:12px;padding:0.4rem 0.9rem;cursor:pointer;">⭐ Değerlendir</button>`;
+          }
+        }
+
+        return `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div>
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem;">
+                <span style="font-weight:800;font-size:1.1rem;color:#fff;">#${_esc(t.ticketId)}</span>
+                ${statusBadge}
+                <span style="color:var(--muted);font-size:0.85rem;">Kategori: ${_esc(t.category || 'Genel')}</span>
+              </div>
+              <div style="color:var(--muted);font-size:0.9rem;">
+                Oluşturulma: ${new Date(t.createdAt).toLocaleString('tr-TR')}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              ${rateAction}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+  const content = `
+    <div style="max-width:900px;margin:0 auto;padding:2rem 1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <h1 style="font-size:2rem;font-weight:800;color:#fff;margin:0;">🎫 Destek Biletleriniz</h1>
+          <p style="color:var(--muted);margin-top:0.3rem;">Tüm destek taleplerinizi görüntüleyin ve kapalı biletleri değerlendirin.</p>
+        </div>
+        <a href="/tickets/new" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;padding:0.75rem 1.5rem;border-radius:16px;">+ Yeni Bilet Oluştur</a>
+      </div>
+
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:24px;padding:1.5rem;">
+        ${ticketsHtml}
+      </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="rate-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:1rem;">
+      <div style="background:#1e1e2d;border:1px solid rgba(255,255,255,0.1);border-radius:24px;width:100%;max-width:450px;padding:2rem;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <h3 style="margin:0 0 0.5rem 0;color:#fff;font-size:1.4rem;font-weight:800;">⭐ Bileti Değerlendir</h3>
+        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1.5rem;">Hizmet kalitemizi artırmamıza yardımcı olmak için biletinizi puanlayın.</p>
+        
+        <input type="hidden" id="rate-ticket-id">
+        <div style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem;">
+          <button class="star-btn" onclick="setStar(1)" style="font-size:2rem;background:none;border:none;cursor:pointer;opacity:0.4;">⭐</button>
+          <button class="star-btn" onclick="setStar(2)" style="font-size:2rem;background:none;border:none;cursor:pointer;opacity:0.4;">⭐</button>
+          <button class="star-btn" onclick="setStar(3)" style="font-size:2rem;background:none;border:none;cursor:pointer;opacity:0.4;">⭐</button>
+          <button class="star-btn" onclick="setStar(4)" style="font-size:2rem;background:none;border:none;cursor:pointer;opacity:0.4;">⭐</button>
+          <button class="star-btn" onclick="setStar(5)" style="font-size:2rem;background:none;border:none;cursor:pointer;opacity:0.4;">⭐</button>
+        </div>
+
+        <textarea id="rate-note" placeholder="Eklemek istediğiniz görüş veya yorum notunuz..." style="width:100%;height:90px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:0.75rem;color:#fff;font-family:inherit;margin-bottom:1.5rem;resize:none;"></textarea>
+
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button class="btn btn-ghost" onclick="closeRateModal()" style="border-radius:12px;padding:0.6rem 1.2rem;">İptal</button>
+          <button class="btn" onclick="submitRating()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;border-radius:12px;padding:0.6rem 1.5rem;">Gönder</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let selectedStar = 5;
+      function openRateModal(ticketId) {
+        document.getElementById('rate-ticket-id').value = ticketId;
+        document.getElementById('rate-modal').style.display = 'flex';
+        setStar(5);
+      }
+      function closeRateModal() {
+        document.getElementById('rate-modal').style.display = 'none';
+      }
+      function setStar(n) {
+        selectedStar = n;
+        const btns = document.querySelectorAll('.star-btn');
+        btns.forEach((b, idx) => {
+          b.style.opacity = idx < n ? '1' : '0.3';
+        });
+      }
+      async function submitRating() {
+        const ticketId = document.getElementById('rate-ticket-id').value;
+        const note = document.getElementById('rate-note').value;
+        try {
+          const res = await fetch('/api/tickets/' + ticketId + '/rate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score: selectedStar, note })
+          });
+          const d = await res.json();
+          if (res.ok) {
+            showToast('Değerlendirmeniz kaydedildi. Teşekkürler!', 'success');
+            setTimeout(() => location.reload(), 800);
+          } else {
+            showToast(d.error || 'Hata oluştu', 'error');
+          }
+        } catch (err) {
+          showToast('Bağlantı hatası', 'error');
+        }
+      }
+    </script>
+  `;
+  return _layout('Biletlerim', user, content, '', '/tickets');
+}
+
+function renderCreateTicketPage(user, categories = []) {
+  const catsOptions = categories.map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`).join('');
+  const content = `
+    <div style="max-width:600px;margin:2rem auto;padding:1rem;">
+      <h1 style="font-size:2rem;font-weight:800;color:#fff;margin-bottom:1.5rem;">🎫 Yeni Destek Bileti Oluştur</h1>
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:24px;padding:2rem;">
+        <div style="margin-bottom:1.5rem;">
+          <label style="display:block;color:var(--muted);font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">Bilet Kategorisi</label>
+          <select id="ticket-cat" style="width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:0.75rem;color:#fff;font-family:inherit;">
+            ${catsOptions || '<option value="Genel">Genel Destek</option>'}
+          </select>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label style="display:block;color:var(--muted);font-size:0.9rem;font-weight:700;margin-bottom:0.5rem;">Talebiniz / Mesajınız</label>
+          <textarea id="ticket-msg" placeholder="Lütfen yaşadığınız sorunu veya talebinizi detaylıca açıklayın..." style="width:100%;height:140px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:0.75rem;color:#fff;font-family:inherit;resize:none;"></textarea>
+        </div>
+        <div style="display:flex;gap:1rem;justify-content:flex-end;">
+          <a href="/tickets" class="btn btn-ghost" style="border-radius:12px;padding:0.75rem 1.5rem;">İptal</a>
+          <button onclick="createTicket()" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;border-radius:12px;padding:0.75rem 1.8rem;">Bileti Gönder</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function createTicket() {
+        const category = document.getElementById('ticket-cat').value;
+        const message = document.getElementById('ticket-msg').value;
+        if (!message) return showToast('Lütfen bir mesaj girin.', 'error');
+        try {
+          const res = await fetch('/api/tickets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category, message })
+          });
+          const d = await res.json();
+          if (res.ok) {
+            showToast('Biletiniz başarıyla oluşturuldu!', 'success');
+            setTimeout(() => location.href = '/tickets', 800);
+          } else {
+            showToast(d.error || 'Hata oluştu', 'error');
+          }
+        } catch (err) {
+          showToast('Bağlantı hatası', 'error');
+        }
+      }
+    </script>
+  `;
+  return _layout('Yeni Bilet', user, content, '', '/tickets');
 }
 
 const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugOfficeFormPage } = require("./_form_views_patch");
