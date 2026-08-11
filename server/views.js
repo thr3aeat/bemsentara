@@ -9241,6 +9241,9 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
       </div>
     </div>
   `;
+  return _layout(formName + ' Kapalı', currentUser, content, '', '/forms');
+}
+
 async function renderTicketsPage(user) {
   const Ticket = require("./models/Ticket");
   let userTickets = [];
@@ -9448,6 +9451,7 @@ module.exports = {
   renderErrorPage,
   renderSocialPage,
   renderAccountTransferPage,
+  renderClosedFormPage,
   // Internal helpers (exported for testing)
   _esc,
   _layout,

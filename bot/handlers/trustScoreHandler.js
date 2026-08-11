@@ -482,10 +482,13 @@ function initializeTrustScoreHandlers(client) {
         const accountAgeDays = (Date.now() - createdTimestamp) / (1000 * 60 * 60 * 24);
 
         if (accountAgeDays < 7) {
-          // Account < 7 days: Apply starter penalty / flag
+          // Account < 7 days: Apply starter penalty / flag only if ENABLE_NEW_ACCOUNT_SECURITY is true
           record.altAccountChecked = true;
           await record.save();
-          await updateTrustScore(member.id, -15.0, `Güvenlik Kalkanı: Şüpheli Yeni Hesap (${Math.floor(accountAgeDays)} Günlük)`, "SYSTEM", client);
+          const { ENABLE_NEW_ACCOUNT_SECURITY } = require("../../config");
+          if (ENABLE_NEW_ACCOUNT_SECURITY || process.env.ENABLE_NEW_ACCOUNT_SECURITY === "true") {
+            await updateTrustScore(member.id, -15.0, `Güvenlik Kalkanı: Şüpheli Yeni Hesap (${Math.floor(accountAgeDays)} Günlük)`, "SYSTEM", client);
+          }
         } else if (accountAgeDays > 365) {
           // Account > 1 year: Apply tenure bonus
           record.altAccountChecked = true;

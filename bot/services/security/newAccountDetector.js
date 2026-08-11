@@ -5,6 +5,7 @@
  */
 
 const { EmbedBuilder } = require("discord.js");
+const { ENABLE_NEW_ACCOUNT_SECURITY } = require("../../../config");
 
 /**
  * Hesabın 24 saat içinde oluşturulup oluşturulmadığını kontrol eder
@@ -12,6 +13,10 @@ const { EmbedBuilder } = require("discord.js");
  * @returns {boolean}
  */
 function isNewAccount(member) {
+  // Yeni hesap güvenlik kalkanı kapalıysa yeni hesap olarak işaretleme
+  if (!ENABLE_NEW_ACCOUNT_SECURITY && process.env.ENABLE_NEW_ACCOUNT_SECURITY !== "true") {
+    return false;
+  }
   const accountCreatedAt = member.user.createdTimestamp;
   const now = Date.now();
   const hours24 = 24 * 60 * 60 * 1000;

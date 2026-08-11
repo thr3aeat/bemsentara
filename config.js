@@ -116,8 +116,11 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || null;
 const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || null;
 const DATA_DIR = process.env.DATA_DIR || null;
 const RESTORE_ROLES_ON_START = process.env.RESTORE_ROLES_ON_START === "true";
+/** Yeni açılan hesaplar için otomatik güvenlik / karantina / ban kalkanı. Varsayılan kapalı. */
+const ENABLE_NEW_ACCOUNT_SECURITY = process.env.ENABLE_NEW_ACCOUNT_SECURITY === "true";
 
 module.exports = {
+  ENABLE_NEW_ACCOUNT_SECURITY,
   PORT,
   BASE_URL,
   SESSION_SECRET,

@@ -10,6 +10,7 @@ const { sendSurveyDM } = require("../services/security/newAccountSurvey");
 const { selectBestModerator, isModeratorAvailable } = require("../services/security/moderatorSelector");
 const { notifyModeratorAboutNewAccount } = require("../services/security/accountInvestigation");
 const AccountInvestigation = require("../../models/AccountInvestigation");
+const { ENABLE_NEW_ACCOUNT_SECURITY } = require("../../config");
 
 /**
  * Yeni üye katıldığında kontrol eder
@@ -18,8 +19,11 @@ const AccountInvestigation = require("../../models/AccountInvestigation");
 function initializeNewAccountHandler(client) {
   client.on("guildMemberAdd", async (member) => {
     try {
-      // Bot ise atla
+      // Bot ise veya Yeni Hesap Güvenlik Kalkanı kapalıysa atla
       if (member.user.bot) return;
+      if (!ENABLE_NEW_ACCOUNT_SECURITY && process.env.ENABLE_NEW_ACCOUNT_SECURITY !== "true") {
+        return;
+      }
       
       // 24 saat içinde oluşturulmuş mu?
       if (!isNewAccount(member)) {

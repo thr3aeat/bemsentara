@@ -14,11 +14,14 @@ class AltRaidGuardService {
 
     let score = 50.0; // Baz puan
 
+    const { ENABLE_NEW_ACCOUNT_SECURITY } = require("../../../config");
+    const isNewAccountEnabled = ENABLE_NEW_ACCOUNT_SECURITY || process.env.ENABLE_NEW_ACCOUNT_SECURITY === "true";
+
     // Hesap Yaşı Puanı
     if (discordAgeDays >= 365) score += 30;
     else if (discordAgeDays >= 30) score += 20;
     else if (discordAgeDays >= 7) score += 10;
-    else if (discordAgeDays < 2) score -= 30; // Çok yeni hesap!
+    else if (discordAgeDays < 2 && isNewAccountEnabled) score -= 30; // Çok yeni hesap!
 
     // Avatar Puanı
     if (hasAvatar) score += 10;
@@ -42,7 +45,7 @@ class AltRaidGuardService {
     }
 
     // Risk Karantinası Kararı (Skor < 30 ise)
-    if (score < 30) {
+    if (score < 30 && isNewAccountEnabled) {
       await this.quarantineMember(member, score, discordAgeDays);
     }
 
