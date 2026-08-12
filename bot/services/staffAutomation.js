@@ -105,6 +105,18 @@ async function syncStaffRobloxRanks(client, discordUserId) {
     }
 
     let staff = await StaffProgress.findOne({ userId: discordUserId });
+    const isInactive = (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned')) || (staff && (staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted'));
+
+    const robloxId = parseInt(user.robloxId);
+    if (isNaN(robloxId)) return false;
+
+    if (isInactive) {
+      try {
+        await noblox.setRank(ROBLOX.EKOYILDIZ_MOD, robloxId, 1).catch(() => {});
+      } catch (err) {}
+      return true;
+    }
+
     if (!staff) {
       staff = new StaffProgress({
         userId: discordUserId,
@@ -115,9 +127,6 @@ async function syncStaffRobloxRanks(client, discordUserId) {
       });
       await staff.save();
     }
-
-    const robloxId = parseInt(user.robloxId);
-    if (isNaN(robloxId)) return false;
 
     // Rank logic for EkoYıldız Moderatör Ekibi (130659145)
     let modRank = 0;
@@ -233,7 +242,41 @@ async function ensureAdminGuildMembership(client, discordUserId) {
 async function syncStaffDiscordRoles(client, discordUserId) {
   try {
     const User = require('../../models/User');
+    const StaffProgress = require('../../models/StaffProgress');
     const user = await User.findOne({ discordId: discordUserId });
+    const staff = await StaffProgress.findOne({ userId: discordUserId });
+
+    const isInactive = !staff || staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' || (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned'));
+
+    const ALL_MANAGED_ROLES = [
+      '1467082387933499524', '1480592150273200330', '1479818628152168479', '1467082891556163727',
+      '1467082280035160269', '1467082211839836344', '1467082157800423515', '1467079795711148062',
+      '1467076700415328266', '1467076595507527834', '1467076260441231401', '1467073280237371527',
+      '1467077436532457545', '1479839884075073567', '1479840791454154782', '1466948998463225859',
+      '1467152505862357250', '1517656567481372772', '1517695716594683904',
+      '1517621814405107773', '1466949714053169327', '1469668957047885967', '1467074142426763347',
+      '1467078019633119366', '1467077931737284914', '1467077860240916534', '1467078315083829318',
+      '1467080003219886132', '1517619148383846592', '1466949577189101605', '1469671332303343642',
+      '1466948827914436927',
+      '1518692395774906648', '1518692394495643830', '1518692393660973186', '1518692392415395971',
+      '1518709348506013706', '1518692391312298045', '1518692386836971610', '1518692389169135666'
+    ];
+
+    if (isInactive) {
+      console.log(`[StaffAutomation] User ${discordUserId} is inactive/dismissed/resigned. Stripping all staff roles.`);
+      const guild = await client.guilds.fetch(ADMIN_GUILD_ID).catch(() => null);
+      const member = guild ? await guild.members.fetch(discordUserId).catch(() => null) : null;
+      if (guild && member) {
+        const currentRoles = member.roles.cache.map(r => r.id);
+        const toRemove = currentRoles.filter(rId => ALL_MANAGED_ROLES.includes(rId));
+        if (toRemove.length > 0) {
+          await member.roles.remove(toRemove).catch(err => console.error(`[StaffAutomation] Ayrılan üyenin roller silinemedi: ${err.message}`));
+        }
+      }
+      await syncMainGuildRoles(client, discordUserId).catch(() => {});
+      return true;
+    }
+
     if (!user || !user.robloxId) return false;
 
     const guild = await client.guilds.fetch(ADMIN_GUILD_ID).catch(() => null);
@@ -262,8 +305,9 @@ async function syncStaffDiscordRoles(client, discordUserId) {
       }
     }
 
-    // Eğer API'dan gelmezse (örn. Roblox önbelleği gecikmesi), veritabanındaki StaffProgress seviyesini kullan
-    let staff = await require('../../models/StaffProgress').findOne({ userId: discordUserId });
+    if (!staff) {
+      staff = await require('../../models/StaffProgress').findOne({ userId: discordUserId });
+    }
 
     if (!rankName && staff) {
       if (staff.level === 1) rankName = "Stajyer Personel";
@@ -422,7 +466,37 @@ async function syncMainGuildRoles(client, discordUserId) {
       return;
     }
 
+    const User = require('../../models/User');
+    const StaffProgress = require('../../models/StaffProgress');
+    const user = await User.findOne({ discordId: discordUserId });
+    const staff = await StaffProgress.findOne({ userId: discordUserId });
+
+    const isInactive = !staff || staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' || (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned'));
+
+    const staffRoleIds = [
+      '1518692395774906648', // Stajyer Personel
+      '1518692394495643830', // Personel
+      '1518692393660973186', // Kıdemli Personel
+      '1518692392415395971', // Sekreter
+      '1518709348506013706', // Kıdemli Sekreter
+      '1518692391312298045', // Genel Koordinatör
+      '1518692386836971610', // Moderasyon
+      '1518692389169135666', // Moderatör Ekibi
+      '1518707673846251691', // adminizm
+      '1518708137920823327'  // modizm
+    ];
+
     const currentRoles = member.roles.cache.map(r => r.id);
+
+    if (isInactive) {
+      const toRemove = currentRoles.filter(rId => staffRoleIds.includes(rId));
+      if (toRemove.length > 0) {
+        await member.roles.remove(toRemove, 'Kadro dışı / Ayrıldı yapıldı').catch(err => {
+          console.error(`[StaffAutomation] Failed to remove main guild level roles: ${err.message}`);
+        });
+      }
+      return;
+    }
 
     // Mappings:
     // 1. If has '1417534492251394149' or '1417530761774366821' -> give '1417533740892291214'
@@ -432,7 +506,7 @@ async function syncMainGuildRoles(client, discordUserId) {
     const targetRoles = [];
     const rolesToRemove = [];
 
-    const staffRoleIds = [
+    const levelRoleIds = [
       '1518692395774906648', // Stajyer Personel
       '1518692394495643830', // Personel
       '1518692393660973186', // Kıdemli Personel
@@ -441,7 +515,7 @@ async function syncMainGuildRoles(client, discordUserId) {
       '1518692391312298045', // Genel Koordinatör
     ];
 
-    const hasStaffRole = staffRoleIds.some(rid => currentRoles.includes(rid));
+    const hasStaffRole = levelRoleIds.some(rid => currentRoles.includes(rid));
 
     if (hasStaffRole) {
       targetRoles.push('1518692386836971610'); // 🧸 Moderasyon

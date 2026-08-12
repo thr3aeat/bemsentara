@@ -176,6 +176,9 @@ function formatPhaseLabel(phase) {
 
 async function sendAIFrustratedMessage(userId, client, level = 1) {
   try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p || p.status !== 'active') return;
+
     const user = await client.users.fetch(userId);
     if (!user) return;
 
@@ -205,10 +208,12 @@ async function scheduleSchoolReminders(client) {
   try {
     const dueTime = Date.now() - REMINDER_INTERVAL_MS;
     const candidates = await StaffProgress.find({
+      status: 'active',
       'schoolSystem.status': { $in: ['pending_contract', 'in_school'] },
     });
 
     for (const candidate of candidates) {
+      if (!candidate || candidate.status !== 'active') continue;
       const { userId, schoolSystem } = candidate;
       const phase = schoolSystem.phase || 1;
       const status = schoolSystem.status;
@@ -241,7 +246,7 @@ async function scheduleSchoolReminders(client) {
 async function sendSchoolReminderOffer(userId, client) {
   try {
     const p = await StaffProgress.findOne({ userId });
-    if (!p) return;
+    if (!p || p.status !== 'active') return;
     if (!p.schoolSystem) p.schoolSystem = { status: 'in_school', phase: 1, step: 0 };
     const phase = p.schoolSystem.phase || 1;
     const user = await client.users.fetch(userId);
@@ -614,6 +619,12 @@ async function initializeModeratorSchool(client) {
  */
 async function sendContractDM(userId, client) {
   try {
+    const p = await StaffProgress.findOne({ userId });
+    if (!p || p.status !== 'active') {
+      logger.info(`[ModeratorSchool] Personel sisteminde kaydı olmayan/aktif olmayan kullanıcıya (${userId}) sözleşme DM'i gönderilmedi.`);
+      return;
+    }
+
     const user = await client.users.fetch(userId);
     if (!user) return;
 
@@ -640,13 +651,10 @@ async function sendContractDM(userId, client) {
     await user.send({ embeds: [embed], components: [row] });
 
     // Update database status
-    let p = await StaffProgress.findOne({ userId });
-    if (p) {
-      p.schoolSystem = p.schoolSystem || {};
-      p.schoolSystem.status = 'pending_contract';
-      p.schoolSystem.originalLevel = p.level;
-      await p.save();
-    }
+    p.schoolSystem = p.schoolSystem || {};
+    p.schoolSystem.status = 'pending_contract';
+    p.schoolSystem.originalLevel = p.level;
+    await p.save();
   } catch (err) {
     logger.error(`[ModeratorSchool] sendContractDM error for ${userId}:`, err.message);
   }

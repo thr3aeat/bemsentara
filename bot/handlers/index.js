@@ -903,7 +903,7 @@ function initializeDiscordHandlers(client) {
           });
         }
 
-        // Roles changed detection to enforce level/family rules
+        // Roles changed detection to enforce level/family rules & school contract logic
         const rolesChanged = !oldMember.roles.cache.equals(newMember.roles.cache);
         if (rolesChanged) {
           const { enforceFrogRoles } = require("../services/frogLevel");
@@ -914,6 +914,20 @@ function initializeDiscordHandlers(client) {
           await enforceRoleDividers(newMember).catch(err => {
             console.error("[guildMemberUpdate] enforceRoleDividers error:", err.message);
           });
+
+          // Check if Mod role was added, and only trigger Moderator School if registered in personnel system
+          const MOD_ROLE_ID = process.env.MOD_ROLE_ID || '1518692389169135666';
+          const gainedModRole = !oldMember.roles.cache.has(MOD_ROLE_ID) && newMember.roles.cache.has(MOD_ROLE_ID);
+          if (gainedModRole) {
+            const StaffProgress = require("../../models/StaffProgress");
+            const p = await StaffProgress.findOne({ userId: newMember.id });
+            if (p && p.status === 'active' && (!p.schoolSystem || p.schoolSystem.status === 'none')) {
+              const { sendContractDM } = require("../services/moderatorSchool");
+              await sendContractDM(newMember.id, client).catch(() => {});
+            } else if (!p || p.status !== 'active') {
+              console.log(`[guildMemberUpdate] ${newMember.user.tag} mod rolü aldı fakat personel sisteminde (StaffProgress) aktif kaydı yok. Selin asistan mesajı engellendi.`);
+            }
+          }
         }
       }
     } catch (err) {

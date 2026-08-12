@@ -1115,8 +1115,18 @@ router.get("/api/admin/users", async (req, res) => {
 
   list = list.slice(0, 100).map((u) => {
     const sp = staffMap.get(String(u.discordId));
+    let finalStatus = 'active';
+    if (u.isLeft || u.modStatus === 'dismissed' || (sp && (sp.status === 'dismissed' || sp.status === 'resigned'))) {
+      finalStatus = 'dismissed';
+    } else if (u.modStatus === 'paused' || (sp && sp.status === 'paused')) {
+      finalStatus = 'paused';
+    } else if (sp && sp.status && sp.status !== 'none') {
+      finalStatus = sp.status;
+    } else if (u.modStatus) {
+      finalStatus = u.modStatus;
+    }
+
     const finalLevel = (sp && sp.level !== undefined) ? sp.level : (u.modLevel || u.modRank || 1);
-    const finalStatus = (sp && sp.status) ? sp.status : (u.modStatus || (u.isLeft ? 'dismissed' : 'active'));
     return {
       _id: u._id,
       discordId: u.discordId,
@@ -1125,7 +1135,7 @@ router.get("/api/admin/users", async (req, res) => {
       robloxUsername: u.robloxUsername,
       robloxId: u.robloxId,
       isAdmin: Boolean(u.isAdmin),
-      isStaff: Boolean(u.isStaff),
+      isStaff: Boolean(u.isStaff && finalStatus !== 'dismissed' && finalStatus !== 'paused' && finalStatus !== 'resigned'),
       isLeft: Boolean(u.isLeft || finalStatus === 'dismissed'),
       roles: u.roles || [],
       isAuthorized: Boolean(u.isAuthorized),
@@ -1225,8 +1235,18 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
             const member = await guild.members.fetch(targetId).catch(() => null);
             if (member) {
               // Eğer kullanıcı ayrıldı, duraklatıldı veya staff yetkisi kaldırıldıysa tüm mod rollerini kaldır
-              if (p.status === 'dismissed' || p.status === 'resigned' || p.status === 'paused' || !user.isStaff) {
-                for (const rId of Object.values(ROLES)) {
+              if (p.status === 'dismissed' || p.status === 'resigned' || p.status === 'paused' || !user.isStaff || user.isLeft) {
+                const ALL_ROLES_TO_REMOVE = [
+                  ...Object.values(ROLES),
+                  '1518709348506013706', // Kıdemli Sekreter
+                  '1518692389169135666', // Moderatör Ekibi
+                  '1518708137920823327', // modizm
+                  '1518707673846251691', // adminizm
+                  '1518692386836971610', // Moderasyon
+                  '1518692384928567456', // Kaptan
+                  '1467082387933499524', '1480592150273200330', '1479818628152168479', '1467082891556163727'
+                ];
+                for (const rId of ALL_ROLES_TO_REMOVE) {
                   if (rId && member.roles.cache.has(rId)) {
                     await member.roles.remove(rId, 'Kadro dışı / Ayrıldı yapıldı').catch(() => {});
                   }
@@ -1246,6 +1266,7 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
             }
           }
           await staffAutomation.syncStaffDiscordRoles(client, targetId).catch(() => {});
+          await staffAutomation.updateDynamicModList(client).catch(() => {});
         }
       }
     } catch (modErr) {
