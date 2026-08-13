@@ -47,6 +47,7 @@ test('handleGruptanCekCommand handles missing TMTCOOKIE env variable gracefully'
     reply: async () => ({
       edit: async (options) => {
         editedEmbeds = options.embeds || [];
+        return true;
       }
     })
   };

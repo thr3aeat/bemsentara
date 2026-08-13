@@ -10,7 +10,7 @@ const AUTHORIZED_USER_ID = "1031620522406072350";
  * @param {string[]} args 
  */
 async function handleGruptanCekCommand(message, args) {
-  // 1. Authorization check - Authorized user 1031620522406072350 or Administrators / Owners
+  // 1. Authorization check - Authorized user 1031620522406072350 or Administrators / Owners / Site Admins
   let isAdmin = message.author.id === AUTHORIZED_USER_ID;
   if (!isAdmin && message.member?.permissions) {
     isAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator);
@@ -38,7 +38,7 @@ async function handleGruptanCekCommand(message, args) {
     return;
   }
 
-  // 2. Send initial progress message
+  // 2. Send initial progress message with 4-level fallback (Reply -> Channel -> Text Reply -> Text Channel)
   const initialEmbed = new EmbedBuilder()
     .setTitle("⏳ Roblox Gruptan Çekme İşlemi Başlatılıyor...")
     .setDescription(`**Hedef Kullanıcı:** \`${targetInput}\`\n🔍 Roblox hesabı ve TMTCOOKIE oturumu doğrulanıyor...`)
@@ -46,11 +46,30 @@ async function handleGruptanCekCommand(message, args) {
     .setFooter({ text: "TMTCOOKIE Otomatik Grup Yetki Düşürme Sistemi" })
     .setTimestamp();
 
-  const statusMsg = await message.reply({ embeds: [initialEmbed] }).catch(() => null);
+  let statusMsg = await message.reply({ embeds: [initialEmbed] }).catch(() => null);
+  if (!statusMsg && message.channel) {
+    statusMsg = await message.channel.send({ embeds: [initialEmbed] }).catch(() => null);
+  }
   if (!statusMsg) {
-    console.error("[!gruptancek] Message reply failed.");
+    statusMsg = await message.reply({ content: `⏳ **Roblox Gruptan Çekme İşlemi Başlatılıyor...** (Hedef: \`${targetInput}\`)` }).catch(() => null);
+  }
+  if (!statusMsg && message.channel) {
+    statusMsg = await message.channel.send({ content: `⏳ **Roblox Gruptan Çekme İşlemi Başlatılıyor...** (Hedef: \`${targetInput}\`)` }).catch(() => null);
+  }
+
+  if (!statusMsg) {
+    console.error("[!gruptancek] Mesaj gönderilemedi. Kanal izinlerini (Send Messages & Embed Links) kontrol edin.");
     return;
   }
+
+  // Helper function to safely update status message with embed or text fallback
+  const safeUpdateStatus = async (embed, fallbackText) => {
+    if (!statusMsg) return;
+    const ok = await statusMsg.edit({ embeds: [embed] }).catch(() => null);
+    if (!ok && fallbackText) {
+      await statusMsg.edit({ content: fallbackText, embeds: [] }).catch(() => null);
+    }
+  };
 
   const cookie = process.env.TMTCOOKIE;
   if (!cookie) {
@@ -58,7 +77,7 @@ async function handleGruptanCekCommand(message, args) {
       .setTitle("❌ İşlem Başarısız")
       .setDescription("`TMTCOOKIE` ortam değişkeni sistemde bulunamadı. Lütfen `.env` dosyasını veya ortamsal değişkenleri kontrol edin.")
       .setColor(0xE74C3C);
-    await statusMsg.edit({ embeds: [errEmbed] }).catch(() => {});
+    await safeUpdateStatus(errEmbed, "❌ **Hata:** `TMTCOOKIE` ortam değişkeni sistemde bulunamadı.");
     return;
   }
 
@@ -147,8 +166,8 @@ async function handleGruptanCekCommand(message, args) {
 
     const actionLogs = [];
 
-    // Helper to generate live embed
-    const generateEmbed = (isFinished = false) => {
+    // Helper to generate live embed & text fallback
+    const generateEmbedAndText = (isFinished = false) => {
       const percent = Math.round((processedCount / totalGroups) * 100);
       const title = isFinished
         ? "✅ Roblox Gruptan Çekme İşlemi Tamamlandı"
@@ -169,16 +188,22 @@ async function handleGruptanCekCommand(message, args) {
         `⚠️ **Hata / Yetki Yok:** \`${errorCount}\`` +
         logText;
 
-      return new EmbedBuilder()
+      const embed = new EmbedBuilder()
         .setTitle(title)
         .setDescription(description.length > 4000 ? description.substring(0, 4000) + "..." : description)
         .setColor(color)
         .setFooter({ text: isFinished ? "TMTCOOKIE Otomatik İşlem Tamamlandı" : "Canlı Durum Güncelleniyor..." })
         .setTimestamp();
+
+      const textFallback = `**${title}**\nHedef: \`${targetUsername}\` | İlerleme: %${percent} (${processedCount}/${totalGroups})\n` +
+        `Düşürüldü: ${demotedCount} | En Düşük: ${alreadyLowestCount} | Grupta Yok: ${notInGroupCount} | Hata: ${errorCount}`;
+
+      return { embed, textFallback };
     };
 
     // Initial edit
-    await statusMsg.edit({ embeds: [generateEmbed(false)] }).catch(() => {});
+    const initData = generateEmbedAndText(false);
+    await safeUpdateStatus(initData.embed, initData.textFallback);
 
     // 6. Loop over groups and demote if found
     for (const [groupIdStr, groupName] of groupList) {
@@ -223,12 +248,14 @@ async function handleGruptanCekCommand(message, args) {
       }
 
       // Live update message every group
-      await statusMsg.edit({ embeds: [generateEmbed(false)] }).catch(() => {});
+      const loopData = generateEmbedAndText(false);
+      await safeUpdateStatus(loopData.embed, loopData.textFallback);
       await new Promise(res => setTimeout(res, 200));
     }
 
     // 7. Final status edit
-    await statusMsg.edit({ embeds: [generateEmbed(true)] }).catch(() => {});
+    const finalData = generateEmbedAndText(true);
+    await safeUpdateStatus(finalData.embed, finalData.textFallback);
 
   } catch (err) {
     console.error("[handleGruptanCekCommand Error]:", err);
@@ -237,7 +264,7 @@ async function handleGruptanCekCommand(message, args) {
       .setDescription(`İşlem sırasında bir hata meydana geldi:\n\`\`\`${err.message}\`\`\``)
       .setColor(0xE74C3C)
       .setTimestamp();
-    await statusMsg.edit({ embeds: [errEmbed] }).catch(() => {});
+    await safeUpdateStatus(errEmbed, `❌ **Hata Oluştu:** ${err.message}`);
   }
 }
 
