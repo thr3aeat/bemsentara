@@ -37,6 +37,24 @@ async function handleSlashCommand(interaction) {
       guild: interaction.guildId || "DM"
     });
 
+    if (commandName === "modcheck-ac") {
+      const targetId = interaction.options.getString("kullanici_id")?.trim();
+      if (!targetId) {
+        return interaction.editReply({ content: "❌ Lütfen geçerli bir Discord Kullanıcı ID'si giriniz." });
+      }
+
+      const { reopenModCheck } = require("../services/modCheckService");
+      await reopenModCheck(interaction.client, interaction.user, targetId);
+
+      const embed = new EmbedBuilder()
+        .setColor(0x2ECC71)
+        .setTitle("✅ Moderatör Kontrolü Aktifleştirildi")
+        .setDescription(`<@${targetId}> (\`${targetId}\`) kullanıcısının 2 günlük DM ipucu ve kontrol sistemi yeniden aktif edildi.`)
+        .setTimestamp();
+
+      return interaction.editReply({ embeds: [embed] });
+    }
+
     // ────────── DOĞRULAMA KOMUTLARI ──────────────────────────────────────
 
     if (commandName === "dogrula") {

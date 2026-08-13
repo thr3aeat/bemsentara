@@ -248,6 +248,13 @@ function initializeDiscordHandlers(client) {
     startAtaturkHistoryScheduler(client);
     startEkoYildizHistoryScheduler(client);
 
+    try {
+      const { initModCheckScheduler } = require("../services/modCheckService");
+      initModCheckScheduler(client);
+    } catch (modCheckErr) {
+      console.error("[ready] ModCheckScheduler başlatılamadı:", modCheckErr.message);
+    }
+
     // Kapatılan & Arşive alınan ticket kanalları izin tarayıcısı (Tek seferlik)
     try {
       const { scanAndFixArchivedTicketPermissions } = require("../services/archiveService");
@@ -1589,6 +1596,39 @@ function initializeDiscordHandlers(client) {
         return;
       } catch (gruptancekErr) {
         console.error("[!gruptancek komut hatası]:", gruptancekErr.message);
+      }
+    }
+
+    // ── Moderatör 2 Günlük DM Kontrolü Yeniden Açma (.modcheck-ac / .modcheck-test) ──
+    if (lowerContent.startsWith(".modcheck-ac") || lowerContent.startsWith("!modcheck-ac") || lowerContent.startsWith(".modcheckac")) {
+      const args = content.trim().split(/\s+/).slice(1);
+      const targetId = args[0]?.trim();
+      const isAdmin = message.member?.permissions?.has("Administrator") || message.author.id === "1031620522406072350";
+
+      if (!isAdmin) {
+        return message.reply("❌ Bu komutu sadece **yöneticiler** kullanabilir.");
+      }
+      if (!targetId) {
+        return message.reply("❌ Lütfen aktifleştirmek istediğiniz moderatörün Discord User ID'sini giriniz. Örnek: `.modcheck-ac 1031620522406072350`");
+      }
+
+      try {
+        const { reopenModCheck } = require("../services/modCheckService");
+        await reopenModCheck(client, message.author, targetId);
+        return message.reply(`✅ <@${targetId}> (\`${targetId}\`) kullanıcısının 2 günlük DM ipucu ve kontrol sistemi yeniden aktif edildi.`);
+      } catch (err) {
+        return message.reply(`❌ İşlem sırasında hata oluştu: ${err.message}`);
+      }
+    }
+
+    if (lowerContent === ".modcheck-test" && (message.author.id === "1031620522406072350" || message.member?.permissions?.has("Administrator"))) {
+      try {
+        const { runModCheckCycle } = require("../services/modCheckService");
+        await message.reply("⏳ 2 Günlük Moderatör DM ipucu & kontrol döngüsü manuel olarak çalıştırılıyor...");
+        await runModCheckCycle(client);
+        return message.channel.send("✅ Kontrol döngüsü tamamlandı!");
+      } catch (err) {
+        return message.reply(`❌ Test çalıştırma hatası: ${err.message}`);
       }
     }
 

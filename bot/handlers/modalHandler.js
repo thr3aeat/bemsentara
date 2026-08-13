@@ -69,6 +69,12 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Moderatör DM Kontrolü Açma Modalı ──────────────────────────────────
+  if (interaction.customId === 'modal_modcheck_open') {
+    const { handleModCheckOpenSubmit } = require('../services/modCheckService');
+    return handleModCheckOpenSubmit(interaction);
+  }
+
   // ── Form Başvurusu — Soru Cevabı ─────────────────────────────────────────
   if (interaction.customId.startsWith('formask_modal_')) {
     try {

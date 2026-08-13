@@ -98,6 +98,16 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── 2 Günde Bir Moderatör DM İpucu & Kontrol Butonları ───────────────────
+  if (customId === 'btn_modcheck_open_modal' || customId === 'modcheck_open_modal') {
+    const { handleModCheckOpenModal } = require('../services/modCheckService');
+    return handleModCheckOpenModal(interaction);
+  }
+  if (customId.startsWith('modcheck_')) {
+    const { handleModCheckButton } = require('../services/modCheckService');
+    return handleModCheckButton(interaction);
+  }
+
   // ── Topluluk Elçisi Ayın Elemanları Butonları ────────────────────────────
   if (customId.startsWith('elcisi_award_')) {
     const awardType = customId.replace('elcisi_award_', '');

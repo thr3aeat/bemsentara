@@ -96,7 +96,8 @@ async function ensureAdminPanels(client) {
     );
 
     const modHomeRow2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('btn_resign_form').setLabel('🚪 İstifa Et').setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId('btn_resign_form').setLabel('🚪 İstifa Et').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('btn_modcheck_open_modal').setLabel('🔓 Mod DM Kontrolü Aç').setStyle(ButtonStyle.Success)
     );
 
     await refreshPanel(client, '1466945894250188912', modHomeEmbed, [modHomeRow1, modHomeRow2]);

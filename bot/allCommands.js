@@ -2,6 +2,14 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 
 const generalCommands = [
   new SlashCommandBuilder()
+    .setName("modcheck-ac")
+    .setDescription("🔓 Pasife alınmış bir moderatörün 2 günlük DM kontrolünü tekrar aktif eder")
+    .addStringOption((o) =>
+      o.setName("kullanici_id").setDescription("Aktifleştirilecek moderatörün Discord User ID'si").setRequired(true)
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+  new SlashCommandBuilder()
     .setName("topluluk-elcisi")
     .setDescription("🛡️ Topluluk Elçisi denetim, ayın elemanları ve moderatör yönetim paneli")
     .setDMPermission(true),
