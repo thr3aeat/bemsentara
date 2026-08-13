@@ -278,13 +278,13 @@ async function handleModCheckButton(interaction) {
     try {
       const targetUser = await interaction.client.users.fetch(targetUserId).catch(() => null);
       if (targetUser) {
-        const deletedEmbed = new EmbedBuilder()
-          .setColor(0xFF0000)
-          .setTitle('⚠️ MOD DATANIZ VERMEDİĞİNİZ İÇİN SİLİNDİ!')
-          .setDescription('2 kez üst üste 2 günlük gelişim ve kontrol mesajlarına yanıt vermediğiniz için moderatör kontrol veriniz pasife alındı ve kapatıldı.\n\nSistemi tekrar açtırmak için üst yönetime başvurunuz.')
+        const closedEmbed = new EmbedBuilder()
+          .setColor(0xE74C3C)
+          .setTitle('⚠️ MOD KONTROL SİSTEMİNİZ KAPATILDI')
+          .setDescription('2 kez üst üste 2 günlük gelişim ve kontrol mesajlarına yanıt vermediğiniz için moderatör kontrol sisteminiz pasife alındı.\n\n*Not: Moderatör verileriniz korunmaktadır, herhangi bir veri silinmemiştir.*\n\nSistemi tekrar açtırmak için üst yönetime başvurunuz.')
           .setTimestamp();
 
-        await targetUser.send({ embeds: [deletedEmbed] }).catch(() => {});
+        await targetUser.send({ embeds: [closedEmbed] }).catch(() => {});
       }
     } catch (dmErr) {
       logger.warn(`[modCheckService] Failed to send deletion DM to mod ${targetUserId}: ${dmErr.message}`);

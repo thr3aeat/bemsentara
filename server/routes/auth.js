@@ -4,8 +4,8 @@ const User = require("../../models/User");
 const { renderLoginPage, renderAuthorizePage } = require("../views");
 const { saveStoreNow } = require("../../models/Store");
 const { syncRoleConnectionForUser } = require("../services/discordRoleConnectionService");
-const logger = require("../../utils/logger");
 const UserActivityLog = require("../../models/UserActivityLog");
+const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = require("../../config");
 
 async function syncLinkedRoleMetadata(user, session = null) {
   if (!user?.discordId) return;
@@ -951,7 +951,7 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
       null,
       {
         params: {
-          secret: "6Lc6gFgtAAAAABSjLHMiS35uw_Y1ze6zeWLlSj1u",
+          secret: RECAPTCHA_SECRET_KEY || "6LeNZYQtAAAAAFFgURxsR8kugaDSdqkz0HudOqiD",
           response: captchaToken,
         },
       }
@@ -1118,7 +1118,7 @@ router.get("/verify", async (req, res) => {
             <input type="text" id="code" class="input-field" placeholder="Doğrulama Kodu" maxlength="6" value="${code || ''}" required>
             
             <div style="display: flex; justify-content: center; margin-bottom: 1.5rem;">
-              <div class="g-recaptcha" data-sitekey="6Lc6gFgtAAAAAH5r3_X-o6zQone_H-0GEN8eoOfq" data-theme="dark"></div>
+              <div class="g-recaptcha" data-sitekey="${RECAPTCHA_SITE_KEY || '6LeNZYQtAAAAAOe0UXQYO_oU_wwUeQBxr4KMHy8x'}" data-theme="dark"></div>
             </div>
             
             <button type="submit" id="btn-submit" class="btn">Doğrula ve Başlat</button>

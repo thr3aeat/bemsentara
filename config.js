@@ -119,6 +119,10 @@ const RESTORE_ROLES_ON_START = process.env.RESTORE_ROLES_ON_START === "true";
 /** Yeni açılan hesaplar için otomatik güvenlik / karantina / ban kalkanı. Varsayılan kapalı. */
 const ENABLE_NEW_ACCOUNT_SECURITY = process.env.ENABLE_NEW_ACCOUNT_SECURITY === "true";
 
+// ── Google reCAPTCHA v2 Anahtarları (ekoyildiz.duckdns.org) ─────────────────
+const RECAPTCHA_SITE_KEY = "6LeNZYQtAAAAAOe0UXQYO_oU_wwUeQBxr4KMHy8x";
+const RECAPTCHA_SECRET_KEY = "6LeNZYQtAAAAAFFgURxsR8kugaDSdqkz0HudOqiD";
+
 module.exports = {
   ENABLE_NEW_ACCOUNT_SECURITY,
   PORT,
@@ -182,4 +186,6 @@ module.exports = {
   EKOYILDIZ_BOM_CHANNEL_ID,
   EKOYILDIZ_STORY_GAME_CHANNEL_ID,
   ROWIFI_TOKEN,
+  RECAPTCHA_SITE_KEY,
+  RECAPTCHA_SECRET_KEY,
 };
