@@ -12,16 +12,16 @@ const ADMIN_TARGET_ID = '1031620522406072350';
 const modCheckSystemStore = collections.modCheckSystem;
 
 /**
- * Moderatör kontrol verisini getirir. Sadece açıkça eklenen kayıtlar aktiftir.
+ * Moderatör kontrol verisini getirir veya gerekirse oluşturur.
  */
-function getModCheckRecord(userId, createIfMissing = false) {
+function getModCheckRecord(userId, createIfMissing = true) {
   let record = modCheckSystemStore.findOne({ userId });
   if (!record && createIfMissing) {
     record = modCheckSystemStore.create({
       userId,
-      enabled: false, // Varsayılan olarak KAPALI! Sadece .modcheck ID girildiğinde açılır.
+      enabled: true,
       missedCount: 0,
-      lastSentAt: null,
+      lastSentAt: new Date(),
       lastRespondedAt: null,
       status: 'none',
       lastResponse: null,
@@ -223,18 +223,25 @@ async function handleModCheckButton(interaction) {
   // 2) "ANLADIM" veya "ANLAMADIM" Butonu
   if (customId.startsWith('modcheck_anladim_') || customId.startsWith('modcheck_anlamadim_')) {
     const isAnladim = customId.startsWith('modcheck_anladim_');
-    const targetUserId = customId.split('_')[2];
+    const targetUserId = customId.split('_')[2] || user.id;
 
     if (user.id !== targetUserId) {
       return interaction.reply({ content: '❌ Bu işlem sadece size özeldir.', ephemeral: true });
     }
 
-    const record = getModCheckRecord(user.id);
-    record.missedCount = 0;
-    record.lastRespondedAt = new Date();
-    record.status = 'answered';
-    record.lastResponse = isAnladim ? 'ANLADIM' : 'ANLAMADIM';
-    await record.save();
+    let record = getModCheckRecord(user.id, true);
+    if (!record) {
+      record = getModCheckRecord(targetUserId, true);
+    }
+    if (record) {
+      record.missedCount = 0;
+      record.lastRespondedAt = new Date();
+      record.status = 'answered';
+      record.lastResponse = isAnladim ? 'ANLADIM' : 'ANLAMADIM';
+      if (typeof record.save === 'function') {
+        await record.save();
+      }
+    }
 
     const responseEmbed = new EmbedBuilder()
       .setColor(isAnladim ? 0x2ECC71 : 0xE67E22)
