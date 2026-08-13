@@ -28,25 +28,55 @@ async function getRecordGuild(client, preferredGuildId) {
 
 /**
  * Safely fetches or creates the category for trust score profile channels.
+ * Automatically handles Discord's 50-channel per category limit by finding an available
+ * category with < 50 channels or creating a new overflow category (e.g., GÜVENLİK PROFİLLERİ 2).
  */
 async function getRecordCategory(recordGuild) {
   if (!recordGuild) return null;
   try {
-    let category = recordGuild.channels.cache.get(RECORD_CATEGORY_ID);
-    if (!category) {
-      category = recordGuild.channels.cache.find(c => c.type === ChannelType.GuildCategory && (
-        c.name.includes("GÜVENLİK") || c.name.includes("GÜVEN") || c.name.includes("TRUST") || c.name.includes("PROFİL")
-      ));
-      if (!category) {
-        category = await recordGuild.channels.create({
-          name: "GÜVENLİK PROFİLLERİ",
-          type: ChannelType.GuildCategory,
-          reason: "Güvenlik Profilleri Otomatik Kategori"
-        }).catch(() => null);
+    let cacheList = [];
+    if (recordGuild.channels && recordGuild.channels.cache) {
+      if (typeof recordGuild.channels.cache.values === 'function') {
+        cacheList = Array.from(recordGuild.channels.cache.values());
+      } else if (Array.isArray(recordGuild.channels.cache)) {
+        cacheList = recordGuild.channels.cache;
+      } else if (typeof recordGuild.channels.cache === 'object') {
+        cacheList = Object.values(recordGuild.channels.cache);
       }
     }
-    return category;
-  } catch (_) {
+
+    // Collect all matching categories sorted by creation timestamp
+    const matchingCategories = cacheList
+      .filter(c => c && c.type === ChannelType.GuildCategory && (
+        c.id === RECORD_CATEGORY_ID ||
+        (c.name && (c.name.includes("GÜVENLİK") || c.name.includes("GÜVEN") || c.name.includes("TRUST") || c.name.includes("PROFİL")))
+      ))
+      .sort((a, b) => (a.createdTimestamp || 0) - (b.createdTimestamp || 0));
+
+    // Find the first category with fewer than 50 child channels
+    for (const cat of matchingCategories) {
+      const childCount = cacheList.filter(c => c && c.parentId === cat.id).length;
+      if (childCount < 50) {
+        return cat;
+      }
+    }
+
+    // All existing categories are full (>= 50 channels) or none exist -> Create a new overflow category
+    const catNumber = matchingCategories.length + 1;
+    const catName = catNumber === 1 ? "GÜVENLİK PROFİLLERİ" : `GÜVENLİK PROFİLLERİ ${catNumber}`;
+
+    const newCategory = await recordGuild.channels.create({
+      name: catName,
+      type: ChannelType.GuildCategory,
+      reason: `Güvenlik Profilleri Otomatik Kategori (${catNumber}. Kısım)`
+    }).catch(err => {
+      console.error(`[TrustScore] Kategori oluşturulamadı (${catName}):`, err.message);
+      return null;
+    });
+
+    return newCategory;
+  } catch (err) {
+    console.error("[TrustScore] getRecordCategory hatası:", err.message);
     return null;
   }
 }
@@ -274,7 +304,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
 
           const cleanName = record.username.toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100) || 'kullanici';
 
-          // Create dynamic channel directly with user's username (without g- prefix)
+          // Attempt 1: Create dynamic channel directly with user's username
+          let createErr = null;
           channel = await recordGuild.channels.create({
             name: cleanName,
             type: ChannelType.GuildText,
@@ -282,9 +313,56 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
             permissionOverwrites,
             reason: `Güvenlik & Kişisel Log Profili: ${record.username}`
           }).catch((err) => {
+            createErr = err;
             console.error("[TrustScore] Channel creation failed:", err.message);
             return null;
           });
+
+          // Attempt 2: Fallback if 50 channel limit or parent_id error occurs
+          if (!channel && createErr && (
+            createErr.message.includes("50") ||
+            createErr.message.includes("parent_id") ||
+            createErr.message.includes("CHANNEL_PARENT_MAX_CHANNELS")
+          )) {
+            console.log(`[TrustScore] Kategori dolu (50 kanal sınırı). Kullanıcı "${record.username}" için 2. Kısım taşma kategorisi oluşturuluyor...`);
+            
+            const catCount = recordGuild.channels.cache.filter(c => c.type === ChannelType.GuildCategory && (
+              c.name.includes("GÜVENLİK") || c.name.includes("GÜVEN") || c.name.includes("TRUST") || c.name.includes("PROFİL")
+            )).size;
+
+            const overflowCatName = `GÜVENLİK PROFİLLERİ ${catCount + 1}`;
+            const overflowCat = await recordGuild.channels.create({
+              name: overflowCatName,
+              type: ChannelType.GuildCategory,
+              reason: "Güvenlik Profilleri 50 Kanal Limiti Taşma Kategorisi"
+            }).catch(() => null);
+
+            const overflowParentId = overflowCat ? overflowCat.id : null;
+
+            channel = await recordGuild.channels.create({
+              name: cleanName,
+              type: ChannelType.GuildText,
+              parent: overflowParentId,
+              permissionOverwrites,
+              reason: `Güvenlik Profili (${catCount + 1}. Kısım Taşma): ${record.username}`
+            }).catch((err2) => {
+              console.error("[TrustScore] Taşma kategorisinde de kanal oluşturulamadı:", err2.message);
+              return null;
+            });
+          }
+
+          // Attempt 3: Ultimate Fallback - Create uncategorized channel if category creation failed
+          if (!channel) {
+            channel = await recordGuild.channels.create({
+              name: cleanName,
+              type: ChannelType.GuildText,
+              permissionOverwrites,
+              reason: `Güvenlik Profili (Kategorisiz Son Çare): ${record.username}`
+            }).catch((err3) => {
+              console.error("[TrustScore] Kategorisiz kanal oluşturma hatası:", err3.message);
+              return null;
+            });
+          }
 
           if (channel) {
             record.profileChannelId = channel.id;
