@@ -63,18 +63,10 @@ async function handleSlashCommand(interaction) {
       const logger = require("../../utils/logger");
 
       if (!user) {
-        const embed = new EmbedBuilder()
-          .setTitle("❌ Siteye Giriş Yapılmamış")
-          .setDescription("Doğrulama yapmadan önce siteye giriş yapmalısınız.")
-          .setColor(0xe74c3c);
-
-        const btn = new ButtonBuilder()
-          .setLabel("🌐 Siteye Git")
-          .setStyle(ButtonStyle.Link)
-          .setURL(BASE_URL || 'https://ekoyildiz.duckdns.org');
-
-        const row = new ActionRowBuilder().addComponents(btn);
-        return interaction.editReply({ embeds: [embed], components: [row] });
+        user = await User.create({
+          discordId: interaction.user.id,
+          botVerified: false
+        });
       }
 
       if (user.botVerified) {
