@@ -7,7 +7,8 @@ const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
 // ─────────────────────────────────────────────
 function _layout(title, user, content, extraHead = '', activePath = '') {
   const staffLinks = user && isSiteStaff(user)
-    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">👨‍💼 Staff</a>`
+    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">👨‍💼 Staff</a>
+       <a href="/tumodlar" class="nav-link${activePath === '/tumodlar' ? ' nav-active' : ''}">🛡️ Tüm Modlar</a>`
     : '';
   const adminLink = user && isSiteAdmin(user)
     ? `<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">⚙️ Admin</a>`
@@ -9420,6 +9421,7 @@ function renderCreateTicketPage(user, categories = []) {
 }
 
 const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugOfficeFormPage } = require("./_form_views_patch");
+const { renderTumModlarPage } = require("./views/tumModlarPage");
 
 module.exports = {
   renderMainPage,
@@ -9452,6 +9454,7 @@ module.exports = {
   renderSocialPage,
   renderAccountTransferPage,
   renderClosedFormPage,
+  renderTumModlarPage,
   // Internal helpers (exported for testing)
   _esc,
   _layout,

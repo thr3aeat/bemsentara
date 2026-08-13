@@ -4860,3 +4860,219 @@ router.get("/api/account-transfer/user/:discordId", async (req, res) => {
     return res.status(500).json({ error: "Kullanıcı geçmişi getirilirken bir hata oluştu." });
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// TÜM MODLAR & MOD OKULU BİLDİRİM AYARLARI API
+// ══════════════════════════════════════════════════════════════════════
+
+router.get("/api/tumodlar/data", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu paneli görüntüleme yetkiniz yok." });
+  }
+
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    const SchoolSession = require("../../models/SchoolSession");
+    const User = require("../../models/User");
+    const { users: storeUsers } = require("../../models/Store");
+
+    const staffRecords = await StaffProgress.find({}).catch(() => []);
+    const schoolSessions = await SchoolSession.find({}).catch(() => []);
+    const dbUsers = await User.find({}).catch(() => []);
+    
+    // Create lookup maps
+    const userMap = new Map();
+    dbUsers.forEach(u => userMap.set(String(u.discordId), u));
+    storeUsers.find({}).forEach(u => {
+      if (u.discordId && !userMap.has(String(u.discordId))) {
+        userMap.set(String(u.discordId), u);
+      }
+    });
+
+    const schoolMap = new Map();
+    schoolSessions.forEach(s => schoolMap.set(String(s.userId), s));
+
+    const moderatorsList = [];
+
+    for (const s of staffRecords) {
+      const u = userMap.get(String(s.userId)) || {};
+      const school = schoolMap.get(String(s.userId)) || s.schoolSystem || {};
+
+      const isSchoolTrainee = (s.level === 1 || school?.status !== 'none' || s.schoolSystem?.status !== 'none');
+
+      let levelName = "Moderatör";
+      if (s.level === 1) levelName = "Stajyer Moderatör";
+      else if (s.level === 2) levelName = "Personel Moderatör";
+      else if (s.level === 3) levelName = "Gelişmiş Moderatör";
+      else if (s.level === 4) levelName = "Sekreter Moderatör";
+
+      if (isSchoolTrainee) levelName += " (Mod Okulu)";
+
+      let schoolStatusText = "Okulda Değil";
+      if (school?.status && school.status !== 'none') {
+        schoolStatusText = school.status;
+      }
+
+      moderatorsList.push({
+        userId: s.userId,
+        discordUsername: u.discordUsername || u.username || `User_${s.userId}`,
+        avatar: u.avatar || '',
+        robloxUsername: u.robloxUsername || s.schoolSystem?.robloxUsername || 'Bağlı Değil',
+        robloxId: u.robloxId || s.schoolSystem?.robloxUserId || null,
+        level: s.level,
+        levelName,
+        status: s.status || 'active',
+        guildJoined: !!s.guildJoined,
+        robloxVerified: !!s.robloxVerified,
+        inSchool: isSchoolTrainee,
+        schoolStatusText,
+        schoolPhase: school.phase || 0,
+        schoolStep: school.step || 0,
+        settings: {
+          skipIncompleteVerificationDM: !!(s.settings?.skipIncompleteVerificationDM || s.settings?.disableVerificationDM),
+          dailyBriefingEnabled: s.settings?.dailyBriefingEnabled !== false,
+          notificationsEnabled: s.settings?.notificationsEnabled !== false,
+          warningsEnabled: s.settings?.warningsEnabled !== false
+        },
+        stats: s.stats || {},
+        updatedAt: s.updatedAt || s.createdAt
+      });
+    }
+
+    // Also include school sessions not yet in StaffProgress
+    for (const sess of schoolSessions) {
+      if (!staffRecords.some(s => String(s.userId) === String(sess.userId))) {
+        const u = userMap.get(String(sess.userId)) || {};
+        moderatorsList.push({
+          userId: sess.userId,
+          discordUsername: u.discordUsername || `User_${sess.userId}`,
+          avatar: u.avatar || '',
+          robloxUsername: sess.robloxUsername || u.robloxUsername || 'Bağlı Değil',
+          robloxId: sess.robloxUserId || u.robloxId || null,
+          level: 1,
+          levelName: "Mod Okulu Öğrencisi",
+          status: 'in_school',
+          guildJoined: false,
+          robloxVerified: false,
+          inSchool: true,
+          schoolStatusText: sess.status || 'in_school',
+          schoolPhase: sess.training?.phase || 0,
+          schoolStep: sess.training?.step || 0,
+          settings: {
+            skipIncompleteVerificationDM: false,
+            dailyBriefingEnabled: true,
+            notificationsEnabled: true,
+            warningsEnabled: true
+          },
+          stats: {},
+          updatedAt: sess.updatedAt
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      moderators: moderatorsList,
+      counts: {
+        total: moderatorsList.length,
+        inSchool: moderatorsList.filter(m => m.inSchool).length,
+        verificationDmDisabled: moderatorsList.filter(m => m.settings.skipIncompleteVerificationDM).length,
+        briefingEnabled: moderatorsList.filter(m => m.settings.dailyBriefingEnabled).length
+      }
+    });
+
+  } catch (err) {
+    console.error("[/api/tumodlar/data error]:", err);
+    res.status(500).json({ error: "Moderatör verileri alınırken hata oluştu." });
+  }
+});
+
+router.post("/api/tumodlar/update-settings", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi gerçekleştirme yetkiniz yok." });
+  }
+
+  const { targetUserId, skipIncompleteVerificationDM, dailyBriefingEnabled, notificationsEnabled } = req.body;
+  if (!targetUserId) {
+    return res.status(400).json({ error: "Geçerli bir kullanıcı ID belirtilmedi." });
+  }
+
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    let progress = await StaffProgress.findOne({ userId: String(targetUserId) });
+
+    if (!progress) {
+      progress = new StaffProgress({
+        userId: String(targetUserId),
+        guildId: process.env.GUILD_ID || "1437481457344974992",
+        level: 1
+      });
+    }
+
+    if (!progress.settings) progress.settings = {};
+
+    if (typeof skipIncompleteVerificationDM === "boolean") {
+      progress.settings.skipIncompleteVerificationDM = skipIncompleteVerificationDM;
+      progress.settings.disableVerificationDM = skipIncompleteVerificationDM;
+    }
+    if (typeof dailyBriefingEnabled === "boolean") {
+      progress.settings.dailyBriefingEnabled = dailyBriefingEnabled;
+    }
+    if (typeof notificationsEnabled === "boolean") {
+      progress.settings.notificationsEnabled = notificationsEnabled;
+    }
+
+    progress.markModified('settings');
+    await progress.save();
+
+    res.json({
+      success: true,
+      message: "Moderatör ayarları başarıyla güncellendi.",
+      settings: progress.settings
+    });
+
+  } catch (err) {
+    console.error("[/api/tumodlar/update-settings error]:", err);
+    res.status(500).json({ error: "Ayar güncellenirken hata oluştu." });
+  }
+});
+
+router.post("/api/tumodlar/global-toggle", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { isSiteAdmin, isSiteStaff } = require("../../utils/adminCheck");
+  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi gerçekleştirme yetkiniz yok." });
+  }
+
+  const { skipIncompleteVerificationDM } = req.body;
+
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    const targetVal = typeof skipIncompleteVerificationDM === "boolean" ? skipIncompleteVerificationDM : true;
+
+    await StaffProgress.updateMany(
+      {},
+      {
+        $set: {
+          "settings.skipIncompleteVerificationDM": targetVal,
+          "settings.disableVerificationDM": targetVal
+        }
+      }
+    );
+
+    res.json({
+      success: true,
+      message: targetVal
+        ? "🚨 Tüm moderatörler için 'Eksik Doğrulama' DM uyarısı KAPATILDI."
+        : "📩 Tüm moderatörler için 'Eksik Doğrulama' DM uyarısı AÇILDI."
+    });
+
+  } catch (err) {
+    console.error("[/api/tumodlar/global-toggle error]:", err);
+    res.status(500).json({ error: "Toplu işlem gerçekleştirilirken hata oluştu." });
+  }
+});

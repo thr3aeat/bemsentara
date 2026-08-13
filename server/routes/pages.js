@@ -19,6 +19,7 @@ const {
   renderShopPage,
   renderGroupAdminPage,
   renderSocialPage,
+  renderTumModlarPage,
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
@@ -66,6 +67,12 @@ router.get("/staff", (req, res) => {
   const { isSiteStaff } = require("../../utils/adminCheck");
   if (!req.user || !isSiteStaff(req.user)) return res.redirect("/");
   res.send(renderStaffPanel(req.user));
+});
+
+router.get("/tumodlar", (req, res) => {
+  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
+  if (!req.user || (!isSiteStaff(req.user) && !isSiteAdmin(req.user))) return res.redirect("/login");
+  res.send(renderTumModlarPage(req.user));
 });
 
 router.get("/debug", (req, res) => {

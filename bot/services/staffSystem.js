@@ -4651,6 +4651,12 @@ async function checkStaffVerifications(client) {
     const { ROBLOX, ADMIN_GUILD_ID } = require('./staffAutomation');
 
     for (const p of allProgress) {
+      // 🚨 EĞER KULLANICI İÇİN 'EKSİK DOĞRULAMA DM' KAPATILDIYSA UYARIYI ATLA
+      if (p.settings?.skipIncompleteVerificationDM || p.settings?.disableVerificationDM) {
+        console.log(`[staffSystem] checkStaffVerifications: ${p.userId} için 'Eksik Doğrulama' DM bildirimi kapalı, mesaj gönderimi atlandı.`);
+        continue;
+      }
+
       const user = await User.findOne({ discordId: p.userId });
 
       const missingRoblox = !user || !user.robloxId;
