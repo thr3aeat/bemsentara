@@ -1,6 +1,6 @@
 'use strict';
 
-const { isSiteAdmin, isSiteStaff } = require("../../utils/adminCheck");
+const { isSiteAdmin } = require("../../utils/adminCheck");
 
 function renderTumModlarPage(user) {
   const content = `
@@ -8,11 +8,12 @@ function renderTumModlarPage(user) {
       <!-- HEADER BANNER -->
       <div class="banner-card">
         <div class="banner-info">
-          <div class="banner-badge">🛡️ MODERATÖR & OKUL YÖNETİM MERKEZİ</div>
-          <h1 class="banner-title">Tüm Moderatörler & Mod Okulu Yönetimi</h1>
+          <div class="banner-badge">👑 SADECE YÖNETİCİ (ADMIN) ERİŞİMİ</div>
+          <h1 class="banner-title">Tüm Moderatörler & Mod Okulu Yönetim Paneli</h1>
           <p class="banner-sub">
-            Tüm ekip üyelerini, Mod Okulu öğrencilerini ve bot DM bildirim ayarlarını buradan yönetebilirsiniz. 
-            <strong>"🚨 DİKKAT: Eksik Doğrulama İşlemi"</strong> DM uyarısının gitmesini istemediğiniz kişilerin ayarını kapatarak genel personel süreçlerini aksatmadan sürdürebilirsiniz.
+            Tüm ekip üyelerini, Mod Okulu öğrencilerini yönetebilir; moderatörleri <strong>kovabilir</strong>, 
+            <strong>Discord / Roblox hesaplarını değiştirebilir</strong> ve 
+            <strong>"🚨 DİKKAT: Eksik Doğrulama İşlemi"</strong> DM uyarısının gitme durumunu ayarlayabilirsiniz.
           </p>
         </div>
         <div class="banner-actions">
@@ -79,6 +80,39 @@ function renderTumModlarPage(user) {
       </div>
     </div>
 
+    <!-- MODAL: ACCOUNT CHANGE -->
+    <div id="accountModal" class="modal-overlay" style="display:none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title">🔄 Discord / Roblox Hesap Değiştirme</h3>
+          <button class="modal-close" onclick="closeAccountModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalTargetUserId" />
+          <div class="form-group">
+            <label class="form-label">Mevcut Discord ID:</label>
+            <input type="text" id="modalCurrentId" class="form-input" readonly />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Yeni Discord ID (Opsiyonel - Tüm Verileri Aktarır):</label>
+            <input type="text" id="modalNewDiscordId" class="form-input" placeholder="Örn: 1031620522406072350" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Yeni Discord Kullanıcı Adı (Hesap Aktarımı İçin):</label>
+            <input type="text" id="modalNewDiscordUsername" class="form-input" placeholder="Örn: yeni_kullanici" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Yeni Roblox Kullanıcı Adı (Opsiyonel):</label>
+            <input type="text" id="modalNewRobloxUsername" class="form-input" placeholder="Örn: RobloxKullaniciAdi" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeAccountModal()">İptal</button>
+          <button class="btn btn-primary" onclick="submitAccountChange()">💾 Değişikliği Kaydet</button>
+        </div>
+      </div>
+    </div>
+
     <!-- STYLES -->
     <style>
       .tumodlar-container {
@@ -105,9 +139,9 @@ function renderTumModlarPage(user) {
       .banner-info { max-width: 750px; }
       .banner-badge {
         display: inline-block;
-        background: rgba(167,139,250,0.15);
-        color: var(--accent);
-        border: 1px solid rgba(167,139,250,0.3);
+        background: rgba(244,63,94,0.18);
+        color: #fb7185;
+        border: 1px solid rgba(244,63,94,0.35);
         padding: 4px 12px;
         border-radius: 20px;
         font-size: 0.8rem;
@@ -120,18 +154,22 @@ function renderTumModlarPage(user) {
       .banner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
       .btn {
-        padding: 10px 18px;
+        padding: 9px 16px;
         border-radius: 10px;
         font-family: inherit;
-        font-size: 0.88rem;
+        font-size: 0.86rem;
         font-weight: 600;
         cursor: pointer;
         border: none;
         transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
+      .btn-primary { background: rgba(167,139,250,0.25); color: #c084fc; border: 1px solid rgba(167,139,250,0.4); }
+      .btn-primary:hover { background: rgba(167,139,250,0.4); transform: translateY(-2px); }
+      .btn-danger { background: rgba(244,63,94,0.18); color: #fb7185; border: 1px solid rgba(244,63,94,0.35); }
+      .btn-danger:hover { background: rgba(244,63,94,0.3); transform: translateY(-2px); }
       .btn-warning { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.35); }
       .btn-warning:hover { background: rgba(251,191,36,0.3); transform: translateY(-2px); }
       .btn-success { background: rgba(52,211,153,0.18); color: #34d399; border: 1px solid rgba(52,211,153,0.35); }
@@ -224,6 +262,7 @@ function renderTumModlarPage(user) {
       }
       .mod-card:hover { transform: translateY(-2px); border-color: rgba(167,139,250,0.4); }
       .mod-card.dm-disabled-card { border-left: 4px solid var(--warning); }
+      .mod-card.dismissed-card { opacity: 0.6; border-left: 4px solid var(--danger); }
 
       .mod-header { display: flex; align-items: center; gap: 14px; }
       .mod-avatar {
@@ -265,6 +304,15 @@ function renderTumModlarPage(user) {
       }
       .detail-row { display: flex; justify-content: space-between; color: var(--muted); }
       .detail-val { color: #fff; font-weight: 600; }
+
+      /* ACTION BUTTONS ON CARD */
+      .card-admin-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--border);
+        padding-top: 14px;
+      }
 
       /* TOGGLE SWITCHES */
       .switches-group {
@@ -313,6 +361,45 @@ function renderTumModlarPage(user) {
       input:checked + .slider { background-color: #34d399; }
       input:checked + .slider.alert-slider { background-color: #fb7185; }
       input:checked + .slider:before { transform: translateX(20px); }
+
+      /* MODAL STYLES */
+      .modal-overlay {
+        position: fixed;
+        top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(10px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-card {
+        background: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 520px;
+        padding: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+      .modal-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
+      .modal-close { background: transparent; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; }
+      .modal-body { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+      .form-group { display: flex; flex-direction: column; gap: 6px; }
+      .form-label { font-size: 0.85rem; font-weight: 600; color: #cbd5e1; }
+      .form-input {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid var(--border);
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+      }
+      .form-input:focus { border-color: var(--accent); }
+      .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
 
       .loading-spinner { text-align: center; padding: 40px; color: var(--muted); font-size: 1.1rem; }
     </style>
@@ -387,10 +474,11 @@ function renderTumModlarPage(user) {
 
         grid.innerHTML = mods.map(m => {
           const isDmDisabled = m.settings.skipIncompleteVerificationDM;
+          const isDismissed = m.status === 'dismissed';
           const badgeClass = m.inSchool ? 'badge-school' : (m.level === 4 ? 'badge-sekreter' : (m.level === 2 ? 'badge-personel' : 'badge-stajyer'));
 
           return \`
-            <div class="mod-card \${isDmDisabled ? 'dm-disabled-card' : ''}">
+            <div class="mod-card \${isDmDisabled ? 'dm-disabled-card' : ''} \${isDismissed ? 'dismissed-card' : ''}">
               <div class="mod-header">
                 <div class="mod-avatar">\${m.discordUsername.charAt(0).toUpperCase()}</div>
                 <div class="mod-name-info">
@@ -434,6 +522,16 @@ function renderTumModlarPage(user) {
                   </label>
                 </div>
               </div>
+
+              <!-- ADMIN ACTIONS: KOV & HESAP DEĞİŞTİR -->
+              <div class="card-admin-actions">
+                <button class="btn btn-primary" onclick="openAccountModal('\${m.userId}', '\${escHtml(m.robloxUsername)}')">
+                  🔄 Hesap Değiştir
+                </button>
+                <button class="btn btn-danger" onclick="dismissMod('\${m.userId}', '\${escHtml(m.discordUsername)}')">
+                  🚨 Kov / İşten Çıkar
+                </button>
+              </div>
             </div>
           \`;
         }).join('');
@@ -452,7 +550,6 @@ function renderTumModlarPage(user) {
           const data = await res.json();
           if (data.success) {
             showToast('✅ Ayar güncellendi!', 'success');
-            // Update local memory
             const mod = allModerators.find(m => String(m.userId) === String(userId));
             if (mod) mod.settings[settingName] = value;
           } else {
@@ -462,6 +559,71 @@ function renderTumModlarPage(user) {
         } catch (err) {
           showToast('❌ Bağlantı hatası', 'error');
           loadModData();
+        }
+      }
+
+      async function dismissMod(userId, username) {
+        const reason = prompt(\`🚨 "\${username}" (\${userId}) isimli moderatörü kovmak / işten çıkarmak istediğinize emin misiniz?\\n\\nİşten çıkarma nedenini girin:\`, "Admin paneli üzerinden kovuldu");
+        if (reason === null) return; // Canceled
+
+        try {
+          const res = await fetch('/api/tumodlar/dismiss', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetUserId: userId, reason })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('🚨 Moderatör başarıyla kovuldu / işten çıkarıldı.', 'success');
+            loadModData();
+          } else {
+            showToast('❌ ' + (data.error || 'İşten çıkarma başarısız oldu'), 'error');
+          }
+        } catch (err) {
+          showToast('❌ Bağlantı hatası', 'error');
+        }
+      }
+
+      function openAccountModal(userId, currentRoblox) {
+        document.getElementById('modalTargetUserId').value = userId;
+        document.getElementById('modalCurrentId').value = userId;
+        document.getElementById('modalNewDiscordId').value = '';
+        document.getElementById('modalNewDiscordUsername').value = '';
+        document.getElementById('modalNewRobloxUsername').value = currentRoblox || '';
+        document.getElementById('accountModal').style.display = 'flex';
+      }
+
+      function closeAccountModal() {
+        document.getElementById('accountModal').style.display = 'none';
+      }
+
+      async function submitAccountChange() {
+        const targetUserId = document.getElementById('modalTargetUserId').value;
+        const newDiscordId = document.getElementById('modalNewDiscordId').value;
+        const newDiscordUsername = document.getElementById('modalNewDiscordUsername').value;
+        const newRobloxUsername = document.getElementById('modalNewRobloxUsername').value;
+
+        try {
+          const res = await fetch('/api/tumodlar/change-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targetUserId,
+              newDiscordId,
+              newDiscordUsername,
+              newRobloxUsername
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(data.message, 'success');
+            closeAccountModal();
+            loadModData();
+          } else {
+            showToast('❌ ' + (data.error || 'Hesap değiştirme başarısız oldu'), 'error');
+          }
+        } catch (err) {
+          showToast('❌ Bağlantı hatası', 'error');
         }
       }
 
@@ -493,7 +655,6 @@ function renderTumModlarPage(user) {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
-      // Auto Load on Page Load
       document.addEventListener('DOMContentLoaded', loadModData);
     </script>
   `;

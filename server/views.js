@@ -7,11 +7,13 @@ const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
 // ─────────────────────────────────────────────
 function _layout(title, user, content, extraHead = '', activePath = '') {
   const staffLinks = user && isSiteStaff(user)
-    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">👨‍💼 Staff</a>
-       <a href="/tumodlar" class="nav-link${activePath === '/tumodlar' ? ' nav-active' : ''}">🛡️ Tüm Modlar</a>`
+    ? `<a href="/staff" class="nav-link staff-link${activePath === '/staff' ? ' nav-active' : ''}">👨‍💼 Staff</a>`
+    : '';
+  const tumModlarLink = user && isSiteAdmin(user)
+    ? `<a href="/tumodlar" class="nav-link${activePath === '/tumodlar' ? ' nav-active' : ''}">🛡️ Tüm Modlar</a>`
     : '';
   const adminLink = user && isSiteAdmin(user)
-    ? `<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">⚙️ Admin</a>`
+    ? `${tumModlarLink}<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">⚙️ Admin</a>`
     : '';
 
   const isOwner = user && user.discordUsername === "ekonqtx";

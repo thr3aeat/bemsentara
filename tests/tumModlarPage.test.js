@@ -14,7 +14,7 @@ test('renderTumModlarPage returns valid HTML with dashboard components', () => {
 
   const html = renderTumModlarPage(mockUser);
   assert.ok(typeof html === 'string');
-  assert.ok(html.includes('Tüm Moderatörler &amp; Mod Okulu Yönetimi') || html.includes('Tüm Moderatörler & Mod Okulu Yönetimi'));
+  assert.ok(html.includes('Tüm Moderatörler') && html.includes('Mod Okulu'));
   assert.ok(html.includes('Eksik Doğrulama'));
   assert.ok(html.includes('modSearchInput'));
   assert.ok(html.includes('/api/tumodlar/data'));

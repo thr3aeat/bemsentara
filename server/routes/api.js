@@ -4867,9 +4867,9 @@ router.get("/api/account-transfer/user/:discordId", async (req, res) => {
 
 router.get("/api/tumodlar/data", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
-  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
-  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
-    return res.status(403).json({ error: "Bu paneli görüntüleme yetkiniz yok." });
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu paneli görüntüleme yetkiniz yok. Yalnızca Admin yetkisi olanlar erişebilir." });
   }
 
   try {
@@ -4991,9 +4991,9 @@ router.get("/api/tumodlar/data", async (req, res) => {
 
 router.post("/api/tumodlar/update-settings", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
-  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
-  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
-    return res.status(403).json({ error: "Bu işlemi gerçekleştirme yetkiniz yok." });
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi sadece Admin yetkisi olanlar gerçekleştirebilir." });
   }
 
   const { targetUserId, skipIncompleteVerificationDM, dailyBriefingEnabled, notificationsEnabled } = req.body;
@@ -5043,9 +5043,9 @@ router.post("/api/tumodlar/update-settings", async (req, res) => {
 
 router.post("/api/tumodlar/global-toggle", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
-  const { isSiteAdmin, isSiteStaff } = require("../../utils/adminCheck");
-  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
-    return res.status(403).json({ error: "Bu işlemi gerçekleştirme yetkiniz yok." });
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi sadece Admin yetkisi olanlar gerçekleştirebilir." });
   }
 
   const { skipIncompleteVerificationDM } = req.body;
@@ -5074,5 +5074,138 @@ router.post("/api/tumodlar/global-toggle", async (req, res) => {
   } catch (err) {
     console.error("[/api/tumodlar/global-toggle error]:", err);
     res.status(500).json({ error: "Toplu işlem gerçekleştirilirken hata oluştu." });
+  }
+});
+
+router.post("/api/tumodlar/dismiss", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi sadece Admin yetkisi olanlar gerçekleştirebilir." });
+  }
+
+  const { targetUserId, reason } = req.body;
+  if (!targetUserId) {
+    return res.status(400).json({ error: "Geçerli bir hedef kullanıcı ID belirtilmedi." });
+  }
+
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    const SchoolSession = require("../../models/SchoolSession");
+
+    const progress = await StaffProgress.findOne({ userId: String(targetUserId) });
+    if (progress) {
+      progress.status = 'dismissed';
+      progress.dismissedAt = new Date();
+      progress.dismissReason = reason || 'Admin paneli üzerinden kovuldu';
+      progress.level = 0;
+      await progress.save();
+    }
+
+    const schoolSession = await SchoolSession.findOne({ userId: String(targetUserId) });
+    if (schoolSession) {
+      schoolSession.status = 'kicked';
+      await schoolSession.save();
+    }
+
+    console.log(`[TumModlar Admin] ${req.user.discordUsername} (${req.user.discordId}) kovdu: ${targetUserId} (Neden: ${reason || 'Belirtilmedi'})`);
+
+    res.json({
+      success: true,
+      message: `Moderatör (${targetUserId}) başarıyla kovuldu / işten çıkarıldı.`
+    });
+
+  } catch (err) {
+    console.error("[/api/tumodlar/dismiss error]:", err);
+    res.status(500).json({ error: "İşten çıkarma işlemi sırasında hata oluştu." });
+  }
+});
+
+router.post("/api/tumodlar/change-account", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu işlemi sadece Admin yetkisi olanlar gerçekleştirebilir." });
+  }
+
+  const { targetUserId, newDiscordId, newDiscordUsername, newRobloxUsername } = req.body;
+  if (!targetUserId) {
+    return res.status(400).json({ error: "Geçerli bir hedef kullanıcı ID belirtilmedi." });
+  }
+
+  try {
+    let transferSuccess = false;
+    let robloxSuccess = false;
+
+    // 1. If new Discord ID is provided, execute account transfer
+    if (newDiscordId && newDiscordId.trim() !== String(targetUserId).trim()) {
+      const cleanNewId = newDiscordId.trim();
+      const cleanNewUsername = (newDiscordUsername || `User_${cleanNewId}`).trim();
+
+      if (!/^\d{17,20}$/.test(cleanNewId)) {
+        return res.status(400).json({ error: "Geçersiz Yeni Discord ID formatı." });
+      }
+
+      const { transferAccount } = require("../services/accountTransferService");
+      const transferRes = await transferAccount(
+        String(targetUserId),
+        cleanNewId,
+        cleanNewUsername,
+        req.user.discordId,
+        "Tüm Modlar Admin Paneli Üzerinden Hesap Değiştirme"
+      );
+
+      if (!transferRes.success) {
+        return res.status(400).json({ error: `Discord hesap aktarımı başarısız: ${transferRes.error}` });
+      }
+      transferSuccess = true;
+    }
+
+    // 2. If new Roblox Username is provided, update Roblox account mapping
+    const effectiveUserId = transferSuccess ? newDiscordId.trim() : String(targetUserId).trim();
+
+    if (newRobloxUsername && newRobloxUsername.trim().length > 0) {
+      const cleanRobloxUsername = newRobloxUsername.trim();
+      const noblox = require("noblox.js");
+      const robloxId = await noblox.getIdFromUsername(cleanRobloxUsername).catch(() => null);
+
+      const User = require("../../models/User");
+      const StaffProgress = require("../../models/StaffProgress");
+      const SchoolSession = require("../../models/SchoolSession");
+
+      const dbUser = await User.findOne({ discordId: effectiveUserId });
+      if (dbUser) {
+        dbUser.robloxUsername = cleanRobloxUsername;
+        if (robloxId) dbUser.robloxId = robloxId;
+        await dbUser.save();
+      }
+
+      const progress = await StaffProgress.findOne({ userId: effectiveUserId });
+      if (progress) {
+        if (!progress.schoolSystem) progress.schoolSystem = {};
+        progress.schoolSystem.robloxUsername = cleanRobloxUsername;
+        if (robloxId) progress.schoolSystem.robloxUserId = robloxId;
+        progress.robloxVerified = true;
+        await progress.save();
+      }
+
+      const schoolSession = await SchoolSession.findOne({ userId: effectiveUserId });
+      if (schoolSession) {
+        schoolSession.robloxUsername = cleanRobloxUsername;
+        if (robloxId) schoolSession.robloxUserId = robloxId;
+        await schoolSession.save();
+      }
+
+      robloxSuccess = true;
+    }
+
+    res.json({
+      success: true,
+      message: `Moderatör hesap bilgileri başarıyla güncellendi. ${transferSuccess ? '(Discord hesabı aktarıldı) ' : ''}${robloxSuccess ? '(Roblox hesabı güncellendi)' : ''}`
+    });
+
+  } catch (err) {
+    console.error("[/api/tumodlar/change-account error]:", err);
+    res.status(500).json({ error: `Hesap değiştirme hatası: ${err.message}` });
   }
 });

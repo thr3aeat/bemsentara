@@ -70,8 +70,8 @@ router.get("/staff", (req, res) => {
 });
 
 router.get("/tumodlar", (req, res) => {
-  const { isSiteStaff, isSiteAdmin } = require("../../utils/adminCheck");
-  if (!req.user || (!isSiteStaff(req.user) && !isSiteAdmin(req.user))) return res.redirect("/login");
+  const { isSiteAdmin } = require("../../utils/adminCheck");
+  if (!req.user || !isSiteAdmin(req.user)) return res.redirect("/");
   res.send(renderTumModlarPage(req.user));
 });
 
