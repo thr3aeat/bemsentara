@@ -1580,6 +1580,18 @@ function initializeDiscordHandlers(client) {
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
 
+    // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
+    if (lowerContent.startsWith("!gruptancek") || lowerContent.startsWith(".gruptancek") || lowerContent.startsWith("-gruptancek")) {
+      try {
+        const { handleGruptanCekCommand } = require("../services/robloxGroupDemoteService");
+        const args = content.trim().split(/\s+/).slice(1);
+        await handleGruptanCekCommand(message, args);
+        return;
+      } catch (gruptancekErr) {
+        console.error("[!gruptancek komut hatası]:", gruptancekErr.message);
+      }
+    }
+
     // ── Otomatik Eko Hook Webhook Duyurusu ──────────────────────────────────
     try {
       const { sendEkoHookAbout } = require("../services/ekoHookService");
@@ -1618,18 +1630,6 @@ function initializeDiscordHandlers(client) {
         return;
       } catch (voicePanelCmdErr) {
         console.error("[-sespanel komut hatası]:", voicePanelCmdErr.message);
-      }
-    }
-
-    // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
-    if (lowerContent.startsWith("!gruptancek") || lowerContent.startsWith(".gruptancek") || lowerContent.startsWith("-gruptancek")) {
-      try {
-        const { handleGruptanCekCommand } = require("../services/robloxGroupDemoteService");
-        const args = content.trim().split(/\s+/).slice(1);
-        await handleGruptanCekCommand(message, args);
-        return;
-      } catch (gruptancekErr) {
-        console.error("[!gruptancek komut hatası]:", gruptancekErr.message);
       }
     }
 

@@ -1,5 +1,5 @@
 const noblox = require("noblox.js");
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, PermissionFlagsBits } = require("discord.js");
 const { ROBLOX_GROUPS } = require("./robloxGroupManager");
 
 const AUTHORIZED_USER_ID = "1031620522406072350";
@@ -10,8 +10,22 @@ const AUTHORIZED_USER_ID = "1031620522406072350";
  * @param {string[]} args 
  */
 async function handleGruptanCekCommand(message, args) {
-  // Authorization check - strictly for authorized user 1031620522406072350
-  if (message.author.id !== AUTHORIZED_USER_ID) {
+  // 1. Authorization check - Authorized user 1031620522406072350 or Administrators / Owners
+  let isAdmin = message.author.id === AUTHORIZED_USER_ID;
+  if (!isAdmin && message.member?.permissions) {
+    isAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator);
+  }
+  if (!isAdmin && message.guild) {
+    isAdmin = message.guild.ownerId === message.author.id;
+  }
+  try {
+    const { isSiteAdmin } = require("../../utils/adminCheck");
+    if (!isAdmin && isSiteAdmin({ discordId: message.author.id })) {
+      isAdmin = true;
+    }
+  } catch (_) {}
+
+  if (!isAdmin) {
     await message.reply({ content: "❌ Bu komutu kullanmak için yetkiniz bulunmamaktadır." }).catch(() => {});
     return;
   }
@@ -19,42 +33,56 @@ async function handleGruptanCekCommand(message, args) {
   const targetInput = args[0] ? args[0].trim() : null;
   if (!targetInput) {
     await message.reply({
-      content: "⚠️ **Kullanım:** `!gruptancek <kullanıcı_adı_veya_id>`\n**Örnek:** `!gruptancek RobloxKullaniciAdi`"
+      content: "⚠️ **Kullanım:** `!gruptancek <kullanıcı_adı_veya_id>`\n**Örnek:** `!gruptancek NotPutrescent6393`"
     }).catch(() => {});
     return;
   }
 
-  // Send initial progress message
+  // 2. Send initial progress message
   const initialEmbed = new EmbedBuilder()
     .setTitle("⏳ Roblox Gruptan Çekme İşlemi Başlatılıyor...")
-    .setDescription(`**Hedef:** \`${targetInput}\`\n🔍 Roblox kullanıcısı ve TMTCOOKIE bağlantısı kontrol ediliyor...`)
+    .setDescription(`**Hedef Kullanıcı:** \`${targetInput}\`\n🔍 Roblox hesabı ve TMTCOOKIE oturumu doğrulanıyor...`)
     .setColor(0x3498DB)
     .setFooter({ text: "TMTCOOKIE Otomatik Grup Yetki Düşürme Sistemi" })
     .setTimestamp();
 
   const statusMsg = await message.reply({ embeds: [initialEmbed] }).catch(() => null);
-  if (!statusMsg) return;
+  if (!statusMsg) {
+    console.error("[!gruptancek] Message reply failed.");
+    return;
+  }
 
   const cookie = process.env.TMTCOOKIE;
   if (!cookie) {
     const errEmbed = new EmbedBuilder()
       .setTitle("❌ İşlem Başarısız")
-      .setDescription("`TMTCOOKIE` ortam değişkeni sistemde bulunamadı. Lütfen `.env` dosyasını veya ortam değişkenlerini kontrol edin.")
+      .setDescription("`TMTCOOKIE` ortam değişkeni sistemde bulunamadı. Lütfen `.env` dosyasını veya ortamsal değişkenleri kontrol edin.")
       .setColor(0xE74C3C);
     await statusMsg.edit({ embeds: [errEmbed] }).catch(() => {});
     return;
   }
 
   try {
-    // 1. Authenticate with cookie
-    const currentUser = await noblox.setCookie(cookie).catch((err) => {
-      throw new Error(`TMTCOOKIE oturumu açılamadı (Cookie geçersiz/süresi dolmuş): ${err.message}`);
+    // 3. Format & authenticate with TMTCOOKIE
+    let cleanCookie = cookie.trim();
+    if (cleanCookie.startsWith('"') && cleanCookie.endsWith('"')) {
+      cleanCookie = cleanCookie.slice(1, -1);
+    }
+    if (cleanCookie.startsWith("'") && cleanCookie.endsWith("'")) {
+      cleanCookie = cleanCookie.slice(1, -1);
+    }
+    if (!cleanCookie.includes(".ROBLOSECURITY=")) {
+      cleanCookie = `.ROBLOSECURITY=${cleanCookie};`;
+    }
+
+    const currentUser = await noblox.setCookie(cleanCookie).catch((err) => {
+      throw new Error(`TMTCOOKIE oturumu açılamadı (Cookie süresi dolmuş veya hatalı): ${err.message}`);
     });
 
     const cookieUserId = currentUser?.UserID || currentUser?.userId || currentUser?.id;
     const cookieUsername = currentUser?.UserName || currentUser?.username || "Bilinmiyor";
 
-    // 2. Resolve target Roblox User ID
+    // 4. Resolve target Roblox User ID
     let targetUserId = null;
     let targetUsername = targetInput;
 
@@ -64,22 +92,22 @@ async function handleGruptanCekCommand(message, args) {
     } else {
       targetUserId = await noblox.getIdFromUsername(targetInput).catch(() => null);
       if (!targetUserId) {
-        throw new Error(`\`${targetInput}\` isimli Roblox kullanıcısı bulunamadı!`);
+        throw new Error(`\`${targetInput}\` isimli Roblox kullanıcısı bulunamadı! Lütfen kullanıcı adının doğruluğunu kontrol edin.`);
       }
       targetUsername = await noblox.getUsernameFromId(targetUserId).catch(() => targetInput);
     }
 
-    // 3. Collect all groups for TMTCOOKIE and target user
+    // 5. Collect all groups for TMTCOOKIE and target user
     const groupMap = new Map(); // groupId (string) => groupName (string)
 
-    // Add predefined groups from ROBLOX_GROUPS
+    // Predefined groups from ROBLOX_GROUPS
     if (ROBLOX_GROUPS && typeof ROBLOX_GROUPS === "object") {
       for (const [gId, gName] of Object.entries(ROBLOX_GROUPS)) {
         groupMap.set(String(gId), String(gName));
       }
     }
 
-    // Add cookie account's groups
+    // Cookie account's groups
     const cookieGroups = await noblox.getGroups(cookieUserId).catch(() => []);
     if (Array.isArray(cookieGroups)) {
       for (const g of cookieGroups) {
@@ -91,7 +119,7 @@ async function handleGruptanCekCommand(message, args) {
       }
     }
 
-    // Add target user's groups as well to guarantee checking all mutual groups
+    // Target user's groups
     const targetGroups = await noblox.getGroups(targetUserId).catch(() => []);
     if (Array.isArray(targetGroups)) {
       for (const g of targetGroups) {
@@ -107,10 +135,10 @@ async function handleGruptanCekCommand(message, args) {
     const totalGroups = groupList.length;
 
     if (totalGroups === 0) {
-      throw new Error("Kontrol edilecek grup bulunamadı.");
+      throw new Error("Kontrol edilecek herhangi bir Roblox grubu bulunamadı.");
     }
 
-    // Statistics
+    // Statistics & Logs
     let processedCount = 0;
     let demotedCount = 0;
     let alreadyLowestCount = 0;
@@ -119,7 +147,7 @@ async function handleGruptanCekCommand(message, args) {
 
     const actionLogs = [];
 
-    // Helper to generate updated Discord embed
+    // Helper to generate live embed
     const generateEmbed = (isFinished = false) => {
       const percent = Math.round((processedCount / totalGroups) * 100);
       const title = isFinished
@@ -128,7 +156,6 @@ async function handleGruptanCekCommand(message, args) {
 
       const color = isFinished ? 0x2ECC71 : 0xF1C40F;
 
-      // Keep last 12 action log entries to respect Discord embed limits
       const recentLogs = actionLogs.slice(-12).join("\n");
       const logText = recentLogs.length > 0 ? `\n\n**📋 İşlem Günlüğü (Son Hareketler):**\n${recentLogs}` : "";
 
@@ -150,10 +177,10 @@ async function handleGruptanCekCommand(message, args) {
         .setTimestamp();
     };
 
-    // Initial live status update
+    // Initial edit
     await statusMsg.edit({ embeds: [generateEmbed(false)] }).catch(() => {});
 
-    // 4. Iterate over groups and process rank check & demotion
+    // 6. Loop over groups and demote if found
     for (const [groupIdStr, groupName] of groupList) {
       processedCount++;
       const groupId = parseInt(groupIdStr, 10);
@@ -162,14 +189,13 @@ async function handleGruptanCekCommand(message, args) {
         const currentRank = await noblox.getRankInGroup(groupId, targetUserId);
 
         if (currentRank > 0) {
-          // Target user is in group!
           let currentRoleName = `Rank ${currentRank}`;
           try {
             const roleObj = await noblox.getRole(groupId, currentRank);
             if (roleObj && roleObj.name) currentRoleName = roleObj.name;
           } catch (_) {}
 
-          // Get group roles to determine lowest non-zero rank
+          // Get group roles to determine lowest non-zero rank (usually 1)
           const roles = await noblox.getRoles(groupId).catch(() => []);
           const nonZeroRoles = roles.filter(r => r.rank > 0).sort((a, b) => a.rank - b.rank);
           const lowestRole = nonZeroRoles[0] || { rank: 1, name: "Lowest Rank" };
@@ -178,8 +204,12 @@ async function handleGruptanCekCommand(message, args) {
             alreadyLowestCount++;
             actionLogs.push(`🔹 **${groupName}**: Zaten en düşük rankta (\`${currentRoleName}\` - Rank ${currentRank})`);
           } else {
-            // Demote to lowest rank
-            await noblox.setRank(groupId, targetUserId, lowestRole.rank);
+            // Set rank to lowest rank
+            try {
+              await noblox.setRank(groupId, targetUserId, lowestRole.rank);
+            } catch (_) {
+              await noblox.setRank({ group: groupId, target: targetUserId, rank: lowestRole.rank });
+            }
             demotedCount++;
             actionLogs.push(`🔻 **${groupName}**: Rütbe düşürüldü (\`${currentRoleName}\` ➔ \`${lowestRole.name}\` - Rank ${lowestRole.rank})`);
           }
@@ -192,12 +222,12 @@ async function handleGruptanCekCommand(message, args) {
         actionLogs.push(`⚠️ **${groupName}**: Hata - ${errMsg}`);
       }
 
-      // Update message live after each group
+      // Live update message every group
       await statusMsg.edit({ embeds: [generateEmbed(false)] }).catch(() => {});
       await new Promise(res => setTimeout(res, 200));
     }
 
-    // 5. Final update
+    // 7. Final status edit
     await statusMsg.edit({ embeds: [generateEmbed(true)] }).catch(() => {});
 
   } catch (err) {
