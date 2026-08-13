@@ -5,6 +5,56 @@ const { ROBLOX_GROUPS } = require("./robloxGroupManager");
 const AUTHORIZED_USER_ID = "1031620522406072350";
 
 /**
+ * Robustly authenticates noblox with TMTCOOKIE/TOKENFRIEND trying multiple format representations
+ */
+async function authenticateRobloxCookie() {
+  const cookieCandidates = [
+    process.env.TMTCOOKIE,
+    process.env.TOKENFRIEND,
+    process.env.tokenfriend
+  ].filter(Boolean);
+
+  if (cookieCandidates.length === 0) {
+    throw new Error("Sistemde `TMTCOOKIE` veya `TOKENFRIEND` ortam değişkeni tanımlı değil.");
+  }
+
+  let lastError = null;
+
+  for (const rawCookie of cookieCandidates) {
+    let clean = rawCookie.trim();
+    if (clean.startsWith('"') && clean.endsWith('"')) clean = clean.slice(1, -1);
+    if (clean.startsWith("'") && clean.endsWith("'")) clean = clean.slice(1, -1);
+
+    // Format 1: Full cookie header string `.ROBLOSECURITY=...;`
+    let formattedCookie = clean;
+    if (!formattedCookie.includes(".ROBLOSECURITY=")) {
+      formattedCookie = `.ROBLOSECURITY=${clean};`;
+    }
+
+    // Format 2: Raw token string
+    let rawToken = clean.replace(/^\.ROBLOSECURITY=/, "").replace(/;$/, "").trim();
+
+    // Try setCookie with formattedCookie
+    try {
+      const user = await noblox.setCookie(formattedCookie);
+      if (user) return { user, cookie: formattedCookie };
+    } catch (err1) {
+      lastError = err1;
+    }
+
+    // Try setCookie with rawToken
+    try {
+      const user = await noblox.setCookie(rawToken);
+      if (user) return { user, cookie: rawToken };
+    } catch (err2) {
+      lastError = err2;
+    }
+  }
+
+  throw new Error(`TMTCOOKIE oturumu açılamadı: ${lastError ? lastError.message : "You are not logged in."}`);
+}
+
+/**
  * Executes the !gruptancek command logic
  * @param {import('discord.js').Message} message 
  * @param {string[]} args 
@@ -38,7 +88,7 @@ async function handleGruptanCekCommand(message, args) {
     return;
   }
 
-  // 2. Send initial progress message with 4-level fallback (Reply -> Channel -> Text Reply -> Text Channel)
+  // 2. Send initial progress message with 4-level fallback
   const initialEmbed = new EmbedBuilder()
     .setTitle("⏳ Roblox Gruptan Çekme İşlemi Başlatılıyor...")
     .setDescription(`**Hedef Kullanıcı:** \`${targetInput}\`\n🔍 Roblox hesabı ve TMTCOOKIE oturumu doğrulanıyor...`)
@@ -58,11 +108,11 @@ async function handleGruptanCekCommand(message, args) {
   }
 
   if (!statusMsg) {
-    console.error("[!gruptancek] Mesaj gönderilemedi. Kanal izinlerini (Send Messages & Embed Links) kontrol edin.");
+    console.error("[!gruptancek] Mesaj gönderilemedi. Kanal izinlerini kontrol edin.");
     return;
   }
 
-  // Helper function to safely update status message with embed or text fallback
+  // Helper function to safely update status message
   const safeUpdateStatus = async (embed, fallbackText) => {
     if (!statusMsg) return;
     const ok = await statusMsg.edit({ embeds: [embed] }).catch(() => null);
@@ -71,33 +121,33 @@ async function handleGruptanCekCommand(message, args) {
     }
   };
 
-  const cookie = process.env.TMTCOOKIE;
-  if (!cookie) {
-    const errEmbed = new EmbedBuilder()
-      .setTitle("❌ İşlem Başarısız")
-      .setDescription("`TMTCOOKIE` ortam değişkeni sistemde bulunamadı. Lütfen `.env` dosyasını veya ortamsal değişkenleri kontrol edin.")
-      .setColor(0xE74C3C);
-    await safeUpdateStatus(errEmbed, "❌ **Hata:** `TMTCOOKIE` ortam değişkeni sistemde bulunamadı.");
-    return;
-  }
-
   try {
     // 3. Format & authenticate with TMTCOOKIE
-    let cleanCookie = cookie.trim();
-    if (cleanCookie.startsWith('"') && cleanCookie.endsWith('"')) {
-      cleanCookie = cleanCookie.slice(1, -1);
-    }
-    if (cleanCookie.startsWith("'") && cleanCookie.endsWith("'")) {
-      cleanCookie = cleanCookie.slice(1, -1);
-    }
-    if (!cleanCookie.includes(".ROBLOSECURITY=")) {
-      cleanCookie = `.ROBLOSECURITY=${cleanCookie};`;
+    let authResult;
+    try {
+      authResult = await authenticateRobloxCookie();
+    } catch (cookieErr) {
+      const errEmbed = new EmbedBuilder()
+        .setTitle("❌ Roblox Oturumu Açılamadı")
+        .setDescription(
+          `🔑 **Neden:** \`TMTCOOKIE\` çerezinin süresi dolmuş, geçersiz veya Roblox tarafından güvenlik nedeniyle sıfırlanmış.\n\n` +
+          `💡 **Çözüm:**\n` +
+          `1️⃣ Roblox'a gidin ve hesabınızdan yeni bir \`.ROBLOSECURITY\` çerezi kopyalayın.\n` +
+          `2️⃣ **.env** dosyasındaki veya **Render.com** ayarlarındaki \`TMTCOOKIE\` değişkenini güncelleyin.\n` +
+          `3️⃣ Botu yeniden başlatın.\n\n` +
+          `*Teknik Detay: ${cookieErr.message}*`
+        )
+        .setColor(0xE74C3C)
+        .setTimestamp();
+
+      await safeUpdateStatus(
+        errEmbed,
+        "❌ **Roblox Oturumu Açılamadı:** `TMTCOOKIE` çerezinin süresi dolmuş veya geçersiz. Lütfen Render.com / .env üzerindeki TMTCOOKIE değişkenini yeni Roblox `.ROBLOSECURITY` çerezi ile güncelleyin."
+      );
+      return;
     }
 
-    const currentUser = await noblox.setCookie(cleanCookie).catch((err) => {
-      throw new Error(`TMTCOOKIE oturumu açılamadı (Cookie süresi dolmuş veya hatalı): ${err.message}`);
-    });
-
+    const currentUser = authResult.user;
     const cookieUserId = currentUser?.UserID || currentUser?.userId || currentUser?.id;
     const cookieUsername = currentUser?.UserName || currentUser?.username || "Bilinmiyor";
 
@@ -270,5 +320,6 @@ async function handleGruptanCekCommand(message, args) {
 
 module.exports = {
   handleGruptanCekCommand,
-  AUTHORIZED_USER_ID
+  AUTHORIZED_USER_ID,
+  authenticateRobloxCookie
 };
