@@ -279,12 +279,43 @@ async function handleGruptanCekCommand(message, args) {
             alreadyLowestCount++;
             actionLogs.push(`🔹 **${groupName}**: Zaten en düşük rankta (\`${currentRoleName}\` - Rank ${currentRank})`);
           } else {
-            // Set rank to lowest rank
-            try {
-              await noblox.setRank(groupId, targetUserId, lowestRole.rank);
-            } catch (_) {
-              await noblox.setRank({ group: groupId, target: targetUserId, rank: lowestRole.rank });
+            // Set rank to lowest role (using role name/id first to handle multiple roles with rank 1)
+            let rankSetSuccess = false;
+
+            if (lowestRole.name) {
+              try {
+                await noblox.setRank(groupId, targetUserId, lowestRole.name);
+                rankSetSuccess = true;
+              } catch (_) {
+                try {
+                  await noblox.setRank({ group: groupId, target: targetUserId, rank: lowestRole.name });
+                  rankSetSuccess = true;
+                } catch (_) {}
+              }
             }
+
+            if (!rankSetSuccess && lowestRole.id) {
+              try {
+                await noblox.setRank(groupId, targetUserId, lowestRole.id);
+                rankSetSuccess = true;
+              } catch (_) {
+                try {
+                  await noblox.setRank({ group: groupId, target: targetUserId, role: lowestRole.id });
+                  rankSetSuccess = true;
+                } catch (_) {}
+              }
+            }
+
+            if (!rankSetSuccess) {
+              try {
+                await noblox.setRank(groupId, targetUserId, lowestRole.rank);
+                rankSetSuccess = true;
+              } catch (_) {
+                await noblox.setRank({ group: groupId, target: targetUserId, rank: lowestRole.rank });
+                rankSetSuccess = true;
+              }
+            }
+
             demotedCount++;
             actionLogs.push(`🔻 **${groupName}**: Rütbe düşürüldü (\`${currentRoleName}\` ➔ \`${lowestRole.name}\` - Rank ${lowestRole.rank})`);
           }
