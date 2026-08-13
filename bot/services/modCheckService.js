@@ -12,14 +12,14 @@ const ADMIN_TARGET_ID = '1031620522406072350';
 const modCheckSystemStore = collections.modCheckSystem;
 
 /**
- * Moderatör kontrol verisini getirir veya yeni oluşturur
+ * Moderatör kontrol verisini getirir. Sadece açıkça eklenen kayıtlar aktiftir.
  */
-function getModCheckRecord(userId) {
+function getModCheckRecord(userId, createIfMissing = false) {
   let record = modCheckSystemStore.findOne({ userId });
-  if (!record) {
+  if (!record && createIfMissing) {
     record = modCheckSystemStore.create({
       userId,
-      enabled: true,
+      enabled: false, // Varsayılan olarak KAPALI! Sadece .modcheck ID girildiğinde açılır.
       missedCount: 0,
       lastSentAt: null,
       lastRespondedAt: null,
@@ -61,31 +61,27 @@ Kurallar:
 }
 
 /**
- * Her 2 günde bir tüm aktif moderatörlere DM kontrolü çalıştırır
+ * Her 2 günde bir SADECE .modcheck ile eklenmiş aktif moderatörlere DM kontrolü çalıştırır
  */
 async function runModCheckCycle(client) {
-  logger.info('[modCheckService] 2 Günlük Moderatör Kontrol Döngüsü Başlatılıyor...');
+  logger.info('[modCheckService] 2 Günlük Moderatör Kontrol Döngüsü Çalıştırılıyor...');
 
   try {
-    const activeStaff = await StaffProgress.find({ status: 'active' });
+    // SADECE sistemde kayıtlı ve enabled: true olan moderatörleri al (Rastgele mod olmayan kimseye atılmaz)
+    const enabledRecords = modCheckSystemStore.find({ enabled: true }) || [];
     const now = new Date();
     const TWO_DAYS_MS = 48 * 60 * 60 * 1000;
 
-    for (const staff of activeStaff) {
-      const userId = String(staff.userId);
-      const record = getModCheckRecord(userId);
-
-      // Eğer kapatılmışsa pas geç
-      if (record.enabled === false) {
-        continue;
-      }
+    for (const record of enabledRecords) {
+      if (!record || record.enabled === false) continue;
+      const userId = String(record.userId);
 
       // Daha önce mesaj gönderilmiş ve 2 gün (48 saat) geçmiş mi kontrol et
       const lastSent = record.lastSentAt ? new Date(record.lastSentAt).getTime() : 0;
       const timeDiff = now.getTime() - lastSent;
 
-      // İlk defa gönderilecekse veya 48 saati doldurduysa
-      if (!record.lastSentAt || timeDiff >= TWO_DAYS_MS) {
+      // Eğer 48 saati doldurduysa
+      if (lastSent > 0 && timeDiff >= TWO_DAYS_MS) {
 
         // Eğer önceki mesaj "pending" kaldıysa (yanıt vermediyse) missedCount artır
         if (record.status === 'pending') {
@@ -313,30 +309,57 @@ async function handleModCheckButton(interaction) {
 }
 
 /**
- * Admin tarafından ID girilerek moderatör kontrolünü yeniden açma
+ * Admin tarafından ID girilerek moderatör kontrolünü kaydetme / yeniden açma
  */
 async function reopenModCheck(client, adminUser, modUserId) {
-  const record = getModCheckRecord(modUserId);
-  record.enabled = true;
-  record.missedCount = 0;
-  record.status = 'reopened';
-  record.lastSentAt = null; // Bir sonraki döngüde DM alsın
-  await record.save();
+  let record = modCheckSystemStore.findOne({ userId: modUserId });
+  if (!record) {
+    record = modCheckSystemStore.create({
+      userId: modUserId,
+      enabled: true,
+      missedCount: 0,
+      lastSentAt: null,
+      lastRespondedAt: null,
+      status: 'none',
+      lastResponse: null,
+    });
+  } else {
+    record.enabled = true;
+    record.missedCount = 0;
+    record.status = 'reopened';
+  }
 
-  // Moderatöre bilgi mesajı at
+  // Hemen 2 günlük ilk AI ipucunu ve BURADAYIM butonunu gönder
+  const tipText = await generateModTip();
+
+  const dmEmbed = new EmbedBuilder()
+    .setColor(0x3498DB)
+    .setTitle('💡 2 Günlük Moderatör Gelişim & Kontrol İpucu')
+    .setDescription(`Merhaba Yetkilimiz! 👋\nYönetim tarafından 2 günlük moderatör katılım ve gelişim kontrol sisteminiz aktifleştirildi.\n\nİpucunuz:\n> *"${tipText}"*\n\n**Moderatör Nasıl Olmalı?**\nAktifliğinizi doğrulamak ve ipucunu okuduğunuzu teyit etmek için lütfen aşağıdaki **BURADAYIM** butonuna tıklayınız.`)
+    .setFooter({ text: 'Sentara & EkoYıldız Yönetim Sistemi • 2 Günlük Kontrol' })
+    .setTimestamp();
+
+  const dmRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`modcheck_buradayim_${modUserId}_${Date.now()}`)
+      .setLabel('BURADAYIM')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('✋')
+  );
+
   try {
     const targetUser = await client.users.fetch(modUserId).catch(() => null);
     if (targetUser) {
-      const reopenEmbed = new EmbedBuilder()
-        .setColor(0x2ECC71)
-        .setTitle('✅ Moderatör Kontrol Sisteminiz Yeniden Açıldı')
-        .setDescription('Üst yönetim tarafından 2 günlük moderatör kontrol ve gelişim sisteminiz tekrar aktif edildi. Bir sonraki periyotta gelişim ipucunuz tarafınıza ulaştırılacaktır.')
-        .setTimestamp();
-
-      await targetUser.send({ embeds: [reopenEmbed] }).catch(() => {});
+      await targetUser.send({ embeds: [dmEmbed], components: [dmRow] });
+      record.lastSentAt = new Date();
+      record.status = 'pending';
+      await record.save();
+      logger.info(`[modCheckService] Activated and sent DM tip to moderator ${modUserId}`);
     }
   } catch (err) {
-    logger.warn(`[modCheckService] Could not send reopen DM to user ${modUserId}: ${err.message}`);
+    logger.warn(`[modCheckService] Could not send initial DM to mod ${modUserId}: ${err.message}`);
+    record.lastSentAt = new Date();
+    await record.save();
   }
 
   return true;

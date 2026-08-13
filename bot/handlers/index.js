@@ -1599,8 +1599,8 @@ function initializeDiscordHandlers(client) {
       }
     }
 
-    // ── Moderatör 2 Günlük DM Kontrolü Yeniden Açma (.modcheck-ac / .modcheck-test) ──
-    if (lowerContent.startsWith(".modcheck-ac") || lowerContent.startsWith("!modcheck-ac") || lowerContent.startsWith(".modcheckac")) {
+    // ── Moderatör 2 Günlük DM Kontrolü Ekleme / Açma (.modcheck <user_id> / .modcheck-ac <user_id>) ──
+    if (lowerContent.startsWith(".modcheck ") || lowerContent.startsWith("!modcheck ") || lowerContent.startsWith(".modcheck-ac") || lowerContent.startsWith("!modcheck-ac") || lowerContent.startsWith(".modcheckac")) {
       const args = content.trim().split(/\s+/).slice(1);
       const targetId = args[0]?.trim();
       const isAdmin = message.member?.permissions?.has("Administrator") || message.author.id === "1031620522406072350";
@@ -1609,13 +1609,13 @@ function initializeDiscordHandlers(client) {
         return message.reply("❌ Bu komutu sadece **yöneticiler** kullanabilir.");
       }
       if (!targetId) {
-        return message.reply("❌ Lütfen aktifleştirmek istediğiniz moderatörün Discord User ID'sini giriniz. Örnek: `.modcheck-ac 1031620522406072350`");
+        return message.reply("❌ Lütfen aktifleştirmek istediğiniz moderatörün Discord User ID'sini giriniz. Örnek: `.modcheck 1031620522406072350`");
       }
 
       try {
         const { reopenModCheck } = require("../services/modCheckService");
         await reopenModCheck(client, message.author, targetId);
-        return message.reply(`✅ <@${targetId}> (\`${targetId}\`) kullanıcısının 2 günlük DM ipucu ve kontrol sistemi yeniden aktif edildi.`);
+        return message.reply(`✅ <@${targetId}> (\`${targetId}\`) moderatörü 2 günlük DM ipucu ve kontrol sistemine eklendi/aktif edildi ve ilk DM ipucu gönderildi!`);
       } catch (err) {
         return message.reply(`❌ İşlem sırasında hata oluştu: ${err.message}`);
       }
