@@ -389,17 +389,23 @@ async function handleBlacklistMessage(message, client) {
     const reason = match[2].trim();
 
     try {
-      const existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${groupName}$`, 'i') }, type: 'group' });
+      const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(groupName)}$`, 'i') }, type: 'group' });
+      let isNew = false;
       if (existing) {
-        return sendWarning(`⚠️ **${groupName}** grubu zaten karalistede ekli!`);
+        existing.reason = reason;
+        existing.status = 'active';
+        existing.removedAt = null;
+        await existing.save();
+      } else {
+        await Blacklist.create({
+          name: groupName,
+          type: 'group',
+          reason: reason,
+          addedBy: message.author.id
+        });
+        isNew = true;
       }
-
-      await Blacklist.create({
-        name: groupName,
-        type: 'group',
-        reason: reason,
-        addedBy: message.author.id
-      });
 
       deleteMessage();
       await renderBlacklist(client);
@@ -407,7 +413,7 @@ async function handleBlacklistMessage(message, client) {
       if (logChannel) {
         const cleanName = groupName.replace(/[<@!>]/g, "");
         await logChannel.send({
-          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})`,
+          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})${isNew ? '' : ' *(Güncellendi)*'}`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -424,17 +430,23 @@ async function handleBlacklistMessage(message, client) {
     const reason = match[2].trim();
 
     try {
-      const existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') }, type: 'person' });
+      const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') }, type: 'person' });
+      let isNew = false;
       if (existing) {
-        return sendWarning(`⚠️ **${name}** zaten karalistede ekli!`);
+        existing.reason = reason;
+        existing.status = 'active';
+        existing.removedAt = null;
+        await existing.save();
+      } else {
+        await Blacklist.create({
+          name: name,
+          type: 'person',
+          reason: reason,
+          addedBy: message.author.id
+        });
+        isNew = true;
       }
-
-      await Blacklist.create({
-        name: name,
-        type: 'person',
-        reason: reason,
-        addedBy: message.author.id
-      });
 
       deleteMessage();
       await renderBlacklist(client);
@@ -442,7 +454,7 @@ async function handleBlacklistMessage(message, client) {
       if (logChannel) {
         const cleanName = name.replace(/[<@!>]/g, "");
         await logChannel.send({
-          content: `➕ **[KARALİSTE KİŞİ EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** eklendi. (Sebep: ${reason})`,
+          content: `➕ **[KARALİSTE KİŞİ EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** eklendi. (Sebep: ${reason})${isNew ? '' : ' *(Güncellendi)*'}`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
