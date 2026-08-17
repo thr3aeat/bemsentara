@@ -14,6 +14,19 @@ const { chatWithAI } = require("./aiService");
 const { jailUser } = require("./jailService");
 const { issueWarning } = require("./punishmentService");
 const { logTrustUserActivity, updateTrustScore } = require("./security/trustScoreService");
+const MOD_CEZA_LOG_CHANNEL_ID = process.env.EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
+
+async function sendCezaLog(client, embed) {
+  try {
+    if (!client) return;
+    const channel = await client.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null);
+    if (channel && channel.isTextBased()) {
+      await channel.send({ embeds: [embed] }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[automodPunishmentService] sendCezaLog error:', err.message);
+  }
+}
 
 /**
  * Moderatör tıklamaları için Automod Ceza Handler
@@ -126,6 +139,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("🤖 YAPAY ZEKA CEZASI İNFAZ EDİLDİ")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **İnfaz Eden:** ${interaction.user.toString()}\n> ${resultMsg}`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 
@@ -144,6 +158,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("🏏 HAPİSTE JOPLAMA GERÇEKLEŞTİRİLDİ")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **Yetkili:** ${interaction.user.toString()}\n> 🏏 Kullanıcının hapiste konuşması **60 dakika** joplanarak kısıtlandı.`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 
@@ -166,6 +181,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("🔒 HAPİS SÜRESİ UZATILDI")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **Yetkili:** ${interaction.user.toString()}\n> 🔒 Kullanıcının hapis cezası **+${addedMins} dakika** uzatıldı.`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 
@@ -185,6 +201,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("⚠️ UYARI GÖNDERİLDİ")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **Yetkili:** ${interaction.user.toString()}\n> ⚠️ Kullanıcıya resmi uyarı gönderildi.`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 
@@ -207,6 +224,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("🔇 SUSTURMA CEZASI UYGULANDI")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **Yetkili:** ${interaction.user.toString()}\n> 🔇 Kullanıcı **${duration} dakika** susturuldu.`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 
@@ -221,6 +239,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
         .setTitle("🔒 HAPİS CEZASI UYGULANDI")
         .setDescription((originalEmbed?.description || "") + `\n\n> 👮 **Yetkili:** ${interaction.user.toString()}\n> 🔒 Kullanıcı **${duration} dakika** hapse atıldı.`);
 
+      sendCezaLog(interaction.client, updatedEmbed).catch(() => {});
       return interaction.editReply({ embeds: [updatedEmbed], components: [] }).catch(() => {});
     }
 

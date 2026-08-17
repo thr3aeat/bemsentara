@@ -1444,9 +1444,33 @@ Lütfen yetkiliye hitaben, karnesini takdim eden resmi bir AI Eğitim Mentoru di
       await interaction.deferReply({ ephemeral: true });
       try {
         const { retireFromStaff } = require('../services/staffSystem');
-        const result = await retireFromStaff(interaction.user.id, interaction.client);
+        const result = await retireFromStaff(interaction.user.id, 'Yetkili Paneli Üzerinden Onursal Emeklilik', interaction.client);
         if (!result.success) return interaction.editReply({ content: `❌ ${result.message}` });
-        return interaction.editReply({ content: `🏅 **Tebrikler!** ${result.totalDays} gün aktif hizmetin sonrasında emekli oldun! Son görevin: ${result.levelName}` });
+        return interaction.editReply({ content: `🏛️ **Tebrikler!** ${result.totalDays} gün aktif hizmetin sonrasında **Onursal Kıdemli Danışman** statüsüne geçtin! Son görevin: ${result.levelName}` });
+      } catch (err) {
+        return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+      }
+    }
+
+    if (action === 'staff_action_buy_pardon') {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const { purchaseStaffPardon } = require('../services/staffSystem');
+        const result = await purchaseStaffPardon(interaction.user.id, interaction.client);
+        if (!result.success) return interaction.editReply({ content: `❌ ${result.message}` });
+        return interaction.editReply({ content: result.message });
+      } catch (err) {
+        return interaction.editReply({ content: `❌ Hata: ${err.message}` });
+      }
+    }
+
+    if (action === 'staff_action_trigger_event') {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const { triggerRandomCommunityEvent } = require('../services/staffSystem');
+        const result = await triggerRandomCommunityEvent(interaction.client);
+        if (!result.success) return interaction.editReply({ content: `❌ Kriz etkinliği başlatılamadı: ${result.message}` });
+        return interaction.editReply({ content: `🚨 **Rastgele Sunucu Kriz Etkinliği Başlatıldı!**\n> Etkinlik: **${result.event}**\nYetkili kanalına acil durum brifingi gönderildi!` });
       } catch (err) {
         return interaction.editReply({ content: `❌ Hata: ${err.message}` });
       }

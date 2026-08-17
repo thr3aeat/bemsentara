@@ -2283,22 +2283,38 @@ function initializeDiscordHandlers(client) {
           .replace(/ö/g, "o")
           .replace(/ç/g, "c");
 
-        // Substring check (can also use RegExp to prevent false positives if needed, but keeping user's .includes for now, or using word-boundary check)
+        // Substring check
         const hasSwear = swearWords.some(word => {
           const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
           const regex = new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`, "i");
           return regex.test(cleanedContent);
         });
+
         if (hasSwear) {
           // Notify Moderator
           const { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+          const MOD_CEZA_LOG_CHANNEL_ID = process.env.EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
+
+          // Yetkili / Moderatör kontrolü
+          const staffRoleIds = [
+            "1518692386836971610", // Mod ekibi
+            "1518692395774906648", // Stajyer
+            "1518692394495643830", // Personel
+            "1518692393660973186", // Kıdemli
+            "1518692392415395971", // Sekreter
+            "1518709348506013706", // Kıdemli Sekreter
+            "1518692391312298045"  // Genel Koordinatör
+          ];
+
+          const isStaffAuthor = staffRoleIds.some(rId => message.member?.roles?.cache?.has(rId));
 
           let targetMod = null;
           try {
-            // Find members with role ID 1518692386836971610
+            // Mesajı yazan kişi moderatörse kesinlikle KENDİSİNE gönderme, başka aktif bir yetkili bul
             const modRoleMembers = message.guild.members.cache.filter(m =>
               !m.user.bot &&
-              m.roles.cache.has("1518692386836971610")
+              m.id !== message.author.id &&
+              staffRoleIds.some(rId => m.roles.cache.has(rId))
             );
 
             // Filter by presence (active)
@@ -2317,120 +2333,124 @@ function initializeDiscordHandlers(client) {
             targetMod = await message.guild.members.fetch("1031620522406072350").catch(() => null);
           }
 
-          if (targetMod) {
-            // AI Evaluation of the severity
-            let severity = "orta";
-            let suggestedDuration = 15;
-            try {
-              const { chatWithAI } = require("../services/aiService");
-              const aiPrompt = "Sen bir Discord moderasyon asistanısın. Kullanıcı tarafından yazılan küfürlü mesajın ciddiyetini değerlendir. " +
-                "Aşırı derecede kötü veya cinsel içerikliyse yüksek süre ver. Hafif küfür ise düşük süre ver. " +
-                "Yalnızca JSON formatında yanıt dön: {\"severity\": \"dusuk|orta|yuksek\", \"minutes\": 10-180 arası sayı}";
-              const aiResponse = await chatWithAI(`Kullanıcı Mesajı: "${message.content}"`, aiPrompt).catch(() => null);
-              if (aiResponse) {
-                const cleanJson = aiResponse.replace(/```json|```/g, "").trim();
-                const parsed = JSON.parse(cleanJson);
-                severity = parsed.severity || severity;
-                suggestedDuration = parsed.minutes || suggestedDuration;
-              }
-            } catch (err) {
-              console.error("[SwearDetector] AI değerlendirme hatası:", err.message);
+          // AI Evaluation of the severity
+          let severity = "orta";
+          let suggestedDuration = 15;
+          try {
+            const { chatWithAI } = require("../services/aiService");
+            const aiPrompt = "Sen bir Discord moderasyon asistanısın. Kullanıcı tarafından yazılan küfürlü mesajın ciddiyetini değerlendir. " +
+              "Aşırı derecede kötü veya cinsel içerikliyse yüksek süre ver. Hafif küfür ise düşük süre ver. " +
+              "Yalnızca JSON formatında yanıt dön: {\"severity\": \"dusuk|orta|yuksek\", \"minutes\": 10-180 arası sayı}";
+            const aiResponse = await chatWithAI(`Kullanıcı Mesajı: "${message.content}"`, aiPrompt).catch(() => null);
+            if (aiResponse) {
+              const cleanJson = aiResponse.replace(/```json|```/g, "").trim();
+              const parsed = JSON.parse(cleanJson);
+              severity = parsed.severity || severity;
+              suggestedDuration = parsed.minutes || suggestedDuration;
             }
+          } catch (err) {
+            console.error("[SwearDetector] AI değerlendirme hatası:", err.message);
+          }
 
-            const User = require("../../models/User");
-            const dbUser = await User.findOne({ discordId: message.author.id });
-            const targetMember = await message.guild.members.fetch(message.author.id).catch(() => null);
-            const isUserJailed = !!(dbUser?.isJailed || targetMember?.roles?.cache?.some(r => r.name.toLowerCase() === "hapis"));
+          const User = require("../../models/User");
+          const dbUser = await User.findOne({ discordId: message.author.id });
+          const targetMember = await message.guild.members.fetch(message.author.id).catch(() => null);
+          const isUserJailed = !!(dbUser?.isJailed || targetMember?.roles?.cache?.some(r => r.name.toLowerCase() === "hapis"));
 
-            const alertTitle = isUserJailed ? "🚨 HAPİSTEYKEN KURAL İHLALİ ALGILANDI" : "🚨 KÜFÜR VEYA UYGUNSUZ İÇERİK ALGILANDI";
+          let alertTitle = isUserJailed ? "🚨 HAPİSTEYKEN KURAL İHLALİ ALGILANDI" : "🚨 KÜFÜR VEYA UYGUNSUZ İÇERİK ALGILANDI";
+          if (isStaffAuthor) {
+            alertTitle = "🚨 DİKKAT: YETKİLİ / MODERATÖR KURAL İHLALİ ALGILANDI!";
+          }
 
-            const embed = new EmbedBuilder()
-              .setTitle(alertTitle)
-              .setColor(0xe74c3c)
-              .setDescription(
-                `Sunucuda küfür veya uygunsuz içerik barındıran bir mesaj tespit edildi.${isUserJailed ? "\n\n⚠️ **DİKKAT:** Bu kullanıcı şu an **HAPİSHANEDEDİR!**" : ""}\n\n` +
-                `👤 **Kullanıcı:** ${message.author.toString()} (\`${message.author.tag}\`)\n` +
-                `🏠 **Sunucu:** ${message.guild.name}\n` +
-                `📂 **Kanal:** <#${message.channel.id}>\n` +
-                `📝 **İçerik:** \`${message.content}\`\n\n` +
-                `🤖 **AI Değerlendirmesi:**\n` +
-                `• **Önem Derecesi:** \`${severity.toUpperCase()}\`\n` +
-                `• **Önerilen Süre:** \`${suggestedDuration} dakika\``
-              )
-              .setTimestamp();
+          const embed = new EmbedBuilder()
+            .setTitle(alertTitle)
+            .setColor(isStaffAuthor ? 0x9b59b6 : 0xe74c3c)
+            .setDescription(
+              (isStaffAuthor
+                ? `⚠️ **ÖNEMLİ:** İhlal yapan kullanıcı bir **MODERATÖR / YETKİLİDİR!** Kendisine bildirim gitmemiş, işlem yapmanız için en yakın aktif yetkili olarak size atanmıştır.\n\n`
+                : "") +
+              (isUserJailed ? `⚠️ **DİKKAT:** Bu kullanıcı şu an **HAPİSHANEDEDİR!**\n\n` : "") +
+              `👤 **Kullanıcı:** ${message.author.toString()} (\`${message.author.tag}\`)${isStaffAuthor ? " 🛡️ **[YETKİLİ]**" : ""}\n` +
+              `🏠 **Sunucu:** ${message.guild.name}\n` +
+              `📂 **Kanal:** <#${message.channel.id}>\n` +
+              `📝 **İçerik:** \`${message.content}\`\n\n` +
+              `🤖 **AI Değerlendirmesi:**\n` +
+              `• **Önem Derecesi:** \`${severity.toUpperCase()}\`\n` +
+              `• **Önerilen Süre:** \`${suggestedDuration} dakika\``
+            )
+            .setFooter({ text: "Eko Yıldız • Ceza İşlem & Adalet Sistemi" })
+            .setTimestamp();
 
-            const row1 = new ActionRowBuilder();
-            const row2 = new ActionRowBuilder();
+          const row1 = new ActionRowBuilder();
+          const row2 = new ActionRowBuilder();
 
-            // AI Auto Punish Button
+          if (isUserJailed) {
+            // Hapisteki kullanıcılar için: Jopla (Hapiste Sustur), Hapis Süresini Uzat
+            row1.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`jail_jop_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("🏏 JOPLA (HAPİSTE SUSTUR)")
+                .setStyle(ButtonStyle.Warning),
+              new ButtonBuilder()
+                .setCustomId(`jail_extend_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("🔒 HAPİS SÜRESİNİ UZAT (+60 dk)")
+                .setStyle(ButtonStyle.Danger)
+            );
+
+            row2.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`jail_ai_auto_punish_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("✨ AI ADLİ KARAR")
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("✅ YOKSAY")
+                .setStyle(ButtonStyle.Secondary)
+            );
+          } else {
+            // Standart kullanıcı ve yetkili ihlalleri: Ban/Kick yerine Hapis, Uyarı, Susturma
             row1.addComponents(
               new ButtonBuilder()
                 .setCustomId(`jail_ai_auto_punish_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
                 .setLabel("✨ AI ÖNERİLEN CEZAYI UYGULA")
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Success),
+              new ButtonBuilder()
+                .setCustomId(`jail_immed_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
+                .setLabel("🔒 HAPİSE AT")
+                .setStyle(ButtonStyle.Danger)
             );
 
-            if (isUserJailed) {
-              row1.addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`jail_jop_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("🏏 JOPLA (HAPİSTE SUSTUR)")
-                  .setStyle(ButtonStyle.Warning),
-                new ButtonBuilder()
-                  .setCustomId(`jail_extend_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("🔒 HAPİS SÜRESİNİ UZAT")
-                  .setStyle(ButtonStyle.Danger)
-              );
+            row2.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`jail_warn_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("⚠️ RESMİ UYARI VER")
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId(`jail_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
+                .setLabel("🔇 SUSTUR (MUTE)")
+                .setStyle(ButtonStyle.Primary),
+              new ButtonBuilder()
+                .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
+                .setLabel("✅ YOKSAY")
+                .setStyle(ButtonStyle.Secondary)
+            );
+          }
 
-              row2.addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`jail_kick_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("👢 SUNUCUDAN AT")
-                  .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                  .setCustomId(`jail_ban_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("🔨 BANLA")
-                  .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                  .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("✅ YOKSAY")
-                  .setStyle(ButtonStyle.Secondary)
-              );
-            } else {
-              row1.addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`jail_warn_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("⚠️ UYAR")
-                  .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                  .setCustomId(`jail_mute_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
-                  .setLabel("🔇 SUSTUR (MUTE)")
-                  .setStyle(ButtonStyle.Primary)
-              );
-
-              row2.addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`jail_immed_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}_${suggestedDuration}`)
-                  .setLabel("🔒 HAPİSE AT")
-                  .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                  .setCustomId(`jail_kick_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("👢 SUNUCUDAN AT")
-                  .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                  .setCustomId(`jail_ban_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("🔨 BANLA")
-                  .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                  .setCustomId(`jail_ignore_${message.guild.id}_${message.author.id}_${message.channel.id}_${message.id}`)
-                  .setLabel("✅ YOKSAY")
-                  .setStyle(ButtonStyle.Secondary)
-              );
-            }
-
+          // 1. Yetkiliye DM gönder
+          if (targetMod && targetMod.id !== message.author.id) {
             await targetMod.send({ embeds: [embed], components: [row1, row2] }).catch((err) => {
               console.error(`[SwearDetector] Yetkiliye DM gönderilemedi:`, err.message);
             });
+          }
+
+          // 2. Moderatör Ceza İşlem Log Kanalına (1518693023934844959) anında log düşür
+          try {
+            const logChannel = await client.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null);
+            if (logChannel && logChannel.isTextBased()) {
+              await logChannel.send({ embeds: [embed] }).catch(() => {});
+            }
+          } catch (logErr) {
+            console.error('[SwearDetector] Log kanalına gönderilemedi:', logErr.message);
           }
         }
       } catch (err) {

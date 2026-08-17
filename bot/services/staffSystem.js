@@ -1571,18 +1571,40 @@ async function checkDailyCompletion(progress, client, autoSave = true) {
     if (!progress.gamification) {
       progress.gamification = { totalPoints: 0, ecoCoins: 0, level: 1, currentXP: 0, badges: {}, streak: { current: 0, longest: 0, brokenDays: 0 }, lastDailyClaim: '' };
     }
-    const levelMultiplier = 1 + (progress.level * 0.25); // Seviye arttıkça daha fazla ödül
+    const levelMultiplier = 1 + (progress.level * 0.05); // Dengeli ekonomik çarpan
     const restedMultiplier = restedBonus ? 2.0 : 1.0;
     
-    progress.gamification.totalPoints = (progress.gamification.totalPoints || 0) + Math.floor(25 * levelMultiplier * restedMultiplier); // Günlük 25+ puan
-    progress.gamification.currentXP = (progress.gamification.currentXP || 0) + Math.floor(100 * levelMultiplier * restedMultiplier); // Günlük 100+ XP
+    const xpReward = Math.floor(100 * levelMultiplier * restedMultiplier);
+    progress.gamification.totalPoints = (progress.gamification.totalPoints || 0) + Math.floor(25 * levelMultiplier * restedMultiplier);
+    progress.gamification.currentXP = (progress.gamification.currentXP || 0) + xpReward;
 
-    // EkoCoin İyileştirmesi: Tüm görevlerin tamamlanması halinde EkoCoin ödülü (Seri çarpanı ile!)
+    // Türk Lirası (₺) ve Seri Çarpanı Ödülü
     const consecutiveDays = progress.stats?.consecutiveDays || 0;
     const streakMultiplier = consecutiveDays >= 30 ? 2.0 : (consecutiveDays >= 15 ? 1.5 : (consecutiveDays >= 5 ? 1.2 : 1.0));
-    const baseCoinReward = Math.floor(40 * levelMultiplier * restedMultiplier);
+    const baseCoinReward = Math.floor(50 * levelMultiplier * restedMultiplier);
     const coinReward = Math.floor(baseCoinReward * streakMultiplier);
     progress.gamification.ecoCoins = (progress.gamification.ecoCoins || 0) + coinReward;
+
+    // 🤝 Devriye Ortağı (Buddy) Bonusu
+    if (progress.buddyId && client) {
+      try {
+        const buddyP = await StaffProgress.findOne({ userId: progress.buddyId });
+        if (buddyP) {
+          const buddyBonusCoins = Math.floor(coinReward * 0.20);
+          const buddyBonusXP = Math.floor(xpReward * 0.20);
+          buddyP.gamification.ecoCoins = (buddyP.gamification.ecoCoins || 0) + buddyBonusCoins;
+          buddyP.gamification.currentXP = (buddyP.gamification.currentXP || 0) + buddyBonusXP;
+          await buddyP.save().catch(() => {});
+
+          const buddyUser = await client.users.fetch(progress.buddyId).catch(() => null);
+          if (buddyUser) {
+            buddyUser.send(`🤝 **Devriye Ortağın** <@${progress.userId}> bugünkü görevlerini tamamladı! Ortaklık bonusu olarak **+${buddyBonusCoins} TL** ve **+${buddyBonusXP} 💎 Elmas** kazandın! 🎉`).catch(() => {});
+          }
+        }
+      } catch (bErr) {
+        console.warn('[staffSystem] Buddy bonus error:', bErr.message);
+      }
+    }
 
     // Görev tamamlama mesajı gönder (moladayken değilse)
     if (client && !isOnBreak) {
@@ -1593,10 +1615,10 @@ async function checkDailyCompletion(progress, client, autoSave = true) {
         .setDescription(
           `Tebrikler <@${progress.userId}>, bugünün tüm günlük görevlerini (Selamlaşma + Ses Aktifliği) başarıyla tamamladın!\n\n` +
           (restedBonus ? `⚡ **RESTED XP (DİNLENME BONUSU) AKTİF!** İzin dönüşü x2.0 Çifte Ödül Kazandın! 🎉\n\n` : "") +
-          `✨ **+${Math.floor(100 * levelMultiplier * restedMultiplier)} XP** kazanıldı!\n` +
+          `✨ **+${xpReward} 💎 Elmas (XP)** kazanıldı!\n` +
           (streakMultiplier > 1.0 ? `🔥 **Seri Çarpanı Aktif:** \`${consecutiveDays} Gün\` ardışık aktifliğin sayesinde **x${streakMultiplier}** ödül kazandın!\n\n` : "") +
-          `💰 **+${coinReward} EkoCoin (E.C.)** kazanıldı!\n` +
-          `💳 Güncel Bakiyen: \`${progress.gamification.ecoCoins} E.C.\``
+          `💰 **+${coinReward} TL (₺)** kazanıldı!\n` +
+          `💳 **Güncel Bakiyen:** \`${progress.gamification.ecoCoins} TL\` | \`${progress.gamification.currentXP} 💎 Elmas\``
         )
         .setFooter({ text: 'Eko Yıldız • Personel Sistemi' })
         .setTimestamp();
@@ -2903,7 +2925,10 @@ async function getMorningBriefingComponents(progress) {
     { label: '📊 İzin Durumu Sorgula', description: 'Güncel izin kredilerinizi görün.', value: 'staff_action_leave_status', emoji: '📅' },
     { label: '🪙 Haftalık Maaşımı Al', description: 'Haftalık yetkili maaşınızı çekin.', value: 'staff_action_claim_salary', emoji: '🪙' },
     { label: '💳 Kurumsal Kredi & Finans', description: 'Maaş avansı çekin veya borç yatırın.', value: 'staff_action_finance_center', emoji: '💳' },
-    { label: '📊 Yetkili Liderlik Tablosu', description: 'Haftanın Top 5 yetkilisini görün.', value: 'staff_action_leaderboard', emoji: '📊' }
+    { label: '📊 Yetkili Liderlik Tablosu', description: 'Haftanın Top 5 yetkilisini görün.', value: 'staff_action_leaderboard', emoji: '📊' },
+    { label: '🏛️ Emeklilik & Onursal Danışmanlık', description: 'Gereksinimleri sıfırla, Onursal Mod rolü al ve temettü kazan!', value: 'staff_action_retire', emoji: '🏛️' },
+    { label: '🖤 Kara Borsa & Af Kartı (Ceza Sildir)', description: '500 TL ile 1 sicil uyarısını veya inaktiflik cezasını sil.', value: 'staff_action_buy_pardon', emoji: '📜' },
+    { label: '🚨 Rastgele Sunucu Kriz Etkinliği', description: 'Ekip için acil durum bonus görevi başlat.', value: 'staff_action_trigger_event', emoji: '🚨' }
   ];
 
   const combinedSelect = new StringSelectMenuBuilder()
@@ -4027,7 +4052,15 @@ async function runDailyCheck(client) {
       const hasPartialActivity = p.daily?.date === checkDate &&
         ((p.daily?.greetCount || 0) > 0 || (p.daily?.voiceMinutes || 0) >= 15);
 
+      const isPostponedOrNightShift = p.daily?.postponedToday || (p.daily?.transferToTomorrowVoice > 0) || p.daily?.nightShiftActive;
+
       if (!completedToday && !isUserInactive) {
+        if (isPostponedOrNightShift) {
+          console.log(`[staffSystem] ${p.userId} görev erteleme / gece mesaisi devrinde olduğu için inaktiflik cezası uygulanmadı.`);
+          await p.save();
+          continue;
+        }
+
         if (hasPartialActivity) {
           console.log(`[staffSystem] ${p.userId} kısmi aktiflik sağladığı için inaktiflik cezası ertelendi.`);
           await p.save();
@@ -5623,19 +5656,18 @@ async function postponeDailyTask(userId, client) {
     let resultText = '';
 
     if (remainingVoice > 0) {
-      p.daily.transferToTomorrowVoice = (p.daily.transferToTomorrowVoice || 0) + remainingVoice;
-      // 🔧 FIX: TransferredVoiceMinutes eksi gitmemesi için Math.max(0, ...) ekle
-      p.daily.transferredVoiceMinutes = Math.max(0, (p.daily.transferredVoiceMinutes || 0) - remainingVoice);
-      resultText += `• **${remainingVoice} dakika** ses aktifliği yarınki görevinize aktarıldı.\n`;
+      const voiceToTransfer = Math.min(30, remainingVoice);
+      p.daily.transferToTomorrowVoice = Math.min(30, (p.daily.transferToTomorrowVoice || 0) + voiceToTransfer);
+      p.daily.transferredVoiceMinutes = Math.max(0, (p.daily.transferredVoiceMinutes || 0) - voiceToTransfer);
+      resultText += `• **${voiceToTransfer} dakika** ses aktifliği yarınki görevinize aktarıldı (Maks: 30 dk).\n`;
     }
 
     if (remainingGreets > 0) {
-      p.daily.transferToTomorrowGreets = (p.daily.transferToTomorrowGreets || 0) + remainingGreets;
-      // 🔧 FIX: TransferredGreets eksi gitmemesi için Math.max(0, ...) ekle
-      p.daily.transferredGreets = Math.max(0, (p.daily.transferredGreets || 0) - remainingGreets);
-      // Bugün tamamlanmış sayılması için greeted'ı true yapalım
+      const greetsToTransfer = Math.min(2, remainingGreets);
+      p.daily.transferToTomorrowGreets = Math.min(2, (p.daily.transferToTomorrowGreets || 0) + greetsToTransfer);
+      p.daily.transferredGreets = Math.max(0, (p.daily.transferredGreets || 0) - greetsToTransfer);
       p.daily.greeted = true;
-      resultText += `• **Selamlaşma görevi** yarınki görevinize aktarıldı.\n`;
+      resultText += `• **Selamlaşma görevi** yarınki görevinize aktarıldı (Maks: 2 selam).\n`;
     }
 
     p.daily.postponedToday = true;
@@ -5987,38 +6019,189 @@ async function resignFromStaff(userId, reason = 'Kişisel sebepler', client = nu
   }
 }
 
-async function retireFromStaff(userId, reason = 'Sistem tarafından', client = null) {
+const ROLE_ONURSAL_MOD = process.env.ROLE_ONURSAL_MOD || '1242289737230717036';
+
+async function retireFromStaff(userId, reason = 'Onursal Emeklilik Talebi', client = null) {
   try {
     const p = await StaffProgress.findOne({ userId });
     if (!p) {
       console.warn(`[staffSystem] retireFromStaff: User ${userId} not found in staff system`);
-      return false;
+      return { success: false, message: 'Personel kaydı bulunamadı.' };
     }
     const prevLevel = p.level || 1;
-    const prevRole = ROLE_NAMES[prevLevel] || 'Bilinmiyor';
+    const prevRole = ROLE_NAMES[prevLevel] || 'Yetkili';
     const activeDays = p.stats?.activeDays || 0;
-    p.status = 'retired';
+
+    p.status = 'honorary';
     p.retiredAt = new Date();
     p.retirementReason = reason;
-    p.level = 0;
+    p.honoraryGrantedAt = new Date();
+    p.warnings.inactivityCount = 0;
+    p.warnings.count = 0;
     await p.save();
-    console.log(`[staffSystem] ${userId} emekliye çıkarıldı. Rütbe: ${prevRole}, Aktif Gün: ${activeDays}`);
+
+    console.log(`[staffSystem] 🏛️ ${userId} Onursal Kıdemli Danışman (Emekli) statüsüne geçti. Önceki Rol: ${prevRole}, Hizmet: ${activeDays} gün`);
+
     if (client) {
+      // 1242289737230717036 Onursal Mod rolünü ver
+      try {
+        const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
+        if (guild) {
+          const member = await guild.members.fetch(userId).catch(() => null);
+          if (member && ROLE_ONURSAL_MOD) {
+            await member.roles.add(ROLE_ONURSAL_MOD, 'Onursal Kıdemli Danışmanlık / Emeklilik').catch(() => {});
+          }
+        }
+      } catch (roleErr) {
+        console.warn('[staffSystem] Onursal rol verme hatası:', roleErr.message);
+      }
+
       try {
         const user = await client.users.fetch(userId);
-        await user.send(
-          `🎖️ Emekliye çıkıştınız.\n` +
-          `**Rütbeniz:** ${prevRole}\n` +
-          `**Aktif Gün:** ${activeDays} gün\n` +
-          `**Sebep:** ${reason}\n` +
-          `Hizmetleriniz için teşekkürler! Hononu hak ettiniz. 🏆`
-        ).catch(() => { });
+        const embed = new EmbedBuilder()
+          .setColor(0xf1c40f)
+          .setTitle('🏛️ ONURSAL KIDEMLİ DANIŞMANLIK STATÜSÜ VERİLDİ!')
+          .setDescription(
+            `Tebrikler Sayın **${prevRole}** <@${userId}>! 🎖️\n\n` +
+            `Sunucumuza sunduğunuz **${activeDays} günlük** değerli hizmetlerin ardından **Onursal Kıdemli Danışman (Veteran Lounge)** statüsüne alındınız.\n\n` +
+            `### 🌟 Onursal Statü Ayrıcalıkları:\n` +
+            `• **Rol:** <@&${ROLE_ONURSAL_MOD}>\n` +
+            `• **Zorunlu Görevler:** Sıfırlandı! Artık günlük selam veya ses kotası baskısı yok.\n` +
+            `• **Haftalık Temettü:** Her hafta pasif emekli maaşınızı çekebilirsiniz.\n` +
+            `• **Danışmanlık:** İstediğiniz zaman sohbete uğrayıp yeni moderatörlere tavsiye verebilirsiniz.\n\n` +
+            `Emekleriniz için sonsuz teşekkürler! EkoYıldız ailesinin ömür boyu onur konuğusunuz. 🏆`
+          )
+          .setFooter({ text: 'Eko Yıldız • Onursal Kıdemli Danışmanlık Sistemi' })
+          .setTimestamp();
+
+        await user.send({ embeds: [embed] }).catch(() => {});
       } catch (_) { }
     }
-    return true;
+    return {
+      success: true,
+      totalDays: activeDays,
+      levelName: prevRole,
+      message: 'Onursal Danışmanlık statüsüne başarıyla geçtiniz.'
+    };
   } catch (err) {
     console.error('[staffSystem] retireFromStaff error:', err.message);
-    return false;
+    return { success: false, message: err.message };
+  }
+}
+
+/**
+ * 🖤 Kara Borsa: Ceza Sildirme / Af Kartı Satın Alma
+ */
+async function purchaseStaffPardon(userId, client) {
+  try {
+    const p = await getOrCreate(userId, GUILD_ID, client);
+    if (!p) return { success: false, message: 'Personel profili bulunamadı.' };
+
+    const PARDON_COST = 500; // 500 TL veya 300 Elmas
+    const coins = p.gamification?.ecoCoins || 0;
+    const diamonds = p.gamification?.currentXP || 0;
+
+    if (coins < PARDON_COST && diamonds < 300) {
+      return {
+        success: false,
+        message: `Yetersiz bakiye! Af Kartı için **${PARDON_COST} TL** veya **300 💎 Elmas** gereklidir. Güncel Bakiyeniz: \`${coins} TL\` / \`${diamonds} 💎\``
+      };
+    }
+
+    if (coins >= PARDON_COST) {
+      p.gamification.ecoCoins -= PARDON_COST;
+    } else {
+      p.gamification.currentXP -= 300;
+    }
+
+    let clearedItem = 'İnaktiflik Sicil Kaydı';
+    if (p.disciplinary?.warns && p.disciplinary.warns.length > 0) {
+      const removed = p.disciplinary.warns.pop();
+      clearedItem = `Disiplin Uyarısı (${removed.reason || 'Kural İhlali'})`;
+    } else if ((p.warnings?.inactivityCount || 0) > 0) {
+      p.warnings.inactivityCount = 0;
+      p.warnings.count = 0;
+      clearedItem = 'Tüm İnaktiflik Uyarıları';
+    } else {
+      clearedItem = 'Temiz Sicil Koruması (+1 Koruma Kredisi)';
+      p.stats.breakCredits = (p.stats.breakCredits || 0) + 1;
+    }
+
+    await p.save();
+    return {
+      success: true,
+      clearedItem,
+      remainingCoins: p.gamification.ecoCoins,
+      message: `📜 **Af Kartı Başarıyla Kullanıldı!** ${clearedItem} silindi ve siciliniz temizlendi.`
+    };
+  } catch (err) {
+    console.error('[staffSystem] purchaseStaffPardon error:', err.message);
+    return { success: false, message: 'İşlem sırasında hata oluştu.' };
+  }
+}
+
+/**
+ * 🤝 Devriye Ortağı (Buddy Sistemi)
+ */
+async function pairStaffBuddy(userId, buddyUserId, client) {
+  try {
+    const p1 = await getOrCreate(userId, GUILD_ID, client);
+    const p2 = await getOrCreate(buddyUserId, GUILD_ID, client);
+
+    if (!p1 || !p2) return { success: false, message: 'Yetkili profilleri bulunamadı.' };
+    if (userId === buddyUserId) return { success: false, message: 'Kendinizle ortak olamazsınız!' };
+
+    p1.buddyId = buddyUserId;
+    p2.buddyId = userId;
+    await p1.save();
+    await p2.save();
+
+    return {
+      success: true,
+      message: `🤝 <@${userId}> ve <@${buddyUserId}> artık **Devriye Ortağı (Buddy)** oldu! Biriniz günlük görevini bitirdiğinde diğeri de **+%20 Ortaklık Bonusu** kazanacak.`
+    };
+  } catch (err) {
+    console.error('[staffSystem] pairStaffBuddy error:', err.message);
+    return { success: false, message: 'Ortaklık kaydı sırasında hata oluştu.' };
+  }
+}
+
+/**
+ * 🚨 Rastgele Sunucu Krizleri (Random World Events)
+ */
+async function triggerRandomCommunityEvent(client) {
+  try {
+    const events = [
+      {
+        title: '🔥 SOHBET KANALINDA YANGIN ÇIKTI!',
+        desc: 'Genel sohbette ani bir yoğunluk başladı! Önümüzdeki **15 dakika içinde 50 mesaj barajı** aşılırsa devriyedeki tüm moderatörlere **+200 TL ve +300 💎** dağıtılacaktır!',
+        color: 0xe74c3c,
+      },
+      {
+        title: '🎤 ACİL SES DEVRİYESİ ALARMI!',
+        desc: 'Topluluk ses kanallarında kalabalık toplanıyor! Aynı anda en az **3 yetkili ses odalarında 15 dakika** nöbet tutarsa tüm ekibe **+150 TL ve +250 💎**!',
+        color: 0x3498db,
+      },
+      {
+        title: '🎫 DESTEK BİLETİ SEFERBERLİĞİ!',
+        desc: 'Bekleyen biletler için hızlı müdahale operasyonu! Önümüzdeki 30 dakika içinde çözülen her ticket için **x2.0 Çifte Ödül** verilecek!',
+        color: 0x2ecc71,
+      }
+    ];
+
+    const ev = events[Math.floor(Math.random() * events.length)];
+    const embed = new EmbedBuilder()
+      .setColor(ev.color)
+      .setTitle(`🚨 RASTGELE SUNUCU KRİZİ: ${ev.title}`)
+      .setDescription(`${ev.desc}\n\n⚔️ *Harekete geçin ve takımınızı zafere taşıyın!*`)
+      .setFooter({ text: 'Eko Yıldız • Dinamik Kriz Yönetimi' })
+      .setTimestamp();
+
+    await sendStaffChannelNotification(client, embed);
+    return { success: true, event: ev.title };
+  } catch (err) {
+    console.error('[staffSystem] triggerRandomCommunityEvent error:', err.message);
+    return { success: false, message: err.message };
   }
 }
 
@@ -6880,4 +7063,9 @@ module.exports = {
   startFlashQuest,
   getWeeklyUnitLeaderboard,
   triggerAmbassadorPromotionCheck,
+  // Lifetime RPG & Community Mechanics
+  purchaseStaffPardon,
+  pairStaffBuddy,
+  triggerRandomCommunityEvent,
+  ROLE_ONURSAL_MOD,
 };
