@@ -57,7 +57,19 @@ discordBot.on("warn", (info) => {
   logger.warn(`[Discord Warn] ${info}`);
 });
 discordBot.on("error", (err) => {
-  logger.error(`[Discord Error]`, err);
+  logger.error(`[Discord Error]`, err && err.message);
+});
+discordBot.on("shardError", (err, shardId) => {
+  logger.warn(`[Discord Shard ${shardId} Error]`, err && err.message);
+});
+discordBot.on("shardDisconnect", (event, shardId) => {
+  logger.warn(`[Discord Shard ${shardId} Disconnected (Kod: ${event?.code})]`);
+});
+discordBot.on("shardReconnecting", (shardId) => {
+  logger.info(`[Discord Shard ${shardId} Yeniden Bağlanıyor...]`);
+});
+discordBot.on("shardResume", (shardId, replayedEvents) => {
+  logger.success(`[Discord Shard ${shardId} Oturum Devam Etti (${replayedEvents} olay tekrarlandı)]`);
 });
 
 const { setDiscordClient } = require("./bot/discordClient");
@@ -246,32 +258,27 @@ async function start() {
     logger.section("DISCORD CONNECTION");
 
     const connectDiscord = async () => {
-      const MAX_RETRIES = 5;
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      let attempt = 0;
+      let connected = false;
+
+      while (!connected) {
+        attempt++;
         try {
-          logger.step(`[Discord] Deneme ${attempt}/${MAX_RETRIES}`);
+          logger.step(`[Discord 7/24] Bağlantı Denemesi #${attempt}...`);
           await discordBot.login(TOKEN);
-          logger.success("Discord bot bağlandı ve aktif.");
-          await new Promise(r => setTimeout(r, 1000));
-          await registerAllCommands();
-          return; // başarılı → çık
+          logger.success("✅ Discord bot başarıyla bağlandı ve 7/24 aktif.");
+          connected = true;
+          await new Promise(r => setTimeout(r, 1500));
+          await registerAllCommands().catch(err => {
+            logger.warn('[registerAllCommands] Komut kayıt uyarısı:', err && err.message);
+          });
+          return;
         } catch (err) {
-          // Rate limit hatası — retryAfter ms bekle
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;
-          if (retryAfterMs && attempt < MAX_RETRIES) {
-            const waitSec = Math.ceil(retryAfterMs / 1000);
-            logger.warn(`[Discord] Rate limit: ${waitSec} saniye bekleniyor (deneme ${attempt}/${MAX_RETRIES})...`);
-            await new Promise(r => setTimeout(r, retryAfterMs + 2000)); // +2s tampon
-            // Yeniden bağlanmak için yeni client oluştur (destroy sonrası gerekli)
-            discordBot.destroy().catch(() => {});
-            await new Promise(r => setTimeout(r, 500));
-          } else {
-            logger.error(`[Discord] Login başarısız (deneme ${attempt}/${MAX_RETRIES}):`, err.message);
-            logger.error("Full stack:", err.stack);
-            if (attempt >= MAX_RETRIES) {
-              logger.error("[Discord] Maksimum deneme sayısına ulaşıldı. Web sunucusu aktif kalmaya devam ediyor.");
-            }
-          }
+          const waitMs = retryAfterMs ? (retryAfterMs + 2000) : Math.min(30000, 5000 * Math.min(attempt, 6));
+          const waitSec = Math.ceil(waitMs / 1000);
+          logger.warn(`[Discord 7/24 Self-Healing] Login başarısız (${err.message}). ${waitSec} sn sonra otomatik tekrar denenecek...`);
+          await new Promise(r => setTimeout(r, waitMs));
         }
       }
     };
