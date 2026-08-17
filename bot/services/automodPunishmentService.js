@@ -110,7 +110,7 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
       const rsn = decision.reason || "Yapay Zeka Moderasyon Kararı";
 
       if (act === "WARN") {
-        if (member) await issueWarning(interaction, member.user, rsn, interaction.user).catch(() => {});
+        if (member) await issueWarning(interaction, member.user, rsn, interaction.user, guild).catch(() => {});
         resultMsg = `⚠️ **AI Kararı:** Kullanıcıya resmi uyarı gönderildi (${rsn}).`;
       } else if (act === "MUTE") {
         if (member) await member.timeout(mins * 60 * 1000, rsn).catch(() => {});
@@ -188,7 +188,23 @@ SADECE AŞAĞIDAKİ JSON FORMATINDA YANIT VER:
     // ── 5. UYAR ────────────────────────────────────────────────────────────
     if (action === "warn") {
       await interaction.deferUpdate().catch(() => {});
-      if (member) await issueWarning(interaction, member.user, "Automod: Uygunsuz İçerik", interaction.user).catch(() => {});
+      if (member) {
+        await issueWarning(interaction, member.user, "Automod: Uygunsuz İçerik", interaction.user, guild).catch((err) => {
+          console.error("[automodPunishmentService] issueWarning hatası:", err.message);
+        });
+
+        // Bildirimin kesinlikle ulaşabilmesi için ihlalin gerçekleştiği kanala da bilgi düş
+        try {
+          if (channelId) {
+            const violChannel = await guild.channels.fetch(channelId).catch(() => null);
+            if (violChannel && violChannel.isTextBased()) {
+              await violChannel.send({
+                content: `⚠️ <@${userId}>, sunucu kuralları ihlali (Uygunsuz İçerik) sebebiyle Yetkili <@${interaction.user.id}> tarafından **Resmi Uyarı** aldınız.`
+              }).catch(() => {});
+            }
+          }
+        } catch (_) {}
+      }
 
       // Topluluk Elçisine DM Bildirimi
       try {

@@ -9,7 +9,7 @@ const {
 } = require('discord.js');
 
 const User = require('../../models/User');
-const { jailUser, releaseUser } = require('./jailService');
+const { jailUser, unjailUser } = require('./jailService');
 
 const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
 const MOD_CEZA_LOG_CHANNEL_ID = '1518693023934844959';
@@ -34,11 +34,18 @@ async function sendModLog(guild, embed) {
 /**
  * ⚠️ Uyarı Verme Komutu
  */
-async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İhlali', executorUser) {
-  const guild = interactionOrMessage.guild;
-  if (!guild) return;
+async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İhlali', executorUser, guildOverride = null) {
+  const guild = interactionOrMessage?.guild
+    || guildOverride
+    || (interactionOrMessage?.client ? interactionOrMessage.client.guilds.cache.first() : null);
 
-  const isInteraction = Boolean(interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand);
+  if (!guild) {
+    console.error('[issueWarning] Sunucu (guild) bulunamadı!');
+    return false;
+  }
+
+  const client = interactionOrMessage?.client || guild.client;
+  const isInteraction = Boolean(interactionOrMessage && (interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand || interactionOrMessage.isButton));
 
   let dbUser = await User.findOne({ discordId: targetUser.id });
   if (!dbUser) {
@@ -63,7 +70,7 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
   // Topluluk Elçisine DM Bildirimi Gönder
   try {
     const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
-    await sendModAuditToAmbassador(interactionOrMessage.client, guild, executorUser, targetUser, 'Resmi Disiplin Uyarısı', reason);
+    await sendModAuditToAmbassador(client, guild, executorUser, targetUser, 'Resmi Disiplin Uyarısı', reason);
   } catch (errElci) {
     console.warn('[issueWarning] Topluluk elçisi bildirim hatası:', errElci.message);
   }
@@ -71,7 +78,7 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
   // Güven ve Performans Puanı Güncelleme (Uyarı)
   try {
     const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
-    await updateTrustScore(targetUser.id, -5.0, `Disiplin Uyarısı Alındı (${reason})`, executorUser.id, interactionOrMessage.client);
+    await updateTrustScore(targetUser.id, -5.0, `Disiplin Uyarısı Alındı (${reason})`, executorUser.id, client);
     await addModPoints(executorUser.id, 2.5, `Mod İşlem: Kullanıcı Uyarısı (${targetUser.username})`);
   } catch (errScore) {
     console.error("[issueWarning] Puan güncelleme hatası:", errScore.message);
@@ -85,7 +92,7 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
     await dbUser.save();
 
     // Call Jail System
-    await jailUser(guild, targetUser.id, `3/3 UYARI SINIRINA ULAŞILDI: ${reason}`, 60, 500);
+    await jailUser(client, guild, targetUser.id, `3/3 UYARI SINIRINA ULAŞILDI: ${reason}`, 60, executorUser.id || "500");
 
     // Remove Yavru Dinazor role
     if (targetMember && targetMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
@@ -106,8 +113,12 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
     const responsePayload = { embeds: [autoJailEmbed] };
 
     if (isInteraction) {
-      await interactionOrMessage.reply(responsePayload).catch(() => {});
-    } else {
+      if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+        await interactionOrMessage.followUp(responsePayload).catch(() => {});
+      } else {
+        await interactionOrMessage.reply(responsePayload).catch(() => {});
+      }
+    } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
       await interactionOrMessage.channel.send(responsePayload).catch(() => {});
     }
 
@@ -147,17 +158,41 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
   const channelPayload = { content: `<@${targetUser.id}>`, embeds: [warnEmbed], components: [warnRow] };
 
   if (isInteraction) {
-    await interactionOrMessage.reply(channelPayload).catch(() => {});
-  } else {
+    if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+      await interactionOrMessage.followUp(channelPayload).catch(() => {});
+    } else {
+      await interactionOrMessage.reply(channelPayload).catch(() => {});
+    }
+  } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
     await interactionOrMessage.channel.send(channelPayload).catch(() => {});
   }
 
   // Send DM to target user with interactive contract buttons
-  await targetUser.send({
-    content: `⚠️ **RESMİ UYARI BİLDİRİMİ!** Sunucuda hakkınızda resmi uyarı düzenlendi.`,
-    embeds: [warnEmbed],
-    components: [warnRow]
-  }).catch(() => {});
+  let dmSent = false;
+  try {
+    await targetUser.send({
+      content: `⚠️ **RESMİ UYARI BİLDİRİMİ!** Sunucuda hakkınızda resmi uyarı düzenlendi.`,
+      embeds: [warnEmbed],
+      components: [warnRow]
+    });
+    dmSent = true;
+  } catch (errDm) {
+    console.warn(`[issueWarning] Target DM delivery failed for user ${targetUser.id}: ${errDm.message}`);
+  }
+
+  // Fallback notification if DM was blocked
+  if (!dmSent && guild) {
+    try {
+      const logChannel = await guild.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null);
+      if (logChannel && logChannel.isTextBased()) {
+        await logChannel.send({
+          content: `⚠️ <@${targetUser.id}> **(DM Kapalı / Ulaşılamadı)** — Hakkınızda **Resmi Disiplin Uyarısı** düzenlendi! (Gerekçe: ${reason})`,
+          embeds: [warnEmbed],
+          components: [warnRow]
+        }).catch(() => {});
+      }
+    } catch (_) {}
+  }
 
   await sendModLog(guild, warnEmbed);
 }
@@ -165,18 +200,33 @@ async function issueWarning(interactionOrMessage, targetUser, reason = 'Kural İ
 /**
  * 🔒 Hapis Cezası Komutu
  */
-async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60, reason = 'Kural İhlali', executorUser) {
-  const guild = interactionOrMessage.guild;
-  if (!guild) return;
+async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60, reason = 'Kural İhlali', executorUser, guildOverride = null) {
+  const guild = interactionOrMessage?.guild
+    || guildOverride
+    || (interactionOrMessage?.client ? interactionOrMessage.client.guilds.cache.first() : null);
 
-  const isInteraction = Boolean(interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand);
+  if (!guild) {
+    console.error('[issueJail] Sunucu (guild) bulunamadı!');
+    return false;
+  }
+
+  const client = interactionOrMessage?.client || guild.client;
+  const isInteraction = Boolean(interactionOrMessage && (interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand || interactionOrMessage.isButton));
 
   // Call Jail Service
-  const jailed = await jailUser(guild, targetUser.id, reason, durationMinutes, 500);
+  const jailed = await jailUser(client, guild, targetUser.id, reason, durationMinutes, executorUser?.id || "500");
   if (!jailed) {
     const errPayload = { content: `❌ <@${targetUser.id}> kullanıcı hapishaneye gönderilemedi.`, ephemeral: true };
-    if (isInteraction) return interactionOrMessage.reply(errPayload);
-    return interactionOrMessage.channel.send(errPayload);
+    if (isInteraction) {
+      if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+        await interactionOrMessage.followUp(errPayload).catch(() => {});
+      } else {
+        await interactionOrMessage.reply(errPayload).catch(() => {});
+      }
+    } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
+      await interactionOrMessage.channel.send(errPayload).catch(() => {});
+    }
+    return false;
   }
 
   // Strip Yavru Dinazor Role
@@ -188,7 +238,7 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
   // Topluluk Elçisine DM Bildirimi Gönder
   try {
     const { sendModAuditToAmbassador } = require('./toplulukElcisiService');
-    await sendModAuditToAmbassador(interactionOrMessage.client, guild, executorUser, targetUser, 'Hapis Cezası', reason);
+    await sendModAuditToAmbassador(client, guild, executorUser, targetUser, 'Hapis Cezası', reason);
   } catch (errElci) {
     console.warn('[issueJail] Topluluk elçisi bildirim hatası:', errElci.message);
   }
@@ -196,7 +246,7 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
   // Güven ve Performans Puanı Güncelleme (Hapis)
   try {
     const { updateTrustScore, addModPoints } = require("./security/trustScoreService");
-    await updateTrustScore(targetUser.id, -30.0, `Hapse Atıldı (Süre: ${durationMinutes} Dk, Sebep: ${reason})`, executorUser.id, interactionOrMessage.client);
+    await updateTrustScore(targetUser.id, -30.0, `Hapse Atıldı (Süre: ${durationMinutes} Dk, Sebep: ${reason})`, executorUser.id, client);
     await addModPoints(executorUser.id, 2.5, `Mod İşlem: Hapis İnfazı (${targetUser.username})`);
   } catch (errScore) {
     console.error("[issueJail] Puan güncelleme hatası:", errScore.message);
@@ -232,8 +282,12 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
   const payload = { content: `<@${targetUser.id}>`, embeds: [jailEmbed], components: [jailRow] };
 
   if (isInteraction) {
-    await interactionOrMessage.reply(payload).catch(() => {});
-  } else {
+    if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+      await interactionOrMessage.followUp(payload).catch(() => {});
+    } else {
+      await interactionOrMessage.reply(payload).catch(() => {});
+    }
+  } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
     await interactionOrMessage.channel.send(payload).catch(() => {});
   }
 
@@ -249,17 +303,32 @@ async function issueJail(interactionOrMessage, targetUser, durationMinutes = 60,
 /**
  * 🔓 Hapisten Çıkarma Komutu
  */
-async function issueUnjail(interactionOrMessage, targetUser, executorUser) {
-  const guild = interactionOrMessage.guild;
-  if (!guild) return;
+async function issueUnjail(interactionOrMessage, targetUser, executorUser, guildOverride = null) {
+  const guild = interactionOrMessage?.guild
+    || guildOverride
+    || (interactionOrMessage?.client ? interactionOrMessage.client.guilds.cache.first() : null);
 
-  const isInteraction = Boolean(interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand);
+  if (!guild) {
+    console.error('[issueUnjail] Sunucu (guild) bulunamadı!');
+    return false;
+  }
 
-  const released = await releaseUser(guild, targetUser.id);
+  const client = interactionOrMessage?.client || guild.client;
+  const isInteraction = Boolean(interactionOrMessage && (interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand || interactionOrMessage.isButton));
+
+  const released = await unjailUser(client, guild, targetUser.id);
   if (!released) {
     const errPayload = { content: `❌ <@${targetUser.id}> kullanıcısının aktif hapis kaydı bulunamadı.`, ephemeral: true };
-    if (isInteraction) return interactionOrMessage.reply(errPayload);
-    return interactionOrMessage.channel.send(errPayload);
+    if (isInteraction) {
+      if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+        await interactionOrMessage.followUp(errPayload).catch(() => {});
+      } else {
+        await interactionOrMessage.reply(errPayload).catch(() => {});
+      }
+    } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
+      await interactionOrMessage.channel.send(errPayload).catch(() => {});
+    }
+    return false;
   }
 
   const unjailEmbed = new EmbedBuilder()
@@ -275,8 +344,12 @@ async function issueUnjail(interactionOrMessage, targetUser, executorUser) {
   const payload = { embeds: [unjailEmbed] };
 
   if (isInteraction) {
-    await interactionOrMessage.reply(payload).catch(() => {});
-  } else {
+    if (interactionOrMessage.deferred || interactionOrMessage.replied) {
+      await interactionOrMessage.followUp(payload).catch(() => {});
+    } else {
+      await interactionOrMessage.reply(payload).catch(() => {});
+    }
+  } else if (interactionOrMessage?.channel && typeof interactionOrMessage.channel.send === 'function') {
     await interactionOrMessage.channel.send(payload).catch(() => {});
   }
 
@@ -289,3 +362,4 @@ module.exports = {
   issueJail,
   issueUnjail
 };
+

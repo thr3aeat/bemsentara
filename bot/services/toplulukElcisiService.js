@@ -280,7 +280,7 @@ async function handleAmbassadorFixSelect(interaction, client) {
       await targetMember.timeout(30 * 60 * 1000, `Topluluk Elçisi Düzeltmesi: ${auditObj.reason}`);
       newActionText = '30 Dk Susturma';
     } else if (selectedOption === 'JAIL_30M' && targetUser) {
-      await jailUser(guild, targetUser.id, `Topluluk Elçisi Düzeltmesi: ${auditObj.reason}`, 30, 500);
+      await jailUser(client, guild, targetUser.id, `Topluluk Elçisi Düzeltmesi: ${auditObj.reason}`, 30, 500);
       newActionText = '30 Dk Hapis';
     }
 

@@ -1090,7 +1090,7 @@ async function applyVerdict(interaction, caseCode, verdictType, verdictNote = ''
 
     const { jailUser } = require('./jailService');
     if (guild) {
-      await jailUser(guild, courtCase.defendantId, `Mahkeme kararı: ${verdictNote || 'Hapis cezası'} (${caseCode})`, 100, 500);
+      await jailUser(interaction?.client || guild.client, guild, courtCase.defendantId, `Mahkeme kararı: ${verdictNote || 'Hapis cezası'} (${caseCode})`, 100, 500);
     }
 
     verdictDesc += `Sanık <@${courtCase.defendantId}> **#kodos Hapishanesine** gönderilmiştir! Kefalet: **500 Coin**.`;
