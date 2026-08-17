@@ -1632,12 +1632,6 @@ function initializeDiscordHandlers(client) {
       }
     }
 
-    // ── Otomatik Eko Hook Webhook Duyurusu ──────────────────────────────────
-    try {
-      const { sendEkoHookAbout } = require("../services/ekoHookService");
-      setTimeout(() => sendEkoHookAbout(client).catch(() => {}), 12000);
-    } catch (_) {}
-
     // ── Otomatik Gizli Arşiv Komutu (-arşiv / -arsiv) ──────────────────────────
     if (message.guild && (lowerContent === "-arşiv" || lowerContent === "-arsiv" || lowerContent.startsWith("-arşiv ") || lowerContent.startsWith("-arsiv "))) {
       try {

@@ -54,17 +54,17 @@ class ComponentsV2Factory {
    */
   static section(textContent, imageUrl = null) {
     const textNode = typeof textContent === "string" ? this.text(textContent) : textContent;
-    const sec = {
+    if (!imageUrl) {
+      return textNode;
+    }
+    return {
       type: TYPE_SECTION,
       components: [textNode],
-    };
-    if (imageUrl) {
-      sec.accessory = {
+      accessory: {
         type: TYPE_THUMBNAIL,
         media: { url: imageUrl },
-      };
-    }
-    return sec;
+      },
+    };
   }
 
   /**

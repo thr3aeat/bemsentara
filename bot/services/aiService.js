@@ -3,23 +3,23 @@
 const https = require('https');
 const http = require('http');
 
-const OLLAMA_BASE = 'https://api.groq.com/openai/v1';
+const OLLAMA_BASE = process.env.AI_BASE_URL
+  || process.env.OLLAMA_BASE_URL
+  || 'https://api.groq.com/openai/v1';
 const OLLAMA_KEY = process.env.OPENROUTER_API_KEY
   || process.env.OLLAMA_API_KEY
   || process.env.GROQ_API_KEY
   || '';
-const MODELS = process.env.AI_MODEL
+let MODELS = process.env.AI_MODEL
   ? [process.env.AI_MODEL]
   : [
-    'llama-3.1-8b-instant',
-    'llama-3.3-70b-versatile',
-    'openai/gpt-oss-120b',
-    'openai/gpt-oss-20b',
-    'meta-llama/llama-4-scout-17b-16e-instruct',
-    'qwen/qwen3-32b',
     'qwen/qwen3.6-27b',
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
     'deepseek-r1-distill-llama-70b',
     'deepseek-r1-distill-qwen-32b',
+    'qwen/qwen3-32b',
+    'openai/gpt-oss-120b',
     'compound',
     'compound-mini'
   ];
@@ -190,11 +190,17 @@ async function chatWithAI(messages, customSystemPrompt, mode = 'ticket', options
     msgArray = [{ role: 'user', content: messages }];
   }
   let lastErr;
-  for (const model of MODELS) {
+  for (let i = 0; i < MODELS.length; i++) {
+    const model = MODELS[i];
     try {
       console.log(`[aiService] Deneniyor: ${model}`);
       const result = await requestModel(model, msgArray, systemContent, options);
       console.log(`[aiService] Başarılı: ${model}`);
+      // Çalışan modeli listenin en başına al (sonraki istekler anında çalışsın)
+      if (i > 0) {
+        MODELS.splice(i, 1);
+        MODELS.unshift(model);
+      }
       return result;
     } catch (err) {
       console.warn(`[aiService] ${model} başarısız: ${err.message}`);

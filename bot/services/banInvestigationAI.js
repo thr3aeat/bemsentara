@@ -39,6 +39,7 @@ const VERY_TOKEN = process.env.DISCORDTOKENVERY || '';
 
 /** @type {Client|null} */
 let veryBot = null;
+let veryBotDisabled = false;
 
 const activeConversations = new Map();
 
@@ -69,8 +70,10 @@ function generateCaseCode() {
 }
 
 async function initVeryBot(mainClient) {
-  if (!VERY_TOKEN) {
+  if (veryBotDisabled) return null;
+  if (!VERY_TOKEN || !VERY_TOKEN.trim()) {
     console.warn('[banInvestigationAI] DISCORDTOKENVERY env degiskeni ayarlanmamis -- AI ban servisi devre disi.');
+    veryBotDisabled = true;
     return null;
   }
 
@@ -130,6 +133,7 @@ async function initVeryBot(mainClient) {
     veryBot = bot;
     return bot;
   } catch (err) {
+    veryBotDisabled = true;
     console.warn(`[banInvestigationAI] Aras bot login skipped (${err.message}).`);
     return null;
   }

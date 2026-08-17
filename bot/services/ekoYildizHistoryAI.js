@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const { EmbedBuilder } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 
-const TARGET_CHANNEL_ID = "1393379303508541440";
+const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1393379303508541440";
 
 /**
  * Her gün sabah 09:00'da tarih paylaşımı yapar.
