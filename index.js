@@ -19,8 +19,22 @@ const { registerAllCommands } = require("./bot/registerCommands");
 const { PORT, BASE_URL, TOKEN } = require("./config");
 const cron = require("node-cron");
 const axios = require("axios");
-
 const logger = require("./utils/logger");
+
+// ── 7/24 Kendini İyileştirme & Çökme Önleyici (Self-Healing Crash Guard) ───
+process.on("unhandledRejection", (reason, promise) => {
+  const errMsg = reason instanceof Error ? reason.stack || reason.message : String(reason);
+  logger.error(`[Self-Healing] Unhandled Rejection engellendi: ${errMsg}`);
+});
+
+process.on("uncaughtException", (err, origin) => {
+  const errMsg = err instanceof Error ? err.stack || err.message : String(err);
+  logger.error(`[Self-Healing] Uncaught Exception (${origin}) engellendi: ${errMsg}`);
+});
+
+process.on("uncaughtExceptionMonitor", (err, origin) => {
+  logger.warn(`[Self-Healing Monitor] Hata yakalandı (${origin}):`, err && err.message);
+});
 
 const discordBot = createDiscordClient();
 

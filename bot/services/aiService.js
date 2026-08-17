@@ -50,6 +50,29 @@ Mesajları kısa ama duygu dolu tut, gerektiğinde kişiselleştirilmiş sorular
 Kullanıcının durumunu ve görevlerini anlayarak, onlara güven verecek şekilde konuş.`;
 
 /**
+ * AI modellerinden gelen <think>...</think>, [THINK] vb. zincirleme düşünme bloklarını temizler
+ */
+function cleanAIResponse(rawText) {
+  if (!rawText || typeof rawText !== 'string') return '';
+  let text = rawText;
+
+  // 1. Tam kapanmış düşünme bloklarını temizle
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
+  text = text.replace(/\[THINK\][\s\S]*?\[\/THINK\]/gi, '');
+  text = text.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, '');
+
+  // 2. Yanıt token sınırında kesilmiş ve kapanmamış <think> bloğunu temizle
+  text = text.replace(/<think>[\s\S]*$/gi, '');
+  text = text.replace(/<reasoning>[\s\S]*$/gi, '');
+
+  // 3. Başlangıçtaki düşünce açıklaması kalıntılarını temizle
+  text = text.replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '');
+
+  return text.trim();
+}
+
+/**
  * Tek bir modele istek at
  */
 function requestModel(model, messages, systemContent, options = {}) {
@@ -145,12 +168,20 @@ function requestModel(model, messages, systemContent, options = {}) {
             }
 
             // Response validation
-            const content = parsed?.choices?.[0]?.message?.content;
+            let content = parsed?.choices?.[0]?.message?.content;
+            if (!content && parsed?.choices?.[0]?.message?.reasoning_content) {
+              content = parsed.choices[0].message.reasoning_content;
+            }
             if (!content || typeof content !== 'string') {
               return reject(new Error(`Geçersiz yanıt formatı`));
             }
 
-            resolve(content.trim());
+            const cleaned = cleanAIResponse(content);
+            if (!cleaned) {
+              return reject(new Error(`Boş veya yalnızca düşünme bloğu içeren yanıt`));
+            }
+
+            resolve(cleaned);
           } catch (e) {
             reject(new Error(`JSON parse hatası (HTTP ${res.statusCode}): ${e.message}`));
           }
@@ -210,4 +241,4 @@ async function chatWithAI(messages, customSystemPrompt, mode = 'ticket', options
   throw lastErr || new Error('Tüm AI modelleri başarısız oldu');
 }
 
-module.exports = { chatWithAI, TICKET_SYSTEM_PROMPT, STORY_SYSTEM_PROMPT, PERSONAL_ASSISTANT_SYSTEM_PROMPT };
+module.exports = { chatWithAI, cleanAIResponse, TICKET_SYSTEM_PROMPT, STORY_SYSTEM_PROMPT, PERSONAL_ASSISTANT_SYSTEM_PROMPT };

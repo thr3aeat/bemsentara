@@ -71,106 +71,91 @@ function getProgressBar(percent, length = 10) {
   return `\`[${'█'.repeat(filled)}${'░'.repeat(empty)}]\` **%${pct}**`;
 }
 
-// ── Seviyeye özgü günlük görevler ─────────────────────────────────────────
+// ── Seviyeye özgü günlük görevler (Hafifletilmiş / Esnek) ─────────────────
 const LEVEL_TASKS = {
   1: {
     name: 'Stajyer',
     dailyTasks: [
-      '✅ Sohbet kanalına 2x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 10 dk kal (zorunlu)',
-      '📚 Sunucu kurallarını oku ve hatırla',
-      '👀 Diğer personelin nasıl çalıştığını izle',
-      '💬 Sorularında yardım iste — öğrenmek normaldir!',
-      '🎫 Ticket çözmeye başla (terfi için gerekli!)',
+      '✅ Sohbet kanalına 1x selam ver (kolay başlangıç)',
+      '🎤 Ses kanalında 5 dk bulun',
+      '📚 Sunucu kurallarına göz at',
+      '💬 İhtiyaç duyduğunda üstlerinden yardım iste',
     ],
-    rewards: '✨ Her tamamlanan gün terfi sayacına eklenir. Başarılı başlangıç yap!',
-    penalties: '⏰ 3 gün görev yapmazsan rol alınır — disiplini koru!',
-    tips: 'Stajyer olarak öğrenme dönemindeysin ama görevlerini aksatma!',
+    rewards: '✨ Tamamlanan her görev terfi sayacına eklenir. Kolay gelsin!',
+    penalties: '💡 Görevlerini rahat bir tempoda yapabilirsin.',
+    tips: 'Stajyer olarak öğrenme dönemindesin, acele etme!',
   },
   2: {
     name: 'Personel',
     dailyTasks: [
-      '✅ Sohbet kanalına 4x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 20 dk kal (zorunlu)',
-      '🎫 En az 2 ticket çözmeye çalış',
-      '🚨 Kural ihlallerini raporla',
-      '🛡️ En az 1 moderasyon işlemi yap',
-      '💬 Yeni üyelere yardımcı ol',
+      '✅ Sohbet kanalına 2x selam ver',
+      '🎤 Ses kanalında en az 10 dk kal',
+      '🎫 Müsait olduğunda ticket çözmeye yardımcı ol (hedef: 1+ bilet)',
+      '💬 Yeni üyelere selam ver ve yardımcı ol',
     ],
-    rewards: '✨ Her ticket çözümü terfi sayacına eklenir.',
-    penalties: '⏰ 3 gün görev yapmazsan Stajyer\'e düşersin',
-    tips: 'Personel olarak aktif olman ve moderasyon yapman bekleniyor. Sorumluluk artıyor!',
+    rewards: '✨ Bilet çözümleri ve aktiflik doğrudan terfi sayacına işlenir.',
+    penalties: '💡 Dengeli ve esnek çalışma temposu.',
+    tips: 'Sohbette samimi ve yardımsever olman yeterli!',
   },
   3: {
     name: 'Gelişmiş Personel',
     dailyTasks: [
-      '✅ Sohbet kanalına 6x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 30 dk kal (zorunlu)',
-      '🎫 Günde 3+ ticket çözmeye çalış',
-      '💬 Sohbette aktif ol (haftada en az 50 mesaj)',
-      '🛡️ Moderasyon kararlarında diğerlerine örnek ol',
-      '📝 Sunucu gelişim önerisi yap (haftada 2)',
-      '👥 Stajyerlere rehberlik et — liderlik göster!',
+      '✅ Sohbet kanalına 2x selam ver',
+      '🎤 Ses kanalında en az 15 dk kal',
+      '🎫 Günlük 1-2 ticket çözmeye çalış',
+      '🛡️ Sohbette düzeni ve huzuru koru',
+      '👥 Yeni personellere rehberlik et',
     ],
-    rewards: '✨ Sekreterlik yolunda ilerliyor. En prestijli roldür!',
-    penalties: '⏰ 3 gün görev yapmazsan Personele gerileme olur',
-    tips: 'Bu seviyede liderlik becerilerin kritik. Ekibi yönet ve örnek ol!',
+    rewards: '✨ Üst kademe roller için puan biriktiriyorsun.',
+    penalties: '💡 Dengeli çalışma düzeni.',
+    tips: 'Ekip arkadaşlarınla uyumlu çalışman en büyük artın!',
   },
   4: {
     name: 'Sekreter',
     dailyTasks: [
-      '✅ Sohbet kanalına 10x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 60 dk kal (zorunlu)',
-      '🎫 Ticket kalitesini denetle ve yönet',
-      '👥 Stajyerleri eğit ve motive et',
-      '📋 Haftalık personel raporu hazırla',
-      '🔍 Sunucu güvenliğini aktif izle',
-      '💡 Yöneticilere sunucu gelişim önerisi sun',
-      '🤝 Ekibin moral duvarı ol — destek ver!',
+      '✅ Sohbet kanalına 3x selam ver',
+      '🎤 Ses kanalında en az 20 dk kal',
+      '🎫 Ticket ve sohbet akışına genel destek ol',
+      '👥 Personele moral ve destek ver',
     ],
-    rewards: '👑 Sekreter rütbesinin getirdiği saygınlık ve sorumluluk sende.',
-    penalties: '⏰ 3 gün görev yapmazsan Sekreterlik gözden geçirilir',
-    tips: 'Sunucunun yüzüsün. Disiplin ve liderlik göster!',
+    rewards: '👑 Yönetici kademesinde saygın bir rol.',
+    penalties: '💡 Esnek yönetim temposu.',
+    tips: 'Ekibin motivasyonunu yüksek tut!',
   },
   5: {
     name: "Kıdemli Sekreter",
     dailyTasks: [
-      '✅ Sohbet kanalına 12x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 90 dk kal (zorunlu)',
-      '🛡️ Tüm moderatör ekibini denetle ve yönet',
-      '📈 Sunucu istatistiklerini raporla',
+      '✅ Sohbet kanalına 3x selam ver',
+      '🎤 Ses kanalında en az 25 dk kal',
+      '🛡️ Moderatör ekibine koordinasyon desteği ver',
       '🤝 Yöneticilerle koordineli çalış'
     ],
     rewards: '👨‍✈️ Yüksek kademe yönetim rolü.',
-    penalties: '⏰ 3 gün görev yapmazsan Sekreterliğe gerileme olur',
-    tips: 'Liderliği elden bırakma ve ekibi koordine et!'
+    penalties: '💡 Esnek çalışma temposu.',
+    tips: 'Liderliği elden bırakma ve ekibi destekle!'
   },
   6: {
     name: 'Genel Koordinatör',
     dailyTasks: [
-      '✅ Sohbet kanalına 15x selam ver (zorunlu)',
-      '🎤 Ses kanalında en az 120 dk kal (zorunlu)',
-      '👑 Tüm personel ve moderasyon operasyonlarını koordine et',
-      '🎓 Yeni personellerin sınav süreçlerini tasarla',
-      '📊 Haftalık/Aylık genel sunucu denetimini gerçekleştir'
+      '✅ Sohbet kanalına 3x selam ver',
+      '🎤 Ses kanalında en az 30 dk kal',
+      '👑 Genel moderasyon ve personel operasyonlarına rehberlik et',
     ],
-    rewards: '💼 En üst ve en zorlu yetkili rütbesi.',
-    penalties: '⏰ 3 gün görev yapmazsan Sekreter\'in Babası rütbesine gerilersin',
-    tips: 'En üst rütbedesin, ekibin tüm sorumluluğu senin omuzlarında!'
+    rewards: '💼 Zirve yetkili statüsü.',
+    penalties: '💡 Rahat yönetim temposu.',
+    tips: 'Ekibin tüm desteği seninle!'
   }
 };
 
-// ── Günlük gereksinimler (sabit, hiç artmaz - ödül sistem seviye ile artar) ──
+// ── Günlük gereksinimler (Hafifletilmiş / Kolaylaştırılmış) ─────────────────
 function getDailyRequirements(level, consecutiveDays = 0) {
-  // 🔧 FIX: Multiplier kaldırıldı. Düzenli çalışan cezalandırılmak yerine ödüllendirilir
-  // Ödüller checkDailyCompletion'da streakMultiplier ile artırılıyor
   const base = {
-    1: { greets: 2, voiceMinutes: 10 },
-    2: { greets: 4, voiceMinutes: 20 },
-    3: { greets: 6, voiceMinutes: 30 },
-    4: { greets: 10, voiceMinutes: 60 },
-    5: { greets: 12, voiceMinutes: 90 },
-    6: { greets: 15, voiceMinutes: 120 },
+    1: { greets: 1, voiceMinutes: 5 },
+    2: { greets: 2, voiceMinutes: 10 },
+    3: { greets: 2, voiceMinutes: 15 },
+    4: { greets: 3, voiceMinutes: 20 },
+    5: { greets: 3, voiceMinutes: 25 },
+    6: { greets: 3, voiceMinutes: 30 },
   };
   const b = base[level] || base[1];
   return {
@@ -211,66 +196,66 @@ async function checkLowActivityWarning(progress, client) {
   }
 }
 
-// ── Terfi gereksinimleri (ZOR) ─────────────────────────────────────────────
+// ── Terfi gereksinimleri (Hafifletilmiş / Erişilebilir Seviyeler) ───────────
 const PROMOTION_REQUIREMENTS = {
   1: {
-    ticketsSolved: 15,
-    chatMessages: 100,
-    totalVoiceMinutes: 180,
-    activeDays: 5,
-    moderationActions: 5,
+    ticketsSolved: 5,
+    chatMessages: 40,
+    totalVoiceMinutes: 60,
+    activeDays: 3,
+    moderationActions: 2,
     weeklyReports: 0,
-    description: '15 Bilet + 100 Mesaj + 3 Saat Ses + 5 Mod İşlem + 5 Gün Aktiflik',
+    description: '5 Bilet + 40 Mesaj + 1 Saat Ses + 2 Mod İşlem + 3 Gün Aktiflik',
     promotionBonus: { points: 250, xp: 350 },
   },
   2: {
-    ticketsSolved: 60,
-    chatMessages: 400,
-    totalVoiceMinutes: 600,
-    activeDays: 14,
-    moderationActions: 25,
+    ticketsSolved: 20,
+    chatMessages: 150,
+    totalVoiceMinutes: 180,
+    activeDays: 7,
+    moderationActions: 8,
     weeklyReports: 0,
-    description: '60 Bilet + 400 Mesaj + 10 Saat Ses + 25 Mod İşlem + 14 Gün Aktiflik',
+    description: '20 Bilet + 150 Mesaj + 3 Saat Ses + 8 Mod İşlem + 7 Gün Aktiflik',
     promotionBonus: { points: 500, xp: 750 },
   },
   3: {
-    ticketsSolved: 180,
-    chatMessages: 1200,
-    totalVoiceMinutes: 1800,
-    activeDays: 30,
-    moderationActions: 75,
+    ticketsSolved: 50,
+    chatMessages: 400,
+    totalVoiceMinutes: 450,
+    activeDays: 14,
+    moderationActions: 20,
     weeklyReports: 0,
-    description: '180 Bilet + 1200 Mesaj + 30 Saat Ses + 75 Mod İşlem + 30 Gün Aktiflik',
+    description: '50 Bilet + 400 Mesaj + 7.5 Saat Ses + 20 Mod İşlem + 14 Gün Aktiflik',
     promotionBonus: { points: 1200, xp: 1800 },
   },
   4: {
-    ticketsSolved: 450,
-    chatMessages: 3000,
-    totalVoiceMinutes: 4500,
-    activeDays: 60,
-    moderationActions: 180,
+    ticketsSolved: 120,
+    chatMessages: 900,
+    totalVoiceMinutes: 900,
+    activeDays: 25,
+    moderationActions: 50,
     weeklyReports: 0,
-    description: '450 Bilet + 3000 Mesaj + 75 Saat Ses + 180 Mod İşlem + 60 Gün Aktiflik',
+    description: '120 Bilet + 900 Mesaj + 15 Saat Ses + 50 Mod İşlem + 25 Gün Aktiflik',
     promotionBonus: { points: 2500, xp: 3500 }
   },
   5: {
-    ticketsSolved: 1000,
-    chatMessages: 7500,
-    totalVoiceMinutes: 9000,
-    activeDays: 120,
-    moderationActions: 400,
+    ticketsSolved: 250,
+    chatMessages: 1800,
+    totalVoiceMinutes: 1800,
+    activeDays: 45,
+    moderationActions: 100,
     weeklyReports: 0,
-    description: '1000 Bilet + 7500 Mesaj + 150 Saat Ses + 400 Mod İşlem + 120 Gün Aktiflik',
+    description: '250 Bilet + 1800 Mesaj + 30 Saat Ses + 100 Mod İşlem + 45 Gün Aktiflik',
     promotionBonus: { points: 6000, xp: 8000 }
   },
   6: {
-    ticketsSolved: 2000,
-    chatMessages: 15000,
-    totalVoiceMinutes: 18000,
-    activeDays: 240,
-    moderationActions: 800,
+    ticketsSolved: 500,
+    chatMessages: 3500,
+    totalVoiceMinutes: 3000,
+    activeDays: 60,
+    moderationActions: 200,
     weeklyReports: 0,
-    description: 'Maksimum Unvan: Zirve Koordinatör Statüsü Koruma Kotası',
+    description: 'Zirve Koordinatör Statüsü (Hafifletilmiş Dengeli Kota)',
     promotionBonus: { points: 10000, xp: 15000 }
   }
 };
@@ -467,7 +452,8 @@ function getDailyTaskCompletionStats(progress) {
     chosenTaskText = `${chosenTaskDone ? '✅' : '⏳'} **${taskName}** ${chosenTaskDone ? '*(Tamamlandı! +Bonus Kazandın!)*' : '*(Devam Ediyor)*'}`;
   }
 
-  const totalPercent = Math.min(100, Math.round(greetPercent * 0.45 + voicePercent * 0.45 + (chosenTaskDone ? 10 : 0)));
+  // Zorunlu görevler %50 + %50 = %100 oluşturur, seçmeli görev ekstra bonus/ödül sağlar
+  const totalPercent = Math.min(100, Math.round(greetPercent * 0.50 + voicePercent * 0.50));
   const progressBar = getProgressBar(totalPercent);
 
   return {
@@ -2216,12 +2202,15 @@ async function triggerAmbassadorPromotionCheck(progress, client) {
         user,
         { reason: `Tüm KPI hedeflerini (%100) tamamladı. Rütbe verilmesini onaylıyor musunuz?` },
         async () => {
-          // Elçi onaylarsa terfi ettir (bypass ile)
-          progress._ambassadorApproved = true;
+          // Elçi onaylarsa DB'ye kaydet ve terfi ettir
+          progress.ambassadorApprovedAt = new Date();
+          await progress.save().catch(() => {});
           await promote(progress, client);
         },
         async () => {
           // Elçi reddederse bildir
+          progress.ambassadorApprovedAt = null;
+          await progress.save().catch(() => {});
           await user.send(`❌ Terfi talebiniz Topluluk Elçileri (Şef Kadrosu) tarafından şu anlık uygun görülmedi.`).catch(() => {});
         }
       );
@@ -2244,8 +2233,11 @@ async function promote(progress, client) {
     const newLevel = oldLevel + 1;
     if (newLevel > 6) return;
 
-    // Level 4 ve üzeri terfilerde Topluluk Elçisi liyakat onayı kontrolü
-    if (newLevel >= 4 && !progress._ambassadorApproved) {
+    // Level 4 ve üzeri terfilerde Topluluk Elçisi liyakat onayı kontrolü (DB + Bellek korumalı)
+    const isAmbassadorApproved = progress._ambassadorApproved || 
+      (progress.ambassadorApprovedAt && (Date.now() - new Date(progress.ambassadorApprovedAt).getTime() < 48 * 60 * 60 * 1000));
+
+    if (newLevel >= 4 && !isAmbassadorApproved) {
       const sentToAmbassador = await triggerAmbassadorPromotionCheck(progress, client);
       if (sentToAmbassador) {
         console.log(`[staffSystem] ${progress.userId} Level ${newLevel} terfi talebi Topluluk Elçisine gönderildi.`);
@@ -2253,6 +2245,7 @@ async function promote(progress, client) {
       }
     }
     delete progress._ambassadorApproved;
+    progress.ambassadorApprovedAt = null;
 
     // 🎁 Terfi bonusu ekle
     const req = PROMOTION_REQUIREMENTS[oldLevel];
@@ -2303,7 +2296,7 @@ async function promote(progress, client) {
     if (oldRoleId) {
       await member.roles.remove(oldRoleId, 'Terfi').catch(roleErr => {
         console.warn(`[staffSystem] Cannot remove old role (${oldRoleId}):`, roleErr.code, roleErr.message);
-        if (roleErr.code === 50) {
+        if (roleErr.code === 50013 || roleErr.code === 50001 || roleErr.message?.includes('Missing Permissions')) {
           console.error('[staffSystem] ⚠️ Bot missing ManageRoles permission');
         }
       });
@@ -2313,7 +2306,7 @@ async function promote(progress, client) {
     if (newRoleId) {
       await member.roles.add(newRoleId, 'Terfi').catch(roleErr => {
         console.warn(`[staffSystem] Cannot add new role (${newRoleId}):`, roleErr.code, roleErr.message);
-        if (roleErr.code === 50) {
+        if (roleErr.code === 50013 || roleErr.code === 50001 || roleErr.message?.includes('Missing Permissions')) {
           console.error('[staffSystem] ⚠️ Bot missing ManageRoles permission');
         }
       });
@@ -3625,91 +3618,73 @@ async function useLeaveCredit(userId) {
 
 async function removeRole(progress, client, reasonText = null) {
   try {
-    const userRoleName = ROLE_NAMES[progress.level] || 'Moderatör';
-    const reasonHeader = reasonText || '3 gün üst üste görev yapamadığın';
+    const currentLevel = progress.level || 1;
+    const reasonHeader = reasonText || 'İnaktiflik ve görev yapılmaması';
 
-    try {
-      const { addNotification } = require("../../utils/notification");
-      await addNotification(progress.userId, {
-        title: "⏸️ Rolünüz Askıya Alındı",
-        message: `${reasonHeader} için personel rolleriniz askıya alındı. Yöneticilerle görüşerek tekrar başlayabilirsiniz.`,
-        icon: "⚠️"
-      });
-    } catch (nErr) {
-      console.error("[staffSystem] removeRole notification error:", nErr.message);
-    }
-
+    // ── Ömür Boyu Personel Koruması (Kıdem Tenzili / Pasif Statü) ──
     const guild = await client.guilds.fetch(GUILD_ID).catch(() => null);
-    if (guild) {
-      const member = await guild.members.fetch(progress.userId).catch(() => null);
-      if (member) {
-        const rolesToRemove = [
-          ...Object.values(ROLES),
-          '1518709348506013706', // Kıdemli Sekreter (Level 5)
-          '1518692389169135666', // Moderatör Ekibi
-          '1518708137920823327', // modizm
-          '1518707673846251691', // adminizm
-          '1518692384928567456'  // Kaptan
-        ];
 
-        for (const rId of rolesToRemove) {
-          if (member.roles.cache.has(rId)) {
-            await member.roles.remove(rId, `${reasonHeader} - Sistemden askıya alındı`).catch(() => { });
+    if (currentLevel > 1) {
+      // Bir alt kademeye düşür (Örn: Kıdemli Personel -> Personel), sistemden silme!
+      const newLevel = currentLevel - 1;
+      const oldRoleId = ROLES[currentLevel];
+      const newRoleId = ROLES[newLevel];
+
+      progress.level = newLevel;
+      progress.warnings.inactivityCount = 0;
+      progress.warnings.count = 0;
+      progress.status = 'active';
+      await progress.save().catch(() => {});
+
+      if (guild) {
+        const member = await guild.members.fetch(progress.userId).catch(() => null);
+        if (member) {
+          if (oldRoleId && member.roles.cache.has(oldRoleId)) {
+            await member.roles.remove(oldRoleId, `${reasonHeader} - Bir alt rütbeye düşürüldü`).catch(() => {});
+          }
+          if (newRoleId && !member.roles.cache.has(newRoleId)) {
+            await member.roles.add(newRoleId, `${reasonHeader} - Yeni kademe rolü`).catch(() => {});
           }
         }
       }
-    }
 
-    try {
-      const mainGuild = await client.guilds.fetch('1367646464804655104').catch(() => null);
-      if (mainGuild) {
-        const mainMember = await mainGuild.members.fetch(progress.userId).catch(() => null);
-        if (mainMember) {
-          const rolesToRemove = [
-            ...Object.values(ROLES),
-            '1518709348506013706',
-            '1518692389169135666',
-            '1518708137920823327',
-            '1518707673846251691',
-            '1518692384928567456'
-          ];
-          for (const rId of rolesToRemove) {
-            if (mainMember.roles.cache.has(rId)) {
-              await mainMember.roles.remove(rId, 'Görev yapılmadığı için sistemden silindi').catch(() => { });
-            }
-          }
-        }
-      }
-    } catch (e) { }
+      const embed = new EmbedBuilder()
+        .setColor(0xff9500)
+        .setTitle('📉 Kademe Güncellemesi (Kıdem Tenzili)')
+        .setDescription(
+          `Sayın Yetkilimiz, **${reasonHeader}** nedeniyle rütbeniz **${ROLE_NAMES[currentLevel]}** seviyesinden **${ROLE_NAMES[newLevel]}** kademesine çekilmiştir.\n\n` +
+          `💚 Personel kadrosundan çıkarılmadınız! Görevlerinizi rahat bir tempoda yaparak tekrar terfi alabilirsiniz.`
+        )
+        .setFooter({ text: 'Eko Yıldız • Personel Koruma Sistemi | Her zaman yanındayız!' })
+        .setTimestamp();
 
-    const embed = new EmbedBuilder()
-      .setColor(0xff9500)
-      .setTitle('⏸️ Personel Rolü Duraklatıldı — Geri Dön!')
-      .setDescription(
-        `**${reasonHeader}** için **${userRoleName}** rolün alındı. ⚠️\n\n` +
-        `💡 **Ama endişelenme! Geri gelmek ÇOOOOK basit:**\n` +
-        `🤝 Yöneticilere yazabilirsin\n` +
-        `💬 Neden yapamadığını anlatabilirsin\n` +
-        `📋 Plan yapabilirsiniz\n` +
-        `✨ Sonra tekrar başlarsın!\n\n` +
-        `🎁 **Meşgulseniz:**\n` +
-        `İzin sistemi var! İzin talep edebilirsin. Anlıyoruz!\n\n` +
-        `😊 Herkes ara sıra durgunluk yaşıyor. Sorun değil!\n` +
-        `Biz seninle çözeriz. Geri dön! 💪`
-      )
-      .setFooter({ text: 'Eko Yıldız • Personel Sistemi | Seni özleyeceğiz! 💚' })
-      .setTimestamp();
-
-    const user = await client.users.fetch(progress.userId).catch(() => null);
-    if (user) await user.send({ embeds: [embed] }).catch(() => { });
-    if (progress.status === 'active') {
-      progress.status = 'paused';
+      const user = await client.users.fetch(progress.userId).catch(() => null);
+      if (user) await user.send({ embeds: [embed] }).catch(() => {});
+      console.log(`[staffSystem] Personel kademesi 1 düşürüldü: ${progress.userId} (${currentLevel} -> ${newLevel})`);
+    } else {
+      // Level 1 ise: Rolünü tamamen silmek yerine 'dormant' (Pasif/Dinlenmede) statüsüne al
+      progress.status = 'dormant';
       progress.pausedAt = new Date();
-      await progress.save().catch(() => { });
+      progress.warnings.inactivityCount = 0;
+      progress.warnings.count = 0;
+      await progress.save().catch(() => {});
+
+      const embed = new EmbedBuilder()
+        .setColor(0x3498db)
+        .setTitle('⏸️ Personel Statünüz Dinlenmeye (Pasif Moda) Alındı')
+        .setDescription(
+          `Sayın Yetkilimiz, **${reasonHeader}** nedeniyle hesabınız **Dinlenme / Pasif Yetkili** moduna alınmıştır.\n\n` +
+          `✨ **Sistemden silinmediniz!** İstediğiniz zaman sohbette aktif olup görev yaparak veya yöneticilere yazarak kaldığınız yerden devam edebilirsiniz.`
+        )
+        .setFooter({ text: 'Eko Yıldız • Ömür Boyu Personel Sistemi | Seni bekliyoruz!' })
+        .setTimestamp();
+
+      const user = await client.users.fetch(progress.userId).catch(() => null);
+      if (user) await user.send({ embeds: [embed] }).catch(() => {});
+      console.log(`[staffSystem] Personel pasif/durgun moda alındı: ${progress.userId}`);
     }
-    console.log(`[staffSystem] Rol alındı: ${progress.userId} (${reasonHeader})`);
   } catch (err) {
-    console.error('[staffSystem] Rol alma hatası:', err.message);
+    console.error('[staffSystem] removeRole hatası:', err.message);
   }
 }
 
@@ -4310,10 +4285,7 @@ async function syncInvalidPromotionsOnStartup(client) {
 
 // ── Scheduler — sabah brifing + gün içi hatırlatmalar ──────────────────────
 function startStaffScheduler(client) {
-  // Zerox terfisini geri al (Level 3) ve Mert terfisini iade et (Level 4 Sekreter)
-  fixZeroxAndMertPromotions(client).catch(() => {});
-
-  // Bot başlatıldığında hatalı/erken terfileri otomatik denetle ve düzelt
+  // Bot başlatıldığında rütbe senkronizasyonunu denetle
   syncInvalidPromotionsOnStartup(client).catch(() => {});
   async function refreshMarketState() {
     try {
@@ -6050,45 +6022,54 @@ async function retireFromStaff(userId, reason = 'Sistem tarafından', client = n
   }
 }
 
-// Terfi süreci state'i (kullanıcıya özel, memory-only)
+// Terfi süreci state'i (kullanıcıya özel, TTL ve bellek sızıntısı korumalı)
 const promotionCeremonyState = new Map();
+
+function cleanExpiredCeremonyStates() {
+  const now = Date.now();
+  for (const [userId, state] of promotionCeremonyState.entries()) {
+    if (!state || !state.startedAt || (now - state.startedAt > 15 * 60 * 1000)) {
+      promotionCeremonyState.delete(userId);
+    }
+  }
+}
 
 // Rütbeye özel terfi sınavı soru havuzu
 const PROMOTION_EXAM_QUESTIONS = {
   2: [
-    { q: 'Bir kullanıcı sohbette küfür ederse ne yaparsın?', options: ['A) Uyarı veririm', 'B) Görmezden gelirim', 'C) Ben de yazarım', 'D) Sunucudan atarım'], correctAnswer: 'A' },
-    { q: 'Ticket çözerken kullanıcı sinirlenirse nasıl davranırsın?', options: ['A) Sakin kalır çözüm sunarım', 'B) Ben de sinirlenirim', 'C) Ticket\'ı kapatırım', 'D) Başka yetkiliyi çağırırım'], correctAnswer: 'A' },
-    { q: 'Bir üye kurallara uymuyorsa ilk adımın ne olmalı?', options: ['A) Sözlü uyarı', 'B) Direkt ban', 'C) Timeout', 'D) Hiçbir şey yapmam'], correctAnswer: 'A' },
-    { q: 'Ses kanalında spam yapan birisine ne yaparsın?', options: ['A) Uyarı + gerekirse mute', 'B) Hemen ban', 'C) Kanalı kapatırım', 'D) Görmezden gelirim'], correctAnswer: 'A' },
-    { q: 'Yeni bir üye sunucuya katıldığında ne yapmalısın?', options: ['A) Hoş geldin derim', 'B) İlgilenmem', 'C) DM atarım', 'D) Rol veririm'], correctAnswer: 'A' },
+    { q: 'Bir kullanıcı sohbette küfür ederse ilk olarak ne yaparsın?', options: ['Uyarı veririm ve kuralları hatırlatırım', 'Görmezden gelirim', 'Ben de küfürle karşılık veririm', 'Sormadan direkt sunucudan banlarım'], correctText: 'Uyarı veririm ve kuralları hatırlatırım' },
+    { q: 'Ticket çözerken kullanıcı sinirlenirse nasıl davranırsın?', options: ['Sakin kalır, dinler ve yapıcı çözüm sunarım', 'Ben de sinirlenip tartışırım', 'Cevap vermeden ticket\'ı kapatırım', 'Kullanıcıyı yetkisizce odadan atarım'], correctText: 'Sakin kalır, dinler ve yapıcı çözüm sunarım' },
+    { q: 'Bir üye hafif kural ihlali yapıyorsa ilk adımın ne olmalı?', options: ['Nazikçe sözlü uyarıda bulunmak', 'Hemen süresiz ban atmak', '1 hafta timeout vermek', 'Hiçbir işlem yapmamak'], correctText: 'Nazikçe sözlü uyarıda bulunmak' },
+    { q: 'Ses kanalında mikrofon spamı yapan birisine ne yaparsın?', options: ['Önce uyarır, devam ederse susturma (mute) uygularım', 'Hemen sunucudan kalıcı banlarım', 'Kanalı tamamen silerim', 'Hiçbir şey yapmam'], correctText: 'Önce uyarır, devam ederse susturma (mute) uygularım' },
+    { q: 'Yeni bir üye sunucuya katıldığında en doğru yaklaşım nedir?', options: ['Hoş geldin diyerek kurallara ve kanallara yönlendirmek', 'İlgilenmemek', 'İzinsiz DM reklamı atmak', 'Sorgusuz ceza vermek'], correctText: 'Hoş geldin diyerek kurallara ve kanallara yönlendirmek' },
   ],
   3: [
-    { q: 'İki üye arasında tartışma çıkarsa ilk ne yaparsın?', options: ['A) İkisini de dinler arabuluculuk yaparım', 'B) Birisini banlarım', 'C) İkisini de susturorum', 'D) Yöneticiye haber veririm'], correctAnswer: 'A' },
-    { q: 'Bir yetkili görevini kötüye kullanıyorsa ne yaparsın?', options: ['A) Kanıt toplar üst yöneticiye bildiririm', 'B) Kendim müdahale ederim', 'C) Görmezden gelirim', 'D) Herkese söylerim'], correctAnswer: 'A' },
-    { q: 'Sunucu kurallarını güncellemen istense nereden başlarsın?', options: ['A) Mevcut kuralları analiz eder ekiple tartışırım', 'B) Tek başıma yazarım', 'C) Eski kuralları silerim', 'D) Yapmam'], correctAnswer: 'A' },
-    { q: 'Raid saldırısı altındayken ilk adımın ne olmalı?', options: ['A) Doğrulama seviyesini yükseltir antiraid sistemi aktif ederim', 'B) Sunucuyu kapatırım', 'C) Herkesi banlarım', 'D) Beklerim geçer'], correctAnswer: 'A' },
-    { q: 'Bir stajyer personele mentorluk yaparken en önemli şey nedir?', options: ['A) Sabırla öğretmek ve örnek olmak', 'B) Hatalarını eleştirmek', 'C) Kendi işimi yapmak', 'D) Sadece kuralları okutmak'], correctAnswer: 'A' },
+    { q: 'İki üye arasında tartışma çıkarsa ilk yaklaşımın ne olmalı?', options: ['Sakinleştirip tarafları dinleyerek arabuluculuk yapmak', 'Hemen iki tarafı da sorgusuz banlamak', 'Kavgayı izleyip taraf tutmak', 'Tüm kanalı kalıcı olarak silmek'], correctText: 'Sakinleştirip tarafları dinleyerek arabuluculuk yapmak' },
+    { q: 'Bir yetkili görevini kötüye kullanıyorsa ne yapmalısın?', options: ['Kanıtları toplayıp üst yönetime gizlice iletmek', 'Genel sohbette yetkiliyle kavga etmek', 'Durumu görmezden gelmek', 'Yetkiliye küfür etmek'], correctText: 'Kanıtları toplayıp üst yönetime gizlice iletmek' },
+    { q: 'Sunucu kurallarında bir eksiklik fark edersen ne yaparsın?', options: ['Öneriyi not alıp ekip ve yönetimle istişareye sunarım', 'Kendi başıma gizlice kural eklerim', 'Tüm kuralları silerim', 'Önemsiz görüp geçerim'], correctText: 'Öneriyi not alıp ekip ve yönetimle istişareye sunarım' },
+    { q: 'Raid (toplu bot/üye saldırısı) anında ilk adımın ne olmalıdır?', options: ['Güvenlik seviyesini artırıp yönetimi anında bilgilendirmek', 'Panikleyip sunucudan çıkmak', 'Tüm üyeleri banlamak', 'Hiçbir şey yapmadan beklemek'], correctText: 'Güvenlik seviyesini artırıp yönetimi anında bilgilendirmek' },
+    { q: 'Stajyer bir personele rehberlik ederken en önemli ilke nedir?', options: ['Sabırla öğretmek, hataları yapıcı düzeltmek ve örnek olmak', 'Sürekli azarlamak ve tehdit etmek', 'Tüm kendi işlerimi ona yıkmak', 'Onunla hiç iletişim kurmamak'], correctText: 'Sabırla öğretmek, hataları yapıcı düzeltmek ve örnek olmak' },
   ],
   4: [
-    { q: 'Haftalık personel raporu hazırlarken nelere dikkat edersin?', options: ['A) Performans metrikleri, aktiflik ve gelişim alanları', 'B) Sadece şikayetler', 'C) Kim daha çok konuşmuş', 'D) Rapor hazırlamam'], correctAnswer: 'A' },
-    { q: 'Ekip motivasyonu düştüğünde lider olarak ne yaparsın?', options: ['A) Bireysel görüşme + takım etkinliği düzenlerim', 'B) Daha fazla görev veririm', 'C) Görmezden gelirim', 'D) Ceza sistemi uygularım'], correctAnswer: 'A' },
-    { q: 'Kritik bir sunucu kararı alınırken nasıl yaklaşırsın?', options: ['A) Veri toplar, ekiple istişare eder, sonra karar veririm', 'B) Hemen karar veririm', 'C) Üst yönetime bırakırım', 'D) Oylama yaparım'], correctAnswer: 'A' },
-    { q: 'Bir üye haksız yere ceza aldığını iddia ediyorsa?', options: ['A) Logları inceler, haklıysa düzeltirim', 'B) Reddederim', 'C) Cezayı kaldırırım', 'D) Şikayet eden yetkiliyi uyarırım'], correctAnswer: 'A' },
-    { q: 'Sunucu güvenliğini nasıl aktif olarak izlersin?', options: ['A) Düzenli log kontrolü + audit trail + şüpheli aktivite takibi', 'B) Sadece şikayet gelince bakarım', 'C) Bot loglarını kontrol ederim', 'D) İzlemem, sorun olursa hallederim'], correctAnswer: 'A' },
+    { q: 'Haftalık personel değerlendirmesi yaparken nelere odaklanırsın?', options: ['Aktiflik, yardımseverlik, bilet kalitesi ve ekip uyumu', 'Sadece şahsi arkadaşlık ilişkilerine', 'Kim en çok konuştuysa sadece ona', 'Rastgele puan vermeye'], correctText: 'Aktiflik, yardımseverlik, bilet kalitesi ve ekip uyumu' },
+    { q: 'Ekip motivasyonu düştüğünde lider olarak en doğru adım nedir?', options: ['Birebir dinlemek, yapıcı geri bildirim ve moral desteği vermek', 'Ağır cezalar ve tehditler yağdırmak', 'Durumu tamamen görmezden gelmek', 'Tüm ekibi görevden almak'], correctText: 'Birebir dinlemek, yapıcı geri bildirim ve moral desteği vermek' },
+    { q: 'Kritik bir karar alırken Sekreterin benimsemesi gereken tutum nedir?', options: ['Veri ve delilleri inceleyip üst yönetimle koordine olmak', 'Anlık öfkeyle fevri kararlar almak', 'Karar almaktan tamamen kaçınmak', 'Üyeleri kışkırtmak'], correctText: 'Veri ve delilleri inceleyip üst yönetimle koordine olmak' },
+    { q: 'Bir üye haksız yere ceza aldığını kanıtlarıyla iddia ediyorsa?', options: ['Logları ve delilleri tarafsızca inceler, gerekirse cezayı düzeltirim', 'İtirazını dinlemeden reddederim', 'Yetkiliyi üyelerin önünde küçük düşürürüm', 'Kullanıcıyı sorgusuz banlarım'], correctText: 'Logları ve delilleri tarafsızca inceler, gerekirse cezayı düzeltirim' },
+    { q: 'Sunucu güvenliğini sağlarken en kritik araç nedir?', options: ['Düzenli denetim logları, şüpheli aktivite takibi ve proaktif izleme', 'Sadece şikayet gelmesini beklemek', 'Her gün herkese ceza puanı vermek', 'Güvenliği şansa bırakmak'], correctText: 'Düzenli denetim logları, şüpheli aktivite takibi ve proaktif izleme' },
   ],
   5: [
-    { q: 'Tüm moderatör ekibini yönetirken önceliğin ne olmalı?', options: ['A) Adil görev dağılımı ve performans takibi', 'B) Herkesin mutlu olması', 'C) Sadece kuralları uygulatmak', 'D) En az işle en çok sonuç'], correctAnswer: 'A' },
-    { q: 'Sunucu istatistiklerinde anormal bir düşüş görsen ne yaparsın?', options: ['A) Detaylı analiz yapar, nedenleri araştırır, eylem planı oluştururum', 'B) Beklerim, düzelir', 'C) Yöneticiye söylerim', 'D) Etkinlik düzenlerim'], correctAnswer: 'A' },
-    { q: 'Yöneticilerle koordineli çalışmanın en önemli kuralı nedir?', options: ['A) Şeffaf iletişim ve düzenli raporlama', 'B) Her şeyi onlardan sormak', 'C) Kendi kararlarımı vermek', 'D) Toplantılara katılmak'], correctAnswer: 'A' },
-    { q: 'Kriz anında (sunucu çökme, büyük tartışma) nasıl davranırsın?', options: ['A) Soğukkanlı kalır, protokolü uygular, ekibi koordine ederim', 'B) Panik yaparım', 'C) Üst yönetime haber verip beklerim', 'D) Herkesi susturorum'], correctAnswer: 'A' },
-    { q: 'Bir alt kademe yetkiliye performans değerlendirmesi yaparken?', options: ['A) Güçlü yönlerini vurgular, gelişim alanlarını yapıcı şekilde sunarım', 'B) Sadece hataları söylerim', 'C) Puan veririm', 'D) Genel bir şey söylerim'], correctAnswer: 'A' },
+    { q: 'Kıdemli Sekreter olarak moderasyon ekibini nasıl yönetirsin?', options: ['Adil iş bölümü, düzenli rehberlik ve şeffaf koordinasyonla', 'Keyfi emirler vererek', 'Sadece en sevdiğim kişilerle çalışarak', 'Görevleri takip etmeyerek'], correctText: 'Adil iş bölümü, düzenli rehberlik ve şeffaf koordinasyonla' },
+    { q: 'Sunucu aktivitesinde ani düşüş yaşanırsa ilk ne yaparsın?', options: ['Kök neden analizi yapar, etkinlik ve motivasyon planı hazırlarım', 'Hemen sunucuyu kilitlerim', 'Tüm ekibi suçlarım', 'Sorunu önemsemem'], correctText: 'Kök neden analizi yapar, etkinlik ve motivasyon planı hazırlarım' },
+    { q: 'Yönetimle personel arasındaki köprü nasıl kurulmalıdır?', options: ['Şeffaf, dürüst ve iki yönlü yapıcı geri bildirimle', 'Bilgileri saklayarak', 'Yönetimi personele kötüleyerek', 'İletişimi tamamen keserek'], correctText: 'Şeffaf, dürüst ve iki yönlü yapıcı geri bildirimle' },
+    { q: 'Kriz anında (çökme, saldırı vb.) liderin en önemli özelliği nedir?', options: ['Soğukkanlılık, net talimatlar ve acil durum protokolünü işletmek', 'Panik yapıp ortadan kaybolmak', 'Herkesi suçlamak', 'Çözümü başkasına devretmek'], correctText: 'Soğukkanlılık, net talimatlar ve acil durum protokolünü işletmek' },
+    { q: 'Bir moderatörün gelişimini desteklemek için ne yapılmalıdır?', options: ['Güçlü yönlerini takdir edip eksiklerini eğitimle tamamlamak', 'Her hatasında anında görevden almak', 'Hatalarını görmezden gelmek', 'Onu diğerleriyle kıyaslayıp aşağılamak'], correctText: 'Güçlü yönlerini takdir edip eksiklerini eğitimle tamamlamak' },
   ],
   6: [
-    { q: 'Genel Koordinatör olarak en büyük sorumluluğun nedir?', options: ['A) Tüm operasyonları koordine etmek ve stratejik kararlar almak', 'B) Herkesi yönetmek', 'C) Sunucuyu büyütmek', 'D) Kuralları yazmak'], correctAnswer: 'A' },
-    { q: 'Sınav süreçlerini tasarlarken neyi gözetirsin?', options: ['A) Adalet, bilgi ölçümü ve pratik beceri değerlendirmesi', 'B) Zor sorular sormak', 'C) Kolay geçiş sağlamak', 'D) Herkesi geçirmek'], correctAnswer: 'A' },
-    { q: 'Aylık genel denetim raporunda nelere bakarsın?', options: ['A) KPI, üye memnuniyeti, moderasyon kalitesi, büyüme verileri', 'B) Sadece aktif personel sayısı', 'C) Ticket istatistikleri', 'D) Şikayetler'], correctAnswer: 'A' },
-    { q: 'Büyük bir yapısal değişiklik yapmak gerektiğinde?', options: ['A) Etki analizi yapar, tüm paydaşlarla istişare eder, aşamalı uygularım', 'B) Hemen uygularım', 'C) Oylama yaparım', 'D) Vazgeçerim'], correctAnswer: 'A' },
-    { q: 'Ekibin tüm sorumluluğu senin omuzlarında. Bunu nasıl taşırsın?', options: ['A) Delege eder, güvenir, destekler ama takip ederim', 'B) Her şeyi kendim yaparım', 'C) Sorumluluk dağıtırım', 'D) Stresle baş ederim'], correctAnswer: 'A' },
+    { q: 'Genel Koordinatör olarak temel misyonun nedir?', options: ['Tüm topluluk ve moderasyon ekibinin sürdürülebilir, huzurlu ve kaliteli işlemesini sağlamak', 'Sadece güç gösterisi yapmak', 'Sunucuyu kendi çıkarlarına göre yönetmek', 'Hiçbir sorumluluk almamak'], correctText: 'Tüm topluluk ve moderasyon ekibinin sürdürülebilir, huzurlu ve kaliteli işlemesini sağlamak' },
+    { q: 'Sınav ve terfi sisteminde en vazgeçilmez kural nedir?', options: ['Liyakat, adalet, tarafsızlık ve şeffaf ölçüm', 'Torpil ve adam kayırma', 'Rastgele karar verme', 'Zorlaştırıp herkesi elemek'], correctText: 'Liyakat, adalet, tarafsızlık ve şeffaf ölçüm' },
+    { q: 'Genel denetimlerde hangi göstergeler önceliklidir?', options: ['Üye memnuniyeti, adil ceza oranları, bilet çözüm kalitesi ve ekip uyumu', 'Sadece atılan toplam mesaj sayısı', 'Kaç kişinin banlandığı', 'Hiçbiri'], correctText: 'Üye memnuniyeti, adil ceza oranları, bilet çözüm kalitesi ve ekip uyumu' },
+    { q: 'Büyük çaplı bir yenilik yapılırken izlenecek en doğru yol nedir?', options: ['Ekiple istişare, pilot deneme, geri bildirim toplama ve aşamalı geçiş', 'Haber vermeden anında dayatmak', 'Gelen tepkileri dinlememek', 'Fikirden hemen vazgeçmek'], correctText: 'Ekiple istişare, pilot deneme, geri bildirim toplama ve aşamalı geçiş' },
+    { q: 'Liderliğin zirvesinde başarı nasıl sürdürülebilir kılınır?', options: ['Sürekli öğrenerek, ekibi yetkilendirerek ve adil kalarak', 'Otoriter baskı kurarak', 'Yetkileri devretmeyip her şeyi tek başına yaparak', 'Geri bildirimlere kulak tıkayarak'], correctText: 'Sürekli öğrenerek, ekibi yetkilendirerek ve adil kalarak' },
   ],
 };
 
@@ -6102,13 +6083,24 @@ const EXAM_EVALUATION_RESPONSES = [
 ];
 
 /**
- * Terfi sınavı için soruları üret (rütbeye göre 5 soru seç)
+ * Terfi sınavı için soruları üret (şıkları ve doğru cevabı dinamik karıştır)
  */
 function generatePromotionExamQuestions(targetLevel) {
   const pool = PROMOTION_EXAM_QUESTIONS[targetLevel] || PROMOTION_EXAM_QUESTIONS[2];
-  // Havuzdan 5 soru seç (shuffle)
-  const shuffled = [...pool].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 5);
+  const shuffledPool = [...pool].sort(() => 0.5 - Math.random()).slice(0, 5);
+
+  return shuffledPool.map(item => {
+    const shuffledOpts = [...item.options].sort(() => 0.5 - Math.random());
+    const correctIdx = shuffledOpts.indexOf(item.correctText);
+    const letters = ['A', 'B', 'C', 'D'];
+    const correctLetter = letters[correctIdx >= 0 ? correctIdx : 0];
+
+    return {
+      q: item.q,
+      options: shuffledOpts.map((opt, i) => `${letters[i]}) ${opt}`),
+      correctAnswer: correctLetter,
+    };
+  });
 }
 
 /**
@@ -6169,6 +6161,8 @@ function checkPromotionEligibility(progress) {
  */
 async function startPromotionCeremony(interaction, progress) {
   const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+  cleanExpiredCeremonyStates();
 
   const currentLevel = progress.level || 1;
   const targetLevel = currentLevel + 1;

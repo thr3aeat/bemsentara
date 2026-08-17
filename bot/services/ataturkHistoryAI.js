@@ -35,8 +35,8 @@ async function postAtaturkHistory(client) {
 
     let title = `📅 Tarihte Bugün - ${dateStr}`;
     let embedColor = 0xdc143c; // Normal kırmızı
-    const systemPrompt = "Sen saygın bir tarihçisin. Sadece Mustafa Kemal Atatürk'ün hayatı ve Türk tarihi hakkında net ve doğru bilgiler verirsin.";
-    let userPrompt = `Bugün ${dateStr}. Tarihte bugün (veya bu haftalarda) Mustafa Kemal Atatürk ne yapmıştı? Kısa, anlaşılır ve saygılı bir dille 1-2 paragraf halinde anlat. Hiçbir başlık, selamlama veya "Tarihte bugün" gibi giriş kelimeleri kullanma, doğrudan olayı anlat.`;
+    const systemPrompt = "Sen saygın bir tarihçisin. Sadece Mustafa Kemal Atatürk'ün hayatı ve Türk tarihi hakkında net ve doğru bilgiler verirsin. Asla düşünme süreci (<think>) veya İngilizce açıklama yazmazsın, doğrudan Türkçe yanıt verirsin.";
+    let userPrompt = `Bugün ${dateStr}. Tarihte bugün (veya bu haftalarda) Mustafa Kemal Atatürk ne yapmıştı? Kısa, anlaşılır ve saygılı bir dille 1-2 paragraf halinde anlat. Hiçbir başlık, düşünme süreci (<think>), selamlama veya "Tarihte bugün" gibi giriş kelimeleri kullanma, doğrudan olayı anlat.`;
 
     // Özel gün kontrolleri
     let isSpecialDay = false;

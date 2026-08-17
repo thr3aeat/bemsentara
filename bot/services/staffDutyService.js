@@ -176,25 +176,21 @@ async function endDuty(interaction, client, handoverNotes = null) {
         console.error('[staffDutyService] ServerConfig handover notes save error:', confErr.message);
       }
 
-      // Run AI Audit Log check
+      // Run AI Audit Log check (Yumuşatılmış ve adil denetim)
       try {
         let isAnomaly = false;
         let anomalyReason = '';
-        if (durationMins >= 120 && tickets === 0 && mods === 0) {
+        if (durationMins >= 480 && tickets === 0 && mods === 0 && voiceMins === 0) {
           isAnomaly = true;
-          anomalyReason = 'Çok uzun süre (2+ saat) nöbette kalınmasına rağmen sıfır ticket çözüldü ve sıfır moderasyon işlemi yapıldı.';
-        } else if (handoverNotes.length < 15 && durationMins >= 60) {
-          isAnomaly = true;
-          anomalyReason = '1 saatten fazla nöbette kalınmasına rağmen devir notu çok kısa veya yetersiz.';
-        } else {
+          anomalyReason = 'Çok uzun süre (8+ saat) boyunca tamamen hareketsiz nöbet oturumu.';
+        } else if (handoverNotes && handoverNotes.length >= 5) {
           const { chatWithAI } = require('./staffSystem');
-          const aiPrompt = `Aşağıdaki vardiya devir notunu ve nöbet istatistiklerini ciddiyet, doğruluk ve tutarlılık açısından analiz et. Herhangi bir ciddiyetsizlik, spam, veya tembellik anomalisi var mı? Sadece EVET veya HAYIR ile başla, ardından kısa bir cümleyle açıkla.
-Not: "${handoverNotes}"
-İstatistikler: Süre: ${durationMins} dakika, Çözülen Ticket: ${tickets}, Moderasyon: ${mods}`;
+          const aiPrompt = `Aşağıdaki vardiya devir notunu analiz et. Küfür, bariz hakaret veya troll spam var mı? Sadece EVET veya HAYIR ile başla.
+Not: "${handoverNotes}"`;
           const aiResponse = await chatWithAI([{ role: 'user', content: aiPrompt }], 'Sen bir denetleme yapay zekasısın.').catch(() => '');
           if (aiResponse && aiResponse.toUpperCase().startsWith('EVET')) {
             isAnomaly = true;
-            anomalyReason = aiResponse.replace(/^(EVET|Evet)[\s,.:]*/i, '').trim() || 'AI tarafından şüpheli devir notu/ciddiyetsiz davranış tespiti.';
+            anomalyReason = 'Devir notunda uygunsuz ifade veya troll içerik tespiti.';
           }
         }
 

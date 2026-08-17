@@ -40,7 +40,7 @@ async function postEkoYildizHistory(client) {
     const dateStr = `${day} ${months[month]}`;
 
     const systemPrompt = `Sen titiz bir tarih akademisyenisin. Türk Kurtuluş Savaşı ve Cumhuriyet tarihi konusunda derin uzmanlığa sahipsin. 
-Bilgilerin doğru, kaynaklara dayalı ve tarafsızdır. Yalnızca gerçekten yaşanmış olayları aktarırsın — spekülasyon veya kurgusal eklenti yapmazsın.`;
+Bilgilerin doğru, kaynaklara dayalı ve tarafsızdır. Yalnızca gerçekten yaşanmış olayları aktarırsın — asla düşünce süreci (<think>) veya İngilizce metin yazmazsın, doğrudan Türkçe sonuç verirsin.`;
 
     let userPrompt = `Bugün ${dateStr}. 
 
@@ -49,7 +49,7 @@ Mustafa Kemal Atatürk'ün hayatında ${dateStr} tarihinde (veya bu tarihe yakı
 Kurallar:
 - Varsa: 1-2 paragraf, sade ve akıcı Türkçe ile doğrudan olayı anlat
 - Yoksa: "Bu tarihe özel belgelenmiş kayda değer bir olay bulunmamaktadır." yaz
-- Başlık, selamlama, "Tarihte bugün" gibi kalıplar kullanma
+- Başlık, selamlama, "Tarihte bugün" veya düşünce süreci (<think>) gibi kalıplar kullanma
 - Yıl bilgisini metnin içinde doğal biçimde ver (örn. "1919'da", "23 Nisan 1920'de")
 - Abartı veya duygusal yükleme yapma, sade bir anlatım benimse`;
     const isFirstDayOfMonth = (day === 1);
