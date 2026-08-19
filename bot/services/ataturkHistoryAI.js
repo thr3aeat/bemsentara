@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const { EmbedBuilder } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 
-const TARGET_CHANNEL_IDS = ["1514583020680777760", "1518692463177498674"];
+const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
 /**
  * Her gün sabah 09:00'da Atatürk ile ilgili tarihi bilgi atar.
@@ -35,8 +35,15 @@ async function postAtaturkHistory(client) {
 
     let title = `📅 Tarihte Bugün - ${dateStr}`;
     let embedColor = 0xdc143c; // Normal kırmızı
-    const systemPrompt = "Sen saygın bir tarihçisin. Sadece Mustafa Kemal Atatürk'ün hayatı ve Türk tarihi hakkında net ve doğru bilgiler verirsin. Asla düşünme süreci (<think>) veya İngilizce açıklama yazmazsın, doğrudan Türkçe yanıt verirsin.";
-    let userPrompt = `Bugün ${dateStr}. Tarihte bugün (veya bu haftalarda) Mustafa Kemal Atatürk ne yapmıştı? Kısa, anlaşılır ve saygılı bir dille 1-2 paragraf halinde anlat. Hiçbir başlık, düşünme süreci (<think>), selamlama veya "Tarihte bugün" gibi giriş kelimeleri kullanma, doğrudan olayı anlat.`;
+    const systemPrompt = `Sen Türk Kurtuluş Savaşı ve Mustafa Kemal Atatürk tarihi konusunda uzman, saygın bir tarihçisin.
+Görevin: İstenen tarihte gerçekleşmiş önemli tarihi gelişmeyi doğru, akıcı ve saygılı bir Türkçe ile aktarmak.
+Kesin Kurallar:
+- Yanıtın SADECE Türkçe olmalıdır.
+- Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı yapma, İngilizce metin yazma.
+- Doğrudan tarihi olayın anlatımına başla.`;
+
+    let userPrompt = `Tarih: ${dateStr}.
+Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} günü (veya bu haftalarda) gerçekleşen önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde açıkça belirt (örn. 1922'de).`;
 
     // Özel gün kontrolleri
     let isSpecialDay = false;
@@ -65,17 +72,17 @@ async function postAtaturkHistory(client) {
       if (isMourning) {
         title = `🖤 ÖNEMLİ GÜN! - ${specialDayName} - ${dateStr}`;
         embedColor = 0x2c3e50; // Koyu Gri / Siyah tonu
-        userPrompt = `Bugün ${specialDayName}. Ulu Önder Mustafa Kemal Atatürk'ün vefatının yıl dönümü. Bu hüzünlü, anlamlı ve önemli günde; Atatürk'ün hatırasını, fikirlerini, Türk milletine bıraktığı mirası ve onun ölümsüzlüğünü son derece saygılı, hürmetkar, duygusal ve derin bir dille 1-2 paragraf halinde anlat. Hiçbir başlık, selamlama veya giriş kelimesi kullanma, doğrudan anlatıma başla.`;
+        userPrompt = `Bugün ${specialDayName}. Ulu Önder Mustafa Kemal Atatürk'ün vefatının yıl dönümünde onun mirasını ve hatırasını 1-2 paragraf halinde derinden anlat.`;
       } else {
         title = `🇹🇷 ÖNEMLİ GÜN! - ${specialDayName} - ${dateStr}`;
         embedColor = 0xff0000; // Canlı Kırmızı (Bayrak Kırmızısı)
-        userPrompt = `Bugün ${specialDayName}! Türk milleti ve tarihi için son derece önemli, coşkulu, gurur dolu ve mutlu bir gün. Mustafa Kemal Atatürk'ün bu büyük gündeki rolünü, bu bayramın anlam ve önemini son derece coşkulu, mutlu, gururlu ve sürükleyici bir dille 1-2 paragraf halinde anlat. Hiçbir başlık, selamlama veya giriş kelimesi kullanma, doğrudan anlatıma başla.`;
+        userPrompt = `Bugün ${specialDayName}! Atatürk'ün bu büyük gündeki rolünü ve bu bayramın anlam ve önemini coşkulu ve gururlu bir dille 1-2 paragraf halinde anlat.`;
       }
     }
 
     let aiContent = "";
     try {
-      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt);
+      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
     } catch (aiErr) {
       console.error("❌ [AtaturkHistoryAI] AI isteği başarısız:", aiErr.message);
       if (isSpecialDay) {

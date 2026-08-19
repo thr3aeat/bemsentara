@@ -140,12 +140,13 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
     if (!guild) return;
 
     const channel = await guild.channels.fetch(ticket.channelId).catch(async err => {
-      console.debug(`[ticketCleanup] Channel ${ticket.channelId} not found:`, err.code);
-      if (err.code === 10003 || err.status === 404) {
+      if (err?.code === 10003 || err?.code === 50001 || err?.status === 404) {
         ticket.channelDeleted = true;
         ticket.channelDeletedAt = new Date();
         await ticket.save().catch(() => {});
         console.log(`[ticketCleanup] Ticket ${ticket.ticketId} channel was deleted externally. Marked in DB.`);
+      } else {
+        console.debug(`[ticketCleanup] Channel ${ticket.channelId} fetch error:`, err?.message || err?.code);
       }
       return null;
     });
@@ -153,8 +154,15 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
     if (!channel?.isTextBased?.()) return;
 
     // Son 5 mesajı çek
-    const messages = await channel.messages.fetch({ limit: 5 }).catch(err => {
-      console.debug(`[ticketCleanup] Message fetch error for ${ticket.ticketId}:`, err.code);
+    const messages = await channel.messages.fetch({ limit: 5 }).catch(async err => {
+      if (err?.code === 10003 || err?.code === 50001 || err?.code === 50013 || err?.status === 404) {
+        ticket.channelDeleted = true;
+        ticket.channelDeletedAt = new Date();
+        await ticket.save().catch(() => {});
+        console.log(`[ticketCleanup] Ticket ${ticket.ticketId} channel is inaccessible/missing permissions (${err?.code || err?.status}). Marked in DB.`);
+      } else {
+        console.debug(`[ticketCleanup] Message fetch error for ${ticket.ticketId}:`, err?.message || err?.code || err);
+      }
       return null;
     });
     

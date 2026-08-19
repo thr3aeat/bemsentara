@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const { EmbedBuilder } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 
-const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1393379303508541440";
+const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1518692463177498674";
 
 /**
  * Her gün sabah 09:00'da tarih paylaşımı yapar.
@@ -39,44 +39,40 @@ async function postEkoYildizHistory(client) {
     const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     const dateStr = `${day} ${months[month]}`;
 
-    const systemPrompt = `Sen titiz bir tarih akademisyenisin. Türk Kurtuluş Savaşı ve Cumhuriyet tarihi konusunda derin uzmanlığa sahipsin. 
-Bilgilerin doğru, kaynaklara dayalı ve tarafsızdır. Yalnızca gerçekten yaşanmış olayları aktarırsın — asla düşünce süreci (<think>) veya İngilizce metin yazmazsın, doğrudan Türkçe sonuç verirsin.`;
+    const systemPrompt = `Sen Türk ve dünya tarihi konusunda derin uzmanlığa sahip saygın bir tarih akademisyenisin.
+Görevin: İstenen tarihte gerçekleşmiş önemli tarihi gelişmeyi (özellikle Türk tarihi ve Atatürk odaklı) doğru, akıcı ve saygılı bir Türkçe ile aktarmak.
+Kesin Kurallar:
+- Yanıtın SADECE Türkçe olmalıdır.
+- Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı yapma, İngilizce metin yazma.
+- Doğrudan tarihi olayın anlatımına başla.`;
 
-    let userPrompt = `Bugün ${dateStr}. 
-
-Mustafa Kemal Atatürk'ün hayatında ${dateStr} tarihinde (veya bu tarihe yakın günlerde) gerçekleşmiş önemli bir olay var mı?
-
-Kurallar:
-- Varsa: 1-2 paragraf, sade ve akıcı Türkçe ile doğrudan olayı anlat
-- Yoksa: "Bu tarihe özel belgelenmiş kayda değer bir olay bulunmamaktadır." yaz
-- Başlık, selamlama, "Tarihte bugün" veya düşünce süreci (<think>) gibi kalıplar kullanma
-- Yıl bilgisini metnin içinde doğal biçimde ver (örn. "1919'da", "23 Nisan 1920'de")
-- Abartı veya duygusal yükleme yapma, sade bir anlatım benimse`;
+    let userPrompt = `Tarih: ${dateStr}.
+Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} tarihinde (veya bu günlerde) gerçekleşmiş önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde doğal biçimde ver.`;
     const isFirstDayOfMonth = (day === 1);
 
     if (isFirstDayOfMonth) {
-      userPrompt = `Bugün ${dateStr} (Ayın ilk günü). Lütfen aşağıdaki şablona tam olarak uyacak şekilde bir metin oluştur:
+      userPrompt = `Tarih: ${dateStr} (Ayın ilk günü). Lütfen aşağıdaki şablona tam olarak uyacak şekilde bir metin oluştur:
 
 🌟 YENİ AYA MERHABA!
 Bu ay Tarihte Bugün EkoYıldız'da [bu ay içinde yaşanmış, Türk ve dünya tarihinden 3-4 adet dikkat çeken önemli tarihi konu başlığı/tema] konularını göreceksiniz.
 
 📅 Bugünün Tarihte Bugünü:
-[Tarihte bugün yaşanan önemli bir tarihi olay hakkında 1-2 paragraflık sürükleyici anlatım]
+[Tarihte bugün yaşanan önemli bir tarihi olay hakkında 1-2 paragraflık sürökleyici anlatım]
 
 Kurallar:
 - Şablondaki başlıkları (🌟 YENİ AYA MERHABA!, 📅 Bugünün Tarihte Bugünü:) aynen kullan.
-- Metin doğrudan bu şablonla başlasın, ek giriş-çıkış veya selamlama cümleleri ekleme.`;
+- Metin doğrudan bu şablonla başlasın.`;
     }
 
     let aiContent = "";
     try {
-      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt);
+      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
     } catch (aiErr) {
       console.error("❌ [EkoYildizHistoryAI] AI isteği başarısız:", aiErr.message);
       if (isFirstDayOfMonth) {
         aiContent = `🌟 YENİ AYA MERHABA!\nBu ay Tarihte Bugün EkoYıldız'da dünya ve Türk tarihinin en önemli dönüm noktalarını göreceksiniz.\n\n📅 Bugünün Tarihte Bugünü:\n${dateStr} tarihinde yaşanan tüm gelişmeleri ve tarihi olayları saygıyla hatırlıyoruz.`;
       } else {
-        aiContent = `${dateStr} gününde yaşanan tarihi gelişmeleri ve önemli olayları saygıyla hatırlıyoruz. (Yapay zeka servisinde anlık bir sorun oluştu)`;
+        aiContent = `${dateStr} gününde yaşanan tarihi gelişmeleri ve önemli olayları saygıyla hatırlıyoruz.`;
       }
     }
 

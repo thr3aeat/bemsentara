@@ -3,25 +3,16 @@
 const https = require('https');
 const http = require('http');
 
-const OLLAMA_BASE = process.env.AI_BASE_URL
-  || process.env.OLLAMA_BASE_URL
-  || 'https://api.groq.com/openai/v1';
-const OLLAMA_KEY = process.env.OPENROUTER_API_KEY
-  || process.env.OLLAMA_API_KEY
-  || process.env.GROQ_API_KEY
-  || '';
+const GROQ_BASE = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
+const GROQ_KEY = process.env.GROQ_API_KEY || process.env.AI_API_KEY || '';
 let MODELS = process.env.AI_MODEL
   ? [process.env.AI_MODEL]
   : [
-    'qwen/qwen3.6-27b',
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'deepseek-r1-distill-llama-70b',
-    'deepseek-r1-distill-qwen-32b',
-    'qwen/qwen3-32b',
+    'groq/compound',
+    'groq/compound-mini',
+    'openai/gpt-oss-20b',
     'openai/gpt-oss-120b',
-    'compound',
-    'compound-mini'
+    'qwen/qwen3.6-27b'
   ];
 
 const TICKET_SYSTEM_PROMPT = `Sen Sentara destek sisteminin yapay zeka asistanısın.
@@ -62,14 +53,42 @@ function cleanAIResponse(rawText) {
   text = text.replace(/\[THINK\][\s\S]*?\[\/THINK\]/gi, '');
   text = text.replace(/\[REASONING\][\s\S]*?\[\/REASONING\]/gi, '');
 
-  // 2. Yanıt token sınırında kesilmiş ve kapanmamış <think> bloğunu temizle
+  // 2. Kapanmamış düşünme bloklarını temizle (token sınırında kesilme durumunda)
   text = text.replace(/<think>[\s\S]*$/gi, '');
   text = text.replace(/<reasoning>[\s\S]*$/gi, '');
+  text = text.replace(/\[THINK\][\s\S]*$/gi, '');
+  text = text.replace(/\[REASONING\][\s\S]*$/gi, '');
 
   // 3. Başlangıçtaki düşünce açıklaması kalıntılarını temizle
   text = text.replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '');
+  text = text.replace(/^(?:Identify Historical Context|Let's check|Wait,|Rule checklist|Language: Turkish only|NO greetings)[\s\S]*?\n\n/gi, '');
 
-  return text.trim();
+  // 4. Başlangıçtaki İngilizce düşünme / taslak satırlarını temizle
+  const lines = text.split('\n');
+  const cleanLines = [];
+  let foundActualContent = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!foundActualContent) {
+      if (/^(Identify Historical Context|Let's check|Wait,|Rule checklist|Language:|NO greetings|August \d+|Actually,|The Great Offensive|August \d+, \d+:)/i.test(trimmed)) {
+        continue;
+      }
+      if (/^\)?\s*,?\s*NO greetings/i.test(trimmed)) {
+        continue;
+      }
+      if (trimmed) {
+        foundActualContent = true;
+      }
+    }
+    if (foundActualContent) {
+      cleanLines.push(line);
+    }
+  }
+
+  text = cleanLines.join('\n').trim();
+
+  return text;
 }
 
 /**
@@ -77,8 +96,8 @@ function cleanAIResponse(rawText) {
  */
 function requestModel(model, messages, systemContent, options = {}) {
   // Validate inputs
-  if (!OLLAMA_KEY || OLLAMA_KEY.trim() === '') {
-    return Promise.reject(new Error('❌ AI API anahtarı yapılandırılmamış'));
+  if (!GROQ_KEY || GROQ_KEY.trim() === '') {
+    return Promise.reject(new Error('❌ Groq API anahtarı yapılandırılmamış'));
   }
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -92,12 +111,12 @@ function requestModel(model, messages, systemContent, options = {}) {
       ...messages,
     ],
     stream: false,
-    max_tokens: options.max_tokens || 300,
+    max_tokens: options.max_tokens || 1000,
     temperature: options.temperature !== undefined ? options.temperature : 0.7,
   });
 
   return new Promise((resolve, reject) => {
-    const base = OLLAMA_BASE.replace(/\/+$/, '');
+    const base = GROQ_BASE.replace(/\/+$/, '');
     let url;
     try {
       url = new URL(`${base}/chat/completions`);
@@ -116,7 +135,7 @@ function requestModel(model, messages, systemContent, options = {}) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(body),
-        'Authorization': `Bearer ${OLLAMA_KEY}`,
+        'Authorization': `Bearer ${GROQ_KEY}`,
         'HTTP-Referer': 'https://sentara.app',
         'X-Title': 'Sentara Support Bot',
       },
@@ -168,12 +187,9 @@ function requestModel(model, messages, systemContent, options = {}) {
             }
 
             // Response validation
-            let content = parsed?.choices?.[0]?.message?.content;
-            if (!content && parsed?.choices?.[0]?.message?.reasoning_content) {
-              content = parsed.choices[0].message.reasoning_content;
-            }
-            if (!content || typeof content !== 'string') {
-              return reject(new Error(`Geçersiz yanıt formatı`));
+            const content = parsed?.choices?.[0]?.message?.content;
+            if (!content || typeof content !== 'string' || content.trim() === '') {
+              return reject(new Error(`Geçersiz veya boş yanıt formatı`));
             }
 
             const cleaned = cleanAIResponse(content);

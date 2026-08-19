@@ -625,8 +625,11 @@ async function sendContractDM(userId, client) {
       return;
     }
 
-    const user = await client.users.fetch(userId);
-    if (!user) return;
+    const user = await client.users.fetch(userId).catch(() => null);
+    if (!user) {
+      logger.warn(`[ModeratorSchool] User ${userId} bulunamadı.`);
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setColor(0x7c6af7)
@@ -648,7 +651,16 @@ async function sendContractDM(userId, client) {
         .setStyle(ButtonStyle.Success)
     );
 
-    await user.send({ embeds: [embed], components: [row] });
+    const sent = await user.send({ embeds: [embed], components: [row] }).catch(err => {
+      if (err?.code === 50007) {
+        logger.warn(`[ModeratorSchool] Kullanıcının (${userId}) DM kutusu kapalı (50007), sözleşme iletilemedi.`);
+      } else {
+        logger.warn(`[ModeratorSchool] sendContractDM DM gönderilemedi (${userId}):`, err?.message || err);
+      }
+      return null;
+    });
+
+    if (!sent) return;
 
     // Update database status
     p.schoolSystem = p.schoolSystem || {};
@@ -656,7 +668,7 @@ async function sendContractDM(userId, client) {
     p.schoolSystem.originalLevel = p.level;
     await p.save();
   } catch (err) {
-    logger.error(`[ModeratorSchool] sendContractDM error for ${userId}:`, err.message);
+    logger.error(`[ModeratorSchool] sendContractDM error for ${userId}:`, err?.message || err);
   }
 }
 
