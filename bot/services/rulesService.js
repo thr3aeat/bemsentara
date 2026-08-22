@@ -13,12 +13,21 @@ const {
   MessageFlags
 } = require('discord.js');
 const { appMeta, saveStoreNow } = require('../../models/Store');
+const { BASE_URL } = require('../../config');
 
 const RULES_CHANNEL_ID = '1535319008956649564';
 const WEBHOOK_NAME = 'EkoYıldız Kurallar';
 const WEBHOOK_AVATAR = 'https://i.imgur.com/HT7bvru.png';
 const BANNER_URL = 'https://i.imgur.com/j3pnVTu.png';
-const ANAYASA_URL = 'https://docs.google.com/document/d/1uug3KuDnHaT9qYweF6pSdj40_yRSHBlqIVPo8Mg_VZ0/edit?usp=sharing';
+
+const getAnayasaUrl = () => {
+  if (process.env.ANAYASA_URL) return process.env.ANAYASA_URL;
+  if (BASE_URL && !BASE_URL.includes('localhost')) {
+    return `${BASE_URL.replace(/\/+$/, '')}/anayasasi`;
+  }
+  return 'http://ekoyildiz.duckdns.org/anayasasi';
+};
+const ANAYASA_URL = getAnayasaUrl();
 
 /**
  * Sends or updates the EkoYıldız rules in channel 1535319008956649564 using Discord Components V2.

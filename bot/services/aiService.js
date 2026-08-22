@@ -8,6 +8,10 @@ const GROQ_KEY = process.env.GROQ_API_KEY || process.env.AI_API_KEY || '';
 let MODELS = process.env.AI_MODEL
   ? [process.env.AI_MODEL]
   : [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'mixtral-8x7b-32768',
+    'gemma2-9b-it',
     'groq/compound',
     'groq/compound-mini',
     'openai/gpt-oss-20b',
@@ -41,13 +45,14 @@ Mesajları kısa ama duygu dolu tut, gerektiğinde kişiselleştirilmiş sorular
 Kullanıcının durumunu ve görevlerini anlayarak, onlara güven verecek şekilde konuş.`;
 
 /**
- * AI modellerinden gelen <think>...</think>, [THINK] vb. zincirleme düşünme bloklarını temizler
+ * AI modellerinden gelen <think>...</think>, [THINK] vb. zincirleme düşünme bloklarını
+ * ve İngilizce iç mantık/taslak/kural tekrarı satırlarını temizler.
  */
 function cleanAIResponse(rawText) {
   if (!rawText || typeof rawText !== 'string') return '';
   let text = rawText;
 
-  // 1. Tam kapanmış düşünme bloklarını temizle
+  // 1. Tam kapanmış düşünme/reasoning bloklarını temizle
   text = text.replace(/<think>[\s\S]*?<\/think>/gi, '');
   text = text.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, '');
   text = text.replace(/\[THINK\][\s\S]*?\[\/THINK\]/gi, '');
@@ -61,9 +66,8 @@ function cleanAIResponse(rawText) {
 
   // 3. Başlangıçtaki düşünce açıklaması kalıntılarını temizle
   text = text.replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '');
-  text = text.replace(/^(?:Identify Historical Context|Let's check|Wait,|Rule checklist|Language: Turkish only|NO greetings)[\s\S]*?\n\n/gi, '');
 
-  // 4. Başlangıçtaki İngilizce düşünme / taslak satırlarını temizle
+  // 4. Başlangıçtaki İngilizce düşünme / taslak / prompt tekrarı satırlarını süz
   const lines = text.split('\n');
   const cleanLines = [];
   let foundActualContent = false;
@@ -71,16 +75,23 @@ function cleanAIResponse(rawText) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!foundActualContent) {
-      if (/^(Identify Historical Context|Let's check|Wait,|Rule checklist|Language:|NO greetings|August \d+|Actually,|The Great Offensive|August \d+, \d+:)/i.test(trimmed)) {
+      if (!trimmed) continue;
+
+      // Düşünme / kural / taslak / İngilizce adım belirteçleri
+      const isReasoningLine =
+        /^(?:Identify|Let's|Wait|Rule|Language|NO greetings|NO English|Directly start|Role:|Task:|Goal:|Instructions:|Checklist|Draft|Thinking|Step \d+|Background|Historical Research|Internal Knowledge|What happened|Key events|Actually|August \d+|Around late|In August)/i.test(trimmed) ||
+        /^\)?\s*,?\s*NO\s/i.test(trimmed) ||
+        /^[-*o]\s*(?:Role:|Directly|What happened|Key events|Around|Language:|Only|Must|Start|What|Key)/i.test(trimmed) ||
+        /^\d+\.\s*(?:Historical Research|Internal Knowledge|Rule|Goal|Step|Phase|Analysis|Historical)/i.test(trimmed);
+
+      if (isReasoningLine) {
         continue;
       }
-      if (/^\)?\s*,?\s*NO greetings/i.test(trimmed)) {
-        continue;
-      }
-      if (trimmed) {
-        foundActualContent = true;
-      }
+
+      // Eğer satır temiz ve Türkçe/anlamlı içerikse başla
+      foundActualContent = true;
     }
+
     if (foundActualContent) {
       cleanLines.push(line);
     }

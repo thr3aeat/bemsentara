@@ -20,6 +20,7 @@ const {
   renderGroupAdminPage,
   renderSocialPage,
   renderTumModlarPage,
+  renderEkoYildizAnayasaPage,
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
@@ -664,6 +665,23 @@ router.get("/briefing-form", (req, res) => {
   }
   
   res.send(renderBriefingOnboardingModal(req.user));
+});
+
+// ── EkoYıldız Topluluğu Anayasası Sayfası ────────────────────────────────────
+router.get("/anayasasi", (req, res) => {
+  res.send(renderEkoYildizAnayasaPage(req.user));
+});
+
+router.get("/anayasa", (req, res) => {
+  res.redirect("/anayasasi");
+});
+
+router.get("/ekoyildiz/anayasasi", (req, res) => {
+  res.redirect("/anayasasi");
+});
+
+router.get("/ekoyildiz-anayasasi", (req, res) => {
+  res.redirect("/anayasasi");
 });
 
 module.exports = router;

@@ -37,13 +37,15 @@ async function postAtaturkHistory(client) {
     let embedColor = 0xdc143c; // Normal kırmızı
     const systemPrompt = `Sen Türk Kurtuluş Savaşı ve Mustafa Kemal Atatürk tarihi konusunda uzman, saygın bir tarihçisin.
 Görevin: İstenen tarihte gerçekleşmiş önemli tarihi gelişmeyi doğru, akıcı ve saygılı bir Türkçe ile aktarmak.
-Kesin Kurallar:
-- Yanıtın SADECE Türkçe olmalıdır.
-- Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı yapma, İngilizce metin yazma.
-- Doğrudan tarihi olayın anlatımına başla.`;
+
+KESİN ÇIKTI KURALLARI:
+1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak Türkçe metinden oluşmalıdır.
+2. Kesinlikle hiçbir İngilizce kelime, iç düşünce (thinking/reasoning process), taslak, kural kontrolü veya planlama adımı YAZMA.
+3. Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı YAZMA.
+4. Doğrudan tarihi olayın anlatımına başla.`;
 
     let userPrompt = `Tarih: ${dateStr}.
-Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} günü (veya bu haftalarda) gerçekleşen önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde açıkça belirt (örn. 1922'de).`;
+Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} günü (veya bu haftalarda) gerçekleşen önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde açıkça belirt (örn. 1922'de). Sadece Türkçe metin üret.`;
 
     // Özel gün kontrolleri
     let isSpecialDay = false;

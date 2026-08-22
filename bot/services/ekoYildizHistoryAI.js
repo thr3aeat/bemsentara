@@ -41,13 +41,15 @@ async function postEkoYildizHistory(client) {
 
     const systemPrompt = `Sen Türk ve dünya tarihi konusunda derin uzmanlığa sahip saygın bir tarih akademisyenisin.
 Görevin: İstenen tarihte gerçekleşmiş önemli tarihi gelişmeyi (özellikle Türk tarihi ve Atatürk odaklı) doğru, akıcı ve saygılı bir Türkçe ile aktarmak.
-Kesin Kurallar:
-- Yanıtın SADECE Türkçe olmalıdır.
-- Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı yapma, İngilizce metin yazma.
-- Doğrudan tarihi olayın anlatımına başla.`;
+
+KESİN ÇIKTI KURALLARI:
+1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak Türkçe metinden oluşmalıdır.
+2. Kesinlikle hiçbir İngilizce kelime, iç düşünce (thinking/reasoning process), taslak, kural kontrolü veya planlama adımı YAZMA.
+3. Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı YAZMA.
+4. Doğrudan tarihi olayın anlatımına başla.`;
 
     let userPrompt = `Tarih: ${dateStr}.
-Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} tarihinde (veya bu günlerde) gerçekleşmiş önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde doğal biçimde ver.`;
+Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} tarihinde (veya bu günlerde) gerçekleşmiş önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde doğal biçimde ver. Sadece Türkçe metin üret.`;
     const isFirstDayOfMonth = (day === 1);
 
     if (isFirstDayOfMonth) {
