@@ -1,5 +1,6 @@
 const { AuditLogEvent } = require("discord.js");
 const { updateTrustScore, ensureUserTrustScore, incrementAfProgress } = require("../services/security/trustScoreService");
+const { processMessageAutomod } = require("../services/profanityAutomodService");
 const UserTrustScore = require("../../models/UserTrustScore");
 
 const ACTIVE_GUILD_ID = "1367646464804655104"; // EKO YILDIZ
@@ -165,21 +166,12 @@ function initializeTrustScoreHandlers(client) {
         hasMentions
       });
 
-      // ── E. Automod Checks: Swears (Gelişmiş Leet-speak Bypass Kalkanı) & Normal Links ──
+      // ── E. Automod Checks: Swears (Gelişmiş Deobfuscator & Kademeli Ceza Kalkanı) & Normal Links ──
       let hasViolated = false;
 
-      const normalizedText = normalizeTextForSwearCheck(message.content);
-      const hasSwear = SWEAR_WORDS.some(word => {
-        const regex = new RegExp(`\\b${word}\\b|${word}`, 'i');
-        return regex.test(contentLower) || regex.test(normalizedText);
-      });
-
-      if (hasSwear) {
+      const isProfanityBlocked = await processMessageAutomod(message, client);
+      if (isProfanityBlocked) {
         hasViolated = true;
-        await updateTrustScore(userId, -2.0, "Automod: Küfür / Argo Tespiti", "SYSTEM", client);
-        await message.reply({ content: "⚠️ **[Güvenlik]** Küfürlü/toksik dil tespiti nedeniyle güven puanınız düşürüldü." }).then(msg => {
-          setTimeout(() => msg.delete().catch(() => {}), 5000);
-        }).catch(() => {});
       }
 
       // Normal link check
