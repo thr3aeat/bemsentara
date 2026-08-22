@@ -161,4 +161,13 @@ app.use(authRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);
 
+// ── 404 Not Found Middleware ────────────────────────────────────────────────
+app.use((req, res) => {
+  if (req.accepts('html')) {
+    const { render404Page } = require('./views/notFoundPage');
+    return res.status(404).send(render404Page(req.user, req.path));
+  }
+  res.status(404).json({ error: 'Sayfa veya kaynak bulunamadı (404)' });
+});
+
 module.exports = app;

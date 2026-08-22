@@ -9425,6 +9425,7 @@ function renderCreateTicketPage(user, categories = []) {
 const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugOfficeFormPage } = require("./_form_views_patch");
 const { renderTumModlarPage } = require("./views/tumModlarPage");
 const { renderEkoYildizAnayasaPage } = require("./views/ekoYildizAnayasaPage");
+const { render404Page } = require("./views/notFoundPage");
 
 module.exports = {
   renderMainPage,
@@ -9459,6 +9460,7 @@ module.exports = {
   renderClosedFormPage,
   renderTumModlarPage,
   renderEkoYildizAnayasaPage,
+  render404Page,
   // Internal helpers (exported for testing)
   _esc,
   _layout,

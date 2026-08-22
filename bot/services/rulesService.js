@@ -71,9 +71,9 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Karşılama Metni
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('# EkoYıldız\'a Hoş Geldin 👋'),
+      new TextDisplayBuilder().setContent('# 📜 EkoYıldız Resmî Topluluk ve Disiplin Yönetmeliği'),
       new TextDisplayBuilder().setContent(
-        `> Aramıza katılımınızdan memnuniyet duyuyoruz. Sunucu kurallarımız aşağıda bilgilerinize sunulmuştur; katılım sağlayan her kullanıcının bu kuralları tebellüğ ettiği kabul edilmektedir. Bu doğrultuda, moderasyon birimi tarafından susturulmanız veya uzaklaştırılmanız durumunda, kurallara riayet edilmediği esastır.`
+        `> **Resmî Mevzuat No: 2026/01** | İşbu kurallar bütünü, EkoYıldız Anayasası'nın amir hükümleri uyarınca yürürlükte olup en üst düzey bağlayıcı norm niteliğindedir. Topluluğa katılım sağlayan her üye bu yönetmeliği tebellüğ etmiş ve hükümlerine uymayı taahhüt etmiş sayılır.`
       )
     );
 
@@ -83,11 +83,11 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Bölüm 1: Genel Topluluk
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | Genel Topluluk 💬'),
+      new TextDisplayBuilder().setContent('### | KISIM I: Genel Hukuk ve Topluluk Standartları 💬'),
       new TextDisplayBuilder().setContent(
-        `* **Discord Kullanım Şartları & Topluluk Kuralları:** Bu madde, sunucumuzun temel ve en kapsayıcı kuralıdır. Tüm alt kurallar bu çerçevede düzenlenmiştir. Kurallarımız yalnızca yerel topluluk standartlarımızı değil, aynı zamanda Discord’un resmi Hizmet Koşullarını ve Topluluk İlkelerini de kapsamaktadır.\n` +
-        `* **⭐ Türk Tarihine ve Değerlerine Saygı:** Türk tarihine ve bu tarihin kurucu sembollerine yönelik her türlü saygısızlık kesinlikle yasaktır. Özellikle Gazi Mustafa Kemal Atatürk’e ve milli değerlere yönelik olumsuz beyanlarda bulunulması sunucudan süresiz uzaklaştırma sebebidir.\n` +
-        `* **1.1 Yaş Sınırı ve Güvenlik:** Discord platformunu kullanabilmek ve sunucumuzda yer alabilmek için en az 13 yaşında olmanız yasal bir zorunluluktur. Yaş sınırının altında olduğu tespit edilen veya bunu beyan eden kullanıcılar, güvenlik politikalarımız gereği sunucudan yasaklanır.`
+        `* **MADDE 1 (Discord Hizmet Koşulları):** Topluluk üyeleri Discord ToS ve Topluluk İlkelerine tam uyumla mükelleftir.\n` +
+        `* **MADDE 2 (Milli Değerler ve Türk Tarihi):** Gazi Mustafa Kemal Atatürk'e, cumhuriyetimizin kurucu değerlerine ve tarihimize yönelik her türlü hakaret ve saygısızlık **süresiz ihraç (kalıcı ban)** sebebidir.\n` +
+        `* **MADDE 3 (Yaş Sınırı ve Emniyet):** Discord platform standartları gereğince 13 yaşından küçük kullanıcıların tespiti halinde güvenlik politikaları uyarınca ilişiği kesilir.`
       )
     );
 
@@ -97,12 +97,12 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Bölüm 2: Güvenlik ve Gizlilik
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | Güvenlik ve Gizlilik 🛡️'),
+      new TextDisplayBuilder().setContent('### | KISIM II: Siber Emniyet, KVKK ve Mahremiyet 🛡️'),
       new TextDisplayBuilder().setContent(
-        `* **1.2 Kişisel Verilerin Gizliliği (KVKK):** Üyelerin özel, kişisel veya hassas verilerinin (ifşa) paylaşılması kesinlikle yasaktır. Bu durum, kişisel bilgilerin paylaşımıyla tehdit etme eylemini de kapsar. Telefon numarası, isim-soyisim, T.C. Kimlik numarası ve yüz görsellerinin paylaşımı yasaktır.\n` +
-        `* **1.3 Siber Güvenlik ve Dolandırıcılık:** Zararlı yazılım (virüs) içeren dosyaların gönderilmesi ve dolandırıcılık faaliyetleri yürütülmesi kesinlikle yasaktır. IP Logger gibi veri takibi yapan bağlantıların paylaşımı doğrudan uzaklaştırma nedenidir.\n` +
-        `* **1.4 Sesli Kanal Kayıt Prosedürü:** Sesli kanallarda, kanalda bulunan üyelerin açık rızası olmaksızın ses kaydı alınması yasaktır. (İstisna: Yetkililer tarafından organize edilen resmi etkinlikler).\n` +
-        `* **1.5 Destek Hattı (Bilet) Kullanımı:** Destek sistemi (Ticket), yalnızca ihtiyaç duyulan hallerde kullanılmalıdır. Sistemi eğlence veya trol amaçlı meşgul etmek yasaktır.`
+        `* **MADDE 4 (Kişisel Verilerin Gizliliği - KVKK):** Üyelerin ad, soyad, telefon, T.C. kimlik, adres, görsel veya şahsi kayıtlarının izinsiz neşri (Doxxing) ve ifşa tehdidi **ihtarsız süresiz ihraç ve adli bildirim** sebebidir.\n` +
+        `* **MADDE 5 (Siber Suçlar ve Zararlı Yazılım):** Virüs, keylogger, token grabber ve sahte oltalama (phishing) bağlantıları kesinlikle yasaktır.\n` +
+        `* **MADDE 6 (Ses Kayıt Prosedürü):** Sesli kanallarda üyelerin açık rızası hilafına izinsiz ses kaydı alınamaz.\n` +
+        `* **MADDE 7 (Destek / Bilet Sistemi):** Destek hattı yalnızca meşru talep ve şikayetler için kullanılır; sistemi trolleme cürüm sayılır.`
       )
     );
 
@@ -111,11 +111,11 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Bölüm 3: İçerik ve Müstehcenlik
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | İçerik ve Müstehcenlik 🔞'),
+      new TextDisplayBuilder().setContent('### | KISIM III: Kamu Ahlakı, Müstehcenlik ve E-Date Yasağı 🔞'),
       new TextDisplayBuilder().setContent(
-        `* **2.1 NSFW İçerik Paylaşımı ve Söylemleri:** NSFW (uygunsuz) ve pornografik içeriklere karşı toleransımız sıfırdır. Bu tür içeriklerin paylaşılması, imâ edilmesi veya çağrışım uyandıracak görsellerin sunucuya iletilmesi kesinlikle yasaktır.\n` +
-        `* **2.2 NSFL ve Rahatsız Edici İçerikler:** NSFL kapsamına giren; intihar, kendine zarar verme, şiddet veya toplumsal hassasiyetleri zedeleyici unsurların paylaşımı yasaktır.\n` +
-        `* **2.3 Sanal İlişki (E-date) ve Flört Faaliyetleri:** Sunucumuz bir arkadaşlık veya flört (dating) platformu değildir. DM (Özel Mesaj), genel sohbet kanalları veya diğer birimler üzerinden flört eyleminde bulunduğu tespit edilen kullanıcılar sunucudan yasaklanacaktır.`
+        `* **MADDE 8 (NSFW ve Müstehcenlik):** Pornografik, cinsel çağrışımlı veya aşırı teşhir içeren hiçbir materyal paylaşılamaz.\n` +
+        `* **MADDE 9 (NSFL ve Şiddet Unsurları):** Vahşet, kan, intihar veya toplumsal hassasiyetleri rencide edici materyaller yasaktır.\n` +
+        `* **MADDE 10 (Sanal Flört / E-Date Yasağı):** Sunucu mecraları veya DM üzerinden flört ve sanal ilişki faaliyetlerinde bulunanlar sunucudan men edilir.`
       )
     );
 
@@ -125,14 +125,13 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Bölüm 4: Saygı, Düzen ve Reklam
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | Saygı, Topluluk Düzeni & Reklam 👥'),
+      new TextDisplayBuilder().setContent('### | KISIM IV: Kamu İntizamı, Reklam Memnuiyeti ve Saygı 👥'),
       new TextDisplayBuilder().setContent(
-        `* **3.1 Nezaket ve Eşitlik:** Sunucu içerisindeki pozisyonu veya kıdemi ne olursa olsun, her üyeye karşı nazik ve saygılı bir tutum sergilenmesi esastır.\n` +
-        `* **3.2 Hassas Konular ve Tartışma Kültürü:** Politika, siyaset, din, cinsellik ve fanatizm içeren futbol tartışmaları kısıtlanmıştır.\n` +
-        `* **3.3 Huzur Ortamının Korunması:** Bilinçli olarak tartışma çıkarmak, üyeleri provoke etmek veya kaosa sebebiyet verecek söylemlerde bulunmak yasaktır.\n` +
-        `* **3.4 Radikal Görüşler ve Ayrımcılık Yasağı:** Aşırı ve radikal ideolojilerin savunuculuğunu yapmak, svastika gibi nefret sembollerini kullanmak kesinlikle yasaktır. Ayrımcılığın hiçbir türüne tolerans gösterilmez.\n` +
-        `* **5.1 Reklam Yasağı:** Üyelere özel mesaj (DM) üzerinden veya sunucu içerisinde herhangi bir oluşumun, sunucunun veya platformun (özellikle diğer Roblox gruplarının) reklamını yapmak yasaktır.\n` +
-        `* **6.1 & 6.2 Profil Standartları & Taklit Yasağı:** Discord profiliniz sunucu kurallarına uygun olmalıdır. Sunucu yetkililerini, YK üyelerini ve @eko kadrosunu taklit etmek yasaktır.`
+        `* **MADDE 11 (Nezaket ve İntizam):** Tahrik, aşağılama, küfür ve kışkırtma yasaktır. Fikir teatisinde medeni üslup esastır.\n` +
+        `* **MADDE 12 (Hassas Konular ve Tarafsızlık):** Siyaset, din, ideoloji ve fanatizm içeren tartışmalar kısıtlanmıştır.\n` +
+        `* **MADDE 13 (Radikal Söylem ve Nefret Suçu):** Ayrımcılık ve nefret sembollerinin kullanımı mutlak yasaktır.\n` +
+        `* **MADDE 14 (İzinsiz Reklam Yasağı):** Kanallarda veya DM üzerinden harici sunucu, platform veya ticari oluşum tanıtımı yapılamaz.\n` +
+        `* **MADDE 15 (Taklit Yasağı):** EkoYıldız yetkililerini, kurucularını veya resmi personeli taklit etmek yasaktır.`
       )
     );
 
@@ -142,18 +141,17 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
 
     // Bölüm 5: Anayasa ve Özel Hükümler
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | Anayasa ve Yasal Hükümler 📜'),
+      new TextDisplayBuilder().setContent('### | KISIM V: Resmî Anayasa ve Yargı Hükümleri 📜'),
       new TextDisplayBuilder().setContent(
-        `* **Kuralların Suiistimali:** Sunucu kurallarını esnetmeye çalışmak veya maddeleri kişisel çıkar doğrultusunda yorumlamak yasaktır. Kurallarda açıkça belirtilmese dahi, topluluk huzurunu bozan her türlü girişim moderasyon takdirine tabidir.\n` +
-        `* **📜 EKOYILDIZ ANAYASASI:** EkoYıldız Anayasası sunucu kurallarına esastır. Detaylı anayasa maddelerini aşağıdaki bağlantı üzerinden inceleyebilirsiniz.\n` +
-        `* **⚖️ Özel Ceza Hükmü:** Eko Yıldız Anayasası 2.1 ve 2.2 kuralları gereğince verilen cezalar ihlalin niteliğine göre ağırlaştırılabilir.`
+        `* **MADDE 16 (Anayasal Bağlayıcılık):** EkoYıldız Anayasası tüm kuralların fevkindedir. Detaylı kanun maddeleri, dokunulmaz hükümler ve ceza cetveli resmî portal üzerinden neşrolunmuştur.\n` +
+        `* **MADDE 17 (Ağırlaştırılmış Yaptırım):** Anayasa'nın 2.1, 4.2 ve 20. maddelerini ihlal eden failler hakkında infaz indirimi uygulanmaz.`
       )
     );
 
     // Anayasa Butonu
     const rowButtons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setLabel('EKOYILDIZ ANAYASASI')
+        .setLabel('RESMÎ EKOYILDIZ ANAYASASI')
         .setStyle(ButtonStyle.Link)
         .setURL(ANAYASA_URL)
         .setEmoji('📜')
@@ -166,7 +164,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`-# EkoYıldız Discord topluluk sunucu kuralları 07.07.2026 tarihi itibari ile geçerlidir.`)
+      new TextDisplayBuilder().setContent(`-# EkoYıldız Resmî Disiplin ve Topluluk Yönetmeliği 07.07.2026 tarihi itibariyle mer'iyettedir.`)
     );
 
     // ─── MESAJ GÖNDERİMİ VE DÜZENLEME ─────────────────────────────────────
