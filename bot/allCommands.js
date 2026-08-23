@@ -15,6 +15,11 @@ const generalCommands = [
     .setDMPermission(true),
   
   new SlashCommandBuilder()
+    .setName("tarihte-bugun")
+    .setDescription("📅 EkoYıldız Tarihte Bugün – Tarihi olayları ve Atatürk'ü incele")
+    .setDMPermission(true),
+
+  new SlashCommandBuilder()
     .setName("grafikler")
     .setDescription("📊 Bot kullanım istatistiklerini ve canlı grafiklerini görüntüle")
     .setDMPermission(true),

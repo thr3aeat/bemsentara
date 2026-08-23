@@ -9,14 +9,12 @@ let MODELS = process.env.AI_MODEL
   ? [process.env.AI_MODEL]
   : [
     'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile',
     'llama-3.1-8b-instant',
-    'mixtral-8x7b-32768',
+    'llama3-70b-8192',
+    'llama3-8b-8192',
     'gemma2-9b-it',
-    'groq/compound',
-    'groq/compound-mini',
-    'openai/gpt-oss-20b',
-    'openai/gpt-oss-120b',
-    'qwen/qwen3.6-27b'
+    'mixtral-8x7b-32768'
   ];
 
 const TICKET_SYSTEM_PROMPT = `Sen Sentara destek sisteminin yapay zeka asistanısın.

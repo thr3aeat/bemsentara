@@ -9,6 +9,7 @@ const { deferEphemeral } = require("../utils/interaction");
 const pingTracker = new Map();
 const philanthropyTracker = new Map();
 const GENERAL_COMMANDS = new Set([
+  "tarihte-bugun",
   "support",
   "mytickets",
   "closeticket",
@@ -99,6 +100,76 @@ const GENERAL_COMMANDS = new Set([
 async function handleGeneralCommand(interaction) {
   if (!interaction.isChatInputCommand()) return null;
   const { commandName } = interaction;
+
+  // ── tarihte-bugun: EkoYıldız Tarihte Bugün Bilgilendirmesi ───────────────
+  if (commandName === "tarihte-bugun") {
+    await interaction.deferReply();
+    try {
+      const { getSpecialDayInfo } = require("../services/specialDaysHelper");
+      const { getHistoricalFallbackEvent } = require("../services/historyDataset");
+      const { chatWithAI } = require("../services/aiService");
+
+      const today = new Date();
+      const day = today.getDate();
+      const month = today.getMonth();
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const dateStr = `${day} ${months[month]}`;
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDay = yesterday.getDate();
+      const yesterdayMonth = months[yesterday.getMonth()];
+      const yesterdayStr = `${yesterdayDay} ${yesterdayMonth}`;
+
+      const specialDay = getSpecialDayInfo(today);
+      let embedTitle = specialDay ? `${specialDay.emoji} ${specialDay.name} – ${dateStr}` : `📅 Tarihte Bugün – ${dateStr}`;
+      let embedColor = specialDay?.color || 0xdc143c;
+      let specialField = specialDay ? {
+        name: `📌 ${specialDay.emoji} Günün Anlam ve Önemi`,
+        value: `${specialDay.desc}\n> *"${specialDay.quote}"*`
+      } : null;
+
+      const systemPrompt = `Sen EkoYıldız Discord sunucusunda her gün düzenli olarak Tarihte Bugün mesajları paylaşan; tarihi büyük bir tutku, samimiyet ve arkadaş canlısı bir dille aktaran sevilen bir tarih anlatıcısısın.
+Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları (özellikle Mustafa Kemal Atatürk ve varsa diğer büyük tarihi olayları) sanki her gün arkadaşlarına bizzat kendin yazıyormuş gibi sıcak, samimi, akıcı ve sürükleyici bir Türkçe ile tam 2 detaylı paragraf halinde aktarmak.
+
+KESİN ÇIKTI VE ANLATIM KURALLARI:
+1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak 2 Türkçe paragraftan oluşmalıdır.
+2. 1. PARAGRAFIN BAŞLANGICI: Samimi ve sıcak bir hitapla başla (Örn: "Evet sevgili EkoYıldız ailesi, geldik ${dateStr}'a! Dün ${yesterdayStr}'ta bahsettiğimiz gibi...", "Evet arkadaşlar, takvimler ${dateStr}'ı gösteriyor! Dün konuştuğumuz hazırlıkların ardından bugün...").
+3. 1. PARAGRAF (Mustafa Kemal Atatürk): Atatürk'ün ${dateStr} tarihinde (veya o dönemin bu günlerinde) üstlendiği askeri, siyasi ve devrimci liderliğini, vizyonunu ve kararlarını zengin, akıcı ve canlı bir dille anlat.
+4. 2. PARAGRAF (Büyük Tarihi Olay / Tarihsel Derinlik & Samimi Kapanış): Bu tarihte gerçekleşen başka büyük bir tarihi olay varsa ondan bahset; yoksa Atatürk'ün bu tarihi adımının milletimiz ve cumhuriyetimiz üzerindeki mirasını anlat ve sıcak bir kapanış yap (Örn: "...İşte bağımsızlık ruhu tam da böyle günlerde yazıldı. Yarın tarihin bir başka heyecan dolu sayfasında buluşmak üzere!").
+5. İki paragrafı çift satır boşluğu (\\n\\n) ile ayır.
+6. Başlık, markdown başlığı (## vb.), madde işareti, emoji listesi, düşünce süreci YAZMA. Doğrudan 1. paragrafın samimi açılış cümlesiyle başla.`;
+
+      const userPrompt = `Tarih: ${dateStr}.
+Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki önemli bir olayı ve ayrıca tarihte bu gün yaşanmış çok büyük bir tarihi gelişmeyi "Dün ${yesterdayStr}'ta..." bağı kurarak, yukarıdaki samimi kurallara tam uyarak 2 zengin paragraf halinde anlat. Sadece Türkçe metin üret.`;
+
+      let aiContent = "";
+      try {
+        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
+        if (!aiContent || aiContent.trim().length < 80) {
+          throw new Error("AI yanıtı yetersiz");
+        }
+      } catch (aiErr) {
+        aiContent = getHistoricalFallbackEvent(day, month);
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle(embedTitle)
+        .setDescription(aiContent)
+        .setColor(embedColor)
+        .setFooter({ text: "EkoYıldız Yapay Zeka Tarih Sistemi", iconURL: interaction.client.user.displayAvatarURL() })
+        .setTimestamp();
+
+      if (specialField) {
+        embed.addFields(specialField);
+      }
+
+      return interaction.editReply({ embeds: [embed] });
+    } catch (err) {
+      console.error("[tarihte-bugun error]:", err.message);
+      return interaction.editReply({ content: `❌ Bir hata oluştu: ${err.message}` });
+    }
+  }
 
   // ── topluluk-elcisi: Ayın Elemanları Panelini Topluluk Elçisine DM'le gönder ─
   if (commandName === "topluluk-elcisi") {

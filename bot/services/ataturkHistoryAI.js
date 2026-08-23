@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const { EmbedBuilder } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
+const { getHistoricalFallbackEvent } = require("./historyDataset");
 
 const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
@@ -33,26 +34,34 @@ async function postAtaturkHistory(client, customDate = null) {
     const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     const dateStr = `${day} ${months[month]}`;
 
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayDay = yesterday.getDate();
+    const yesterdayMonth = months[yesterday.getMonth()];
+    const yesterdayStr = `${yesterdayDay} ${yesterdayMonth}`;
+
     // 1. Özel Gün / Bayram Kontrolü
     const specialDay = getSpecialDayInfo(today);
 
-    let title = `📅 Tarihte Bugün - ${dateStr}`;
+    let title = `📅 Tarihte Bugün – ${dateStr}`;
     let embedColor = 0xdc143c; // Normal kırmızı
     let specialField = null;
 
-    const systemPrompt = `Sen Türk Kurtuluş Savaşı ve Mustafa Kemal Atatürk tarihi konusunda uzman, saygın bir tarihçisin.
-Görevin: İstenen tarihte gerçekleşmiş önemli tarihi gelişmeyi doğru, akıcı ve saygılı bir Türkçe ile aktarmak.
+    const systemPrompt = `Sen her gün düzenli olarak Tarihte Bugün mesajları paylaşan; tarihi büyük bir tutku, samimiyet ve arkadaş canlısı bir dille aktaran sevilen bir tarih anlatıcısısın.
+Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları (özellikle Gazi Mustafa Kemal Atatürk ve varsa diğer büyük tarihi olayları) sanki her gün arkadaşlarına bizzat kendin yazıyormuş gibi sıcak, samimi, akıcı ve sürükleyici bir Türkçe ile tam 2 detaylı paragraf halinde aktarmak.
 
-KESİN ÇIKTI KURALLARI:
-1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak Türkçe metinden oluşmalıdır.
-2. Kesinlikle hiçbir İngilizce kelime, iç düşünce (thinking/reasoning process), taslak, kural kontrolü veya planlama adımı YAZMA.
-3. Giriş/selamlama yapma, başlık atma, kural veya prompt tekrarı YAZMA.
-4. Doğrudan tarihi olayın anlatımına başla.`;
+KESİN ÇIKTI VE ANLATIM KURALLARI:
+1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak 2 Türkçe paragraftan oluşmalıdır.
+2. 1. PARAGRAFIN BAŞLANGICI: Samimi ve sıcak bir hitapla başla (Örn: "Evet sevgili dostlar, geldik ${dateStr}'a! Dün ${yesterdayStr}'ta bahsettiğimiz gibi...", "Evet arkadaşlar, takvimler ${dateStr}'ı gösteriyor! Dün konuştuğumuz hazırlıkların ardından bugün...").
+3. 1. PARAGRAF (Mustafa Kemal Atatürk): Atatürk'ün ${dateStr} tarihinde (veya o dönemin bu günlerinde) üstlendiği askeri, siyasi ve devrimci liderliğini, vizyonunu ve kararlarını zengin, akıcı ve canlı bir dille anlat.
+4. 2. PARAGRAF (Büyük Tarihi Olay / Tarihsel Derinlik & Samimi Kapanış): Bu tarihte gerçekleşen başka büyük bir tarihi olay varsa ondan bahset; yoksa Atatürk'ün bu tarihi adımının milletimiz ve cumhuriyetimiz üzerindeki mirasını anlat ve sıcak bir kapanış yap.
+5. İki paragrafı çift satır boşluğu (\\n\\n) ile ayır.
+6. Başlık, markdown başlığı (## vb.), madde işareti, emoji listesi, düşünce süreci YAZMA. Doğrudan 1. paragrafın samimi açılış cümlesiyle başla.`;
 
     let userPrompt = "";
 
     if (specialDay) {
-      title = `${specialDay.emoji} ${specialDay.name} - ${dateStr}`;
+      title = `${specialDay.emoji} ${specialDay.name} – ${dateStr}`;
       embedColor = specialDay.color || 0xdc143c;
 
       specialField = {
@@ -61,20 +70,23 @@ KESİN ÇIKTI KURALLARI:
       };
 
       if (specialDay.isMourning) {
-        userPrompt = `Bugün ${specialDay.name} (${dateStr}). Ulu Önderimiz Gazi Mustafa Kemal Atatürk'ün ebediyete intikalinin yıl dönümünde onun mirasını, fikirlerini ve hatırasını 1-2 paragraf halinde derin, saygılı ve minnet dolu bir üslupla anlat. Sadece Türkçe yaz.`;
+        userPrompt = `Bugün ${specialDay.name} (${dateStr}). Ulu Önderimiz Gazi Mustafa Kemal Atatürk'ün ebediyete intikalinin yıl dönümünde onun mirasını, fikirlerini ve hatırasını samimi, derin ve saygılı 2 paragraf halinde anlat. Sadece Türkçe yaz.`;
       } else {
-        userPrompt = `Bugün ${specialDay.name} (${dateStr})! Atatürk'ün bu büyük gündeki rolünü, Türk tarihindeki dönüm noktasını ve ${dateStr} tarihinde gerçekleşen önemli tarihi olayları coşkulu ve gururlu bir dille 1-2 paragraf halinde anlat. Sadece Türkçe yaz.`;
+        userPrompt = `Bugün ${specialDay.name} (${dateStr})! Atatürk'ün bu büyük gündeki rolünü, Türk tarihindeki dönüm noktasını ve ${dateStr} tarihinde gerçekleşen önemli tarihi olayları samimi, gururlu ve arkadaş canlısı bir dille 2 detaylı paragraf halinde anlat. Sadece Türkçe yaz.`;
       }
     } else {
       userPrompt = `Tarih: ${dateStr}.
-Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} günü (veya bu haftalarda) gerçekleşen önemli bir olayı 1-2 paragraf halinde anlat. Yıl bilgisini metin içinde açıkça belirt (örn. 1922'de). Sadece Türkçe metin üret.`;
+Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki önemli bir olayı ve ayrıca tarihte bu gün yaşanmış çok büyük bir tarihi gelişmeyi "Dün ${yesterdayStr}'ta..." bağı kurarak, yukarıdaki samimi kurallara tam uyarak 2 zengin paragraf halinde anlat. Sadece Türkçe metin üret.`;
     }
 
     let aiContent = "";
     try {
       aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
+      if (!aiContent || aiContent.trim().length < 80) {
+        throw new Error("AI yanıtı yetersiz veya çok kısa");
+      }
     } catch (aiErr) {
-      console.error("❌ [AtaturkHistoryAI] AI isteği başarısız:", aiErr.message);
+      console.warn("⚠️ [AtaturkHistoryAI] AI isteği başarısız, zengin tarih veritabanı kullanılıyor:", aiErr.message);
       if (specialDay) {
         if (specialDay.isMourning) {
           aiContent = `Bugün ${specialDay.name}. Ulu Önderimiz Mustafa Kemal Atatürk'ü vefatının yıl dönümünde sonsuz sevgi, saygı, minnet ve özlemle anıyoruz. Fikirleri ve devrimleri her zaman yolumuzu aydınlatmaya devam edecek.`;
@@ -82,7 +94,7 @@ Mustafa Kemal Atatürk'ün hayatında ve Türk tarihinde ${dateStr} günü (veya
           aiContent = `Bugün ${specialDay.name}! ${specialDay.desc}\n\nBaşta Ulu Önderimiz Mustafa Kemal Atatürk olmak üzere, bu vatanı bizlere armağan eden tüm kahramanlarımızı saygı ve minnetle anıyoruz.`;
         }
       } else {
-        aiContent = `${dateStr} gününde Atatürk'ün tarihimize kattığı eşsiz değerleri saygıyla anıyoruz.`;
+        aiContent = getHistoricalFallbackEvent(day, month);
       }
     }
 
