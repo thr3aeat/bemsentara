@@ -1433,40 +1433,257 @@ async function handleButtonInteraction(interaction) {
     return triggerEpostaFormModal(interaction, category);
   }
 
-  if (customId === "ekoyildiz_reklam_form_button") {
-    const { ModalBuilder, TextInputBuilder, ActionRowBuilder, TextInputStyle } = require("discord.js");
-    const modal = new ModalBuilder()
-      .setCustomId("ekoyildiz_reklam_form_modal")
-      .setTitle("Reklam Oluşturma Talebi");
+  if (customId === "ekoyildiz_reklam_form_button" || customId.startsWith("reklam_open_modal_")) {
+    const { triggerReklamModal } = require("../services/reklamTicketService");
+    let prefillPkg = "";
+    if (customId.startsWith("reklam_open_modal_")) {
+      prefillPkg = customId.replace("reklam_open_modal_", "");
+    }
+    return triggerReklamModal(interaction, prefillPkg);
+  }
 
-    const compNameInput = new TextInputBuilder()
-      .setCustomId("reklam_topluluk_adi")
-      .setLabel("Topluluğunuzun Adı")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("Örn: Eko Yıldız")
-      .setRequired(true);
+  // ── Reklam Paketleri İnteraktif Gezinme (Carousel / Step-by-Step) ─────────────
+  if (customId.startsWith("reklam_nav_first_")) {
+    const ticketId = customId.replace("reklam_nav_first_", "");
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, 0, ticketId);
+  }
 
-    const memberCountInput = new TextInputBuilder()
-      .setCustomId("reklam_kisi_sayisi")
-      .setLabel("Kişi Sayısı (Hedef Kitle)")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("Örn: 50,000")
-      .setRequired(true);
+  if (customId.startsWith("reklam_nav_prev_")) {
+    const parts = customId.replace("reklam_nav_prev_", "").split("_");
+    const currentIdx = parseInt(parts[0], 10) || 0;
+    const ticketId = parts.slice(1).join("_") || null;
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, currentIdx - 1, ticketId);
+  }
 
-    const adTypeInput = new TextInputBuilder()
-      .setCustomId("reklam_turu")
-      .setLabel("Nasıl bir reklam olacak?")
-      .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder("Reklamın içeriği ve formatı hakkında bilgi verin.")
-      .setRequired(true);
+  if (customId.startsWith("reklam_nav_next_")) {
+    const parts = customId.replace("reklam_nav_next_", "").split("_");
+    const currentIdx = parseInt(parts[0], 10) || 0;
+    const ticketId = parts.slice(1).join("_") || null;
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, currentIdx + 1, ticketId);
+  }
 
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(compNameInput),
-      new ActionRowBuilder().addComponents(memberCountInput),
-      new ActionRowBuilder().addComponents(adTypeInput)
+  if (customId.startsWith("reklam_nav_last_")) {
+    const ticketId = customId.replace("reklam_nav_last_", "");
+    const { handlePackageNavigation, REKLAM_PACKAGES } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, REKLAM_PACKAGES.length - 1, ticketId);
+  }
+
+  if (customId.startsWith("reklam_browse_start_")) {
+    const ticketId = customId.replace("reklam_browse_start_", "");
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, 0, ticketId);
+  }
+
+  if (customId.startsWith("reklam_view_all_")) {
+    const { buildAllPackagesSummaryEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+    const { buildAllPackagesSummaryEmbed: getAllEmbed } = require("../services/reklamTicketService");
+    const ticketId = customId.replace("reklam_view_all_", "");
+    const embed = getAllEmbed();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_browse_start_${ticketId}`)
+        .setLabel("🔍 Sıra Sıra İncele")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_${ticketId}`)
+        .setLabel("🛒 Hızlı Satın Al")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`reklam_view_deals_${ticketId}`)
+        .setLabel("🔥 %60 İndirimler")
+        .setStyle(ButtonStyle.Danger)
     );
+    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  }
 
-    return interaction.showModal(modal);
+  if (customId.startsWith("reklam_view_stats_")) {
+    const { buildAudienceStatsEmbed } = require("../services/reklamTicketService");
+    const embed = buildAudienceStatsEmbed();
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_quality_")) {
+    const { buildQualityGuaranteeEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("../services/reklamTicketService");
+    const ticketId = customId.replace("reklam_view_quality_", "");
+    const embed = buildQualityGuaranteeEmbed();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_browse_start_${ticketId}`)
+        .setLabel("📦 Paketleri İncele")
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji("🔍"),
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_${ticketId}`)
+        .setLabel("🛒 Hızlı Satın Al")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("🛍️"),
+      new ButtonBuilder()
+        .setCustomId(`reklam_view_deals_${ticketId}`)
+        .setLabel("🔥 %60 Fırsatlar")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🏷️")
+    );
+    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_deals_")) {
+    const { buildCampaignDealsEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("../services/reklamTicketService");
+    const ticketId = customId.replace("reklam_view_deals_", "");
+    const embed = buildCampaignDealsEmbed();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_browse_start_${ticketId}`)
+        .setLabel("📦 Paketleri İncele")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_${ticketId}`)
+        .setLabel("🛒 Satın Al")
+        .setStyle(ButtonStyle.Success)
+    );
+    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_payment_")) {
+    const { buildPaymentInfoEmbed } = require("../services/reklamTicketService");
+    const embed = buildPaymentInfoEmbed();
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_send_deals_")) {
+    const ticketId = customId.replace("reklam_send_deals_", "");
+    const { sendDealsCampaign } = require("../services/reklamTicketService");
+    return sendDealsCampaign(interaction, ticketId);
+  }
+
+  if (customId.startsWith("reklam_send_payment_")) {
+    const ticketId = customId.replace("reklam_send_payment_", "");
+    const { sendPaymentDetails } = require("../services/reklamTicketService");
+    return sendPaymentDetails(interaction, ticketId);
+  }
+
+  if (customId.startsWith("reklam_builder_open_")) {
+    const ticketId = customId.replace("reklam_builder_open_", "");
+    const { buildCustomBuilderComponents } = require("../services/reklamTicketService");
+    const { embed, components } = buildCustomBuilderComponents([], ticketId);
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_builder_buy_")) {
+    const raw = customId.replace("reklam_builder_buy_", "");
+    const parts = raw.split("_");
+    const ticketId = parts[0] || "general";
+    const selectedModsStr = parts.slice(1).join("_");
+    const selectedModuleIds = selectedModsStr.split("-").filter(Boolean);
+    const { CUSTOM_BUILDER_MODULES, triggerReklamModal } = require("../services/reklamTicketService");
+    const selectedModules = CUSTOM_BUILDER_MODULES.filter(m => selectedModuleIds.includes(m.id));
+    let totalTl = 0;
+    let totalRobux = 0;
+    for (const mod of selectedModules) {
+      totalTl += mod.tlPrice;
+      totalRobux += mod.robuxPrice;
+    }
+    if (selectedModules.length === 0) {
+      totalTl = 30;
+      totalRobux = 2400;
+    }
+    const names = selectedModules.map(m => m.label).join(", ") || "Özel Reklam Modülleri";
+    return triggerReklamModal(interaction, `Özel Paket: ${names} (${totalTl} TL / ${totalRobux} Robux)`, ticketId);
+  }
+
+  if (customId.startsWith("reklam_view_reviews_")) {
+    const { buildCustomerReviewsEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("../services/reklamTicketService");
+    const ticketId = customId.replace("reklam_view_reviews_", "");
+    const embed = buildCustomerReviewsEmbed();
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_browse_start_${ticketId}`)
+        .setLabel("📦 Paketleri İncele")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`reklam_builder_open_${ticketId}`)
+        .setLabel("🎯 Kendi Paketini Tasarla")
+        .setStyle(ButtonStyle.Success)
+    );
+    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_guarantee_")) {
+    const { buildAntiRiskGuaranteeEmbed } = require("../services/reklamTicketService");
+    const embed = buildAntiRiskGuaranteeEmbed();
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_flash_deal_")) {
+    const ticketId = customId.replace("reklam_view_flash_deal_", "");
+    const { buildFlashDealEmbed } = require("../services/reklamTicketService");
+    const { embed, components } = buildFlashDealEmbed(ticketId);
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_analytics_")) {
+    const { buildAudienceAnalyticsEmbed } = require("../services/reklamTicketService");
+    const embed = buildAudienceAnalyticsEmbed();
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_kamp_")) {
+    const ticketId = customId.replace("reklam_view_kamp_", "");
+    const { buildKampKurulumEmbed, buildKampBrowserComponents } = require("../services/reklamTicketService");
+    const embed = buildKampKurulumEmbed();
+    const components = buildKampBrowserComponents(ticketId);
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_upsell_accept_")) {
+    const raw = customId.replace("reklam_upsell_accept_", "");
+    const parts = raw.split("_");
+    const upsellPkgId = parts[2] ? parts[1] + "_" + parts[2] : parts[1];
+    const ticketId = parts.slice(3).join("_") || "general";
+    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
+    const targetPkg = REKLAM_PACKAGES.find(p => p.id === upsellPkgId || p.code === upsellPkgId || raw.includes(p.id)) || REKLAM_PACKAGES[2];
+    return triggerReklamModal(interaction, `${targetPkg.title} (${targetPkg.discountPrice} / ${targetPkg.discountRobux})`, ticketId);
+  }
+
+  if (customId.startsWith("reklam_upsell_decline_")) {
+    const raw = customId.replace("reklam_upsell_decline_", "");
+    const parts = raw.split("_");
+    const origPkgId = parts[0] + "_" + (parts[1] || "");
+    const ticketId = parts.slice(2).join("_") || "general";
+    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
+    const origPkg = REKLAM_PACKAGES.find(p => p.id === origPkgId || p.code === origPkgId || raw.includes(p.id)) || REKLAM_PACKAGES[0];
+    return triggerReklamModal(interaction, `${origPkg.title} (${origPkg.discountPrice} / ${origPkg.discountRobux})`, ticketId);
+  }
+
+  if (customId.startsWith("reklam_buy_pkg_")) {
+    const clean = customId.replace("reklam_buy_pkg_", "");
+    const parts = clean.split("_");
+    const pkgId = parts[0] + "_" + (parts[1] || "");
+    const ticketId = parts.slice(2).join("_") || (parts.length > 2 ? parts[2] : "general");
+    const { REKLAM_PACKAGES, KAMP_SERVICES, buildUpsellOfferEmbed, triggerReklamModal } = require("../services/reklamTicketService");
+    
+    // Check Kamp services
+    if (KAMP_SERVICES) {
+      const matchedKamp = KAMP_SERVICES.find(k => clean.startsWith(k.id) || k.id === pkgId || customId.includes(k.id));
+      if (matchedKamp) {
+        return triggerReklamModal(interaction, `${matchedKamp.title} (${matchedKamp.discountPrice} / ${matchedKamp.robuxPrice})`, ticketId);
+      }
+    }
+
+    const matched = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId || customId.includes(p.id));
+    
+    // If package has an upsell offer, present the upsell proposal first!
+    if (matched && matched.upsellTargetId) {
+      const upsellPkg = REKLAM_PACKAGES.find(p => p.id === matched.upsellTargetId);
+      if (upsellPkg) {
+        const { embed, components } = buildUpsellOfferEmbed(matched, upsellPkg, ticketId);
+        return interaction.reply({ embeds: [embed], components, ephemeral: true });
+      }
+    }
+
+    return triggerReklamModal(interaction, matched ? `${matched.title} (${matched.discountPrice} / ${matched.discountRobux})` : '', ticketId);
   }
 
   if (customId.startsWith("ekoyildiz_reklam_confirm_yes_")) {

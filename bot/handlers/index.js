@@ -447,6 +447,20 @@ function initializeDiscordHandlers(client) {
     // V6.0 interaktif hoşgeldin bildirimi (tek seferlik)
     setTimeout(() => sendV6WelcomeNotification(client), 5000);
 
+    // ── Reklam Sepet Kurtarma & 24 Saatlik Takip Zamanlayıcısı ─────────────
+    try {
+      const { checkAbandonedReklamTickets } = require('../services/reklamTicketService');
+      // İlk kontrol 1 dakika sonra, ardından her 30 dakikada bir
+      setTimeout(() => checkAbandonedReklamTickets(client).catch(() => {}), 60000);
+      setInterval(() => {
+        checkAbandonedReklamTickets(client).catch(err => {
+          console.error('[ReklamAbandonedRecovery] Hatırlatma kontrol hatası:', err.message);
+        });
+      }, 30 * 60 * 1000);
+    } catch (err) {
+      console.warn('[ReklamAbandonedRecovery] Başlatılamadı:', err.message);
+    }
+
     // XP Çekiliş Scheduler
     setInterval(async () => {
       try {

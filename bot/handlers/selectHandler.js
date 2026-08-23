@@ -89,6 +89,22 @@ async function handleSelectInteraction(interaction) {
     return handlePurchaseSelection(interaction);
   }
 
+  if (customId.startsWith("reklam_quick_jump_")) {
+    const ticketId = customId.replace("reklam_quick_jump_", "");
+    const selectedVal = interaction.values[0]; // e.g. 'jump_2'
+    const targetIdx = parseInt(selectedVal.replace("jump_", ""), 10) || 0;
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, targetIdx, ticketId);
+  }
+
+  if (customId.startsWith("reklam_builder_select_")) {
+    const ticketId = customId.replace("reklam_builder_select_", "");
+    const selectedModuleIds = interaction.values;
+    const { buildCustomBuilderComponents } = require("../services/reklamTicketService");
+    const { embed, components } = buildCustomBuilderComponents(selectedModuleIds, ticketId);
+    return interaction.update({ embeds: [embed], components });
+  }
+
   if (customId.startsWith("survey_select_")) {
     const { handleNewAccountSelect } = require("./newAccountButtonHandler");
     return handleNewAccountSelect(interaction);
@@ -1757,27 +1773,70 @@ Lütfen yetkiliye hitaben, karnesini takdim eden resmi bir AI Eğitim Mentoru di
   const isEko = interaction.customId === "ekoyildiz_support_category";
 
   if (isEko && category === "reklam_destek") {
-    const { EmbedBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
-    const mailEmbed = new EmbedBuilder()
-      .setTitle("📨 E-POSTA ALICISI: Eko Yıldız Reklam Departmanı")
+    const promoEmbed = new EmbedBuilder()
+      .setTitle("🌟 EKO YILDIZ REKLAM & SPONSORLUK DANIŞMANLIĞI")
       .setDescription(
-        "**Reklam Destek Hizmetlerine Hoş Geldiniz!**\n\n" +
-        "Sanki yeni bir e-posta yazıyormuş gibi aşağıdaki butona tıklayarak Reklam Talep Formu'nu doldurun.\n\n" +
-        "📝 **Sistem Durumu:** Çevrimiçi\n" +
-        "👤 **Departman Sorumlusu:** Emre (Müşteri İlişkileri)"
+        `Topluluğunuzu, Roblox grubunuzu, YouTube kanalınızı veya projenizi **on binlerce aktif ve gerçek oyuncuya** tanıtmak için doğru yerdesiniz!\n\n` +
+        `💎 **KALİTE VE GÜVENCE FARKI:**\n` +
+        `Piyasadaki özensiz, bot basan ve baştan savma içerik üreticilerinin aksine; **Eko Yıldız** stüdyo kalitesinde kurgu, kristal seslendirme ve %100 organik sadık kitle gücü sunar!\n\n` +
+        `🔥 **GÜNÜN FIRSATI:** Tüm reklam paketlerimizde **%40 - %60 Lansman İndirimi** aktif!\n` +
+        `👤 **Müşteri Danışmanı:** Emre (Müşteri İlişkileri & Sponsorluk)\n` +
+        `⚡ **Ortalama Yanıt Süresi:** 5 Dakika İçinde Canlı İletişim\n` +
+        `📊 **Erişim Gücümüz:** 1.5M+ Aylık İzlenme • 50K+ Aktif Topluluk\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👇 **Hemen Başlayın:** Paketleri sıra sıra inceleyebilir, kalite standartlarımıza göz atabilir veya doğrudan talep oluşturabilirsiniz.`
       )
-      .setColor(0x3498DB)
+      .setColor(0xF1C40F)
+      .setFooter({ text: 'Eko Yıldız VIP Sponsorluk Ağı • %100 Organik & Yüksek Dönüşüm Garantisi' })
       .setTimestamp();
 
-    const row = new ActionRowBuilder().addComponents(
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId("ekoyildiz_reklam_form_button")
-        .setLabel("Yeni Reklam Talebi")
+        .setCustomId("reklam_browse_start_general")
+        .setLabel("📦 Paketleri İncele")
         .setStyle(ButtonStyle.Primary)
-        .setEmoji("📨")
+        .setEmoji("🔍"),
+      new ButtonBuilder()
+        .setCustomId("reklam_view_kamp_general")
+        .setLabel("🏰 Kamp Kurulum Hizmeti")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("👑"),
+      new ButtonBuilder()
+        .setCustomId("reklam_builder_open_general")
+        .setLabel("🎯 Kendi Paketini Tasarla")
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji("🛠️")
     );
 
-    return interaction.reply({ embeds: [mailEmbed], components: [row], ephemeral: true });
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("reklam_view_guarantee_general")
+        .setLabel("🛡️ Erişim Sigortası")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("🔒"),
+      new ButtonBuilder()
+        .setCustomId("reklam_view_flash_deal_general")
+        .setLabel("⚡ Flaş Fırsat")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🎁"),
+      new ButtonBuilder()
+        .setCustomId("reklam_view_reviews_general")
+        .setLabel("⭐ Yorumlar")
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji("🌟"),
+      new ButtonBuilder()
+        .setCustomId("reklam_view_analytics_general")
+        .setLabel("📈 Kitle Raporu")
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji("📊"),
+      new ButtonBuilder()
+        .setCustomId("reklam_view_payment_general")
+        .setLabel("💳 İtemSatış")
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji("💰")
+    );
+
+    return interaction.reply({ embeds: [promoEmbed], components: [row1, row2], ephemeral: true });
   }
 
   if (isEko && (category === 'kullanici_destek' || category === 'diger_destek' || category === 'sikayet_destek' || category === 'yonetim_destek')) {

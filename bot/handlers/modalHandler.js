@@ -2272,7 +2272,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
   }
 
   // ── Ticket oluşturma modal'ı ─────────────────────────────────────────────
-  if (interaction.customId === "ekoyildiz_reklam_form_modal") {
+  if (interaction.customId === "ekoyildiz_reklam_form_modal" || interaction.customId.startsWith("ekoyildiz_reklam_checkout_modal_")) {
     const { handleReklamModalSubmit } = require("../services/reklamTicketService");
     return handleReklamModalSubmit(interaction);
   }
