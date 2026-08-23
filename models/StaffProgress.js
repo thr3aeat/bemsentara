@@ -278,6 +278,7 @@ const staffProgressSchema = new mongoose.Schema({
 
   // 2FA Güvenlik Geçiş Süresi
   securityClearanceUntil: { type: Date, default: null },
+  claimedSpecialDayBonuses: { type: [String], default: [] },
 
   // V0.7 Kurumsal Yönetişim Alanları
   clearanceLevel: { type: String, default: 'L0' }, // L0, L1, L2, L3, L4
