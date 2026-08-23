@@ -362,47 +362,56 @@ const KAMP_SERVICES = [
   {
     id: 'kamp_ana_brans',
     code: 'kamp_ana_brans',
-    title: '🏰 Ana ve Branş Sunucuları Kurulumu',
+    title: '🏰 Ana & Branş Sunucu Kurulumu',
     regularPrice: '1.000 TL',
     discountPrice: '500 TL',
     robuxPrice: '22.000 Robux',
-    desc: 'Profesyonel Discord mimarisi, yetki hiyerarşisi, kural & duyuru estetiği, otomatik karşılama sistemleri.'
+    desc: 'Ana & Branş sunucu mimarisi, yetki hiyerarşisi, kural & duyuru estetiği. (+90 TL Webhook & İzin Şablonları)'
   },
   {
     id: 'kamp_birim_odalar',
     code: 'kamp_birim_odalar',
-    title: '🏛️ Birim ve Departman Odaları (İndirimli Kurulum)',
-    regularPrice: '850 TL',
+    title: '🏛️ Birim & Departman Odaları Paketi',
+    regularPrice: '600 TL',
     discountPrice: '450 TL',
     robuxPrice: '19.500 Robux',
-    desc: 'Özel rol/departman ses & metin kanalları, gizli operasyon odaları, estetik sembollü düzen.'
+    desc: 'Özel birlik/departman ses & metin kanalları, gizli operasyon odaları. (+350 TL RoWifi, +50 TL Webhook Form)'
+  },
+  {
+    id: 'kamp_panel_yonetim',
+    code: 'kamp_panel_yonetim',
+    title: '⚡ Eko Yıldız Paneli Rütbe & Alım Sistemi (Ömür Boyu)',
+    regularPrice: '600 TL',
+    discountPrice: '300 TL',
+    robuxPrice: '13.500 Robux',
+    desc: 'Eko Yıldız Panel Entegreli Rütbe & Alım Yönetim Sistemi (7/24 Kesintisiz Ömür Boyu Aktif).'
   },
   {
     id: 'kamp_ozel_bot',
     code: 'kamp_ozel_bot',
-    title: '🤖 Özel Rütbe, Aktiflik ve Gelişmiş Log Botu (Canavar Sistem)',
+    title: '🤖 Özel Kodlanmış Rütbe, Aktiflik & Log Botu',
     regularPrice: '1.500 TL',
     discountPrice: '750 TL',
     robuxPrice: '32.000 Robux',
-    desc: '7/24 Kesintisiz çalışma, grup değiştirme & aktiflik kontrolü, anlık işlem/eylem loglama, dahili destek ticket sistemi! Lüks ve modern altyapı.'
+    desc: 'Rütbe atlama, ses/yazı aktifliği, tüm denetim logları. (+300 TL Oyuna Girme Kayıtlarını Rütbe XP\'sine Dönüştürme)'
   },
   {
     id: 'kamp_gfx_tasarim',
     code: 'kamp_gfx_tasarim',
-    title: '🎨 Profesyonel GFX Tasarım Paketi (Logo + Banner)',
-    regularPrice: '1.000 TL',
-    discountPrice: '780 TL',
-    robuxPrice: '34.000 Robux',
-    desc: 'Eko Yıldız bizzat hazırlıyor! 500 TL Logo + 500 TL Banner = Normalde 1.000 TL yerine SANA ÖZEL SADECE 780 TL!'
+    title: '🎨 Stüdyo GFX Logo + Banner VIP Seti',
+    regularPrice: '1.100 TL',
+    discountPrice: '790 TL',
+    robuxPrice: '34.500 Robux',
+    desc: 'Stüdyo Kalite Logo (500 TL) + Özel Konsept Banner (500 TL) = Anında 310 TL Tasarrufla 790 TL!'
   },
   {
     id: 'kamp_full_bundle',
     code: 'kamp_full_bundle',
-    title: '👑 FULL KAMP KURULUM KOMBO PAKETİ (Hepsi Dahil!)',
-    regularPrice: '3.850 TL',
-    discountPrice: '1.890 TL',
-    robuxPrice: '79.000 Robux',
-    desc: 'Ana/Branş Sunucular + Birim Odaları + 7/24 Canavar Bot + Logo & Banner GFX Tasarımı hepsi tek pakette dev indirimle!'
+    title: '👑 %100 FULL LÜKS KAMP KURULUM SETİ (ALL-IN-ONE VIP BUNDLE)',
+    regularPrice: '7.000 TL',
+    discountPrice: '4.850 TL',
+    robuxPrice: '198.000 Robux',
+    desc: 'Tüm Sunucu Mimarisi + RoWifi + Birimler + Panel + 7/24 Bot + GFX Seti + KDV & Komisyon Dahil Anahtar Teslim!'
   }
 ];
 
@@ -411,32 +420,40 @@ const KAMP_SERVICES = [
  */
 function buildKampKurulumEmbed() {
   return new EmbedBuilder()
-    .setTitle('🏰 KAMPINIZ YOK MU? KAMPINIZI DA BİZ YAPIYORUZ!')
+    .setTitle('🏰 EKO YILDIZ REKLAM SİSTEMLERİ — KAMPINIZ YOK MU YAPARIZ!')
     .setDescription(
-      `Sıfırdan zirveye profesyonel, lüks ve modern bir Roblox Askeri / Rol Yapma / Topluluk Kampı kurmak için ihtiyacınız olan her şey burada!\n\n` +
+      `*Normalde sadece reklamlar vardı ancak artık kampta yapıyoruz! Tamamen yüzde yüz Türk insanlar yapıyor. (Ara sıra demokratik Kongolu da.)*\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `### 1️⃣ 🏰 Ana ve Branş Sunucuları Kurulumu:\n` +
-      `> 🇹🇷 **Fiyat:** ~~1.000 TL~~ ➔ **500 TL** *(🪙 22.000 Robux)*\n` +
-      `> • Kusursuz yetki hiyerarşisi, roller, kural & duyuru estetiği, otomatik sistemler.\n\n` +
-      `### 2️⃣ 🏛️ Birim ve Departman Odaları (İndirimli Kurulum):\n` +
-      `> 🇹🇷 **Fiyat:** ~~850 TL~~ ➔ **450 TL** *(🪙 19.500 Robux)*\n` +
-      `> • Özel askeri/birlik departman ses & metin kanalları, gizli operasyon odaları, estetik sembollü düzen.\n\n` +
-      `### 3️⃣ 🤖 Özel Rütbe, Aktiflik ve Gelişmiş Log Botu (Canavar Sistem):\n` +
-      `> 🇹🇷 **Fiyat:** ~~1.500 TL~~ ➔ **750 TL** *(🪙 32.000 Robux)*\n` +
-      `> • **7/24 Kesintisiz Aktif:** Asla kapanmaz, canavar gibi çalışır!\n` +
-      `> • **Grup Değiştirme & Aktiflik Takibi:** Üyelerin rütbelerini ve online kalma sürelerini otomatik ölçer.\n` +
-      `> • **Ekstra Gelişmiş Loglama:** Grupta veya sunucuda birisi bir eylem yaptığında anında anlık bildirim verir!\n` +
-      `> • **Dahili Destek Sistemi:** Sunucunuz için entegre ticket sistemi içerir.\n\n` +
-      `### 4️⃣ 🎨 Profesyonel GFX Tasarım Paketi (Logo + Banner):\n` +
-      `> 🇹🇷 **Fiyat:** ~~1.000 TL~~ ➔ **780 TL** *(🪙 34.000 Robux)*\n` +
-      `> • *Eko Yıldız kalitesiyle bizzat hazırlanır! 500 TL Logo + 500 TL Banner = Normalde 1.000 TL yerine SANA ÖZEL 780 TL!*\n\n` +
-      `### 👑 FULL KAMP KURULUM KOMBO PAKETİ (TÜMÜ DAHİL):\n` +
-      `> 🇹🇷 **Tek Fiyat:** ~~3.850 TL~~ ➔ **1.890 TL** *(%51 Dev Tasarruf!)*\n` +
+      `### 📊 HİZMET KALEMLERİ & VERGİLENDİRİLMİŞ LİSTE FİYATLARI:\n` +
+      `• **🏰 Ana ve Branş Sunucuları:** 500 TL\n` +
+      `• **🔗 Webhook & Kural Ek Paketi:** 90 TL\n` +
+      `• **🏛️ Birim ve Departman Odaları:** 450 TL\n` +
+      `• **🤖 RoWifi Tam Kurulumu:** 350 TL\n` +
+      `• **📝 Webhook / Alım Formu / Dokümantasyon:** 50 TL\n` +
+      `• **⚡ Eko Yıldız Paneli Rütbe & Alım Sistemi (Ömür Boyu):** 300 TL\n` +
+      `• **🛡️ Özel Kodlanmış Rütbe, Aktiflik & Log Botu:** 750 TL\n` +
+      `• **🎨 Stüdyo GFX Logo + Banner VIP Seti:** 790 TL\n` +
+      `• **🧾 Yasal KDV (%20) + İtemSatış Platform Komisyonu & Güvenlik:** 3.720 TL\n` +
+      `> ❌ **Tek Tek Alım Genel Liste Değeri (Her Şey Dahil):** ~~7.000 TL~~\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🛡️ *Tüm ödemeler SADECE İTEMSATIŞ üzerinden güvenceyle alınır.*`
+      `### 👑 %100 FULL LÜKS KAMP KURULUM SETİ (ALL-IN-ONE VIP BUNDLE)\n` +
+      `Tüm sunucu mimarisi, bot yazılımları, yönetim panelleri ve profesyonel grafik tasarımları tek bir anahtar teslim pakette birleştirildi. Yasal vergiler, platform komisyonları ve tam altyapı maliyeti paket fiyatına yedirildi.\n\n` +
+      `💰 **Tek Tek Alım Değeri:** ~~7.000 TL~~\n` +
+      `🟢 **Paket Kampanya Fiyatı:** **4.850 TL** *(%20 KDV ve İtemSatış Komisyonları Dahildir — Net 2.150 TL Tasarruf!)*\n\n` +
+      `✨ **Paket Kapsamı (Anahtar Teslim):**\n` +
+      `• 🏰 **Tam Mimarili Ana & Branş Sunucu Kurulumu:** Webhook bildirimleri, kural setleri ve profesyonel yetki ağacı\n` +
+      `• 🏢 **Birim & Departman Sunucuları:** Gelişmiş kanal düzeni, webhook alım formları ve operasyon dokümantasyonu\n` +
+      `• 🤖 **RoWifi Tam Entegrasyonu:** Otomatik grup, rol ve rütbe eşitleme altyapısı\n` +
+      `• ⚙️ **Eko Yıldız Panel Entegrasyonu:** 7/24 kesintisiz, ömür boyu rütbe ve alım yönetim sistemi\n` +
+      `• 🛡️ **Özel Kodlanmış Rütbe, Aktiflik & Log Botu:** Sunucunuza özel bağımsız çalışan eşsiz denetim mimarisi\n` +
+      `• 🎨 **Stüdyo Kalite GFX Paketi:** Özel konsept Discord & Roblox Logo + Banner seti\n` +
+      `• 🧾 **%100 Güvenli Ödeme & Yasal Güvence:** İtemSatış 3D Secure güvencesi, yasal KDV ve resmi işlem garantisi\n` +
+      `• 🚀 **Öncelikli Teslimat:** 24–48 saatte tam teslim + 7 Gün VIP Birebir Teknik Destek\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💡 *Sıfır teknik bilgiyle grubunuzu Roblox ekosisteminin en prestijli, hatasız ve tam otomatik kampı haline getirin!*`
     )
     .setColor(0xF1C40F)
-    .setFooter({ text: 'Eko Yıldız Stüdyo & Kamp Mimarlık Hizmetleri • Sadece İtemSatış' })
+    .setFooter({ text: 'Eko Yıldız Full Lüks Kamp Mimarlık & Bot Departmanı • Sadece İtemSatış' })
     .setTimestamp();
 }
 
@@ -447,33 +464,37 @@ function buildKampBrowserComponents(ticketId = 'general') {
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_kamp_full_${ticketId}`)
-      .setLabel('👑 Full Kombo Paket (1.890 TL)')
+      .setLabel('👑 Full Lüks VIP Bundle (4.850 TL)')
       .setStyle(ButtonStyle.Success)
       .setEmoji('🏆'),
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_kamp_bot_${ticketId}`)
-      .setLabel('🤖 7/24 Canavar Bot (750 TL)')
+      .setLabel('🤖 7/24 Log & Rütbe Botu (750 TL)')
       .setStyle(ButtonStyle.Primary)
       .setEmoji('⚡'),
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_kamp_gfx_${ticketId}`)
-      .setLabel('🎨 GFX Logo+Banner (780 TL)')
+      .setLabel('🌟 VIP Logo+Banner (790 TL)')
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('🖌️')
+      .setEmoji('🎨')
   );
 
   const row2 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_kamp_ana_${ticketId}`)
-      .setLabel('🏰 Ana/Branş Sunucu (500 TL)')
+      .setLabel('🏰 Ana/Branş (500 TL)')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_kamp_birim_${ticketId}`)
       .setLabel('🏛️ Birim Odaları (450 TL)')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
+      .setCustomId(`reklam_buy_pkg_kamp_panel_${ticketId}`)
+      .setLabel('⚡ Panel Yönetim (300 TL)')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
       .setCustomId(`reklam_browse_start_${ticketId}`)
-      .setLabel('📦 Reklam Paketlerine Dön')
+      .setLabel('📦 Reklam Paketleri')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('↩️')
   );
@@ -893,11 +914,38 @@ function buildCampaignDealsEmbed() {
 }
 
 /**
+ * T.C. Yasal Vergileri ve %100 Eko Yıldız Vergi Muafiyeti / Karşılama Embed'i
+ */
+function buildTaxReliefGuaranteeEmbed() {
+  return new EmbedBuilder()
+    .setTitle('🏛️ T.C. YASAL VERGİLERİ VE %100 EKO YILDIZ VERGİ KARŞILAMA GÜVENCESİ')
+    .setDescription(
+      `Türkiye Cumhuriyeti vergi mevzuatı uyarınca dijital reklam, yayıncılık ve sponsorluk hizmetlerine uygulanan yasal vergi yükümlülükleri ve Eko Yıldız güvencesi:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `### 📊 T.C. RESMİ DİJİTAL HİZMET VERGİ TABLOSU:\n` +
+      `• 🏛️ **Katma Değer Vergisi (KDV - %20):** Normalde faturaya eklenen yasal satış vergisi\n` +
+      `• 💻 **Dijital Hizmet Vergisi (DHV - %7.5):** 7194 Sayılı Kanun kapsamındaki dijital reklam yayınlama vergisi\n` +
+      `• 📋 **Stopaj & Gelir Vergisi Kesintisi (%15):** Reklam ve telif ödemeleri stopaj yükümlülüğü\n` +
+      `• 📜 **Damga Vergisi & Banka Muameleleri (BSMV - %5):** Resmi sözleşme ve işlem vergisi\n` +
+      `> ⚠️ **TOPLAM YASAL VERGİ YÜKÜ:** **+%47.5**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `### 🎁 EKO YILDIZ'DAN SİZE %100 VERGİ KARŞILAMA JESTİ:\n` +
+      `> 💥 **MÜJDE:** Normalde müşteriye yansıtılması gereken **bu %47.5'lik TÜM VERGİLERİ (KDV, DHV, Stopaj ve Damga Vergisi) TAMAMEN BİZ CEBİMİZDEN KARŞILIYORUZ!**\n` +
+      `> 🟢 **Sizden 1 Kuruş Bile Ekstra Vergi Alınmaz!** Ekranda gördüğünüz indirimli İtemSatış fiyatı neyse, sadece o net tutarı ödersiniz. Şirketimiz tüm yasal beyanname ve vergileri kendi bünyesinde öder.\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ *Sıfır ek maliyet, net fiyat garantisi! Güvenle İtemSatış üzerinden siparişinizi tamamlayabilirsiniz.*`
+    )
+    .setColor(0x2ECC71)
+    .setFooter({ text: 'Eko Yıldız Mali Müşavirlik & Finans Güvencesi • Sadece İtemSatış' })
+    .setTimestamp();
+}
+
+/**
  * Ödeme Yöntemleri & Yayın Süreci Bilgilendirme Embed'i (SADECE İTEMSATIŞ)
  */
 function buildPaymentInfoEmbed() {
   return new EmbedBuilder()
-    .setTitle('💳 ÖDEME SİSTEMİ: SADECE İTEMSATIŞ GÜVENCESİ')
+    .setTitle('💳 ÖDEME SİSTEMİ VE %100 VERGİ KARŞILAMA GÜVENCESİ')
     .setDescription(
       `Tüm reklam ve sponsorluk ödemelerimiz **SADECE İTEMSATIŞ** platformu üzerinden güvenle kabul edilmektedir.\n\n` +
       `🛡️ **Neden Sadece İtemSatış?**\n` +
@@ -905,6 +953,8 @@ function buildPaymentInfoEmbed() {
       `• **Alıcı & Satıcı Güvencesi:** Paranızı yatırdığınızda işlem onaylanana kadar İtemSatış havuzunda güvende kalır.\n` +
       `• **Hızlı Onay:** Ödeme tamamlandığında otomatik veya danışman onaylı anında işlem.\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🏛️ **T.C. VERGİLERİ BİZDEN (KDV %20 + DHV %7.5 + STOPAJ %15 = %47.5):**\n` +
+      `> Normalde yasal olarak eklenmesi gereken **%47.5'lik tüm T.C. vergilerini tamamen Eko Yıldız olarak biz karşılıyoruz!** Sizden ek vergi alınmaz, fiyata her şey dahildir.\n\n` +
       `💰 **TL vs. ROBUX ÖDEME FARKI & KOMİSYON UYARISI:**\n` +
       `• 🇹🇷 **TL İle Ödeme (Tavsiye Edilen):** İtemSatış üzerinden doğrudan liste/kampanya fiyatıyla komisyonsuz, en karlı ödeme yöntemidir.\n` +
       `• 🪙 **Robux İle Ödeme (Aşırı Pahalı Seçenek):** Roblox sisteminin uyguladığı **%30 kesinti** ve platform transfer komisyonları nedeniyle Robux fiyatlarımız TL karşılığına göre **oldukça yüksektir**. Tüm Robux ve transfer komisyonları **müşteri (alıcı) tarafından karşılanmaktadır**.\n\n` +
@@ -1799,6 +1849,7 @@ module.exports = {
   buildQualityGuaranteeEmbed,
   buildCampaignDealsEmbed,
   buildPaymentInfoEmbed,
+  buildTaxReliefGuaranteeEmbed,
   handlePackageNavigation,
   triggerReklamModal,
   handleReklamModalSubmit,

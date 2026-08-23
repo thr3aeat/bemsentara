@@ -1552,6 +1552,12 @@ async function handleButtonInteraction(interaction) {
     return interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
+  if (customId.startsWith("reklam_view_taxes_")) {
+    const { buildTaxReliefGuaranteeEmbed } = require("../services/reklamTicketService");
+    const embed = buildTaxReliefGuaranteeEmbed();
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
   if (customId.startsWith("reklam_send_deals_")) {
     const ticketId = customId.replace("reklam_send_deals_", "");
     const { sendDealsCampaign } = require("../services/reklamTicketService");
