@@ -2943,13 +2943,6 @@ async function getMorningBriefingComponents(progress) {
 
 /**
  * Rütbeye özel toleranslı görev yapmama sınırı (gün cinsinden)
- * Level 1 (Stajyer): 3 gün
- * Level 1 (Stajyer): 10 gün
- * Level 2 (Personel): 15 gün
- * Level 3 (Kıdemli Personel): 35 gün
- * Level 4 (Sekreter): 45 gün
- * Level 5 (Kıdemli Sekreter): 60 gün
- * Level 6 (Genel Koordinatör): 90 gün
  */
 function getInactivityLimit(level) {
   if (level <= 1) return 10;
@@ -2960,121 +2953,10 @@ function getInactivityLimit(level) {
   return 90;
 }
 
-// ── Uyarı DM ──────────────────────────────────────────────────────────────
+// ── Uyarı DM (Devre Dışı) ──────────────────────────────────────────────────
 async function sendWarningDM(progress, client) {
-  if (progress.settings?.warningsEnabled === false) {
-    console.log(`[staffSystem] Warnings disabled for user ${progress.userId}. Skipping DM.`);
-    return;
-  }
-  if (await hasInactivityRole(progress.userId, client)) return;
-
-  const req = getDailyRequirements(progress.level, progress.stats?.consecutiveDays || 0);
-  const maxLimit = getInactivityLimit(progress.level);
-  const warnCount = progress.warnings?.inactivityCount || progress.warnings?.count || 0;
-  const warnLeft = Math.max(0, maxLimit - warnCount);
-  const roleName = ROLE_NAMES[progress.level] || 'Moderatör';
-
-  // Quick guard: if both today's greet and voice tasks are already done, skip sending warning
-  try {
-    const todayCheck = todayStr();
-    const quickGreetDone = progress.daily?.date === todayCheck && progress.daily?.greeted;
-    const quickVoiceDone = progress.daily?.date === todayCheck && (progress.daily?.voiceMinutes || 0) >= (req.voiceMinutes || 0);
-    if (quickGreetDone && quickVoiceDone) {
-      console.log(`[staffSystem] sendWarningDM skipped for ${progress.userId} — tasks already completed today.`);
-      return;
-    }
-  } catch (_) { }
-
-  // Escalating Anger & Tone based on ratio = warnCount / maxLimit
-  const ratio = warnCount / maxLimit;
-  let title = `🟢 Günlük Görev Hatırlatması (${warnCount}/${maxLimit} Gün)`;
-  let color = 0x2ecc71; // Green
-  let toneHeader = `Merhaba ${roleName} 👋 İşlerin yoğun galiba, hiç sorun değil! Müsait olduğunda görevini tamamlamayı unutma 💪`;
-  let aiTonePrompt = 'nazik, anlayışlı ve dostça';
-
-  if (ratio > 0.8) {
-    title = `🚨 ACİL KURTARMA PROTOKOLÜ: Rütben Tehlikede! (${warnCount}/${maxLimit} Gün)`;
-    color = 0xe74c3c; // Red
-    toneHeader =
-      `🚨 **RÜTBEN TEHLİKEDE! AMA PES ETMEK YOK!** 💪\n` +
-      `Son günlerde yoğun olduğunu biliyoruz. **${warnCount} gündür** dinleniyorsun ama **${roleName}** rütbeni korumak için harekete geçme zamanı geldi!\n` +
-      `Bugün tek bir 15 dakikalık ses görevi veya selamlaşma yaparak durumunu **'Kritik'ten 'Güvenli'ye** çekebilirsin! Pes etme, ekibin seninle! 🚀`;
-    aiTonePrompt = 'teşvik edici, pes etmeyen, motivasyon verici ve destekleyici';
-  } else if (ratio > 0.55) {
-    title = `⚠️ HAREKETE GEÇME ZAMANI: Görev Durumu (${warnCount}/${maxLimit} Gün)`;
-    color = 0xe67e22; // Orange
-    toneHeader =
-      `Hey ${roleName}! 🌟 Bir süredir aramızda yoktun, seni özledik! Ekip arkadaşlarının desteğine ihtiyacı var.\n` +
-      `Bugün ufak bir katkı sunarak ritmini tekrar yakalayabilirsin! 💪`;
-    aiTonePrompt = 'samimi, teşvik edici ve motive edici';
-  } else if (ratio > 0.25) {
-    title = `💬 Tatlı Hatırlatma (${warnCount}/${maxLimit} Gün)`;
-    color = 0xf1c40f; // Yellow
-    toneHeader = `Bayağıdır sohbet etmedik! 🧐 **${roleName}** olarak enerjini sunucuya katmayı unutma. Kısa bir selam bile fark yaratır!`;
-    aiTonePrompt = 'dostça, yapıcı ve nazik';
-  }
-
-  // System Notification
-  try {
-    const { addNotification } = require("../../utils/notification");
-    await addNotification(progress.userId, {
-      title: title,
-      message: `${warnCount}/${maxLimit} gündür görev yapılmadı. Kalan süre: ${warnLeft} gün.`,
-      icon: ratio > 0.8 ? "🔥" : ratio > 0.55 ? "😠" : "⏰"
-    });
-  } catch (nErr) { }
-
-  // AI Koçu Duygusal Uyarı Mesajı
-  let aiWarn = '';
-  try {
-    const prompt = `Eko Yıldız personeli ${roleName} ${warnCount} gündür görev yapmıyor. Kullanıcıya kısa, net ve destekleyici bir Türkçe hatırlatma mesajı yaz.`;
-    aiWarn = await chatWithAI([{ role: 'user', content: prompt }], '').catch(() => '');
-    aiWarn = aiWarn?.replace(/<think>[\s\S]*?<\/think>/g, '').trim() || '';
-  } catch (_) { }
-
-  const today = todayStr();
-  const isGreetDone = progress.daily?.date === today && progress.daily?.greeted;
-  const voiceDone = progress.daily?.date === today && (progress.daily?.voiceMinutes || 0) >= req.voiceMinutes;
-  const greetsSent = progress.daily?.greetCount || 0;
-  const voiceMins = progress.daily?.voiceMinutes || 0;
-
-  const taskStatusText =
-    `• **Selamlaşma Görevi:** ${isGreetDone ? '✅ Tamamlandı' : '❌ Eksik'} (${greetsSent}/${req.greets} selam)\n` +
-    `• **Ses Aktifliği Görevi:** ${voiceDone ? '✅ Tamamlandı' : '❌ Eksik'} (${voiceMins}/${req.voiceMinutes} dk)`;
-
-  const stats = getDailyTaskCompletionStats(progress);
-
-  const embed = new EmbedBuilder()
-    .setColor(color)
-    .setTitle(title)
-    .setDescription(
-      `${toneHeader}\n\n` +
-      (aiWarn ? `🤖 **AI Koçu:** ${aiWarn}\n\n` : '') +
-      `**🕐 ${warnLeft === 1 ? '⚠️ SON GÜN! BUGÜN NÖBETE GEÇ!' : `${warnLeft} gün daha yapılmazsa rolünüz alınır.`}**\n\n` +
-      `📊 **Görev İlerlemesi:** \`[${stats.progressBar}]\` **%${stats.totalPercent}**\n\n` +
-      `📋 **Görevlerinin Durumu:**\n` +
-      `${taskStatusText}\n\n` +
-      (ratio > 0.8 ? `� **Çıkış Yolu:** İzin kredi çekmek veya hemen nöbete başlamakla sorunu çözebilirsin!` : `�💡 **Meşgulseniz:** İzin kredinizi kullanabilir veya yöneticilerle iletişime geçebilirsiniz. 😊`)
-    )
-    .addFields(
-      { name: '⚠️ İnaktif Gün', value: `${warnCount}/${maxLimit} Gün`, inline: true },
-      { name: '📊 Seviye', value: roleName, inline: true },
-      { name: '🕐 Kalan Tolerans', value: warnLeft <= 2 ? `🔴 ${warnLeft} gün (KRİTİK)` : `${warnLeft} gün`, inline: true },
-    )
-    .setFooter({ text: 'Eko Yıldız • Personel Disiplin & Takip Sistemi' })
-    .setTimestamp();
-
-  try {
-    const user = await client.users.fetch(progress.userId);
-    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('staff_update_progress')
-        .setLabel('👤 Moderatör Anasayfası')
-        .setStyle(ButtonStyle.Primary)
-    );
-    await user.send({ embeds: [embed], components: [row] });
-  } catch (_) { }
+  // Kullanıcı talebi: Günlük briefing ve "Acil Kurtarma Protokolü" gibi otomatik rahatsız edici DM uyarıları personellere gönderilmez.
+  return;
 }
 
 function shouldOfferInactivitySupport(progress) {
@@ -4415,6 +4297,20 @@ function startStaffScheduler(client) {
     }
   });
   */
+
+  // 09:30 — Önemli günlerde personellere özel DM kutlaması ve ikramiye ödülü (XP, EkoCoin, Elmas)
+  scheduleAt(9, 30, async () => {
+    await checkAndRewardStaffSpecialDay(client).catch(err => {
+      console.error('[staffSystem] Özel gün personel ikramiyesi hatası:', err.message);
+    });
+  });
+
+  // Bot açılışında da bugünün özel gün ikramiyesini kontrol et
+  setTimeout(() => {
+    checkAndRewardStaffSpecialDay(client).catch(err => {
+      console.error('[staffSystem] Başlangıç özel gün ikramiyesi hatası:', err.message);
+    });
+  }, 15000);
 
   // 00:05 — Pazartesi haftalık rapor sayacını temizle
   scheduleAt(0, 5, async () => {

@@ -131,6 +131,22 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
 
     await channel.send({ embeds: [embed] });
     console.log(`✅ [EkoYildizHistoryAI] ${embedTitle} mesajı başarıyla gönderildi.`);
+
+    // 2. Özel günlerde duyuru/genel kanalına bildirim mesajı gönder (1518692466860101915)
+    if (specialDay) {
+      const NOTIFICATION_CHANNEL_ID = process.env.EKO_YILDIZ_ANNOUNCE_CHANNEL_ID || "1518692466860101915";
+      try {
+        const notifyChannel = await client.channels.fetch(NOTIFICATION_CHANNEL_ID).catch(() => null);
+        if (notifyChannel && notifyChannel.isTextBased()) {
+          const notifyText = `:information_source: **${specialDay.name} gününüzü sevgi ve sağlıcakla kutlarız, https://discord.com/channels/1367646464804655104/1518692463177498674 kanalına bugüne özel yeni bir tarihte bugün atıldı. Komutlar ve bazı yazılar bu güne olarak düzenlendi.**`;
+          await notifyChannel.send(notifyText);
+          console.log(`📢 [EkoYildizHistoryAI] ${specialDay.name} özel gün duyurusu ${NOTIFICATION_CHANNEL_ID} kanalına iletildi.`);
+        }
+      } catch (notifyErr) {
+        console.warn("⚠️ [EkoYildizHistoryAI] Özel gün duyuru mesajı gönderilemedi:", notifyErr.message);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error("❌ [EkoYildizHistoryAI] Mesaj gönderim hatası:", error);

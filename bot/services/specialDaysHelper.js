@@ -345,6 +345,15 @@ const FIXED_SPECIAL_DAYS = {
     desc: "Engelsiz Bir Dünya ve Farkındalık Günü",
     quote: "En büyük engel sevgisizliktir. Engelsiz bir gelecek el ele mümkündür.",
     isMourning: false
+  },
+  "11_31": {
+    name: "Yılbaşı Gecesi / Yeni Yıl Arifesi",
+    type: "official_holiday",
+    emoji: "🎆",
+    color: 0xf1c40f,
+    desc: "Yeni Bir Yıla Adım Atış ve Yılbaşı Gecesi",
+    quote: "Geçmiş yılın tüm yorgunluklarını geride bırakıp yeni yıla umutla, sağlıkla ve mutlulukla adım atıyoruz!",
+    isMourning: false
   }
 };
 

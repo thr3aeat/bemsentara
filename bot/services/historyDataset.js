@@ -15,9 +15,9 @@ const MONTH_NAMES = [
 // Tarihe özel yüksek detaylı, samimi ve sürükleyici anlatımlar
 const SPECIFIC_DATE_EVENTS = {
   // ── OCAK ───────────────────────────────────────────────────────────────────
-  "0_1": `Evet sevgili dostlar, yeni bir yılın ilk gününe, 1 Ocak tarihine hep birlikte merhaba diyoruz! 1 Ocak 1923 tarihinde, Lozan Barış Konferansı'nın o en çetin günlerinde Gazi Mustafa Kemal Atatürk, Türk heyetine tam bağımsızlıktan zerre kadar taviz verilmemesi yönündeki kesin talimatını yinelemişti. Atatürk, "Siyasi ve askeri zaferler ne kadar büyük olursa olsunlar, iktisadi zaferlerle taçlandırılmazlarsa yaşayamaz" diyerek genç Türkiye'nin kalkınma meşalesini tam da bu günlerde yakmıştı.
+  "0_1": `🎆 Yeni yılınız kutlu olsun sevgili EkoYıldız ailesi! Yeni bir yılın ilk günü olan 1 Ocak tarihine hep birlikte büyük bir neşeyle merhaba diyoruz! Sağlık, mutluluk ve başarılarla dolu harika bir yıl olsun! 1 Ocak 1923 tarihinde, Lozan Barış Konferansı'nın o en çetin günlerinde Gazi Mustafa Kemal Atatürk, Türk heyetine tam bağımsızlıktan zerre kadar taviz verilmemesi yönündeki kesin talimatını yinelemişti. 
 
-Bunun yanı sıra 1 Ocak, tüm dünyada yeni umutların ve kararların filizlendiği küresel bir başlangıç günü. Milletimizin küllerinden doğarak bağımsız bir cumhuriyete yürüdüğü bu tarihi adımları bugün bir kez daha gururla hatırlıyoruz. Yarın tarihin bir başka heyecanlı sayfasında buluşmak üzere!`,
+Mustafa Kemal Paşa'nın "Siyasi ve askeri zaferler ne kadar büyük olursa olsunlar, iktisadi zaferlerle taçlandırılmazlarsa yaşayamaz" vizyonu doğrultusunda genç cumhuriyetimizin temelleri atıldı. Tüm EkoYıldız ailesine huzurlu, bereketli ve nice zaferlerle dolu harika bir yıl dileriz!`,
 
   "0_10": `Evet arkadaşlar, geldik 10 Ocak gününe! Dün konuştuğumuz hazırlıkların ardından bugün Türk Kurtuluş Savaşı'nın en gurur verici askeri zaferlerinden birine tanıklık ediyoruz. 10 Ocak 1921 tarihinde, Albay İsmet (İnönü) Bey komutasındaki düzenli ordumuz, Birinci İnönü Muharebesi'nde Yunan işgal kuvvetlerini kesin bir yenilgiye uğrattı. Gazi Mustafa Kemal Paşa'nın Ankara'dan büyük bir inançla yönettiği bu zafer, milletin Meclis'e olan güvenini zirveye taşıdı.
 
@@ -146,7 +146,11 @@ Onun fikirleri ve devrimleri her daim yolumuzu aydınlatmaya devam edecektir.`,
   // ── ARALIK ─────────────────────────────────────────────────────────────────
   "11_5": `Evet dostlar, geldik 5 Aralık gününe! 5 Aralık 1934'te Türk kadınına milletvekili seçme ve seçilme hakkı tanındı. Atatürk'ün vizyonuyla kadınlarımız birçok Avrupa ülkesinden yıllar önce Meclis'te yerini aldı.`,
 
-  "11_27": `Evet sevgili arkadaşlar, takvimler 27 Aralık'ı gösteriyor! 27 Aralık 1919'da Mustafa Kemal Paşa Ankara'ya geldi ve binlerce Seymen tarafından "Vatanı kurtarmaya geldik Paşam!" nidalarıyla karşılandı. Ankara, bağımsızlığın sarsılmaz kalesi oldu.`
+  "11_27": `Evet sevgili arkadaşlar, takvimler 27 Aralık'ı gösteriyor! 27 Aralık 1919'da Mustafa Kemal Paşa Ankara'ya geldi ve binlerce Seymen tarafından "Vatanı kurtarmaya geldik Paşam!" nidalarıyla karşılandı. Ankara, bağımsızlığın sarsılmaz kalesi oldu.`,
+
+  "11_31": `🎆 Yeni yılınız şimdiden kutlu olsun sevgili EkoYıldız ailesi! Koskoca bir yılın son günü olan 31 Aralık'tayız! Hep birlikte yeni bir yıla adım atarken sağlık, başarı, huzur ve mutluluk dolu harika bir yıl diliyoruz! 31 Aralık 1922 tarihinde, Gazi Mustafa Kemal Atatürk ve TBMM, yeni bir yıla girerken tam bağımsızlık andını ve aydınlık Türkiye vizyonunu tüm dünyaya duyurmuştu.
+
+Eski yılın yorgunluklarını geride bırakırken, Atatürk'ün "Yükselen yeni nesil, istikbal sizsiniz" sözleriyle cumhuriyetimizin ışığında yeni yıla umutla yürüyoruz. Yeni yılınız kutlu olsun dostlar!`
 };
 
 /**
