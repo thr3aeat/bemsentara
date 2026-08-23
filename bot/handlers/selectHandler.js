@@ -18,75 +18,8 @@ async function handleSelectInteraction(interaction) {
     const isEko = customId === "ekoyildiz_support_category";
 
     if (isEko && category === "reklam_destek") {
-      const promoEmbed = new EmbedBuilder()
-        .setTitle("🌟 EKO YILDIZ REKLAM & SPONSORLUK DANIŞMANLIĞI")
-        .setDescription(
-          `Topluluğunuzu, Roblox grubunuzu, YouTube kanalınızı veya projenizi **on binlerce aktif ve gerçek oyuncuya** tanıtmak için doğru yerdesiniz!\n\n` +
-          `💎 **KALİTE VE GÜVENCE FARKI:**\n` +
-          `Piyasadaki özensiz, bot basan ve baştan savma içerik üreticilerinin aksine; **Eko Yıldız** stüdyo kalitesinde kurgu, kristal seslendirme ve %100 organik sadık kitle gücü sunar!\n\n` +
-          `🔥 **GÜNÜN FIRSATI:** Tüm reklam paketlerimizde **%40 - %60 Lansman İndirimi** aktif!\n` +
-          `👤 **Müşteri Danışmanı:** Emre (Müşteri İlişkileri & Sponsorluk)\n` +
-          `⚡ **Ortalama Yanıt Süresi:** 5 Dakika İçinde Canlı İletişim\n` +
-          `📊 **Erişim Gücümüz:** 1.5M+ Aylık İzlenme • 50K+ Aktif Topluluk\n\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `👇 **Hemen Başlayın:** Paketleri sıra sıra inceleyebilir, kamp kurulum hizmetlerimize göz atabilir veya doğrudan talep oluşturabilirsiniz.`
-        )
-        .setColor(0xF1C40F)
-        .setFooter({ text: 'Eko Yıldız VIP Sponsorluk Ağı • %100 Organik & Yüksek Dönüşüm Garantisi' })
-        .setTimestamp();
-
-      const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("reklam_browse_start_general")
-          .setLabel("📦 Paketleri İncele")
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji("🔍"),
-        new ButtonBuilder()
-          .setCustomId("reklam_view_kamp_general")
-          .setLabel("🏰 Kamp Kurulum Hizmeti")
-          .setStyle(ButtonStyle.Success)
-          .setEmoji("👑"),
-        new ButtonBuilder()
-          .setCustomId("ekoyildiz_reklam_form_button")
-          .setLabel("✨ Reklam Talebi Oluştur")
-          .setStyle(ButtonStyle.Success)
-          .setEmoji("📝"),
-        new ButtonBuilder()
-          .setCustomId("reklam_builder_open_general")
-          .setLabel("🎯 Kendi Paketini Tasarla")
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji("🛠️")
-      );
-
-      const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("reklam_view_guarantee_general")
-          .setLabel("🛡️ Erişim Sigortası")
-          .setStyle(ButtonStyle.Success)
-          .setEmoji("🔒"),
-        new ButtonBuilder()
-          .setCustomId("reklam_view_taxes_general")
-          .setLabel("🏛️ Vergiler Bizden (%47.5)")
-          .setStyle(ButtonStyle.Success)
-          .setEmoji("🎁"),
-        new ButtonBuilder()
-          .setCustomId("reklam_view_flash_deal_general")
-          .setLabel("⚡ Flaş Fırsat")
-          .setStyle(ButtonStyle.Danger)
-          .setEmoji("🔥"),
-        new ButtonBuilder()
-          .setCustomId("reklam_view_reviews_general")
-          .setLabel("⭐ Yorumlar")
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji("🌟"),
-        new ButtonBuilder()
-          .setCustomId("reklam_view_payment_general")
-          .setLabel("💳 İtemSatış")
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji("💰")
-      );
-
-      return interaction.reply({ embeds: [promoEmbed], components: [row1, row2], ephemeral: true });
+      const { openReklamTicketDirectly } = require("../services/reklamTicketService");
+      return openReklamTicketDirectly(interaction);
     }
 
     if (isEko && (category === 'kullanici_destek' || category === 'diger_destek' || category === 'sikayet_destek' || category === 'yonetim_destek')) {

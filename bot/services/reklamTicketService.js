@@ -1207,26 +1207,258 @@ async function handleReklamConfirm(interaction, client, isYes, ticketId) {
       permissionOverwrites,
     });
 
-    ticket.status = 'open';
-    ticket.channelId = channel.id;
-    await ticket.save();
+/**
+ * Reklam Sihirbazı Adımları (1: Kalite, 2: 8 Paket, 3: Kamp Kurulumu, 4: Vergiler & Güvence, 5: İtemSatış Sipariş)
+ */
+function buildReklamWizardStep(step = 1, ticketId = 'general') {
+  const currentStep = Math.max(1, Math.min(5, Number(step) || 1));
+  let embed;
+  let nextLabel = '';
 
-    // Welcome embed in reklam channel
-    const welcomeEmbed = new EmbedBuilder()
-      .setTitle(`🎫 ${ticket.ticketId} — Reklam & Sponsorluk Masası`)
+  if (currentStep === 1) {
+    embed = new EmbedBuilder()
+      .setTitle('🌟 [ADIM 1/5] EKO YILDIZ KALİTE & PRESTİJ STANDARTLARI')
       .setDescription(
-        `👑 **Müşteri:** <@${ticket.userId}> (\`${ticket.userName}\`)\n` +
-        `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
-        `📋 **Müşteri Başvuru & İtemSatış Detayları:**\n${ticket.description}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `💼 **Yetkili & Danışman Paneli:**\n` +
-        `• Kanala yazdığınız her mesaj müşteriye **DM** olarak gider.\n` +
-        `• Müşterinin DM'den yazdıkları anlık bu kanala düşer.\n` +
-        `• Ödeme **SADECE İTEMSATIŞ** üzerinden alınacaktır. Aşağıdaki hızlı butonlarla müşteriye İtemSatış ödeme yönlendirmesi yapabilirsiniz.`
+        `Hoş geldiniz! Topluluğunuzu, Roblox grubunuzu veya YouTube projenizi **on binlerce gerçek & aktif oyuncuya** ulaştırmak için doğru adrestesiniz!\n\n` +
+        `💎 **NEDEN EKO YILDIZ?**\n` +
+        `• **Stüdyo Kurgusu & Kristal Seslendirme:** Piyasadaki baştan savma ve bot basan içeriklerin aksine profesyonel prodüksiyon!\n` +
+        `• **%100 Sadık Organik Kitle:** 1.5M+ Aylık İzlenme, %88 Robux harcayan oyuncu kitlesi.\n` +
+        `• **🛡️ %100 Anti-Risk Sigortası:** Reklam hedeflenen organik performansı yakalayamazsa ücretsiz telafi yayını!\n\n` +
+        `⏳ *Bu tanıtım sihirbazı her 5 saniyede bir otomatik ilerler veya aşağıdaki butonlarla kendiniz gezebilirsiniz.*`
       )
       .setColor(0xF1C40F)
-      .setFooter({ text: 'Eko Yıldız Reklam Departmanı • Sadece İtemSatış' })
+      .setFooter({ text: 'Reklam Sihirbazı • Adım 1 / 5: Kalite & Standartlar' })
       .setTimestamp();
+    nextLabel = '▶️ Sıradaki: 8 Reklam Paketi (%60 İndirim)';
+  } else if (currentStep === 2) {
+    embed = new EmbedBuilder()
+      .setTitle('📦 [ADIM 2/5] 8 POPÜLER REKLAM PAKETİ & %60 İNDİRİMLER')
+      .setDescription(
+        `Bütçenize ve hedefinize uygun 8 farklı reklam seçeneği:\n\n` +
+        `1️⃣ **YouTube Video Başı / Sonu Sponsorluğu:** ~~250 TL~~ ➔ **100 TL** *(3x Abone: 240 TL)*\n` +
+        `2️⃣ **YouTube Video İçi 60s Detaylı Tanıtım:** ~~400 TL~~ ➔ **180 TL** *(3x Abone: 430 TL)*\n` +
+        `3️⃣ **Özel Video Çekimi (5-8 Dakika Tam İnceleme):** ~~800 TL~~ ➔ **450 TL** *(3x Abone: 1.080 TL)*\n` +
+        `4️⃣ **Canlı Yayın Sponsorluğu (1 Saatlik Banner):** ~~300 TL~~ ➔ **120 TL** *(3x Abone: 290 TL)*\n` +
+        `5️⃣ **YouTube Topluluk Gönderisi:** ~~150 TL~~ ➔ **50 TL** *(3x Abone: 120 TL)*\n` +
+        `6️⃣ **Topluluk Anketi (Yüksek Etkileşim):** ~~200 TL~~ ➔ **80 TL** *(3x Abone: 190 TL)*\n` +
+        `7️⃣ **Discord Duyuru & @everyone Bildirimi:** ~~200 TL~~ ➔ **70 TL** *(3x Abone: 170 TL)*\n` +
+        `8️⃣ **👑 FULL VIP MEGA REKLAM KOMBOSU:** ~~1.500 TL~~ ➔ **600 TL** *(%60 Dev Tasarruf!)*\n\n` +
+        `💡 *İster paketleri tek tek inceleyin, ister kendi özel paketinizi modül modül tasarlayın!*`
+      )
+      .setColor(0x3498DB)
+      .setFooter({ text: 'Reklam Sihirbazı • Adım 2 / 5: Paketler & Fiyatlar' })
+      .setTimestamp();
+    nextLabel = '▶️ Sıradaki: Kamp Kurulumu (4.850 TL)';
+  } else if (currentStep === 3) {
+    embed = new EmbedBuilder()
+      .setTitle('🏰 [ADIM 3/5] KAMPINIZ YOK MU YAPARIZ! (ALTYAPI & BOT)')
+      .setDescription(
+        `*Sadece reklam değil, Roblox & Discord kampınızı anahtar teslim kuruyoruz!*\n\n` +
+        `📊 **Hizmet Kalemleri:**\n` +
+        `• 🏰 **Ana & Branş Sunucu Kurulumu:** 500 TL *(+90 TL Webhook & İzinler)*\n` +
+        `• 🏛️ **Birim & Departman Odaları:** 450 TL *(+350 TL RoWifi, +50 TL Form)*\n` +
+        `• ⚡ **Panel Entegreli Rütbe Sistemi:** 300 TL *(Ömür Boyu 7/24)*\n` +
+        `• 🤖 **Özel Kodlanmış 7/24 Rütbe & Log Botu:** 750 TL *(Canavar gibi çalışır!)*\n` +
+        `• 🎨 **Stüdyo GFX Logo + Banner VIP Seti:** 790 TL\n` +
+        `• 🧾 **Yasal KDV (%20) + İtemSatış Komisyon & Güvenlik Payı:** 3.720 TL\n` +
+        `> ❌ **Tek Tek Alım Değeri:** ~~7.000 TL~~\n\n` +
+        `👑 **%100 FULL LÜKS KAMP KURULUM SETİ (VIP BUNDLE):**\n` +
+        `> Anında **4.850 TL** *(Her şey dahil anahtar teslim, net 2.150 TL tasarruf!)*`
+      )
+      .setColor(0x9B59B6)
+      .setFooter({ text: 'Reklam Sihirbazı • Adım 3 / 5: Kamp & Bot Çözümleri' })
+      .setTimestamp();
+    nextLabel = '▶️ Sıradaki: Vergiler & Güvence';
+  } else if (currentStep === 4) {
+    embed = new EmbedBuilder()
+      .setTitle('🏛️ [ADIM 4/5] T.C. VERGİLERİ BİZDEN & %100 ERİŞİM SİGORTASI')
+      .setDescription(
+        `Devlet vergileri ve platform komisyonlarıyla kafanızı yormayın!\n\n` +
+        `📊 **T.C. RESMİ DİJİTAL HİZMET VERGİ TABLOSU:**\n` +
+        `• 🏛️ KDV (%20) + 💻 DHV (%7.5) + 📋 Stopaj (%15) + 📜 BSMV (%5) = **+%47.5 Vergi Yükü**\n\n` +
+        `🎁 **EKO YILDIZ'DAN SİZE %100 VERGİ KARŞILAMA JESTİ:**\n` +
+        `> 💥 **Bu %47.5'lik TÜM YASAL VERGİLERİ TAMAMEN BİZ CEBİMİZDEN KARŞILIYORUZ!**\n` +
+        `> Sizden 1 kuruş bile ekstra vergi alınmaz. Ekranda gördüğünüz net fiyatı ödersiniz.\n\n` +
+        `🛡️ **%100 ERİŞİM SİGORTASI:** Reklamınız hedeflenen organik izlenmeyi yakalayamazsa anında **Ücretsiz Telafi Yayını** yapılır!`
+      )
+      .setColor(0x2ECC71)
+      .setFooter({ text: 'Reklam Sihirbazı • Adım 4 / 5: Vergi & Güvence' })
+      .setTimestamp();
+    nextLabel = '▶️ Sıradaki: İtemSatış & Sipariş';
+  } else {
+    embed = new EmbedBuilder()
+      .setTitle('💳 [ADIM 5/5] SADECE İTEMSATIŞ GÜVENCESİ & SİPARİŞİ TAMAMLA')
+      .setDescription(
+        `Tebrikler! Tanıtım turunu tamamladınız. Artık siparişinizi başlatmaya hazırsınız.\n\n` +
+        `🛡️ **ÖDEME SİSTEMİ:**\n` +
+        `• Tüm ödemelerimiz **SADECE İTEMSATIŞ** üzerinden 3D Secure güvencesiyle gerçekleşir.\n` +
+        `• İtemSatış bakiyesi, kredi kartı veya banka kartı ile güvenle ödeme yapabilirsiniz.\n` +
+        `• Komisyon kesintileri sebebiyle **TL ile ödeme** şiddetle tavsiye edilir.\n\n` +
+        `🚀 **Sıradaki Adım:** Aşağıdaki butonlardan sipariş formunu doldurabilir, paketleri tek tek gezebilir veya bu kanaldan canlı danışmanımız **Emre** ile yazışabilirsiniz!`
+      )
+      .setColor(0xE67E22)
+      .setFooter({ text: 'Reklam Sihirbazı • Adım 5 / 5: Sipariş & Tamamlama' })
+      .setTimestamp();
+  }
+
+  const navRow = new ActionRowBuilder();
+  if (currentStep > 1) {
+    navRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_wizard_step_${currentStep - 1}_${ticketId}`)
+        .setLabel(`◀️ Geri (${currentStep - 1})`)
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+  if (currentStep < 5) {
+    navRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_wizard_step_${currentStep + 1}_${ticketId}`)
+        .setLabel(nextLabel || `▶️ İleri (${currentStep + 1})`)
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  navRow.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_open_modal_general_${ticketId}`)
+      .setLabel('✨ Sipariş Formu Aç')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('📝'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_browse_start_${ticketId}`)
+      .setLabel('📦 Paketleri Gez')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🔍'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_view_kamp_${ticketId}`)
+      .setLabel('🏰 Kamp Hizmetleri')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('👑')
+  );
+
+  return { embed, components: [navRow] };
+}
+
+/**
+ * Kullanıcı menüden reklam seçtiğinde doğrudan ticket açar ve sihirbazı başlatır
+ */
+async function openReklamTicketDirectly(interaction) {
+  const User = require('../../models/User');
+  const userRecord = await User.findOne({ discordId: interaction.user.id });
+  if (userRecord?.ticketBanned) {
+    return interaction.reply({
+      content: "🚫 **Ticket Yasaklısınız.**\nSpam/kötüye kullanım raporunuz yetkililerce onaylandığı için ticket sistemi erişiminiz engellendi.",
+      ephemeral: true
+    });
+  }
+
+  // Check if open ticket exists
+  const existingTicket = await Ticket.findOne({
+    userId: interaction.user.id,
+    category: 'reklam_destek',
+    status: 'open'
+  });
+
+  if (existingTicket && existingTicket.channelId) {
+    return interaction.reply({
+      content: `⚠️ Zaten açık bir reklam masanız bulunmaktadır: <#${existingTicket.channelId}>\nOradan sihirbazı inceleyebilir veya danışmanımızla görüşebilirsiniz.`,
+      ephemeral: true
+    });
+  }
+
+  const ticketId = generateTicketId();
+  const targetGuild = await interaction.client.guilds.fetch(GUILD2_ID).catch(() => null);
+  if (!targetGuild) {
+    return interaction.reply({ content: "❌ Sunucuya erişilemedi.", ephemeral: true });
+  }
+
+  const permissionOverwrites = [
+    { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
+    {
+      id: interaction.user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+      ],
+    },
+  ];
+
+  for (const roleId of Object.values(ROLES)) {
+    if (roleId && targetGuild.roles.cache.has(roleId)) {
+      permissionOverwrites.push({
+        id: roleId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+        ],
+      });
+    }
+  }
+
+  const channel = await targetGuild.channels.create({
+    name: `reklam-${interaction.user.username.toLowerCase()}`,
+    type: ChannelType.GuildText,
+    parent: GUILD2_TICKET_CATEGORY_ID || undefined,
+    permissionOverwrites,
+  });
+
+  const ticket = new Ticket({
+    ticketId,
+    userId: interaction.user.id,
+    userName: interaction.user.username,
+    category: 'reklam_destek',
+    subject: 'Reklam & Sponsorluk Talebi',
+    description: 'Kullanıcı destek kanalından reklam talebi başlattı.',
+    status: 'open',
+    channelId: channel.id,
+    guildId: GUILD2_ID,
+    source: 'channel',
+  });
+  await ticket.save();
+
+  await interaction.reply({
+    content: `✅ **Reklam ve Sponsorluk Masanız Başarıyla Açıldı!**\n👉 Lütfen <#${channel.id}> kanalına geçin. Reklam Sihirbazımız başlatıldı!`,
+    ephemeral: true
+  });
+
+  // Start guided wizard in channel and send DM to user
+  const step1Data = buildReklamWizardStep(1, ticketId);
+  const wizardMsg = await channel.send({
+    content: `🎉 Hoş geldiniz <@${interaction.user.id}>! Eko Yıldız Reklam ve Sponsorluk Masanız açıldı.\n` +
+      `Danışmanımız **Emre** sizinle ilgileniyor. Aşağıda **5 Adımlı Tanıtım Sihirbazımız** başladı:`,
+    embeds: [step1Data.embed],
+    components: step1Data.components
+  }).catch(() => null);
+
+  // Send DM to user
+  try {
+    await interaction.user.send({
+      content: `👑 **Eko Yıldız Reklam & Sponsorluk Masanız Açıldı!**\nSunucudaki kanalınız: <#${channel.id}>\n\nAşağıdaki sihirbazı inceleyebilir veya doğrudan sunucu kanalından bize yazabilirsiniz:`,
+      embeds: [step1Data.embed],
+      components: step1Data.components
+    });
+  } catch (_) {}
+
+  // Automatically advance to step 2 after 5 seconds if ticket is still open
+  if (wizardMsg) {
+    setTimeout(async () => {
+      try {
+        const checkTicket = await Ticket.findOne({ ticketId });
+        if (!checkTicket || checkTicket.status !== 'open') return;
+        const step2Data = buildReklamWizardStep(2, ticketId);
+        await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => {});
+      } catch (_) {}
+    }, 5000);
+  }
+
+  // Start staff routing
+  startTicketClaimRouting(ticketId, interaction.client);
+}
 
     const rowButtons1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -1850,6 +2082,11 @@ module.exports = {
   buildCampaignDealsEmbed,
   buildPaymentInfoEmbed,
   buildTaxReliefGuaranteeEmbed,
+  buildReklamWizardStep,
+  openReklamTicketDirectly,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   handlePackageNavigation,
   triggerReklamModal,
   handleReklamModalSubmit,

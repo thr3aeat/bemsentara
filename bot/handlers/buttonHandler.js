@@ -1529,8 +1529,17 @@ async function handleButtonInteraction(interaction) {
     return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
   }
 
+  if (customId.startsWith("reklam_wizard_step_")) {
+    const parts = customId.replace("reklam_wizard_step_", "").split("_");
+    const targetStep = parseInt(parts[0], 10) || 1;
+    const ticketId = parts.slice(1).join("_") || "general";
+    const { buildReklamWizardStep } = require("../services/reklamTicketService");
+    const stepData = buildReklamWizardStep(targetStep, ticketId);
+    return interaction.update({ embeds: [stepData.embed], components: stepData.components });
+  }
+
   if (customId.startsWith("reklam_view_deals_")) {
-    const { buildCampaignDealsEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("../services/reklamTicketService");
+    const { buildCampaignDealsEmbed } = require("../services/reklamTicketService");
     const ticketId = customId.replace("reklam_view_deals_", "");
     const embed = buildCampaignDealsEmbed();
     const row = new ActionRowBuilder().addComponents(
@@ -1600,7 +1609,7 @@ async function handleButtonInteraction(interaction) {
   }
 
   if (customId.startsWith("reklam_view_reviews_")) {
-    const { buildCustomerReviewsEmbed, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("../services/reklamTicketService");
+    const { buildCustomerReviewsEmbed } = require("../services/reklamTicketService");
     const ticketId = customId.replace("reklam_view_reviews_", "");
     const embed = buildCustomerReviewsEmbed();
     const row = new ActionRowBuilder().addComponents(
