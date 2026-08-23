@@ -132,6 +132,40 @@ async function handleModalSubmit(interaction) {
     if (handled) return;
   }
 
+  // ── Reklam Danışmanına Soru Sorma Modali ──────────────────────────────────
+  if (interaction.customId.startsWith('reklam_ask_emre_submit_')) {
+    const ticketId = interaction.customId.replace('reklam_ask_emre_submit_', '');
+    const userQuestion = interaction.fields.getTextInputValue('reklam_question_text')?.trim() || 'Soru belirtilmedi';
+
+    const responseEmbed = new EmbedBuilder()
+      .setTitle('💬 DANIŞMAN EMRE YANITLIYOR')
+      .setDescription(
+        `Merhaba **${interaction.user.username}**! Sorunuzu büyük bir memnuniyetle aldım:\n\n` +
+        `❓ **Sorduğunuz Soru:**\n> *"${userQuestion}"*\n\n` +
+        `💡 **Danışman Emre'nin Yanıtı & Tavsiyesi:**\n` +
+        `Eko Yıldız reklamlarında süreç çok basittir! Bütçenize göre paketi seçtikten sonra ödemeniz **SADECE İTEMSATIŞ** üzerinden güvenle alınır.\n` +
+        `Reklamınız **%100 Telafi ve Erişim Sigortası** kapsamındadır. Eğer ekstra bir modül veya özel tanıtım isterseniz +30 TL / +50 TL farkla anında ekleyebilirsiniz.\n\n` +
+        `🚀 Dilerseniz hemen aşağıdaki butondan sipariş formunu doldurabilir veya bu kanaldan doğrudan bana yazmaya devam edebilirsiniz!`
+      )
+      .setColor(0x3498DB)
+      .setFooter({ text: 'Eko Yıldız VIP Danışmanlık • Emre' })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_open_modal_general_${ticketId}`)
+        .setLabel('🛒 Satın Al / Sipariş Formu Aç')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('📝'),
+      new ButtonBuilder()
+        .setCustomId(`reklam_browse_start_${ticketId}`)
+        .setLabel('📦 Paketleri Gez')
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    return interaction.reply({ embeds: [responseEmbed], components: [row], ephemeral: true });
+  }
+
   // ── Birim İçi Talep / Emir Modalleri ──────────────────────────────────────
   if (interaction.customId.startsWith('modal_unit_')) {
     const { handleRequestModal } = require("../services/unitRequestService");
@@ -2737,9 +2771,12 @@ async function handleCloseReasonModal(interaction) {
 
   // Clean up active claim routing and delete DM message if any
   try {
-    const { activeTicketClaims, deleteActiveClaimDmMessage } = require("../services/reklamTicketService");
+    const { activeTicketClaims, deleteActiveClaimDmMessage, cleanReklamSalesMessages } = require("../services/reklamTicketService");
     await deleteActiveClaimDmMessage(ticket.ticketId);
     activeTicketClaims.delete(ticket.ticketId);
+    if (ticket.category === 'reklam_destek') {
+      await cleanReklamSalesMessages(interaction.channel);
+    }
   } catch (_) { }
 
   const { GUILD2_ID } = require("../../config");

@@ -1697,53 +1697,95 @@ async function handleButtonInteraction(interaction) {
     return interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
-  if (customId.startsWith("reklam_upsell_accept_")) {
-    const raw = customId.replace("reklam_upsell_accept_", "");
+  if (customId.startsWith("reklam_help_question_") || customId.startsWith("reklam_simple_browse_")) {
+    const raw = customId.startsWith("reklam_simple_browse_") 
+      ? customId.replace("reklam_simple_browse_", "") 
+      : customId.replace("reklam_help_question_", "");
     const parts = raw.split("_");
-    const upsellPkgId = parts[2] ? parts[1] + "_" + parts[2] : parts[1];
-    const ticketId = parts.slice(3).join("_") || "general";
-    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
-    const targetPkg = REKLAM_PACKAGES.find(p => p.id === upsellPkgId || p.code === upsellPkgId || raw.includes(p.id)) || REKLAM_PACKAGES[2];
-    return triggerReklamModal(interaction, `${targetPkg.title} (${targetPkg.discountPrice} / ${targetPkg.discountRobux})`, ticketId);
+    const targetIdx = parseInt(parts[0], 10) || 0;
+    const ticketId = parts.slice(1).join("_") || "general";
+    const { buildSimplePackageBrowser } = require("../services/reklamTicketService");
+    const { embed, components } = buildSimplePackageBrowser(targetIdx, ticketId);
+    if (interaction.isButton() && interaction.message) {
+      return interaction.update({ embeds: [embed], components }).catch(() => interaction.reply({ embeds: [embed], components, ephemeral: true }));
+    }
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
   }
 
-  if (customId.startsWith("reklam_upsell_decline_")) {
-    const raw = customId.replace("reklam_upsell_decline_", "");
+  if (customId.startsWith("reklam_simple_nav_prev_") || customId.startsWith("reklam_simple_nav_next_")) {
+    const isPrev = customId.startsWith("reklam_simple_nav_prev_");
+    const raw = isPrev ? customId.replace("reklam_simple_nav_prev_", "") : customId.replace("reklam_simple_nav_next_", "");
     const parts = raw.split("_");
-    const origPkgId = parts[0] + "_" + (parts[1] || "");
+    const currentIdx = parseInt(parts[0], 10) || 0;
+    const targetIdx = isPrev ? Math.max(0, currentIdx - 1) : currentIdx + 1;
+    const ticketId = parts.slice(1).join("_") || "general";
+    const { buildSimplePackageBrowser } = require("../services/reklamTicketService");
+    const { embed, components } = buildSimplePackageBrowser(targetIdx, ticketId);
+    return interaction.update({ embeds: [embed], components });
+  }
+
+  if (customId.startsWith("reklam_select_pkg_") || customId.startsWith("reklam_buy_pkg_")) {
+    const raw = customId.startsWith("reklam_select_pkg_") 
+      ? customId.replace("reklam_select_pkg_", "") 
+      : customId.replace("reklam_buy_pkg_", "");
+    const parts = raw.split("_");
+    const pkgId = parts[0] + "_" + (parts[1] || "");
     const ticketId = parts.slice(2).join("_") || "general";
-    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
-    const origPkg = REKLAM_PACKAGES.find(p => p.id === origPkgId || p.code === origPkgId || raw.includes(p.id)) || REKLAM_PACKAGES[0];
-    return triggerReklamModal(interaction, `${origPkg.title} (${origPkg.discountPrice} / ${origPkg.discountRobux})`, ticketId);
+    const { buildEkoThinkingEmbed, buildEkoUpsellPromptEmbed } = require("../services/reklamTicketService");
+
+    // 1. Düşünme & Bilgiler Eko'ya aktarılıyor animasyonunu göster
+    if (interaction.isButton() && interaction.message) {
+      await interaction.update({ embeds: [buildEkoThinkingEmbed(pkgId, ticketId)], components: [] }).catch(() => {});
+    } else {
+      await interaction.reply({ embeds: [buildEkoThinkingEmbed(pkgId, ticketId)], ephemeral: true }).catch(() => {});
+    }
+
+    // 2. 1.5 saniye sonra "Bunu da ek farkla ister misiniz?" tavsiye kartını aç
+    setTimeout(async () => {
+      try {
+        const upsell = buildEkoUpsellPromptEmbed(pkgId, ticketId);
+        await interaction.editReply({ embeds: [upsell.embed], components: upsell.components }).catch(() => {});
+      } catch (_) {}
+    }, 1500);
+    return;
   }
 
-  if (customId.startsWith("reklam_buy_pkg_")) {
-    const clean = customId.replace("reklam_buy_pkg_", "");
+  if (customId.startsWith("reklam_confirm_with_bump_")) {
+    const clean = customId.replace("reklam_confirm_with_bump_", "");
     const parts = clean.split("_");
     const pkgId = parts[0] + "_" + (parts[1] || "");
-    const ticketId = parts.slice(2).join("_") || (parts.length > 2 ? parts[2] : "general");
-    const { REKLAM_PACKAGES, KAMP_SERVICES, buildUpsellOfferEmbed, triggerReklamModal } = require("../services/reklamTicketService");
+    const bumpId = parts[2] || "addon";
+    const ticketId = parts.slice(3).join("_") || "general";
+    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
+    const matched = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId) || REKLAM_PACKAGES[0];
     
-    // Check Kamp services
-    if (KAMP_SERVICES) {
-      const matchedKamp = KAMP_SERVICES.find(k => clean.startsWith(k.id) || k.id === pkgId || customId.includes(k.id));
-      if (matchedKamp) {
-        return triggerReklamModal(interaction, `${matchedKamp.title} (${matchedKamp.discountPrice} / ${matchedKamp.robuxPrice})`, ticketId);
-      }
-    }
+    let bumpName = "Ek Modül (+30 TL)";
+    if (bumpId === 'midroll_addon') bumpName = "Sesli Mid-Roll (+40 TL)";
+    else if (bumpId === 'poll_discord_combo') bumpName = "Topluluk Anketi + Discord Duyurusu (+50 TL)";
+    else if (bumpId === 'upgrade_mega') bumpName = "FULL VIP Mega Upgrade (+150 TL)";
+    else if (bumpId === 'fast_track_addon') bumpName = "24s Hızlı Teslimat (+40 TL)";
 
-    const matched = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId || customId.includes(p.id));
-    
-    // If package has an upsell offer, present the upsell proposal first!
-    if (matched && matched.upsellTargetId) {
-      const upsellPkg = REKLAM_PACKAGES.find(p => p.id === matched.upsellTargetId);
-      if (upsellPkg) {
-        const { embed, components } = buildUpsellOfferEmbed(matched, upsellPkg, ticketId);
-        return interaction.reply({ embeds: [embed], components, ephemeral: true });
-      }
-    }
+    return triggerReklamModal(interaction, `${matched.title} + ${bumpName}`, ticketId);
+  }
 
-    return triggerReklamModal(interaction, matched ? `${matched.title} (${matched.discountPrice} / ${matched.discountRobux})` : '', ticketId);
+  if (customId.startsWith("reklam_confirm_without_bump_")) {
+    const clean = customId.replace("reklam_confirm_without_bump_", "");
+    const parts = clean.split("_");
+    const pkgId = parts[0] + "_" + (parts[1] || "");
+    const ticketId = parts.slice(2).join("_") || "general";
+    const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
+    const matched = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId) || REKLAM_PACKAGES[0];
+    return triggerReklamModal(interaction, `${matched.title} (${matched.discountPrice} / ${matched.discountRobux})`, ticketId);
+  }
+
+  if (customId === "reklam_start_comm_dm") {
+    const { openReklamTicketWithOptions } = require("../services/reklamTicketService");
+    return openReklamTicketWithOptions(interaction, "dm");
+  }
+
+  if (customId === "reklam_start_comm_guild") {
+    const { openReklamTicketWithOptions } = require("../services/reklamTicketService");
+    return openReklamTicketWithOptions(interaction, "guild");
   }
 
   if (customId.startsWith("ekoyildiz_reklam_confirm_yes_")) {

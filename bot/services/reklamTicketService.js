@@ -1382,6 +1382,172 @@ async function handleReklamModalSubmit(interaction) {
 }
 
 /**
+ * "❓ Bir Şey Anlamadım" — Sırayla Paket Tanıtım & Seçim Arayüzü (Önceki/Sonraki Butonlu)
+ */
+function buildSimplePackageBrowser(currentIndex = 0, ticketId = 'general') {
+  const total = REKLAM_PACKAGES.length;
+  const safeIdx = Math.max(0, Math.min(currentIndex, total - 1));
+  const pkg = REKLAM_PACKAGES[safeIdx];
+
+  const featureList = pkg.features.slice(0, 3).map(f => `  ✅ ${f}`).join('\n');
+
+  const embed = new EmbedBuilder()
+    .setTitle(`❓ [${safeIdx + 1}/${total}] ${pkg.emoji} ${pkg.title}`)
+    .setDescription(
+      `Hiç kafanızı karıştırmayın! İşte sıradaki reklam seçeneğimiz:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💰 **SADE & NET FİYATLAR (SADECE İTEMSATIŞ):**\n` +
+      `> 🎯 **1x Tek Seferlik İndirimli Fiyat:** ~~${pkg.regularPrice}~~ ➔ **${pkg.discountPrice}** *(%60 İndirim)*\n` +
+      `> ⭐ **3x Çoklu Yayın Paketi:** **${pkg.multiPackPrice}**\n` +
+      `> 🪙 **Robux ile Ödeme:** **${pkg.discountRobux}** ⚠️ *(Komisyonlar Dahil)*\n\n` +
+      `📝 **Kısaca Ne İşe Yarar?**\n` +
+      `*${pkg.summary}*\n\n` +
+      `✨ **Öne Çıkan Özellikler:**\n${featureList}\n\n` +
+      `📊 **Tahmini Oyuncu Erişimi:** **${pkg.reach}**\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👉 *Bu paketi beğendiyseniz aşağıdaki **"🎯 Bu Paketi Seçmek İstiyorum"** butonuna basarak anında devam edebilirsiniz!*`
+    )
+    .setColor(pkg.color)
+    .setFooter({ text: `Paket ${safeIdx + 1} / ${total} • Eko Yıldız Sade Paket Rehberi • Sadece İtemSatış` })
+    .setTimestamp();
+
+  // 1. Gezinme Butonları (Önceki, Sayfa, Sonraki)
+  const navRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_simple_nav_prev_${safeIdx}_${ticketId}`)
+      .setLabel('◀️ Bir Önceki Paket')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(safeIdx === 0),
+    new ButtonBuilder()
+      .setCustomId(`reklam_simple_nav_info_${safeIdx}_${ticketId}`)
+      .setLabel(`Sayfa ${safeIdx + 1} / ${total}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId(`reklam_simple_nav_next_${safeIdx}_${ticketId}`)
+      .setLabel('Bir Sonraki Paket ▶️')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(safeIdx === total - 1)
+  );
+
+  // 2. Seçim & Aksiyon Butonları
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_select_pkg_${pkg.id}_${ticketId}`)
+      .setLabel(`🎯 Bu Paketi Seç (${pkg.discountPrice})`)
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('✅'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_ask_emre_modal_${ticketId}`)
+      .setLabel('💬 Danışman Emre\'ye Sor')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('❓'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_open_modal_general_${ticketId}`)
+      .setLabel('📝 Sipariş Formu Aç')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return { embed, components: [navRow, actionRow] };
+}
+
+/**
+ * "Şu anda yükleniyor... Bilgiler Eko'ya aktarılıyor..." Düşünme & Analiz Embed'i
+ */
+function buildEkoThinkingEmbed(pkgId = '', ticketId = 'general') {
+  const pkg = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId) || REKLAM_PACKAGES[0];
+
+  return new EmbedBuilder()
+    .setTitle('⏳ ŞU ANDA YÜKLENİYOR... BİLGİLERİNİZ EKO\'YA AKTARILIYOR')
+    .setDescription(
+      `> [████████░░] **%80 Analiz Tamamlandı**\n\n` +
+      `🤖 **Eko Yıldız Kamp & Büyüme Algoritması Devrede:**\n` +
+      `• Seçtiğiniz paket: **${pkg.title} (${pkg.discountPrice})** inceleniyor...\n` +
+      `• **Kampınıza & Roblox grubunuza nasıl daha çok adam çekebiliriz diye sistemlerimiz düşünüyor...**\n` +
+      `• Size özel kitle patlaması yaratacak **Ek Fırsat & Performans Garantisi** hesaplanıyor...\n\n` +
+      `*Lütfen 1 saniye bekleyin, kampınıza özel tavsiye ve fırsat kartı ekrana geliyor...*`
+    )
+    .setColor(0x3498DB)
+    .setFooter({ text: 'Eko Yıldız Büyüme Laboratuvarı • Analiz Ediliyor' });
+}
+
+/**
+ * "BUNU DA EK FARKLA İSTER MİSİNİZ?" Özel Fırsat & Upsell Onay Kartı
+ */
+function buildEkoUpsellPromptEmbed(pkgId = '', ticketId = 'general') {
+  const pkg = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId) || REKLAM_PACKAGES[0];
+
+  let bumpTitle = 'Topluluk Anketi (80 TL Değerinde)';
+  let bumpPrice = '30';
+  let bumpId = 'yt_poll';
+  let bumpDesc = 'YouTube Topluluk sekmesinde on binlerce oyuncunun oy kullanacağı anket ile grubunuza akın etmelerini sağlar.';
+
+  if (pkg.id === 'pkg_shorts') {
+    bumpTitle = 'Sesli Mid-Roll Reklam Arası (100 TL Değerinde)';
+    bumpPrice = '40';
+    bumpId = 'midroll_addon';
+    bumpDesc = 'Shorts videonuza ek olarak ana YouTube videosunda sesli ve görüntülü 20-30s tanıtım ekler!';
+  } else if (pkg.id === 'pkg_standart' || pkg.id === 'pkg_advantaged') {
+    bumpTitle = 'YouTube Topluluk Anketi + Discord Duyurusu (150 TL Değerinde)';
+    bumpPrice = '50';
+    bumpId = 'poll_discord_combo';
+    bumpDesc = 'Hem YouTube Topluluk anketinde hem de 50K Discord sunucumuzda @everyone duyurusu ile 2 kat daha fazla oyuncu çeker!';
+  } else if (pkg.id === 'pkg_gold') {
+    bumpTitle = '👑 FULL VIP Mega Komboya Yükseltme (600 TL Değerinde)';
+    bumpPrice = '150';
+    bumpId = 'upgrade_mega';
+    bumpDesc = 'Tüm platformlar, canlı yayın bannerı, anket ve Discord @everyone dahil tam 360 derece reklam gücü!';
+  } else {
+    bumpTitle = '🚀 24 Saat Süper Hızlı Teslimat & Öncelikli Sıra (40 TL Değerinde)';
+    bumpPrice = '40';
+    bumpId = 'fast_track_addon';
+    bumpDesc = 'Siparişiniz tüm kuyruğun en önüne geçer ve ilk sırada 12-24 saatte yayınlanır!';
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('💡 EKO AKILLI BÜYÜME ANALİZİ TAMAMLANDI!')
+    .setDescription(
+      `🎯 **Seçtiğiniz Ana Paket:** **${pkg.title}** ➔ **${pkg.discountPrice}**\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🔥 **KAMPINIZA DAHA ÇOK ADAM ÇEKMEK İÇİN SİSTEMİMİZİN ÖZEL TAVSİYESİ:**\n\n` +
+      `> 🎁 **SADECE +${bumpPrice} TL FARKLA \`${bumpTitle.toUpperCase()}\` İSTER MİSİNİZ?**\n` +
+      `> 💡 *${bumpDesc}*\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ **%100 ERİŞİM & TELAFİ SİGORTASI:** Reklamınız hedeflenen performansa ulaşmazsa ücretsiz telafi yayını yapılır!\n` +
+      `💳 **Ödeme:** Sadece İtemSatış üzerinden 3D Secure güvencesiyle gerçekleşir.`
+    )
+    .setColor(0xF1C40F)
+    .setFooter({ text: 'Eko Yıldız Akıllı Sipariş Masası • Sadece İtemSatış' })
+    .setTimestamp();
+
+  const row1 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_confirm_with_bump_${pkg.id}_${bumpId}_${ticketId}`)
+      .setLabel(`✅ Evet, +${bumpPrice} TL Farkla Bunu da İstiyorum!`)
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🔥'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_confirm_without_bump_${pkg.id}_${ticketId}`)
+      .setLabel(`❌ Hayır, Sadece ${pkg.discountPrice} Olanı Al`)
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const row2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_simple_browse_${REKLAM_PACKAGES.indexOf(pkg)}_${ticketId}`)
+      .setLabel('◀️ Farklı Paket Seç (Geri)')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`reklam_ask_emre_modal_${ticketId}`)
+      .setLabel('💬 Danışman Emre\'ye Sor')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('❓')
+  );
+
+  return { embed, components: [row1, row2] };
+}
+
+/**
  * Adım geçişi yükleniyor durumu embed'i
  */
 function buildLoadingStepEmbed(targetStep = 1) {
@@ -1602,13 +1768,21 @@ function buildReklamWizardStep(step = 1, ticketId = 'general') {
       .setEmoji('👑')
   );
 
+  bumpRow.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_help_question_${ticketId}`)
+      .setLabel('❓ Bir Şey Anlamadım')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('🤔')
+  );
+
   return { embed, components: [bumpRow, navRow] };
 }
 
 /**
- * Kullanıcı menüden reklam seçtiğinde doğrudan ticket açar ve sihirbazı başlatır
+ * Reklam İletişim Yöntemi Seçim Arayüzü (DM vs Sunucu)
  */
-async function openReklamTicketDirectly(interaction) {
+async function showCommunicationPreferencePrompt(interaction) {
   const User = require('../../models/User');
   const userRecord = await User.findOne({ discordId: interaction.user.id });
   if (userRecord?.ticketBanned) {
@@ -1626,30 +1800,109 @@ async function openReklamTicketDirectly(interaction) {
   });
 
   if (existingTicket && existingTicket.channelId) {
+    if (existingTicket.communicationPref === 'dm') {
+      return interaction.reply({
+        content: `⚠️ Zaten açık bir reklam masanız bulunmaktadır. Lütfen Danışmanımız Emre ile **DM (Özel Mesaj)** kutusundan görüşmeye devam edin.`,
+        ephemeral: true
+      });
+    }
     return interaction.reply({
       content: `⚠️ Zaten açık bir reklam masanız bulunmaktadır: <#${existingTicket.channelId}>\nOradan sihirbazı inceleyebilir veya danışmanımızla görüşebilirsiniz.`,
       ephemeral: true
     });
   }
 
+  const embed = new EmbedBuilder()
+    .setTitle("🎯 REKLAM İLETİŞİM YÖNTEMİNİ SEÇİN")
+    .setDescription(
+      `Eko Yıldız Reklam ve Sponsorluk Departmanı ile nasıl iletişim kurmak istersiniz?\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `📩 **1. DM ÜZERİNDEN İLETİŞİM (GİZLİ & ÖZEL):**\n` +
+      `• Sunucuda kanal aramakla uğraşmazsınız.\n` +
+      `• Sunucu kanalını **görmezsiniz**, doğrudan botun **DM (Özel Mesaj)** kutusundan danışmanımızla birebir yazışırsınız.\n\n` +
+      `🏛️ **2. SUNUCU ÜZERİNDEN İLETİŞİM (SUNUCU KANALI):**\n` +
+      `• Eko Yıldız sunucusunda size özel gizli bir reklam masası kanalı (\`#reklam-${interaction.user.username.toLowerCase()}\`) açılır.\n` +
+      `• Görüşmeyi doğrudan sunucu kanalından yaparsınız, DM kutunuza mesaj gitmez.\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Lütfen aşağıdaki butonlardan tercih ettiğiniz iletişim yöntemine tıklayın:`
+    )
+    .setColor(0xF1C40F)
+    .setFooter({ text: 'Eko Yıldız Müşteri İletişim Tercihi • Sadece İtemSatış' })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("reklam_start_comm_dm")
+      .setLabel("📩 DM Üzerinden İletişim İstiyorum")
+      .setStyle(ButtonStyle.Success)
+      .setEmoji("💬"),
+    new ButtonBuilder()
+      .setCustomId("reklam_start_comm_guild")
+      .setLabel("🏛️ Sunucu Üzerinden İletişim İstiyorum")
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji("🏰")
+  );
+
+  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+}
+
+/**
+ * Kullanıcının seçtiği iletişim moduna göre (DM vs Sunucu) ticket açar
+ */
+async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
+  const User = require('../../models/User');
+  const userRecord = await User.findOne({ discordId: interaction.user.id });
+  if (userRecord?.ticketBanned) {
+    return interaction.reply({
+      content: "🚫 **Ticket Yasaklısınız.**\nSpam/kötüye kullanım raporunuz yetkililerce onaylandığı için ticket sistemi erişiminiz engellendi.",
+      ephemeral: true
+    });
+  }
+
+  // Check if open ticket exists
+  const existingTicket = await Ticket.findOne({
+    userId: interaction.user.id,
+    category: 'reklam_destek',
+    status: 'open'
+  });
+
+  if (existingTicket && existingTicket.channelId) {
+    if (existingTicket.communicationPref === 'dm') {
+      return interaction.reply({
+        content: `⚠️ Zaten açık bir reklam masanız bulunmaktadır. Lütfen Danışmanımız Emre ile **DM (Özel Mesaj)** kutusundan görüşmeye devam edin.`,
+        ephemeral: true
+      });
+    }
+    return interaction.reply({
+      content: `⚠️ Zaten açık bir reklam masanız bulunmaktadır: <#${existingTicket.channelId}>\nOradan sihirbazı inceleyebilir veya danışmanımızla görüşebilirsiniz.`,
+      ephemeral: true
+    });
+  }
+
+  const isDmMode = commMode === 'dm';
   const ticketId = generateTicketId();
   const targetGuild = await interaction.client.guilds.fetch(GUILD2_ID).catch(() => null);
   if (!targetGuild) {
     return interaction.reply({ content: "❌ Sunucuya erişilemedi.", ephemeral: true });
   }
 
+  // DM modunda kullanıcı sunucu kanalını GÖREMEZ. Sunucu modunda GÖRÜR ve YAZAR.
+  const userPermissionOverwrite = isDmMode
+    ? { id: interaction.user.id, deny: [PermissionFlagsBits.ViewChannel] }
+    : {
+        id: interaction.user.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.AttachFiles,
+          PermissionFlagsBits.EmbedLinks,
+        ],
+      };
+
   const permissionOverwrites = [
     { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
-    {
-      id: interaction.user.id,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ReadMessageHistory,
-        PermissionFlagsBits.AttachFiles,
-        PermissionFlagsBits.EmbedLinks,
-      ],
-    },
+    userPermissionOverwrite
   ];
 
   for (const roleId of Object.values(ROLES)) {
@@ -1677,52 +1930,95 @@ async function openReklamTicketDirectly(interaction) {
     userId: interaction.user.id,
     userName: interaction.user.username,
     category: 'reklam_destek',
-    subject: 'Reklam & Sponsorluk Talebi',
-    description: 'Kullanıcı destek kanalından reklam talebi başlattı.',
+    subject: isDmMode ? 'Reklam Talebi (DM İletişim Modu)' : 'Reklam Talebi (Sunucu İçi Kanal)',
+    description: isDmMode ? 'Kullanıcı DM üzerinden iletişim tercih etti. Kanalı göremez.' : 'Kullanıcı sunucu içi kanal tercih etti.',
     status: 'open',
     channelId: channel.id,
     guildId: GUILD2_ID,
-    source: 'channel',
+    source: isDmMode ? 'dm' : 'channel',
+    communicationPref: isDmMode ? 'dm' : 'guild'
   });
   await ticket.save();
 
-  await interaction.reply({
-    content: `✅ **Reklam ve Sponsorluk Masanız Başarıyla Açıldı!**\n👉 Lütfen <#${channel.id}> kanalına geçin. Reklam Sihirbazımız başlatıldı!`,
-    ephemeral: true
-  });
+  // 1. Durum: DM Üzerinden İletişim
+  if (isDmMode) {
+    await interaction.reply({
+      content: `✅ **DM Reklam ve Sponsorluk Masanız Başarıyla Açıldı!**\n💬 Lütfen botun **DM (Özel Mesaj)** kutusuna geçin. Danışmanımız **Emre** size oradan yazdı!`,
+      ephemeral: true
+    });
 
-  // Start guided wizard in channel and send DM to user
-  const step1Data = buildReklamWizardStep(1, ticketId);
-  const wizardMsg = await channel.send({
-    content: `🎉 Hoş geldiniz <@${interaction.user.id}>! Eko Yıldız Reklam ve Sponsorluk Masanız açıldı.\n` +
-      `Danışmanımız **Emre** sizinle ilgileniyor. Aşağıda **5 Adımlı Tanıtım Sihirbazımız** başladı:`,
-    embeds: [step1Data.embed],
-    components: step1Data.components
-  }).catch(() => null);
+    // Staff Channel Notice
+    const staffNoticeEmbed = new EmbedBuilder()
+      .setTitle(`🎫 ${ticket.ticketId} — Reklam Masası (DM İletişim Modu)`)
+      .setDescription(
+        `👑 **Müşteri:** <@${interaction.user.id}> (\`${interaction.user.username}\`)\n` +
+        `📩 **İletişim Türü:** **DM (Özel Mesaj)**\n\n` +
+        `🔒 **BİLGİLENDİRME:**\n` +
+        `• Müşteri bu kanalı **göremez**.\n` +
+        `• Yetkililerin bu kanala yazacağı her mesaj müşterinin **DM kutusuna** gider.\n` +
+        `• Müşterinin DM'den yazdığı her mesaj anlık bu kanala düşer.\n` +
+        `• Ödeme **SADECE İTEMSATIŞ** üzerinden alınacaktır.`
+      )
+      .setColor(0x3498DB)
+      .setFooter({ text: 'Eko Yıldız DM Köprüsü • Sadece İtemSatış' })
+      .setTimestamp();
 
-  // Send DM to user
-  try {
-    await interaction.user.send({
-      content: `👑 **Eko Yıldız Reklam & Sponsorluk Masanız Açıldı!**\nSunucudaki kanalınız: <#${channel.id}>\n\nAşağıdaki sihirbazı inceleyebilir veya doğrudan sunucu kanalından bize yazabilirsiniz:`,
+    const rowButtons1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`reklam_prices_${ticketId}`).setLabel("📦 Paket Kataloğu").setStyle(ButtonStyle.Primary).setEmoji("📑"),
+      new ButtonBuilder().setCustomId(`reklam_send_payment_${ticketId}`).setLabel("💳 İtemSatış Bilgisini İlet").setStyle(ButtonStyle.Secondary).setEmoji("💰"),
+      new ButtonBuilder().setCustomId(`reklam_close_${ticketId}`).setLabel("🔒 Reklam Talebini Kapat").setStyle(ButtonStyle.Danger)
+    );
+
+    await channel.send({ embeds: [staffNoticeEmbed], components: [rowButtons1] });
+
+    // Send DM to user with initial wizard and chat invitation
+    const step1Data = buildReklamWizardStep(1, ticketId);
+    try {
+      await interaction.user.send({
+        content: `👑 **Merhaba ${interaction.user.username}! Eko Yıldız DM Reklam Masanız Açıldı.**\n` +
+          `Danışmanımız **Emre** sizinle ilgileniyor. Doğrudan buraya mesaj yazarak sorularınızı iletebilir veya aşağıdaki adımları inceleyebilirsiniz:`,
+        embeds: [step1Data.embed],
+        components: step1Data.components
+      });
+    } catch (_) {}
+
+  } else {
+    // 2. Durum: Sunucu Üzerinden İletişim
+    await interaction.reply({
+      content: `✅ **Sunucu Reklam Masanız Başarıyla Açıldı!**\n👉 Lütfen doğrudan <#${channel.id}> kanalına geçin. Reklam Sihirbazımız başlatıldı!`,
+      ephemeral: true
+    });
+
+    const step1Data = buildReklamWizardStep(1, ticketId);
+    const wizardMsg = await channel.send({
+      content: `🎉 Hoş geldiniz <@${interaction.user.id}>! Eko Yıldız Reklam ve Sponsorluk Masanız açıldı.\n` +
+        `Danışmanımız **Emre** sizinle ilgileniyor. İletişim doğrudan bu kanaldan sağlanacaktır.`,
       embeds: [step1Data.embed],
       components: step1Data.components
-    });
-  } catch (_) {}
+    }).catch(() => null);
 
-  // Automatically advance to step 2 after 5 seconds if ticket is still open
-  if (wizardMsg) {
-    setTimeout(async () => {
-      try {
-        const checkTicket = await Ticket.findOne({ ticketId });
-        if (!checkTicket || checkTicket.status !== 'open') return;
-        const step2Data = buildReklamWizardStep(2, ticketId);
-        await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => {});
-      } catch (_) {}
-    }, 5000);
+    // Advance to step 2 after 5 seconds
+    if (wizardMsg) {
+      setTimeout(async () => {
+        try {
+          const checkTicket = await Ticket.findOne({ ticketId });
+          if (!checkTicket || checkTicket.status !== 'open') return;
+          const step2Data = buildReklamWizardStep(2, ticketId);
+          await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => {});
+        } catch (_) {}
+      }, 5000);
+    }
   }
 
-  // Start staff routing
+  // Start staff claim routing
   startTicketClaimRouting(ticketId, interaction.client);
+}
+
+/**
+ * Eski doğrudan ticket açma fonksiyonu geriye dönük uyumluluk için promptu çağırır
+ */
+async function openReklamTicketDirectly(interaction) {
+  return showCommunicationPreferencePrompt(interaction);
 }
 
 /**
@@ -1961,6 +2257,11 @@ async function forwardReklamChannelToDM(message, client) {
   const channelId = message.channel.id;
   const ticket = await Ticket.findOne({ channelId, status: 'open', category: 'reklam_destek' });
   if (!ticket) return false;
+
+  // Sunucu üzerinden iletişim seçildiyse DM spamı yapma
+  if (ticket.communicationPref === 'guild' || (ticket.source === 'channel' && ticket.communicationPref !== 'dm')) {
+    return false;
+  }
 
   if (ticket.paused) {
     return false;
@@ -2420,6 +2721,59 @@ async function routeNextClaimRequest(ticketId, client) {
   }
 }
 
+/**
+ * Ticket kapandığında o kanaldaki tüm satış fiyatı ve tanıtım mesajlarını siler
+ */
+async function cleanReklamSalesMessages(channel) {
+  if (!channel || !channel.messages) return;
+  try {
+    const fetched = await channel.messages.fetch({ limit: 100 }).catch(() => null);
+    if (!fetched || fetched.size === 0) return;
+
+    const salesMessages = fetched.filter(m => {
+      if (!m.author?.bot) return false;
+      if (m.embeds && m.embeds.length > 0) {
+        const title = (m.embeds[0].title || '').toLowerCase();
+        const desc = (m.embeds[0].description || '').toLowerCase();
+        if (
+          title.includes('paket') ||
+          title.includes('fiyat') ||
+          title.includes('sihirbaz') ||
+          title.includes('kamp') ||
+          title.includes('fırsat') ||
+          title.includes('merdiven') ||
+          title.includes('şans') ||
+          title.includes('sepet') ||
+          title.includes('anlamadım') ||
+          title.includes('iletişim') ||
+          desc.includes('tl') ||
+          desc.includes('robux') ||
+          desc.includes('itemsatış')
+        ) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (salesMessages.size > 0) {
+      if (channel.bulkDelete) {
+        await channel.bulkDelete(salesMessages, true).catch(async () => {
+          for (const msg of salesMessages.values()) {
+            await msg.delete().catch(() => {});
+          }
+        });
+      } else {
+        for (const msg of salesMessages.values()) {
+          await msg.delete().catch(() => {});
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[reklamTicketService] Failed to clean sales messages on close:', err.message);
+  }
+}
+
 module.exports = {
   REKLAM_PACKAGES,
   CUSTOM_BUILDER_MODULES,
@@ -2441,13 +2795,20 @@ module.exports = {
   buildTaxReliefGuaranteeEmbed,
   buildLoadingStepEmbed,
   buildReklamWizardStep,
+  showCommunicationPreferencePrompt,
+  openReklamTicketWithOptions,
   openReklamTicketDirectly,
+  cleanReklamSalesMessages,
   getLiveActivityFeedText,
   buildTieredMilestonesEmbed,
   buildSamplesShowcaseEmbed,
   buildSpinWheelEmbed,
   buildGroupAuditEmbed,
   buildFastTrackEmbed,
+  buildSimpleHelpShowcaseEmbed,
+  buildSimplePackageBrowser,
+  buildEkoThinkingEmbed,
+  buildEkoUpsellPromptEmbed,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
