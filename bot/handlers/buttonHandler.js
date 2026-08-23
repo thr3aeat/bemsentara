@@ -1533,9 +1533,19 @@ async function handleButtonInteraction(interaction) {
     const parts = customId.replace("reklam_wizard_step_", "").split("_");
     const targetStep = parseInt(parts[0], 10) || 1;
     const ticketId = parts.slice(1).join("_") || "general";
-    const { buildReklamWizardStep } = require("../services/reklamTicketService");
-    const stepData = buildReklamWizardStep(targetStep, ticketId);
-    return interaction.update({ embeds: [stepData.embed], components: stepData.components });
+    const { buildLoadingStepEmbed, buildReklamWizardStep } = require("../services/reklamTicketService");
+    
+    // 1. Önce "Bir sonraki adım yükleniyor..." durumunu göster
+    await interaction.update({ embeds: [buildLoadingStepEmbed(targetStep)], components: [] }).catch(() => {});
+    
+    // 2. 1.2 saniye sonra TL farkla al / garanti teklifli adımı yükle
+    setTimeout(async () => {
+      try {
+        const stepData = buildReklamWizardStep(targetStep, ticketId);
+        await interaction.editReply({ embeds: [stepData.embed], components: stepData.components }).catch(() => {});
+      } catch (_) {}
+    }, 1200);
+    return;
   }
 
   if (customId.startsWith("reklam_view_deals_")) {
@@ -1650,6 +1660,41 @@ async function handleButtonInteraction(interaction) {
     const embed = buildKampKurulumEmbed();
     const components = buildKampBrowserComponents(ticketId);
     return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_milestones_")) {
+    const ticketId = customId.replace("reklam_view_milestones_", "");
+    const { buildTieredMilestonesEmbed } = require("../services/reklamTicketService");
+    const embed = buildTieredMilestonesEmbed(ticketId);
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_view_samples_")) {
+    const ticketId = customId.replace("reklam_view_samples_", "");
+    const { buildSamplesShowcaseEmbed } = require("../services/reklamTicketService");
+    const embed = buildSamplesShowcaseEmbed(ticketId);
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_spin_wheel_")) {
+    const ticketId = customId.replace("reklam_spin_wheel_", "");
+    const { buildSpinWheelEmbed } = require("../services/reklamTicketService");
+    const { embed, components } = buildSpinWheelEmbed(ticketId);
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_group_audit_")) {
+    const ticketId = customId.replace("reklam_group_audit_", "");
+    const { buildGroupAuditEmbed } = require("../services/reklamTicketService");
+    const { embed, components } = buildGroupAuditEmbed('100_500', ticketId);
+    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+
+  if (customId.startsWith("reklam_fast_track_")) {
+    const ticketId = customId.replace("reklam_fast_track_", "");
+    const { buildFastTrackEmbed } = require("../services/reklamTicketService");
+    const embed = buildFastTrackEmbed(ticketId);
+    return interaction.reply({ embeds: [embed], ephemeral: true });
   }
 
   if (customId.startsWith("reklam_upsell_accept_")) {

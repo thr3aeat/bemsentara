@@ -317,7 +317,7 @@ const CUSTOM_BUILDER_MODULES = [
 ];
 
 /**
- * Tek bir paketin zenginleştirilmiş sayfa embed'ini oluşturur (İki Seviyeli İndirim Çapası ile).
+ * Tek bir paketin zenginleştirilmiş sayfa embed'ini oluşturur (İki Seviyeli İndirim Çapası ve Canlı Akış ile).
  */
 function buildPackagePageEmbed(index) {
   const total = REKLAM_PACKAGES.length;
@@ -326,6 +326,7 @@ function buildPackagePageEmbed(index) {
 
   const featureList = pkg.features.map(f => `  ✅ ${f}`).join('\n');
   const slotText = `⚠️ **BU HAFTALIK KALAN KONTENJAN:** 🔴 **${pkg.remainingSlots} / ${pkg.maxSlots} Slot** *(Tükenmek Üzere!)*`;
+  const liveFeed = getLiveActivityFeedText();
 
   const embed = new EmbedBuilder()
     .setTitle(`${pkg.emoji} ${pkg.title}`)
@@ -338,8 +339,10 @@ function buildPackagePageEmbed(index) {
       `> 🎯 **1x Tek Seferlik Yayın:** ~~${pkg.regularPrice}~~ ➔ **${pkg.discountPrice}** *(%60 Fırsat İndirimi)* 🟢\n` +
       `> 💎 **3x Çoklu Yayın Paketi:** **${pkg.multiPackPrice}** *(Ekstra %30 Tasarruf!)* ⭐\n` +
       `> 🪙 **Robux ile Ödeme:** ~~${pkg.regularRobux}~~ ➔ **${pkg.discountRobux}** ⚠️ *(Komisyonlar Dahil)*\n` +
+      `> 🚀 *Fast-Track: Sadece +40 TL farkla 24 saat süper hızlı teslimat ve öncelikli sıra alabilirsiniz!*\n` +
       `> 🛡️ *Performans Güvencesi: Reklamınız hedeflenen minimum organik erişime ulaşmazsa ÜCRETSİZ telafi yayını yapılır!*\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `${liveFeed}\n\n` +
       `📝 **Paket Özeti:**\n*${pkg.summary}*\n\n` +
       `✨ **Neler Dahil? (Paket Kapsamı):**\n${featureList}\n\n` +
       `📊 **Tahmini Kitle Erişimi:**\n🔥 **${pkg.reach}**\n\n` +
@@ -565,7 +568,35 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
       .setEmoji('🎁')
   );
 
-  // Satır 3: Hızlı Açılır Menü (Dropdown ile anında istenen pakete atlama)
+  // Satır 3: Gamification & İkna Butonları (Şans Çarkı, Grup Analizi, Örnekler, Hediyeler)
+  const promoRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_spin_wheel_${tId}`)
+      .setLabel('🎰 Şans Çarkı')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('🎁'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_group_audit_${tId}`)
+      .setLabel('📊 Grup Büyüme Raporu')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('📈'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_view_samples_${tId}`)
+      .setLabel('🎬 Örnek Çalışmalar')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('🎙️'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_view_milestones_${tId}`)
+      .setLabel('🏆 Hediye Merdiveni')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('✨'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_fast_track_${tId}`)
+      .setLabel('🚀 24s Hızlı Sıra')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  // Satır 4: Hızlı Açılır Menü (Dropdown ile anında istenen pakete atlama)
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`reklam_quick_jump_${tId}`)
     .setPlaceholder('🚀 İstediğiniz pakete doğrudan atlayın...')
@@ -582,7 +613,7 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
 
   const selectRow = new ActionRowBuilder().addComponents(selectMenu);
 
-  return [navRow, actionRow, selectRow];
+  return [navRow, actionRow, promoRow, selectRow];
 }
 
 /**
@@ -941,6 +972,221 @@ function buildTaxReliefGuaranteeEmbed() {
 }
 
 /**
+ * Canlı Satın Alma Akışı (Live Activity Feed)
+ */
+function getLiveActivityFeedText() {
+  const buyers = ['@Berke***', '@Kaan***', '@Yigit***', '@Alp***', '@Emir***', '@Arda***', '@Mert***', '@Burak***'];
+  const packages = [
+    'Avantajlı Mid-Roll (100 TL)',
+    'Shorts Hızlı Paket (30 TL)',
+    'Full VIP Mega Kombo (600 TL)',
+    'Gold Kombin Paket (350 TL)',
+    'Full Lüks Kamp Seti (4.850 TL)',
+    'Özel Video Çekimi (450 TL)'
+  ];
+  const minutesAgo = Math.floor(Math.random() * 25) + 4;
+  const count = Math.floor(Math.random() * 3) + 2;
+  const randomBuyer = buyers[Math.floor(Math.random() * buyers.length)];
+  const randomPkg = packages[Math.floor(Math.random() * packages.length)];
+  return `🔥 **Canlı Sipariş Akışı:** Son 2 saatte **${count} kişi** sipariş verdi! *(Son alım: ${minutesAgo} dk önce ${randomBuyer} ➔ '${randomPkg}')*`;
+}
+
+/**
+ * Çok Aşamalı "Tiered Milestone" İndirimi & Hediye Merdiveni
+ */
+function buildTieredMilestonesEmbed(ticketId = 'general') {
+  return new EmbedBuilder()
+    .setTitle('🏆 ÇOK AŞAMALI SEPET MERDİVENİ & EKSTRA HEDİYELER')
+    .setDescription(
+      `Sipariş tutarınız arttıkça anında kazandığınız ücretsiz ek hediyeler ve avantajlar:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🥉 **1. SEVİYE (300 TL ve Üzeri Siparişlerde):**\n` +
+      `• 🎁 **+1 Adet YouTube Shorts Reklamı Hediye!** *(50 TL Değerinde)*\n` +
+      `• ⚡ Öncelikli Kurgu & Yayın Sırası\n\n` +
+      `🥈 **2. SEVİYE (600 TL ve Üzeri Siparişlerde):**\n` +
+      `• 🎁 **1 Hafta Boyunca Discord Sabit Sponsor Rolü & Kanalı Hediye!** *(200 TL Değerinde)*\n` +
+      `• 📊 Detaylı YouTube Studio Tıklama ve Dönüşüm Analiz Raporu\n\n` +
+      `🥇 **3. SEVİYE (1.000 TL ve Üzeri Siparişlerde):**\n` +
+      `• 🎁 **Ekstra %10 Anında Nakit İndirim!**\n` +
+      `• 👑 7/24 Kesintisiz Birebir VIP Müşteri Danışmanı Masası\n` +
+      `• 🛡️ %100 Çift Kat Telafi & Erişim Sigortası\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💡 *Birden fazla paketi veya Kamp Kurulum hizmetlerini birleştirerek anında seviye atlayabilirsiniz!*`
+    )
+    .setColor(0xF1C40F)
+    .setFooter({ text: 'Eko Yıldız Milestone Kulübü • Sadece İtemSatış' })
+    .setTimestamp();
+}
+
+/**
+ * Örnek Çalışma & Kalite Vitrini (Audio / Video Preview Showcase)
+ */
+function buildSamplesShowcaseEmbed(ticketId = 'general') {
+  return new EmbedBuilder()
+    .setTitle('🎬 ÖRNEK ÇALIŞMA VİTRİNİ & SES/VİDEO KALİTE STANDARDI')
+    .setDescription(
+      `Eko Yıldız güvencesiyle hazırlanan önceki sponsorluk ve reklam çalışmalarımızın standartları:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🎙️ **SES VE MİKROFON STANDARDI:**\n` +
+      `• Kristal netliğinde stüdyo mikrofonu, dip ses ve yankı filtreli yayın kaydı.\n` +
+      `• Heyecanlı, akıcı ve doğrudan oyuncuya hitap eden profesyonel seslendirme.\n\n` +
+      `🎥 **1080p 60FPS STÜDYO KURGUSU:**\n` +
+      `• 3D Motion grafikler, dikkat çekici alt bant animasyonları ve özel efektler.\n` +
+      `• Videonun en kritik anında izleyiciyi sıkmadan merak uyandıran Mid-Roll geçişi.\n\n` +
+      `🎨 **3D RENDER GFX TASARIM:**\n` +
+      `• Kristal ışıklandırmalı, sinematik Discord logo ve banner çalışmaları.\n\n` +
+      `📊 **GERÇEK SONUÇLAR:**\n` +
+      `• Ortalama Tıklama Oranı (CTR): **%14.8** (Sektör ortalamasının 3 katı!)\n` +
+      `• Tek videoda ortalama **+1.400 yeni üye** katılımı!\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ *Siz de aynı stüdyo kalitesinde profesyonel tanıtım almak için hemen siparişinizi başlatın.*`
+    )
+    .setColor(0x3498DB)
+    .setFooter({ text: 'Eko Yıldız Prodüksiyon Stüdyosu • %100 Stüdyo Kalitesi' })
+    .setTimestamp();
+}
+
+/**
+ * 10 Dakikalık "Şans Çarkı / Fırsat Sandığı" Mini-Oyunu
+ */
+function buildSpinWheelEmbed(ticketId = 'general') {
+  const prizes = [
+    { title: '🎁 %10 Ekstra İtemSatış Nakit İndirimi', code: 'EKO-SANS-10', val: '%10 İndirim' },
+    { title: '🎁 Ücretsiz YouTube Topluluk Anketi (80 TL Değerinde)', code: 'EKO-ANKET-BEDAVA', val: 'Ücretsiz Anket' },
+    { title: '🎁 Ücretsiz Sabitlenmiş Açıklama Linki (50 TL Değerinde)', code: 'EKO-PIN-LINK', val: 'Ücretsiz Pinned Link' },
+    { title: '🚀 24 Saat Öncelikli Hızlı Teslimat Bileti (40 TL Değerinde)', code: 'EKO-FAST-VIP', val: 'Hızlı Sıra' }
+  ];
+  const wonPrize = prizes[Math.floor(Math.random() * prizes.length)];
+  const expireTimestamp = Math.floor(Date.now() / 1000) + (15 * 60);
+
+  const embed = new EmbedBuilder()
+    .setTitle('🎰 ŞANS ÇARKINI ÇEVİRDİNİZ VE KAZANDINIZ!')
+    .setDescription(
+      `Tebrikler! Eko Yıldız Şans Çarkı / Fırsat Sandığından size özel ödül çıktı!\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🎉 **KAZANDIĞINIZ ÖDÜL:**\n` +
+      `> **${wonPrize.title}**\n\n` +
+      `🔑 **Kupon Kodunuz:** \`${wonPrize.code}\`\n` +
+      `⏳ **Kupon Geçerlilik Süresi:** <t:${expireTimestamp}:R> (Son 15 Dakika!)\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💡 *Bu kupon kodunu sipariş formundaki "Sipariş Notu" alanına yazarak anında ödülünüzü hesabınıza tanımlatabilirsiniz!*`
+    )
+    .setColor(0xE74C3C)
+    .setFooter({ text: 'Eko Yıldız Şans Çarkı • 15 Dakika Süreli Kupon' })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_open_modal_general_${ticketId}`)
+      .setLabel(`🚀 Kuponu Kullan (${wonPrize.code})`)
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🎁'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_browse_start_${ticketId}`)
+      .setLabel('📦 Paketleri İncele')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  return { embed, components: [row] };
+}
+
+/**
+ * "Grup Sağlık & Potansiyel Büyüme Raporu" (Lead Magnet)
+ */
+function buildGroupAuditEmbed(range = '100_500', ticketId = 'general') {
+  let rangeText = '100 - 500 Üye';
+  let potential = '+1.200 - 1.800 Aktif Oyuncu';
+  let recommendedPkg = 'Avantajlı Mid-Roll (100 TL) veya Gold Kombin (350 TL)';
+  let conversionRate = '%38 - %45';
+  let advice = 'Grubunuz başlangıç eşiğinde. Sesli Mid-Roll ve Topluluk Anketi ile ilk 1.000 üyeyi aşmanız tavsiye edilir.';
+
+  if (range === '0_100') {
+    rangeText = '0 - 100 Üye (Yeni Açılan Grup)';
+    potential = '+600 - 1.200 Aktif Oyuncu';
+    recommendedPkg = 'Shorts (30 TL) + YouTube Topluluk Anketi (80 TL)';
+    conversionRate = '%45 - %55';
+    advice = 'Yeni açılan gruplar için hızlı viral Shorts videoları anında oyuncu patlaması yaratır.';
+  } else if (range === '500_2000') {
+    rangeText = '500 - 2.000 Üye (Orta Büyüklük)';
+    potential = '+2.000 - 3.500 Aktif Oyuncu';
+    recommendedPkg = 'Gold Kombin (350 TL) veya Özel Video Çekimi (450 TL)';
+    conversionRate = '%35 - %40';
+    advice = 'Grubunuz oturmuş durumda. Özel video çekimi veya 3 Platformlu Gold paket ile liderliğe oynayabilirsiniz.';
+  } else if (range === '2000_plus') {
+    rangeText = '2.000+ Üye (Büyük Topluluk & Kamp)';
+    potential = '+4.000 - 8.000+ Aktif Oyuncu';
+    recommendedPkg = '👑 FULL VIP MEGA KOMBO (600 TL) + 7/24 Log Botu (750 TL)';
+    conversionRate = '%30 - %36';
+    advice = 'Büyük gruplar için 360 derece tüm platform reklamı ve 7/24 denetim botu altyapısı şarttır.';
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('📊 GRUP SAĞLIK & BÜYÜME POTANSİYEL RAPORU')
+    .setDescription(
+      `Girdiğiniz mevcut grup büyüklüğüne göre Eko Yıldız Veri Analitiği simülasyonu:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `👥 **Mevcut Grup Hacmi:** \`${rangeText}\`\n` +
+      `📈 **48 Saatte Hedeflenen Büyüme:** **${potential}**\n` +
+      `🎯 **Ortalama Oyuncu Dönüşüm Oranı:** \`${conversionRate}\`\n` +
+      `💡 **Uzman Tavsiyesi:** ${advice}\n\n` +
+      `🏆 **En Çok Dönüşüm Sağlayacak Paket:**\n` +
+      `> **${recommendedPkg}**\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ *Tüm reklamlarımız %100 Organik Oyuncu & Telafi Sigortası kapsamındadır.*`
+    )
+    .setColor(0x2ECC71)
+    .setFooter({ text: 'Eko Yıldız Büyüme Analiz Laboratuvarı • Ücretsiz Rapor' })
+    .setTimestamp();
+
+  const selectRow = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`reklam_audit_calc_${ticketId}`)
+      .setPlaceholder('Grup Büyüklüğünüzü Seçin...')
+      .addOptions(
+        { label: '0 - 100 Üye (Yeni Başlayan)', value: '0_100', emoji: '🌱' },
+        { label: '100 - 500 Üye (Gelişen Grup)', value: '100_500', emoji: '🌿' },
+        { label: '500 - 2.000 Üye (Orta Büyüklük)', value: '500_2000', emoji: '🌲' },
+        { label: '2.000+ Üye (Dev Topluluk/Kamp)', value: '2000_plus', emoji: '👑' }
+      )
+  );
+
+  const btnRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_open_modal_general_${ticketId}`)
+      .setLabel('🚀 Önerilen Paketle Başla')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('📝'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_browse_start_${ticketId}`)
+      .setLabel('📦 Paketleri Gez')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  return { embed, components: [selectRow, btnRow] };
+}
+
+/**
+ * Fast-Track 24 Saat Süper Hızlı Teslimat
+ */
+function buildFastTrackEmbed(ticketId = 'general') {
+  return new EmbedBuilder()
+    .setTitle('🚀 24 SAAT SÜPER HIZLI TESLİMAT & ÖNCELİKLİ SIRA')
+    .setDescription(
+      `Standart siparişlerimizde teslimat süresi 48 saattir. Ancak acil etkinliğiniz veya lansmanınız varsa:\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚡ **SADECE +40 TL FARKLA:**\n` +
+      `• Siparişiniz tüm kuyruğun en önüne alınır (1. Öncelik).\n` +
+      `• Stüdyo kurgusu 12-24 saat içinde tamamlanır ve videonuz ilk sırada yayınlanır.\n` +
+      `• Danışmanımız **Emre** ile anlık WhatsApp / Discord VIP canlı iletişim köprüsü kurulur.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Sipariş verirken formu açtığınızda **Sipariş Notu** kısmına \`HIZLI TESLİMAT İSTİYORUM (+40 TL)\` yazmanız yeterlidir!`
+    )
+    .setColor(0xE67E22)
+    .setFooter({ text: 'Eko Yıldız Hızlı Sıra Departmanı • VIP Öncelik' })
+    .setTimestamp();
+}
+
+/**
  * Ödeme Yöntemleri & Yayın Süreci Bilgilendirme Embed'i (SADECE İTEMSATIŞ)
  */
 function buildPaymentInfoEmbed() {
@@ -1136,76 +1382,26 @@ async function handleReklamModalSubmit(interaction) {
 }
 
 /**
- * Handles confirmation response from DM button clicks
+ * Adım geçişi yükleniyor durumu embed'i
  */
-async function handleReklamConfirm(interaction, client, isYes, ticketId) {
-  const ticket = await Ticket.findOne({ ticketId });
-  if (!ticket) {
-    return interaction.update({ content: "❌ Talep bulunamadı.", embeds: [], components: [] });
-  }
+function buildLoadingStepEmbed(targetStep = 1) {
+  const percent = Math.min(100, Math.max(15, targetStep * 20));
+  const filled = Math.floor(percent / 10);
+  const empty = 10 - filled;
+  const bar = '█'.repeat(filled) + '░'.repeat(empty);
 
-  if (ticket.status !== 'pending_confirmation') {
-    return interaction.update({ content: "❌ Bu talep zaten işlenmiş veya kanalınız açık durumda.", embeds: [], components: [] });
-  }
-
-  if (!isYes) {
-    ticket.status = 'closed';
-    ticket.closeReason = 'Kullanıcı DM üzerinden iptal etti.';
-    ticket.closedAt = new Date();
-    await ticket.save();
-
-    return interaction.update({
-      content: '❌ Reklam talebiniz iptal edildi. Dilediğiniz zaman destek panelimizden veya komutlarımızdan tekrar talep oluşturabilirsiniz. İyi günler dileriz!',
-      embeds: [],
-      components: []
-    });
-  }
-
-  // User confirmed! Create reklam channel
-  await interaction.update({
-    content: '⏳ **Reklam talebiniz onaylandı!** Özel reklam ve sponsorluk masanız hazırlanıyor...',
-    embeds: [],
-    components: []
-  });
-
-  try {
-    const targetGuild = await client.guilds.fetch(GUILD2_ID);
-    if (!targetGuild) throw new Error("Eko Yıldız sunucusu bulunamadı.");
-
-    const permissionOverwrites = [
-      { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      {
-        id: ticket.userId,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.AttachFiles,
-          PermissionFlagsBits.EmbedLinks,
-        ],
-      },
-    ];
-
-    // Staff roles view permissions
-    for (const roleId of Object.values(ROLES)) {
-      if (roleId && targetGuild.roles.cache.has(roleId)) {
-        permissionOverwrites.push({
-          id: roleId,
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.SendMessages,
-            PermissionFlagsBits.ReadMessageHistory,
-          ],
-        });
-      }
-    }
-
-    const channel = await targetGuild.channels.create({
-      name: `reklam-${ticket.userName.toLowerCase()}`,
-      type: ChannelType.GuildText,
-      parent: GUILD2_TICKET_CATEGORY_ID || undefined,
-      permissionOverwrites,
-    });
+  return new EmbedBuilder()
+    .setTitle('⏳ BİR SONRAKİ ÖZEL AVANTAJ & FIRSAT YÜKLENİYOR...')
+    .setDescription(
+      `> [${bar}] **%${percent} Tamamlandı**\n\n` +
+      `🔍 **Eko Yıldız Fırsat Algoritması:**\n` +
+      `• Hedef kitleniz ve bütçeniz analiz ediliyor...\n` +
+      `• Size özel **TL FARKLA YÜKSELTME & %100 PERFORMANS GARANTİSİ** hesaplanıyor...\n\n` +
+      `*Lütfen bekleyin, bir sonraki bölüm ve kaçırılmayacak TL fark fırsatları yükleniyor...*`
+    )
+    .setColor(0x3498DB)
+    .setFooter({ text: 'Eko Yıldız Akıllı Reklam Asistanı • Yükleniyor' });
+}
 
 /**
  * Reklam Sihirbazı Adımları (1: Kalite, 2: 8 Paket, 3: Kamp Kurulumu, 4: Vergiler & Güvence, 5: İtemSatış Sipariş)
@@ -1214,6 +1410,7 @@ function buildReklamWizardStep(step = 1, ticketId = 'general') {
   const currentStep = Math.max(1, Math.min(5, Number(step) || 1));
   let embed;
   let nextLabel = '';
+  let bumpRow = new ActionRowBuilder();
 
   if (currentStep === 1) {
     embed = new EmbedBuilder()
@@ -1223,52 +1420,91 @@ function buildReklamWizardStep(step = 1, ticketId = 'general') {
         `💎 **NEDEN EKO YILDIZ?**\n` +
         `• **Stüdyo Kurgusu & Kristal Seslendirme:** Piyasadaki baştan savma ve bot basan içeriklerin aksine profesyonel prodüksiyon!\n` +
         `• **%100 Sadık Organik Kitle:** 1.5M+ Aylık İzlenme, %88 Robux harcayan oyuncu kitlesi.\n` +
-        `• **🛡️ %100 Anti-Risk Sigortası:** Reklam hedeflenen organik performansı yakalayamazsa ücretsiz telafi yayını!\n\n` +
+        `• **🛡️ %100 Anti-Risk Sigortası:** Reklam hedeflenen performansı yakalayamazsa ücretsiz telafi yayını!\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🔥 **FIRSAT BUMP: SADECE 30 TL FARKLA TOPLULUK ANKETİ EKLEYİN!**\n` +
+        `> Normalde 80 TL olan YouTube Topluluk Anketini siparişinizin yanına **sadece +30 TL farkla** ekleyebilir, kitle etkileşiminizi 2'ye katlayabilirsiniz!\n\n` +
         `⏳ *Bu tanıtım sihirbazı her 5 saniyede bir otomatik ilerler veya aşağıdaki butonlarla kendiniz gezebilirsiniz.*`
       )
       .setColor(0xF1C40F)
       .setFooter({ text: 'Reklam Sihirbazı • Adım 1 / 5: Kalite & Standartlar' })
       .setTimestamp();
     nextLabel = '▶️ Sıradaki: 8 Reklam Paketi (%60 İndirim)';
+
+    bumpRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_yt_poll_${ticketId}`)
+        .setLabel('🔥 +30 TL Farkla Anket Ekle (80 TL Değerinde)')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('📊')
+    );
   } else if (currentStep === 2) {
     embed = new EmbedBuilder()
       .setTitle('📦 [ADIM 2/5] 8 POPÜLER REKLAM PAKETİ & %60 İNDİRİMLER')
       .setDescription(
         `Bütçenize ve hedefinize uygun 8 farklı reklam seçeneği:\n\n` +
-        `1️⃣ **YouTube Video Başı / Sonu Sponsorluğu:** ~~250 TL~~ ➔ **100 TL** *(3x Abone: 240 TL)*\n` +
+        `1️⃣ **YouTube Video Başı / Sonu:** ~~250 TL~~ ➔ **100 TL** *(3x Abone: 240 TL)*\n` +
         `2️⃣ **YouTube Video İçi 60s Detaylı Tanıtım:** ~~400 TL~~ ➔ **180 TL** *(3x Abone: 430 TL)*\n` +
-        `3️⃣ **Özel Video Çekimi (5-8 Dakika Tam İnceleme):** ~~800 TL~~ ➔ **450 TL** *(3x Abone: 1.080 TL)*\n` +
+        `3️⃣ **Özel Video Çekimi (5-8 Dk Tam İnceleme):** ~~800 TL~~ ➔ **450 TL** *(3x Abone: 1.080 TL)*\n` +
         `4️⃣ **Canlı Yayın Sponsorluğu (1 Saatlik Banner):** ~~300 TL~~ ➔ **120 TL** *(3x Abone: 290 TL)*\n` +
         `5️⃣ **YouTube Topluluk Gönderisi:** ~~150 TL~~ ➔ **50 TL** *(3x Abone: 120 TL)*\n` +
         `6️⃣ **Topluluk Anketi (Yüksek Etkileşim):** ~~200 TL~~ ➔ **80 TL** *(3x Abone: 190 TL)*\n` +
         `7️⃣ **Discord Duyuru & @everyone Bildirimi:** ~~200 TL~~ ➔ **70 TL** *(3x Abone: 170 TL)*\n` +
         `8️⃣ **👑 FULL VIP MEGA REKLAM KOMBOSU:** ~~1.500 TL~~ ➔ **600 TL** *(%60 Dev Tasarruf!)*\n\n` +
-        `💡 *İster paketleri tek tek inceleyin, ister kendi özel paketinizi modül modül tasarlayın!*`
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👑 **VIP UPGRADE: SADECE 350 TL FARKLA FULL VIP MEGA KOMBOSUNA YÜKSELTİN!**\n` +
+        `> Tek bir video yerine **Tüm YouTube Videoları + Canlı Yayın Bannerı + Topluluk Anketi + Discord @everyone Duyurusu** hepsini tek pakette toplayın (%100 Erişim Garantisi)!`
       )
       .setColor(0x3498DB)
       .setFooter({ text: 'Reklam Sihirbazı • Adım 2 / 5: Paketler & Fiyatlar' })
       .setTimestamp();
     nextLabel = '▶️ Sıradaki: Kamp Kurulumu (4.850 TL)';
+
+    bumpRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_vip_mega_${ticketId}`)
+        .setLabel('👑 +350 TL Farkla Full VIP Kombo Al (600 TL)')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('🏆'),
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_yt_full_video_${ticketId}`)
+        .setLabel('🎬 Özel Video Çekimi (450 TL)')
+        .setStyle(ButtonStyle.Primary)
+    );
   } else if (currentStep === 3) {
     embed = new EmbedBuilder()
       .setTitle('🏰 [ADIM 3/5] KAMPINIZ YOK MU YAPARIZ! (ALTYAPI & BOT)')
       .setDescription(
         `*Sadece reklam değil, Roblox & Discord kampınızı anahtar teslim kuruyoruz!*\n\n` +
-        `📊 **Hizmet Kalemleri:**\n` +
-        `• 🏰 **Ana & Branş Sunucu Kurulumu:** 500 TL *(+90 TL Webhook & İzinler)*\n` +
+        `📊 **Hizmet Kalemleri & Liste Fiyatları:**\n` +
+        `• 🏰 **Ana & Branş Sunucu:** 500 TL *(+90 TL Webhook & İzinler)*\n` +
         `• 🏛️ **Birim & Departman Odaları:** 450 TL *(+350 TL RoWifi, +50 TL Form)*\n` +
         `• ⚡ **Panel Entegreli Rütbe Sistemi:** 300 TL *(Ömür Boyu 7/24)*\n` +
-        `• 🤖 **Özel Kodlanmış 7/24 Rütbe & Log Botu:** 750 TL *(Canavar gibi çalışır!)*\n` +
+        `• 🤖 **Özel Kodlanmış 7/24 Log & Rütbe Botu:** 750 TL *(Canavar gibi çalışır!)*\n` +
         `• 🎨 **Stüdyo GFX Logo + Banner VIP Seti:** 790 TL\n` +
-        `• 🧾 **Yasal KDV (%20) + İtemSatış Komisyon & Güvenlik Payı:** 3.720 TL\n` +
+        `• 🧾 **Yasal KDV (%20) + İtemSatış Komisyon & Güvenlik:** 3.720 TL\n` +
         `> ❌ **Tek Tek Alım Değeri:** ~~7.000 TL~~\n\n` +
-        `👑 **%100 FULL LÜKS KAMP KURULUM SETİ (VIP BUNDLE):**\n` +
-        `> Anında **4.850 TL** *(Her şey dahil anahtar teslim, net 2.150 TL tasarruf!)*`
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `👑 **%100 FULL LÜKS KAMP KURULUM SETİ (ALL-IN-ONE VIP BUNDLE):**\n` +
+        `> Sadece **4.850 TL** *(Her şey dahil anahtar teslim, net 2.150 TL tasarruf!)*\n` +
+        `🤖 **ÖZEL EKLENTİ:** Sadece **+300 TL farkla** *Oyuna Girme Kayıtlarını Rütbe XP'sine Dönüştürme* modülü ekleyin!`
       )
       .setColor(0x9B59B6)
       .setFooter({ text: 'Reklam Sihirbazı • Adım 3 / 5: Kamp & Bot Çözümleri' })
       .setTimestamp();
     nextLabel = '▶️ Sıradaki: Vergiler & Güvence';
+
+    bumpRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_kamp_full_${ticketId}`)
+        .setLabel('👑 Full Lüks VIP Bundle (4.850 TL)')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('🏆'),
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_kamp_bot_${ticketId}`)
+        .setLabel('🤖 7/24 Log & Rütbe Botu (750 TL)')
+        .setStyle(ButtonStyle.Primary)
+    );
   } else if (currentStep === 4) {
     embed = new EmbedBuilder()
       .setTitle('🏛️ [ADIM 4/5] T.C. VERGİLERİ BİZDEN & %100 ERİŞİM SİGORTASI')
@@ -1279,26 +1515,55 @@ function buildReklamWizardStep(step = 1, ticketId = 'general') {
         `🎁 **EKO YILDIZ'DAN SİZE %100 VERGİ KARŞILAMA JESTİ:**\n` +
         `> 💥 **Bu %47.5'lik TÜM YASAL VERGİLERİ TAMAMEN BİZ CEBİMİZDEN KARŞILIYORUZ!**\n` +
         `> Sizden 1 kuruş bile ekstra vergi alınmaz. Ekranda gördüğünüz net fiyatı ödersiniz.\n\n` +
-        `🛡️ **%100 ERİŞİM SİGORTASI:** Reklamınız hedeflenen organik izlenmeyi yakalayamazsa anında **Ücretsiz Telafi Yayını** yapılır!`
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🛡️ **%100 ÜCRETSİZ ERİŞİM SİGORTASI GARANTİSİ (0 TL FARKLA DAHİL):**\n` +
+        `> Reklamınız hedeflenen organik izlenmeyi yakalayamazsa hiçbir ek ücret ödemeden **%100 Ücretsiz Telafi Yayını** yapılır!`
       )
       .setColor(0x2ECC71)
       .setFooter({ text: 'Reklam Sihirbazı • Adım 4 / 5: Vergi & Güvence' })
       .setTimestamp();
     nextLabel = '▶️ Sıradaki: İtemSatış & Sipariş';
+
+    bumpRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_view_guarantee_${ticketId}`)
+        .setLabel('🛡️ %100 Erişim Sigortasını İncele')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('🔒'),
+      new ButtonBuilder()
+        .setCustomId(`reklam_view_taxes_${ticketId}`)
+        .setLabel('🏛️ Vergi Muafiyet Raporu (%47.5)')
+        .setStyle(ButtonStyle.Secondary)
+    );
   } else {
     embed = new EmbedBuilder()
       .setTitle('💳 [ADIM 5/5] SADECE İTEMSATIŞ GÜVENCESİ & SİPARİŞİ TAMAMLA')
       .setDescription(
-        `Tebrikler! Tanıtım turunu tamamladınız. Artık siparişinizi başlatmaya hazırsınız.\n\n` +
+        `Tebrikler! Tanıtım turunu başarıyla tamamladınız. Artık siparişinizi başlatmaya hazırsınız.\n\n` +
         `🛡️ **ÖDEME SİSTEMİ:**\n` +
         `• Tüm ödemelerimiz **SADECE İTEMSATIŞ** üzerinden 3D Secure güvencesiyle gerçekleşir.\n` +
         `• İtemSatış bakiyesi, kredi kartı veya banka kartı ile güvenle ödeme yapabilirsiniz.\n` +
         `• Komisyon kesintileri sebebiyle **TL ile ödeme** şiddetle tavsiye edilir.\n\n` +
-        `🚀 **Sıradaki Adım:** Aşağıdaki butonlardan sipariş formunu doldurabilir, paketleri tek tek gezebilir veya bu kanaldan canlı danışmanımız **Emre** ile yazışabilirsiniz!`
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `🎁 **SON DAKİKA JESTİ: SADECE 50 TL FARKLA DİSCORD @everyone DUYURUSU EKLEYİN!**\n` +
+        `> Normalde 70 TL olan tüm sunucuya etiketli özel Discord duyurusunu **sadece +50 TL farkla** sepetinize ekleyebilirsiniz!\n\n` +
+        `🚀 **Sıradaki Adım:** Aşağıdaki butonlardan sipariş formunu doldurabilir, paketleri gezebilir veya bu kanaldan canlı danışmanımız **Emre** ile görüşebilirsiniz!`
       )
       .setColor(0xE67E22)
       .setFooter({ text: 'Reklam Sihirbazı • Adım 5 / 5: Sipariş & Tamamlama' })
       .setTimestamp();
+
+    bumpRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reklam_buy_pkg_dc_everyone_${ticketId}`)
+        .setLabel('🎁 +50 TL Farkla Discord Duyurusu Ekle')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('📢'),
+      new ButtonBuilder()
+        .setCustomId(`reklam_builder_open_${ticketId}`)
+        .setLabel('🎯 Kendi Paketini Tasarla')
+        .setStyle(ButtonStyle.Primary)
+    );
   }
 
   const navRow = new ActionRowBuilder();
@@ -1337,7 +1602,7 @@ function buildReklamWizardStep(step = 1, ticketId = 'general') {
       .setEmoji('👑')
   );
 
-  return { embed, components: [navRow] };
+  return { embed, components: [bumpRow, navRow] };
 }
 
 /**
@@ -1459,6 +1724,98 @@ async function openReklamTicketDirectly(interaction) {
   // Start staff routing
   startTicketClaimRouting(ticketId, interaction.client);
 }
+
+/**
+ * Handles confirmation response from DM button clicks
+ */
+async function handleReklamConfirm(interaction, client, isYes, ticketId) {
+  const ticket = await Ticket.findOne({ ticketId });
+  if (!ticket) {
+    return interaction.update({ content: "❌ Talep bulunamadı.", embeds: [], components: [] });
+  }
+
+  if (ticket.status !== 'pending_confirmation') {
+    return interaction.update({ content: "❌ Bu talep zaten işlenmiş veya kanalınız açık durumda.", embeds: [], components: [] });
+  }
+
+  if (!isYes) {
+    ticket.status = 'closed';
+    ticket.closeReason = 'Kullanıcı DM üzerinden iptal etti.';
+    ticket.closedAt = new Date();
+    await ticket.save();
+
+    return interaction.update({
+      content: '❌ Reklam talebiniz iptal edildi. Dilediğiniz zaman destek panelimizden veya komutlarımızdan tekrar talep oluşturabilirsiniz. İyi günler dileriz!',
+      embeds: [],
+      components: []
+    });
+  }
+
+  // User confirmed! Create reklam channel
+  await interaction.update({
+    content: '⏳ **Reklam talebiniz onaylandı!** Özel reklam ve sponsorluk masanız hazırlanıyor...',
+    embeds: [],
+    components: []
+  });
+
+  try {
+    const targetGuild = await client.guilds.fetch(GUILD2_ID);
+    if (!targetGuild) throw new Error("Eko Yıldız sunucusu bulunamadı.");
+
+    const permissionOverwrites = [
+      { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
+      {
+        id: ticket.userId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.AttachFiles,
+          PermissionFlagsBits.EmbedLinks,
+        ],
+      },
+    ];
+
+    for (const roleId of Object.values(ROLES)) {
+      if (roleId && targetGuild.roles.cache.has(roleId)) {
+        permissionOverwrites.push({
+          id: roleId,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.ReadMessageHistory,
+          ],
+        });
+      }
+    }
+
+    const channel = await targetGuild.channels.create({
+      name: `reklam-${ticket.userName.toLowerCase()}`,
+      type: ChannelType.GuildText,
+      parent: GUILD2_TICKET_CATEGORY_ID || undefined,
+      permissionOverwrites,
+    });
+
+    ticket.status = 'open';
+    ticket.channelId = channel.id;
+    await ticket.save();
+
+    // Welcome embed in reklam channel
+    const welcomeEmbed = new EmbedBuilder()
+      .setTitle(`🎫 ${ticket.ticketId} — Reklam & Sponsorluk Masası`)
+      .setDescription(
+        `👑 **Müşteri:** <@${ticket.userId}> (\`${ticket.userName}\`)\n` +
+        `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+        `📋 **Müşteri Başvuru & İtemSatış Detayları:**\n${ticket.description}\n\n` +
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `💼 **Yetkili & Danışman Paneli:**\n` +
+        `• Kanala yazdığınız her mesaj müşteriye **DM** olarak gider.\n` +
+        `• Müşterinin DM'den yazdıkları anlık bu kanala düşer.\n` +
+        `• Ödeme **SADECE İTEMSATIŞ** üzerinden alınacaktır. Aşağıdaki hızlı butonlarla müşteriye İtemSatış ödeme yönlendirmesi yapabilirsiniz.`
+      )
+      .setColor(0xF1C40F)
+      .setFooter({ text: 'Eko Yıldız Reklam Departmanı • Sadece İtemSatış' })
+      .setTimestamp();
 
     const rowButtons1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -2082,8 +2439,15 @@ module.exports = {
   buildCampaignDealsEmbed,
   buildPaymentInfoEmbed,
   buildTaxReliefGuaranteeEmbed,
+  buildLoadingStepEmbed,
   buildReklamWizardStep,
   openReklamTicketDirectly,
+  getLiveActivityFeedText,
+  buildTieredMilestonesEmbed,
+  buildSamplesShowcaseEmbed,
+  buildSpinWheelEmbed,
+  buildGroupAuditEmbed,
+  buildFastTrackEmbed,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,

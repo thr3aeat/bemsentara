@@ -198,6 +198,14 @@ async function handleSelectInteraction(interaction) {
     return interaction.update({ embeds: [embed], components });
   }
 
+  if (customId.startsWith("reklam_audit_calc_")) {
+    const ticketId = customId.replace("reklam_audit_calc_", "");
+    const selectedRange = interaction.values[0];
+    const { buildGroupAuditEmbed } = require("../services/reklamTicketService");
+    const { embed, components } = buildGroupAuditEmbed(selectedRange, ticketId);
+    return interaction.update({ embeds: [embed], components });
+  }
+
   if (customId.startsWith("survey_select_")) {
     const { handleNewAccountSelect } = require("./newAccountButtonHandler");
     return handleNewAccountSelect(interaction);
