@@ -1800,6 +1800,24 @@ async function handleButtonInteraction(interaction) {
     return handleReklamConfirm(interaction, interaction.client, false, ticketId);
   }
 
+  if (customId.startsWith("reklam_discount_request_")) {
+    const ticketId = customId.replace("reklam_discount_request_", "");
+    const { handleReklamDiscountRequest } = require("../services/reklamTicketService");
+    return handleReklamDiscountRequest(interaction, ticketId);
+  }
+
+  if (customId.startsWith("reklam_approve_price_")) {
+    const ticketId = customId.replace("reklam_approve_price_", "");
+    const { handleReklamPriceApproval } = require("../services/reklamTicketService");
+    return handleReklamPriceApproval(interaction, ticketId, false);
+  }
+
+  if (customId.startsWith("reklam_approve_discount_")) {
+    const ticketId = customId.replace("reklam_approve_discount_", "");
+    const { handleReklamPriceApproval } = require("../services/reklamTicketService");
+    return handleReklamPriceApproval(interaction, ticketId, true);
+  }
+
   if (customId.startsWith("reklam_close_")) {
     const ticketId = customId.replace("reklam_close_", "");
     const { buildCloseReasonModal } = require("../embeds");

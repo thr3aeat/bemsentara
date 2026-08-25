@@ -17,9 +17,9 @@ async function handleSelectInteraction(interaction) {
     const isTMT = customId === "tmt_support_category";
     const isEko = customId === "ekoyildiz_support_category";
 
-    if (isEko && category === "reklam_destek") {
-      const { openReklamTicketDirectly } = require("../services/reklamTicketService");
-      return openReklamTicketDirectly(interaction);
+    if (category === "reklam" || category === "reklam_destek") {
+      const { triggerReklamModal } = require("../services/reklamTicketService");
+      return triggerReklamModal(interaction);
     }
 
     if (isEko && (category === 'kullanici_destek' || category === 'diger_destek' || category === 'sikayet_destek' || category === 'yonetim_destek')) {

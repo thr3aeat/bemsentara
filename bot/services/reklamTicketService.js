@@ -1218,10 +1218,15 @@ function buildPaymentInfoEmbed() {
  * Reklam Başvuru ve Satın Alma Modalı
  * İtemSatış hesabı durumu, TL/Robux seçimi, topluluk linki ve özel notları toplar.
  */
+const EKONQTX_ID = '1031620522406072350';
+
+/**
+ * Trigger modal for Reklam request
+ */
 async function triggerReklamModal(interaction, prefilledPackageName = '', ticketId = 'general') {
   const modal = new ModalBuilder()
     .setCustomId(`ekoyildiz_reklam_checkout_modal_${ticketId}`)
-    .setTitle("🛒 Reklam & İtemSatış Sipariş Formu");
+    .setTitle("📢 Reklam & Sponsorluk Talebi");
 
   const compNameInput = new TextInputBuilder()
     .setCustomId("reklam_topluluk_adi")
@@ -1230,40 +1235,32 @@ async function triggerReklamModal(interaction, prefilledPackageName = '', ticket
     .setPlaceholder("Örn: Eko Yıldız Roblox Grubu / YouTube Kanalım")
     .setRequired(true);
 
-  const itemsatisInput = new TextInputBuilder()
-    .setCustomId("reklam_itemsatis_durumu")
-    .setLabel("İtemSatış Hesabınız Var mı? (Deneyiminiz)")
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder("Örn: Evet var (Kullanıcı Adım: ...) / Hayır ilk defa alacağım")
-    .setRequired(true);
-
-  const currencyInput = new TextInputBuilder()
-    .setCustomId("reklam_odeme_birimi")
-    .setLabel("Ödeme Seçeneği (Tekli TL, 3x Paket, Robux)")
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder("Tek Seferlik TL / 3x Çoklu Paket / Robux")
-    .setValue(prefilledPackageName ? `Paket: ${prefilledPackageName}` : "1x Tek Seferlik TL (İtemSatış)")
-    .setRequired(true);
-
   const linkInput = new TextInputBuilder()
     .setCustomId("reklam_hedef_link")
-    .setLabel("Tanıtılacak Link (Roblox / YouTube / Discord)")
+    .setLabel("Tanıtılacak Link (Roblox / Discord / YouTube)")
     .setStyle(TextInputStyle.Short)
     .setPlaceholder("Örn: https://www.roblox.com/groups/... veya discord.gg/...")
     .setRequired(true);
 
+  const detailInput = new TextInputBuilder()
+    .setCustomId("reklam_detay")
+    .setLabel("Reklam Talebiniz & İstediğiniz Tanıtım Türü")
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder("Ne tür bir reklam istiyorsunuz? (Örn: Shorts, Video Alt Bant, Sesli Mid-Roll, Discord Duyurusu...)")
+    .setValue(prefilledPackageName ? `İstenen Paket: ${prefilledPackageName}` : "")
+    .setRequired(true);
+
   const notesInput = new TextInputBuilder()
     .setCustomId("reklam_siparis_notu")
-    .setLabel("Sipariş Notunuz & Tercih Edilen Yayın Tarihi")
+    .setLabel("Bütçeniz / Ekstra İstekleriniz (Opsiyonel)")
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder("Vurgulanmasını istediğiniz özellikler, video teması, yayın tarihi tercihi veya özel istekleriniz...")
+    .setPlaceholder("Hedeflediğiniz bütçe aralığı, video teması veya yayın tarihi tercihleriniz...")
     .setRequired(false);
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(compNameInput),
-    new ActionRowBuilder().addComponents(itemsatisInput),
-    new ActionRowBuilder().addComponents(currencyInput),
     new ActionRowBuilder().addComponents(linkInput),
+    new ActionRowBuilder().addComponents(detailInput),
     new ActionRowBuilder().addComponents(notesInput)
   );
 
@@ -1275,15 +1272,13 @@ async function triggerReklamModal(interaction, prefilledPackageName = '', ticket
  */
 async function handleReklamModalSubmit(interaction) {
   let communityName = "Topluluk";
-  let itemsatisStatus = "Belirtilmedi";
-  let currencyChoice = "TL (İtemSatış)";
   let targetLink = "Belirtilmedi";
+  let reklamDetay = "Genel Reklam Talebi";
   let orderNotes = "Özel not eklenmedi";
 
   try { communityName = interaction.fields.getTextInputValue("reklam_topluluk_adi")?.trim() || "Topluluk"; } catch (_) {}
-  try { itemsatisStatus = interaction.fields.getTextInputValue("reklam_itemsatis_durumu")?.trim() || "Belirtilmedi"; } catch (_) {}
-  try { currencyChoice = interaction.fields.getTextInputValue("reklam_odeme_birimi")?.trim() || "TL (İtemSatış)"; } catch (_) {}
   try { targetLink = interaction.fields.getTextInputValue("reklam_hedef_link")?.trim() || "Belirtilmedi"; } catch (_) {}
+  try { reklamDetay = interaction.fields.getTextInputValue("reklam_detay")?.trim() || interaction.fields.getTextInputValue("reklam_odeme_birimi")?.trim() || "Genel Reklam"; } catch (_) {}
   try { orderNotes = interaction.fields.getTextInputValue("reklam_siparis_notu")?.trim() || "Özel not eklenmedi"; } catch (_) {}
 
   // Check if user is ticket-banned
@@ -1291,19 +1286,102 @@ async function handleReklamModalSubmit(interaction) {
   const userRecord = await User.findOne({ discordId: interaction.user.id });
   if (userRecord?.ticketBanned) {
     return interaction.reply({
-      content: "🚫 **Ticket Yasaklısınız.**\nSpam/kötüye kullanım raporunuz yetkililerce onaylandığı için ticket sistemi erişiminiz engellendi. Bu konuda itirazınız varsa sunucu yöneticisiyle iletişime geçin.",
+      content: "🚫 **Ticket Yasaklısınız.**\nSpam/kötüye kullanım raporunuz yetkililerce onaylandığı için ticket sistemi erişiminiz engellendi.",
       ephemeral: true
     });
   }
 
-  await interaction.reply({
-    content: "📬 **Harika! Reklam ve İtemSatış sipariş talebiniz başarıyla alındı.**\nLütfen DM kutunuzu kontrol edin; Müşteri Danışmanımız **Emre** sizinle iletişime geçti.",
-    ephemeral: true
-  });
+  await interaction.deferReply({ ephemeral: true }).catch(() => {});
 
   const ticketId = generateTicketId();
 
-  // Create pending ticket in DB
+  // Determine target guild safely
+  let targetGuild = interaction.guild;
+  if (!targetGuild) {
+    targetGuild = await interaction.client.guilds.fetch(GUILD2_ID).catch(() => null);
+  }
+  if (!targetGuild) {
+    const { TARGET_GUILD_ID } = require('../../config');
+    if (TARGET_GUILD_ID) {
+      targetGuild = await interaction.client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
+    }
+  }
+  if (!targetGuild) {
+    targetGuild = interaction.client.guilds.cache.first();
+  }
+
+  if (!targetGuild) {
+    return interaction.editReply({ content: "❌ Sunucu bağlantısı kurulamadı. Lütfen sunucu içinden tekrar deneyin." });
+  }
+
+  // Permissions
+  const permissionOverwrites = [
+    { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
+    {
+      id: interaction.user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+      ],
+    },
+    {
+      id: EKONQTX_ID,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+        PermissionFlagsBits.ManageMessages,
+      ],
+    }
+  ];
+
+  for (const roleId of Object.values(ROLES)) {
+    if (roleId && targetGuild.roles.cache.has(roleId)) {
+      permissionOverwrites.push({
+        id: roleId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+        ],
+      });
+    }
+  }
+
+  let channelParentId = GUILD2_TICKET_CATEGORY_ID || undefined;
+  let categoryChannel = targetGuild.channels.cache.find(
+    c => (c.name.toLowerCase() === "destek talepleri" || c.name.toLowerCase() === "reklam talepleri") && c.type === ChannelType.GuildCategory
+  );
+  if (!categoryChannel && !channelParentId) {
+    categoryChannel = await targetGuild.channels.create({
+      name: "REKLAM TALEPLERİ",
+      type: ChannelType.GuildCategory,
+    }).catch(() => null);
+  }
+  if (categoryChannel) {
+    channelParentId = categoryChannel.id;
+  }
+
+  const cleanUserName = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '') || 'uye';
+  let channel;
+  try {
+    channel = await targetGuild.channels.create({
+      name: `reklam-${cleanUserName}`,
+      type: ChannelType.GuildText,
+      parent: channelParentId,
+      permissionOverwrites,
+    });
+  } catch (err) {
+    console.error("[reklamTicketService] Channel creation error:", err.message);
+    return interaction.editReply({ content: `❌ Reklam masası oluşturulurken hata oluştu: ${err.message}` });
+  }
+
+  // Create ticket in DB
   const ticket = new Ticket({
     ticketId,
     userId: interaction.user.id,
@@ -1312,72 +1390,217 @@ async function handleReklamModalSubmit(interaction) {
     subject: `Reklam Talebi (${communityName})`,
     description: 
       `🏢 **Topluluk/Marka:** ${communityName}\n` +
-      `💳 **İtemSatış Durumu:** ${itemsatisStatus}\n` +
-      `💰 **Ödeme Birimi / Tercih:** ${currencyChoice}\n` +
       `🔗 **Tanıtım Linki:** ${targetLink}\n` +
-      `📝 **Sipariş Notu:** ${orderNotes}`,
-    status: 'pending_confirmation',
-    guildId: GUILD2_ID,
-    source: 'dm',
+      `📝 **Talep Türü / Detay:** ${reklamDetay}\n` +
+      `💬 **Sipariş Notu / Bütçe:** ${orderNotes}`,
+    status: 'open',
+    channelId: channel.id,
+    guildId: targetGuild.id,
+    source: 'channel',
   });
   await ticket.save();
 
-  // Send DM to the user with Yes/No confirmation buttons and interactive browser options
+  // Send Pricing & Information embed to the newly opened channel
+  const priceCatalogEmbed = new EmbedBuilder()
+    .setTitle(`📢 Eko Yıldız Reklam ve Sponsorluk Masası — #${ticketId}`)
+    .setDescription(
+      `🎉 Hoş geldiniz <@${interaction.user.id}>! Reklam ve sponsorluk talebiniz başarıyla alındı.\n\n` +
+      `📋 **İlettiğiniz Talep Detayları:**\n` +
+      `• 🏢 **Topluluk / Marka:** ${communityName}\n` +
+      `• 🔗 **Tanıtım Linki:** ${targetLink}\n` +
+      `• 📝 **Talep Türü / Detay:** ${reklamDetay}\n` +
+      `• 💬 **Özel Not / Bütçe:** ${orderNotes}\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `💰 **GÜNCEL REKLAM & SPONSORLUK FİYAT BİLGİLERİ (SADECE İTEMSATIŞ):**\n` +
+      `> 📱 **Shorts & Hızlı Tanıtım Paketi:** ~~75 TL~~ ➔ **30 TL** *(15.000 - 60.000 Dikey İzlenme)*\n` +
+      `> 🎬 **Standart Uzun Video Sponsorluğu:** ~~125 TL~~ ➔ **50 TL** *(Kalıcı Alt Bant Banner + Yorum)*\n` +
+      `> 🔥 **Avantajlı Mid-Roll (Sesli Tanıtım):** ~~250 TL~~ ➔ **100 TL** *(20-30s Sesli Reklam Arası)*\n` +
+      `> 🌟 **Gold Kombin Paket (3 Platform):** ~~875 TL~~ ➔ **350 TL** *(Uzun Video + Shorts + Topluluk)*\n` +
+      `> 🚀 **Mega Etkileşim Paketi (360°):** ~~1.250 TL~~ ➔ **500 TL** *(Video + Shorts + Topluluk + DC Duyurusu)*\n` +
+      `> 💎 **Çekilişli VIP Paket:** ~~1.490 TL~~ ➔ **670 TL** *(Mega Paket + 9.800 Robux Çekilişi)*\n` +
+      `> 🏰 **Roblox & Kamp Kurulum Hizmetleri:** 300 TL - 4.850 TL\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ **Ödeme Güvencesi:** Tüm ödemeler %100 3D Secure güvencesiyle **SADECE İTEMSATIŞ** üzerinden alınır.\n` +
+      `Lütfen aşağıdaki butonlardan fiyatları onaylayabilir veya fiyatlar yüksek geldiyse indirim talep edebilirsiniz:`
+    )
+    .setColor(0xF1C40F)
+    .setFooter({ text: 'Eko Yıldız Reklam & Sponsorluk Departmanı • Sadece İtemSatış' })
+    .setTimestamp();
+
+  const actionRow1 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_approve_price_${ticketId}`)
+      .setLabel('✅ Fiyatları Onaylıyorum')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🛍️'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_discount_request_${ticketId}`)
+      .setLabel('💸 Fiyatlar Pahalı / İndirim İste')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('🏷️'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_browse_start_${ticketId}`)
+      .setLabel('📦 Detaylı Paket Kataloğu')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('📑')
+  );
+
+  const actionRow2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_builder_open_${ticketId}`)
+      .setLabel('🎯 Kendi Paketini Oluştur')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('⚙️'),
+    new ButtonBuilder()
+      .setCustomId(`claim_ticket_${ticketId}`)
+      .setLabel('🙋‍♂️ Yetkili Üstlen')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`reklam_close_${ticketId}`)
+      .setLabel('🔒 Kapat')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await channel.send({
+    content: `👑 <@${interaction.user.id}> ve Reklam Departmanı Yetkilileri için talep masası hazırlandı.`,
+    embeds: [priceCatalogEmbed],
+    components: [actionRow1, actionRow2]
+  });
+
+  // Start claim routing if configured
+  startTicketClaimRouting(ticket, targetGuild, interaction.client).catch(() => {});
+
+  await interaction.editReply({
+    content: `✅ **Reklam talebiniz başarıyla alındı!**\n👉 Reklam masanız ve fiyat bilgilendirmeniz hazırlandı: <#${channel.id}>`
+  }).catch(() => {});
+}
+
+/**
+ * Handles discount offer when user indicates prices are high / requests discount
+ */
+async function handleReklamDiscountRequest(interaction, ticketId) {
+  const discountEmbed = new EmbedBuilder()
+    .setTitle('🎁 SİZE ÖZEL %20 EKSTRA JEST İNDİRİMİ TANIMLANDI!')
+    .setDescription(
+      `Bütçenizi rahatlatmak ve projenizi desteklemek adına **Eko Yıldız Yönetimi** tarafından size özel **%20 Ekstra Jest İndirimi** tanımlandı! 🎁\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🏷️ **GÜNCELLENMİŞ İNDİRİMLİ FİYAT LİSTESİ (SADECE İTEMSATIŞ):**\n` +
+      `> 📱 **Shorts & Hızlı Tanıtım:** ~~30 TL~~ ➔ **25 TL** *(Süper Fırsat)*\n` +
+      `> 🎬 **Standart Uzun Video:** ~~50 TL~~ ➔ **40 TL** *(%20 İndirim)*\n` +
+      `> 🔥 **Avantajlı Mid-Roll (Sesli):** ~~100 TL~~ ➔ **80 TL** *(20 TL Net Tasarruf)*\n` +
+      `> 🌟 **Gold Kombin (3 Platform):** ~~350 TL~~ ➔ **280 TL** *(70 TL İndirim)*\n` +
+      `> 🚀 **Mega Etkileşim:** ~~500 TL~~ ➔ **400 TL** *(100 TL İndirim)*\n` +
+      `> 💎 **Çekilişli VIP Paket:** ~~670 TL~~ ➔ **530 TL** *(140 TL Dev İndirim)*\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `🛡️ *Bu indirim sadece bu talebinize özeldir. İtemSatış 3D Secure güvencesiyle hemen başlatabilirsiniz!*`
+    )
+    .setColor(0x2ECC71)
+    .setFooter({ text: 'Eko Yıldız Özel İndirim Kulübü • Sadece İtemSatış' })
+    .setTimestamp();
+
+  const discountRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_approve_discount_${ticketId}`)
+      .setLabel('🎉 İndirimli Fiyatı Onaylıyorum')
+      .setStyle(ButtonStyle.Success)
+      .setEmoji('🛍️'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_ask_emre_${ticketId}`)
+      .setLabel('💬 Danışmana Özel Bütçe Yaz')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('❓'),
+    new ButtonBuilder()
+      .setCustomId(`reklam_close_${ticketId}`)
+      .setLabel('🔒 Talebi Kapat')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  return interaction.reply({
+    content: `🎁 <@${interaction.user.id}> için özel jest indirimi tanımlandı:`,
+    embeds: [discountEmbed],
+    components: [discountRow]
+  });
+}
+
+/**
+ * Handles price approval (normal or discounted) and tags ekonqtx
+ */
+async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = false) {
+  const ticket = await Ticket.findOne({ ticketId });
+  if (!ticket) {
+    return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
+  }
+
+  ticket.priceApproved = true;
+  ticket.approvedDiscount = isDiscounted;
+  ticket.approvedAt = new Date();
+  await ticket.save();
+
+  const approvedEmbed = new EmbedBuilder()
+    .setTitle('🎉 REKLAM FİYATI ONAYLANDI — EKONQTX BİLGİLENDİRİLDİ!')
+    .setDescription(
+      `👑 **Müşteri:** <@${ticket.userId}> (\`${ticket.userName}\`)\n` +
+      `📋 **Talep Konusu:** ${ticket.subject}\n` +
+      `💰 **Onaylanan Fiyat / Durum:** ${isDiscounted ? '🎁 %20 İndirimli Jest Teklifi Onaylandı' : '✅ Standart Fiyat Kataloğu Onaylandı'}\n` +
+      `💳 **Ödeme Yolu:** SADECE İTEMSATIŞ\n` +
+      `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `⚡ <@${EKONQTX_ID}> (**ekonqtx**) ve reklam departmanı yetkilileri etiketlendi!\n` +
+      `• En kısa sürede İtemSatış ödeme linki ve sipariş detayları bu kanala iletilecektir.\n` +
+      `• Müşterimizle buradan doğrudan görüşmeye devam edebilirsiniz.`
+    )
+    .setColor(0x2ECC71)
+    .setFooter({ text: 'Eko Yıldız Reklam Onay Sistemi • Sadece İtemSatış' })
+    .setTimestamp();
+
+  const approvalRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`reklam_send_payment_${ticketId}`)
+      .setLabel('💳 İtemSatış Bilgisini İlet')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('💰'),
+    new ButtonBuilder()
+      .setCustomId(`claim_ticket_${ticketId}`)
+      .setLabel('🙋‍♂️ Talebi Üstlen')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`reklam_close_${ticketId}`)
+      .setLabel('🔒 Reklam Masasını Kapat')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  await interaction.reply({
+    content: `🔔 <@${EKONQTX_ID}> **DİKKAT: Müşteri reklam fiyatını ONAYLADI!**`,
+    embeds: [approvedEmbed],
+    components: [approvalRow]
+  });
+
+  // Send direct DM to ekonqtx
   try {
-    const dmEmbed = new EmbedBuilder()
-      .setTitle("✉️ YENİ MESAJ: Eko Yıldız Reklam ve Sponsorluk Departmanı")
-      .setDescription(
-        `Merhaba **${interaction.user.username}**, ben Eko Yıldız Reklam ve Müşteri İlişkileri Danışmanı **Emre**.\n\n` +
-        `Reklam ve sponsorluk talebinizi büyük bir memnuniyetle aldık! Topluluğunuzu binlerce oyuncuya ulaştırmak için sabırsızlanıyoruz.\n\n` +
-        `📋 **Sipariş & Talep Özeti:**\n` +
-        `🔹 **Topluluk / Marka:** ${communityName}\n` +
-        `🔹 **İtemSatış Hesabı / Deneyim:** ${itemsatisStatus}\n` +
-        `🔹 **Ödeme Seçeneği:** ${currencyChoice}\n` +
-        `🔹 **Tanıtılacak Link:** ${targetLink}\n` +
-        `🔹 **Sipariş Notu:** ${orderNotes}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `🛡️ **ÖDEME & SİGORTA GÜVENCESİ:**\n` +
-        `• Tüm ödemelerimiz **SADECE İTEMSATIŞ** üzerinden 3D Secure güvencesiyle alınır.\n` +
-        `• Reklamınız hedeflenen performansa ulaşmazsa **%100 Ücretsiz Telafi Yayını Sigortası** kapsamındasınız.\n\n` +
-        `Resmi reklam masanızı açıp İtemSatış siparişinizi tamamlamak istiyor musunuz?`
-      )
-      .setColor(0xF1C40F)
-      .setFooter({ text: 'Eko Yıldız VIP Danışmanlık • Sadece İtemSatış Güvencesi' })
-      .setTimestamp();
+    const devUser = await interaction.client.users.fetch(EKONQTX_ID).catch(() => null);
+    if (devUser) {
+      const dmNotice = new EmbedBuilder()
+        .setTitle('🔔 Yeni Reklam Fiyat Onayı Alındı!')
+        .setDescription(
+          `Müşteri <@${ticket.userId}> (\`${ticket.userName}\`) reklam fiyatını onayladı!\n\n` +
+          `📍 **Kanal:** <#${ticket.channelId}>\n` +
+          `💰 **Onay Türü:** ${isDiscounted ? '🎁 İndirimli Fiyat Onaylandı' : '✅ Standart Fiyat Onaylandı'}\n` +
+          `📋 **Talep Açıklaması:**\n${ticket.description || 'Detay belirtilmedi'}`
+        )
+        .setColor(0x2ECC71)
+        .setTimestamp();
 
-    const row1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`ekoyildiz_reklam_confirm_yes_${ticketId}`)
-        .setLabel("✅ Evet, Reklam Kanalını Aç")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`ekoyildiz_reklam_confirm_no_${ticketId}`)
-        .setLabel("❌ Talebi İptal Et")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`reklam_view_flash_deal_${ticketId}`)
-        .setLabel("⚡ Flaş Fırsat Kuponu")
-        .setStyle(ButtonStyle.Danger)
-    );
+      const dmRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('🚀 Kanala Git')
+          .setStyle(ButtonStyle.Link)
+          .setURL(`https://discord.com/channels/${ticket.guildId || GUILD2_ID}/${ticket.channelId}`)
+      );
 
-    const row2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`reklam_browse_start_${ticketId}`)
-        .setLabel("📦 Paketleri İncele")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`reklam_view_guarantee_${ticketId}`)
-        .setLabel("🛡️ Erişim Sigortası")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`reklam_view_analytics_${ticketId}`)
-        .setLabel("📈 Kitle Analitiği")
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await interaction.user.send({ embeds: [dmEmbed], components: [row1, row2] });
-  } catch (err) {
-    console.error(`[reklamTicketService] Failed to send DM to user ${interaction.user.id}:`, err.message);
+      await devUser.send({ embeds: [dmNotice], components: [dmRow] }).catch(() => {});
+    }
+  } catch (_) {}
+}
   }
 }
 
@@ -2816,6 +3039,8 @@ module.exports = {
   triggerReklamModal,
   handleReklamModalSubmit,
   handleReklamConfirm,
+  handleReklamDiscountRequest,
+  handleReklamPriceApproval,
   forwardDMToReklamChannel,
   forwardReklamChannelToDM,
   sendReklamPrices,

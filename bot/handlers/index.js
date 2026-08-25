@@ -449,6 +449,13 @@ function initializeDiscordHandlers(client) {
 
     // ── Reklam Sepet Kurtarma & 24 Saatlik Takip Zamanlayıcısı ─────────────
     try {
+      const { startMonitoring } = require('../ekoyildiz/services/monitorService');
+      startMonitoring(client);
+    } catch (err) {
+      console.warn('[EkoYildiz Monitor] Başlatılamadı:', err.message);
+    }
+
+    try {
       const { checkAbandonedReklamTickets } = require('../services/reklamTicketService');
       // İlk kontrol 1 dakika sonra, ardından her 30 dakikada bir
       setTimeout(() => checkAbandonedReklamTickets(client).catch(() => {}), 60000);
@@ -1602,6 +1609,14 @@ function initializeDiscordHandlers(client) {
 
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
+
+    // ── EkoYıldız Port Edilen Komutlar (e! / ! / Bot Mention) ──────────────
+    try {
+      const { handleGuildMessage } = require('../ekoyildiz/commands');
+      await handleGuildMessage(message, client);
+    } catch (cmdErr) {
+      console.error('[EkoYildiz Command Handler Error]:', cmdErr.message);
+    }
 
     // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
     if (lowerContent.startsWith("!gruptancek") || lowerContent.startsWith(".gruptancek") || lowerContent.startsWith("-gruptancek")) {
@@ -4189,6 +4204,25 @@ function initializeDiscordHandlers(client) {
         }
         return;
       }
+      // ── EkoYıldız Canlı Sohbet, Düello & Rezervasyon Butonları ─────────────
+      if (interaction.customId && (
+        interaction.customId.startsWith("accept_duel_") ||
+        interaction.customId.startsWith("reject_duel_") ||
+        interaction.customId.startsWith("duel_") ||
+        interaction.customId.startsWith("queue_") ||
+        interaction.customId.startsWith("chat_") ||
+        interaction.customId.startsWith("res_") ||
+        interaction.customId.startsWith("block_")
+      )) {
+        try {
+          const chatService = require("../ekoyildiz/services/chatService");
+          await chatService.handleInteraction(client, interaction);
+          return;
+        } catch (chatErr) {
+          console.error('[EkoYildiz Chat Interaction Error]:', chatErr.message);
+        }
+      }
+
       // ── Mod İşlem Onay/Red Butonları ────────────────────────────────────────
       if (interaction.isButton() && (interaction.customId?.startsWith("modact_approve_") || interaction.customId?.startsWith("modact_reject_"))) {
         await handleModActionApproval(interaction);

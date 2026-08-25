@@ -2306,7 +2306,14 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
   }
 
   // ── Ticket oluşturma modal'ı ─────────────────────────────────────────────
-  if (interaction.customId === "ekoyildiz_reklam_form_modal" || interaction.customId.startsWith("ekoyildiz_reklam_checkout_modal_")) {
+  if (
+    interaction.customId === "ekoyildiz_reklam_form_modal" ||
+    interaction.customId.startsWith("ekoyildiz_reklam_checkout_modal_") ||
+    interaction.customId.startsWith("reklam_modal_") ||
+    interaction.customId.startsWith("support_modal_reklam") ||
+    interaction.customId.startsWith("tmt_support_modal_reklam") ||
+    interaction.customId.startsWith("ekoyildiz_support_modal_reklam")
+  ) {
     const { handleReklamModalSubmit } = require("../services/reklamTicketService");
     return handleReklamModalSubmit(interaction);
   }
