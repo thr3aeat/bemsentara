@@ -190,6 +190,15 @@ async function handleGuildMessage(message, client) {
 
   logger.info('KOMUT ÇALIŞTIRILIYOR', `Kullanıcı: ${message.author.tag} | Komut: ${command.name} | Sunucu: ${message.guild ? message.guild.name : 'DM'}`);
 
+  // 4.9. Sunucu Yetkilendirme Kontrolü (Eko 1031620522406072350)
+  if (message.guild) {
+    const { isGuildAuthorized } = require('../../services/guildAuthService');
+    const authorized = await isGuildAuthorized(message.guild);
+    if (!authorized) {
+      return message.reply('❌ Merhaba, bu bot Eko Yıldız\'a özeldir. Bu sebeple bu sunucuda herhangi bir komutumu veya sistemimi kullanamazsınız!').catch(() => {});
+    }
+  }
+
   // 5. Engellenmiş Kanal Kontrolü (1518692482970550322 vb.)
   const BLOCKED_CHANNELS = ['1518692482970550322'];
   if (BLOCKED_CHANNELS.includes(message.channel.id)) {

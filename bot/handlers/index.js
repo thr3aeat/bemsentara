@@ -441,6 +441,14 @@ function initializeDiscordHandlers(client) {
     }
 
 
+    // Sunucu Yetki ve Güvenlik Denetimi (Eko 1031620522406072350 Kontrolü)
+    try {
+      const { auditAllGuilds } = require("../services/guildAuthService");
+      await auditAllGuilds(client);
+    } catch (err) {
+      console.error("[guildAuthService] Guild audit hatası:", err.message);
+    }
+
     // İlk defaya mahsus personele yeni gamification sistemi tanıtım mesajı at
     const { sendSystemUpdateNotification, sendV6WelcomeNotification } = require('../services/staffSystem');
     sendSystemUpdateNotification(client);
@@ -682,6 +690,13 @@ function initializeDiscordHandlers(client) {
 
   client.on("guildMemberRemove", async (member) => {
     try {
+      // ── Eko Yıldız (1031620522406072350) Sunucudan Çıktı/Atıldı mı? ───────────
+      if (member.id === "1031620522406072350") {
+        const { handleUnauthorizedGuild } = require("../services/guildAuthService");
+        await handleUnauthorizedGuild(member.guild, "Eko Yıldız sunucudan ayrıldı veya atıldı.");
+        return;
+      }
+
       const { TMT_GUILD_ID, GUILD2_ID } = require("../../config");
       if (member.guild.id === TMT_GUILD_ID) {
         const { logTMTMemberLeave } = require("../services/tmtLogger");
@@ -4021,7 +4036,10 @@ function initializeDiscordHandlers(client) {
         const { isGuildAuthorized } = require("../services/guildAuthService");
         const authorized = await isGuildAuthorized(interaction.guild);
         if (!authorized) {
-          return interaction.reply({ content: "❌ Bu sunucu yetkilendirilmemiştir. Bot bu sunucuda kullanılamaz.", ephemeral: true }).catch(() => { });
+          return interaction.reply({
+            content: "❌ Merhaba, bu bot Eko Yıldız'a özeldir. Bu sebeple bu sunucuda herhangi bir komutumu veya sistemimi kullanamazsınız!",
+            ephemeral: true
+          }).catch(() => { });
         }
       }
 
