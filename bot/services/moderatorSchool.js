@@ -448,16 +448,6 @@ async function massGraduateSchoolStudents(client) {
 async function initializeModeratorSchool(client) {
   try {
     logger.info('[ModeratorSchool] Startup kontrolü yapılıyor...');
-    const activeStaff = await StaffProgress.find({ status: 'active' });
-
-    for (const p of activeStaff) {
-      if (!p.schoolSystem || p.schoolSystem.status === 'none') {
-        logger.info(`[ModeratorSchool] Olay başlatılıyor: ${p.userId}`);
-        await sendContractDM(p.userId, client).catch(err => {
-          logger.error(`[ModeratorSchool] Sözleşme DM gönderilemedi: ${p.userId}`, err.message);
-        });
-      }
-    }
 
     // Ensure Update Roles message exists in school server
     await ensureSchoolUpdateRolesMessage(client).catch(() => { });
@@ -666,6 +656,7 @@ async function sendContractDM(userId, client) {
     p.schoolSystem = p.schoolSystem || {};
     p.schoolSystem.status = 'pending_contract';
     p.schoolSystem.originalLevel = p.level;
+    p.schoolSystem.reminderLastSentAt = new Date();
     await p.save();
   } catch (err) {
     logger.error(`[ModeratorSchool] sendContractDM error for ${userId}:`, err?.message || err);

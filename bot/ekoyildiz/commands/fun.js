@@ -694,7 +694,11 @@ module.exports = [
       );
 
       const embed = createEmbed(target, currentCm);
-      const replyMsg = await message.reply({ embeds: [embed], components: [getNewSystemRow()] });
+      const replyMsg = await message.reply({
+        content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+        embeds: [embed],
+        components: [getNewSystemRow()]
+      });
       const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
 
       collector.on('collect', async (interaction) => {
@@ -713,7 +717,7 @@ module.exports = [
           isOldSystem = false;
           const currentEmbed = createEmbed(target, currentCm);
           await interaction.update({
-            content: ' ',
+            content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
             embeds: [currentEmbed],
             components: [getNewSystemRow()]
           });
@@ -728,7 +732,11 @@ module.exports = [
             });
           } else {
             const newEmbed = createEmbed(target, currentCm);
-            await interaction.update({ content: ' ', embeds: [newEmbed], components: [getNewSystemRow()] });
+            await interaction.update({
+              content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+              embeds: [newEmbed],
+              components: [getNewSystemRow()]
+            });
           }
         } else if (interaction.customId.startsWith('viagra_cm_')) {
           if (hasUsedViagra) {
@@ -745,7 +753,11 @@ module.exports = [
             });
           } else {
             const boostedEmbed = createEmbed(target, currentCm, bonus);
-            await interaction.update({ content: ' ', embeds: [boostedEmbed], components: [getNewSystemRow()] });
+            await interaction.update({
+              content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+              embeds: [boostedEmbed],
+              components: [getNewSystemRow()]
+            });
           }
           await interaction.followUp({ content: `💊 **Mavi Hap Etkisini Gösterdi!** Malafat **+${bonus} cm** daha uzadı! 🚀🔥`, ephemeral: true });
         } else if (interaction.customId.startsWith('fantasy_cm_')) {
@@ -827,7 +839,7 @@ module.exports = [
               .setDescription(`\`[ ${i1} | ${i2} | ${i3} ]\`\n\n${status}`)
               .setColor(color);
 
-            await spinMsg.edit({ content: ' ', embeds: [embed] }).catch(() => { });
+            await spinMsg.edit({ content: null, embeds: [embed] }).catch(() => { });
           }, 800);
         }, 800);
       }, 800);
@@ -1015,13 +1027,13 @@ module.exports = [
             .setTitle('💥 BOOOOM! MERMİ PATLADI!')
             .setDescription(`💀 **${message.author.username}** kafasına sıktı ve rahmetli oldu! ⚰️`)
             .setColor(0xef4444);
-          await msg.edit({ content: ' ', embeds: [deadEmbed] });
+          await msg.edit({ content: null, embeds: [deadEmbed] });
         } else {
           const liveEmbed = new EmbedBuilder()
             .setTitle('💨 *KLİK!* BOŞ KOVAN!')
             .setDescription(`😅 Şanslısın **${message.author.username}**! Mermi namluya denk gelmedi, hayattasın! 🎉`)
             .setColor(0x10b981);
-          await msg.edit({ content: ' ', embeds: [liveEmbed] });
+          await msg.edit({ content: null, embeds: [liveEmbed] });
         }
       }, 2000);
     }
@@ -1043,7 +1055,7 @@ module.exports = [
           .setTitle('🪙 YAZI-TURA SONUCU')
           .setDescription(`Para düştü ve gelen sonuç:\n\n👉 **${result}**`)
           .setColor(0xf59e0b);
-        await msg.edit({ content: ' ', embeds: [embed] }).catch(() => { });
+        await msg.edit({ content: null, embeds: [embed] }).catch(() => { });
       }, 1000);
     }
   },
