@@ -694,11 +694,16 @@ module.exports = [
       );
 
       const embed = createEmbed(target, currentCm);
-      const replyMsg = await message.reply({
-        content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
-        embeds: [embed],
-        components: [getNewSystemRow()]
-      });
+      let replyMsg;
+      try {
+        replyMsg = await message.reply({
+          content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+          embeds: [embed],
+          components: [getNewSystemRow()]
+        });
+      } catch (err) {
+        return message.reply(`📏 **${target.username}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`).catch(() => {});
+      }
       const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
 
       collector.on('collect', async (interaction) => {
