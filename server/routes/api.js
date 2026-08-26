@@ -5209,3 +5209,108 @@ router.post("/api/tumodlar/change-account", async (req, res) => {
     res.status(500).json({ error: `Hesap değiştirme hatası: ${err.message}` });
   }
 });
+
+// ── Roblox Oyun İçi Rütbe Verme API Uç Noktası ─────────────────────────────
+const handleSetRobloxRank = async (req, res) => {
+  try {
+    const secret = req.body?.secret || req.body?.key || req.body?.password ||
+                   req.query?.secret || req.query?.key || req.query?.password ||
+                   req.headers["x-api-key"] ||
+                   (req.headers["authorization"] ? req.headers["authorization"].replace(/^Bearer\s+/i, "") : null);
+
+    const REQUIRED_KEY = process.env.ROBLOX_RANK_API_KEY || "ekonqt";
+
+    if (!secret || secret !== REQUIRED_KEY) {
+      return res.status(401).json({
+        success: false,
+        error: "Yetkisiz erişim: Şifre eksik veya geçersiz."
+      });
+    }
+
+    const username = req.body?.username || req.query?.username || req.body?.user || req.query?.user;
+    let userId = req.body?.userId || req.query?.userId || req.body?.target || req.query?.target;
+    const rankInput = req.body?.rank ?? req.query?.rank ?? req.body?.rankId ?? req.query?.rankId ?? req.body?.roleId ?? req.query?.roleId;
+    const groupId = parseInt(req.body?.groupId || req.query?.groupId || req.body?.group || req.query?.group || 11517908);
+
+    if (!username && !userId) {
+      return res.status(400).json({
+        success: false,
+        error: "Eksik parametre: Roblox kullanıcı adı ('username') veya kullanıcı ID ('userId') belirtilmelidir."
+      });
+    }
+
+    if (rankInput === undefined || rankInput === null || rankInput === "") {
+      return res.status(400).json({
+        success: false,
+        error: "Eksik parametre: Verilecek rütbe ID veya numarası ('rank') belirtilmelidir."
+      });
+    }
+
+    const rank = parseInt(rankInput);
+    if (isNaN(rank) || rank < 1 || rank > 255) {
+      return res.status(400).json({
+        success: false,
+        error: "Geçersiz rütbe numarası. Rütbe 1 ile 255 arasında bir sayı olmalıdır."
+      });
+    }
+
+    const noblox = require("noblox.js");
+
+    // Eğer ID verilmemişse kullanıcı adından ID'yi çözümle
+    if (!userId && username) {
+      const cleanUsername = String(username).trim();
+      userId = await noblox.getIdFromUsername(cleanUsername).catch(() => null);
+      if (!userId) {
+        return res.status(404).json({
+          success: false,
+          error: `'${cleanUsername}' adında geçerli bir Roblox kullanıcısı bulunamadı.`
+        });
+      }
+    } else {
+      userId = parseInt(userId);
+    }
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: "Geçersiz Roblox kullanıcı ID'si."
+      });
+    }
+
+    // Katılma isteği varsa önceden kabul etmeyi dene
+    await noblox.handleJoinRequest(groupId, userId, true).catch(() => {});
+
+    // Rütbe ver
+    const setRankRes = await noblox.setRank({ group: groupId, target: userId, rank: rank }).catch(err => {
+      throw new Error(`Noblox rütbe verme hatası: ${err.message}`);
+    });
+
+    const targetUsername = username ? String(username).trim() : (await noblox.getUsernameFromId(userId).catch(() => `ID:${userId}`));
+
+    return res.json({
+      success: true,
+      message: `${targetUsername} (${userId}) kullanıcısına ${groupId} grubunda ${rank} rütbesi başarıyla verildi.`,
+      data: {
+        groupId,
+        userId,
+        username: targetUsername,
+        rank,
+        newRole: setRankRes
+      }
+    });
+  } catch (err) {
+    console.error("[Roblox SetRank API Error]:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Rütbe verilirken sunucu hatası oluştu."
+    });
+  }
+};
+
+router.post("/api/roblox/set-rank", handleSetRobloxRank);
+router.get("/api/roblox/set-rank", handleSetRobloxRank);
+router.post("/api/rank", handleSetRobloxRank);
+router.get("/api/rank", handleSetRobloxRank);
+
+module.exports = router;
+
