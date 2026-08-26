@@ -261,10 +261,13 @@ module.exports = [
         categories[cat].push(cmd);
       }
 
-      const embed = new EmbedBuilder()
+      const embeds = [];
+      let currentEmbed = new EmbedBuilder()
         .setTitle('📚 EKOYILDIZ BOT KOMUT MENÜSÜ')
         .setDescription('Örnek Kullanım: `e!yardım` veya `e!sistemler`\nHer komutun yetkileri kendine özeldir:')
         .setColor(0x8b5cf6);
+
+      let fieldCount = 0;
 
       for (const [catName, cmdList] of Object.entries(categories)) {
         let chunk = '';
@@ -272,10 +275,16 @@ module.exports = [
 
         for (const c of cmdList) {
           const reqPerms = c.userPermissions && c.userPermissions.length > 0 ? ` *(${c.userPermissions.join(', ')})*` : '';
-          const line = `• \`e!${c.name}\`: ${c.description}${reqPerms}\n`;
+          const line = `• \`e!${c.name}\`: ${c.description || 'Açıklama yok'}${reqPerms}\n`;
 
-          if (chunk.length + line.length > 950) {
-            embed.addFields({ name: `📌 ${catName} Komutları (Bölüm ${part})`, value: chunk });
+          if (chunk.length + line.length > 900) {
+            if (fieldCount >= 24) {
+              embeds.push(currentEmbed);
+              currentEmbed = new EmbedBuilder().setColor(0x8b5cf6);
+              fieldCount = 0;
+            }
+            currentEmbed.addFields({ name: `📌 ${catName} Komutları (Bölüm ${part})`, value: chunk || '...' });
+            fieldCount++;
             chunk = line;
             part++;
           } else {
@@ -283,13 +292,30 @@ module.exports = [
           }
         }
 
-        if (chunk.length > 0) {
+        if (chunk.trim().length > 0) {
+          if (fieldCount >= 24) {
+            embeds.push(currentEmbed);
+            currentEmbed = new EmbedBuilder().setColor(0x8b5cf6);
+            fieldCount = 0;
+          }
           const fieldTitle = part > 1 ? `📌 ${catName} Komutları (Bölüm ${part})` : `📌 ${catName} Komutları`;
-          embed.addFields({ name: fieldTitle, value: chunk });
+          currentEmbed.addFields({ name: fieldTitle, value: chunk });
+          fieldCount++;
         }
       }
 
-      return message.reply({ embeds: [embed] });
+      if (currentEmbed.data.fields && currentEmbed.data.fields.length > 0) {
+        embeds.push(currentEmbed);
+      } else if (embeds.length === 0) {
+        embeds.push(currentEmbed);
+      }
+
+      const finalEmbeds = embeds.slice(0, 10);
+
+      return message.reply({
+        content: '📚 **EkoYıldız Bot Komut Listesi**',
+        embeds: finalEmbeds
+      });
     }
   }
 ];
