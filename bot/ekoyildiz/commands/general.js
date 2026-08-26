@@ -247,75 +247,13 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message, args, context) {
-      const uniqueCommands = new Map();
-      for (const [_, cmd] of context.commands) {
-        if (!uniqueCommands.has(cmd.name)) {
-          uniqueCommands.set(cmd.name, cmd);
-        }
+      try {
+        const { sendHelpMenu } = require('../../services/helpService');
+        await sendHelpMenu(message);
+      } catch (err) {
+        console.error('[Yardım Komutu Hatası]:', err);
+        message.reply({ content: '📚 **EkoYıldız Bot Komut Listesi:** Sunucumuzdaki tüm sistem ve moderasyon komutlarını kullanabilirsiniz.' }).catch(() => {});
       }
-
-      const categories = {};
-      for (const [_, cmd] of uniqueCommands) {
-        const cat = cmd.category || 'Genel';
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push(cmd);
-      }
-
-      const embeds = [];
-      let currentEmbed = new EmbedBuilder()
-        .setTitle('📚 EKOYILDIZ BOT KOMUT MENÜSÜ')
-        .setDescription('Örnek Kullanım: `e!yardım` veya `e!sistemler`\nHer komutun yetkileri kendine özeldir:')
-        .setColor(0x8b5cf6);
-
-      let fieldCount = 0;
-
-      for (const [catName, cmdList] of Object.entries(categories)) {
-        let chunk = '';
-        let part = 1;
-
-        for (const c of cmdList) {
-          const reqPerms = c.userPermissions && c.userPermissions.length > 0 ? ` *(${c.userPermissions.join(', ')})*` : '';
-          const line = `• \`e!${c.name}\`: ${c.description || 'Açıklama yok'}${reqPerms}\n`;
-
-          if (chunk.length + line.length > 900) {
-            if (fieldCount >= 24) {
-              embeds.push(currentEmbed);
-              currentEmbed = new EmbedBuilder().setColor(0x8b5cf6);
-              fieldCount = 0;
-            }
-            currentEmbed.addFields({ name: `📌 ${catName} Komutları (Bölüm ${part})`, value: chunk || '...' });
-            fieldCount++;
-            chunk = line;
-            part++;
-          } else {
-            chunk += line;
-          }
-        }
-
-        if (chunk.trim().length > 0) {
-          if (fieldCount >= 24) {
-            embeds.push(currentEmbed);
-            currentEmbed = new EmbedBuilder().setColor(0x8b5cf6);
-            fieldCount = 0;
-          }
-          const fieldTitle = part > 1 ? `📌 ${catName} Komutları (Bölüm ${part})` : `📌 ${catName} Komutları`;
-          currentEmbed.addFields({ name: fieldTitle, value: chunk });
-          fieldCount++;
-        }
-      }
-
-      if (currentEmbed.data.fields && currentEmbed.data.fields.length > 0) {
-        embeds.push(currentEmbed);
-      } else if (embeds.length === 0) {
-        embeds.push(currentEmbed);
-      }
-
-      const finalEmbeds = embeds.slice(0, 10);
-
-      return message.reply({
-        content: '📚 **EkoYıldız Bot Komut Listesi**',
-        embeds: finalEmbeds
-      });
     }
   }
 ];

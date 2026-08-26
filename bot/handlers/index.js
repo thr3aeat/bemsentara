@@ -1628,7 +1628,8 @@ function initializeDiscordHandlers(client) {
     // ── EkoYıldız Port Edilen Komutlar (e! / ! / Bot Mention) ──────────────
     try {
       const { handleGuildMessage } = require('../ekoyildiz/commands');
-      await handleGuildMessage(message, client);
+      const handled = await handleGuildMessage(message, client);
+      if (handled) return;
     } catch (cmdErr) {
       console.error('[EkoYildiz Command Handler Error]:', cmdErr.message);
     }

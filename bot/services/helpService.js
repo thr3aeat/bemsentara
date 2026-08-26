@@ -159,7 +159,13 @@ async function sendHelpMenu(interactionOrMessage, categoryKey = null) {
     } else {
       await interactionOrMessage.reply({ ...payload, ephemeral: true }).catch(() => {});
     }
-  } else {
+  } else if (interactionOrMessage.reply) {
+    await interactionOrMessage.reply(payload).catch(async () => {
+      if (interactionOrMessage.channel) {
+        await interactionOrMessage.channel.send(payload).catch(() => {});
+      }
+    });
+  } else if (interactionOrMessage.channel) {
     await interactionOrMessage.channel.send(payload).catch(() => {});
   }
 }

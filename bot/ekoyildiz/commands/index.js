@@ -232,9 +232,11 @@ async function handleGuildMessage(message, client) {
 
   try {
     await command.execute(message, args, context);
+    return true;
   } catch (err) {
     logger.error('KOMUT HATASI', `e!${commandName} komutunda hata:`, err);
     message.reply('❌ Komut çalıştırılırken bir hata oluştu. Hata kaydedildi.').catch(() => {});
+    return true;
   }
 }
 
