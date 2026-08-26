@@ -1601,8 +1601,6 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
     }
   } catch (_) {}
 }
-  }
-}
 
 /**
  * "❓ Bir Şey Anlamadım" — Sırayla Paket Tanıtım & Seçim Arayüzü (Önceki/Sonraki Butonlu)
