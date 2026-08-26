@@ -1155,5 +1155,109 @@ module.exports = [
       const fikra = fikralar[Math.floor(Math.random() * fikralar.length)];
       return message.reply(`😄 **Günün Fıkrası:**\n>>> ${fikra}`);
     }
+  },
+  {
+    name: 'tarihtebugun',
+    aliases: ['tarih', 'tb', 'tarihte-bugun', 'todayinhistory'],
+    category: 'Genel',
+    description: 'Tarihte bugün yaşanan büyük zaferleri, Atatürk\'ün adımlarını, bilim ve keşif olaylarını anlatır.',
+    userPermissions: [],
+    botPermissions: ['EmbedLinks'],
+    async execute(message, args) {
+      const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+      const { getSpecialDayInfo } = require('../../services/specialDaysHelper');
+      const { getHistoricalFallbackEvent } = require('../../services/historyDataset');
+      const { chatWithAI } = require('../../services/aiService');
+
+      const loadingMsg = await message.reply('⏳ Tarih arşivleri taranıyor ve yapay zeka ile günün tarihi özeti hazırlanıyor...').catch(() => null);
+
+      const today = new Date();
+      const day = today.getDate();
+      const month = today.getMonth();
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const dateStr = `${day} ${months[month]}`;
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDay = yesterday.getDate();
+      const yesterdayMonth = months[yesterday.getMonth()];
+      const yesterdayStr = `${yesterdayDay} ${yesterdayMonth}`;
+
+      const specialDay = getSpecialDayInfo(today);
+      const embedTitle = specialDay ? `${specialDay.emoji} ${specialDay.name} – ${dateStr}` : `📅 Tarihte Bugün – ${dateStr}`;
+      const embedColor = specialDay?.color || 0xdc143c;
+
+      const systemPrompt = `Sen Türk ve Dünya tarihini derinlemesine bilen, Atatürk ilkelerine ve Cumhuriyet değerlerine tutkuyla bağlı, samimi ve sürükleyici bir üslupla konuşan uzman bir baş tarih araştırmacısı ve anlatıcısısın.
+Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları derinlemesine, edebi, akıcı, merak uyandırıcı ve zengin bir Türkçe ile çok kapsamlı aktarmak.
+
+İÇERİK YAPISI:
+1. GİRİŞ & ATATÜRK KÖŞESİ (Gazi Mustafa Kemal Atatürk'ün bu tarihteki veya o dönemin bu günlerindeki askeri, siyasi, stratejik ve devrimci liderliği, vizyonu ve tarihi adımları).
+2. TÜRK VE DÜNYA TARİHİNDE BÜYÜK DÖNÜM NOKTALARI (Fetihler, savaşlar, antlaşmalar, devrimler, imparatorluklar ve uluslararası kritik gelişmeler).
+3. BİLİM, UZAY, KÜLTÜR VE SANAT (İcatlar, uzay keşifleri, edebiyat ve mimarlık şaheserleri).
+4. İLGİNÇ TARİHİ TRIVIA & BİLİNMEYEN GERÇEKLER (Az bilinen, şaşırtıcı ve düşündürücü tarihi anekdot).
+5. GÜNÜN TARİHİ SÖZÜ & VECİZESİ (Günün ruhunu yansıtan ilham verici tarihi bir söz).
+
+KURALLAR:
+- Samimi, saygılı ve arkadaş canlısı bir hitapla başla.
+- Bilgiler tarihi gerçeklere tam uygun, detaylı ve doyurucu olsun.
+- Sadece Türkçe metin üret.`;
+
+      const userPrompt = `Tarih: ${dateStr}.
+Lütfen ${dateStr} tarihi için:
+1) Gazi Mustafa Kemal Atatürk ve Kurtuluş/Cumhuriyet tarihimizden çok detaylı bir anlatım (Dün ${yesterdayStr}'taki tarihi bağlam ile),
+2) Türk ve Dünya tarihindeki diğer büyük tarihi zaferler, antlaşmalar veya kırılma anları,
+3) Bilim, teknoloji, uzay veya sanat dünyasından tarihte bugün yaşanan önemli bir keşif/gelişme,
+4) İlginç, şaşırtıcı bir tarihi trivia/anekdot,
+5) Günün tarihi sözünü içeren çok kapsamlı, akıcı, zengin ve uzun bir Tarihte Bugün metni hazırla.`;
+
+      let aiContent = "";
+      try {
+        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+        if (!aiContent || aiContent.trim().length < 120) {
+          throw new Error("AI yanıtı yetersiz");
+        }
+      } catch (aiErr) {
+        aiContent = getHistoricalFallbackEvent(day, month);
+      }
+
+      const embed = new EmbedBuilder()
+        .setTitle(embedTitle)
+        .setDescription(aiContent)
+        .setColor(embedColor)
+        .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: message.client.user?.displayAvatarURL() })
+        .setTimestamp();
+
+      if (specialDay) {
+        embed.addFields({
+          name: `📌 ${specialDay.emoji} Günün Anlam ve Önemi`,
+          value: `${specialDay.desc}\n> *"${specialDay.quote}"*`
+        });
+      }
+
+      const historyRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_ataturk_${day}_${month}`)
+          .setLabel("🏛️ Atatürk & Zaferler")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_science_${day}_${month}`)
+          .setLabel("🔬 Bilim & Keşifler")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_trivia_${day}_${month}`)
+          .setLabel("💡 Tarihi Trivia")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`tb_random_quote_${day}_${month}`)
+          .setLabel("📜 Tarihi Vecize")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      if (loadingMsg) {
+        return loadingMsg.edit({ content: null, embeds: [embed], components: [historyRow] });
+      } else {
+        return message.reply({ embeds: [embed], components: [historyRow] });
+      }
+    }
   }
 ];

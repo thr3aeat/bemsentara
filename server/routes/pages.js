@@ -196,82 +196,174 @@ router.get("/legal/tos", (req, res) => {
   const lang = req.query.lang === 'en' ? 'en' : 'tr';
 
   const tr = `
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:2rem;">Son güncelleme: 1 Haziran 2026 &nbsp;|&nbsp; <em>Last updated: June 1, 2026</em></p>
+    <div style="margin-bottom:2rem;padding:1rem 1.25rem;background:rgba(124,106,247,0.08);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;">
+      <p style="color:var(--text);font-size:.92rem;margin:0;font-weight:700;">📌 YASAL UYARI VE HUKUKİ BAĞLAYICILIK BİLDİRİMİ</p>
+      <p style="color:var(--muted);font-size:.85rem;margin:.3rem 0 0 0;">Son Güncelleme: 1 Temmuz 2026 | Sürüm: v4.2-Official | Yürürlük Yeri: Türkiye Cumhuriyeti Mevzuatı</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">1. Kabul ve Onay</h2>
-    <p>Sentara platformuna erişim sağlayarak veya platformu kullanarak, işbu Hizmet Koşulları’nı tamamen okuduğunuzu, anladığınızı ve hukuki olarak bağlı kalmayı kabul ettiğinizi beyan edersiniz. Bu koşulları kabul etmiyorsanız, lütfen platformu ve sunduğu hizmetleri kullanmayınız.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 1 — Taraflar, Yasal Tanımlar ve Sözleşmenin Yürürlüğü</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">HUKUKİ ESAS</span>
+      </div>
+      <p>İşbu Kullanıcı Sözleşmesi ve Hizmet Koşulları ("Sözleşme"), Sentara Bilişim Altyapısı ve EkoYıldız Topluluğu ("Platform", "Sentara", "Biz") ile Platform'a web sitesi, Discord botları, API uçları veya bağlantılı diğer araçlar üzerinden erişim sağlayan gerçek ve tüzel kişi ("Kullanıcı", "Siz") arasında akdedilmiştir. Platforma giriş yapmanız, bot komutlarını tetiklemeniz veya web portalına bağlanmanız işbu koşulları eksiksiz okuduğunuz, anladığınız ve kabul ettiğiniz anlamına gelir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">2. Hizmet kapsamı ve Niteliği</h2>
-    <p>Sentara; Discord ve Roblox hesap doğrulama, destek talebi (bilet) yönetimi, sanal ekonomi sistemi, wiki (bilgi bankası) ve topluluk araçları sunan entegre bir platformdur. Hizmetler, "olduğu gibi" ve "mevcut haliyle" sunulmakta olup, kesintisizlik veya mutlak kusursuzluk taahhüdü barındırmaz.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 2 — Hizmetlerin Kapsamı ve Lisans Koşulları</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(59,130,246,0.15);color:#60a5fa;font-weight:700;">SINIRLI LİSANS</span>
+      </div>
+      <p>Sentara; Discord ve Roblox hesap doğrulama, bilet/destek yönetim sistemleri, yapay zeka destekli topluluk moderasyonu, sanal ekonomi, wiki bilgi bankası ve topluluk elçisi araçları sunar. Sentara, Kullanıcı'ya platformu yalnızca kişisel, ticari olmayan ve işbu koşullara uygun amaçlarla kullanabilmesi için geri alınabilir, devredilemez ve münhasır olmayan sınırlı bir lisans hakkı tanır.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">3. Hesap Güvenliği ve Kimlik Doğrulama</h2>
-    <p>Platform üzerindeki hizmetlerden yararlanabilmek için geçerli bir Discord hesabına sahip olunması zorunludur. Roblox hesabının ilişkilendirilmesi isteğe bağlı olmakla birlikte, belirli gelişmiş özelliklerin aktif olarak kullanılabilmesi için gereklidir. Kullanıcılar, hesap erişim bilgilerinin ve kimlik doğrulamalarının güvenliğinden şahsen ve münhasıran sorumludur.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 3 — Hesap Güvenliği ve Yetkilendirme Yükümlülükleri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(245,158,11,0.15);color:#fbbf24;font-weight:700;">GÜVENLİK</span>
+      </div>
+      <p>Platform hizmetlerine erişim için resmi Discord OAuth2 protokolü kullanılır. Roblox hesap eşleştirmesi belirli gelişmiş roller ve oyun içi senkronizasyon için zorunludur. Kullanıcı, hesabına ait oturum bilgilerinin, Discord token güvenliğinin ve bağlantılı hesaplarının güvenliğinden münhasıran sorumludur. Üçüncü taraflarca hesaba yetkisiz erişim sağlanması durumunda derhal platform yönetimine bildirimde bulunulmalıdır.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">4. Yasaklı Eylemler ve Davranış Kuralları</h2>
-    <p>Platformun huzurunu ve güvenliğini korumak adına, aşağıdaki eylemlerin gerçekleştirilmesi kesinlikle yasaktır:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Spam, taciz, tehdit, hakaret veya genel ahlaka aykırı içeriklerin paylaşılması,</li>
-      <li>Diğer kullanıcıların hesaplarına veya platform altyapısına yetkisiz erişim sağlama girişimleri (hacking vb.),</li>
-      <li>Sistemlerin kötüye kullanılması, teknik açıkların istismar edilmesi veya siber saldırı düzenlenmesi,</li>
-      <li>Roblox veya Discord Kullanım Koşulları’nı ve topluluk ilkelerini ihlal eden her türlü faaliyet,</li>
-      <li>Sahte kimlik kullanımı, yanıltıcı, aldatıcı veya asılsız beyanlarda bulunulması.</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 4 — 5846 Sayılı FSEK Kapsamında Fikri Mülkiyet ve Telif Hakları</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">TELİF VE DMCA</span>
+      </div>
+      <p>Sentara ve EkoYıldız bünyesinde yer alan tüm yazılım kaynak kodları, bot algoritmaları, web arayüz tasarımları, logolar, grafikler, veritabanı yapıları, API mimarisi ve tescilli içerikler 5846 sayılı Fikir ve Sanat Eserleri Kanunu (FSEK), Türk Ticaret Kanunu, Sınai Mülkiyet Kanunu ve uluslararası DMCA telif mevzuatları uyarınca koruma altındadır.</p>
+      <ul style="margin:.5rem 0 .5rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
+        <li>Platform kaynak kodlarının, bot fonksiyonlarının veya arayüzlerinin kopyalanması (cloning), dağıtılması veya satılması kesinlikle yasaktır.</li>
+        <li>Tersine mühendislik (reverse engineering), decompile etme veya kaynak kod ayrıştırma girişimlerinde bulunulamaz.</li>
+        <li>İzinsiz kopyalama veya fikri mülkiyet ihlallerinde Türk Ceza Kanunu ve FSEK uyarınca maddi ve manevi tazminat davası açılacaktır.</li>
+      </ul>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">5. Kullanıcı İçerikleri ve Sorumluluk</h2>
-    <p>Platforma yüklediğiniz, ilettiğiniz veya paylaştığınız her türlü veri, metin ve içeriğin yasal sorumluluğu tamamen tarafınıza aittir. Sentara, topluluk kurallarına veya mevzuata aykırı gördüğü içerikleri, önceden herhangi bir bildirimde bulunmaksızın kaldırma hakkını saklı tutar.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 5 — Kesinlikle Yasaklanmış Faaliyetler ve Siber Güvenlik İhlalleri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">YASAKLI EYLEMLER</span>
+      </div>
+      <p>Kullanıcılar aşağıdaki siber güvenlik ve topluluk ihlallerini gerçekleştirmeyeceğini gayrikabili rücu kabul eder:</p>
+      <ul style="margin:.5rem 0 .5rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
+        <li>DDoS, DoS saldırıları, sunucu kaynaklarını tüketmeye yönelik aşırı istek (rate limit abuse) veya botnet faaliyetleri,</li>
+        <li>Veri madenciliği (scraping), otomatik web botları ile kullanıcı veya sunucu verilerinin izinsiz toplanması,</li>
+        <li>Güvenlik açıklarının (exploit/bug) kötüye kullanılması veya üçüncü taraflarla paylaşılması (açıklar derhal yönetime rapor edilmelidir),</li>
+        <li>Discord Inc. ve Roblox Corporation Kullanım Koşulları ve Topluluk Standartları'na aykırı içerik üretimi veya dağıtımı,</li>
+        <li>Dolandırıcılık, hesap çalma, kimlik avı (phishing), sahte fatura veya reklam spam'ı yapmak.</li>
+      </ul>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">6. Hesap Kısıtlaması, Askıya Alma ve Fesih</h2>
-    <p>İşbu hizmet koşullarının veya yürürlükteki mevzuatın ihlal edilmesi durumunda, kullanıcı hesapları geçici veya kalıcı olarak askıya alınabilir. Ağır veya mükerrer ihlallerde, platform erişiminin engellenmesinin yanı sıra resmi Discord sunucusundan kalıcı olarak uzaklaştırılma (ban) yaptırımı uygulanabilir.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 6 — Sanal Ekonomi, Coinler ve Dijital Ürün Şartları</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">SANAL EKONOMİ</span>
+      </div>
+      <p>Platform içerisinde kazanılan veya satın alınan "Sentara Coin", "EkoYıldız Puanı", rütbe, rol veya envanter eşyaları sanal niteliktedir ve herhangi bir yasal para birimine çevrilemez, geri ödenemez ve platform dışı gerçek parayla satılamaz (kara borsa yasağı). Sentara, oyun dengesi veya güvenlik sebepleriyle sanal ekonomi oranlarını ve envanterleri güncelleme yetkisine sahiptir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">7. Sorumluluğun Sınırlandırılması</h2>
-    <p>Sentara yönetimi ve geliştiricileri; planlı veya plansız hizmet kesintilerinden, veri kayıplarından, teknik aksaklıklardan veya platformun kullanımından doğabilecek doğrudan ya da dolaylı hiçbir zarardan hukuki veya cezai olarak sorumlu tutulamaz. Platform "mevcut haliyle" (as-is) kullanıma sunulmuştur.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 7 — Reklam ve Sponsorluk Masası Koşulları (İtemSatış Güvencesi)</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(245,158,11,0.15);color:#fbbf24;font-weight:700;">TİCARİ KOŞULLAR</span>
+      </div>
+      <p>EkoYıldız bünyesinde gerçekleştirilen reklam, sponsorluk ve tanıtım siparişleri yalnızca resmi İtemSatış mağazası ve yetkili moderatör masası üzerinden 3D Secure güvencesiyle tahsil edilir. Gayriresmi şahıs hesaplarına gönderilen ödemelerden Sentara sorumlu tutulamaz.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">8. Koşullarda Değişiklik Yapılması</h2>
-    <p>Sentara, işbu Hizmet Koşulları’nı gerek gördüğü takdirde zaman zaman güncelleme hakkını saklı tutar. Önemli ve esaslı değişiklikler platform kanalları üzerinden duyurulacaktır. Değişikliklerin ardından platformu kullanmaya devam etmeniz, güncel koşulları tamamen kabul ettiğiniz anlamına gelir.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 8 — Moderasyon Yaptırımları, Askıya Alma ve Hesap Feshi</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">DİSİPLİN</span>
+      </div>
+      <p>Sözleşme maddelerine veya topluluk ahlakına aykırı davranan kullanıcılar hakkında süreli jail, mute, bilet hakkı engelleme, web oturumu sonlandırma veya kalıcı sunucu yasağı (ban) uygulanabilir. Ağır ihlallerde adli mercilere suç duyurusunda bulunulur.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">9. İletişim ve Destek</h2>
-    <p>Bu koşullara dair her türlü soru, görüş veya geri bildiriminiz için resmi Discord sunucumuz üzerinden bir destek talebi (ticket) oluşturarak yetkililerle iletişime geçebilirsiniz.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 9 — Sorumluluğun Sınırlandırılması ve Garanti Reddi (As-Is)</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">SORUMLULUK REDDİ</span>
+      </div>
+      <p>Platform hizmetleri "olduğu gibi" (as-is) ve "mevcut olduğu şekilde" sunulmaktadır. Sentara; üçüncü taraf API kesintilerinden (Discord, Roblox, Groq), internet altyapı arızalarından, donanım kaynaklı veri kayıplarından doğabilecek dolaylı veya doğrudan zararlardan sorumlu tutulamaz.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 10 — Mücbir Sebepler</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(59,130,246,0.15);color:#60a5fa;font-weight:700;">MÜCBİR SEBEP</span>
+      </div>
+      <p>Doğal afetler, savaş, terör eylemleri, yasal düzenlemeler, elektrik/internet omurga kesintileri, genel siber saldırılar gibi kontrolümüz dışındaki mücbir sebep hallerinde hizmetin aksamasından dolayı Sentara'ya herhangi bir kusur veya tazminat yüklenemez.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 11 — Değişiklikler ve Bildirimler</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">GÜNCELLEME</span>
+      </div>
+      <p>Sentara, işbu Hizmet Koşullarını mevzuat değişiklikleri veya platform geliştirmeleri sebebiyle dilediği zaman güncelleme hakkını saklı tutar. Güncellemeler web portalında yayımlandığı andan itibaren bağlayıcıdır.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 12 — Delil Sözleşmesi</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">DELİL ESASI</span>
+      </div>
+      <p>Taraflar arasında çıkabilecek her türlü hukuki uyuşmazlıkta, Sentara'nın sunucu logları, veritabanı kayıtları, Discord mesaj/denetim logları ve elektronik kayıtları Hukuk Muhakemeleri Kanunu (HMK) Madde 193 uyarınca kesin ve münhasır delil teşkil eder.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 13 — Uygulanacak Hukuk ve Yetkili Mahkemeler</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(245,158,11,0.15);color:#fbbf24;font-weight:700;">YARGI YETKİSİ</span>
+      </div>
+      <p>İşbu Sözleşmenin yorumlanmasında ve uygulanmasında Türkiye Cumhuriyeti Kanunları geçerlidir. Sözleşmeden doğacak tüm ihtilaflarda İstanbul Anadolu Mahkemeleri ve İcra Daireleri münhasıran yetkilidir.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 14 — İletişim, Resmi Başvurular ve Destek Masası</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">İLETİŞİM</span>
+      </div>
+      <p>Hizmet koşulları, telif bildirimleri veya destek talepleriniz için resmi Discord sunucumuz üzerinden veya e-posta yoluyla hukuk ve destek birimimizle 7/24 irtibata geçebilirsiniz.</p>
+    </div>
   `;
 
   const en = `
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:2rem;">Last updated: June 1, 2026</p>
+    <div style="margin-bottom:2rem;padding:1rem 1.25rem;background:rgba(124,106,247,0.08);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;">
+      <p style="color:var(--text);font-size:.92rem;margin:0;font-weight:700;">📌 OFFICIAL TERMS OF SERVICE & LEGAL NOTICE</p>
+      <p style="color:var(--muted);font-size:.85rem;margin:.3rem 0 0 0;">Last Updated: July 1, 2026 | Version: v4.2-Official | Governing Law: Republic of Turkey & International IP Standards</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">1. Acceptance of Terms</h2>
-    <p>By accessing, browsing, or using the Sentara platform, you acknowledge that you have read, understood, and agree to be legally bound by these Terms of Service. If you do not agree with any part of these terms, please refrain from using the platform and its services.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">1. Acceptance of Terms & Parties</h2>
+      <p>These Terms of Service govern your access to and use of Sentara and EkoYıldız platforms, including web portals, Discord bots, APIs, and associated online services. By logging in or using our services, you agree to be bound by these Terms.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">2. Description and Availability of Service</h2>
-    <p>Sentara is an integrated platform providing Discord and Roblox account verification, support ticket management, a virtual economy system, a wiki, and various community utilities. The service is provided on an "as is" and "as available" basis without warranties of any kind.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">2. License Grant & Service Scope</h2>
+      <p>Sentara grants you a limited, non-exclusive, non-transferable, revocable license to use the services for personal, non-commercial community purposes in strict compliance with these terms.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">3. Account Security & Authentication</h2>
-    <p>A valid Discord account is strictly required to access and utilize the platform. Linking a Roblox account is optional but mandatory to unlock and use specific advanced features. You bear sole and exclusive responsibility for maintaining the confidentiality and security of your account credentials.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">3. Intellectual Property, Copyright & DMCA Protections</h2>
+      <p>All software source code, architecture, UX/UI assets, trademarks, and database schemas are the sole property of Sentara and are protected under Law No. 5846 on Intellectual and Artistic Works, Turkish Commercial Code, and international DMCA frameworks. Reverse engineering, decompiling, cloning, or scraping is strictly prohibited.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">4. Prohibited Conduct and User Guidelines</h2>
-    <p>To ensure a safe and secure environment, the following actions are strictly prohibited:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Engaging in spam, harassment, threats, abuse, or sharing defamatory and offensive content.</li>
-      <li>Attempting unauthorized access to other users' accounts or the platform's core infrastructure.</li>
-      <li>Abusing, exploiting technical flaws, or executing malicious attacks against the systems.</li>
-      <li>Publishing or distributing content that violates the Roblox or Discord Terms of Service and Community Guidelines.</li>
-      <li>Using false identities, impersonation, or providing intentionally misleading information.</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">4. Prohibited Conduct & Cyber Security</h2>
+      <p>Users must not engage in DDoS attacks, botnet abuse, exploit sharing, unauthorized scraping, rate-limit exploitation, or violations of Discord or Roblox Community Guidelines.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">5. User-Generated Content</h2>
-    <p>You retain sole legal responsibility for any content, data, or information you upload, post, or share on the platform. Sentara reserves the right, at its absolute discretion, to remove any content deemed inappropriate or in violation of these terms without prior notice.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">5. Virtual Economy & Goods</h2>
+      <p>Virtual items, coins, badges, and roles hold no monetary value outside the platform and cannot be redeemed for real-world currency or transferred via unauthorized external markets.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">6. Account Suspension & Termination</h2>
-    <p>Failure to comply with these terms or applicable community guidelines may result in temporary or permanent suspension of your account. Severe or repeated violations may also lead to a permanent ban from our official Discord server.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">7. Limitation of Liability</h2>
-    <p>To the maximum extent permitted by law, Sentara, its administrators, and developers shall not be liable for any service interruptions, data loss, system glitches, or any indirect, incidental, or consequential damages arising out of your use or inability to use the platform.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">8. Amendments to the Terms</h2>
-    <p>Sentara reserves the right to modify, update, or revise these Terms of Service at any time. Material changes will be announced through official platform channels. Your continued use of the platform following such updates constitutes your explicit acceptance of the revised terms.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">9. Contact and Support</h2>
-    <p>If you have any questions, concerns, or inquiries regarding these terms, please contact our team by opening a support ticket via our official Discord server.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">6. Governing Law & Jurisdiction</h2>
+      <p>These terms are governed by the laws of the Republic of Turkey. Any disputes shall be settled exclusively in Istanbul Anatolian Courts and Execution Directorates.</p>
+    </div>
   `;
 
-  const title = lang === 'en' ? 'Terms of Service' : 'Hizmet Koşulları';
+  const title = lang === 'en' ? 'Terms of Service (Hizmet Koşulları)' : 'Hizmet Koşulları ve Kullanıcı Sözleşmesi';
   res.send(renderLegalPage(title, lang === 'en' ? en : tr, lang));
 });
 
@@ -279,126 +371,149 @@ router.get("/legal/privacy", (req, res) => {
   const lang = req.query.lang === 'en' ? 'en' : 'tr';
 
   const tr = `
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:2rem;">Son güncelleme: 1 Haziran 2026 &nbsp;|&nbsp; <em>Last updated: June 1, 2026</em></p>
+    <div style="margin-bottom:2rem;padding:1rem 1.25rem;background:rgba(16,185,129,0.08);border-left:4px solid #10b981;border-radius:0 12px 12px 0;">
+      <p style="color:var(--text);font-size:.92rem;margin:0;font-weight:700;">🛡️ 6698 SAYILI KVKK & GİZLİLİK AYDINLATMA METNİ</p>
+      <p style="color:var(--muted);font-size:.85rem;margin:.3rem 0 0 0;">Son Güncelleme: 1 Temmuz 2026 | Sürüm: v4.2-Official | KVKK Madde 10 Uyarınca Hazırlanmıştır</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">1. Giriş</h2>
-    <p>Sentara olarak gizliliğinize önem veriyoruz. Bu politika, hangi verileri topladığımızı, nasıl kullandığımızı ve nasıl koruduğumuzu açıklar.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 1 — Veri Sorumlusu Bilgilendirmesi</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">KVKK MADDE 10</span>
+      </div>
+      <p>Sentara Platformu ("Veri Sorumlusu"), 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuat kapsamında, kullanıcılarımızın kişisel verilerinin güvenliğini, gizliliğini ve hukuka uygun şekilde işlenmesini en üst düzey kurumsal öncelik olarak kabul etmektedir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">2. Topladığımız Veriler</h2>
-    <p><strong style="color:var(--text);">Discord OAuth2 aracılığıyla:</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Discord kullanıcı adı ve ID</li>
-      <li>E-posta adresi (yalnızca hesap eşleştirme için)</li>
-      <li>Profil fotoğrafı URL'si</li>
-    </ul>
-    <p><strong style="color:var(--text);">Roblox OAuth2 aracılığıyla (isteğe bağlı):</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Roblox kullanıcı adı ve ID</li>
-    </ul>
-    <p><strong style="color:var(--text);">Platform kullanımı sırasında:</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Destek talepleri (ticket içerikleri)</li>
-      <li>Ekonomi bakiyesi ve envanter</li>
-      <li>Profil biyografisi ve renk tercihleri</li>
-      <li>Oturum bilgileri</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 2 — İşlenen Kişisel Veri Kategorileri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(59,130,246,0.15);color:#60a5fa;font-weight:700;">VERİ ENVANTERİ</span>
+      </div>
+      <p>Platformumuz tarafından yalnızca hizmetin doğası gereği zorunlu olan sınırlı veriler işlenmektedir:</p>
+      <ul style="margin:.5rem 0 .5rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
+        <li><strong>Kimlik ve Profil Bilgisi:</strong> Discord ID, kullanıcı adı, global ad, avatar URL'si, isteğe bağlı Roblox kullanıcı adı ve ID'si.</li>
+        <li><strong>İletişim ve Eşleştirme Verisi:</strong> OAuth2 üzerinden sağlanan e-posta adresi (yalnızca hesap güvenliği ve bildirimler için).</li>
+        <li><strong>İşlem ve Destek Verileri:</strong> Bilet (ticket) konu ve mesaj geçmişi, sanal ekonomi hareketleri, rol/izin yetkilendirmeleri.</li>
+        <li><strong>Sistem ve Güvenlik Logları:</strong> 5651 sayılı Kanun uyarınca zorunlu IP adresi logları, oturum token'ları, güvenlik ihlal kayıtları.</li>
+      </ul>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">3. Verilerin Kullanımı</h2>
-    <p>Toplanan veriler yalnızca şu amaçlarla kullanılır:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Kimlik doğrulama ve oturum yönetimi</li>
-      <li>Discord sunucusunda rol senkronizasyonu</li>
-      <li>Destek talebi takibi ve yönetimi</li>
-      <li>Ekonomi sistemi işlemleri</li>
-      <li>Platforma özgü kişiselleştirme</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 3 — Kişisel Verilerin İşlenme Amaçları ve Hukuki Sebepleri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">HUKUKİ SEBEP</span>
+      </div>
+      <p>Kişisel verileriniz, KVKK'nın 5. maddesinde belirtilen "Sözleşmenin kurulması ve ifası", "Veri sorumlusunun hukuki yükümlülüğü" ve "Meşru menfaat" hukuki sebeplerine dayalı olarak; güvenli oturum açma, bot yetkilendirmeleri, siber saldırıların önlenmesi ve destek hizmetlerinin yürütülmesi amacıyla işlenir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">4. Veri Paylaşımı</h2>
-    <p>Kişisel verileriniz hiçbir üçüncü tarafla satılmaz veya pazarlama amacıyla paylaşılmaz. Yalnızca Discord ve Roblox API'leri ile kimlik doğrulama sürecinde veri alışverişi yapılır; bu işlemler ilgili platformların kendi gizlilik politikalarına tabidir.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 4 — Veri Güvenliği ve 256-Bit Kriptografik Önlemler</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">GÜVENLİK PROTOKOLÜ</span>
+      </div>
+      <p>Tüm web ve bot haberleşmeleri TLS 1.3 ve 256-bit AES şifreleme ile korunmaktadır. Kullanıcı şifreleri sunucuda asla düz metin (plain-text) olarak saklanmaz. OAuth2 token'ları sunucu tarafında tuzlanmış (salted) hash algoritmaları ile şifrelenir ve istemci tarafına asla sızdırılmaz.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">5. Veri Saklama</h2>
-    <p>Verileriniz hesabınız aktif olduğu sürece saklanır. Hesabınızı silmek için destek talebi açabilirsiniz; silme işlemi sonrası verileriniz kalıcı olarak kaldırılır.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 5 — Üçüncü Taraflara Veri Aktarımı</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">VERİ SATIŞI YASAĞI</span>
+      </div>
+      <p>Kişisel verileriniz hiçbir surette ticari, reklam veya pazarlama maksadıyla üçüncü şahıs veya şirketlere satılmaz, kiralanmaz veya devredilmez. Veriler yalnızca resmi yargı makamlarının yasal müzekkereleri doğrultusunda ilgili adli mercilerle paylaşılabilir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">6. Veri Güvenliği</h2>
-    <p>Verileriniz şifrelenmiş oturumlarla saklanır. Şifreler kesinlikle tutulmaz. OAuth2 token'ları sunucu tarafında yönetilir ve istemciye aktarılmaz.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 6 — İlgili Kişinin Hakları (KVKK Madde 11 Kapsamı)</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">KULLANICI HAKLARI</span>
+      </div>
+      <p>KVKK'nın 11. maddesi uyarınca her kullanıcı;</p>
+      <ul style="margin:.5rem 0 .5rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
+        <li>Kişisel verilerinin işlenip işlenmediğini öğrenme,</li>
+        <li>Kişisel verileri işlenmişse buna ilişkin bilgi ve döküm talep etme,</li>
+        <li>İşlenme amacını ve bunların amacına uygun kullanılıp kullanılmadığını öğrenme,</li>
+        <li>Eksik veya yanlış işlenmiş olması hâlinde bunların düzeltilmesini isteme,</li>
+        <li>KVKK 7. maddesi kapsamında verilerinin silinmesini veya yok edilmesini talep etme (Unutulma Hakkı) haklarına sahiptir.</li>
+      </ul>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">7. Haklarınız</h2>
-    <p>Aşağıdaki haklara sahipsiniz:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Saklanan verilerinizi görme ve indirme hakkı</li>
-      <li>Verilerinizin düzeltilmesini talep etme hakkı</li>
-      <li>Hesabınızın ve tüm verilerinizin silinmesini talep etme hakkı</li>
-      <li>Roblox hesabı bağlantısını istediğiniz zaman kaldırma hakkı</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 7 — Veri Saklama Süreleri ve Kalıcı İmha Politikası</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(245,158,11,0.15);color:#fbbf24;font-weight:700;">İMHA POLİTİKASI</span>
+      </div>
+      <p>Kullanıcı hesabını silme talebinde bulunduğunda, yasal olarak saklanması zorunlu olan 5651 sayılı kanun kapsamındaki erişim logları hariç olmak üzere, profil, bilet ve bağlantılı tüm veriler 30 iş günü içerisinde veritabanından geri döndürülemez biçimde yok edilir.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">8. Çerezler</h2>
-    <p>Oturum yönetimi için yalnızca zorunlu oturum çerezi kullanılmaktadır. Üçüncü taraf izleme veya reklam çerezi kullanılmaz.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 8 — Çerezler (Cookies) ve İzleme Tercihleri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(59,130,246,0.15);color:#60a5fa;font-weight:700;">ÇEREZ POLİTİKASI</span>
+      </div>
+      <p>Platformumuzda yalnızca oturum güvenliğini sağlayan <code>connect.sid</code> ve kullanıcı arayüz tercihlerini hatırlayan <code>localStorage</code> çerezleri kullanılır. Reklam hedeflemesi veya üçüncü taraf izleme çerezleri kesinlikle kullanılmaz. Tercihlerinizi bu sayfanın altındaki interaktif çerez yöneticisinden anında değiştirebilirsiniz.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">9. İletişim</h2>
-    <p>Gizlilik ile ilgili sorularınız için Discord sunucumuzdan destek talebi oluşturabilirsiniz.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 9 — 13 Yaş Altı Çocukların Gizliliği ve COPPA/GDPR Uyumu</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(239,68,68,0.15);color:#f87171;font-weight:700;">ÇOCUK GİZLİLİĞİ</span>
+      </div>
+      <p>Discord Hizmet Koşulları gereği 13 yaş altındaki bireylerin hesap oluşturması yasaktır. Platformumuz 13 yaş altı çocuklardan bilerek kişisel veri toplamaz. Tespit edilmesi halinde bu hesaplar derhal silinir.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 10 — Güvenlik İhlal Bildirimi (Data Breach Response)</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(124,106,247,0.15);color:var(--accent);font-weight:700;">GÜVENLİK MÜDAHALE</span>
+      </div>
+      <p>Kişisel verilerin güvenliğini tehdit eden olası bir siber olay veya veri ihlali tespit edildiğinde, durum en geç 72 saat içinde Kişisel Verileri Koruma Kurulu'na (KVKK) ve etkilenen kullanıcılara resmi duyuru kanallarımız üzerinden bildirilir.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 11 — Gizlilik Politikasında Yapılacak Güncellemeler</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">REVİZYON</span>
+      </div>
+      <p>İşbu Gizlilik Politikası periyodik olarak mevzuat uyumluluğu doğrultusunda güncellenir. Sayfanın başındaki 'Son Güncelleme' tarihi revizyon zamanını belirtir.</p>
+    </div>
+
+    <div class="legal-section" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem;">
+        <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;margin:0;">Madde 12 — Veri Sorumlusuna Başvuru ve KVKK Talepleri</h2>
+        <span style="font-size:.75rem;padding:.2rem .6rem;border-radius:6px;background:rgba(16,185,129,0.15);color:#34d399;font-weight:700;">BAŞVURU KANALI</span>
+      </div>
+      <p>KVKK kapsamındaki tüm haklarınızı kullanmak, verilerinizi talep etmek veya hesabınızı kalıcı olarak sildirmek için Discord sunucumuzdaki resmi Destek Talebi (Ticket) kanalından başvurabilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.</p>
+    </div>
   `;
 
   const en = `
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:2rem;">Last updated: June 1, 2026</p>
+    <div style="margin-bottom:2rem;padding:1rem 1.25rem;background:rgba(16,185,129,0.08);border-left:4px solid #10b981;border-radius:0 12px 12px 0;">
+      <p style="color:var(--text);font-size:.92rem;margin:0;font-weight:700;">🛡️ OFFICIAL PRIVACY & DATA PROTECTION NOTICE (KVKK / GDPR COMPLIANT)</p>
+      <p style="color:var(--muted);font-size:.85rem;margin:.3rem 0 0 0;">Last Updated: July 1, 2026 | Version: v4.2-Official</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">1. Introduction</h2>
-    <p>At Sentara, we take your privacy seriously. This policy explains what data we collect, how we use it, and how we protect it.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">1. Data Controller Information</h2>
+      <p>Sentara Platform acts as Data Controller and adheres to Law No. 6698 (KVKK) and international data protection standards.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">2. Data We Collect</h2>
-    <p><strong style="color:var(--text);">Via Discord OAuth2:</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Discord username and user ID</li>
-      <li>Email address (used only for account matching)</li>
-      <li>Profile avatar URL</li>
-    </ul>
-    <p><strong style="color:var(--text);">Via Roblox OAuth2 (optional):</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Roblox username and user ID</li>
-    </ul>
-    <p><strong style="color:var(--text);">During platform use:</strong></p>
-    <ul style="margin:.5rem 0 1rem 1.5rem;display:flex;flex-direction:column;gap:.3rem;">
-      <li>Support ticket contents</li>
-      <li>Economy balance and inventory</li>
-      <li>Profile bio and color preferences</li>
-      <li>Session data</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">2. Categories of Data Processed</h2>
+      <p>We only collect strictly necessary identifiers: Discord ID, username, avatar URL, optional Roblox username/ID, session logs, and support ticket interaction history.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">3. How We Use Your Data</h2>
-    <p>Collected data is used solely for:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Authentication and session management</li>
-      <li>Role synchronization on the Discord server</li>
-      <li>Support ticket tracking and management</li>
-      <li>Economy system operations</li>
-      <li>Platform-specific personalization</li>
-    </ul>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">3. Data Security & 256-bit Encryption</h2>
+      <p>All client-server communications use TLS 1.3 and 256-bit AES encryption. Passwords and sensitive tokens are never stored in plaintext.</p>
+    </div>
 
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">4. Data Sharing</h2>
-    <p>Your personal data is never sold or shared with third parties for marketing purposes. Data is only exchanged with Discord and Roblox APIs during the authentication process, which is subject to those platforms' own privacy policies.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">5. Data Retention</h2>
-    <p>Your data is retained as long as your account is active. To delete your account, open a support ticket. All your data will be permanently removed after the deletion request is processed.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">6. Data Security</h2>
-    <p>Your data is stored using encrypted sessions. Passwords are never stored. OAuth2 tokens are managed server-side and are never exposed to the client.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">7. Your Rights</h2>
-    <p>You have the following rights:</p>
-    <ul style="margin:.75rem 0 .75rem 1.5rem;display:flex;flex-direction:column;gap:.4rem;">
-      <li>Right to view and download your stored data</li>
-      <li>Right to request correction of your data</li>
-      <li>Right to request deletion of your account and all associated data</li>
-      <li>Right to unlink your Roblox account at any time</li>
-    </ul>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">8. Cookies</h2>
-    <p>Only a strictly necessary session cookie is used for session management. No third-party tracking or advertising cookies are used.</p>
-
-    <h2 style="color:var(--text);font-size:1.2rem;font-weight:800;margin:1.5rem 0 .75rem;">9. Contact</h2>
-    <p>For privacy-related questions, please open a support ticket through our Discord server.</p>
+    <div class="legal-section" style="margin-bottom:2rem;">
+      <h2 style="color:var(--text);font-size:1.25rem;font-weight:800;">4. Your Rights Under Data Protection Laws</h2>
+      <p>You have the full right to access, rectify, port, or permanently delete your stored data by submitting a ticket via our official Discord server.</p>
+    </div>
   `;
 
-  const title = lang === 'en' ? 'Privacy Policy' : 'Gizlilik Politikası';
+  const title = lang === 'en' ? 'Privacy Policy & KVKK Notice' : 'Gizlilik ve KVKK Politikası';
   res.send(renderLegalPage(title, lang === 'en' ? en : tr, lang));
 });
 

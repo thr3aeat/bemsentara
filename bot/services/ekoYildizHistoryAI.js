@@ -54,16 +54,20 @@ async function postEkoYildizHistory(client, customDate = null) {
     let embedColor = 0xdc143c; // Kırmızı (Photo 2 standardı)
     let specialField = null;
 
-    const systemPrompt = `Sen EkoYıldız Discord sunucusunda her gün düzenli olarak Tarihte Bugün mesajları paylaşan; tarihi büyük bir tutku, samimiyet ve arkadaş canlısı bir dille aktaran sevilen bir tarih anlatıcısısın.
-Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları (özellikle Mustafa Kemal Atatürk ve varsa diğer büyük tarihi olayları) sanki her gün arkadaşlarına bizzat kendin yazıyormuş gibi sıcak, samimi, akıcı ve sürükleyici bir Türkçe ile tam 2 detaylı paragraf halinde aktarmak.
+    const systemPrompt = `Sen Türk ve Dünya tarihini derinlemesine bilen, Atatürk ilkelerine ve Cumhuriyet değerlerine tutkuyla bağlı, samimi ve sürükleyici bir üslupla konuşan uzman bir baş tarih araştırmacısı ve anlatıcısısın.
+Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları derinlemesine, edebi, akıcı, merak uyandırıcı ve zengin bir Türkçe ile çok kapsamlı aktarmak.
 
-KESİN ÇIKTI VE ANLATIM KURALLARI:
-1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak 2 Türkçe paragraftan oluşmalıdır.
-2. 1. PARAGRAFIN BAŞLANGICI: Samimi ve sıcak bir hitapla başla (Örn: "Evet sevgili EkoYıldız ailesi, geldik ${dateStr}'a! Dün ${yesterdayStr}'ta bahsettiğimiz gibi / yaşanan gelişmelerin ardından bugün...", "Evet arkadaşlar, takvimler ${dateStr}'ı gösteriyor! Dün konuştuğumuz hazırlıkların ardından bugün...").
-3. 1. PARAGRAF (Mustafa Kemal Atatürk): Atatürk'ün ${dateStr} tarihinde (veya o dönemin bu günlerinde) üstlendiği askeri, siyasi ve devrimci liderliğini, vizyonunu ve kararlarını zengin, akıcı ve canlı bir dille anlat.
-4. 2. PARAGRAF (Büyük Tarihi Olay / Tarihsel Derinlik & Samimi Kapanış): Bu tarihte gerçekleşen başka büyük bir tarihi olay varsa (büyük zaferler, fetihler, antlaşmalar, devrimler) ondan bahset; yoksa Atatürk'ün bu tarihi adımının milletimiz ve cumhuriyetimiz üzerindeki mirasını anlat ve sıcak bir kapanış yap (Örn: "...İşte bağımsızlık ruhu tam da böyle günlerde yazıldı. Yarın tarihin bir başka heyecan dolu sayfasında buluşmak üzere!").
-5. İki paragrafı çift satır boşluğu (\\n\\n) ile ayır.
-6. Başlık, markdown başlığı (## vb.), madde işareti, emoji listesi, düşünce süreci YAZMA. Doğrudan 1. paragrafın samimi açılış cümlesiyle başla.`;
+İÇERİK YAPISI:
+1. GİRİŞ & ATATÜRK KÖŞESİ (Gazi Mustafa Kemal Atatürk'ün bu tarihteki veya o dönemin bu günlerindeki askeri, siyasi, stratejik ve devrimci liderliği, vizyonu ve tarihi adımları).
+2. TÜRK VE DÜNYA TARİHİNDE BÜYÜK DÖNÜM NOKTALARI (Fetihler, savaşlar, antlaşmalar, devrimler, imparatorluklar ve uluslararası kritik gelişmeler).
+3. BİLİM, UZAY, KÜLTÜR VE SANAT (İcatlar, uzay keşifleri, edebiyat ve mimarlık şaheserleri).
+4. İLGİNÇ TARİHİ TRIVIA & BİLİNMEYEN GERÇEKLER (Az bilinen, şaşırtıcı ve düşündürücü tarihi anekdot).
+5. GÜNÜN TARİHİ SÖZÜ & VECİZESİ (Günün ruhunu yansıtan ilham verici tarihi bir söz).
+
+KURALLAR:
+- Samimi, saygılı ve arkadaş canlısı bir hitapla başla.
+- Bilgiler tarihi gerçeklere tam uygun, detaylı ve doyurucu olsun.
+- Sadece Türkçe metin üret.`;
 
     let userPrompt = "";
 
@@ -76,43 +80,35 @@ KESİN ÇIKTI VE ANLATIM KURALLARI:
         value: `${specialDay.desc}\n> *"${specialDay.quote}"*`
       };
 
-      if (specialDay.isMourning) {
-        userPrompt = `Bugün ${specialDay.name} (${dateStr}). Ulu Önder Gazi Mustafa Kemal Atatürk'ün ebediyete intikalinin yıl dönümünde onun fikirlerini, inkılaplarını ve aziz hatırasını samimi, derin ve saygılı 2 paragraf halinde anlat. Sadece Türkçe yaz.`;
-      } else {
-        userPrompt = `Bugün ${specialDay.name} (${dateStr}). Bu özel günün anlam ve önemini, Gazi Mustafa Kemal Atatürk'ün rolünü ve ${dateStr} tarihinde yaşanmış büyük tarihi gelişmeleri samimi, akıcı ve arkadaş canlısı bir dille 2 detaylı paragraf halinde anlat. Sadece Türkçe yaz.`;
-      }
+      userPrompt = `Bugün ${specialDay.name} (${dateStr}). Bu özel milli günün derin tarihsel anlam ve önemini, Gazi Mustafa Kemal Atatürk'ün eşsiz liderliğini, ${dateStr} tarihinde gerçekleşmiş Türk ve dünya tarihindeki diğer büyük dönüm noktalarını, bilim/sanat gelişmelerini, ilginç bir tarihi anekdotu ve günün tarihi sözünü kapsayan çok zengin, detaylı ve uzun bir anlatım oluştur.`;
     } else if (isFirstDayOfMonth) {
       embedTitle = `🌟 YENİ AYA MERHABA! – 1 ${months[month]}`;
       embedColor = 0xdc143c;
-      userPrompt = `Tarih: 1 ${months[month]} (Ayın ilk günü). Lütfen aşağıdaki şablona tam olarak uyacak şekilde samimi ve arkadaş canlısı bir metin oluştur:
-
-🌟 YENİ AYA MERHABA!
-Evet dostlar, bu ay Tarihte Bugün EkoYıldız'da [bu ay içinde yaşanmış, Türk ve dünya tarihinden 3-4 adet dikkat çeken önemli tarihi konu başlığı/tema] konularını göreceksiniz.
-
-📅 Bugünün Tarihte Bugünü:
-[Tarihte bugün yaşanan önemli bir tarihi olay hakkında Gazi Mustafa Kemal Atatürk odaklı 2 paragraflık samimi, sürükleyici ve detaylı anlatım]
-
-Kurallar:
-- Şablondaki başlıkları (🌟 YENİ AYA MERHABA!, 📅 Bugünün Tarihte Bugünü:) aynen kullan.
-- Metin doğrudan bu şablonla başlasın. Sadece Türkçe yaz.`;
+      userPrompt = `Tarih: 1 ${months[month]} (Ayın ilk günü).
+Lütfen hem bu yeni aya merhaba diyerek bu ay boyunca bizi bekleyen büyük Türk ve dünya tarihi temalarını özetle, hem de 1 ${months[month]} tarihinde Gazi Mustafa Kemal Atatürk, Türk tarihi zaferleri, bilimsel keşifler ve ilginç tarihi anekdotları kapsayan çok zengin ve uzun bir Tarihte Bugün anlatımı oluştur.`;
     } else {
       userPrompt = `Tarih: ${dateStr}.
-Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki önemli bir olayı ve ayrıca tarihte bu gün yaşanmış çok büyük bir tarihi gelişmeyi "Dün ${yesterdayStr}'ta..." bağı kurarak, yukarıdaki samimi ve arkadaş canlısı kurallara tam uyacak şekilde 2 zengin paragraf halinde anlat. Sadece Türkçe metin üret.`;
+Lütfen ${dateStr} tarihi için:
+1) Gazi Mustafa Kemal Atatürk ve Kurtuluş/Cumhuriyet tarihimizden çok detaylı bir anlatım (Dün ${yesterdayStr}'taki tarihi bağlam ile),
+2) Türk ve Dünya tarihindeki diğer büyük tarihi zaferler, antlaşmalar veya kırılma anları,
+3) Bilim, teknoloji, uzay veya sanat dünyasından tarihte bugün yaşanan önemli bir keşif/gelişme,
+4) İlginç, şaşırtıcı bir tarihi trivia/anekdot,
+5) Günün tarihi sözünü içeren çok kapsamlı, akıcı, zengin ve uzun bir Tarihte Bugün metni hazırla.`;
     }
 
     let aiContent = "";
     try {
-      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
-      if (!aiContent || aiContent.trim().length < 80) {
+      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+      if (!aiContent || aiContent.trim().length < 120) {
         throw new Error("AI yanıtı yetersiz veya çok kısa");
       }
     } catch (aiErr) {
       console.warn("⚠️ [EkoYildizHistoryAI] AI isteği başarısız veya yetersiz, zengin tarih veritabanı kullanılıyor:", aiErr.message);
       if (specialDay) {
-        aiContent = `Bugün ${specialDay.name}! ${specialDay.desc}\n\n${dateStr} tarihinde milletimizin bağımsızlığı ve istikbali için canlarını feda eden tüm kahramanlarımızı, başta Gazi Mustafa Kemal Atatürk olmak üzere sonsuz minnet ve saygıyla anıyoruz.`;
+        aiContent = `Bugün ${specialDay.name}! ${specialDay.desc}\n\n${dateStr} tarihinde milletimizin bağımsızlığı ve istikbali için canlarını feda eden tüm kahramanlarımızı, başta Gazi Mustafa Kemal Atatürk olmak üzere sonsuz minnet ve saygıyla anıyoruz.\n\n` + getHistoricalFallbackEvent(day, month);
       } else if (isFirstDayOfMonth) {
         const monthHistory = getHistoricalFallbackEvent(day, month);
-        aiContent = `🌟 YENİ AYA MERHABA!\nBu ay Tarihte Bugün EkoYıldız'da dünya ve Türk tarihinin en önemli dönüm noktalarını göreceksiniz.\n\n📅 Bugünün Tarihte Bugünü:\n${monthHistory}`;
+        aiContent = `🌟 YENİ AYA MERHABA!\nBu ay Tarihte Bugün EkoYıldız'da dünya ve Türk tarihinin en önemli dönüm noktalarını, büyük zaferleri ve bilimsel sıçrayışları göreceksiniz.\n\n📅 Bugünün Tarihte Bugünü:\n${monthHistory}`;
       } else {
         aiContent = getHistoricalFallbackEvent(day, month);
       }
@@ -122,14 +118,34 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
       .setTitle(embedTitle)
       .setDescription(aiContent)
       .setColor(embedColor)
-      .setFooter({ text: "EkoYıldız Yapay Zeka Tarih Sistemi", iconURL: client.user.displayAvatarURL() })
+      .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: client.user.displayAvatarURL() })
       .setTimestamp();
 
     if (specialField) {
       embed.addFields(specialField);
     }
 
-    await channel.send({ embeds: [embed] });
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+    const historyRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`tb_detail_ataturk_${day}_${month}`)
+        .setLabel("🏛️ Atatürk & Zaferler")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`tb_detail_science_${day}_${month}`)
+        .setLabel("🔬 Bilim & Keşifler")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`tb_detail_trivia_${day}_${month}`)
+        .setLabel("💡 Tarihi Trivia")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`tb_random_quote_${day}_${month}`)
+        .setLabel("📜 Tarihi Vecize")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await channel.send({ embeds: [embed], components: [historyRow] });
     console.log(`✅ [EkoYildizHistoryAI] ${embedTitle} mesajı başarıyla gönderildi.`);
 
     // 2. Özel günlerde duyuru/genel kanalına bildirim mesajı gönder (1518692466860101915)

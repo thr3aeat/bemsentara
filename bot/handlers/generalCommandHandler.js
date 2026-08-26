@@ -129,24 +129,33 @@ async function handleGeneralCommand(interaction) {
         value: `${specialDay.desc}\n> *"${specialDay.quote}"*`
       } : null;
 
-      const systemPrompt = `Sen EkoYıldız Discord sunucusunda her gün düzenli olarak Tarihte Bugün mesajları paylaşan; tarihi büyük bir tutku, samimiyet ve arkadaş canlısı bir dille aktaran sevilen bir tarih anlatıcısısın.
-Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları (özellikle Mustafa Kemal Atatürk ve varsa diğer büyük tarihi olayları) sanki her gün arkadaşlarına bizzat kendin yazıyormuş gibi sıcak, samimi, akıcı ve sürükleyici bir Türkçe ile tam 2 detaylı paragraf halinde aktarmak.
+      const systemPrompt = `Sen Türk ve Dünya tarihini derinlemesine bilen, Atatürk ilkelerine ve Cumhuriyet değerlerine tutkuyla bağlı, samimi ve sürükleyici bir üslupla konuşan uzman bir baş tarih araştırmacısı ve anlatıcısısın.
+Görevin: İstenen tarihte (${dateStr}) gerçekleşmiş tarihi olayları derinlemesine, edebi, akıcı, merak uyandırıcı ve zengin bir Türkçe ile çok kapsamlı aktarmak.
 
-KESİN ÇIKTI VE ANLATIM KURALLARI:
-1. Yanıtın SADECE ve DOĞRUDAN yayınlanacak 2 Türkçe paragraftan oluşmalıdır.
-2. 1. PARAGRAFIN BAŞLANGICI: Samimi ve sıcak bir hitapla başla (Örn: "Evet sevgili EkoYıldız ailesi, geldik ${dateStr}'a! Dün ${yesterdayStr}'ta bahsettiğimiz gibi...", "Evet arkadaşlar, takvimler ${dateStr}'ı gösteriyor! Dün konuştuğumuz hazırlıkların ardından bugün...").
-3. 1. PARAGRAF (Mustafa Kemal Atatürk): Atatürk'ün ${dateStr} tarihinde (veya o dönemin bu günlerinde) üstlendiği askeri, siyasi ve devrimci liderliğini, vizyonunu ve kararlarını zengin, akıcı ve canlı bir dille anlat.
-4. 2. PARAGRAF (Büyük Tarihi Olay / Tarihsel Derinlik & Samimi Kapanış): Bu tarihte gerçekleşen başka büyük bir tarihi olay varsa ondan bahset; yoksa Atatürk'ün bu tarihi adımının milletimiz ve cumhuriyetimiz üzerindeki mirasını anlat ve sıcak bir kapanış yap (Örn: "...İşte bağımsızlık ruhu tam da böyle günlerde yazıldı. Yarın tarihin bir başka heyecan dolu sayfasında buluşmak üzere!").
-5. İki paragrafı çift satır boşluğu (\\n\\n) ile ayır.
-6. Başlık, markdown başlığı (## vb.), madde işareti, emoji listesi, düşünce süreci YAZMA. Doğrudan 1. paragrafın samimi açılış cümlesiyle başla.`;
+İÇERİK YAPISI:
+1. GİRİŞ & ATATÜRK KÖŞESİ (Gazi Mustafa Kemal Atatürk'ün bu tarihteki veya o dönemin bu günlerindeki askeri, siyasi, stratejik ve devrimci liderliği, vizyonu ve tarihi adımları).
+2. TÜRK VE DÜNYA TARİHİNDE BÜYÜK DÖNÜM NOKTALARI (Fetihler, savaşlar, antlaşmalar, devrimler, imparatorluklar ve uluslararası kritik gelişmeler).
+3. BİLİM, UZAY, KÜLTÜR VE SANAT (İcatlar, uzay keşifleri, edebiyat ve mimarlık şaheserleri).
+4. İLGİNÇ TARİHİ TRIVIA & BİLİNMEYEN GERÇEKLER (Az bilinen, şaşırtıcı ve düşündürücü tarihi anekdot).
+5. GÜNÜN TARİHİ SÖZÜ & VECİZESİ (Günün ruhunu yansıtan ilham verici tarihi bir söz).
+
+KURALLAR:
+- Samimi, saygılı ve arkadaş canlısı bir hitapla başla.
+- Bilgiler tarihi gerçeklere tam uygun, detaylı ve doyurucu olsun.
+- Sadece Türkçe metin üret.`;
 
       const userPrompt = `Tarih: ${dateStr}.
-Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki önemli bir olayı ve ayrıca tarihte bu gün yaşanmış çok büyük bir tarihi gelişmeyi "Dün ${yesterdayStr}'ta..." bağı kurarak, yukarıdaki samimi kurallara tam uyarak 2 zengin paragraf halinde anlat. Sadece Türkçe metin üret.`;
+Lütfen ${dateStr} tarihi için:
+1) Gazi Mustafa Kemal Atatürk ve Kurtuluş/Cumhuriyet tarihimizden çok detaylı bir anlatım (Dün ${yesterdayStr}'taki tarihi bağlam ile),
+2) Türk ve Dünya tarihindeki diğer büyük tarihi zaferler, antlaşmalar veya kırılma anları,
+3) Bilim, teknoloji, uzay veya sanat dünyasından tarihte bugün yaşanan önemli bir keşif/gelişme,
+4) İlginç, şaşırtıcı bir tarihi trivia/anekdot,
+5) Günün tarihi sözünü içeren çok kapsamlı, akıcı, zengin ve uzun bir Tarihte Bugün metni hazırla.`;
 
       let aiContent = "";
       try {
-        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
-        if (!aiContent || aiContent.trim().length < 80) {
+        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+        if (!aiContent || aiContent.trim().length < 120) {
           throw new Error("AI yanıtı yetersiz");
         }
       } catch (aiErr) {
@@ -157,14 +166,34 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
         .setTitle(embedTitle)
         .setDescription(aiContent)
         .setColor(embedColor)
-        .setFooter({ text: "EkoYıldız Yapay Zeka Tarih Sistemi", iconURL: interaction.client.user.displayAvatarURL() })
+        .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: interaction.client.user.displayAvatarURL() })
         .setTimestamp();
 
       if (specialField) {
         embed.addFields(specialField);
       }
 
-      return interaction.editReply({ embeds: [embed] });
+      const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+      const historyRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_ataturk_${day}_${month}`)
+          .setLabel("🏛️ Atatürk & Zaferler")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_science_${day}_${month}`)
+          .setLabel("🔬 Bilim & Keşifler")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`tb_detail_trivia_${day}_${month}`)
+          .setLabel("💡 Tarihi Trivia")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`tb_random_quote_${day}_${month}`)
+          .setLabel("📜 Tarihi Vecize")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      return interaction.editReply({ embeds: [embed], components: [historyRow] });
     } catch (err) {
       console.error("[tarihte-bugun error]:", err.message);
       return interaction.editReply({ content: `❌ Bir hata oluştu: ${err.message}` });

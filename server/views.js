@@ -3351,27 +3351,199 @@ function renderSettingsPage(user) {
 
 
 // ─────────────────────────────────────────────
-// LEGAL PAGE
+// LEGAL PAGE (GELİŞMİŞ İNTERAKTİF HUKUK & UYUMLULUK MERKEZİ)
 // ─────────────────────────────────────────────
 function renderLegalPage(title, text, lang = 'tr') {
+  const isTr = lang === 'tr';
   const content = `
-    <div class="card" style="max-width:860px;margin:0 auto;">
-      <!-- Dil seçici -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
-        <h1 style="font-size:2rem;font-weight:800;color:var(--accent);">${_esc(title)}</h1>
-        <div style="display:flex;gap:.5rem;">
-          <a href="?lang=tr" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'tr' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'tr' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'tr' ? 'transparent' : 'var(--border)'};">🇹🇷 TR</a>
-          <a href="?lang=en" style="padding:.4rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'en' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'en' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'en' ? 'transparent' : 'var(--border)'};">🇬🇧 EN</a>
+    <div style="max-width:1050px;margin:0 auto;padding-bottom:3rem;">
+      <!-- Legal Header with Badges -->
+      <div class="card" style="margin-bottom:1.5rem;background:linear-gradient(135deg,rgba(124,106,247,0.12),rgba(16,185,129,0.06));border:1px solid rgba(124,106,247,0.25);border-radius:20px;padding:2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1.5rem;">
+          <div>
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;">
+              <span style="font-size:1.8rem;">⚖️</span>
+              <h1 style="font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0;">${_esc(title)}</h1>
+            </div>
+            <p style="color:var(--muted);font-size:.95rem;margin:0;max-width:650px;">
+              ${isTr ? 'Sentara ve EkoYıldız platformu resmi yasal belgeleri, 6698 sayılı KVKK aydınlatma metni, 5846 sayılı FSEK telif bildirimleri ve kullanım şartları sözleşmesidir.' : 'Official legal documentation, GDPR/KVKK compliance notice, DMCA/IP policies, and Terms of Service for Sentara & EkoYıldız platforms.'}
+            </p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.75rem;align-items:flex-end;">
+            <div style="display:flex;gap:.5rem;">
+              <a href="?lang=tr" style="padding:.45rem 1rem;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'tr' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'tr' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'tr' ? 'transparent' : 'var(--border)'};transition:all .2s;">🇹🇷 Türkçe (TR)</a>
+              <a href="?lang=en" style="padding:.45rem 1rem;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;background:${lang === 'en' ? 'var(--accent)' : 'rgba(255,255,255,.07)'};color:${lang === 'en' ? '#fff' : 'var(--muted)'};border:1px solid ${lang === 'en' ? 'transparent' : 'var(--border)'};transition:all .2s;">🇬🇧 English (EN)</a>
+            </div>
+            <div style="display:flex;gap:.5rem;">
+              <button onclick="window.print()" class="btn btn-ghost" style="padding:.4rem .8rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem;">🖨️ ${isTr ? 'Yazdır / PDF' : 'Print / PDF'}</button>
+              <button onclick="copyLegalText()" class="btn btn-ghost" style="padding:.4rem .8rem;font-size:.82rem;display:flex;align-items:center;gap:.4rem;">📋 ${isTr ? 'Metni Kopyala' : 'Copy Text'}</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Compliance Badges -->
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.08);">
+          <span style="display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .8rem;border-radius:8px;font-size:.78rem;font-weight:700;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">🛡️ 6698 Sayılı KVKK Uyumlu</span>
+          <span style="display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .8rem;border-radius:8px;font-size:.78rem;font-weight:700;background:rgba(124,106,247,0.12);color:#a78bfa;border:1px solid rgba(124,106,247,0.25);">⚖️ 5846 Sayılı FSEK & DMCA Telif Korumalı</span>
+          <span style="display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .8rem;border-radius:8px;font-size:.78rem;font-weight:700;background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">📜 5651 Sayılı İnternet Kanunu</span>
+          <span style="display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .8rem;border-radius:8px;font-size:.78rem;font-weight:700;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.25);">🔒 256-Bit SSL Şifreleme</span>
         </div>
       </div>
-      <div style="line-height:2;color:var(--muted);font-size:.97rem;">${text}</div>
-      <hr class="divider">
-      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
-        <a href="/legal/tos"     style="color:var(--accent);text-decoration:none;font-weight:600;">📄 Terms of Service / Hizmet Koşulları</a>
-        <a href="/legal/privacy" style="color:var(--accent);text-decoration:none;font-weight:600;">🔒 Privacy Policy / Gizlilik Politikası</a>
-        <a href="/"              style="color:var(--muted);text-decoration:none;">← Ana Sayfa</a>
+
+      <!-- Navigation Tabs & Search Toolbar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <a href="/legal/tos" style="padding:.6rem 1.2rem;border-radius:12px;font-size:.9rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:.5rem;background:${title.includes('Hizmet') || title.includes('Terms') ? 'var(--accent)' : 'rgba(255,255,255,0.04)'};color:${title.includes('Hizmet') || title.includes('Terms') ? '#fff' : 'var(--muted)'};border:1px solid ${title.includes('Hizmet') || title.includes('Terms') ? 'transparent' : 'var(--border)'};">
+            📄 ${isTr ? 'Hizmet Koşulları (Terms)' : 'Terms of Service'}
+          </a>
+          <a href="/legal/privacy" style="padding:.6rem 1.2rem;border-radius:12px;font-size:.9rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:.5rem;background:${title.includes('Gizlilik') || title.includes('Privacy') ? 'var(--accent)' : 'rgba(255,255,255,0.04)'};color:${title.includes('Gizlilik') || title.includes('Privacy') ? '#fff' : 'var(--muted)'};border:1px solid ${title.includes('Gizlilik') || title.includes('Privacy') ? 'transparent' : 'var(--border)'};">
+            🔒 ${isTr ? 'Gizlilik & KVKK Politikası' : 'Privacy Policy'}
+          </a>
+        </div>
+        <div style="position:relative;min-width:280px;flex:1;max-width:400px;">
+          <input type="text" id="legalSearch" onkeyup="filterLegalArticles()" placeholder="${isTr ? '🔍 Maddelerde ara... (örn: telif, iade, ban, çerez)' : '🔍 Search legal articles...'}" style="width:100%;padding:.6rem 1rem .6rem 2.4rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text);font-size:.88rem;outline:none;">
+          <span style="position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;">⚖️</span>
+        </div>
+      </div>
+
+      <!-- Main Legal Body Container -->
+      <div class="card" style="border-radius:20px;padding:2.5rem;background:rgba(18,18,24,0.7);backdrop-filter:blur(16px);border:1px solid var(--border);line-height:1.9;color:var(--muted);font-size:.97rem;" id="legalDocumentContent">
+        ${text}
+      </div>
+
+      <!-- Interactive Cookie & Privacy Preferences Accordion -->
+      <div class="card" style="margin-top:2rem;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleCookieSettings()">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <span style="font-size:1.5rem;">🍪</span>
+            <div>
+              <h3 style="margin:0;font-size:1.1rem;font-weight:800;color:var(--text);">${isTr ? 'İnteraktif Çerez (Cookie) ve Gizlilik Tercihleri' : 'Interactive Cookie & Privacy Preferences'}</h3>
+              <p style="margin:0;font-size:.85rem;color:var(--muted);">${isTr ? 'Platformda kullanılan çerezleri ve veri işleme tercihlerinizi buradan yönetebilirsiniz.' : 'Manage cookies and data processing preferences here.'}</p>
+            </div>
+          </div>
+          <span id="cookieToggleIcon" style="font-size:1.2rem;color:var(--accent);transition:transform .3s;">▼</span>
+        </div>
+        <div id="cookieSettingsBox" style="display:none;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:grid;gap:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:rgba(255,255,255,0.03);border-radius:12px;">
+              <div>
+                <strong style="color:var(--text);font-size:.95rem;">🔒 ${isTr ? 'Zorunlu Oturum ve Güvenlik Çerezleri' : 'Strictly Necessary & Session Cookies'}</strong>
+                <p style="margin:0;font-size:.82rem;color:var(--muted);">${isTr ? 'Oturum doğrulama, CSRF güvenliği ve hesap eşleştirme için gereklidir.' : 'Required for session authentication and security.'}</p>
+              </div>
+              <input type="checkbox" checked disabled style="transform:scale(1.2);accent-color:var(--accent);">
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:rgba(255,255,255,0.03);border-radius:12px;">
+              <div>
+                <strong style="color:var(--text);font-size:.95rem;">⚡ ${isTr ? 'Performans ve Arayüz Tercihleri' : 'Performance & UI Preferences'}</strong>
+                <p style="margin:0;font-size:.82rem;color:var(--muted);">${isTr ? 'Karanlık tema, dil seçimi ve hızlı yükleme önbellek verileri.' : 'Saves dark theme, language and UI state.'}</p>
+              </div>
+              <input type="checkbox" id="prefPerformance" checked style="transform:scale(1.2);accent-color:var(--accent);">
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:rgba(255,255,255,0.03);border-radius:12px;">
+              <div>
+                <strong style="color:var(--text);font-size:.95rem;">🔔 ${isTr ? 'Bildirim ve Ses Efektleri' : 'Notification & Audio Preferences'}</strong>
+                <p style="margin:0;font-size:.82rem;color:var(--muted);">${isTr ? 'Destek talebi bildirimleri ve sesli uyarılar.' : 'Ticket alerts and system notifications.'}</p>
+              </div>
+              <input type="checkbox" id="prefNotifications" checked style="transform:scale(1.2);accent-color:var(--accent);">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:1rem;">
+            <button onclick="saveCookiePreferences()" class="btn" style="padding:.5rem 1.25rem;font-size:.88rem;">💾 ${isTr ? 'Tercihleri Kaydet' : 'Save Preferences'}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Acceptance Stamp Widget -->
+      <div class="card" style="margin-top:1.5rem;border-radius:20px;border:1px solid rgba(16,185,129,0.25);background:linear-gradient(135deg,rgba(16,185,129,0.04),rgba(124,106,247,0.04));">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <input type="checkbox" id="acceptLegalCheckbox" onchange="handleLegalAccept(this)" style="transform:scale(1.3);accent-color:#10b981;cursor:pointer;">
+            <label for="acceptLegalCheckbox" style="color:var(--text);font-size:.92rem;font-weight:600;cursor:pointer;">
+              ${isTr ? 'İşbu Hizmet Koşulları, Gizlilik Sözleşmesi ve Telif Bildirimlerini okudum, hak ve yükümlülüklerimi kabul ediyorum.' : 'I have read, understood and agree to the Terms of Service, Privacy Policy and IP Notices.'}
+            </label>
+          </div>
+          <div id="legalAcceptBadge" style="display:none;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:8px;background:rgba(16,185,129,0.15);color:#34d399;font-size:.82rem;font-weight:700;border:1px solid rgba(16,185,129,0.3);">
+            ✅ ${isTr ? 'Dijital Onay Mührü Alındı' : 'Digitally Acknowledged'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Quick Links -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:.9rem;">
+          <a href="/legal/tos" style="color:var(--accent);text-decoration:none;font-weight:700;">📄 Hizmet Koşulları</a>
+          <a href="/legal/privacy" style="color:var(--accent);text-decoration:none;font-weight:700;">🔒 Gizlilik & KVKK Politikası</a>
+          <a href="/" style="color:var(--muted);text-decoration:none;">← Ana Sayfaya Dön</a>
+        </div>
+        <span style="color:var(--muted);font-size:.82rem;">© 2026 Sentara Platform & EkoYıldız Topluluğu. Tüm Hakları Saklıdır.</span>
       </div>
     </div>
+
+    <!-- Interactive Client Scripts -->
+    <script>
+      function filterLegalArticles() {
+        const query = document.getElementById('legalSearch').value.toLowerCase().trim();
+        const container = document.getElementById('legalDocumentContent');
+        const sections = container.querySelectorAll('.legal-section');
+        
+        sections.forEach(sec => {
+          const text = sec.innerText.toLowerCase();
+          if (!query || text.includes(query)) {
+            sec.style.display = 'block';
+          } else {
+            sec.style.display = 'none';
+          }
+        });
+      }
+
+      function toggleCookieSettings() {
+        const box = document.getElementById('cookieSettingsBox');
+        const icon = document.getElementById('cookieToggleIcon');
+        if (box.style.display === 'none' || !box.style.display) {
+          box.style.display = 'block';
+          icon.style.transform = 'rotate(180deg)';
+        } else {
+          box.style.display = 'none';
+          icon.style.transform = 'rotate(0deg)';
+        }
+      }
+
+      function saveCookiePreferences() {
+        const perf = document.getElementById('prefPerformance').checked;
+        const notif = document.getElementById('prefNotifications').checked;
+        localStorage.setItem('sentara_cookie_prefs', JSON.stringify({ performance: perf, notifications: notif, timestamp: Date.now() }));
+        alert('${isTr ? "✅ Çerez tercihleriniz başarıyla kaydedildi!" : "✅ Cookie preferences successfully saved!"}');
+      }
+
+      function handleLegalAccept(el) {
+        const badge = document.getElementById('legalAcceptBadge');
+        if (el.checked) {
+          badge.style.display = 'inline-flex';
+          localStorage.setItem('sentara_legal_accepted', JSON.stringify({ accepted: true, date: new Date().toISOString() }));
+        } else {
+          badge.style.display = 'none';
+          localStorage.removeItem('sentara_legal_accepted');
+        }
+      }
+
+      function copyLegalText() {
+        const text = document.getElementById('legalDocumentContent').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+          alert('${isTr ? "📋 Resmi sözleşme metni panoya kopyalandı." : "📋 Legal text copied to clipboard."}');
+        });
+      }
+
+      // Check existing acceptance on load
+      document.addEventListener('DOMContentLoaded', () => {
+        const acc = localStorage.getItem('sentara_legal_accepted');
+        if (acc) {
+          const checkbox = document.getElementById('acceptLegalCheckbox');
+          const badge = document.getElementById('legalAcceptBadge');
+          if (checkbox) checkbox.checked = true;
+          if (badge) badge.style.display = 'inline-flex';
+        }
+      });
+    </script>
   `;
   return _layout(title, null, content);
 }

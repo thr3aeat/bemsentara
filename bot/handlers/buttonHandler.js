@@ -508,6 +508,55 @@ async function handleButtonInteraction(interaction) {
     }
   }
 
+  // ── Tarihte Bugün İnteraktif Detay Butonları ────────────────────────────
+  if (customId.startsWith("tb_detail_ataturk_") || customId.startsWith("tb_detail_science_") || customId.startsWith("tb_detail_trivia_") || customId.startsWith("tb_random_quote_")) {
+    await interaction.deferReply({ ephemeral: true });
+    try {
+      const parts = customId.split("_");
+      const actionType = parts[1] + "_" + parts[2]; // detail_ataturk, detail_science, detail_trivia, random_quote
+      const day = parts[3] || new Date().getDate();
+      const month = parts[4] || new Date().getMonth();
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const dateStr = `${day} ${months[month]}`;
+
+      const { chatWithAI } = require("../services/aiService");
+      let prompt = "";
+      let title = "";
+      let color = 0xdc143c;
+
+      if (customId.startsWith("tb_detail_ataturk_")) {
+        title = `🏛️ Gazi Mustafa Kemal Atatürk & Zaferler — ${dateStr}`;
+        color = 0xdc143c;
+        prompt = `Tarih: ${dateStr}. Gazi Mustafa Kemal Atatürk'ün bu tarihte (veya o dönemin bu günlerinde) aldığı askeri, siyasi kararlar, vizyoner stratejisi ve Türk milletine kazandırdığı devrimci mirası anlatan çok detaylı, akıcı, zengin 2 paragraf üret.`;
+      } else if (customId.startsWith("tb_detail_science_")) {
+        title = `🔬 Bilim, Uzay & Keşif Tarihi — ${dateStr}`;
+        color = 0x3b82f6;
+        prompt = `Tarih: ${dateStr}. Tarihte bugün dünya çapında gerçekleşmiş bilimsel buluşlar, uzay keşifleri, teknolojik icatlar ve tıp/sanat alanındaki çığır açan gelişmeleri detaylı ve akıcı bir şekilde anlatan zengin 2 paragraf yaz.`;
+      } else if (customId.startsWith("tb_detail_trivia_")) {
+        title = `💡 Şaşırtıcı Tarihi Trivia & Anekdotlar — ${dateStr}`;
+        color = 0xf59e0b;
+        prompt = `Tarih: ${dateStr}. Tarihte bugün yaşanmış veya bu döneme ait, çok az kişinin bildiği, son derece ilginç, şaşırtıcı ve merak uyandıran 3 adet tarihi anekdot/trivia bilgisi paylaş.`;
+      } else if (customId.startsWith("tb_random_quote_")) {
+        title = `📜 Tarihi Vecize ve Günün İlhamı — ${dateStr}`;
+        color = 0x8b5cf6;
+        prompt = `Tarih: ${dateStr}. Gazi Mustafa Kemal Atatürk ve tarihe yön vermiş büyük düşünürlerden, bugünün tarihsel anlamına ve milli mücadeleye uygun, derin anlamlı tarihi sözler ve kısa bir felsefi analiz paylaş.`;
+      }
+
+      const response = await chatWithAI([{ role: 'user', content: prompt }], 'Sen uzman bir tarih araştırmacısısın. Sadece Türkçe zengin içerik üret.', 'ticket', { max_tokens: 1200, temperature: 0.65 });
+
+      const detailEmbed = new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(response || "Detaylı tarih bilgisi yüklenemedi.")
+        .setColor(color)
+        .setFooter({ text: "EkoYıldız Tarihte Bugün İnteraktif Rehberi" })
+        .setTimestamp();
+
+      return interaction.editReply({ embeds: [detailEmbed] });
+    } catch (tbErr) {
+      return interaction.editReply({ content: `❌ Tarih detayı alınırken hata oluştu: ${tbErr.message}` });
+    }
+  }
+
   // ── Automod Ceza & AI Onaylı İnfaz Butonları ──────────────────────────────
   if (customId.startsWith("jail_")) {
     const { handleAutomodPunishmentButton } = require("../services/automodPunishmentService");
