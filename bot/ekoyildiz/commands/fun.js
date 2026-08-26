@@ -229,7 +229,7 @@ module.exports = [
 
         return new EmbedBuilder()
           .setTitle(`💖 AŞK, TUTKU & TEN UYUMU TESTİ`)
-          .setThumbnail(u2.displayAvatarURL({ dynamic: true }))
+          .setThumbnail(u2.displayAvatarURL())
           .setDescription(
             `👑 **Aşıklar:** ${u1}  💞  ${u2}\n\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -339,7 +339,7 @@ module.exports = [
 
       const buildFireEmbed = (user, s) => new EmbedBuilder()
         .setTitle(`🌶️ LİBİDO & ATEŞ ÖLÇER — ${user.username}`)
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(user.displayAvatarURL())
         .setDescription(
           `👤 **Kullanıcı:** ${user}\n\n` +
           `🌡️ **Ateş Seviyesi:** **%${s}**\n` +
@@ -631,9 +631,11 @@ module.exports = [
         const spray = getSprayDistance(cm);
         const position = getRandomPosition();
 
-        return new EmbedBuilder()
+        const botAvatar = message.client.user ? message.client.user.displayAvatarURL() : null;
+
+        const embed = new EmbedBuilder()
           .setTitle(`🍆 KAÇ CM & ULTIMATE PERFORMANS TESTİ - ${user.username}`)
-          .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+          .setThumbnail(user.displayAvatarURL())
           .setColor(info.color)
           .addFields(
             { name: '📐 Malafat Boyu', value: `**${cm} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
