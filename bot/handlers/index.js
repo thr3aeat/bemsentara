@@ -12,7 +12,7 @@ const { setupCentralAuditHandler } = require("./centralAuditHandler");
 const { handleSurveyButton } = require('../services/surveyAI');
 const { handleInterviewButton } = require('../services/modInterview');
 const { handleCoachButton } = require('../services/staffCoach');
-const { handleDMCloseButton, handleDMConfirmButton } = require('../services/dmTicket');
+const { handleDMCloseButton, handleDMButton, handleDMModal } = require('../services/dmTicket');
 const { handleBanButton, handleWarnButton, handleAdLinkButton, handleAdLinkModal } = require('../services/ticketAI');
 const { handleDiscordAbuseButton } = require("./discordAbuseButtonHandler");
 const { handleNightUnbanButton } = require("../services/discordAbuseDetector");
@@ -4116,15 +4116,10 @@ function initializeDiscordHandlers(client) {
         await handleCoachButton(interaction, client);
         return;
       }
-      // ── DM Ticket kapat butonu ─────────────────────────────────────────────
-      if (interaction.isButton() && interaction.customId?.startsWith('dm_close_')) {
-        await handleDMCloseButton(interaction, client);
-        return;
-      }
-      // ── DM Ticket Evet/Hayır butonu ────────────────────────────────────────
-      if (interaction.isButton() && interaction.customId?.startsWith('dm_confirm_')) {
-        await handleDMConfirmButton(interaction, client);
-        return;
+      // ── DM Ticket Butonları (Tüm Mod, Hub ve Kullanıcı Eylemleri) ─────────
+      if (interaction.isButton() && interaction.customId?.startsWith('dm_')) {
+        const handled = await handleDMButton(interaction, client);
+        if (handled) return;
       }
       // ── Ban onayla/reddet butonu ───────────────────────────────────────────
       if (interaction.isButton() && (interaction.customId?.startsWith('ban_approve_') || interaction.customId?.startsWith('ban_reject_'))) {
@@ -4176,6 +4171,11 @@ function initializeDiscordHandlers(client) {
       )) {
         await handleAppealDecisionButton(interaction, client);
         return;
+      }
+      // ── DM Ticket Modal Submit ─────────────────────────────────────────────
+      if (interaction.isModalSubmit() && interaction.customId?.startsWith('dm_')) {
+        const handled = await handleDMModal(interaction, client);
+        if (handled) return;
       }
       // ── Ban İtiraz Modal Submit (form) ─────────────────────────────────────
       if (interaction.isModalSubmit() && interaction.customId?.startsWith('ban_appeal_modal_')) {

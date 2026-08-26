@@ -3,6 +3,8 @@
 const {
   EmbedBuilder, ChannelType, PermissionFlagsBits,
   ActionRowBuilder, ButtonBuilder, ButtonStyle,
+  ModalBuilder, TextInputBuilder, TextInputStyle,
+  AttachmentBuilder
 } = require('discord.js');
 const { chatWithAI } = require('./aiService');
 const Ticket = require('../../models/Ticket');
@@ -14,12 +16,14 @@ const {
 
 // userId → [{role, content}]
 const dmConversations = new Map();
-// userId → 'normal' | 'ai' | 'emergency_ai'
+// userId → 'normal' | 'ai' | 'emergency_ai' | 'tech' | 'billing' | 'report' | 'ad' | 'general'
 const dmModes = new Map();
-// userId → { ticketId, channelId, guildId }
+// userId → { ticketId, channelId, guildId, locked: boolean, claimedBy: string }
 const activeDMTickets = new Map();
 // Onay bekleyen kullanıcılar: userId → true
 const pendingConfirmation = new Map();
+// Nudge cooldown: ticketId → timestamp
+const userNudgeCooldown = new Map();
 
 const EMERGENCY_SYSTEM_PROMPT = `Sen Sentara/EkoYıldız Discord sunucusunun Baş Emniyet ve Güvenlik Yapay Zekasısın.
 Görevin sunucuda istila (raid), yetki suistimali (abuse), saldırganlık yapanları tespit etmek ve eğer botta bir spam/hata durumu varsa müdahale etmektir.
@@ -118,30 +122,6 @@ KATEGORİ BAZLI AKIŞLAR
   Adım 2: Diğer hesap sorunlarında → [HAZIR] hesap sorunu
 
 ━━━━━━━━━━━━━━━━━━━━━━━
-GENEL DESTEK & SOHBET (Ticket dışı da kullanılabilir)
-━━━━━━━━━━━━━━━━━━━━━━━
-Bu kategori hem ticket içinde hem de genel sohbet kanallarında aktiftir.
-
-▸ Sunucu hakkında sorular:
-  - Sunucu kuralları, kanallar, roller hakkında bilgi ver
-  - Etkinlik, duyuru, güncelleme hakkında sorulursa "Duyuru kanalını takip et" de
-  - "Nasıl rank atlarım?" gibi sorulara genel yönlendirme yap
-
-▸ Bot komutları:
-  - Bilinen komutları açıkla (/authorize, /rank, vb.)
-  - Bilinmeyen komutlarda "Bu komut hakkında bilgim yok, yetkililere sorabilirsin" de
-
-▸ Sohbet & eğlence:
-  - Kullanıcı sohbet etmek isterse kısa, samimi yanıtlar ver
-  - Oyun, Roblox, içerik üreticiliği gibi konularda sohbete katıl
-  - Şakalar veya eğlenceli sorulara uygun, hafif mizahla yanıt ver
-  - Kimseyi aşağılayan veya tartışma çıkarabilecek konulardan uzak dur
-
-▸ Yönlendirme:
-  - Ticket gerektiren bir sorun varsa: "Bunun için bir ticket açmalısın, sana yardımcı olayım!"
-  - Yetkili gerektiren durumda: [HAZIR] genel soru
-
-━━━━━━━━━━━━━━━━━━━━━━━
 SİSTEM KOMUTLARI (Asla başka yerde kullanma)
 ━━━━━━━━━━━━━━━━━━━━━━━
 [RESOLVE] <mesaj>    → AI çözdü, ticket oto-kapanır. Kullanıcıya çözümü yaz.
@@ -163,13 +143,65 @@ function cleanAI(text) {
     .trim();
 }
 
-// ── Kapatma butonu ──────────────────────────────────────────────────────────
-function buildDMCloseButton(ticketId) {
-  return new ActionRowBuilder().addComponents(
+// ── Moderatör Kontrol Paneli (Yetkili Kanalı İçin) ─────────────────────────
+function buildDMModActionRows(ticketId, isLocked = false, claimedBy = null) {
+  const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`dm_close_${ticketId}`)
-      .setLabel('🔒 DM Ticket\'ı Kapat')
-      .setStyle(ButtonStyle.Danger)
+      .setLabel('🔒 Talebi Kapat')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`dm_claim_${ticketId}`)
+      .setLabel(claimedBy ? `🙋‍♂️ Üstlendi (${claimedBy})` : '🙋‍♂️ Talebi Üstlen')
+      .setStyle(claimedBy ? ButtonStyle.Success : ButtonStyle.Primary)
+      .setDisabled(!!claimedBy),
+    new ButtonBuilder()
+      .setCustomId(`dm_note_${ticketId}`)
+      .setLabel('📝 Yetkili Notu')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`dm_profile_${ticketId}`)
+      .setLabel('👤 Kullanıcı Sicili')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const row2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`dm_canned_prompt_${ticketId}`)
+      .setLabel('⚡ Hazır Şablonlar')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`dm_ai_audit_${ticketId}`)
+      .setLabel('🚨 AI İhtilaf Analiz')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`dm_transcript_${ticketId}`)
+      .setLabel('📜 Transkript Al')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`dm_lock_${ticketId}`)
+      .setLabel(isLocked ? '🔊 DM Kilidini Aç' : '🔇 DM Yazma Kilidi')
+      .setStyle(isLocked ? ButtonStyle.Success : ButtonStyle.Secondary)
+  );
+
+  return [row1, row2];
+}
+
+// ── Kullanıcı DM Canlı Kontrol Çubuğu ──────────────────────────────────────
+function buildUserDMControlRow(ticketId) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`dm_user_close_${ticketId}`)
+      .setLabel('🔒 Talebi Kapat (Çözüldü)')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`dm_user_nudge_${ticketId}`)
+      .setLabel('🙋‍♂️ Yetkiliye Hatırlat')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`dm_user_transcript_${ticketId}`)
+      .setLabel('📜 Konuşma Özeti')
+      .setStyle(ButtonStyle.Secondary)
   );
 }
 
@@ -177,13 +209,13 @@ function buildDMCloseButton(ticketId) {
 async function handleDMMessage(message, client) {
   const userId = message.author.id;
 
-  // Aktif ticket varsa → kanala ilet (Map'te veya DB'de)
+  // Aktif ticket kontrolü
   if (activeDMTickets.has(userId)) {
     await forwardDMToChannel(message, client);
     return;
   }
 
-  // Map'te yok ama DB'de açık DM ticket olabilir (bot restart sonrası)
+  // DB'den açık bilet kontrolü (bot restart durumu)
   try {
     const existing = await Ticket.findOne({ userId, status: 'open', source: 'dm' });
     if (existing && existing.channelId && existing.guildId) {
@@ -191,21 +223,21 @@ async function handleDMMessage(message, client) {
         ticketId:  existing.ticketId,
         channelId: existing.channelId,
         guildId:   existing.guildId,
+        locked:    false,
+        claimedBy: existing.claimedByName || null,
       });
       await forwardDMToChannel(message, client);
       return;
     }
   } catch (_) {}
 
-  // Onay bekleniyor → mesaj yazarsa tekrar sor (buton beklesin)
+  // Onay bekleniyor durumu
   if (pendingConfirmation.has(userId)) {
-    await message.author.send(
-      '👆 Lütfen yukarıdaki butonlardan birini seçin.'
-    ).catch(() => {});
+    await message.author.send('👆 Lütfen yukarıdaki menüden yapmak istediğiniz işlemi seçin.').catch(() => {});
     return;
   }
 
-  // İlk kez yazıyor → Akıllı menüyü göster
+  // İlk kez yazıyor → Gelişmiş Hub Menüsünü göster
   if (!dmConversations.has(userId)) {
     pendingConfirmation.set(userId, true);
 
@@ -213,36 +245,46 @@ async function handleDMMessage(message, client) {
 
     const embed = new EmbedBuilder()
       .setColor(0x7c6af7)
-      .setTitle('🛡️ Sentara Akıllı Destek & Emniyet Sistemi')
+      .setTitle('🛡️ Sentara & EkoYıldız Akıllı Destek Merkezi')
       .setDescription(
-        'Hoş geldiniz! Yapmak istediğiniz işlemi aşağıdaki butonları kullanarak seçebilirsiniz:\n\n' +
-        '🟢 **Normal Destek Aç:** Yetkililere doğrudan ulaşmak için bilet oluşturun.\n' +
-        '🤖 **Yapay Zeka Destek:** Sorularınızı sormak için EkoBot AI ile doğrudan sohbete başlayın.' +
-        (isMod ? '\n🚨 **ACİL YAPAY ZEKAYA BAĞLAN:** Sunucudaki istilacı/abusecileri raporlayıp banlatın veya bot spamlarını durdurun.' : '')
+        `Merhaba **${message.author.username}**! Sentara DM Destek Merkezine hoş geldiniz.\n\n` +
+        'Lütfen size nasıl yardımcı olabileceğimizi aşağıdaki butonlardan seçiniz:\n\n' +
+        '🎫 **Destek Talebi Aç:** Doğrudan yetkililere ulaşmak için bilet kategorisi seçin.\n' +
+        '🤖 **Yapay Zeka Destek:** EkoBot AI ile 7/24 anında sohbete başlayın.\n' +
+        '📋 **Taleplerim:** Geçmiş ve aktif destek kayıtlarınızı listeleyin.' +
+        (isMod ? '\n\n🚨 **ACİL AI EMNİYET BAĞLAN:** Sunucudaki saldırı/istilacıları banlatın veya bot spamlarını durdurun.' : '')
       )
-      .setFooter({ text: 'Sentara Güvenlik & Destek' });
+      .setFooter({ text: 'Sentara Destek • 7/24 Güvenli & Hızlı İletişim', iconURL: client.user.displayAvatarURL() })
+      .setTimestamp();
 
-    const row = new ActionRowBuilder().addComponents(
+    const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`dm_confirm_yes_${userId}`)
-        .setLabel('🟢 Normal Destek Aç')
+        .setCustomId(`dm_flow_category_${userId}`)
+        .setLabel('🎫 Destek Talebi Aç')
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`dm_confirm_ai_${userId}`)
         .setLabel('🤖 Yapay Zeka Destek')
-        .setStyle(ButtonStyle.Primary)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`dm_my_tickets_${userId}`)
+        .setLabel('📋 Taleplerim')
+        .setStyle(ButtonStyle.Secondary)
     );
 
+    const components = [row1];
+
     if (isMod) {
-      row.addComponents(
+      const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`dm_confirm_emergency_${userId}`)
-          .setLabel('🚨 ACİL AI BAĞLAN')
+          .setLabel('🚨 ACİL AI EMNİYET BAĞLAN')
           .setStyle(ButtonStyle.Danger)
       );
+      components.push(row2);
     }
 
-    await message.author.send({ embeds: [embed], components: [row] }).catch((err) => {
+    await message.author.send({ embeds: [embed], components }).catch((err) => {
       console.error('[dmTicket] Karşılama gönderilemedi:', err.message);
     });
     return;
@@ -255,16 +297,14 @@ async function handleDMMessage(message, client) {
 // ── AI konuşmasını devam ettir ──────────────────────────────────────────────
 async function continueAIConversation(message, client) {
   const userId = message.author.id;
-  const history = dmConversations.get(userId);
+  const history = dmConversations.get(userId) || [];
   const mode = dmModes.get(userId) || 'normal';
 
-  // Normal ticket akışı limiti
   if (mode === 'normal' && history.length >= 14) {
-    await createDMTicket(message.author, 'Kullanıcı destek talep etti.', history, client);
+    await createDMTicket(message.author, 'Kullanıcı destek talep etti.', history, client, 'Genel Destek');
     return;
   }
 
-  // Eğer ek yüklenmişse AI'a bunu bildir
   let userText = message.content || '';
   if (message.attachments.size > 0) {
     userText += `\n[SİSTEM UYARISI: Kullanıcı bir kanıt/dosya eki yükledi. Dosya sayısı: ${message.attachments.size}]`;
@@ -284,16 +324,13 @@ async function continueAIConversation(message, client) {
     history.push({ role: 'assistant', content: aiReply });
   } catch (err) {
     console.error('[dmTicket] AI hata:', err.message);
-    await message.author.send(
-      '⚠️ Asistan şu an çevrimdışı. Sizi direkt yetkililere bağlıyorum...'
-    ).catch(() => {});
-    await createDMTicket(message.author, message.content.slice(0, 200), history, client);
+    await message.author.send('⚠️ Asistan şu an çevrimdışı. Sizi direkt yetkililere bağlıyorum...').catch(() => {});
+    await createDMTicket(message.author, message.content.slice(0, 200), history, client, 'Genel Destek');
     return;
   }
 
   // Acil komut kontrolleri
   if (mode === 'emergency_ai') {
-    // 1. Acil Ban Komutu
     if (aiReply.includes('[BAN_EMERGENCY]')) {
       const match = aiReply.match(/\[BAN_EMERGENCY\]\s*(\d+)/);
       const targetId = match ? match[1] : null;
@@ -307,15 +344,12 @@ async function continueAIConversation(message, client) {
             console.warn(`[BAN_EMERGENCY] Failed in guild ${guild.name}:`, err.message);
           }
         }
-        if (successCount > 0) {
-          aiReply += `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucudan başarıyla yasaklandı.`;
-        } else {
-          aiReply += `\n\n❌ **[SİSTEM MESAJI]** Yasaklama işlemi tüm sunucularda başarısız oldu (Yetki yetersiz veya kullanıcı bulunamadı).`;
-        }
+        aiReply += successCount > 0
+          ? `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucudan başarıyla yasaklandı.`
+          : `\n\n❌ **[SİSTEM MESAJI]** Yasaklama işlemi başarısız oldu (Yetki yetersiz veya kullanıcı bulunamadı).`;
       }
     }
 
-    // 2. Acil Kick Komutu
     if (aiReply.includes('[KICK_EMERGENCY]')) {
       const match = aiReply.match(/\[KICK_EMERGENCY\]\s*(\d+)/);
       const targetId = match ? match[1] : null;
@@ -332,27 +366,22 @@ async function continueAIConversation(message, client) {
             console.warn(`[KICK_EMERGENCY] Failed in guild ${guild.name}:`, err.message);
           }
         }
-        if (successCount > 0) {
-          aiReply += `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucudan başarıyla atıldı.`;
-        } else {
-          aiReply += `\n\n❌ **[SİSTEM MESAJI]** Atma işlemi tüm sunucularda başarısız oldu.`;
-        }
+        aiReply += successCount > 0
+          ? `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucudan başarıyla atıldı.`
+          : `\n\n❌ **[SİSTEM MESAJI]** Atma işlemi başarısız oldu.`;
       }
     }
 
-    // 3. Acil Mute (Timeout) Komutu
     if (aiReply.includes('[MUTE_EMERGENCY]')) {
       const match = aiReply.match(/\[MUTE_EMERGENCY\]\s*(\d+)\s*(\w+)?/);
       const targetId = match ? match[1] : null;
       const durationStr = match && match[2] ? match[2] : "1d";
       if (targetId) {
-        const parseDuration = (timeStr) => {
-          const unitMap = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 };
-          const matches = [...timeStr.matchAll(/(\d+)([smhd])/g)];
-          if (!matches.length) return 24 * 60 * 60 * 1000;
-          return matches.reduce((total, match) => total + parseInt(match[1]) * (unitMap[match[2]] || 1000), 0);
-        };
-        const durationMs = parseDuration(durationStr);
+        const unitMap = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 };
+        const matches = [...durationStr.matchAll(/(\d+)([smhd])/g)];
+        const durationMs = matches.length
+          ? matches.reduce((total, m) => total + parseInt(m[1]) * (unitMap[m[2]] || 1000), 0)
+          : 24 * 60 * 60 * 1000;
 
         let successCount = 0;
         for (const [guildId, guild] of client.guilds.cache) {
@@ -366,126 +395,61 @@ async function continueAIConversation(message, client) {
             console.warn(`[MUTE_EMERGENCY] Failed in guild ${guild.name}:`, err.message);
           }
         }
-        if (successCount > 0) {
-          aiReply += `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucuda ${durationStr} süreyle susturuldu.`;
-        } else {
-          aiReply += `\n\n❌ **[SİSTEM MESAJI]** Susturma işlemi tüm sunucularda başarısız oldu.`;
-        }
+        aiReply += successCount > 0
+          ? `\n\n⚡ **[SİSTEM MESAJI]** <@${targetId}> (${targetId}) kullanıcısı ${successCount} sunucuda ${durationStr} süreyle susturuldu.`
+          : `\n\n❌ **[SİSTEM MESAJI]** Susturma işlemi başarısız oldu.`;
       }
     }
 
-    // 4. Spam Durdurma Komutu
     if (aiReply.includes('[STOP_SPAM]')) {
       global.SPAM_STOPPED = true;
-      aiReply += `\n\n⚡ **[SİSTEM MESAJI]** Güvenlik Protokolü aktifleşti. Botun tüm bildirim planlayıcıları başarıyla durduruldu.`;
+      aiReply += `\n\n⚡ **[SİSTEM MESAJI]** Güvenlik Protokolü aktifleşti. Botun tüm bildirim planlayıcıları durduruldu.`;
     }
   }
 
   if (isReady(aiReply) && mode === 'normal') {
     const summary = cleanAI(aiReply);
-    await createDMTicket(message.author, summary, history, client);
+    await createDMTicket(message.author, summary, history, client, 'Genel Destek');
   } else {
     const cleanReply = cleanAI(aiReply) || aiReply;
     await message.author.send(cleanReply).catch(() => {});
   }
 }
 
-// ── Evet/Hayır buton işleyici ────────────────────────────────────────────────
-async function handleDMConfirmButton(interaction, client) {
-  const customId = interaction.customId;
-
-  if (!customId.startsWith('dm_confirm_yes_') && 
-      !customId.startsWith('dm_confirm_no_') &&
-      !customId.startsWith('dm_confirm_ai_') &&
-      !customId.startsWith('dm_confirm_emergency_')) {
-    return false;
-  }
-
-  const userId = interaction.user.id;
-  pendingConfirmation.delete(userId);
-
-  if (customId.startsWith('dm_confirm_no_')) {
-    await interaction.update({
-      content: '👍 Tamam! İstediğiniz zaman tekrar yazabilirsiniz.',
-      embeds: [],
-      components: [],
-    }).catch(() => {});
-    return true;
-  }
-
-  if (customId.startsWith('dm_confirm_ai_')) {
-    dmConversations.set(userId, []);
-    dmModes.set(userId, 'ai');
-    await interaction.update({
-      content: '🤖 **EkoBot Yapay Zeka Asistanı Bağlandı!**\nSorularınızı yazabilirsiniz. Çözüm odaklı çalışıyorum. 😊',
-      embeds: [],
-      components: [],
-    }).catch(() => {});
-    return true;
-  }
-
-  if (customId.startsWith('dm_confirm_emergency_')) {
-    const isMod = await isModeratorOrStaff(userId, client);
-    if (!isMod) {
-      await interaction.reply({ content: '❌ Bu özelliği sadece moderasyon ekibi kullanabilir.', ephemeral: true }).catch(() => {});
-      return true;
-    }
-    dmConversations.set(userId, []);
-    dmModes.set(userId, 'emergency_ai');
-    await interaction.update({
-      content: '🚨 **ACİL EMNİYET VE GÜVENLİK SİSTEMİ DEVREDE!**\n\n' +
-               'Sunucudaki istilacıları/abusecileri raporlayabilir (kanıt yükleyerek) veya bot spamlarını durdurabilirsiniz.\n' +
-               'Lütfen durumu ve varsa şüpheli ID\'lerini yazıp ekran görüntüsü (kanıt) yükleyin.',
-      embeds: [],
-      components: [],
-    }).catch(() => {});
-    return true;
-  }
-
-  // Evet — Normal ticket açılışı öncesi AI
-  dmConversations.set(userId, []);
-  dmModes.set(userId, 'normal');
-
-  await interaction.update({
-    content: '✅ Harika! Sorununuzu anlatın, detayları alıp sizi yetkililere aktaracağım.',
-    embeds: [],
-    components: [],
-  }).catch(() => {});
-
-  return true;
-}
-
-// ── DM ticket kanalı oluştur ────────────────────────────────────────────────
-async function createDMTicket(user, summary, history, client) {
+// ── DM Ticket Kanalı Oluştur ────────────────────────────────────────────────
+async function createDMTicket(user, summary, history, client, categoryName = 'Genel Destek') {
   const userId = user.id;
   dmConversations.delete(userId);
 
-  // Kullanıcıya bildir
-  await user.send(
-    '⏳ **Yetkiliye aktarılıyorsunuz...**\n\n' +
-    'Bekleyin — yetkili size yazdığında DM üzerinden bildirim alacaksınız.'
-  ).catch(() => {});
-
   const ticketId = generateTicketId();
 
-  // DM ticketlar sadece GUILD2 (EkoYıldız) sunucusunda açılır
   const targets = [
     { id: GUILD2_ID, categoryId: GUILD2_TICKET_CATEGORY_ID },
   ];
 
   let createdChannel = null;
-  let createdGuildId  = null;
+  let createdGuildId = null;
 
   for (const target of targets) {
     try {
       const guild = await client.guilds.fetch(target.id).catch(() => null);
       if (!guild) continue;
 
-      // İzinler: @everyone göremez, ManageMessages'lı roller görebilir
       const permissionOverwrites = [
         { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-        { id: userId, deny: [PermissionFlagsBits.ViewChannel] }
+        { id: userId, deny: [PermissionFlagsBits.ViewChannel] },
+        {
+          id: client.user.id,
+          allow: [
+            PermissionFlagsBits.ViewChannel,
+            PermissionFlagsBits.SendMessages,
+            PermissionFlagsBits.EmbedLinks,
+            PermissionFlagsBits.AttachFiles,
+            PermissionFlagsBits.ManageChannels
+          ]
+        }
       ];
+
       guild.roles.cache
         .filter(r => r.permissions.has(PermissionFlagsBits.ManageMessages) && !r.managed)
         .forEach(r => permissionOverwrites.push({
@@ -494,10 +458,10 @@ async function createDMTicket(user, summary, history, client) {
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages,
             PermissionFlagsBits.ReadMessageHistory,
+            PermissionFlagsBits.AttachFiles
           ],
         }));
 
-      // Kategori
       let parentId = null;
       if (target.categoryId) {
         const ch = await guild.channels.fetch(target.categoryId).catch(() => null);
@@ -517,11 +481,10 @@ async function createDMTicket(user, summary, history, client) {
         type: ChannelType.GuildText,
         parent: parentId,
         permissionOverwrites,
-        topic: `DM Ticket | ${user.tag} (${userId})`,
+        topic: `DM Ticket | ${user.tag} (${userId}) | Kategori: ${categoryName}`,
       });
 
-      // Konuşma geçmişi
-      const convText = history
+      const convText = (history || [])
         .filter(m => m.role === 'user')
         .map(m => `> ${m.content}`)
         .join('\n')
@@ -529,28 +492,32 @@ async function createDMTicket(user, summary, history, client) {
 
       const embed = new EmbedBuilder()
         .setColor(0x7c6af7)
-        .setTitle(`📩 DM Ticket — ${ticketId}`)
+        .setTitle(`📩 DM Destek Talebi — #${ticketId}`)
         .setDescription(
           `**Kullanıcı:** <@${userId}> (${user.tag})\n` +
-          `**Özet:** ${summary || '—'}\n\n` +
-          `**DM Konuşması:**\n${convText}`
+          `**Kategori:** \`${categoryName}\`\n` +
+          `**Özet / Konu:** ${summary || '—'}\n\n` +
+          `**Kullanıcı İlk Mesajı:**\n${convText}`
         )
-        .addFields({
-          name: '📌 Nasıl çalışır?',
-          value:
-            '• Bu kanala yazdığınız mesajlar kullanıcıya **DM** olarak iletilir.\n' +
-            '• Kullanıcının DM yanıtları bu kanala düşer.\n' +
-            '• Kapatmak için 🔒 butonuna basın.',
-        })
-        .setFooter({ text: `DM Ticket • ${user.tag}` })
+        .addFields(
+          {
+            name: '📌 Sistem Nasıl Çalışır?',
+            value:
+              '• Bu kanala yazdığınız her mesaj kullanıcıya anında **DM** olarak iletilir.\n' +
+              '• Kullanıcının bot DM\'sine yazdığı yanıtlar buraya düşer.\n' +
+              '• Aşağıdaki moderatör butonlarıyla talebi yönetebilirsiniz.',
+            inline: false
+          }
+        )
+        .setFooter({ text: `Sentara DM Ticket Engine • #${ticketId}` })
         .setTimestamp();
 
-      const closeBtn = buildDMCloseButton(ticketId);
-      await channel.send({ embeds: [embed], components: [closeBtn] });
+      const modRows = buildDMModActionRows(ticketId, false, null);
+      await channel.send({ embeds: [embed], components: modRows });
 
       if (!createdChannel) {
         createdChannel = channel;
-        createdGuildId  = guild.id;
+        createdGuildId = guild.id;
       }
     } catch (err) {
       console.warn(`[dmTicket] ${target.id} kanalı açılamadı:`, err.message);
@@ -558,18 +525,18 @@ async function createDMTicket(user, summary, history, client) {
   }
 
   if (!createdChannel) {
-    await user.send('❌ Ticket kanalı oluşturulamadı. Sunucudan destek alın.').catch(() => {});
+    await user.send('❌ Destek kanalı oluşturulamadı. Lütfen sunucudan yardım isteyiniz.').catch(() => {});
     return;
   }
 
-  // Ticket DB'ye kaydet
+  // DB Kaydı
   const ticket = new Ticket({
     ticketId,
     userId,
     userName: user.username,
-    category: 'dm',
-    subject: (summary || 'DM destek talebi').slice(0, 100),
-    description: summary || 'DM destek talebi',
+    category: categoryName || 'dm',
+    subject: (summary || `${categoryName} DM Destek`).slice(0, 100),
+    description: summary || `${categoryName} DM Destek Talebi`,
     priority: 'medium',
     channelId: createdChannel.id,
     guildId: createdGuildId,
@@ -581,41 +548,56 @@ async function createDMTicket(user, summary, history, client) {
     ticketId,
     channelId: createdChannel.id,
     guildId: createdGuildId,
+    locked: false,
+    claimedBy: null,
   });
 
-  console.log(`[dmTicket] ${user.tag} → DM ticket: ${ticketId}`);
+  // Kullanıcıya DM Kontrol Çubuğu Gönder
+  const userEmbed = new EmbedBuilder()
+    .setColor(0x10b981)
+    .setTitle('✅ Destek Talebiniz Oluşturuldu')
+    .setDescription(
+      `Talebiniz başarıyla yetkili ekibimize iletildi.\n\n` +
+      `📌 **Bilet No:** \`#${ticketId}\`\n` +
+      `🏷️ **Kategori:** \`${categoryName}\`\n\n` +
+      `Yetkililerimiz size yazdığında mesajlar buraya düşecektir. Ekran görüntüsü veya dosya göndermek için doğrudan bu sohbete yükleyebilirsiniz.`
+    )
+    .setFooter({ text: 'Sentara DM Destek Masası' })
+    .setTimestamp();
 
-  // ── Ticket AI devre dışı ─────────────────────────────────────────────────
-  // (Ticket AI kaldırıldı)
+  const userControlRow = buildUserDMControlRow(ticketId);
+  await user.send({ embeds: [userEmbed], components: [userControlRow] }).catch(() => {});
+
+  console.log(`[dmTicket] ${user.tag} → DM ticket: ${ticketId} (${categoryName})`);
 }
 
-// ── DM → Kanal iletimi ──────────────────────────────────────────────────────
+// ── DM → Kanal İletimi ──────────────────────────────────────────────────────
 async function forwardDMToChannel(message, client) {
   const userId = message.author.id;
-
-  // Önce memory map'e bak
   let dmInfo = activeDMTickets.get(userId);
 
-  // Map'te yoksa DB'den aç DM ticket'ı bul (bot restart sonrası)
   if (!dmInfo) {
     try {
       const ticket = await Ticket.findOne({ userId, status: 'open', source: 'dm' });
       if (ticket && ticket.channelId && ticket.guildId) {
-        // Map'i yeniden doldur
         dmInfo = {
           ticketId:  ticket.ticketId,
           channelId: ticket.channelId,
           guildId:   ticket.guildId,
+          locked:    false,
+          claimedBy: ticket.claimedByName || null,
         };
         activeDMTickets.set(userId, dmInfo);
-        console.log(`[dmTicket] DB'den yüklendi: ${ticket.ticketId}`);
       }
-    } catch (err) {
-      console.warn('[dmTicket] DB ticket araması hatası:', err.message);
-    }
+    } catch (_) {}
   }
 
-  if (!dmInfo) return; // Aktif DM ticket yok
+  if (!dmInfo) return;
+
+  // Kilit kontrolü
+  if (dmInfo.locked) {
+    return message.reply('🔇 **Yazma Kilidi Aktif:** Destek talebiniz yetkililer tarafından geçici olarak durdurulmuştur. Lütfen yetkili yanıtını bekleyiniz.');
+  }
 
   const guild = await client.guilds.fetch(dmInfo.guildId).catch(() => null);
   if (!guild) {
@@ -625,10 +607,8 @@ async function forwardDMToChannel(message, client) {
 
   const channel = await guild.channels.fetch(dmInfo.channelId).catch(() => null);
   if (!channel) {
-    // Kanal silinmiş — DB'de de kapat
     activeDMTickets.delete(userId);
     try {
-      const Ticket = require('../../models/Ticket');
       const t = await Ticket.findOne({ ticketId: dmInfo.ticketId });
       if (t && t.status === 'open') {
         t.status = 'closed';
@@ -638,29 +618,23 @@ async function forwardDMToChannel(message, client) {
       }
     } catch (_) {}
 
-    // Kullanıcıya yeni ticket açma seçeneği sun
-    const { ActionRowBuilder: AR, ButtonBuilder: BB, ButtonStyle: BS, EmbedBuilder: EB } = require('discord.js');
-    const embed = new EB()
+    const embed = new EmbedBuilder()
       .setColor(0xfbbf24)
       .setTitle('📭 Destek Kanalınız Kapandı')
-      .setDescription(
-        'Destek kanalınız kapatılmış veya silinmiş.\n\n' +
-        'Yeni bir destek talebi açmak ister misiniz?'
-      )
+      .setDescription('Destek talebiniz sonlandırılmış.\nYeni bir destek talebi açmak ister misiniz?')
       .setFooter({ text: 'Sentara Destek' });
 
-    const row = new AR().addComponents(
-      new BB()
-        .setCustomId(`dm_confirm_yes_${userId}`)
-        .setLabel('✅ Evet, yeni destek aç')
-        .setStyle(BS.Success),
-      new BB()
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`dm_flow_category_${userId}`)
+        .setLabel('✅ Evet, Yeni Destek Aç')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
         .setCustomId(`dm_confirm_no_${userId}`)
         .setLabel('❌ Hayır')
-        .setStyle(BS.Secondary)
+        .setStyle(ButtonStyle.Secondary)
     );
 
-    // pendingConfirmation'a ekle ki selam mesajı gönderilmesin
     pendingConfirmation.set(userId, true);
     await message.author.send({ embeds: [embed], components: [row] }).catch(() => {});
     return;
@@ -680,36 +654,44 @@ async function forwardDMToChannel(message, client) {
 
   const embed = new EmbedBuilder()
     .setColor(0x4ade80)
-    .setAuthor({ name: `${message.author.tag} (DM)`, iconURL: message.author.displayAvatarURL() })
-    .setDescription((replyText ? `↩️ **Cevaplanan Mesaj:** *"${replyText}"*\n\n` : '') + (message.content || '*(ek dosya)*'))
-    .setFooter({ text: '📩 Kullanıcıdan DM' })
+    .setAuthor({ name: `${message.author.tag} (DM Kullanıcısı)`, iconURL: message.author.displayAvatarURL() })
+    .setDescription((replyText ? `↩️ **Cevaplanan Mesaj:** *"${replyText}"*\n\n` : '') + (message.content || '*(ek dosya paylaştı)*'))
+    .setFooter({ text: `📩 DM Gelen Mesaj • #${dmInfo.ticketId}` })
     .setTimestamp();
 
   const sendOpts = { embeds: [embed] };
 
-  // Resim/dosya varsa ekle
   if (message.attachments.size > 0) {
-    sendOpts.files = [...message.attachments.values()].map(a => a.url).slice(0, 5);
+    sendOpts.files = [...message.attachments.values()].map(a => a.url).slice(0, 8);
   }
 
   await channel.send(sendOpts).catch(() => {});
+  await message.react('📨').catch(() => {});
 }
 
-// ── Kanal → DM iletimi ──────────────────────────────────────────────────────
+// ── Kanal → DM İletimi ──────────────────────────────────────────────────────
 async function forwardChannelToDM(message, client) {
   if (!message.channel.name?.startsWith('dm-')) return false;
 
   const channelId = message.channel.id;
-
-  // userId'yi bul: önce memory map, yoksa channel topic'ten
   let targetUserId = null;
+
   for (const [uid, info] of activeDMTickets.entries()) {
     if (info.channelId === channelId) { targetUserId = uid; break; }
   }
+
   if (!targetUserId && message.channel.topic) {
     const m = message.channel.topic.match(/\((\d{17,20})\)/);
     if (m) targetUserId = m[1];
   }
+
+  if (!targetUserId) {
+    try {
+      const t = await Ticket.findOne({ channelId, status: 'open' });
+      if (t) targetUserId = t.userId;
+    } catch (_) {}
+  }
+
   if (!targetUserId) return false;
 
   const user = await client.users.fetch(targetUserId).catch(() => null);
@@ -729,23 +711,570 @@ async function forwardChannelToDM(message, client) {
 
   const embed = new EmbedBuilder()
     .setColor(0x7c6af7)
-    .setAuthor({ name: `${message.author.displayName} — Yetkili`, iconURL: message.author.displayAvatarURL() })
-    .setDescription((replyText ? `↩️ **Cevaplanan Mesajınız:** *"${replyText}"*\n\n` : '') + (message.content || '*(ek dosya)*'))
-    .setFooter({ text: 'Sentara Destek • Yetkili mesajı' })
+    .setAuthor({ name: `${message.author.displayName || message.author.username} (Yetkili Temsilci)`, iconURL: message.author.displayAvatarURL() })
+    .setDescription((replyText ? `↩️ **Cevaplanan Mesajınız:** *"${replyText}"*\n\n` : '') + (message.content || '*(dosya gönderdi)*'))
+    .setFooter({ text: 'Sentara Destek • Yetkili Yanıtı' })
     .setTimestamp();
 
-  await user.send({ embeds: [embed] }).catch(() => {});
+  const sendOpts = { embeds: [embed] };
+  if (message.attachments.size > 0) {
+    sendOpts.files = [...message.attachments.values()].map(a => a.url).slice(0, 8);
+  }
+
+  await user.send(sendOpts).catch(() => {});
   await message.react('✅').catch(() => {});
   return true;
 }
 
-// ── DM Ticket Kapat (butona basınca) ────────────────────────────────────────
+// ── DM Buton Yöneticisi (Tüm DM Butonları) ──────────────────────────────────
+async function handleDMButton(interaction, client) {
+  const customId = interaction.customId;
+  if (!customId?.startsWith('dm_')) return false;
+
+  const userId = interaction.user.id;
+
+  // 1. Kategori Seçim Menüsü Aç
+  if (customId.startsWith('dm_flow_category_')) {
+    pendingConfirmation.delete(userId);
+    const catEmbed = new EmbedBuilder()
+      .setColor(0x7c6af7)
+      .setTitle('📂 Destek Talebi Kategorisi Seçin')
+      .setDescription(
+        'Sorununuzun hızlı çözülebilmesi için lütfen en uygun kategoriyi seçiniz:\n\n' +
+        '🛠️ **Teknik Destek & Hata:** Bot komutları, website, erişim sorunları.\n' +
+        '💳 **Ödeme & Mağaza:** İtemSatış, Sentara Coin, bakiye ve ürün teslimatı.\n' +
+        '🚨 **Şikayet & İhlal:** Kural ihlalleri, istismar veya moderatör şikayeti.\n' +
+        '💼 **Reklam & Sponsorluk:** Sunucu reklamları ve işbirlikleri.\n' +
+        '❓ **Genel Soru & Bilgi:** Sunucu kuralları, roller ve diğer konular.'
+      );
+
+    const row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`dm_cat_tech_${userId}`).setLabel('🛠️ Teknik Destek').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`dm_cat_billing_${userId}`).setLabel('💳 Ödeme & Mağaza').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`dm_cat_report_${userId}`).setLabel('🚨 Şikayet & İhlal').setStyle(ButtonStyle.Danger)
+    );
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`dm_cat_ad_${userId}`).setLabel('💼 Reklam & Sponsorluk').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`dm_cat_general_${userId}`).setLabel('❓ Genel Soru').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`dm_confirm_no_${userId}`).setLabel('❌ İptal').setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.update({ embeds: [catEmbed], components: [row1, row2] }).catch(() => {});
+    return true;
+  }
+
+  // 2. Kategori Seçildiğinde Doğrudan Ticket Aç
+  if (customId.startsWith('dm_cat_')) {
+    const parts = customId.split('_');
+    const catKey = parts[2]; // tech, billing, report, ad, general
+    const catMap = {
+      tech: '🛠️ Teknik Destek & Hata',
+      billing: '💳 Ödeme & Mağaza',
+      report: '🚨 Şikayet & İhlal',
+      ad: '💼 Reklam & Sponsorluk',
+      general: '❓ Genel Destek'
+    };
+    const catName = catMap[catKey] || 'Genel Destek';
+
+    await interaction.update({
+      content: `⏳ **${catName}** kategorisinde destek talebiniz hazırlanıyor...`,
+      embeds: [],
+      components: [],
+    }).catch(() => {});
+
+    await createDMTicket(interaction.user, `${catName} talebi`, [], client, catName);
+    return true;
+  }
+
+  // 3. Yapay Zeka Desteğe Bağlan
+  if (customId.startsWith('dm_confirm_ai_')) {
+    pendingConfirmation.delete(userId);
+    dmConversations.set(userId, []);
+    dmModes.set(userId, 'ai');
+    await interaction.update({
+      content: '🤖 **EkoBot Yapay Zeka Asistanı Bağlandı!**\nSorununuzu doğrudan yazabilirsiniz. Size anında çözüm ve bilgi sunmak için buradayım. 😊',
+      embeds: [],
+      components: [],
+    }).catch(() => {});
+    return true;
+  }
+
+  // 4. Acil Güvenlik Masası
+  if (customId.startsWith('dm_confirm_emergency_')) {
+    pendingConfirmation.delete(userId);
+    const isMod = await isModeratorOrStaff(userId, client);
+    if (!isMod) {
+      await interaction.reply({ content: '❌ Bu özelliği yalnızca moderatör ekibi kullanabilir.', ephemeral: true }).catch(() => {});
+      return true;
+    }
+    dmConversations.set(userId, []);
+    dmModes.set(userId, 'emergency_ai');
+    await interaction.update({
+      content: '🚨 **ACİL EMNİYET VE ASAYİŞ SİSTEMİ DEVREYE ALINDI!**\n\n' +
+               'Sunucudaki istilacıları/abusecileri raporlayabilir veya bot bildirim spamlarını durdurabilirsiniz.\n' +
+               'Lütfen şüpheli ID/kullanıcı adını yazın ve ekran görüntüsü (kanıt) yükleyin.',
+      embeds: [],
+      components: [],
+    }).catch(() => {});
+    return true;
+  }
+
+  // 5. İptal / Vazgeç
+  if (customId.startsWith('dm_confirm_no_')) {
+    pendingConfirmation.delete(userId);
+    await interaction.update({
+      content: '👍 İşlem iptal edildi. İhtiyaç duyduğunuzda dilediğiniz an tekrar yazabilirsiniz.',
+      embeds: [],
+      components: [],
+    }).catch(() => {});
+    return true;
+  }
+
+  // 6. Kullanıcının Kendi Taleplerini Listelemesi
+  if (customId.startsWith('dm_my_tickets_')) {
+    pendingConfirmation.delete(userId);
+    const tickets = await Ticket.find({ userId }).sort({ createdAt: -1 }).limit(5).catch(() => []);
+    if (!tickets.length) {
+      await interaction.update({
+        content: 'ℹ️ Daha önce açılmış herhangi bir destek talebiniz bulunmuyor.',
+        embeds: [],
+        components: [],
+      }).catch(() => {});
+      return true;
+    }
+
+    const listEmbed = new EmbedBuilder()
+      .setColor(0x7c6af7)
+      .setTitle(`📋 Destek Talepleriniz — ${interaction.user.username}`)
+      .setDescription(
+        tickets.map(t => {
+          const statusEmoji = t.status === 'open' ? '🟢 Açık' : '🔒 Kapalı';
+          const dateStr = t.createdAt ? `<t:${Math.floor(new Date(t.createdAt).getTime() / 1000)}:d>` : '—';
+          return `• **#${t.ticketId}** (${statusEmoji}) | \`${t.category}\` | ${dateStr}\n  *${t.subject || 'Konu belirtilmedi'}*`;
+        }).join('\n\n')
+      )
+      .setFooter({ text: 'Son 5 biletiniz listelendi.' });
+
+    await interaction.update({ embeds: [listEmbed], components: [] }).catch(() => {});
+    return true;
+  }
+
+  // ── Moderatör Eylemleri ──
+
+  // 7. DM Kapat Butonu
+  if (customId.startsWith('dm_close_')) {
+    return handleDMCloseButton(interaction, client);
+  }
+
+  // 8. DM Talebi Üstlen (Claim)
+  if (customId.startsWith('dm_claim_')) {
+    const ticketId = customId.replace('dm_claim_', '');
+    const ticket = await Ticket.findOne({ ticketId }).catch(() => null);
+    if (!ticket) return interaction.reply({ content: '❌ Bilet bulunamadı.', ephemeral: true });
+
+    ticket.claimedBy = interaction.user.id;
+    ticket.claimedByName = interaction.user.username;
+    ticket.claimedAt = new Date();
+    await ticket.save();
+
+    for (const [uid, info] of activeDMTickets.entries()) {
+      if (info.ticketId === ticketId) {
+        info.claimedBy = interaction.user.username;
+        break;
+      }
+    }
+
+    // Kullanıcıya DM Bildirimi
+    try {
+      const user = await client.users.fetch(ticket.userId);
+      if (user) {
+        const claimEmbed = new EmbedBuilder()
+          .setColor(0x3b82f6)
+          .setDescription(`🙋‍♂️ Destek talebiniz yetkili **${interaction.user.username}** tarafından üstlenildi ve incelemeye alındı.`)
+          .setFooter({ text: 'Sentara Destek Masası' });
+        await user.send({ embeds: [claimEmbed] }).catch(() => {});
+      }
+    } catch (_) {}
+
+    await interaction.reply({ content: `🙋‍♂️ Bu destek talebini başarıyla üstlendiniz: **${interaction.user.username}**` });
+    return true;
+  }
+
+  // 9. Yetkili Notu Ekle (Modal)
+  if (customId.startsWith('dm_note_')) {
+    const ticketId = customId.replace('dm_note_', '');
+    const modal = new ModalBuilder()
+      .setCustomId(`dm_note_modal_${ticketId}`)
+      .setTitle(`📝 Yetkili Notu Ekle — #${ticketId}`);
+
+    const noteInput = new TextInputBuilder()
+      .setCustomId('dm_note_text')
+      .setLabel('Yetkili Notu / İnceleme Detayı')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Kullanıcı hakkında veya talep hakkında mod notu...')
+      .setRequired(true)
+      .setMaxLength(1000);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(noteInput));
+    await interaction.showModal(modal).catch(() => {});
+    return true;
+  }
+
+  // 10. Kullanıcı Sicilini Gör (TrustScore & Profil)
+  if (customId.startsWith('dm_profile_')) {
+    const ticketId = customId.replace('dm_profile_', '');
+    const ticket = await Ticket.findOne({ ticketId }).catch(() => null);
+    if (!ticket) return interaction.reply({ content: '❌ Bilet bulunamadı.', ephemeral: true });
+
+    const targetUserId = ticket.userId;
+    const targetUser = await client.users.fetch(targetUserId).catch(() => null);
+    const member = interaction.guild ? await interaction.guild.members.fetch(targetUserId).catch(() => null) : null;
+
+    let trustScore = 100;
+    try {
+      const { getTrustScore } = require('./security/trustScoreService');
+      const scoreData = await getTrustScore(targetUserId);
+      if (scoreData && typeof scoreData.score === 'number') trustScore = scoreData.score;
+    } catch (_) {}
+
+    const totalTickets = await Ticket.countDocuments({ userId: targetUserId }).catch(() => 1);
+    const openTickets = await Ticket.countDocuments({ userId: targetUserId, status: 'open' }).catch(() => 1);
+
+    const infoEmbed = new EmbedBuilder()
+      .setTitle(`👤 DM Kullanıcı Sicili — ${targetUser ? targetUser.username : targetUserId}`)
+      .setColor(trustScore >= 70 ? 0x10b981 : (trustScore >= 40 ? 0xf59e0b : 0xef4444))
+      .setThumbnail(targetUser ? targetUser.displayAvatarURL() : null)
+      .addFields(
+        { name: "🆔 Discord ID", value: `\`${targetUserId}\``, inline: true },
+        { name: "🛡️ Güven Puanı", value: `**%${trustScore}** ${trustScore >= 70 ? '🟢 (Güvenilir)' : '⚠️ (Riskli)'}`, inline: true },
+        { name: "🎫 Toplam / Açık Bilet", value: `**${totalTickets}** Toplam / **${openTickets}** Açık`, inline: true },
+        { name: "📅 Hesap Yaşı", value: targetUser ? `<t:${Math.floor(targetUser.createdTimestamp / 1000)}:R>` : "—", inline: true },
+        { name: "📥 Sunucuya Katılım", value: member ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>` : "—", inline: true }
+      )
+      .setFooter({ text: 'Sentara Audit Service' })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+    return true;
+  }
+
+  // 11. Hazır Şablon Yanıt Menüsü (Canned Responses)
+  if (customId.startsWith('dm_canned_prompt_')) {
+    const ticketId = customId.replace('dm_canned_prompt_', '');
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`dm_canned_send_info_${ticketId}`).setLabel('ℹ️ Kanıt / Detay İste').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`dm_canned_send_billing_${ticketId}`).setLabel('💳 Ödeme Dekontu İste').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`dm_canned_send_wait_${ticketId}`).setLabel('⏳ İnceleniyor Bildir').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`dm_canned_send_resolved_${ticketId}`).setLabel('✅ Çözüldü Bildir').setStyle(ButtonStyle.Success)
+    );
+    await interaction.reply({ content: '⚡ **Göndermek istediğiniz hazır şablon yanıtı seçiniz:**', components: [row], ephemeral: true });
+    return true;
+  }
+
+  // Hazır şablon gönderimi
+  if (customId.startsWith('dm_canned_send_')) {
+    const parts = customId.split('_');
+    const cannedType = parts[3]; // info, billing, wait, resolved
+    const ticketId = parts[4];
+
+    const ticket = await Ticket.findOne({ ticketId }).catch(() => null);
+    if (!ticket) return interaction.reply({ content: '❌ Bilet bulunamadı.', ephemeral: true });
+
+    const cannedTexts = {
+      info: 'Lütfen sorununuzu daha detaylı açıklayınız ve varsa ekran görüntüsü / video kanıtlarını bu sohbete yükleyiniz.',
+      billing: 'Ödeme işleminiz yetkililerimiz tarafından kontrol edilmektedir. Lütfen İtemSatış / Banka sipariş numaranızı ve ödeme dekontunuzu iletiniz.',
+      wait: 'Talebiniz yetkili birimimize aktarılmış olup incelenmektedir. En kısa sürede size geri dönüş yapılacaktır. Sabrınız için teşekkür ederiz.',
+      resolved: 'Talebiniz ile ilgili gerekli inceleme yapılmış ve sorun çözülmüştür. Başka bir konuda yardıma ihtiyacınız var mıdır?'
+    };
+
+    const textToSend = cannedTexts[cannedType] || 'Talebiniz incelenmektedir.';
+
+    try {
+      const user = await client.users.fetch(ticket.userId);
+      if (user) {
+        const cannedEmbed = new EmbedBuilder()
+          .setColor(0x7c6af7)
+          .setAuthor({ name: `${interaction.user.username} (Yetkili Temsilci)`, iconURL: interaction.user.displayAvatarURL() })
+          .setDescription(textToSend)
+          .setFooter({ text: 'Sentara Destek • Hazır Bilgilendirme' })
+          .setTimestamp();
+        await user.send({ embeds: [cannedEmbed] });
+      }
+    } catch (_) {}
+
+    await interaction.channel.send({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x7c6af7)
+          .setDescription(`⚡ **Hazır Şablon İletildi (${interaction.user.username}):**\n> *"${textToSend}"*`)
+      ]
+    });
+
+    await interaction.update({ content: '✅ Hazır yanıt kullanıcıya DM olarak gönderildi.', components: [] });
+    return true;
+  }
+
+  // 12. AI İhtilaf & Risk Analizi
+  if (customId.startsWith('dm_ai_audit_')) {
+    const ticketId = customId.replace('dm_ai_audit_', '');
+    await interaction.deferReply();
+
+    try {
+      const messages = await interaction.channel.messages.fetch({ limit: 40 }).catch(() => null);
+      const logText = messages ? [...messages.values()].reverse().map(m => {
+        const author = m.author.bot ? (m.embeds?.[0]?.author?.name || 'Bot/Embed') : m.author.username;
+        const content = m.embeds?.[0]?.description || m.content || '';
+        return `[${author}]: ${content}`;
+      }).join('\n') : '';
+
+      const prompt = `Aşağıdaki Discord DM destek bileti konuşmasını analiz et:
+1. Kullanıcının temel sorunu ve duygu durumu (öfkeli, sakin, dolandırılmış, vb.)
+2. Kullanıcının talebi meşru mu yoksa şüpheli/kural ihlali mi?
+3. Yetkiliye tavsiye edilen en hızlı ve güvenli çözüm nedir?
+
+Konuşma dökümü:
+${logText.slice(0, 3000)}`;
+
+      const analysis = await chatWithAI([{ role: 'user', content: prompt }], 'Sen tarafsız ve uzman bir destek/moderatör kalite denetçisisin. Türkçe ve maddeler halinde analiz yap.', 'ticket');
+
+      const auditEmbed = new EmbedBuilder()
+        .setColor(0x8b5cf6)
+        .setTitle(`🚨 AI Destek Analizi & İhtilaf Raporu — #${ticketId}`)
+        .setDescription(analysis || 'Analiz oluşturulamadı.')
+        .setFooter({ text: 'Sentara AI Support Auditor' })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [auditEmbed] });
+    } catch (err) {
+      await interaction.editReply({ content: `❌ AI analizi başarısız: ${err.message}` });
+    }
+    return true;
+  }
+
+  // 13. Transkript Al
+  if (customId.startsWith('dm_transcript_')) {
+    const ticketId = customId.replace('dm_transcript_', '');
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const messages = await interaction.channel.messages.fetch({ limit: 100 }).catch(() => null);
+      if (!messages) return interaction.editReply({ content: '❌ Mesajlar alınamadı.' });
+
+      let transcript = `=======================================================\n` +
+                       `SENTARA DM TICKET TRANSKRIPT - #${ticketId}\n` +
+                       `Tarih: ${new Date().toLocaleString('tr-TR')}\n` +
+                       `Kanal: ${interaction.channel.name}\n` +
+                       `=======================================================\n\n`;
+
+      [...messages.values()].reverse().forEach(m => {
+        const time = new Date(m.createdAt).toLocaleString('tr-TR');
+        const author = m.author.bot ? (m.embeds?.[0]?.author?.name || 'Bot') : m.author.tag;
+        const text = m.embeds?.[0]?.description || m.content || '(Ek Dosya)';
+        transcript += `[${time}] ${author}: ${text}\n`;
+      });
+
+      const buffer = Buffer.from(transcript, 'utf-8');
+      const attachment = new AttachmentBuilder(buffer, { name: `transcript-${ticketId}.txt` });
+
+      await interaction.channel.send({
+        content: `📜 **Resmi Transkript Kaydı Oluşturuldu (#${ticketId})**`,
+        files: [attachment]
+      });
+
+      await interaction.editReply({ content: '✅ Transkript kanala başarıyla yüklendi.' });
+    } catch (err) {
+      await interaction.editReply({ content: `❌ Transkript hatası: ${err.message}` });
+    }
+    return true;
+  }
+
+  // 14. DM Yazma Kilidi (Toggle Lock)
+  if (customId.startsWith('dm_lock_')) {
+    const ticketId = customId.replace('dm_lock_', '');
+    let targetInfo = null;
+    let targetUid = null;
+
+    for (const [uid, info] of activeDMTickets.entries()) {
+      if (info.ticketId === ticketId) { targetInfo = info; targetUid = uid; break; }
+    }
+
+    if (!targetInfo) return interaction.reply({ content: '❌ Aktif DM oturumu bulunamadı.', ephemeral: true });
+
+    targetInfo.locked = !targetInfo.locked;
+    const isLocked = targetInfo.locked;
+
+    const modRows = buildDMModActionRows(ticketId, isLocked, targetInfo.claimedBy);
+    await interaction.message.edit({ components: modRows }).catch(() => {});
+
+    await interaction.reply({
+      content: isLocked
+        ? `🔇 **DM Yazma Kilidi Aktif:** <@${targetUid}> kullanıcısının DM üzerinden mesaj göndermesi geçici olarak durduruldu.`
+        : `🔊 **DM Yazma Kilidi Açıldı:** <@${targetUid}> kullanıcısı artık mesaj gönderebilir.`
+    });
+    return true;
+  }
+
+  // ── Kullanıcı DM Eylemleri ──
+
+  // 15. Kullanıcının Kendi Biletini Kapatması
+  if (customId.startsWith('dm_user_close_')) {
+    const ticketId = customId.replace('dm_user_close_', '');
+    const ticket = await Ticket.findOne({ ticketId, status: 'open' }).catch(() => null);
+    if (!ticket) return interaction.reply({ content: 'ℹ️ Bu bilet zaten kapatılmış.', ephemeral: true });
+
+    ticket.status = 'closed';
+    ticket.closedAt = new Date();
+    ticket.closeReason = 'Kullanıcı tarafından DM üzerinden çözüldü ve kapatıldı';
+    ticket.closedBy = userId;
+    ticket.closedByName = interaction.user.username;
+    await ticket.save();
+
+    activeDMTickets.delete(userId);
+    dmConversations.delete(userId);
+
+    await interaction.update({
+      content: '✅ **Destek talebiniz kapatıldı.** Sorununuzun çözüldüğüne sevindik!\n\nLütfen aldığınız hizmeti değerlendirmeyi unutmayın:',
+      embeds: [],
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId(`dm_rate_5_${ticketId}`).setLabel('⭐⭐⭐⭐⭐ (5)').setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId(`dm_rate_4_${ticketId}`).setLabel('⭐⭐⭐⭐ (4)').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId(`dm_rate_3_${ticketId}`).setLabel('⭐⭐⭐ (3)').setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder().setCustomId(`dm_rate_1_${ticketId}`).setLabel('⭐ (1)').setStyle(ButtonStyle.Danger)
+        )
+      ]
+    }).catch(() => {});
+
+    // Kanala bildirim
+    if (ticket.channelId && ticket.guildId) {
+      try {
+        const guild = await client.guilds.fetch(ticket.guildId);
+        const ch = await guild.channels.fetch(ticket.channelId);
+        if (ch) {
+          await ch.send({
+            embeds: [
+              new EmbedBuilder()
+                .setColor(0x10b981)
+                .setTitle('🔒 Kullanıcı Talebi Kendi Kapattı')
+                .setDescription(`Kullanıcı <@${userId}> sorununun çözüldüğünü belirterek talebi sonlandırdı.\nKanal 3 dakika içinde otomatik silinecektir.`)
+            ]
+          });
+          setTimeout(async () => {
+            await ch.delete('Kullanıcı DM talebini kapattı').catch(() => {});
+          }, 3 * 60 * 1000);
+        }
+      } catch (_) {}
+    }
+    return true;
+  }
+
+  // 16. Kullanıcının Yetkiliye Hatırlatması (Nudge)
+  if (customId.startsWith('dm_user_nudge_')) {
+    const ticketId = customId.replace('dm_user_nudge_', '');
+    const lastNudge = userNudgeCooldown.get(ticketId) || 0;
+    const now = Date.now();
+
+    if (now - lastNudge < 5 * 60 * 1000) {
+      const remainingSec = Math.ceil((5 * 60 * 1000 - (now - lastNudge)) / 1000);
+      return interaction.reply({ content: `⏳ Yetkililere çok sık bildirim gönderemezsiniz. Lütfen **${remainingSec} saniye** sonra tekrar deneyin.`, ephemeral: true });
+    }
+
+    userNudgeCooldown.set(ticketId, now);
+
+    const ticket = await Ticket.findOne({ ticketId, status: 'open' }).catch(() => null);
+    if (!ticket || !ticket.channelId) {
+      return interaction.reply({ content: '❌ Aktif bilet kanalı bulunamadı.', ephemeral: true });
+    }
+
+    try {
+      const guild = await client.guilds.fetch(ticket.guildId);
+      const ch = await guild.channels.fetch(ticket.channelId);
+      if (ch) {
+        await ch.send({
+          content: '🔔 **Yetkili Hatırlatması:** Kullanıcı DM üzerinden yanıt beklediğini bildirdi!',
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0xf59e0b)
+              .setDescription(`⚠️ <@${userId}> kullanıcısı destek kanalına dikkat çekmek istedi.`)
+              .setTimestamp()
+          ]
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({ content: '🔔 Yetkili ekibimize acil bildirim iletildi! En kısa sürede yanıt alacaksınız.', ephemeral: true });
+    return true;
+  }
+
+  // 17. Kullanıcının DM'den Konuşma Özeti İstemesi
+  if (customId.startsWith('dm_user_transcript_')) {
+    const ticketId = customId.replace('dm_user_transcript_', '');
+    const ticket = await Ticket.findOne({ ticketId }).catch(() => null);
+    if (!ticket) return interaction.reply({ content: '❌ Bilet bulunamadı.', ephemeral: true });
+
+    await interaction.reply({
+      content: `📄 **Destek Talebi Özeti (#${ticketId})**\n• **Kategori:** \`${ticket.category}\`\n• **Konu:** ${ticket.subject}\n• **Durum:** ${ticket.status === 'open' ? '🟢 Aktif' : '🔒 Kapalı'}\n• **Açılış:** <t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:f>`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 18. Yıldız Değerlendirme
+  if (customId.startsWith('dm_rate_')) {
+    const parts = customId.split('_');
+    const stars = parseInt(parts[2]) || 5;
+    const ticketId = parts[3];
+
+    try {
+      const ticket = await Ticket.findOne({ ticketId });
+      if (ticket) {
+        ticket.rating = stars;
+        ticket.ratedAt = new Date();
+        await ticket.save();
+      }
+    } catch (_) {}
+
+    await interaction.update({
+      content: `⭐ **Geri bildiriminiz için çok teşekkür ederiz!**\nDeğerlendirmeniz: **${'⭐'.repeat(stars)} (${stars}/5)** kaydedildi. İyi günler dileriz! 😊`,
+      components: []
+    }).catch(() => {});
+    return true;
+  }
+
+  return false;
+}
+
+// ── DM Modalı Yöneticisi (Yetkili Notu vb.) ──────────────────────────────────
+async function handleDMModal(interaction, client) {
+  const customId = interaction.customId;
+  if (!customId?.startsWith('dm_')) return false;
+
+  // Yetkili Notu Modalı
+  if (customId.startsWith('dm_note_modal_')) {
+    const ticketId = customId.replace('dm_note_modal_', '');
+    const noteText = interaction.fields.getTextInputValue('dm_note_text');
+
+    const noteEmbed = new EmbedBuilder()
+      .setColor(0xf59e0b)
+      .setTitle(`📝 Yetkili İnceleme Notu — #${ticketId}`)
+      .setDescription(noteText)
+      .setFooter({ text: `Notu Ekleyen: ${interaction.user.tag}` })
+      .setTimestamp();
+
+    await interaction.channel.send({ embeds: [noteEmbed] });
+    await interaction.reply({ content: '✅ Yetkili notu başarıyla eklendi.', ephemeral: true });
+    return true;
+  }
+
+  return false;
+}
+
+// ── DM Ticket Kapat (Eski buton uyumluluğu) ─────────────────────────────────
 async function handleDMCloseButton(interaction, client) {
   if (!interaction.customId?.startsWith('dm_close_')) return false;
 
   const ticketId = interaction.customId.replace('dm_close_', '');
 
-  // DB'den ticket bul
   const ticket = await Ticket.findOne({ ticketId }).catch(() => null);
   if (!ticket) {
     await interaction.reply({ content: '❌ Ticket bulunamadı.', ephemeral: true });
@@ -756,86 +1285,76 @@ async function handleDMCloseButton(interaction, client) {
     return true;
   }
 
-  // Ticket'ı kapat
-  ticket.status  = 'closed';
+  ticket.status = 'closed';
   ticket.closedAt = new Date();
-  ticket.closeReason = `DM ticket kapatıldı — ${interaction.user.tag}`;
-  ticket.closedBy   = interaction.user.id;
+  ticket.closeReason = `DM ticket yetkili tarafından kapatıldı — ${interaction.user.tag}`;
+  ticket.closedBy = interaction.user.id;
   ticket.closedByName = interaction.user.username;
   await ticket.save();
 
-  // Memory map'ten userId bul
-  let targetUserId = ticket.userId;
+  const targetUserId = ticket.userId;
   activeDMTickets.delete(targetUserId);
   dmConversations.delete(targetUserId);
 
-  await interaction.reply({ content: '✅ DM Ticket kapatıldı.', ephemeral: true });
+  await interaction.reply({ content: '✅ DM Ticket başarıyla kapatıldı.', ephemeral: true });
 
-  // Kanala kapanış mesajı
   const closeEmbed = new EmbedBuilder()
     .setColor(0xed4245)
     .setTitle('🔒 DM Ticket Kapatıldı')
     .setDescription(
-      `**Kapatan:** ${interaction.user.tag}\n` +
-      `⏳ Kanal 5 dakika içinde silinecek.`
+      `**Kapatan Yetkili:** ${interaction.user.tag}\n` +
+      `⏳ Kanal 3 dakika içinde otomatik olarak silinecektir.`
     )
     .setTimestamp();
 
   await interaction.channel.send({ embeds: [closeEmbed] }).catch(() => {});
 
-  // Kullanıcıya DM — kapandı + 5 yıldız hatırlatması
+  // Kullanıcıya DM
   try {
     const user = await client.users.fetch(targetUserId);
     const dmEmbed = new EmbedBuilder()
       .setColor(0xed4245)
       .setTitle('🔒 Destek Talebiniz Kapatıldı')
       .setDescription(
-        `Destek talebiniz **${interaction.user.username}** tarafından kapatıldı.\n\n` +
-        `⭐ **Değerlendirme yapmayı unutmayın!**\n` +
-        `Aldığınız hizmeti değerlendirmek için aşağıdaki butona basın.\n` +
-        `5 yıldız verirseniz çok mutlu oluruz! 😊`
+        `Destek talebiniz yetkili **${interaction.user.username}** tarafından çözümlenerek kapatıldı.\n\n` +
+        `⭐ **Değerlendirme Yapmayı Unutmayın!**\n` +
+        `Aldığınız hizmet kalitesini aşağıdaki butonlardan puanlayabilirsiniz.`
       )
-      .setFooter({ text: 'Sentara Destek • Tekrar ihtiyaç duyarsanız bize yazın.' })
+      .setFooter({ text: 'Sentara Destek • Bizi tercih ettiğiniz için teşekkürler.' })
       .setTimestamp();
 
-    const rateBtn = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`rate_ticket_${ticketId}`)
-        .setLabel('⭐ Değerlendir')
-        .setStyle(ButtonStyle.Primary)
+    const rateRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId(`dm_rate_5_${ticketId}`).setLabel('⭐⭐⭐⭐⭐ (5)').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId(`dm_rate_4_${ticketId}`).setLabel('⭐⭐⭐⭐ (4)').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(`dm_rate_3_${ticketId}`).setLabel('⭐⭐⭐ (3)').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId(`dm_rate_1_${ticketId}`).setLabel('⭐ (1)').setStyle(ButtonStyle.Danger)
     );
 
-    await user.send({ embeds: [dmEmbed], components: [rateBtn] }).catch(() => {});
+    await user.send({ embeds: [dmEmbed], components: [rateRow] }).catch(() => {});
   } catch (_) {}
 
-  // 5 dakika sonra kanalı sil
   const channelToDelete = interaction.channel;
   const channelId = channelToDelete.id;
-  const guildId   = channelToDelete.guild?.id;
+  const guildId = channelToDelete.guild?.id;
 
   setTimeout(async () => {
     try {
-      // Kanalı yeniden fetch et (restart veya cache sıfırlamasına karşı)
       if (guildId) {
         const guild = await client.guilds.fetch(guildId).catch(() => null);
         if (guild) {
           const ch = await guild.channels.fetch(channelId).catch(() => null);
-          if (ch) {
-            await ch.delete('DM Ticket kapatıldı — 5 dk sonra silindi');
-            console.log(`[dmTicket] Kanal silindi: ${channelId}`);
-          }
+          if (ch) await ch.delete('DM Ticket kapatıldı');
         }
       } else {
         await channelToDelete.delete('DM Ticket kapatıldı').catch(() => {});
       }
-    } catch (err) {
-      console.warn('[dmTicket] Kanal silinemedi:', err.message);
-    }
-  }, 5 * 60 * 1000);
+    } catch (_) {}
+  }, 3 * 60 * 1000);
 
   return true;
 }
 
+// ── Moderatör Yetki Kontrolü ────────────────────────────────────────────────
 async function isModeratorOrStaff(userId, client) {
   const { ADMIN_IDS, TARGET_GUILD_ID } = require('../../config');
   if (ADMIN_IDS && ADMIN_IDS.includes(userId)) return true;
@@ -844,20 +1363,18 @@ async function isModeratorOrStaff(userId, client) {
     const StaffProgress = require('../../models/StaffProgress');
     const staff = await StaffProgress.findOne({ userId });
     if (staff && staff.level >= 1) return true;
-  } catch (err) {
-    console.error("[dmTicket] StaffProgress check error:", err.message);
-  }
+  } catch (_) {}
 
   const guildsToCheck = [TARGET_GUILD_ID, '1367646464804655104'];
   const staffRoleIds = [
-    '1518692395774906648', // Stajyer Personel
-    '1518692394495643830', // Personel
-    '1518692393660973186', // Kıdemli Personel
-    '1518692392415395971', // Sekreter
-    '1518709348506013706', // Kıdemli Sekreter
-    '1518692391312298045', // Genel Koordinatör
+    '1518692395774906648',
+    '1518692394495643830',
+    '1518692393660973186',
+    '1518692392415395971',
+    '1518709348506013706',
+    '1518692391312298045',
   ];
-  
+
   for (const gId of guildsToCheck) {
     if (!gId) continue;
     try {
@@ -866,13 +1383,10 @@ async function isModeratorOrStaff(userId, client) {
         const member = await guild.members.fetch(userId).catch(() => null);
         if (member) {
           if (member.permissions.has('Administrator') || member.permissions.has('ManageGuild')) return true;
-          const hasRole = staffRoleIds.some(rid => member.roles.cache.has(rid));
-          if (hasRole) return true;
+          if (staffRoleIds.some(rid => member.roles.cache.has(rid))) return true;
         }
       }
-    } catch (err) {
-      // ignore
-    }
+    } catch (_) {}
   }
 
   return false;
@@ -880,7 +1394,8 @@ async function isModeratorOrStaff(userId, client) {
 
 module.exports = {
   handleDMMessage,
-  handleDMConfirmButton,
+  handleDMButton,
+  handleDMModal,
   forwardChannelToDM,
   handleDMCloseButton,
   activeDMTickets,
