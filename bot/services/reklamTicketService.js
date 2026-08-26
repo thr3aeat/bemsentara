@@ -3026,7 +3026,6 @@ module.exports = {
   buildSpinWheelEmbed,
   buildGroupAuditEmbed,
   buildFastTrackEmbed,
-  buildSimpleHelpShowcaseEmbed,
   buildSimplePackageBrowser,
   buildEkoThinkingEmbed,
   buildEkoUpsellPromptEmbed,
