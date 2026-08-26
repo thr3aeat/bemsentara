@@ -201,12 +201,12 @@ async function handleGuildMessage(message, client) {
 
   // 5. Engellenmiş Kanal Kontrolü (1518692482970550322 vb.)
   const BLOCKED_CHANNELS = ['1518692482970550322'];
-  if (BLOCKED_CHANNELS.includes(message.channel.id)) {
+  if (message.channel && BLOCKED_CHANNELS.includes(message.channel.id)) {
     return message.reply('❌ Bu kanalda komut kullanımı engellenmiştir! Lütfen **başka bir kanalda veya bot komut kanalında kullanın!**').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
   }
 
   // 5.1. Dinamik Engellenmiş Komut Kontrolü (Sadece Sunucu İçi)
-  if (message.guild) {
+  if (message.guild && message.channel) {
     const disableKey = `${message.guild.id}_${message.channel.id}`;
     if (disabledCommands.has(disableKey) && disabledCommands.get(disableKey).has(command.name)) {
       return message.reply('❌ Bu komut bu kanalda yetkililer tarafından engellenmiştir.');
