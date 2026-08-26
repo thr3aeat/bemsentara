@@ -3751,6 +3751,10 @@ function renderAdminPage(user) {
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
         📥 Doldurulan Formlar
       </button>
+      <button class="adm-tab" onclick="admTab('group-logs',this)"
+        style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
+        🔄 Grup Değişiklikleri & Geri Al
+      </button>
     </div>
 
     <!-- İstatistikler -->
@@ -4022,6 +4026,73 @@ function renderAdminPage(user) {
       </div>
     </div>
 
+    <!-- Grup Değişiklikleri & Geri Al -->
+    <div id="adm-group-logs" class="card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.6rem;">
+            🔄 Grup Değişiklik Geçmişi & Geri Alma
+          </h1>
+          <p class="text-muted">Grup yönetiminde yapılan tüm açıklamalar, rütbe sıralamaları, izinler ve yetkili değişikliklerini anında veya toplu olarak geri alın.</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadGroupAuditLogs()">🔄 Yenile</button>
+      </div>
+
+      <!-- Hızlı Geri Alma Kontrolleri -->
+      <div style="background:rgba(124,106,247,0.06);border:1px solid rgba(124,106,247,0.2);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div style="font-weight:700;color:var(--accent);font-size:1.05rem;margin-bottom:0.2rem;">⏱️ Hızlı ve Toplu Geri Alma (Rollback)</div>
+          <div style="font-size:0.85rem;color:var(--muted);">Son 1 veya 5 dakikada yapılan tüm değişiklikleri tek tıkla geri alın veya seçilenleri iptal edin.</div>
+        </div>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <button class="btn btn-danger btn-sm" onclick="batchRollbackTime(1)">⏱️ Son 1 Dakikayı Geri Al</button>
+          <button class="btn btn-danger btn-sm" onclick="batchRollbackTime(5)">⏱️ Son 5 Dakikayı Geri Al</button>
+          <button class="btn btn-danger btn-sm" id="btn-rollback-selected" onclick="batchRollbackSelected()" disabled>☑️ Seçilenleri Geri Al (<span id="selected-count">0</span>)</button>
+        </div>
+      </div>
+
+      <!-- Filtreler -->
+      <div style="display:flex;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <label>🏢 Grup Filtrele</label>
+          <select id="filter-group-id" onchange="loadGroupAuditLogs()" style="margin-bottom:0;">
+            <option value="all">Tüm Gruplar</option>
+            <option value="11517908">TMT Turkish Armed Forces (11517908)</option>
+            <option value="35212138">TMT Akademi (35212138)</option>
+            <option value="33709461">TMT Askeri İnzibat (33709461)</option>
+            <option value="35430592">TMT Birimler Bölükler (35430592)</option>
+            <option value="5415548">TMT Deniz Kuvvetleri (5415548)</option>
+            <option value="35212127">TMT Genel Branş Komutanlığı (35212127)</option>
+            <option value="33709391">TMT Hava Kuvvetleri (33709391)</option>
+            <option value="35432150">TMT Hudut Müfettişleri (35432150)</option>
+            <option value="12008462">TMT Jandarma Genel Komutanlığı (12008462)</option>
+            <option value="33714381">TMT Kara Kuvvetleri Komutanlığı (33714381)</option>
+            <option value="35528574">TMT Ministry of Foreign Affairs (35528574)</option>
+            <option value="33708598">TMT Özel Kuvvetler Komutanlığı (33708598)</option>
+            <option value="35528598">TMT RAIDERS (35528598)</option>
+            <option value="35528556">TMT Sürücü Okulu (35528556)</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label>⚙️ İşlem Türü</label>
+          <select id="filter-action-type" onchange="loadGroupAuditLogs()" style="margin-bottom:0;">
+            <option value="all">Tüm İşlemler</option>
+            <option value="roles_update">Rütbe / İsim Güncellemesi</option>
+            <option value="reorder_5">5'erli Yeniden Sıralama</option>
+            <option value="description_update">Açıklama Güncellemesi</option>
+            <option value="permissions_update">İzin Güncellemesi</option>
+            <option value="add_admin">Yetkili Ekleme</option>
+            <option value="remove_admin">Yetkili Kaldırma</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tablo / Liste -->
+      <div id="group-audit-logs-list" style="overflow-x:auto;">
+        <div style="color:var(--muted);text-align:center;padding:2rem;">Yükleniyor...</div>
+      </div>
+    </div>
+
     <script>
       // ── Sekme geçişi ──────────────────────────────────────────────────────
       window.admTab = function(name, btn) {
@@ -4032,6 +4103,7 @@ function renderAdminPage(user) {
         document.getElementById('adm-forms').style.display       = name === 'forms'       ? '' : 'none';
         document.getElementById('adm-automation').style.display  = name === 'automation'  ? '' : 'none';
         document.getElementById('adm-submissions').style.display = name === 'submissions' ? '' : 'none';
+        document.getElementById('adm-group-logs').style.display  = name === 'group-logs'  ? '' : 'none';
         document.querySelectorAll('.adm-tab').forEach(t => {
           t.style.borderBottomColor = 'transparent';
           t.style.color = 'var(--muted)';
@@ -4043,6 +4115,179 @@ function renderAdminPage(user) {
         if (name === 'bans') loadBans();
         if (name === 'stats') loadStats();
         if (name === 'submissions') loadSubmissions();
+        if (name === 'group-logs') loadGroupAuditLogs();
+      }
+
+      // ── Grup Yönetimi Değişiklik Geçmişi & Geri Alma JS ────────────────────
+      let _allGroupLogs = [];
+      let _selectedLogIds = new Set();
+
+      window.loadGroupAuditLogs = async function() {
+        const container = document.getElementById('group-audit-logs-list');
+        if (!container) return;
+        container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">⏳ Değişiklik kayıtları yükleniyor...</div>';
+        
+        const gId = document.getElementById('filter-group-id')?.value || 'all';
+        const aType = document.getElementById('filter-action-type')?.value || 'all';
+
+        try {
+          const res = await fetch('/api/group-admin/logs?groupId=' + encodeURIComponent(gId) + '&actionType=' + encodeURIComponent(aType));
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            container.innerHTML = '<div style="color:var(--danger);padding:1rem;">Kayıtlar yüklenemedi: ' + (data.error || 'Bilinmeyen hata') + '</div>';
+            return;
+          }
+
+          _allGroupLogs = data.logs || [];
+          _selectedLogIds.clear();
+          updateSelectedCount();
+
+          if (_allGroupLogs.length === 0) {
+            container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Henüz kaydedilmiş bir grup değişikliği bulunmuyor.</div>';
+            return;
+          }
+
+          function getActionBadge(type) {
+            switch(type) {
+              case 'roles_update': return '<span class="badge" style="background:rgba(129,140,248,0.15);color:#818cf8;border:1px solid rgba(129,140,248,0.3);">🛡️ Rütbe Güncelleme</span>';
+              case 'reorder_5': return '<span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">⚡ 5\\\'erli Sıralama</span>';
+              case 'description_update': return '<span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">✍️ Açıklama Değişimi</span>';
+              case 'permissions_update': return '<span class="badge" style="background:rgba(244,63,94,0.15);color:#f43f5e;border:1px solid rgba(244,63,94,0.3);">🔑 İzin Güncelleme</span>';
+              case 'add_admin': return '<span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">➕ Yetkili Eklendi</span>';
+              case 'remove_admin': return '<span class="badge" style="background:rgba(251,113,133,0.15);color:#fb7185;border:1px solid rgba(251,113,133,0.3);">➖ Yetkili Silindi</span>';
+              default: return '<span class="badge">' + type + '</span>';
+            }
+          }
+
+          let html = '<table style="width:100%;border-collapse:collapse;font-size:0.88rem;text-align:left;">' +
+            '<thead>' +
+              '<tr style="border-bottom:1px solid var(--border);color:var(--muted);font-size:0.78rem;text-transform:uppercase;">' +
+                '<th style="padding:0.75rem 0.5rem;width:40px;"><input type="checkbox" onchange="toggleSelectAllGroupLogs(this.checked)"></th>' +
+                '<th style="padding:0.75rem;">Tarih / Saat</th>' +
+                '<th style="padding:0.75rem;">Grup</th>' +
+                '<th style="padding:0.75rem;">Yetkili</th>' +
+                '<th style="padding:0.75rem;">İşlem Türü</th>' +
+                '<th style="padding:0.75rem;">Açıklama / Özet</th>' +
+                '<th style="padding:0.75rem;">Durum</th>' +
+                '<th style="padding:0.75rem;text-align:right;">Eylem</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>';
+
+          _allGroupLogs.forEach(log => {
+            const dateStr = log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '—';
+            const isRolledBack = log.rolledBack;
+            const statusHtml = isRolledBack
+              ? '<span class="badge badge-closed" style="font-size:0.72rem;">↩️ Geri Alındı<br><small style="color:var(--muted);">' + (log.rolledBackBy || '') + '</small></span>'
+              : '<span class="badge badge-open" style="font-size:0.72rem;">✅ Aktif</span>';
+
+            const actionBtn = isRolledBack
+              ? '<button class="btn btn-ghost btn-sm" disabled style="opacity:0.4;cursor:not-allowed;">Geri Alındı</button>'
+              : '<button class="btn btn-danger btn-sm" onclick="rollbackSingleLog(\\'' + log._id + '\\')">↩️ Geri Al</button>';
+
+            html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:' + (isRolledBack ? 'rgba(0,0,0,0.15)' : 'transparent') + ';">' +
+              '<td style="padding:0.75rem 0.5rem;">' +
+                (!isRolledBack ? '<input type="checkbox" class="chk-group-log" data-id="' + log._id + '" onchange="toggleLogSelection(\\'' + log._id + '\\', this.checked)">' : '') +
+              '</td>' +
+              '<td style="padding:0.75rem;font-family:monospace;font-size:0.82rem;color:var(--text);">' + dateStr + '</td>' +
+              '<td style="padding:0.75rem;font-weight:600;color:#fff;">' + (log.groupName || log.groupId) + '</td>' +
+              '<td style="padding:0.75rem;color:var(--accent2);">👤 ' + (log.userTag || 'Sistem') + '</td>' +
+              '<td style="padding:0.75rem;">' + getActionBadge(log.actionType) + '</td>' +
+              '<td style="padding:0.75rem;color:var(--text);max-width:240px;line-height:1.4;">' + (log.summary || '—') + '</td>' +
+              '<td style="padding:0.75rem;">' + statusHtml + '</td>' +
+              '<td style="padding:0.75rem;text-align:right;">' + actionBtn + '</td>' +
+            '</tr>';
+          });
+
+          html += '</tbody></table>';
+          container.innerHTML = html;
+        } catch (err) {
+          container.innerHTML = '<div style="color:var(--danger);padding:1rem;">Bağlantı hatası: ' + err.message + '</div>';
+        }
+      }
+
+      window.toggleLogSelection = function(id, checked) {
+        if (checked) _selectedLogIds.add(id);
+        else _selectedLogIds.delete(id);
+        updateSelectedCount();
+      }
+
+      window.toggleSelectAllGroupLogs = function(checked) {
+        document.querySelectorAll('.chk-group-log').forEach(cb => {
+          cb.checked = checked;
+          const id = cb.dataset.id;
+          if (checked) _selectedLogIds.add(id);
+          else _selectedLogIds.delete(id);
+        });
+        updateSelectedCount();
+      }
+
+      function updateSelectedCount() {
+        const countEl = document.getElementById('selected-count');
+        const btn = document.getElementById('btn-rollback-selected');
+        if (countEl) countEl.innerText = _selectedLogIds.size;
+        if (btn) btn.disabled = _selectedLogIds.size === 0;
+      }
+
+      window.rollbackSingleLog = async function(id) {
+        if (!confirm("Bu değişikliği Roblox üzerinde geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ Değişiklik geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback/' + id, { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+          } else {
+            showToast("❌ " + (data.error || "Geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
+        }
+      }
+
+      window.batchRollbackTime = async function(minutes) {
+        const gId = document.getElementById('filter-group-id')?.value || 'all';
+        if (!confirm("Son " + minutes + " dakika içinde yapılan TÜM değişiklikleri geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ Son " + minutes + " dakikadaki değişiklikler geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ minutesAgo: minutes, groupId: gId })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+          } else {
+            showToast("❌ " + (data.error || "Toplu geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
+        }
+      }
+
+      window.batchRollbackSelected = async function() {
+        if (_selectedLogIds.size === 0) return;
+        if (!confirm("Seçilen " + _selectedLogIds.size + " adet değişikliği geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ " + _selectedLogIds.size + " değişiklik geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logIds: Array.from(_selectedLogIds) })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+          } else {
+            showToast("❌ " + (data.error || "Toplu geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
+        }
       }
 
       window.startAvukatAI = async function() {
@@ -5462,6 +5707,11 @@ function renderGroupAdminPage(user, isOwner = false) {
           <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1rem;font-size:0.88rem;color:var(--muted);line-height:1.5;">
             <p><strong>💡 Bilgilendirme:</strong> Rütbe sıralamasını (Rank numaraları) değiştirmek için rütbe satırlarının başındaki sürükleme simgesinden tutup aşağı/yukarı taşıyabilirsiniz. Kaydet butonuna basılana kadar Roblox üzerinde rütbeler güncellenmez.</p>
           </div>
+          <div style="margin-top:1.2rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-warning" onclick="openGroupAuditModal()">
+              📜 Değişiklik Geçmişi ve Geri Al (Rollback)
+            </button>
+          </div>
           ${ownerSection}
         </div>
 
@@ -5474,6 +5724,9 @@ function renderGroupAdminPage(user, isOwner = false) {
               <p id="active-group-id" class="text-muted" style="font-size:0.85rem;margin-top:0.2rem;font-family:monospace;"></p>
             </div>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="btn btn-ghost" onclick="openGroupAuditModal()">
+                📜 Değişiklik Geçmişi
+              </button>
               <button class="btn btn-success" onclick="addNewRoleRow()">
                 ➕ Yeni Rol Ekle
               </button>
@@ -5572,6 +5825,56 @@ function renderGroupAdminPage(user, isOwner = false) {
         background: rgba(255,255,255,0.01);
       }
     </style>
+
+    <!-- Audit Logs & Rollback Modal for Group Admin Page -->
+    <div id="modal-group-audit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+      <div style="background:#0e0e1a;border:1px solid var(--border);border-radius:20px;max-width:980px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,0.8);overflow:hidden;" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="padding:1.2rem 1.8rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h3 style="font-size:1.25rem;font-weight:800;color:var(--accent);">📜 Değişiklik Geçmişi ve Geri Alma (Rollback)</h3>
+            <p style="color:var(--muted);font-size:0.82rem;margin-top:0.15rem;">Grup yönetiminde yapılan tüm açıklamalar, rütbeler ve izin değişiklikleri.</p>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="closeGroupAuditModal()">✕ Kapat</button>
+        </div>
+
+        <!-- Controls -->
+        <div style="padding:0.9rem 1.8rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.01);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-danger btn-sm" onclick="batchRollbackTime(1)">⏱️ Son 1 Dakikayı Geri Al</button>
+            <button class="btn btn-danger btn-sm" onclick="batchRollbackTime(5)">⏱️ Son 5 Dakikayı Geri Al</button>
+            <button class="btn btn-danger btn-sm" id="btn-rollback-selected-modal" onclick="batchRollbackSelected()" disabled>☑️ Seçilenleri Geri Al (<span id="selected-count-modal">0</span>)</button>
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <select id="modal-filter-group-id" onchange="loadGroupAuditLogs()" style="margin-bottom:0;padding:0.35rem 0.7rem;font-size:0.82rem;">
+              <option value="all">Tüm Gruplar</option>
+              <option value="11517908">TMT Turkish Armed Forces (11517908)</option>
+              <option value="35212138">TMT Akademi (35212138)</option>
+              <option value="33709461">TMT Askeri İnzibat (33709461)</option>
+              <option value="35430592">TMT Birimler Bölükler (35430592)</option>
+              <option value="5415548">TMT Deniz Kuvvetleri (5415548)</option>
+              <option value="35212127">TMT Genel Branş Komutanlığı (35212127)</option>
+              <option value="33709391">TMT Hava Kuvvetleri (33709391)</option>
+              <option value="35432150">TMT Hudut Müfettişleri (35432150)</option>
+              <option value="12008462">TMT Jandarma Genel Komutanlığı (12008462)</option>
+              <option value="33714381">TMT Kara Kuvvetleri Komutanlığı (33714381)</option>
+              <option value="35528574">TMT Ministry of Foreign Affairs (35528574)</option>
+              <option value="33708598">TMT Özel Kuvvetler Komutanlığı (33708598)</option>
+              <option value="35528598">TMT RAIDERS (35528598)</option>
+              <option value="35528556">TMT Sürücü Okulu (35528556)</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadGroupAuditLogs()">🔄 Yenile</button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:1.2rem 1.8rem;overflow-y:auto;flex:1;">
+          <div id="group-audit-logs-list-modal" style="overflow-x:auto;">
+            <div style="color:var(--muted);text-align:center;padding:2rem;">Yükleniyor...</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script>
       let currentGroupId = '';
@@ -6126,6 +6429,195 @@ function renderGroupAdminPage(user, isOwner = false) {
           logBox.scrollTop = logBox.scrollHeight;
         } finally {
           btns.forEach(b => b.disabled = false);
+        }
+      }
+
+      // ── Audit Logs & Rollback Modal Functions ──
+      let _allGroupLogs = [];
+      let _selectedLogIds = new Set();
+
+      window.openGroupAuditModal = function() {
+        document.getElementById('modal-group-audit').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        if (currentGroupId) {
+          const filter = document.getElementById('modal-filter-group-id');
+          if (filter) filter.value = currentGroupId;
+        }
+        loadGroupAuditLogs();
+      }
+
+      window.closeGroupAuditModal = function() {
+        document.getElementById('modal-group-audit').style.display = 'none';
+        document.body.style.overflow = '';
+      }
+
+      window.loadGroupAuditLogs = async function() {
+        const container = document.getElementById('group-audit-logs-list-modal');
+        if (!container) return;
+        container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">⏳ Değişiklik kayıtları yükleniyor...</div>';
+        
+        const gId = document.getElementById('modal-filter-group-id')?.value || 'all';
+
+        try {
+          const res = await fetch('/api/group-admin/logs?groupId=' + encodeURIComponent(gId));
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            container.innerHTML = '<div style="color:var(--danger);padding:1rem;">Kayıtlar yüklenemedi: ' + (data.error || 'Bilinmeyen hata') + '</div>';
+            return;
+          }
+
+          _allGroupLogs = data.logs || [];
+          _selectedLogIds.clear();
+          updateSelectedCount();
+
+          if (_allGroupLogs.length === 0) {
+            container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Henüz kaydedilmiş bir grup değişikliği bulunmuyor.</div>';
+            return;
+          }
+
+          function getActionBadge(type) {
+            switch(type) {
+              case 'roles_update': return '<span class="badge" style="background:rgba(129,140,248,0.15);color:#818cf8;border:1px solid rgba(129,140,248,0.3);">🛡️ Rütbe Güncelleme</span>';
+              case 'reorder_5': return '<span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">⚡ 5\\\'erli Sıralama</span>';
+              case 'description_update': return '<span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">✍️ Açıklama Değişimi</span>';
+              case 'permissions_update': return '<span class="badge" style="background:rgba(244,63,94,0.15);color:#f43f5e;border:1px solid rgba(244,63,94,0.3);">🔑 İzin Güncelleme</span>';
+              case 'add_admin': return '<span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">➕ Yetkili Eklendi</span>';
+              case 'remove_admin': return '<span class="badge" style="background:rgba(251,113,133,0.15);color:#fb7185;border:1px solid rgba(251,113,133,0.3);">➖ Yetkili Silindi</span>';
+              default: return '<span class="badge">' + type + '</span>';
+            }
+          }
+
+          let html = '<table style="width:100%;border-collapse:collapse;font-size:0.88rem;text-align:left;">' +
+            '<thead>' +
+              '<tr style="border-bottom:1px solid var(--border);color:var(--muted);font-size:0.78rem;text-transform:uppercase;">' +
+                '<th style="padding:0.75rem 0.5rem;width:40px;"><input type="checkbox" onchange="toggleSelectAllGroupLogs(this.checked)"></th>' +
+                '<th style="padding:0.75rem;">Tarih / Saat</th>' +
+                '<th style="padding:0.75rem;">Grup</th>' +
+                '<th style="padding:0.75rem;">Yetkili</th>' +
+                '<th style="padding:0.75rem;">İşlem Türü</th>' +
+                '<th style="padding:0.75rem;">Açıklama / Özet</th>' +
+                '<th style="padding:0.75rem;">Durum</th>' +
+                '<th style="padding:0.75rem;text-align:right;">Eylem</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>';
+
+          _allGroupLogs.forEach(log => {
+            const dateStr = log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '—';
+            const isRolledBack = log.rolledBack;
+            const statusHtml = isRolledBack
+              ? '<span class="badge badge-closed" style="font-size:0.72rem;">↩️ Geri Alındı<br><small style="color:var(--muted);">' + (log.rolledBackBy || '') + '</small></span>'
+              : '<span class="badge badge-open" style="font-size:0.72rem;">✅ Aktif</span>';
+
+            const actionBtn = isRolledBack
+              ? '<button class="btn btn-ghost btn-sm" disabled style="opacity:0.4;cursor:not-allowed;">Geri Alındı</button>'
+              : '<button class="btn btn-danger btn-sm" onclick="rollbackSingleLog(\\'' + log._id + '\\')">↩️ Geri Al</button>';
+
+            html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:' + (isRolledBack ? 'rgba(0,0,0,0.15)' : 'transparent') + ';">' +
+              '<td style="padding:0.75rem 0.5rem;">' +
+                (!isRolledBack ? '<input type="checkbox" class="chk-group-log" data-id="' + log._id + '" onchange="toggleLogSelection(\\'' + log._id + '\\', this.checked)">' : '') +
+              '</td>' +
+              '<td style="padding:0.75rem;font-family:monospace;font-size:0.82rem;color:var(--text);">' + dateStr + '</td>' +
+              '<td style="padding:0.75rem;font-weight:600;color:#fff;">' + (log.groupName || log.groupId) + '</td>' +
+              '<td style="padding:0.75rem;color:var(--accent2);">👤 ' + (log.userTag || 'Sistem') + '</td>' +
+              '<td style="padding:0.75rem;">' + getActionBadge(log.actionType) + '</td>' +
+              '<td style="padding:0.75rem;color:var(--text);max-width:240px;line-height:1.4;">' + (log.summary || '—') + '</td>' +
+              '<td style="padding:0.75rem;">' + statusHtml + '</td>' +
+              '<td style="padding:0.75rem;text-align:right;">' + actionBtn + '</td>' +
+            '</tr>';
+          });
+
+          html += '</tbody></table>';
+          container.innerHTML = html;
+        } catch (err) {
+          container.innerHTML = '<div style="color:var(--danger);padding:1rem;">Bağlantı hatası: ' + err.message + '</div>';
+        }
+      }
+
+      window.toggleLogSelection = function(id, checked) {
+        if (checked) _selectedLogIds.add(id);
+        else _selectedLogIds.delete(id);
+        updateSelectedCount();
+      }
+
+      window.toggleSelectAllGroupLogs = function(checked) {
+        document.querySelectorAll('.chk-group-log').forEach(cb => {
+          cb.checked = checked;
+          const id = cb.dataset.id;
+          if (checked) _selectedLogIds.add(id);
+          else _selectedLogIds.delete(id);
+        });
+        updateSelectedCount();
+      }
+
+      function updateSelectedCount() {
+        const countEl = document.getElementById('selected-count-modal');
+        const btn = document.getElementById('btn-rollback-selected-modal');
+        if (countEl) countEl.innerText = _selectedLogIds.size;
+        if (btn) btn.disabled = _selectedLogIds.size === 0;
+      }
+
+      window.rollbackSingleLog = async function(id) {
+        if (!confirm("Bu değişikliği Roblox üzerinde geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ Değişiklik geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback/' + id, { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+            if (currentGroupId) selectGroup(currentGroupId, document.getElementById('active-group-title')?.innerText || '');
+          } else {
+            showToast("❌ " + (data.error || "Geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
+        }
+      }
+
+      window.batchRollbackTime = async function(minutes) {
+        const gId = document.getElementById('modal-filter-group-id')?.value || 'all';
+        if (!confirm("Son " + minutes + " dakika içinde yapılan TÜM değişiklikleri geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ Son " + minutes + " dakikadaki değişiklikler geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ minutesAgo: minutes, groupId: gId })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+            if (currentGroupId) selectGroup(currentGroupId, document.getElementById('active-group-title')?.innerText || '');
+          } else {
+            showToast("❌ " + (data.error || "Toplu geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
+        }
+      }
+
+      window.batchRollbackSelected = async function() {
+        if (_selectedLogIds.size === 0) return;
+        if (!confirm("Seçilen " + _selectedLogIds.size + " adet değişikliği geri almak istediğinize emin misiniz?")) return;
+        showToast("⏳ " + _selectedLogIds.size + " değişiklik geri alınıyor...", "info");
+        try {
+          const res = await fetch('/api/group-admin/rollback-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logIds: Array.from(_selectedLogIds) })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            showToast("✅ " + data.message, "success");
+            loadGroupAuditLogs();
+            if (currentGroupId) selectGroup(currentGroupId, document.getElementById('active-group-title')?.innerText || '');
+          } else {
+            showToast("❌ " + (data.error || "Toplu geri alma başarısız."), "error");
+          }
+        } catch (err) {
+          showToast("❌ İstek hatası: " + err.message, "error");
         }
       }
     </script>

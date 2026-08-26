@@ -150,6 +150,7 @@ const wikiArticles   = collections.wikiArticles;
 const errorReports   = collections.errorReports;
 const groupAdmins    = collections.groupAdmins;
 const rankMetadata   = collections.rankMetadata;
+const groupAuditLogs = collections.groupAuditLogs;
 const posts          = collections.posts;
 const stories        = collections.stories;
 const liveStreams    = collections.liveStreams;
@@ -165,9 +166,9 @@ function getRawCollectionsMap() {
 const ALL_COLLECTION_NAMES = [
   "users", "tickets", "economies", "courtCases", "investigations",
   "wikiArticles", "errorReports", "groupAdmins", "rankMetadata",
-  "posts", "stories", "liveStreams", "appMeta", "formSubmissions",
-  "modInterviews", "staffLeaves", "staffShifts", "modPerformances",
-  "marketAuctions", "userTrustScores"
+  "groupAuditLogs", "posts", "stories", "liveStreams", "appMeta",
+  "formSubmissions", "modInterviews", "staffLeaves", "staffShifts",
+  "modPerformances", "marketAuctions", "userTrustScores"
 ];
 
 /**
@@ -289,6 +290,7 @@ module.exports = {
   errorReports,
   groupAdmins,
   rankMetadata,
+  groupAuditLogs,
   posts,
   stories,
   liveStreams,

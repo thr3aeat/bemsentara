@@ -3828,7 +3828,7 @@ router.post("/api/avukat/direct", async (req, res) => {
 
 
 // ─── Group Administration APIs ──────────────────────────────────────────────
-const { groupAdmins, rankMetadata } = require("../../models/Store");
+const { groupAdmins, rankMetadata, groupAuditLogs } = require("../../models/Store");
 const { ROBLOX_GROUPS } = require("../../bot/services/robloxGroupManager");
 
 // List of TMT Group IDs specifically for filtering/verification
@@ -3879,6 +3879,179 @@ function requireGroupOwner(req, res) {
     return false;
   }
   return true;
+}
+
+// Helper to record group audit logs for undo/rollback
+async function recordGroupAuditLog({ groupId, actionType, summary, beforeState, afterState, user }) {
+  try {
+    const groupName = ROBLOX_GROUPS[groupId] || (groupId === "all" ? "Tüm Gruplar" : `Grup #${groupId}`);
+    const log = groupAuditLogs.create({
+      groupId: String(groupId),
+      groupName,
+      userId: user ? (user.discordId || user.username || user._id) : "system",
+      userTag: user ? (user.discordUsername || user.username || "Yetkili") : "Sistem",
+      actionType,
+      summary: summary || "",
+      beforeState: beforeState || null,
+      afterState: afterState || null,
+      rolledBack: false,
+      createdAt: new Date()
+    });
+    await saveStoreNow();
+    return log;
+  } catch (err) {
+    console.error("[groupAuditLogs] Log kaydetme hatası:", err.message);
+    return null;
+  }
+}
+
+// Helper to reapply roles state
+async function applyRolesState(groupId, targetRoles) {
+  if (!Array.isArray(targetRoles)) return;
+  const response = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
+  const currentRobloxRoles = response.data.roles || [];
+  
+  const nameOnlyUpdates = [];
+  const rankUpdates = [];
+  
+  for (const item of targetRoles) {
+    const roleId = String(item.id);
+    const name = item.name;
+    const rank = parseInt(item.rank, 10);
+    const color = item.color || "#7c6af7";
+
+    const current = currentRobloxRoles.find(r => String(r.id) === roleId);
+    if (!current) continue;
+
+    const isSystemRole = current.rank === 0 || current.rank === 255 || rank === 0 || rank === 255;
+    
+    // Save color locally
+    let meta = rankMetadata.findOne({ groupId, roleId });
+    if (!meta) {
+      rankMetadata.create({ groupId, roleId, color, createdAt: new Date() });
+    } else if (meta.color !== color) {
+      meta.color = color;
+      meta.updatedAt = new Date();
+      await meta.save();
+    }
+
+    if (isSystemRole) {
+      if (current.name !== name) {
+        nameOnlyUpdates.push({ id: roleId, name });
+      }
+    } else {
+      if (current.name !== name && current.rank === rank) {
+        nameOnlyUpdates.push({ id: roleId, name });
+      } else if (current.rank !== rank) {
+        rankUpdates.push({ id: roleId, oldRank: current.rank, newRank: rank, name });
+      }
+    }
+  }
+
+  for (const update of nameOnlyUpdates) {
+    await robloxApiRequest(
+      `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
+      "PATCH",
+      { name: update.name }
+    );
+    await new Promise(r => setTimeout(r, 2000));
+  }
+
+  if (rankUpdates.length > 0) {
+    let pending = [...rankUpdates];
+    let currentOccupied = new Set(currentRobloxRoles.map(r => r.rank));
+    
+    while (pending.length > 0) {
+      let found = false;
+      for (let i = 0; i < pending.length; i++) {
+        const update = pending[i];
+        if (!currentOccupied.has(update.newRank) || update.newRank === update.oldRank) {
+          await robloxApiRequest(
+            `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
+            "PATCH",
+            { name: update.name, rank: update.newRank }
+          );
+          currentOccupied.delete(update.oldRank);
+          currentOccupied.add(update.newRank);
+          pending.splice(i, 1);
+          found = true;
+          await new Promise(r => setTimeout(r, 2000));
+          break;
+        }
+      }
+      
+      if (!found) {
+        const update = pending[0];
+        let tempRank = 200;
+        while (currentOccupied.has(tempRank) || tempRank === 255) tempRank++;
+        
+        await robloxApiRequest(
+          `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
+          "PATCH",
+          { name: update.name, rank: tempRank }
+        );
+        currentOccupied.delete(update.oldRank);
+        currentOccupied.add(tempRank);
+        update.oldRank = tempRank;
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+  }
+}
+
+// Helper to execute rollback for a single audit log
+async function executeRollbackLog(log, executingUser) {
+  if (!log) throw new Error("Değişiklik kaydı bulunamadı.");
+  if (log.rolledBack) throw new Error("Bu işlem zaten daha önce geri alınmış.");
+
+  const { groupId, actionType, beforeState } = log;
+  const userTag = executingUser ? (executingUser.discordUsername || executingUser.username) : "Sistem";
+
+  if (actionType === "description_update") {
+    if (beforeState && beforeState.description !== undefined) {
+      await robloxApiRequest(
+        `https://groups.roblox.com/v1/groups/${groupId}/description`,
+        "PATCH",
+        { description: beforeState.description }
+      );
+    }
+  } else if (actionType === "roles_update" || actionType === "reorder_5") {
+    if (beforeState && Array.isArray(beforeState.roles)) {
+      await applyRolesState(groupId, beforeState.roles);
+    }
+  } else if (actionType === "permissions_update") {
+    if (beforeState && beforeState.roleId && beforeState.permissions) {
+      await robloxApiRequest(
+        `https://groups.roblox.com/v1/groups/${groupId}/roles/${beforeState.roleId}/permissions`,
+        "PATCH",
+        beforeState.permissions
+      );
+    }
+  } else if (actionType === "add_admin") {
+    if (log.afterState && log.afterState.username) {
+      const found = groupAdmins.findOne({ username: log.afterState.username.toLowerCase() });
+      if (found) {
+        groupAdmins.data.delete(found._id);
+      }
+    }
+  } else if (actionType === "remove_admin") {
+    if (beforeState && beforeState.username) {
+      if (!groupAdmins.findOne({ username: beforeState.username.toLowerCase() })) {
+        groupAdmins.create({ username: beforeState.username.toLowerCase(), createdAt: new Date() });
+      }
+    }
+  }
+
+  log.rolledBack = true;
+  log.rolledBackAt = new Date();
+  log.rolledBackBy = userTag;
+  if (typeof log.save === "function") {
+    await log.save();
+  }
+  await saveStoreNow();
+
+  logger.log(`[GRUP GERİ ALMA] ${userTag}, ${log.groupName || groupId} için yapılan '${log.summary}' işlemini geri aldı.`, "admin");
+  return { success: true, message: `İşlem başarıyla geri alındı: ${log.summary}` };
 }
 
 // Roblox API helper with CSRF and cookie handling
@@ -3962,6 +4135,15 @@ router.post("/api/group-admin/admins", async (req, res) => {
   
   logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + username + " kullanıcısını yönetici olarak ekledi.", "admin");
   
+  await recordGroupAuditLog({
+    groupId: "all",
+    actionType: "add_admin",
+    summary: `${username} kullanıcısı grup yöneticisi olarak eklendi.`,
+    beforeState: null,
+    afterState: { username },
+    user: req.user
+  });
+
   res.json({ success: true, admin: created });
 });
 
@@ -3990,6 +4172,15 @@ router.delete("/api/group-admin/admins/:username", async (req, res) => {
   
   logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + username + " kullanıcısının yönetici yetkisini kaldırdı.", "admin");
   
+  await recordGroupAuditLog({
+    groupId: "all",
+    actionType: "remove_admin",
+    summary: `${username} kullanıcısının grup yöneticisi yetkisi kaldırıldı.`,
+    beforeState: { username },
+    afterState: null,
+    user: req.user
+  });
+
   res.json({ success: true, message: "Kullanıcı yetkisi kaldırıldı." });
 });
 
@@ -4055,6 +4246,12 @@ router.patch("/api/group-admin/groups/:groupId/description", async (req, res) =>
   }
 
   try {
+    let beforeDesc = "";
+    try {
+      const gRes = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}`);
+      beforeDesc = gRes.data?.description || "";
+    } catch (_) {}
+
     await robloxApiRequest(
       `https://groups.roblox.com/v1/groups/${groupId}/description`,
       "PATCH",
@@ -4063,6 +4260,15 @@ router.patch("/api/group-admin/groups/:groupId/description", async (req, res) =>
     
     logger.log(`[GRUP YÖNETİCİSİ] ${req.user.discordUsername || req.user.username}, ${groupId} ID'li grubun açıklamasını güncelledi.`, "admin");
     
+    await recordGroupAuditLog({
+      groupId,
+      actionType: "description_update",
+      summary: `Grup açıklaması güncellendi.`,
+      beforeState: { description: beforeDesc },
+      afterState: { description },
+      user: req.user
+    });
+
     res.json({ success: true, message: "Grup açıklaması güncellendi." });
   } catch (err) {
     console.error("Update description error:", err.response?.data || err.message);
@@ -4087,6 +4293,17 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
     // 1. Fetch current roles from Roblox to calculate current state and check constraints
     const response = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
     const currentRobloxRoles = response.data.roles || [];
+
+    const beforeRoles = currentRobloxRoles.map(r => {
+      const meta = rankMetadata.findOne({ groupId, roleId: String(r.id) });
+      return {
+        id: String(r.id),
+        name: r.name,
+        rank: r.rank,
+        color: meta ? meta.color : "#7c6af7",
+        description: r.description || ""
+      };
+    });
     
     // 2. Identify the modifications and update colors locally
     const nameOnlyUpdates = [];
@@ -4233,6 +4450,15 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
     
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun rütbe sıralarını/isimlerini/renklerini güncelledi.", "admin");
     
+    await recordGroupAuditLog({
+      groupId,
+      actionType: "roles_update",
+      summary: `${groupId} ID'li grupta rütbe/isim/renk güncellemeleri yapıldı.`,
+      beforeState: { roles: beforeRoles },
+      afterState: { roles },
+      user: req.user
+    });
+
     res.json({ success: true, message: "Rütbeler başarıyla güncellendi." });
   } catch (err) {
     console.error("Update roles error:", err.response?.data || err.message);
@@ -4261,6 +4487,17 @@ router.post("/api/group-admin/groups/:groupId/reorder-5", async (req, res) => {
     // 1. Fetch current roles
     const response = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
     const currentRobloxRoles = response.data.roles || [];
+
+    const beforeRoles = currentRobloxRoles.map(r => {
+      const meta = rankMetadata.findOne({ groupId, roleId: String(r.id) });
+      return {
+        id: String(r.id),
+        name: r.name,
+        rank: r.rank,
+        color: meta ? meta.color : "#7c6af7",
+        description: r.description || ""
+      };
+    });
 
     // 2. Filter out Guest (0) and Owner (255), and sort the remaining roles by current rank ascending
     const reorderable = currentRobloxRoles
@@ -4327,6 +4564,16 @@ router.post("/api/group-admin/groups/:groupId/reorder-5", async (req, res) => {
     }
 
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun rütbelerini 5'erli olarak sıraladı.", "admin");
+    
+    await recordGroupAuditLog({
+      groupId,
+      actionType: "reorder_5",
+      summary: `${groupId} ID'li grupta rütbeler 5'erli olarak sıralandı.`,
+      beforeState: { roles: beforeRoles },
+      afterState: { roles: updates },
+      user: req.user
+    });
+
     res.json({ success: true, message: "Rütbeler başarıyla 5'erli olarak sıralandı." });
   } catch (err) {
     console.error("Reorder 5 error:", err.response?.data || err.message);
@@ -4369,6 +4616,14 @@ router.patch("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async
   }
 
   try {
+    let beforePerms = null;
+    try {
+      beforePerms = await robloxApiRequest(
+        `https://groups.roblox.com/v1/groups/${groupId}/roles/${roleId}/permissions`,
+        "GET"
+      );
+    } catch (_) {}
+
     const permissions = req.body;
     const data = await robloxApiRequest(
       `https://groups.roblox.com/v1/groups/${groupId}/roles/${roleId}/permissions`,
@@ -4376,10 +4631,116 @@ router.patch("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async
       permissions
     );
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun " + roleId + " ID'li rolünün izinlerini güncelledi.", "admin");
+    
+    await recordGroupAuditLog({
+      groupId,
+      actionType: "permissions_update",
+      summary: `${groupId} ID'li grubun ${roleId} ID'li rolünün izinleri güncellendi.`,
+      beforeState: { roleId, permissions: beforePerms },
+      afterState: { roleId, permissions },
+      user: req.user
+    });
+
     res.json({ success: true, data });
   } catch (err) {
     console.error("Update permissions error:", err.message);
     res.status(500).json({ error: "İzinler güncellenemedi: " + (err.response?.data?.errors?.[0]?.message || err.message) });
+  }
+});
+
+// ─── Grup Yönetimi Audit Logları & Geri Alma (Rollback) API'leri ─────────────
+
+// Endpoint: Get Audit Logs
+router.get("/api/group-admin/logs", (req, res) => {
+  if (!requireGroupAdmin(req, res)) return;
+  try {
+    const { groupId, actionType, limit } = req.query;
+    let logs = groupAuditLogs.find({});
+    
+    if (groupId && groupId !== "all") {
+      logs = logs.filter(l => l.groupId === String(groupId));
+    }
+    if (actionType && actionType !== "all") {
+      logs = logs.filter(l => l.actionType === String(actionType));
+    }
+
+    logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    const maxLimit = parseInt(limit, 10) || 100;
+    const result = logs.slice(0, maxLimit);
+
+    res.json({ success: true, count: result.length, total: logs.length, logs: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint: Single Rollback
+router.post("/api/group-admin/rollback/:id", async (req, res) => {
+  if (!requireGroupAdmin(req, res)) return;
+  try {
+    const log = groupAuditLogs.findOne({ _id: req.params.id });
+    if (!log) return res.status(404).json({ error: "Geri alınacak değişiklik kaydı bulunamadı." });
+
+    const result = await executeRollbackLog(log, req.user);
+    res.json(result);
+  } catch (err) {
+    console.error("Rollback error:", err.message);
+    res.status(500).json({ error: "Geri alma başarısız: " + err.message });
+  }
+});
+
+// Endpoint: Batch Rollback (Dakikalık veya Seçilen Toplu Değişiklikler)
+router.post("/api/group-admin/rollback-batch", async (req, res) => {
+  if (!requireGroupAdmin(req, res)) return;
+  try {
+    const { logIds, minutesAgo, groupId } = req.body;
+    let targetLogs = [];
+
+    if (Array.isArray(logIds) && logIds.length > 0) {
+      targetLogs = logIds.map(id => groupAuditLogs.findOne({ _id: id })).filter(Boolean);
+    } else if (minutesAgo) {
+      const minutes = parseInt(minutesAgo, 10) || 1;
+      const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+      targetLogs = groupAuditLogs.find({}).filter(l => {
+        const matchesTime = new Date(l.createdAt) >= cutoff;
+        const matchesGroup = !groupId || groupId === "all" || l.groupId === String(groupId);
+        return matchesTime && matchesGroup;
+      });
+    } else {
+      return res.status(400).json({ error: "Lütfen geri alınacak kayıtları veya zaman aralığını belirtin." });
+    }
+
+    // Filter un-rolled back logs and sort newest to oldest
+    const pendingLogs = targetLogs.filter(l => !l.rolledBack).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    if (pendingLogs.length === 0) {
+      return res.json({ success: true, count: 0, message: "Geri alınacak aktif değişiklik bulunamadı." });
+    }
+
+    let successCount = 0;
+    const errors = [];
+
+    for (const log of pendingLogs) {
+      try {
+        await executeRollbackLog(log, req.user);
+        successCount++;
+        await new Promise(r => setTimeout(r, 1000));
+      } catch (err) {
+        errors.push(`[${log.summary}]: ${err.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      count: successCount,
+      totalAttempted: pendingLogs.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${successCount} adet değişiklik başarıyla geri alındı.${errors.length > 0 ? ` (${errors.length} hata oluştu)` : ''}`
+    });
+  } catch (err) {
+    console.error("Batch rollback error:", err.message);
+    res.status(500).json({ error: "Toplu geri alma başarısız: " + err.message });
   }
 });
 
