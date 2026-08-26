@@ -33,14 +33,22 @@ const PERM_NAMES_TR = {
 
 function normalizeCmd(str) {
   if (!str) return '';
-  return str.toLowerCase()
-    .replace(/i̇/g, 'i')
+  return str
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'i')
     .replace(/ı/g, 'i')
+    .replace(/i̇/g, 'i')
+    .replace(/Ç/g, 'c')
     .replace(/ç/g, 'c')
+    .replace(/Ğ/g, 'g')
     .replace(/ğ/g, 'g')
+    .replace(/Ö/g, 'o')
     .replace(/ö/g, 'o')
+    .replace(/Ş/g, 's')
     .replace(/ş/g, 's')
+    .replace(/Ü/g, 'u')
     .replace(/ü/g, 'u')
+    .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
 }
 
@@ -168,11 +176,15 @@ async function handleGuildMessage(message, client) {
 
   if (content.toLowerCase().startsWith('e!')) {
     commandBody = content.slice(2).trim();
+  } else if (content.toLowerCase().startsWith('e !')) {
+    commandBody = content.slice(3).trim();
   } else if (botMention1 && content.startsWith(botMention1)) {
     commandBody = content.slice(botMention1.length).trim();
   } else if (botMention2 && content.startsWith(botMention2)) {
     commandBody = content.slice(botMention2.length).trim();
   } else if (content.startsWith('!')) {
+    commandBody = content.slice(1).trim();
+  } else if (content.startsWith('.')) {
     commandBody = content.slice(1).trim();
   }
 

@@ -75,6 +75,51 @@ async function handleModalSubmit(interaction) {
     return handleModCheckOpenSubmit(interaction);
   }
 
+  // ── Moderatör Yetkili Notu Ekleme Modalı ──────────────────────────────────
+  if (interaction.customId.startsWith('ticket_note_modal_')) {
+    const ticketId = interaction.customId.replace('ticket_note_modal_', '');
+    const noteText = interaction.fields.getTextInputValue('ticket_mod_note_text');
+
+    const noteEmbed = new EmbedBuilder()
+      .setTitle(`📝 Yetkili / Moderatör Notu — #${ticketId}`)
+      .setDescription(`>>> ${noteText}`)
+      .setColor(0xf59e0b)
+      .setFooter({ text: `Notu Ekleyen: ${interaction.user.tag}` })
+      .setTimestamp();
+
+    await interaction.channel.send({ embeds: [noteEmbed] }).catch(() => {});
+    return interaction.reply({ content: `✅ Yetkili notu destek kanalına kaydedildi.`, ephemeral: true });
+  }
+
+  // ── Kanala Kullanıcı Ekleme Modalı ────────────────────────────────────────
+  if (interaction.customId.startsWith('ticket_add_user_modal_')) {
+    const ticketId = interaction.customId.replace('ticket_add_user_modal_', '');
+    const targetInput = interaction.fields.getTextInputValue('target_user_input');
+    const targetUserId = await resolveUserFromInput(targetInput, interaction);
+
+    if (!targetUserId) {
+      return interaction.reply({ content: `❌ Belirtilen kullanıcı bulunamadı: \`${targetInput}\``, ephemeral: true });
+    }
+
+    try {
+      await interaction.channel.permissionOverwrites.create(targetUserId, {
+        ViewChannel: true,
+        SendMessages: true,
+        ReadMessageHistory: true,
+        AttachFiles: true,
+        EmbedLinks: true,
+      });
+
+      await interaction.channel.send({
+        content: `👋 <@${targetUserId}>, bu destek talebine <@${interaction.user.id}> tarafından davet edildi/eklendi.`
+      }).catch(() => {});
+
+      return interaction.reply({ content: `✅ <@${targetUserId}> başarıyla kanala eklendi.`, ephemeral: true });
+    } catch (addErr) {
+      return interaction.reply({ content: `❌ Kullanıcı eklenemedi: ${addErr.message}`, ephemeral: true });
+    }
+  }
+
   // ── Form Başvurusu — Soru Cevabı ─────────────────────────────────────────
   if (interaction.customId.startsWith('formask_modal_')) {
     try {
@@ -2554,7 +2599,7 @@ async function handleSupportModal(interaction) {
     const targetGuild = await interaction.client.guilds.fetch(targetGuildId);
     if (!targetGuild) throw new Error("Hedef sunucu bulunamadı.");
 
-    let ticketChannel;
+    const botId = targetGuild.members?.me?.id || interaction.client?.user?.id;
     const permissionOverwrites = [
       { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
       {
@@ -2567,6 +2612,18 @@ async function handleSupportModal(interaction) {
           PermissionFlagsBits.EmbedLinks,
         ],
       },
+      ...(botId ? [{
+        id: botId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.AttachFiles,
+          PermissionFlagsBits.EmbedLinks,
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.ManageMessages,
+        ],
+      }] : [])
     ];
 
     // ── TÜM MODERAT/PERSONEL ROLLERINI EKLE (ticket görülebilsin) ──────────
@@ -2682,13 +2739,33 @@ async function handleSupportModal(interaction) {
       priority,
       channelId: ticketChannel.id,
       guildId: targetGuildId,
+      createdAt: new Date(),
     });
 
     await ticket.save();
 
-    const ticketEmbed = buildTicketEmbed(ticket);
-    const closeButton = buildCloseButton(ticketId);
-    await ticketChannel.send({ embeds: [ticketEmbed], components: [closeButton] });
+    const { buildTicketV2, getTicketModActionRows } = require("../embeds");
+    let sent = false;
+    try {
+      const v2Payload = buildTicketV2(ticket);
+      await ticketChannel.send({
+        content: `👋 Hoş geldiniz <@${interaction.user.id}>! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
+        ...v2Payload
+      });
+      sent = true;
+    } catch (v2Err) {
+      console.warn("[modalHandler] V2 Payload error, sending standard fallback:", v2Err.message);
+    }
+
+    if (!sent) {
+      const ticketEmbed = buildTicketEmbed(ticket);
+      const modRows = getTicketModActionRows(ticketId);
+      await ticketChannel.send({
+        content: `👋 Hoş geldiniz <@${interaction.user.id}>! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
+        embeds: [ticketEmbed],
+        components: modRows
+      });
+    }
 
     if (isGuild2) {
       const { startTicketClaimRouting } = require("../services/reklamTicketService");

@@ -101,6 +101,7 @@ async function createDualModeTicket(interaction, ticketId, ticket) {
       });
     }
 
+    const botId = guild.members?.me?.id || interaction.client?.user?.id || user.client?.user?.id;
     const ticketChannel = await guild.channels.create({
       name: `ticket-${ticketId.toLowerCase()}`,
       type: ChannelType.GuildText,
@@ -109,12 +110,16 @@ async function createDualModeTicket(interaction, ticketId, ticket) {
       permissionOverwrites: [
         {
           id: guild.id,
-          deny: ['ViewChannel'],
+          deny: [PermissionFlagsBits.ViewChannel],
         },
         {
           id: user.id,
-          allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'AttachFiles', 'EmbedLinks'],
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks],
         },
+        ...(botId ? [{
+          id: botId,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageMessages],
+        }] : []),
       ],
     });
 

@@ -79,7 +79,8 @@ async function handleEpostaModalSubmit(interaction, category) {
     const targetGuild = await interaction.client.guilds.fetch(GUILD2_ID);
     if (!targetGuild) throw new Error("Eko Yıldız sunucusu bulunamadı.");
 
-    // Single Channel Overwrites: User + Staff Roles
+    // Single Channel Overwrites: User + Bot + Staff Roles
+    const botId = targetGuild.members?.me?.id || interaction.client?.user?.id;
     const permissionOverwrites = [
       { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
       {
@@ -91,7 +92,19 @@ async function handleEpostaModalSubmit(interaction, category) {
           PermissionFlagsBits.AttachFiles,
           PermissionFlagsBits.EmbedLinks,
         ],
-      }
+      },
+      ...(botId ? [{
+        id: botId,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.AttachFiles,
+          PermissionFlagsBits.EmbedLinks,
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.ManageMessages,
+        ],
+      }] : [])
     ];
 
     for (const roleId of Object.values(ROLES)) {
@@ -137,46 +150,28 @@ async function handleEpostaModalSubmit(interaction, category) {
       ephemeral: true
     });
 
-    // Welcome Embed in the Single Ticket Channel
-    const welcomeEmbed = new EmbedBuilder()
-      .setTitle(`🎫 Destek Talebi — ${ticketId}`)
-      .setDescription(
-        `Merhaba <@${interaction.user.id}>,\n` +
-        `Destek talebiniz oluşturulmuştur. Yetkililerimiz en kısa sürede sizinle iletişime geçecektir.\n\n` +
-        `🔹 **Konu:** ${subject}\n` +
-        `🔹 **Açıklama:** ${description}\n\n` +
-        `💬 *Sorununuzu buraya detaylıca yazabilir ve yetkili arkadaşımızla doğrudan bu kanalda görüşebilirsiniz.*`
-      )
-      .setColor(0x3498DB)
-      .setTimestamp();
+    const { buildTicketV2, buildTicketEmbed, getTicketModActionRows } = require("../embeds");
+    let sent = false;
+    try {
+      const v2Payload = buildTicketV2(ticket);
+      await ticketChannel.send({
+        content: `👋 Merhaba <@${interaction.user.id}>, hoş geldiniz! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
+        ...v2Payload
+      });
+      sent = true;
+    } catch (v2Err) {
+      console.warn("[epostaTicketService] V2 Payload error, sending fallback embed:", v2Err.message);
+    }
 
-    const row1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`close_ticket_${ticketId}`)
-        .setLabel("❌ Talebi Kapat")
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(`claim_ticket_${ticketId}`)
-        .setLabel("🙋‍♂️ Üstlen")
-        .setStyle(ButtonStyle.Success)
-    );
-
-    const row2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`ticket_notify_user_${ticketId}`)
-        .setLabel("🔔 DM Bildirimi Gönder")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`ticket_ai_dispute_${ticketId}`)
-        .setLabel("🚨 Tickette Kavga Var!")
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await ticketChannel.send({
-      content: `Merhaba <@${interaction.user.id}>, hoş geldiniz!`,
-      embeds: [welcomeEmbed],
-      components: [row1, row2]
-    });
+    if (!sent) {
+      const ticketEmbed = buildTicketEmbed(ticket);
+      const modRows = getTicketModActionRows(ticketId);
+      await ticketChannel.send({
+        content: `👋 Merhaba <@${interaction.user.id}>, hoş geldiniz!`,
+        embeds: [ticketEmbed],
+        components: modRows
+      });
+    }
 
     // AI Smart Auto-Resolver check
     try {

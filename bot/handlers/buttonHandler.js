@@ -310,6 +310,204 @@ async function handleButtonInteraction(interaction) {
     return applyAIJailPenalty(interaction, ticketId, offenderId, durationMinutes);
   }
 
+  // ── Moderatör Kullanıcı Sicili / Bilgi Sorgusu ───────────────────────────
+  if (customId.startsWith("ticket_user_info_")) {
+    const ticketId = customId.replace("ticket_user_info_", "");
+    const Ticket = require("../../models/Ticket");
+    const ticket = await Ticket.findOne({ ticketId });
+    if (!ticket) return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
+
+    const targetUserId = ticket.userId;
+    const targetUser = await interaction.client.users.fetch(targetUserId).catch(() => null);
+    const member = interaction.guild ? await interaction.guild.members.fetch(targetUserId).catch(() => null) : null;
+
+    let trustScore = 100;
+    try {
+      const { getTrustScore } = require("../services/security/trustScoreService");
+      const scoreData = await getTrustScore(targetUserId);
+      if (scoreData && typeof scoreData.score === 'number') trustScore = scoreData.score;
+    } catch (_) {}
+
+    const totalTickets = await Ticket.countDocuments({ userId: targetUserId }).catch(() => 1);
+    const openTickets = await Ticket.countDocuments({ userId: targetUserId, status: 'open' }).catch(() => 1);
+
+    const infoEmbed = new EmbedBuilder()
+      .setTitle(`👤 Kullanıcı Sicil ve Destek Karnesi — ${targetUser ? targetUser.username : targetUserId}`)
+      .setColor(trustScore >= 70 ? 0x10b981 : (trustScore >= 40 ? 0xf59e0b : 0xef4444))
+      .setThumbnail(targetUser ? targetUser.displayAvatarURL() : null)
+      .addFields(
+        { name: "🆔 Discord ID", value: `\`${targetUserId}\``, inline: true },
+        { name: "🛡️ Güven Puanı (TrustScore)", value: `**%${trustScore}** ${trustScore >= 70 ? '🟢 (Güvenilir)' : '⚠️ (Riskli)'}`, inline: true },
+        { name: "🎫 Toplam / Açık Ticket", value: `**${totalTickets}** Toplam / **${openTickets}** Açık`, inline: true },
+        { name: "📅 Hesap Kuruluş", value: targetUser ? `<t:${Math.floor(targetUser.createdTimestamp / 1000)}:R>` : "—", inline: true },
+        { name: "📥 Sunucuya Katılım", value: member ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>` : "—", inline: true },
+        { name: "🎭 Rol Sayısı", value: member ? `\`${member.roles.cache.size - 1}\`` : "—", inline: true }
+      )
+      .setFooter({ text: "Sentara Mod Audit Service" })
+      .setTimestamp();
+
+    return interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+  }
+
+  // ── Moderatör Yetkili Notu Bırakma (Modal Tetikleme) ─────────────────────
+  if (customId.startsWith("ticket_add_note_")) {
+    const ticketId = customId.replace("ticket_add_note_", "");
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require("discord.js");
+    const modal = new ModalBuilder()
+      .setCustomId(`ticket_note_modal_${ticketId}`)
+      .setTitle("📝 Destek Yetkili Notu Ekle");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("ticket_mod_note_text")
+          .setLabel("Yetkili / Moderatör Notu")
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder("Bu talep hakkında diğer yetkililerin bilmesi gereken önemli detaylar...")
+          .setRequired(true)
+          .setMaxLength(1000)
+      )
+    );
+    return interaction.showModal(modal);
+  }
+
+  // ── Ticket Transkript Alma & Kaydetme ────────────────────────────────────
+  if (customId.startsWith("ticket_save_transcript_")) {
+    const ticketId = customId.replace("ticket_save_transcript_", "");
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const messages = await interaction.channel.messages.fetch({ limit: 100 }).catch(() => null);
+      if (!messages || messages.size === 0) {
+        return interaction.editReply({ content: "❌ Transkript için mesaj geçmişi okunamadı." });
+      }
+
+      const sortedMsgs = Array.from(messages.values()).reverse();
+      let transcriptText = `=====================================================\n`;
+      transcriptText += `SENTARA DESTEK TALEBİ TRANSKRİPTİ — #${ticketId}\n`;
+      transcriptText += `Kanal: #${interaction.channel.name} (${interaction.channel.id})\n`;
+      transcriptText += `Tarih: ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}\n`;
+      transcriptText += `Yetkili: ${interaction.user.tag} (${interaction.user.id})\n`;
+      transcriptText += `=====================================================\n\n`;
+
+      for (const m of sortedMsgs) {
+        const timeStr = m.createdAt.toISOString().replace('T', ' ').substring(0, 19);
+        transcriptText += `[${timeStr}] ${m.author.tag} (${m.author.id}):\n${m.cleanContent || m.content || '[Medya/Embed]'}\n\n`;
+      }
+
+      const { AttachmentBuilder } = require("discord.js");
+      const buffer = Buffer.from(transcriptText, "utf-8");
+      const attachment = new AttachmentBuilder(buffer, { name: `transcript-${ticketId}.txt` });
+
+      await interaction.channel.send({
+        content: `📜 **Yetkili Transkript Yedeği:** <@${interaction.user.id}> tarafından destek talebinin mesaj geçmişi kaydedildi.`,
+        files: [attachment]
+      }).catch(() => {});
+
+      return interaction.editReply({ content: `✅ Transkript başarıyla oluşturuldu ve kanala yüklendi.` });
+    } catch (transErr) {
+      console.error("[ticket_save_transcript] Error:", transErr.message);
+      return interaction.editReply({ content: `❌ Transkript alınırken hata oluştu: ${transErr.message}` });
+    }
+  }
+
+  // ── Yavaş Mod (Slowmode) Aç/Kapat ───────────────────────────────────────
+  if (customId.startsWith("ticket_toggle_slowmode_")) {
+    const currentLimit = interaction.channel?.rateLimitPerUser || 0;
+    const newLimit = currentLimit > 0 ? 0 : 5;
+    try {
+      await interaction.channel.setRateLimitPerUser(newLimit);
+      return interaction.reply({
+        content: `⏱️ **Yavaş Mod Güncellendi:** Kanal yavaş modu **${newLimit > 0 ? '5 saniye olarak açıldı 🟢' : 'kapatıldı 🔴'}**.`,
+        ephemeral: false
+      });
+    } catch (smErr) {
+      return interaction.reply({ content: `❌ Yavaş mod değiştirilemedi: ${smErr.message}`, ephemeral: true });
+    }
+  }
+
+  // ── Kullanıcı Ekleme Modal Tetikleme ─────────────────────────────────────
+  if (customId.startsWith("ticket_add_user_prompt_")) {
+    const ticketId = customId.replace("ticket_add_user_prompt_", "");
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require("discord.js");
+    const modal = new ModalBuilder()
+      .setCustomId(`ticket_add_user_modal_${ticketId}`)
+      .setTitle("👥 Kanala Kullanıcı / Yetkili Ekle");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("target_user_input")
+          .setLabel("Kullanıcı ID veya Adı")
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder("Örn: 1031620522406072350 veya discordkullaniciadi")
+          .setRequired(true)
+          .setMaxLength(64)
+      )
+    );
+    return interaction.showModal(modal);
+  }
+
+  // ── Öncelik Değiştirme (Cycle Priority) ──────────────────────────────────
+  if (customId.startsWith("ticket_change_priority_")) {
+    const ticketId = customId.replace("ticket_change_priority_", "");
+    const Ticket = require("../../models/Ticket");
+    const ticket = await Ticket.findOne({ ticketId });
+    if (!ticket) return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
+
+    const priorityCycle = {
+      low: 'normal',
+      normal: 'medium',
+      medium: 'high',
+      high: 'urgent',
+      urgent: 'low'
+    };
+
+    const currentPriority = (ticket.priority || 'normal').toLowerCase();
+    const nextPriority = priorityCycle[currentPriority] || 'high';
+    ticket.priority = nextPriority;
+    await ticket.save();
+
+    const priorityBadges = {
+      low: '🟢 DÜŞÜK (Low)',
+      normal: '🔵 NORMAL',
+      medium: '🟡 ORTA (Medium)',
+      high: '🔴 YÜKSEK (High)',
+      urgent: '🔥 ACİL (Urgent)'
+    };
+
+    return interaction.reply({
+      content: `📌 **Öncelik Güncellendi:** <@${interaction.user.id}> tarafından bu talebin önceliği **${priorityBadges[nextPriority] || nextPriority.toUpperCase()}** olarak ayarlandı.`
+    });
+  }
+
+  // ── Yazma Kilidi (Mute / Lock Ticket Chat) ──────────────────────────────
+  if (customId.startsWith("ticket_lock_chat_")) {
+    const ticketId = customId.replace("ticket_lock_chat_", "");
+    const Ticket = require("../../models/Ticket");
+    const ticket = await Ticket.findOne({ ticketId });
+    if (!ticket) return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
+
+    try {
+      const currentOverwrite = interaction.channel.permissionOverwrites.cache.get(ticket.userId);
+      const isCurrentlyDenied = currentOverwrite?.deny?.has(PermissionFlagsBits.SendMessages);
+
+      if (isCurrentlyDenied) {
+        await interaction.channel.permissionOverwrites.edit(ticket.userId, {
+          SendMessages: true
+        });
+        return interaction.reply({ content: `🔊 **Yazma Kilidi Kaldırıldı:** <@${ticket.userId}> artık bu kanala tekrar mesaj gönderebilir.` });
+      } else {
+        await interaction.channel.permissionOverwrites.edit(ticket.userId, {
+          SendMessages: false
+        });
+        return interaction.reply({ content: `🔇 **Yazma Kilidi Aktif:** <@${ticket.userId}> kullanıcısının mesaj gönderme yetkisi yetkililer tarafından geçici olarak durduruldu.` });
+      }
+    } catch (lockErr) {
+      return interaction.reply({ content: `❌ Yazma kilidi değiştirilemedi: ${lockErr.message}`, ephemeral: true });
+    }
+  }
+
   // ── Automod Ceza & AI Onaylı İnfaz Butonları ──────────────────────────────
   if (customId.startsWith("jail_")) {
     const { handleAutomodPunishmentButton } = require("../services/automodPunishmentService");

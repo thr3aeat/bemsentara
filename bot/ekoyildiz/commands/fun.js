@@ -56,7 +56,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const opponent = message.mentions.members.first();
+      const opponent = message.mentions?.members?.first?.();
       if (!opponent || opponent.id === message.author.id || opponent.user.bot) {
         return message.reply('⚠️ Lütfen düello yapmak için geçerli bir kullanıcı etiketleyin!');
       }
@@ -189,7 +189,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first();
+      const target = message.mentions?.users?.first?.();
       if (!target) return message.reply('❤️ Lütfen aşkınızı ve tutkunuzu ölçmek için birini etiketleyin!');
       if (target.id === message.author.id) return message.reply('❤️ Kendinize olan aşkınız harika ama lütfen başka birini etiketleyin!');
 
@@ -320,7 +320,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first() || message.author;
+      const target = message.mentions?.users?.first?.() || message.author;
       let score = Math.floor(Math.random() * 101);
 
       const makeFireBar = (s) => {
@@ -389,7 +389,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first();
+      const target = message.mentions?.users?.first?.();
       if (!target) return message.reply('💋 Kimi öpmek istiyorsanız onu etiketleyin!');
       if (target.id === message.author.id) return message.reply('💋 Aynayı mı öpüyorsunuz? Lütfen başka birini etiketleyin!');
 
@@ -421,7 +421,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first();
+      const target = message.mentions?.users?.first?.();
       if (!target) return message.reply('🫂 Kime sarılmak istiyorsanız onu etiketleyin!');
 
       const hugGifs = [
@@ -450,7 +450,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first();
+      const target = message.mentions?.users?.first?.();
       if (!target) return message.reply('🍑 Kime şaplak atmak istiyorsanız onu etiketleyin!');
 
       const force = Math.floor(Math.random() * 80) + 50; // 50-130 PSI
@@ -532,8 +532,8 @@ module.exports = [
     description: 'Rastgele kaç cm olduğunu ölçer, dayanıklılık, menzil ve fantezi istatistiği verir.',
     userPermissions: [],
     botPermissions: [],
-    async execute(message) {
-      const target = message.mentions.users.first() || message.author;
+    async execute(message, args = []) {
+      const target = message.mentions?.users?.first?.() || message.author;
 
       if (target.bot) {
         return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞');
@@ -631,11 +631,11 @@ module.exports = [
         const spray = getSprayDistance(cm);
         const position = getRandomPosition();
 
-        const botAvatar = message.client.user ? message.client.user.displayAvatarURL() : null;
+        const botAvatar = message.client?.user ? message.client.user.displayAvatarURL() : null;
 
         const embed = new EmbedBuilder()
           .setTitle(`🍆 KAÇ CM & ULTIMATE PERFORMANS TESTİ - ${user.username}`)
-          .setThumbnail(user.displayAvatarURL())
+          .setThumbnail(user.displayAvatarURL?.() || null)
           .setColor(info.color)
           .addFields(
             { name: '📐 Malafat Boyu', value: `**${cm} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
@@ -649,8 +649,10 @@ module.exports = [
             { name: '📢 Durum Raporu', value: info.alert },
             { name: '📊 Görsel Ölçüm', value: `\`${bar}\`` }
           )
-          .setFooter({ text: 'EkoYıldız 🔥', iconURL: message.client.user.displayAvatarURL() })
+          .setFooter({ text: 'EkoYıldız 🔥', iconURL: botAvatar })
           .setTimestamp();
+
+        return embed;
       };
 
       let currentCm = calculateCm();
@@ -677,7 +679,7 @@ module.exports = [
             .setStyle(ButtonStyle.Secondary)
         );
 
-        if (message.mentions.users.first() && message.mentions.users.first().id !== message.author.id) {
+        if (target && target.id !== message.author.id) {
           row.addComponents(
             new ButtonBuilder()
               .setCustomId(`compare_cm_${message.author.id}`)
@@ -1106,7 +1108,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first() || message.author;
+      const target = message.mentions?.users?.first?.() || message.author;
       const iltifatlar = [
         'Gözlerinin ışıltısı tüm sunucunun aydınlatma masrafını karşılıyor! ✨',
         'Sen bu dünyaya fazlasın, yıldızlardan düşmüş bir parçasın. 🌟',
@@ -1125,7 +1127,7 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const target = message.mentions.users.first();
+      const target = message.mentions?.users?.first?.();
       if (!target) return message.reply('Kime kapak yapmak istiyorsanız etiketleyin!');
       const laflar = [
         'Sana laf sokardım ama laf sokmaya bile değmezsin.',
