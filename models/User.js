@@ -39,6 +39,9 @@ const User = {
       profileMusicUrl: null,
       customStatus: null,
       sexualOrientation: "Belirtilmedi",
+      gender: "Erkek",
+      city: "İstanbul",
+      cmLockData: null,
       joinedAt: new Date(),
     };
     return Promise.resolve(users.create({ ...defaults, ...data }));
@@ -80,6 +83,9 @@ function UserConstructor(data) {
     profileMusicUrl: null,
     customStatus: null,
     sexualOrientation: "Belirtilmedi",
+    gender: "Erkek",
+    city: "İstanbul",
+    cmLockData: null,
     joinedAt: new Date(),
   };
   const merged = { ...defaults, ...data };

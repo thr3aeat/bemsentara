@@ -546,78 +546,7 @@ module.exports = [
         return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞');
       }
 
-      const calculateCm = () => Math.floor(Math.random() * 38) + 1;
-      const calculateHardness = () => Math.floor(Math.random() * 50) + 51;
-
-      const getStamina = (cm) => {
-        if (cm <= 7) return '⚡ 3 Saniye (Erken Final & Nefes Darlığı!)';
-        if (cm <= 14) return '⏱️ 15 Dakika (Standart Anadolu Performansı)';
-        if (cm <= 22) return '🔥 45 Dakika + Uzatmalar (Çarşaf Yakan!)';
-        if (cm <= 30) return '🚀 3 Gün 3 Gece (Efsane Maraton)';
-        return '🐉 Şampiyonlar Ligi (Yatak Kırıcı & Deprem Etkisi!)';
-      };
-
-      const getTitleAndColor = (cm) => {
-        if (cm <= 5) return {
-          title: '🔬 Mikroskopik & Fındık Kadar',
-          comment: 'Cımbız ve büyüteç olmadan tespit edilemiyor! Rüzgarda uçmasın dikkat et 🤏',
-          alert: '⚠️ AFAD ve Arama Kurtarma ekipleri mercekle bölgede!',
-          color: 0xef4444
-        };
-        if (cm <= 11) return {
-          title: '🐣 Mütevazı Anadolu Kaplanı',
-          comment: 'Niyet çok iyi ama ekipman fındık kadar. Kalbin temiz, önemli olan işlevi! 😌',
-          alert: '✅ İdare eder, üzmez ama çok da heyecanlandırmaz.',
-          color: 0xf59e0b
-        };
-        if (cm <= 17) return {
-          title: '📏 Altın Milli Ortalama',
-          comment: 'Tam bir fiyat/performans ürünü! Utandırmaz, yormaz, çarşafı tatlı tatlı sallar. 🔥',
-          alert: '👍 Türkiye standartlarının gurur tablosu.',
-          color: 0x10b981
-        };
-        if (cm <= 24) return {
-          title: '🦍 Devasa Yatak Kırıcı',
-          comment: 'Ateşli ve tehlikeli! Karşı taraf görünce hafiften tırsıyor ve geri adım atıyor... 💥',
-          alert: '🚨 DİKKAT: Çevredeki mobilyalara ve duvara zarar verebilir!',
-          color: 0x3b82f6
-        };
-        if (cm <= 31) return {
-          title: '🐍 Çılgın Anakonda',
-          comment: 'Doğal afet bölgesi! Komşular sarsıntıdan polise haber verdi, yatak garantisi bitti! 🔞',
-          alert: '🔞 18+ Çevredekiler derhal sığınaklara kaçsın!',
-          color: 0x8b5cf6
-        };
-        return {
-          title: '🚀 Gökdelen Canavarı / Ruhsatlı Silah',
-          comment: 'Polis çevirmede durdurdu, jandarma ruhsat istedi! Yörüngeye fırlatılacak boyutta! 🌌⚡',
-          alert: '⚡ EFSANEVİ BOYUT: Kitle imha silahı sayılır!',
-          color: 0xec4899
-        };
-      };
-
-      const makeBar = (cm) => {
-        const total = 10;
-        const filled = Math.min(total, Math.max(1, Math.round((cm / 40) * total)));
-        return '8' + '='.repeat(filled * 2) + 'D 💦';
-      };
-
-      const getCondomSize = (cm) => {
-        if (cm <= 5) return 'XXS (Parmak Kılıfı Tipi 🤏)';
-        if (cm <= 12) return 'S / M (Şirin Standart Beden 📦)';
-        if (cm <= 20) return 'L / XL (Mega Beden 🔥)';
-        if (cm <= 30) return 'XXXL (Çöp Poşeti / Çuval Tipi 🗑️)';
-        return 'Çadır Brandası & Battaniye 🏕️';
-      };
-
-      const getSprayDistance = (cm) => {
-        if (cm <= 5) return '💧 10 cm (Hafif Sızıntı)';
-        if (cm <= 12) return '🎯 1.5 Metre (Hedefi Tam Vuran)';
-        if (cm <= 20) return '🧯 10 Metre (Tazyikli İtfaiye Hortumu)';
-        if (cm <= 30) return '🌊 50 Metre (Baraj Kapağı Açıldı!)';
-        return '🚀 Yörüngeye Kadar (Ay\'ı Vurdu! 🌕)';
-      };
-
+      const calculateCm = () => Math.floor(Math.random() * 35) + 3;
       const fantasyPositions = [
         '🚁 Helikopter Vuruşu (%98 Uyum)',
         '🧗‍♂️ Tavandan Sallanmalı Kamikaze (%85 Uyum)',
@@ -627,33 +556,100 @@ module.exports = [
         '🤼 Wrestling Tipi Kilitlenme (%88 Uyum)'
       ];
 
-      const getRandomPosition = () => fantasyPositions[Math.floor(Math.random() * fantasyPositions.length)];
+      const User = require('../../../models/User');
+      let dbUser = await User.findOne({ discordId: target.id });
 
-      const createEmbed = (user, cm, bonus = 0) => {
-        const info = getTitleAndColor(cm);
-        const bar = makeBar(cm);
+      const gender = dbUser?.gender || 'Erkek';
+      const city = dbUser?.city || 'İstanbul';
+      const orientation = dbUser?.sexualOrientation || 'Heteroseksüel';
+
+      // 2 Günlük Kilitli Sonuç Mantığı (Lock System)
+      const now = Date.now();
+      let cm = 0;
+
+      if (dbUser && dbUser.cmLockData && dbUser.cmLockData.expiresAt > now) {
+        cm = dbUser.cmLockData.value;
+      } else {
+        cm = Math.floor(Math.random() * 35) + 3; // 3-38 cm
+        if (dbUser) {
+          dbUser.cmLockData = {
+            value: cm,
+            expiresAt: now + (2 * 24 * 60 * 60 * 1000) // 2 Gün kilitli
+          };
+          await dbUser.save();
+        }
+      }
+
+      // İl Ortalamaları Veritabanı
+      const cityAverages = {
+        'İstanbul': 16, 'Ankara': 17, 'İzmir': 18, 'Bursa': 15, 'Antalya': 19,
+        'Adana': 22, 'Trabzon': 20, 'Diyarbakır': 21, 'Konya': 14, 'Eskişehir': 16
+      };
+      const cityAvg = cityAverages[city] || 16;
+      const compareWithCity = cm > cityAvg 
+        ? `🔥 **${city}** il ortalamasından (\`${cityAvg} cm\`) **${cm - cityAvg} cm daha uzun!** 🎉`
+        : `📉 **${city}** il ortalamasının (\`${cityAvg} cm\`) **${cityAvg - cm} cm altında.**`;
+
+      // Cinsiyet ve Yönelime Özel Yorumlar
+      let customReaction = '';
+      if (gender === 'Kadın') {
+        customReaction = `💃 **Kadın Seçeneği:** Göğüs / Vücut Uyum Ölçümü Yapıldı! Formunuz: **%${Math.min(100, cm * 3)}** *(Çok Alımlı!)*`;
+      } else if (cm >= 22) {
+        customReaction = `🔥 **Yüksek Tepki:** "Kız olsam dev gibi of! böyle boyuta dayanamaz kesinlikle peşinden koşardım..." 🤤💥`;
+      } else if (cm <= 10) {
+        customReaction = orientation === 'Heteroseksüel'
+          ? `💔 **Düşük Tepki:** "Kız arkadaşın bu sonucu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
+          : `🧊 **Düşük Tepki:** "Görünüşe göre ekipman beklenenden biraz mütevazı çıktı."`;
+      } else {
+        customReaction = `👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."`;
+      }
+
+      const calculateHardness = () => Math.floor(Math.random() * 50) + 51;
+
+      const getStamina = (val) => {
+        if (val <= 7) return '⚡ 3 Saniye (Erken Final & Nefes Darlığı!)';
+        if (val <= 14) return '⏱️ 15 Dakika (Standart Anadolu Performansı)';
+        if (val <= 22) return '🔥 45 Dakika + Uzatmalar (Çarşaf Yakan!)';
+        if (val <= 30) return '🚀 3 Gün 3 Gece (Efsane Maraton)';
+        return '🐉 Şampiyonlar Ligi (Yatak Kırıcı & Deprem Etkisi!)';
+      };
+
+      const getTitleAndColor = (val) => {
+        if (val <= 5) return { title: '🔬 Mikroskopik & Fındık Kadar', color: 0xef4444 };
+        if (val <= 11) return { title: '🐣 Mütevazı Anadolu Kaplanı', color: 0xf59e0b };
+        if (val <= 17) return { title: '📏 Altın Milli Ortalama', color: 0x10b981 };
+        if (val <= 24) return { title: '🦍 Devasa Yatak Kırıcı', color: 0x3b82f6 };
+        if (val <= 31) return { title: '🐍 Çılgın Anakonda', color: 0x8b5cf6 };
+        return { title: '🚀 Gökdelen Canavarı / Ruhsatlı Silah', color: 0xec4899 };
+      };
+
+      const makeBar = (val) => {
+        const total = 10;
+        const filled = Math.min(total, Math.max(1, Math.round((val / 40) * total)));
+        return '8' + '='.repeat(filled * 2) + 'D 💦';
+      };
+
+      const createEmbed = (user, val, bonus = 0) => {
+        const info = getTitleAndColor(val);
+        const bar = makeBar(val);
         const hardness = calculateHardness();
-        const stamina = getStamina(cm);
-        const condom = getCondomSize(cm);
-        const spray = getSprayDistance(cm);
-        const position = getRandomPosition();
+        const stamina = getStamina(val);
 
         const embed = new EmbedBuilder()
-          .setTitle(`🍆 KAÇ CM & ULTIMATE PERFORMANS TESTİ - ${user.username || 'Kullanıcı'}`)
+          .setTitle(`🍆 KAÇ CM & ULTIMATE ANALİZ — ${user.username || 'Kullanıcı'}`)
           .setColor(info.color)
           .addFields(
-            { name: '📐 Malafat Boyu', value: `**${cm} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
-            { name: '💎 Sertlik Seviyesi', value: `**%${hardness}** (Çelik Gibi)`, inline: true },
+            { name: '📐 Malafat / Ölçüm', value: `**${val} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
+            { name: '🔒 Kilit Durumu', value: `\`2 Gün Sabit (Kilitli)\``, inline: true },
+            { name: '👤 Cinsiyet / Yönelim', value: `\`${gender}\` / \`${orientation}\``, inline: true },
+            { name: '💎 Sertlik Seviyesi', value: `**%${hardness}**`, inline: true },
             { name: '⏱️ Dayanıklılık', value: `**${stamina}**`, inline: true },
-            { name: '🛡️ Uyumlu Beden', value: `**${condom}**`, inline: true },
-            { name: '💦 Tazyik & Menzil', value: `**${spray}**`, inline: true },
-            { name: '🍑 Önerilen Fantezi', value: `**${position}**`, inline: true },
+            { name: '📍 Şehir Ortalaması', value: `${compareWithCity}` },
+            { name: '💭 Özel Tepki & Yorum', value: `${customReaction}` },
             { name: '🏆 Ünvan', value: `**${info.title}**` },
-            { name: '💬 Detaylı Yorum', value: info.comment },
-            { name: '📢 Durum Raporu', value: info.alert },
             { name: '📊 Görsel Ölçüm', value: `\`${bar}\`` }
           )
-          .setFooter({ text: 'EkoYıldız 🔥' })
+          .setFooter({ text: 'EkoYıldız 🔥 • Cinsiyet ve İl Seçenekli Sabit Ölçüm' })
           .setTimestamp();
 
         try {
@@ -664,7 +660,7 @@ module.exports = [
         return embed;
       };
 
-      let currentCm = calculateCm();
+      let currentCm = cm;
       let hasUsedViagra = false;
       let isOldSystem = false;
 
@@ -1477,6 +1473,104 @@ Lütfen ${dateStr} tarihi için:
         .setTimestamp();
 
       return message.reply({ embeds: [embed] });
+    }
+  },
+
+  // ── 12. CİNSİYET SEÇİMİ (KIZ / ERKEK / BELİRTİLMEDİ) ──────────────────────
+  {
+    name: 'cinsiyet',
+    aliases: ['cinsiyetsec', 'cinsiyet-sec', 'gender'],
+    category: 'Eğlence',
+    description: 'Profiliniz için cinsiyet seçimi (Erkek / Kadın) yapmanızı sağlar.',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message) {
+      const User = require('../../../models/User');
+      let dbUser = await User.findOne({ discordId: message.author.id });
+      const currentGender = dbUser?.gender || 'Erkek';
+
+      const embed = new EmbedBuilder()
+        .setTitle('👤 CİNSİYET PROFİLİ SEÇİMİ')
+        .setDescription(
+          `Merhaba **${message.author.username}**!\n\n` +
+          `📌 **Mevcut Cinsiyetiniz:** \`${currentGender}\`\n\n` +
+          `Aşağıdaki butonları kullanarak cinsiyet profilinizi güncelleyebilirsiniz:`
+        )
+        .setColor(0x3b82f6);
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`set_gender_male_${message.author.id}`).setLabel('👨 Erkek').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId(`set_gender_female_${message.author.id}`).setLabel('👩 Kadın').setStyle(ButtonStyle.Danger)
+      );
+
+      const replyMsg = await message.reply({ embeds: [embed], components: [row] });
+      const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
+
+      collector.on('collect', async i => {
+        if (i.user.id !== message.author.id) {
+          return i.reply({ content: '❌ Sadece komutu yazan cinsiyetini değiştirebilir!', ephemeral: true });
+        }
+        const selected = i.customId.startsWith('set_gender_male_') ? 'Erkek' : 'Kadın';
+
+        if (!dbUser) dbUser = new User({ discordId: message.author.id });
+        dbUser.gender = selected;
+        await dbUser.save();
+
+        await i.update({
+          embeds: [new EmbedBuilder().setTitle('✅ CİNSİYET GÜNCELLENDİ').setDescription(`Profil cinsiyetiniz **${selected}** olarak kaydedildi.`).setColor(0x10b981)],
+          components: []
+        });
+      });
+    }
+  },
+
+  // ── 13. ŞEHİR / İL SEÇİMİ (CM İL ORTALAMASI İÇİN) ──────────────────────────
+  {
+    name: 'il',
+    aliases: ['sehir', 'şehir', 'ilsec'],
+    category: 'Eğlence',
+    description: 'Profiliniz için yaşadığınız ili seçmenizi sağlar (İl ortalaması karşılaştırması için).',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message) {
+      const User = require('../../../models/User');
+      let dbUser = await User.findOne({ discordId: message.author.id });
+      const currentCity = dbUser?.city || 'İstanbul';
+
+      const cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Adana', 'Trabzon', 'Diyarbakır', 'Konya', 'Eskişehir'];
+
+      const embed = new EmbedBuilder()
+        .setTitle('📍 İL / ŞEHİR SEÇİMİ')
+        .setDescription(
+          `Merhaba **${message.author.username}**!\n\n` +
+          `📌 **Kayıtlı İliniz:** \`${currentCity}\`\n\n` +
+          `Aşağıdaki menüden yaşadığınız ili seçerek \`e!kaçcm\` ortalamalarını ilinize özel hesaplayabilirsiniz:`
+        )
+        .setColor(0x10b981);
+
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId(`set_city_${message.author.id}`)
+        .setPlaceholder('📍 Yaşadığınız İli Seçin...')
+        .addOptions(cities.map(c => new StringSelectMenuOptionBuilder().setLabel(c).setValue(c).setDefault(c === currentCity)));
+
+      const row = new ActionRowBuilder().addComponents(menu);
+      const replyMsg = await message.reply({ embeds: [embed], components: [row] });
+      const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
+
+      collector.on('collect', async i => {
+        if (i.user.id !== message.author.id) {
+          return i.reply({ content: '❌ Sadece komutu yazan ilini değiştirebilir!', ephemeral: true });
+        }
+        const selected = i.values[0];
+        if (!dbUser) dbUser = new User({ discordId: message.author.id });
+        dbUser.city = selected;
+        await dbUser.save();
+
+        await i.update({
+          embeds: [new EmbedBuilder().setTitle('✅ İL PROFİLİ GÜNCELLENDİ').setDescription(`Yaşadığınız il **${selected}** olarak kaydedildi.`).setColor(0x10b981)],
+          components: []
+        });
+      });
     }
   }
 ];
