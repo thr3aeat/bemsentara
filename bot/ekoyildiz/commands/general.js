@@ -249,7 +249,7 @@ module.exports = [
   },
   {
     name: 'yardım',
-    aliases: ['help'],
+    aliases: ['help', 'komutlar'],
     category: 'Kullanıcı',
     description: 'Tüm komutları listeler.',
     userPermissions: [],
@@ -260,7 +260,10 @@ module.exports = [
         await sendHelpMenu(message);
       } catch (err) {
         console.error('[Yardım Komutu Hatası]:', err);
-        message.reply({ content: '📚 **EkoYıldız Bot Komut Listesi:** Sunucumuzdaki tüm sistem ve moderasyon komutlarını kullanabilirsiniz.' }).catch(() => {});
+        const fallbackText = '📚 **EkoYıldız Bot Komut Listesi:** Sunucumuzdaki tüm sistem, eğlence ve moderasyon komutlarını `e!yardım` ile kullanabilirsiniz.';
+        await message.reply({ content: fallbackText }).catch(async () => {
+          if (message.channel) await message.channel.send({ content: fallbackText }).catch(() => {});
+        });
       }
     }
   }

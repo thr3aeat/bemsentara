@@ -2320,17 +2320,15 @@ function initializeDiscordHandlers(client) {
     // ── Profanity & Swear & NSFW Check ──
     if (message.guild && !message.author.bot) {
       try {
+        // Sadece net ve açık küfürler / hakaretler (Masum kelimeler ve sohbet ifadeleri kesinlikle hariç tutulmuştur)
         const swearWords = [
-          "siktir", "sikis", "sikem", "sikim", "sikti", "orospu", "pic", "amk", "yarrak",
-          "got", "amina", "amini", "kaltak", "yavsak", "kahpe", "meme", "tassak", "tasak",
-          "amcik", "gavat", "godos", "porno", "hentai", "nsfw", "sikiş", "piç", "göt",
-          "amına", "amını", "yavşak", "taşşak", "taşak", "amcık", "godoş", "yarak", "oç",
-          "ibne", "gays", "lez", "xxx", "sex", "yasak", "ifsa", "türbanlı", "azgin", "sikişmek", "sikismek", "bacak", "meme",
-          "dildo", "anal", "oral", "masturbasyon", "bosalma", "yalamak", "emmek", "bayan",
-          "sokmak", "cinsel", "orgazm", "fantezi", "bacaklar", "kalca", "göğüs", "yatak",
-          "sevisme", "tecavuz", "pedofili", "sapik", "mal", "aptal", "gerizekali", "salak",
-          "ezik", "yavsak", "kaltak", "fahişe", "orospu", "pezevenk", "gotveren", "yavşak",
-          "döl", "döllenme", "çük", "kuku", "sürtük", "piç",
+          "amk", "aq", "amq", "anaskm", "amınakoyim", "amınakoyayım", "aminakoyim", "amınakodumun", "amkoyim",
+          "orospu", "orospucocugu", "orospuçocuğu", "orosbu", "oç", "oc",
+          "yarrak", "yarak", "yarram", "yarragim", "yarrağım",
+          "amcık", "amcik", "amcığı", "amına", "amını", "amina", "amini",
+          "siktir", "siktirgit", "sikeyim", "siktim", "siktiğimin", "sikerim", "sikiş", "sikis", "sikim", "sikem", "sikişmek", "sikismek",
+          "piç", "pic", "pici", "piçin", "picin",
+          "götveren", "gotveren", "gavat", "kaltak", "kahpe", "yavşak", "yavsak", "pezevenk", "puşt", "pust", "sürtük", "tasak", "tassak", "taşak", "taşşak", "godos", "godoş"
         ];
 
         const cleanedContent = message.content

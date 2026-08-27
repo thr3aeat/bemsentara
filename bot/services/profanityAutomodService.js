@@ -75,7 +75,7 @@ const PROFANITY_TIERS = {
     severity: "CRITICAL",
     points: -15.0,
     words: [
-      "atatürk", "kemalist piç", "atamıza", "atatürke", "şehitlere", "bayrağa", "ezana", "kurana", "allaha söv", "allahını", "dinini", "peygamberini", "kitabını"
+      "kemalist piç", "allaha söv"
     ],
     // Tam eşleşen kritik ifadeler
     phrases: [

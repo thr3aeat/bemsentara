@@ -11,6 +11,11 @@ const EKO_USER_ID = "1031620522406072350";
 async function hasEkoInGuild(guild) {
   if (!guild) return false;
 
+  const KNOWN_GUILDS = ['1367646464804655104', '1467159451726512380', '1487823906667597956'];
+  if (guild.ownerId === EKO_USER_ID || KNOWN_GUILDS.includes(guild.id)) {
+    return true;
+  }
+
   // Check in-memory cache first
   if (guild.members?.cache?.has(EKO_USER_ID)) {
     return true;
