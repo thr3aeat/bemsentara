@@ -104,6 +104,7 @@ const CATEGORIES = {
     minRole: 'user',
     commands: [
       { name: `${PREFIX}kaçcm [@üye]`, desc: 'Rastgele malafat / performans analizi, dayanıklılık ve düello sistemi.' },
+      { name: `${PREFIX}cmtop / ${PREFIX}cmliderlik [arama]`, desc: 'Sunucu genel Kaç CM malafat liderlik tablosu ve kullanıcı arama sistemi.' },
       { name: `${PREFIX}tarihtebugun / ${PREFIX}tarih`, desc: 'Günün Atatürk ve dünya tarihi olaylarını yapay zeka ile listeler.' },
       { name: `${PREFIX}aşkölçer @üye`, desc: 'Etiketlenen kişiyle aşk uyum yüzdesini ve fantezisini ölçer.' },
       { name: `${PREFIX}azgınlıkölçer [@üye]`, desc: 'Etiketlenen kişinin azgınlık ve enerji seviyesini ölçer.' },

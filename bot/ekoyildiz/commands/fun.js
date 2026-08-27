@@ -546,7 +546,13 @@ module.exports = [
         return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞');
       }
 
-      const calculateCm = () => Math.floor(Math.random() * 35) + 3;
+      const calculateCm = () => {
+        const r = Math.random();
+        if (r < 0.12) return Math.floor(Math.random() * 3) + 1; // 1-3 cm (Aşırı küçük)
+        if (r > 0.88) return Math.floor(Math.random() * 16) + 35; // 35-50 cm (Aşırı yüksek devasa)
+        return Math.floor(Math.random() * 31) + 4; // 4-34 cm
+      };
+
       const fantasyPositions = [
         '🚁 Helikopter Vuruşu (%98 Uyum)',
         '🧗‍♂️ Tavandan Sallanmalı Kamikaze (%85 Uyum)',
@@ -570,7 +576,7 @@ module.exports = [
       if (dbUser && dbUser.cmLockData && dbUser.cmLockData.expiresAt > now) {
         cm = dbUser.cmLockData.value;
       } else {
-        cm = Math.floor(Math.random() * 35) + 3; // 3-38 cm
+        cm = calculateCm();
         if (dbUser) {
           dbUser.cmLockData = {
             value: cm,
@@ -594,11 +600,15 @@ module.exports = [
       let customReaction = '';
       if (gender === 'Kadın') {
         customReaction = `💃 **Kadın Seçeneği:** Göğüs / Vücut Uyum Ölçümü Yapıldı! Formunuz: **%${Math.min(100, cm * 3)}** *(Çok Alımlı!)*`;
+      } else if (cm <= 3) {
+        customReaction = `😱 **AŞIRI KÜÇÜK TEPKİ:** "Oha ne kadar küçük! 🔬 Fındık tanesinden de ufak, büyüteçle bile zor seçiliyor!" 🤏😢`;
+      } else if (cm >= 35) {
+        customReaction = `🚀 **AŞIRI DEVASE TEPKİ:** "Oha ne kadar devasa! Ruhsatlı füze fırlatıcı resmen, Kız olsam dev gibi of! böyle boyuta peşinden koşardım..." 💥🔞`;
       } else if (cm >= 22) {
         customReaction = `🔥 **Yüksek Tepki:** "Kız olsam dev gibi of! böyle boyuta dayanamaz kesinlikle peşinden koşardım..." 🤤💥`;
       } else if (cm <= 10) {
         customReaction = orientation === 'Heteroseksüel'
-          ? `💔 **Düşük Tepki:** "Kız arkadaşın bu sonucu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
+          ? `💔 **Düşük Tepki:** "Kızlar bunu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
           : `🧊 **Düşük Tepki:** "Görünüşe göre ekipman beklenenden biraz mütevazı çıktı."`;
       } else {
         customReaction = `👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."`;
@@ -1570,6 +1580,99 @@ Lütfen ${dateStr} tarihi için:
           embeds: [new EmbedBuilder().setTitle('✅ İL PROFİLİ GÜNCELLENDİ').setDescription(`Yaşadığınız il **${selected}** olarak kaydedildi.`).setColor(0x10b981)],
           components: []
         });
+      });
+    }
+  },
+
+  // ── 14. KAÇ CM LİDERLİK TABLOSU VE ARAMA SİSTEMİ ───────────────────────────
+  {
+    name: 'cmtop',
+    aliases: ['cmliderlik', 'cm-liderlik', 'cmlb', 'cm-top', 'cmlider'],
+    category: 'Eğlence',
+    description: 'Sunucu içi Kaç CM malafat ölçüm liderlik tablosunu ve kullanıcı arama sistemini açar.',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message, args = []) {
+      const User = require('../../../models/User');
+      const allUsers = await User.find({}) || [];
+      const searchQuery = args.join(' ').trim().toLowerCase();
+
+      // CM kaydı olan tüm kullanıcıları çek
+      let usersWithCm = allUsers.filter(u => u.cmLockData && typeof u.cmLockData.value === 'number');
+
+      if (searchQuery) {
+        usersWithCm = usersWithCm.filter(u => (u.username || '').toLowerCase().includes(searchQuery));
+      }
+
+      // Büyükten küçüğe sırala
+      usersWithCm.sort((a, b) => b.cmLockData.value - a.cmLockData.value);
+
+      const getReactionComment = (val) => {
+        if (val <= 3) return '😱 Oha ne kadar küçük! 🔬🤏';
+        if (val >= 35) return '🚀 Oha ne kadar devasa! Ruhsatlı füze! 💥';
+        if (val >= 22) return '🔥 Kız olsam dev gibi of! 🤤';
+        if (val <= 10) return '💔 Kızlar bunu görünce üzüldü... 😢';
+        return '👍 Tam ideal Anadolu boyutu.';
+      };
+
+      const getRankEmoji = (idx) => {
+        if (idx === 0) return '🥇';
+        if (idx === 1) return '🥈';
+        if (idx === 2) return '🥉';
+        return `\`#${idx + 1}\``;
+      };
+
+      const embed = new EmbedBuilder()
+        .setTitle('🏆 EKO YILDIZ — KAÇ CM LİDERLİK TABLOSU')
+        .setColor(0xec4899)
+        .setTimestamp();
+
+      if (searchQuery) {
+        embed.setDescription(`🔍 **"${searchQuery}"** kelimesine göre filtrelenen kullanıcılar (${usersWithCm.length} sonuç bulundu):\n\n`);
+      } else {
+        embed.setDescription(`📊 **Sunucu Genel Malafat ve Ölçüm Sıralaması (Top 15):**\n\n`);
+      }
+
+      if (usersWithCm.length === 0) {
+        embed.setDescription(searchQuery ? `❌ **"${searchQuery}"** adında CM ölçümü yapmış bir kullanıcı bulunamadı.` : '⚠️ Henüz kimse `e!kaçcm` komutunu kullanarak ölçüm yapmamış!');
+      } else {
+        const topList = usersWithCm.slice(0, 15);
+        const lines = topList.map((u, idx) => {
+          const val = u.cmLockData.value;
+          const comment = getReactionComment(val);
+          const cityStr = u.city ? ` • 📍 ${u.city}` : '';
+          return `${getRankEmoji(idx)} **${u.username || 'Kullanıcı'}** — **${val} cm** ${comment}${cityStr}`;
+        });
+        embed.addFields({ name: '📜 Sıralama Listesi', value: lines.join('\n') });
+      }
+
+      const searchRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`cm_search_help_${message.author.id}`)
+          .setLabel('🔍 Kullanıcı Nasıl Aranır?')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`cm_refresh_${message.author.id}`)
+          .setLabel('🔄 Sıralamayı Yenile')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      const replyMsg = await message.reply({ embeds: [embed], components: [searchRow] });
+      const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
+
+      collector.on('collect', async i => {
+        if (i.user.id !== message.author.id) {
+          return i.reply({ content: '❌ Bu butonları sadece komutu yazan tıklayabilir!', ephemeral: true });
+        }
+
+        if (i.customId.startsWith('cm_search_help_')) {
+          await i.reply({
+            content: `🔍 **Kullanıcı Arama Kullanımı:**\nKomutun yanına aramak istediğiniz ismi ekleyin. Örn:\n\`e!cmtop ar\` ➔ *İçinde "ar" geçen (arsız, aras vb.) tüm kullanıcıları listeler.*\n\`e!cmliderlik ahmet\` ➔ *Ahmet adındaki kullanıcıyı arar.*`,
+            ephemeral: true
+          });
+        } else if (i.customId.startsWith('cm_refresh_')) {
+          await i.deferUpdate().catch(() => {});
+        }
       });
     }
   }
