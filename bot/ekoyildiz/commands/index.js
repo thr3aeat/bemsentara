@@ -366,14 +366,16 @@ async function handleGuildMessage(message, client) {
     return true;
   } catch (err) {
     logger.error('KOMUT HATASI', `e!${commandName} komutunda hata:`, err);
-    const errText = `❌ **e!${commandName}** komutu çalıştırılırken bir hata oluştu: \`${err.message || 'Bilinmeyen hata'}\``;
-    if (typeof message.reply === 'function') {
-      await message.reply(errText).catch(async () => {
-        if (message.channel) await message.channel.send(errText).catch(() => {});
-      });
-    } else if (message.channel) {
-      await message.channel.send(errText).catch(() => {});
-    }
+    const errText = `❌ **e!${commandName}** komutu çalıştırılırken bir hata oluştu: \`${err?.message || err || 'Bilinmeyen hata'}\``;
+    try {
+      if (typeof message.reply === 'function') {
+        await message.reply({ content: errText }).catch(async () => {
+          if (message.channel) await message.channel.send({ content: errText }).catch(() => {});
+        });
+      } else if (message.channel) {
+        await message.channel.send({ content: errText }).catch(() => {});
+      }
+    } catch (_) {}
     return true;
   }
 }

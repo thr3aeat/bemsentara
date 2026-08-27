@@ -364,6 +364,7 @@ module.exports = [
       );
 
       const msg = await message.reply({
+        content: `🌶️ **${target.username || 'Kullanıcı'}** Libido & Ateş Raporu:`,
         embeds: [buildFireEmbed(target, score)],
         components: [getFireRow()]
       });
