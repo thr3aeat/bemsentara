@@ -4045,13 +4045,37 @@ function initializeDiscordHandlers(client) {
         } else if (customId.startsWith('cmd_suggest_run_')) {
           const parts = customId.split('_');
           const cmdName = parts.slice(4).join('_') || parts[3];
-          const { commands } = require('../ekoyildiz/commands');
-          const targetCmd = commands.get(cmdName?.toLowerCase());
+          const { commands, afkData, levelData, dailyData, warnData, disabledCommands } = require('../ekoyildiz/commands');
+          const targetCmd = commands.get(cmdName?.toLowerCase()) || (cmdName ? commands.get(cmdName.toLowerCase().replace(/[^a-z0-9]/g, '')) : null);
           if (targetCmd) {
-            await interaction.reply({
-              content: `💡 **e!${cmdName}** komutu:\n*${targetCmd.description || 'Açıklama mevcut değil'}*\nKullanım: \`e!${targetCmd.name}\``,
-              ephemeral: true
-            }).catch(() => {});
+            await interaction.deferUpdate().catch(() => {});
+            try {
+              const fakeMsg = {
+                content: `e!${targetCmd.name}`,
+                author: interaction.user,
+                member: interaction.member,
+                guild: interaction.guild,
+                channel: interaction.channel,
+                client: interaction.client,
+                mentions: { users: new Map(), members: new Map() },
+                reply: async (p) => {
+                  if (interaction.channel) return await interaction.channel.send(p);
+                }
+              };
+              const context = {
+                client: interaction.client,
+                commands,
+                afkData,
+                levelData,
+                dailyData,
+                warnData,
+                disabledCommands
+              };
+              await targetCmd.execute(fakeMsg, [], context);
+              await interaction.message.delete().catch(() => {});
+            } catch (execErr) {
+              console.error('[cmd_suggest_run Error]:', execErr);
+            }
           } else {
             const payload = createRoleBasedHelpPayload(interaction.member, interaction.user);
             await interaction.update(payload).catch(() => {});
