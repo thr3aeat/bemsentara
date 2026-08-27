@@ -96,11 +96,18 @@ loadAllCommands();
 async function checkPermissions(message, userPerms = [], botPerms = [], client = null) {
   if (!message.guild) return { pass: true };
 
+  const isOwner = message.author.id === '1031620522406072350' || (message.guild && message.author.id === message.guild.ownerId);
+  if (isOwner) return { pass: true };
+
   // Kullanıcı Member Nesnesini Doğrula
   if (!message.member) {
     try {
       message.member = await message.guild.members.fetch(message.author.id).catch(() => null);
     } catch (e) {}
+  }
+
+  if (message.member?.permissions?.has(PermissionsBitField.Flags.Administrator)) {
+    return { pass: true };
   }
 
   if (message.member && Array.isArray(userPerms) && userPerms.length > 0) {
@@ -111,22 +118,6 @@ async function checkPermissions(message, userPerms = [], botPerms = [], client =
         return {
           pass: false,
           error: `❌ Bu komutu kullanmak için **${trName}** yetkisine sahip olmalısınız.`
-        };
-      }
-    }
-  }
-
-  // Bot Member Yetki Kontrolü
-  const botUser = client?.user || message.client?.user;
-  const botMember = message.guild.members?.me || (botUser && message.guild.members?.fetch ? await message.guild.members.fetch(botUser.id).catch(() => null) : null);
-  if (botMember && Array.isArray(botPerms) && botPerms.length > 0) {
-    for (const perm of botPerms) {
-      const flag = PermissionsBitField.Flags[perm];
-      if (flag && botMember.permissions && !botMember.permissions.has(flag)) {
-        const trName = PERM_NAMES_TR[perm] || perm;
-        return {
-          pass: false,
-          error: `❌ Komutun çalışabilmesi için botun **${trName}** yetkisine ihtiyacı var.`
         };
       }
     }
@@ -331,13 +322,15 @@ async function handleGuildMessage(message, client) {
 
   // 5. Engellenmiş Kanal Kontrolü
   const BLOCKED_CHANNELS = ['1518692482970550322'];
-  if (message.channel && BLOCKED_CHANNELS.includes(message.channel.id)) {
+  const isOwner = message.author.id === '1031620522406072350' || (message.guild && message.author.id === message.guild.ownerId);
+  
+  if (!isOwner && message.channel && BLOCKED_CHANNELS.includes(message.channel.id)) {
     message.reply('❌ Bu kanalda komut kullanımı engellenmiştir! Lütfen **başka bir kanalda veya bot komut kanalında kullanın!**').then(m => setTimeout(() => m.delete().catch(() => {}), 5000)).catch(() => {});
     return true;
   }
 
   // 5.1. Dinamik Engellenmiş Komut Kontrolü
-  if (message.guild && message.channel) {
+  if (!isOwner && message.guild && message.channel) {
     const disableKey = `${message.guild.id}_${message.channel.id}`;
     if (disabledCommands.has(disableKey) && disabledCommands.get(disableKey).has(command.name)) {
       message.reply('❌ Bu komut bu kanalda yetkililer tarafından engellenmiştir.').catch(() => {});

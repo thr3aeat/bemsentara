@@ -1263,10 +1263,10 @@ Lütfen ${dateStr} tarihi için:
           .setStyle(ButtonStyle.Secondary)
       );
 
-      if (loadingMsg) {
-        return loadingMsg.edit({ content: null, embeds: [embed], components: [historyRow] });
+      if (loadingMsg && typeof loadingMsg.edit === 'function') {
+        return loadingMsg.edit({ content: null, embeds: [embed], components: [historyRow] }).catch(() => message.reply({ embeds: [embed], components: [historyRow] }).catch(() => {}));
       } else {
-        return message.reply({ embeds: [embed], components: [historyRow] });
+        return message.reply({ embeds: [embed], components: [historyRow] }).catch(() => {});
       }
     }
   }

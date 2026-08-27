@@ -26,7 +26,11 @@ module.exports = [
         .setFooter({ text: 'EkoYıldız Sistem Takipçisi • Modüler Sistem' })
         .setTimestamp();
 
-      await loadingMsg.edit({ content: '', embeds: [embed] });
+      if (loadingMsg && typeof loadingMsg.edit === 'function') {
+        await loadingMsg.edit({ content: '', embeds: [embed] }).catch(() => {});
+      } else {
+        await message.reply({ embeds: [embed] }).catch(() => {});
+      }
     }
   },
   {
