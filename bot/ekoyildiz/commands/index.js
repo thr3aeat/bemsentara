@@ -131,67 +131,7 @@ async function checkPermissions(message, userPerms = [], botPerms = [], client =
  */
 async function sendCommandSuggestion(message, typedCmd, suggestedCmd, client) {
   const payload = createCommandSuggestionPayload(message.member, message.author, typedCmd, suggestedCmd);
-  const sentMsg = await message.reply(payload).catch(() => null);
-  if (!sentMsg) return true;
-
-  const collector = sentMsg.createMessageComponentCollector({ time: 90000 });
-
-  collector.on('collect', async (interaction) => {
-    if (interaction.user.id !== message.author.id) {
-      return interaction.reply({ content: '❌ Bu butonları sadece komutu yazan kişi kullanabilir!', ephemeral: true });
-    }
-
-    const customId = interaction.customId;
-
-    // 1. "Evet, aradığım bu" veya Butonla Komut Çalıştırma
-    if (customId.startsWith('cmd_suggest_run_')) {
-      const parts = customId.split('_');
-      const targetCmdName = parts.slice(4).join('_') || parts[3];
-      const cmdToRun = commands.get(targetCmdName.toLowerCase()) || commands.get(normalizeCmd(targetCmdName));
-
-      if (cmdToRun) {
-        await interaction.deferUpdate().catch(() => {});
-        try {
-          const context = {
-            client: client || message.client,
-            commands,
-            afkData,
-            levelData,
-            dailyData,
-            warnData,
-            disabledCommands
-          };
-          await cmdToRun.execute(message, [], context);
-          await sentMsg.delete().catch(() => {});
-        } catch (execErr) {
-          logger.error('ÖNERİ KOMUT ÇALIŞTIRMA HATASI', execErr);
-          await message.reply(`❌ **e!${targetCmdName}** çalıştırılırken hata: \`${execErr.message}\``).catch(() => {});
-        }
-      } else {
-        // Yardım panelini aç
-        const helpPayload = createRoleBasedHelpPayload(message.member, message.author);
-        await interaction.update(helpPayload).catch(() => {});
-      }
-      collector.stop();
-    }
-    // 2. "Hayır, aradığım bu değil" -> Yetkiye Göre Tüm Komutları Aç
-    else if (customId.startsWith('cmd_suggest_all_')) {
-      const helpPayload = createRoleBasedHelpPayload(message.member, message.author);
-      await interaction.update(helpPayload).catch(() => {});
-    }
-    // 3. Dropdown Kategori Seçimi
-    else if (customId.startsWith('s_help_role_select_') || customId === 's_help_category_select') {
-      const selectedCategory = interaction.values?.[0];
-      const catPayload = createRoleBasedHelpPayload(message.member, message.author, selectedCategory);
-      await interaction.update(catPayload).catch(() => {});
-    }
-  });
-
-  collector.on('end', () => {
-    // Süre dolduğunda butonları pasif yap
-    sentMsg.edit({ components: [] }).catch(() => {});
-  });
-
+  await message.reply(payload).catch(() => null);
   return true;
 }
 

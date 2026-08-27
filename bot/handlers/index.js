@@ -4037,16 +4037,22 @@ function initializeDiscordHandlers(client) {
       if (interaction.isButton() && interaction.customId?.startsWith('cmd_suggest_')) {
         const { createRoleBasedHelpPayload } = require('../services/helpService');
         const customId = interaction.customId;
+        const parts = customId.split('_');
+        const authorId = parts[3];
+
+        if (authorId && authorId !== interaction.user.id) {
+          return interaction.reply({ content: '❌ Bu butonları sadece komutu yazan kişi kullanabilir!', ephemeral: true });
+        }
 
         if (customId.startsWith('cmd_suggest_all_')) {
           const payload = createRoleBasedHelpPayload(interaction.member, interaction.user);
           await interaction.update(payload).catch(() => {});
           return;
         } else if (customId.startsWith('cmd_suggest_run_')) {
-          const parts = customId.split('_');
           const cmdName = parts.slice(4).join('_') || parts[3];
           const { commands, afkData, levelData, dailyData, warnData, disabledCommands } = require('../ekoyildiz/commands');
           const targetCmd = commands.get(cmdName?.toLowerCase()) || (cmdName ? commands.get(cmdName.toLowerCase().replace(/[^a-z0-9]/g, '')) : null);
+
           if (targetCmd) {
             await interaction.deferUpdate().catch(() => {});
             try {
@@ -4059,7 +4065,10 @@ function initializeDiscordHandlers(client) {
                 client: interaction.client,
                 mentions: { users: new Map(), members: new Map() },
                 reply: async (p) => {
-                  if (interaction.channel) return await interaction.channel.send(p);
+                  if (interaction.channel) {
+                    if (typeof p === 'string') return await interaction.channel.send({ content: p });
+                    return await interaction.channel.send(p);
+                  }
                 }
               };
               const context = {
