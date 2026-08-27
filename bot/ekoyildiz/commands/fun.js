@@ -631,11 +631,8 @@ module.exports = [
         const spray = getSprayDistance(cm);
         const position = getRandomPosition();
 
-        const botAvatar = message.client?.user ? message.client.user.displayAvatarURL() : null;
-
         const embed = new EmbedBuilder()
-          .setTitle(`🍆 KAÇ CM & ULTIMATE PERFORMANS TESTİ - ${user.username}`)
-          .setThumbnail(user.displayAvatarURL?.() || null)
+          .setTitle(`🍆 KAÇ CM & ULTIMATE PERFORMANS TESTİ - ${user.username || 'Kullanıcı'}`)
           .setColor(info.color)
           .addFields(
             { name: '📐 Malafat Boyu', value: `**${cm} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
@@ -649,8 +646,13 @@ module.exports = [
             { name: '📢 Durum Raporu', value: info.alert },
             { name: '📊 Görsel Ölçüm', value: `\`${bar}\`` }
           )
-          .setFooter({ text: 'EkoYıldız 🔥', iconURL: botAvatar })
+          .setFooter({ text: 'EkoYıldız 🔥' })
           .setTimestamp();
+
+        try {
+          const avatarUrl = typeof user?.displayAvatarURL === 'function' ? user.displayAvatarURL() : null;
+          if (avatarUrl) embed.setThumbnail(avatarUrl);
+        } catch (_) {}
 
         return embed;
       };
@@ -703,14 +705,32 @@ module.exports = [
 
       const embed = createEmbed(target, currentCm);
       let replyMsg;
+      const payload = {
+        content: `📏 **${target.username || 'Kullanıcı'}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+        embeds: [embed],
+        components: [getNewSystemRow()]
+      };
+
       try {
-        replyMsg = await message.reply({
-          content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
-          embeds: [embed],
-          components: [getNewSystemRow()]
-        });
+        if (typeof message.reply === 'function') {
+          replyMsg = await message.reply(payload).catch(async () => {
+            if (message.channel) return await message.channel.send(payload);
+          });
+        } else if (message.channel) {
+          replyMsg = await message.channel.send(payload);
+        }
       } catch (err) {
-        return message.reply(`📏 **${target.username}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`).catch(() => {});
+        console.error('[kaçcm error]:', err);
+        const fallback = `📏 **${target.username || 'Kullanıcı'}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`;
+        if (typeof message.reply === 'function') {
+          return message.reply(fallback).catch(() => message.channel?.send(fallback).catch(() => {}));
+        } else if (message.channel) {
+          return message.channel.send(fallback).catch(() => {});
+        }
+      }
+
+      if (!replyMsg || typeof replyMsg.createMessageComponentCollector !== 'function') {
+        return;
       }
       const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
 

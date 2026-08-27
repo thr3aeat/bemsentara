@@ -362,10 +362,18 @@ async function handleGuildMessage(message, client) {
 
   try {
     await command.execute(message, args, context);
+    logger.success('KOMUT TAMAMLANDI', `e!${commandName} komutu başarıyla çalıştırıldı. (Kullanıcı: ${message.author.tag})`);
     return true;
   } catch (err) {
     logger.error('KOMUT HATASI', `e!${commandName} komutunda hata:`, err);
-    message.reply(`❌ **e!${commandName}** komutu çalıştırılırken bir hata oluştu: \`${err.message || 'Bilinmeyen hata'}\``).catch(() => {});
+    const errText = `❌ **e!${commandName}** komutu çalıştırılırken bir hata oluştu: \`${err.message || 'Bilinmeyen hata'}\``;
+    if (typeof message.reply === 'function') {
+      await message.reply(errText).catch(async () => {
+        if (message.channel) await message.channel.send(errText).catch(() => {});
+      });
+    } else if (message.channel) {
+      await message.channel.send(errText).catch(() => {});
+    }
     return true;
   }
 }
