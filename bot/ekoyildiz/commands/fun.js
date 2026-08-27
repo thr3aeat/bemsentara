@@ -541,10 +541,19 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message, args = []) {
-      const target = message.mentions?.users?.first?.() || message.author;
+      let target = message.mentions?.users?.first?.();
+      if (!target && args[0]) {
+        const cleanedId = args[0].replace(/[^0-9]/g, '');
+        if (cleanedId) {
+          try {
+            target = await message.client.users.fetch(cleanedId).catch(() => null);
+          } catch (_) {}
+        }
+      }
+      if (!target) target = message.author;
 
       if (target.bot) {
-        return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞');
+        return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞').catch(() => {});
       }
 
       const calculateCm = () => {
@@ -564,7 +573,7 @@ module.exports = [
       ];
 
       const User = require('../../../models/User');
-      let dbUser = await User.findOne({ discordId: target.id });
+      let dbUser = await User.findOne({ discordId: target.id }).catch(() => null);
 
       const gender = dbUser?.gender || 'Erkek';
       const city = dbUser?.city || 'İstanbul';
@@ -574,17 +583,30 @@ module.exports = [
       const now = Date.now();
       let cm = 0;
 
-      if (dbUser && dbUser.cmLockData && dbUser.cmLockData.expiresAt > now) {
+      if (dbUser && dbUser.cmLockData && typeof dbUser.cmLockData.value === 'number' && dbUser.cmLockData.expiresAt > now) {
         cm = dbUser.cmLockData.value;
       } else {
         cm = calculateCm();
-        if (dbUser) {
+        if (!dbUser) {
+          dbUser = new User({
+            discordId: target.id,
+            username: target.username || 'Kullanıcı',
+            gender,
+            city,
+            sexualOrientation: orientation,
+            cmLockData: {
+              value: cm,
+              expiresAt: now + (2 * 24 * 60 * 60 * 1000) // 2 Gün kilitli
+            }
+          });
+        } else {
+          dbUser.username = target.username || dbUser.username || 'Kullanıcı';
           dbUser.cmLockData = {
             value: cm,
-            expiresAt: now + (2 * 24 * 60 * 60 * 1000) // 2 Gün kilitli
+            expiresAt: now + (2 * 24 * 60 * 60 * 1000)
           };
-          await dbUser.save();
         }
+        await dbUser.save().catch(() => {});
       }
 
       // İl Ortalamaları Veritabanı
@@ -598,7 +620,7 @@ module.exports = [
         : `📉 **${city}** il ortalamasının (\`${cityAvg} cm\`) **${cityAvg - cm} cm altında.**`;
 
       // Cinsiyet ve Yönelime Özel Yorumlar
-      let customReaction = '';
+      let customReaction = '👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."';
       if (gender === 'Kadın') {
         customReaction = `💃 **Kadın Seçeneği:** Göğüs / Vücut Uyum Ölçümü Yapıldı! Formunuz: **%${Math.min(100, cm * 3)}** *(Çok Alımlı!)*`;
       } else if (cm <= 3) {
@@ -611,8 +633,6 @@ module.exports = [
         customReaction = orientation === 'Heteroseksüel'
           ? `💔 **Düşük Tepki:** "Kızlar bunu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
           : `🧊 **Düşük Tepki:** "Görünüşe göre ekipman beklenenden biraz mütevazı çıktı."`;
-      } else {
-        customReaction = `👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."`;
       }
 
       const calculateHardness = () => Math.floor(Math.random() * 50) + 51;
@@ -636,7 +656,7 @@ module.exports = [
 
       const makeBar = (val) => {
         const total = 10;
-        const filled = Math.min(total, Math.max(1, Math.round((val / 40) * total)));
+        const filled = Math.min(total, Math.max(1, Math.round(((val || 10) / 40) * total)));
         return '8' + '='.repeat(filled * 2) + 'D 💦';
       };
 
@@ -645,18 +665,19 @@ module.exports = [
         const bar = makeBar(val);
         const hardness = calculateHardness();
         const stamina = getStamina(val);
+        const displayName = user?.username || 'Kullanıcı';
 
         const embed = new EmbedBuilder()
-          .setTitle(`🍆 KAÇ CM & ULTIMATE ANALİZ — ${user.username || 'Kullanıcı'}`)
-          .setColor(info.color)
+          .setTitle(`🍆 KAÇ CM & ULTIMATE ANALİZ — ${displayName}`)
+          .setColor(info.color || 0x10b981)
           .addFields(
             { name: '📐 Malafat / Ölçüm', value: `**${val} cm** ${bonus > 0 ? `*(+${bonus} cm Mavi Hap Effect! 💊)*` : ''}`, inline: true },
-            { name: '🔒 Kilit Durumu', value: `\`2 Gün Sabit (Kilitli)\``, inline: true },
+            { name: '🔒 Kilit Durumu', value: '`2 Gün Sabit (Kilitli)`', inline: true },
             { name: '👤 Cinsiyet / Yönelim', value: `\`${gender}\` / \`${orientation}\``, inline: true },
             { name: '💎 Sertlik Seviyesi', value: `**%${hardness}**`, inline: true },
             { name: '⏱️ Dayanıklılık', value: `**${stamina}**`, inline: true },
-            { name: '📍 Şehir Ortalaması', value: `${compareWithCity}` },
-            { name: '💭 Özel Tepki & Yorum', value: `${customReaction}` },
+            { name: '📍 Şehir Ortalaması', value: compareWithCity || 'Hesaplandı' },
+            { name: '💭 Özel Tepki & Yorum', value: customReaction || 'İdeal ölçüm' },
             { name: '🏆 Ünvan', value: `**${info.title}**` },
             { name: '📊 Görsel Ölçüm', value: `\`${bar}\`` }
           )
@@ -718,29 +739,39 @@ module.exports = [
       );
 
       const embed = createEmbed(target, currentCm);
-      let replyMsg;
+      const targetName = target?.username || 'Kullanıcı';
       const payload = {
-        content: `📏 **${target.username || 'Kullanıcı'}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+        content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
         embeds: [embed],
         components: [getNewSystemRow()]
       };
 
+      let replyMsg = null;
       try {
         if (typeof message.reply === 'function') {
           replyMsg = await message.reply(payload).catch(async () => {
-            if (message.channel) return await message.channel.send(payload);
+            if (message.channel) return await message.channel.send(payload).catch(() => null);
+            return null;
           });
         } else if (message.channel) {
-          replyMsg = await message.channel.send(payload);
+          replyMsg = await message.channel.send(payload).catch(() => null);
         }
       } catch (err) {
         console.error('[kaçcm error]:', err);
-        const fallback = `📏 **${target.username || 'Kullanıcı'}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`;
-        if (typeof message.reply === 'function') {
-          return message.reply(fallback).catch(() => message.channel?.send(fallback).catch(() => {}));
-        } else if (message.channel) {
-          return message.channel.send(fallback).catch(() => {});
-        }
+      }
+
+      if (!replyMsg) {
+        const fallback = `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`;
+        try {
+          if (typeof message.reply === 'function') {
+            replyMsg = await message.reply({ content: fallback }).catch(async () => {
+              if (message.channel) return await message.channel.send({ content: fallback }).catch(() => null);
+              return null;
+            });
+          } else if (message.channel) {
+            replyMsg = await message.channel.send({ content: fallback }).catch(() => null);
+          }
+        } catch (_) {}
       }
 
       if (!replyMsg || typeof replyMsg.createMessageComponentCollector !== 'function') {
@@ -750,87 +781,89 @@ module.exports = [
 
       collector.on('collect', async (interaction) => {
         if (interaction.user.id !== message.author.id) {
-          return interaction.reply({ content: '❌ Bu butonları sadece komutu kullanan kişi tıklayabilir!', ephemeral: true });
+          return interaction.reply({ content: '❌ Bu butonları sadece komutu kullanan kişi tıklayabilir!', ephemeral: true }).catch(() => {});
         }
 
         if (interaction.customId.startsWith('old_system_cm_')) {
           isOldSystem = true;
           await interaction.update({
-            content: `📏 **${target.username}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
+            content: `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
             embeds: [],
             components: [getOldSystemRow()]
-          });
+          }).catch(() => {});
         } else if (interaction.customId.startsWith('new_system_cm_')) {
           isOldSystem = false;
           const currentEmbed = createEmbed(target, currentCm);
           await interaction.update({
-            content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+            content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
             embeds: [currentEmbed],
             components: [getNewSystemRow()]
-          });
+          }).catch(() => {});
         } else if (interaction.customId.startsWith('reroll_cm_')) {
           currentCm = calculateCm();
           hasUsedViagra = false;
           if (isOldSystem) {
             await interaction.update({
-              content: `📏 **${target.username}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
+              content: `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
               embeds: [],
               components: [getOldSystemRow()]
-            });
+            }).catch(() => {});
           } else {
             const newEmbed = createEmbed(target, currentCm);
             await interaction.update({
-              content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+              content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
               embeds: [newEmbed],
               components: [getNewSystemRow()]
-            });
+            }).catch(() => {});
           }
         } else if (interaction.customId.startsWith('viagra_cm_')) {
           if (hasUsedViagra) {
-            return interaction.reply({ content: '⚠️ **Zaten takviye aldın! Aşırı doz kalp krizine yol açabilir! 💊💀**', ephemeral: true });
+            return interaction.reply({ content: '⚠️ **Zaten takviye aldın! Aşırı doz kalp krizine yol açabilir! 💊💀**', ephemeral: true }).catch(() => {});
           }
           hasUsedViagra = true;
           const bonus = Math.floor(Math.random() * 5) + 3;
           currentCm += bonus;
           if (isOldSystem) {
             await interaction.update({
-              content: `📏 **${target.username}** kullanıcısının malafatı Mavi Hap takviyesiyle tam olarak **${currentCm} cm** oldu! 💊🚀 ¯\\_(ツ)_/¯`,
+              content: `📏 **${targetName}** kullanıcısının malafatı Mavi Hap takviyesiyle tam olarak **${currentCm} cm** oldu! 💊🚀 ¯\\_(ツ)_/¯`,
               embeds: [],
               components: [getOldSystemRow()]
-            });
+            }).catch(() => {});
           } else {
             const boostedEmbed = createEmbed(target, currentCm, bonus);
             await interaction.update({
-              content: `📏 **${target.username}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+              content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
               embeds: [boostedEmbed],
               components: [getNewSystemRow()]
-            });
+            }).catch(() => {});
           }
-          await interaction.followUp({ content: `💊 **Mavi Hap Etkisini Gösterdi!** Malafat **+${bonus} cm** daha uzadı! 🚀🔥`, ephemeral: true });
+          await interaction.followUp({ content: `💊 **Mavi Hap Etkisini Gösterdi!** Malafat **+${bonus} cm** daha uzadı! 🚀🔥`, ephemeral: true }).catch(() => {});
         } else if (interaction.customId.startsWith('fantasy_cm_')) {
           const newPos = fantasyPositions[Math.floor(Math.random() * fantasyPositions.length)];
           const fantasyEmbed = new EmbedBuilder()
-            .setTitle(`🍑 FANTEZİ ÇARKI - ${target.username}`)
+            .setTitle(`🍑 FANTEZİ ÇARKI - ${targetName}`)
             .setColor(0xec4899)
             .setDescription(`🔥 **Rastgele Fantezi Kartı Çekildi!**\n\n👉 **Bugünün Önerilen Pozisyonu:**\n**${newPos}**\n\n*Partneriniz hazırsa hemen deneyebilirsiniz!* 😉🔞`);
-          await interaction.reply({ embeds: [fantasyEmbed], ephemeral: true });
+          await interaction.reply({ content: `🍑 **${targetName}** için Fantezi Kartı:`, embeds: [fantasyEmbed], ephemeral: true }).catch(() => {});
         } else if (interaction.customId.startsWith('compare_cm_')) {
           const user1Cm = currentCm;
           const user2Cm = calculateCm();
           const p1 = target;
           const p2 = message.author;
+          const p1Name = p1?.username || 'Kullanıcı 1';
+          const p2Name = p2?.username || 'Kullanıcı 2';
 
           const compEmbed = new EmbedBuilder()
             .setTitle('⚔️ KAÇ CM MALAFAT DÜELLOSU')
             .setColor(0xf59e0b)
             .addFields(
-              { name: `👤 ${p1.username}`, value: `**${user1Cm} cm**\n\`${makeBar(user1Cm)}\``, inline: true },
+              { name: `👤 ${p1Name}`, value: `**${user1Cm} cm**\n\`${makeBar(user1Cm)}\``, inline: true },
               { name: `⚔️ VS`, value: '⚡', inline: true },
-              { name: `👤 ${p2.username}`, value: `**${user2Cm} cm**\n\`${makeBar(user2Cm)}\``, inline: true },
-              { name: '🏆 Kapışma Sonucu', value: user1Cm > user2Cm ? `🎉 **${p1.username}** heybetiyle **${p2.username}** kişisini ezip geçti!` : (user2Cm > user1Cm ? `🎉 **${p2.username}** devasa boyutuyla **${p1.username}** kişisini nakavt etti!` : '🤝 **Berabere!** İki malafat da eşit boyda çıktı, dostluk kazandı.') }
+              { name: `👤 ${p2Name}`, value: `**${user2Cm} cm**\n\`${makeBar(user2Cm)}\``, inline: true },
+              { name: '🏆 Kapışma Sonucu', value: user1Cm > user2Cm ? `🎉 **${p1Name}** heybetiyle **${p2Name}** kişisini ezip geçti!` : (user2Cm > user1Cm ? `🎉 **${p2Name}** devasa boyutuyla **${p1Name}** kişisini nakavt etti!` : '🤝 **Berabere!** İki malafat da eşit boyda çıktı, dostluk kazandı.') }
             );
 
-          await interaction.reply({ embeds: [compEmbed], ephemeral: false });
+          await interaction.reply({ content: `⚔️ **${p1Name}** VS **${p2Name}** Düello Sonucu:`, embeds: [compEmbed], ephemeral: false }).catch(() => {});
         }
       });
 
@@ -1644,7 +1677,8 @@ Lütfen ${dateStr} tarihi için:
           const cityStr = u.city ? ` • 📍 ${u.city}` : '';
           return `${getRankEmoji(idx)} **${u.username || 'Kullanıcı'}** — **${val} cm** ${comment}${cityStr}`;
         });
-        embed.addFields({ name: '📜 Sıralama Listesi', value: lines.join('\n') });
+        const listText = lines.join('\n').trim();
+        embed.addFields({ name: '📜 Sıralama Listesi', value: listText || 'Sıralama verisi henüz bulunmuyor.' });
       }
 
       const searchRow = new ActionRowBuilder().addComponents(
