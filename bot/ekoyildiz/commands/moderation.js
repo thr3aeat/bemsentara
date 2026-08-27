@@ -203,9 +203,12 @@ module.exports = [
     userPermissions: ['ManageChannels'],
     botPermissions: ['ManageChannels'],
     async execute(message) {
-      const channel = message.mentions.channels.first() || message.channel;
-      await channel.permissionOverwrites.edit(message.guild.roles.everyone, { SendMessages: false });
-      return message.reply(`🔒 **${channel.name}** kanalı başarıyla kilitlendi!`);
+      const channel = message.mentions?.channels?.first?.() || message.channel;
+      const everyoneRole = message.guild?.roles?.everyone || message.guild?.id;
+      if (channel?.permissionOverwrites?.edit) {
+        await channel.permissionOverwrites.edit(everyoneRole, { SendMessages: false }).catch(() => {});
+      }
+      return message.reply(`🔒 **${channel?.name || 'Kanal'}** başarıyla kilitlendi!`);
     }
   },
   {
@@ -234,7 +237,9 @@ module.exports = [
     async execute(message, args) {
       const topic = args.join(' ');
       if (!topic) return message.reply('⚠️ Lütfen yeni kanal açıklamasını yazın.');
-      await message.channel.setTopic(topic);
+      if (message.channel?.setTopic) {
+        await message.channel.setTopic(topic).catch(() => {});
+      }
       return message.reply(`📝 Kanal açıklaması güncellendi: **${topic}**`);
     }
   },
@@ -245,34 +250,40 @@ module.exports = [
     userPermissions: ['ManageRoles'],
     botPermissions: ['ManageRoles'],
     async execute(message, args) {
-      const target = message.mentions.members.first();
+      const target = message.mentions?.members?.first?.();
       if (!target) return message.reply('⚠️ Kullanım: `e!rol @üye <rol-ismi/mention>`');
 
       const roleName = args.slice(1).join(' ');
-      const role = message.mentions.roles.first() || message.guild.roles.cache.find(r => r.name.toLowerCase() === roleName.toLowerCase());
+      const role = message.mentions?.roles?.first?.() || message.guild?.roles?.cache?.find(r => r.name.toLowerCase() === roleName.toLowerCase());
       if (!role) return message.reply('❌ Belirtilen rol bulunamadı.');
 
-      if (target.roles.cache.has(role.id)) {
+      if (target.roles?.cache?.has(role.id)) {
         await target.roles.remove(role);
-        return message.reply(`➖ **${target.user.tag}** kullanıcısından **${role.name}** rolü alındı.`);
+        return message.reply(`➖ **${target.user?.tag || target.id}** kullanıcısından **${role.name}** rolü alındı.`);
       } else {
         await target.roles.add(role);
-        return message.reply(`➕ **${target.user.tag}** kullanıcısına **${role.name}** rolü verildi.`);
+        return message.reply(`➕ **${target.user?.tag || target.id}** kullanıcısına **${role.name}** rolü verildi.`);
       }
     }
   },
   {
     name: 'rololuştur',
     category: 'Moderasyon',
-    description: 'Yeni rol oluşturursunuz.',
+    description: 'Sunucuda yeni bir rol oluşturur (Örn: `e!rololuştur VIP #ff0000`).',
     userPermissions: ['ManageRoles'],
     botPermissions: ['ManageRoles'],
     async execute(message, args) {
-      const roleName = args.join(' ');
-      if (!roleName) return message.reply('⚠️ Lütfen oluşturulacak rol adını girin.');
+      const name = args[0];
+      const color = args[1] || '#99aab5';
+      if (!name) return message.reply('⚠️ Lütfen rol adını girin (Örn: `e!rololuştur VIP #ff0000`).');
 
-      const role = await message.guild.roles.create({ name: roleName, reason: `${message.author.tag} tarafından oluşturuldu.` });
-      return message.reply(`✅ **${role.name}** adında yeni bir rol oluşturuldu!`);
+      const role = await message.guild.roles.create({
+        name: name,
+        color: color.startsWith('#') ? color : `#${color}`,
+        reason: `${message.author.tag} tarafından oluşturuldu.`
+      });
+
+      return message.reply(`✅ **${role.name}** rolü başarıyla oluşturuldu!`);
     }
   },
   {
@@ -283,12 +294,12 @@ module.exports = [
     userPermissions: ['ManageNicknames'],
     botPermissions: ['ManageNicknames'],
     async execute(message, args) {
-      const target = message.mentions.members.first();
+      const target = message.mentions?.members?.first?.();
       if (!target) return message.reply('⚠️ Kullanım: `e!takmaad @üye <Yeni İsim>`');
 
       const newNick = args.slice(1).join(' ');
       await target.setNickname(newNick || null);
-      return message.reply(`🏷 **${target.user.tag}** kullanıcısının ismi **${newNick || 'Orijinal İsmi'}** olarak değiştirildi.`);
+      return message.reply(`🏷 **${target.user?.tag || target.id}** kullanıcısının ismi **${newNick || 'Orijinal İsmi'}** olarak değiştirildi.`);
     }
   },
   {
@@ -301,14 +312,15 @@ module.exports = [
       const tag = args[0];
       if (!tag) return message.reply('⚠️ Lütfen eklenecek tagı yazın (Örn: `e!herkesetagver [TAG]`).');
 
-      message.reply('⏳ Herkesin ismine tag ekleme işlemi başlatıldı...');
-      const members = await message.guild.members.fetch();
+      message.reply('⏳ Herkesin ismine tag ekleme işlemi başlatıldı...').catch(() => {});
+      const fetched = message.guild?.members?.fetch ? await message.guild.members.fetch().catch(() => message.guild.members.cache) : message.guild?.members?.cache;
+      const members = fetched instanceof Map || fetched?.values ? Array.from(fetched.values()) : [];
       let count = 0;
 
-      for (const [_, member] of members) {
-        if (member.user.bot || member.id === message.guild.ownerId) continue;
+      for (const member of members) {
+        if (!member || member.user?.bot || member.id === message.guild?.ownerId) continue;
         try {
-          const currentName = member.displayName;
+          const currentName = member.displayName || member.user?.username || '';
           if (!currentName.startsWith(tag)) {
             await member.setNickname(`${tag} ${currentName}`);
             count++;
@@ -329,15 +341,17 @@ module.exports = [
       const tag = args[0];
       if (!tag) return message.reply('⚠️ Lütfen kaldırılacak tagı yazın (Örn: `e!toplutagal [TAG]`).');
 
-      message.reply('⏳ Tag kaldırma işlemi başlatıldı...');
-      const members = await message.guild.members.fetch();
+      message.reply('⏳ Tag kaldırma işlemi başlatıldı...').catch(() => {});
+      const fetched = message.guild?.members?.fetch ? await message.guild.members.fetch().catch(() => message.guild.members.cache) : message.guild?.members?.cache;
+      const members = fetched instanceof Map || fetched?.values ? Array.from(fetched.values()) : [];
       let count = 0;
 
-      for (const [_, member] of members) {
-        if (member.user.bot) continue;
+      for (const member of members) {
+        if (!member || member.user?.bot) continue;
         try {
-          if (member.displayName.startsWith(tag)) {
-            const newName = member.displayName.replace(tag, '').trim();
+          const currentName = member.displayName || member.user?.username || '';
+          if (currentName.startsWith(tag)) {
+            const newName = currentName.replace(tag, '').trim();
             await member.setNickname(newName || null);
             count++;
           }

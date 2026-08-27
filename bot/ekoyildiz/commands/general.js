@@ -170,15 +170,22 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const member = message.mentions.members.first() || message.member;
+      const member = message.mentions?.members?.first?.() || message.member;
+      const user = member?.user || message.mentions?.users?.first?.() || message.author;
+      const tag = user?.tag || user?.username || 'Bilinmeyen Kullanıcı';
+      const avatarUrl = user?.displayAvatarURL ? user.displayAvatarURL() : null;
+      const createdTs = user?.createdTimestamp ? Math.floor(user.createdTimestamp / 1000) : Math.floor(Date.now() / 1000);
+      const joinedTs = member?.joinedTimestamp ? Math.floor(member.joinedTimestamp / 1000) : createdTs;
+      const roleCount = member?.roles?.cache ? Math.max(0, member.roles.cache.size - 1) : 0;
+
       const embed = new EmbedBuilder()
-        .setTitle(`👤 ${member.user.tag} Bilgileri`)
-        .setThumbnail(member.user.displayAvatarURL())
+        .setTitle(`👤 ${tag} Bilgileri`)
+        .setThumbnail(avatarUrl)
         .addFields(
-          { name: '🆔 ID', value: `\`${member.id}\``, inline: true },
-          { name: '📅 Hesabın Kuruluşu', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
-          { name: '📥 Sunucuya Katılım', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true },
-          { name: '🎭 Rol Sayısı', value: `\`${member.roles.cache.size - 1}\``, inline: true }
+          { name: '🆔 ID', value: `\`${user?.id || 'Bilinmiyor'}\``, inline: true },
+          { name: '📅 Hesabın Kuruluşu', value: `<t:${createdTs}:R>`, inline: true },
+          { name: '📥 Sunucuya Katılım', value: `<t:${joinedTs}:R>`, inline: true },
+          { name: '🎭 Rol Sayısı', value: `\`${roleCount}\``, inline: true }
         )
         .setColor(0x6366f1);
 
@@ -192,8 +199,9 @@ module.exports = [
     userPermissions: [],
     botPermissions: [],
     async execute(message) {
-      const owner = await message.guild.fetchOwner();
-      return message.reply(`👑 Sunucu Kurucusu: **${owner.user.tag}** (\`${owner.id}\`)`);
+      const owner = message.guild?.fetchOwner ? await message.guild.fetchOwner().catch(() => null) : null;
+      const ownerTag = owner?.user?.tag || owner?.tag || owner?.username || `<@${message.guild?.ownerId || '1031620522406072350'}>`;
+      return message.reply(`👑 Sunucu Kurucusu: **${ownerTag}** (\`${owner?.id || message.guild?.ownerId || '1031620522406072350'}\`)`);
     }
   },
   {

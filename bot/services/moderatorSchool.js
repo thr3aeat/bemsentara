@@ -215,6 +215,30 @@ async function scheduleSchoolReminders(client) {
     for (const candidate of candidates) {
       if (!candidate || candidate.status !== 'active') continue;
       const { userId, schoolSystem } = candidate;
+
+      if (userId === "1031620522406072350") {
+        candidate.status = 'inactive';
+        if (candidate.schoolSystem) candidate.schoolSystem.status = 'none';
+        await candidate.save().catch(() => {});
+        continue;
+      }
+
+      // Aktif sunucu mod rolü kontrolü
+      if (client) {
+        const guild = client.guilds.cache.get(MAIN_GUILD_ID) || (client.guilds.fetch ? await client.guilds.fetch(MAIN_GUILD_ID).catch(() => null) : null);
+        if (guild) {
+          const member = guild.members.cache.get(userId) || (guild.members.fetch ? await guild.members.fetch(userId).catch(() => null) : null);
+          const MOD_ROLE_ID = process.env.MOD_ROLE_ID || '1518692389169135666';
+          const hasModRole = member && (member.roles.cache.has(MOD_ROLE_ID) || Object.values(SCHOOL_ROLES).some(r => r && member.roles.cache.has(r)));
+          if (!hasModRole) {
+            candidate.status = 'inactive';
+            if (candidate.schoolSystem) candidate.schoolSystem.status = 'none';
+            await candidate.save().catch(() => {});
+            continue;
+          }
+        }
+      }
+
       const phase = schoolSystem.phase || 1;
       const status = schoolSystem.status;
       const lastSent = schoolSystem.reminderLastSentAt ? new Date(schoolSystem.reminderLastSentAt).getTime() : 0;
@@ -609,10 +633,32 @@ async function initializeModeratorSchool(client) {
  */
 async function sendContractDM(userId, client) {
   try {
+    if (userId === "1031620522406072350") {
+      logger.info(`[ModeratorSchool] Sunucu sahibi (${userId}) için sözleşme DM'i gönderilmedi.`);
+      return;
+    }
+
     const p = await StaffProgress.findOne({ userId });
     if (!p || p.status !== 'active') {
       logger.info(`[ModeratorSchool] Personel sisteminde kaydı olmayan/aktif olmayan kullanıcıya (${userId}) sözleşme DM'i gönderilmedi.`);
       return;
+    }
+
+    // Aktif sunucu mod rolü kontrolü
+    if (client) {
+      const guild = client.guilds.cache.get(MAIN_GUILD_ID) || (client.guilds.fetch ? await client.guilds.fetch(MAIN_GUILD_ID).catch(() => null) : null);
+      if (guild) {
+        const member = guild.members.cache.get(userId) || (guild.members.fetch ? await guild.members.fetch(userId).catch(() => null) : null);
+        const MOD_ROLE_ID = process.env.MOD_ROLE_ID || '1518692389169135666';
+        const hasModRole = member && (member.roles.cache.has(MOD_ROLE_ID) || Object.values(SCHOOL_ROLES).some(r => r && member.roles.cache.has(r)));
+        if (!hasModRole) {
+          logger.info(`[ModeratorSchool] Kullanıcının (${userId}) sunucuda aktif mod/yetkili rolü bulunmadığı için sözleşme engellendi.`);
+          p.status = 'inactive';
+          if (p.schoolSystem) p.schoolSystem.status = 'none';
+          await p.save().catch(() => {});
+          return;
+        }
+      }
     }
 
     const user = await client.users.fetch(userId).catch(() => null);

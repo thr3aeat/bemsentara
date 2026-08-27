@@ -28,7 +28,9 @@ const CATEGORIES = {
       { name: `${PREFIX}birimistifa @üye`, desc: 'Birim personeli istifa işlemini onaylar.' },
       { name: `${PREFIX}personelkov @üye [sebep]`, desc: 'Personeli yetkili kadrosundan çıkarır.' },
       { name: `${PREFIX}modcheck @üye`, desc: 'Moderatör 2 günlük otomatik DM denetimini açar/kapatır.' },
-      { name: `${PREFIX}abusetest`, desc: 'Yetki kötüye kullanım algılayıcısını test eder.' }
+      { name: `${PREFIX}abusetest`, desc: 'Yetki kötüye kullanım algılayıcısını test eder.' },
+      { name: `${PREFIX}sunucukur`, desc: 'Gelişmiş sunucu şablonu ve kanal düzeni kurar.' },
+      { name: `${PREFIX}komut [aç/kapat] [komut]`, desc: 'Kanalda belirli komutları devre dışı bırakır veya açar.' }
     ]
   },
   moderation: {
@@ -37,20 +39,30 @@ const CATEGORIES = {
     emoji: '👮',
     minRole: 'moderator',
     commands: [
-      { name: `${PREFIX}ban @üye [gerekçe]`, desc: 'Kullanıcıyı sunucudan yasaklar.' },
+      { name: `${PREFIX}ban @üye [gerekçe]`, desc: 'Kullanıcıyı sunucudan kalıcı olarak yasaklar.' },
       { name: `${PREFIX}forceban [ID] [gerekçe]`, desc: 'Sunucuda olmayan kullanıcıyı ID ile yasaklar.' },
       { name: `${PREFIX}unban [ID]`, desc: 'Yasaklı kullanıcının banını kaldırır.' },
       { name: `${PREFIX}kick @üye [gerekçe]`, desc: 'Kullanıcıyı sunucudan atar.' },
-      { name: `${PREFIX}mute @üye [süre] [gerekçe]`, desc: 'Kullanıcıya geçici zamanaşımı (mute) uygular.' },
+      { name: `${PREFIX}sustur / ${PREFIX}mute @üye [süre] [gerekçe]`, desc: 'Kullanıcıya geçici zamanaşımı (mute) uygular.' },
       { name: `${PREFIX}unmute @üye`, desc: 'Kullanıcının susturmasını kaldırır.' },
-      { name: `${PREFIX}uyar @üye [gerekçe]`, desc: 'Üyeye resmi disiplin uyarısı işler.' },
-      { name: `${PREFIX}uyarısil @üye`, desc: 'Üyenin aktif uyarısını siler ve sicilini düzeltir.' },
+      { name: `${PREFIX}uyarı / ${PREFIX}uyar @üye [gerekçe]`, desc: 'Üyeye resmi disiplin uyarısı işler.' },
+      { name: `${PREFIX}uyarılar / ${PREFIX}sicil @üye`, desc: 'Kullanıcının ceza ve uyarı geçmişini listeler.' },
+      { name: `${PREFIX}uyarısil @üye [indeks]`, desc: 'Üyenin aktif uyarısını siler ve sicilini düzeltir.' },
       { name: `${PREFIX}hapis @üye [dk] [gerekçe]`, desc: 'Üyeyi #kodos hapishanesine gönderir.' },
-      { name: `${PREFIX}unkodos @üye`, desc: 'Hapisteki üyeyi tahliye eder.' },
+      { name: `${PREFIX}unkodos @üye`, desc: 'Hapisteki üyeyi tahliye eder ve rollerini geri verir.' },
       { name: `${PREFIX}temizle / ${PREFIX}sil [adet]`, desc: 'Kanalda belirtilen miktarda mesajı toplu siler.' },
       { name: `${PREFIX}lock / ${PREFIX}kilitle`, desc: 'Kanalı üyelere mesaj yazımına kapatır.' },
       { name: `${PREFIX}unlock / ${PREFIX}kilit-aç`, desc: 'Kanalın mesaj yazım kilidini açar.' },
-      { name: `${PREFIX}slowmode [saniye]`, desc: 'Kanala yavaş mod süresi ayarlar.' },
+      { name: `${PREFIX}slowmode / ${PREFIX}yavaşmod [saniye]`, desc: 'Kanala yavaş mod süresi ayarlar.' },
+      { name: `${PREFIX}kanalaçıklama [yeni_konu]`, desc: 'Kanalın konusunu/açıklamasını günceller.' },
+      { name: `${PREFIX}rol @üye [rol_adı]`, desc: 'Belirtilen kullanıcıya rol verir veya alır.' },
+      { name: `${PREFIX}rololuştur [rol_adı] [renk]`, desc: 'Sunucuda yeni bir rol oluşturur.' },
+      { name: `${PREFIX}takmaad / ${PREFIX}nick @üye [isim]`, desc: 'Kullanıcının sunucu içi ismini değiştirir.' },
+      { name: `${PREFIX}herkesetagver [TAG]`, desc: 'Sunucudaki herkesin isminin başına tag ekler.' },
+      { name: `${PREFIX}toplutagal [TAG]`, desc: 'Sunucudaki herkesten belirtilen tagı siler.' },
+      { name: `${PREFIX}emojiekle [link] [isim]`, desc: 'Sunucuya görsel linkinden emoji yükler.' },
+      { name: `${PREFIX}sesli`, desc: 'Ses kanallarındaki toplam üye sayısını gösterir.' },
+      { name: `${PREFIX}oylama [soru]`, desc: 'Kanalda şık ve tepkili resmi oylama başlatır.' },
       { name: `${PREFIX}say`, desc: 'Sunucudaki anlık üye, ses ve aktiflik istatistiğini sayar.' }
     ]
   },
@@ -65,7 +77,9 @@ const CATEGORIES = {
       { name: `${PREFIX}personel-kpi @personel`, desc: 'Personel aktiflik, ticket ve performans skorunu gösterir.' },
       { name: `${PREFIX}staff-warn @personel [sebep]`, desc: 'Personel siciline disiplin uyarısı işler.' },
       { name: `${PREFIX}staff-commend @personel [sebep]`, desc: 'Personel siciline takdir/teşekkür belgesi işler.' },
-      { name: `${PREFIX}staff-sicil @personel`, desc: 'Personelin sicil ve terfi geçmişini döker.' }
+      { name: `${PREFIX}staff-sicil @personel`, desc: 'Personelin sicil ve terfi geçmişini döker.' },
+      { name: `${PREFIX}birimtanitim`, desc: 'Sunucudaki tüm resmi birimlerin tanıtım kartını basar.' },
+      { name: `${PREFIX}birim-gorevleri`, desc: 'Günlük birim görev ağacını ve puan tablosunu listeler.' }
     ]
   },
   court: {
@@ -76,26 +90,38 @@ const CATEGORIES = {
     commands: [
       { name: `${PREFIX}dava-ac @sanık [madde] [gerekçe]`, desc: 'Savcılık makamına resmi dava dilekçesi verir.' },
       { name: `${PREFIX}sorusturma @şüpheli [neden]`, desc: 'Yetkili soruşturma odası açar ve baro avukatı atar.' },
-      { name: `${PREFIX}adli-sicil @üye`, desc: 'Bir üyenin adli sicil dökümünü ve sabıka kaydını sorgular.' },
+      { name: `${PREFIX}adli-sicil / ${PREFIX}sabika-kaydi @üye`, desc: 'Bir üyenin adli sicil dökümünü ve sabıka kaydını sorgular.' },
+      { name: `${PREFIX}yasa-kitabi`, desc: 'Sunucu Ceza Kanun Maddelerini listeler.' },
+      { name: `${PREFIX}kodos-tahliye @üye`, desc: 'Hapishane kefaletini öder veya tahliye eder.' },
       { name: `${PREFIX}avukat-bul`, desc: 'Aktif baro avukatlarını listeler ve iletişim sağlar.' },
       { name: `${PREFIX}uzlaşma`, desc: 'Dava veya soruşturmada resmi uzlaşma protokolü teklif eder.' }
     ]
   },
   fun: {
-    title: '🎉 Eğlence & Sosyal Komutlar',
+    title: '🎉 Eğlence, Oyunlar & Sosyal',
     description: 'Eko Yıldız eğlence, oyun, aşk ölçer ve nostalji komutları:',
     emoji: '🎉',
     minRole: 'user',
     commands: [
-      { name: `${PREFIX}kaçcm [@üye]`, desc: 'Rastgele malafat / performans analizi ve düello sistemi.' },
-      { name: `${PREFIX}tarihtebugun`, desc: 'Günün Atatürk ve dünya tarihi olaylarını yapay zeka ile listeler.' },
-      { name: `${PREFIX}aşkölçer @üye`, desc: 'Etiketlenen kişiyle aşk uyum yüzdesini ölçer.' },
-      { name: `${PREFIX}espri / ${PREFIX}fıkra`, desc: 'Rastgele eğlenceli espri ve fıkra anlatır.' },
-      { name: `${PREFIX}balıktut`, desc: 'Göl veya denize olta atarak nadir balık tutar.' },
-      { name: `${PREFIX}yazıtura / ${PREFIX}zar`, desc: 'Şans oyunları ve zar atma simülasyonu.' },
-      { name: `${PREFIX}düello @üye`, desc: 'Etiketlenen üyeyle şans ve refleks düellosuna girer.' },
-      { name: `${PREFIX}sarıl / ${PREFIX}öp / ${PREFIX}tokat`, desc: 'Sosyal etkileşim ve sevgi/şaka komutları.' },
-      { name: `${PREFIX}fal / ${PREFIX}kahve / ${PREFIX}çay`, desc: 'Günün kahve/çay ikramı ve tarot falı.' }
+      { name: `${PREFIX}kaçcm [@üye]`, desc: 'Rastgele malafat / performans analizi, dayanıklılık ve düello sistemi.' },
+      { name: `${PREFIX}tarihtebugun / ${PREFIX}tarih`, desc: 'Günün Atatürk ve dünya tarihi olaylarını yapay zeka ile listeler.' },
+      { name: `${PREFIX}aşkölçer @üye`, desc: 'Etiketlenen kişiyle aşk uyum yüzdesini ve fantezisini ölçer.' },
+      { name: `${PREFIX}azgınlıkölçer [@üye]`, desc: 'Etiketlenen kişinin azgınlık ve enerji seviyesini ölçer.' },
+      { name: `${PREFIX}1vs1 / ${PREFIX}düello @üye`, desc: 'Etiketlenen üyeyle refleks ve şans düellosuna girer.' },
+      { name: `${PREFIX}slot [miktar]`, desc: 'Kumarhanede şans slotu çevirir ve ödül kazanır.' },
+      { name: `${PREFIX}rulet [renk/sayı]`, desc: 'Rus ruleti ve masa ruleti simülasyonu.' },
+      { name: `${PREFIX}balıktut`, desc: 'Göl veya denize olta atarak nadir ve efsanevi balıklar tutar.' },
+      { name: `${PREFIX}mayıntarlası`, desc: 'Discord üzerinde interaktif mayın tarlası oyunu başlatır.' },
+      { name: `${PREFIX}adamasmaca`, desc: 'Kelime tahmin etme ve adam asmaca oyunu oynatır.' },
+      { name: `${PREFIX}dogrulukcesaret / ${PREFIX}dc`, desc: 'Doğruluk mu Cesaret mi oyunu başlatır.' },
+      { name: `${PREFIX}yazıtura`, desc: 'Şans parası fırlatır (Yazı mı Tura mı?).' },
+      { name: `${PREFIX}zar`, desc: '1 ile 6 arasında rastgele zar atar.' },
+      { name: `${PREFIX}atatürk`, desc: 'Gazi Mustafa Kemal Atatürk hakkında ilham verici tarihi anekdot ve fotoğraflar sunar.' },
+      { name: `${PREFIX}gününbilgisi`, desc: 'Bilim, teknoloji ve genel kültür alanından ilginç bilgi paylaşır.' },
+      { name: `${PREFIX}fıkra / ${PREFIX}espri`, desc: 'Gülümseten fıkra ve soğuk/komik espriler anlatır.' },
+      { name: `${PREFIX}iltifat / ${PREFIX}övgü @üye`, desc: 'Etiketlenen kişiye tatlı ve samimi bir iltifat gönderir.' },
+      { name: `${PREFIX}kapaklaf @üye`, desc: 'Etiketlenen kişiye efsane bir kapak söz fırlatır.' },
+      { name: `${PREFIX}sarıl / ${PREFIX}öp / ${PREFIX}şaplak @üye`, desc: 'Sosyal sevgi ve eğlenceli etkileşim komutları.' }
     ]
   },
   economy: {
@@ -108,23 +134,30 @@ const CATEGORIES = {
       { name: `${PREFIX}bakiye [@üye]`, desc: 'Mevcut TL, Coin ve banka hesabınızı gösterir.' },
       { name: `${PREFIX}cuzdan`, desc: 'Kişisel finans cüzdanınızı ve varlıklarınızı görüntüler.' },
       { name: `${PREFIX}transfer @üye [miktar]`, desc: 'Başka bir üyeye güvenli para transferi yapar.' },
+      { name: `${PREFIX}yatirim [miktar]`, desc: 'Eko Yıldız Yatırım Fonuna katılım sağlar.' },
       { name: `${PREFIX}magaza`, desc: 'Sunucu özel rol ve ayrıcalık mağazasını açar.' }
     ]
   },
   general: {
-    title: '⚙️ Genel & Kullanıcı Komutları',
-    description: 'Profil, doğrulama, seviye ve genel bilgi komutları:',
+    title: '⚙️ Genel, Kullanıcı & Araçlar',
+    description: 'Profil, doğrulama, seviye, hesap ve genel bilgi komutları:',
     emoji: '⚙️',
     minRole: 'user',
     commands: [
-      { name: `${PREFIX}yardım`, desc: 'Tüm komut kategorilerini ve kullanım rehberini açar.' },
-      { name: `${PREFIX}rank / ${PREFIX}seviye`, desc: 'Seviye ve XP kartınızı görüntüler.' },
-      { name: `${PREFIX}leaderboard / ${PREFIX}top`, desc: 'Sunucu seviye ve mesaj sıralamasını listeler.' },
-      { name: `${PREFIX}avatar [@üye]`, desc: 'Kullanıcının profil fotoğrafını büyük boyutta gösterir.' },
+      { name: `${PREFIX}yardım / ${PREFIX}help`, desc: 'Tüm komut kategorilerini ve yetkinize özel kullanım rehberini açar.' },
+      { name: `${PREFIX}rank / ${PREFIX}seviye [@üye]`, desc: 'Seviye, XP ve mesaj istatistik kartınızı görüntüler.' },
+      { name: `${PREFIX}leaderboard / ${PREFIX}top`, desc: 'Sunucu seviye, XP ve mesaj sıralamasını listeler.' },
+      { name: `${PREFIX}avatar [@üye]`, desc: 'Kullanıcının profil fotoğrafını yüksek çözünürlükte gösterir.' },
+      { name: `${PREFIX}kullanıcıbilgi / ${PREFIX}userinfo [@üye]`, desc: 'Kullanıcının kuruluş tarihi, rolleri ve sunucu bilgilerini döker.' },
+      { name: `${PREFIX}kurucukim`, desc: 'Sunucunun kurucusunu ve sahip bilgilerini söyler.' },
+      { name: `${PREFIX}sunucubilgi`, desc: 'Sunucunun detaylı üye, kanal, boost ve istatistik raporu.' },
+      { name: `${PREFIX}emojiler`, desc: 'Sunucuda bulunan tüm özel emojileri listeler.' },
+      { name: `${PREFIX}hesapla [işlem]`, desc: 'Matematiksel işlemleri anında çözer (Örn: `e!hesapla 25*4+10`).' },
+      { name: `${PREFIX}minecraft / ${PREFIX}mc [oyuncu]`, desc: 'Minecraft oyuncu skini ve profil bilgilerini getirir.' },
       { name: `${PREFIX}afk [sebep]`, desc: 'AFK moduna geçer ve etiketlendiğinizde bilgi verir.' },
-      { name: `${PREFIX}sunucubilgi`, desc: 'Sunucunun detaylı üye, kanal ve istatistik raporu.' },
       { name: `${PREFIX}ping`, desc: 'Bot ve Discord WebSocket anlık gecikme sürelerini ölçer.' },
       { name: `${PREFIX}dogrula`, desc: 'Roblox ve Discord hesap doğrulama sihirbazını başlatır.' },
+      { name: `${PREFIX}kurallar`, desc: 'Sunucu anayasasını ve kurallarını okuyup onaylar.' },
       { name: `${PREFIX}ticket`, desc: 'Destek talebi (Ticket) kategorisini ve menüsünü açar.' }
     ]
   }
@@ -211,13 +244,17 @@ function createRoleBasedHelpPayload(member, user, categoryKey = null) {
     selectedCat.commands.forEach(c => {
       cmdText += `> **\`${c.name}\`**\n> └ *${c.desc}*\n\n`;
     });
+
+    if (cmdText.length > 4000) {
+      cmdText = cmdText.substring(0, 3990) + '\n\n*(Devamı için kategoriyi daraltın)*';
+    }
     embed.setDescription(cmdText);
   } else {
     embed.setTitle(`🌟 EKO YILDIZ KOMUT MERKEZİ`);
     embed.setDescription(
       `Merhaba <@${user?.id || member?.id}>! Sunucu yetkiniz: **${roleBadge.badge}**\n\n` +
-      `📌 **Komut Prefixleri:** \`e!\` veya \`s!\` (Örn: \`e!kaçcm\`, \`e!tarihtebugun\`, \`e!yardım\`)\n\n` +
-      `👇 **Kullanabileceğiniz Komut Kategorileri:**`
+      `📌 **Komut Prefixleri:** \`e!\` veya \`s!\` (Örn: \`e!kaçcm\`, \`e!tarihtebugun\`, \`e!sistemler\`, \`e!yardım\`)\n\n` +
+      `👇 **Kullanabileceğiniz Komut Kategorileri (Aşağıdaki menüden kategori seçin):**`
     );
 
     accessibleKeys.forEach(k => {

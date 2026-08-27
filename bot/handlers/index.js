@@ -960,10 +960,12 @@ function initializeDiscordHandlers(client) {
             console.error("[guildMemberUpdate] enforceRoleDividers error:", err.message);
           });
 
-          // Check if Mod role was added, and only trigger Moderator School if registered in personnel system
+          // Check if Mod role was added or removed
           const MOD_ROLE_ID = process.env.MOD_ROLE_ID || '1518692389169135666';
           const gainedModRole = !oldMember.roles.cache.has(MOD_ROLE_ID) && newMember.roles.cache.has(MOD_ROLE_ID);
-          if (gainedModRole) {
+          const lostModRole = oldMember.roles.cache.has(MOD_ROLE_ID) && !newMember.roles.cache.has(MOD_ROLE_ID);
+
+          if (gainedModRole && newMember.id !== '1031620522406072350') {
             const StaffProgress = require("../../models/StaffProgress");
             const p = await StaffProgress.findOne({ userId: newMember.id });
             if (p && p.status === 'active' && (!p.schoolSystem || p.schoolSystem.status === 'none')) {
@@ -971,6 +973,17 @@ function initializeDiscordHandlers(client) {
               await sendContractDM(newMember.id, client).catch(() => {});
             } else if (!p || p.status !== 'active') {
               console.log(`[guildMemberUpdate] ${newMember.user.tag} mod rolü aldı fakat personel sisteminde (StaffProgress) aktif kaydı yok. Selin asistan mesajı engellendi.`);
+            }
+          }
+
+          if (lostModRole) {
+            const StaffProgress = require("../../models/StaffProgress");
+            const p = await StaffProgress.findOne({ userId: newMember.id });
+            if (p) {
+              p.status = 'inactive';
+              if (p.schoolSystem) p.schoolSystem.status = 'none';
+              await p.save().catch(() => {});
+              console.log(`[guildMemberUpdate] ${newMember.user.tag} mod rolünü bıraktı. Personel ve Okul durumu pasife alındı.`);
             }
           }
         }
