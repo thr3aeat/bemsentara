@@ -537,7 +537,7 @@ module.exports = [
     name: 'kaçcm',
     aliases: ['kaccm', 'kac-cm', 'kaç-cm', 'cm', 'malafat'],
     category: 'Eğlence',
-    description: 'Rastgele kaç cm olduğunu ölçer, dayanıklılık, menzil ve fantezi istatistiği verir.',
+    description: 'Sorulu ve testli kaç cm ölçümü, dayanıklılık, menzil ve fantezi analizi.',
     userPermissions: [],
     botPermissions: [],
     async execute(message, args = []) {
@@ -556,11 +556,78 @@ module.exports = [
         return message.reply('🤖 **Ben bir robotum ama siber antenim tam 100 cm!** 📡⚡\n*Pil seviyesi %100, aşırı ısınma koruması devrede!* 🔞').catch(() => {});
       }
 
-      const calculateCm = () => {
+      const testQuestions = [
+        {
+          id: 'q1',
+          question: '🌤️ Sabah güne ilk başladığında modun ve aksiyonun ne olur?',
+          options: [
+            { label: '🅰️ Soğuk duş + 50 Şınav (Alpha Modu)', modifier: 6 },
+            { label: '🅱️ Kahve içip sosyal medyaya bakmak', modifier: 3 },
+            { label: '🅾️ Yataktan kalkmam 1 saati bulur...', modifier: -2 },
+            { label: '🆎 Aynaya bakıp "Bugün de harikayım" demek', modifier: 5 }
+          ]
+        },
+        {
+          id: 'q2',
+          question: '🏎️ Trafikte biri aniden önüne kırarsa tepkin ne olur?',
+          options: [
+            { label: '🅰️ Kornaya basıp sol şeritten uzarım!', modifier: 5 },
+            { label: '🅱️ Derin nefes alıp yoluma bakarım (Stoik)', modifier: 2 },
+            { label: '🅾️ Kenara çekip çay/kahve içerim', modifier: 0 },
+            { label: '🆎 Camı indirip bağırırım!', modifier: 4 }
+          ]
+        },
+        {
+          id: 'q3',
+          question: '🏋️ Spor salonunda ilk hangi hareketi yaparsın?',
+          options: [
+            { label: '🅰️ Direct 150 kg Bench Press!', modifier: 6 },
+            { label: '🅱️ Koşu bandında tempolu yürüyüş', modifier: 2 },
+            { label: '🅾️ Sadece fotoğraf çekilip hikaye atarım', modifier: -3 },
+            { label: '🆎 Leg Day (Bacak) asla atlamam', modifier: 5 }
+          ]
+        },
+        {
+          id: 'q4',
+          question: '🍕 Gece saat 03:00\'te aniden acıkırsan ne yersin?',
+          options: [
+            { label: '🅰️ Gece Kokoreçi veya Döner Dürüm', modifier: 5 },
+            { label: '🅱️ Mega Acılı Çiğköfte Dürüm', modifier: 4 },
+            { label: '🅾️ Nutella kavanozuna kaşık sallamak', modifier: -1 },
+            { label: '🆎 Su içip geri uyumak (Disiplin)', modifier: 1 }
+          ]
+        },
+        {
+          id: 'q5',
+          question: '💘 İlk buluşmada (Date) nereye gitmeyi teklif edersin?',
+          options: [
+            { label: '🅰️ Adana Dürümcüye (Harbi Anadolu)', modifier: 5 },
+            { label: '🅱️ Şık İtalyan Restoranı & Şarap', modifier: 4 },
+            { label: '🅾️ Sahilde çekirdek & çay', modifier: 1 },
+            { label: '🆎 3. Nesil Kahveci & Derin Felsefe', modifier: 3 }
+          ]
+        },
+        {
+          id: 'q6',
+          question: '⚡ Sana tek bir süper güç verilecek olsa hangisini seçersin?',
+          options: [
+            { label: '🅰️ Sınırsız Enerji ve Deprem Etkisi', modifier: 6 },
+            { label: '🅱️ Işınlanma ve Zamanı Durdurma', modifier: 4 },
+            { label: '🅾️ Görünmezlik', modifier: 0 },
+            { label: '🆎 Uçabilme ve Çelik Zırh', modifier: 5 }
+          ]
+        }
+      ];
+
+      const calculateCm = (modifier = 0) => {
         const r = Math.random();
-        if (r < 0.12) return Math.floor(Math.random() * 3) + 1; // 1-3 cm (Aşırı küçük)
-        if (r > 0.88) return Math.floor(Math.random() * 16) + 35; // 35-50 cm (Aşırı yüksek devasa)
-        return Math.floor(Math.random() * 31) + 4; // 4-34 cm
+        let base = 15;
+        if (r < 0.12) base = Math.floor(Math.random() * 3) + 1; // 1-3 cm
+        else if (r > 0.88) base = Math.floor(Math.random() * 15) + 30; // 30-44 cm
+        else base = Math.floor(Math.random() * 20) + 7; // 7-26 cm
+
+        const finalVal = base + modifier;
+        return Math.max(1, Math.min(50, finalVal));
       };
 
       const fantasyPositions = [
@@ -578,62 +645,13 @@ module.exports = [
       const gender = dbUser?.gender || 'Erkek';
       const city = dbUser?.city || 'İstanbul';
       const orientation = dbUser?.sexualOrientation || 'Heteroseksüel';
+      const targetName = target?.username || 'Kullanıcı';
 
-      // 2 Günlük Kilitli Sonuç Mantığı (Lock System)
-      const now = Date.now();
-      let cm = 0;
-
-      if (dbUser && dbUser.cmLockData && typeof dbUser.cmLockData.value === 'number' && dbUser.cmLockData.expiresAt > now) {
-        cm = dbUser.cmLockData.value;
-      } else {
-        cm = calculateCm();
-        if (!dbUser) {
-          dbUser = new User({
-            discordId: target.id,
-            username: target.username || 'Kullanıcı',
-            gender,
-            city,
-            sexualOrientation: orientation,
-            cmLockData: {
-              value: cm,
-              expiresAt: now + (2 * 24 * 60 * 60 * 1000) // 2 Gün kilitli
-            }
-          });
-        } else {
-          dbUser.username = target.username || dbUser.username || 'Kullanıcı';
-          dbUser.cmLockData = {
-            value: cm,
-            expiresAt: now + (2 * 24 * 60 * 60 * 1000)
-          };
-        }
-        await dbUser.save().catch(() => {});
-      }
-
-      // İl Ortalamaları Veritabanı
       const cityAverages = {
         'İstanbul': 16, 'Ankara': 17, 'İzmir': 18, 'Bursa': 15, 'Antalya': 19,
         'Adana': 22, 'Trabzon': 20, 'Diyarbakır': 21, 'Konya': 14, 'Eskişehir': 16
       };
       const cityAvg = cityAverages[city] || 16;
-      const compareWithCity = cm > cityAvg 
-        ? `🔥 **${city}** il ortalamasından (\`${cityAvg} cm\`) **${cm - cityAvg} cm daha uzun!** 🎉`
-        : `📉 **${city}** il ortalamasının (\`${cityAvg} cm\`) **${cityAvg - cm} cm altında.**`;
-
-      // Cinsiyet ve Yönelime Özel Yorumlar
-      let customReaction = '👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."';
-      if (gender === 'Kadın') {
-        customReaction = `💃 **Kadın Seçeneği:** Göğüs / Vücut Uyum Ölçümü Yapıldı! Formunuz: **%${Math.min(100, cm * 3)}** *(Çok Alımlı!)*`;
-      } else if (cm <= 3) {
-        customReaction = `😱 **AŞIRI KÜÇÜK TEPKİ:** "Oha ne kadar küçük! 🔬 Fındık tanesinden de ufak, büyüteçle bile zor seçiliyor!" 🤏😢`;
-      } else if (cm >= 35) {
-        customReaction = `🚀 **AŞIRI DEVASE TEPKİ:** "Oha ne kadar devasa! Ruhsatlı füze fırlatıcı resmen, Kız olsam dev gibi of! böyle boyuta peşinden koşardım..." 💥🔞`;
-      } else if (cm >= 22) {
-        customReaction = `🔥 **Yüksek Tepki:** "Kız olsam dev gibi of! böyle boyuta dayanamaz kesinlikle peşinden koşardım..." 🤤💥`;
-      } else if (cm <= 10) {
-        customReaction = orientation === 'Heteroseksüel'
-          ? `💔 **Düşük Tepki:** "Kızlar bunu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
-          : `🧊 **Düşük Tepki:** "Görünüşe göre ekipman beklenenden biraz mütevazı çıktı."`;
-      }
 
       const calculateHardness = () => Math.floor(Math.random() * 50) + 51;
 
@@ -660,12 +678,31 @@ module.exports = [
         return '8' + '='.repeat(filled * 2) + 'D 💦';
       };
 
-      const createEmbed = (user, val, bonus = 0) => {
+      const createReportEmbed = (user, val, bonus = 0, lastQA = null) => {
         const info = getTitleAndColor(val);
         const bar = makeBar(val);
         const hardness = calculateHardness();
         const stamina = getStamina(val);
         const displayName = user?.username || 'Kullanıcı';
+
+        const compareWithCity = val > cityAvg 
+          ? `🔥 **${city}** il ortalamasından (\`${cityAvg} cm\`) **${val - cityAvg} cm daha uzun!** 🎉`
+          : `📉 **${city}** il ortalamasının (\`${cityAvg} cm\`) **${cityAvg - val} cm altında.**`;
+
+        let customReaction = '👍 **Orta Tepki:** "Tam ideal Anadolu standardı! Hem üzmez hem tatmin eder."';
+        if (gender === 'Kadın') {
+          customReaction = `💃 **Kadın Seçeneği:** Göğüs / Vücut Uyum Ölçümü Yapıldı! Formunuz: **%${Math.min(100, val * 3)}** *(Çok Alımlı!)*`;
+        } else if (val <= 3) {
+          customReaction = `😱 **AŞIRI KÜÇÜK TEPKİ:** "Oha ne kadar küçük! 🔬 Fındık tanesinden de ufak, büyüteçle bile zor seçiliyor!" 🤏😢`;
+        } else if (val >= 35) {
+          customReaction = `🚀 **AŞIRI DEVASE TEPKİ:** "Oha ne kadar devasa! Ruhsatlı füze fırlatıcı resmen!" 💥🔞`;
+        } else if (val >= 22) {
+          customReaction = `🔥 **Yüksek Tepki:** "Kız olsam dev gibi of! böyle boyuta dayanamaz peşinden koşardım..." 🤤💥`;
+        } else if (val <= 10) {
+          customReaction = orientation === 'Heteroseksüel'
+            ? `💔 **Düşük Tepki:** "Kızlar bunu görünce biraz üzüldü ve derin bir iç çekti... 😢"`
+            : `🧊 **Düşük Tepki:** "Görünüşe göre ekipman beklenenden biraz mütevazı çıktı."`;
+        }
 
         const embed = new EmbedBuilder()
           .setTitle(`🍆 KAÇ CM & ULTIMATE ANALİZ — ${displayName}`)
@@ -676,13 +713,20 @@ module.exports = [
             { name: '👤 Cinsiyet / Yönelim', value: `\`${gender}\` / \`${orientation}\``, inline: true },
             { name: '💎 Sertlik Seviyesi', value: `**%${hardness}**`, inline: true },
             { name: '⏱️ Dayanıklılık', value: `**${stamina}**`, inline: true },
-            { name: '📍 Şehir Ortalaması', value: compareWithCity || 'Hesaplandı' },
-            { name: '💭 Özel Tepki & Yorum', value: customReaction || 'İdeal ölçüm' },
+            { name: '📍 Şehir Ortalaması', value: compareWithCity },
+            { name: '💭 Özel Tepki & Yorum', value: customReaction },
             { name: '🏆 Ünvan', value: `**${info.title}**` },
             { name: '📊 Görsel Ölçüm', value: `\`${bar}\`` }
           )
-          .setFooter({ text: 'EkoYıldız 🔥 • Cinsiyet ve İl Seçenekli Sabit Ölçüm' })
+          .setFooter({ text: 'EkoYıldız 🔥 • Test İle Dinamik Hesaplanan Sabit Ölçüm' })
           .setTimestamp();
+
+        if (lastQA) {
+          embed.setDescription(
+            `❓ **Çözülen Test Sorusu:** ${lastQA.question}\n` +
+            `👉 **Verdiğiniz Cevap:** ${lastQA.answer}`
+          );
+        }
 
         try {
           const avatarUrl = typeof user?.displayAvatarURL === 'function' ? user.displayAvatarURL() : null;
@@ -692,15 +736,11 @@ module.exports = [
         return embed;
       };
 
-      let currentCm = cm;
-      let hasUsedViagra = false;
-      let isOldSystem = false;
-
       const getNewSystemRow = () => {
         const buttons = [
           new ButtonBuilder()
             .setCustomId(`reroll_cm_${message.author.id}`)
-            .setLabel('🎲 Yeniden Ölç')
+            .setLabel('🧪 Yeniden Test Et (Farklı Soru)')
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId(`viagra_cm_${message.author.id}`)
@@ -738,91 +778,165 @@ module.exports = [
           .setStyle(ButtonStyle.Success)
       );
 
-      const embed = createEmbed(target, currentCm);
-      const targetName = target?.username || 'Kullanıcı';
-      const payload = {
-        content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
-        embeds: [embed],
-        components: [getNewSystemRow()]
+      let lastQuestionIndex = -1;
+      const getRandomQuestion = () => {
+        let available = testQuestions.map((_, i) => i).filter(i => i !== lastQuestionIndex);
+        if (available.length === 0) available = testQuestions.map((_, i) => i);
+        const chosenIdx = available[Math.floor(Math.random() * available.length)];
+        lastQuestionIndex = chosenIdx;
+        return testQuestions[chosenIdx];
       };
 
-      let replyMsg = null;
-      try {
-        if (typeof message.reply === 'function') {
-          replyMsg = await message.reply(payload).catch(async () => {
-            if (message.channel) return await message.channel.send(payload).catch(() => null);
-            return null;
-          });
-        } else if (message.channel) {
-          replyMsg = await message.channel.send(payload).catch(() => null);
-        }
-      } catch (err) {
-        console.error('[kaçcm error]:', err);
-      }
+      const createQuestionPayload = (q) => {
+        const embed = new EmbedBuilder()
+          .setTitle(`🧪 EKO YILDIZ — ULTIMATE MALAFAT TESTİ (${targetName})`)
+          .setColor(0x3b82f6)
+          .setDescription(
+            `Merhaba **${targetName}**! CM ve Malafat Analizinizi yapmak için lütfen aşağıdaki soruyu yanıtlayın:\n\n` +
+            `❓ **Soru:**\n**${q.question}**\n\n` +
+            `*Aşağıdaki seçeneklerden tarzınıza en uygun cevabı seçin:*`
+          )
+          .setFooter({ text: 'EkoYıldız 🔥 • Yanıtınıza Göre CM İstatistiği Oluşturulur' })
+          .setTimestamp();
 
-      if (!replyMsg) {
-        const fallback = `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`;
+        const buttons = q.options.map((opt, idx) =>
+          new ButtonBuilder()
+            .setCustomId(`cm_ans_${idx}_${message.author.id}`)
+            .setLabel(opt.label.length > 80 ? opt.label.slice(0, 77) + '...' : opt.label)
+            .setStyle(ButtonStyle.Secondary)
+        );
+
+        const rows = [
+          new ActionRowBuilder().addComponents(buttons.slice(0, 2)),
+          new ActionRowBuilder().addComponents(buttons.slice(2, 4))
+        ];
+
+        return { content: `🧪 **${targetName}** için Malafat Test Sorusu:`, embeds: [embed], components: rows };
+      };
+
+      let currentQuestion = getRandomQuestion();
+      let currentCm = 0;
+      let hasUsedViagra = false;
+      let isOldSystem = false;
+      let lastQA = null;
+
+      const now = Date.now();
+      const hasLockedCm = dbUser && dbUser.cmLockData && typeof dbUser.cmLockData.value === 'number' && dbUser.cmLockData.expiresAt > now;
+
+      let replyMsg = null;
+      if (hasLockedCm) {
+        currentCm = dbUser.cmLockData.value;
+        const reportEmbed = createReportEmbed(target, currentCm);
+        const payload = {
+          content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+          embeds: [reportEmbed],
+          components: [getNewSystemRow()]
+        };
+
         try {
           if (typeof message.reply === 'function') {
-            replyMsg = await message.reply({ content: fallback }).catch(async () => {
-              if (message.channel) return await message.channel.send({ content: fallback }).catch(() => null);
+            replyMsg = await message.reply(payload).catch(async () => {
+              if (message.channel) return await message.channel.send(payload).catch(() => null);
               return null;
             });
           } else if (message.channel) {
-            replyMsg = await message.channel.send({ content: fallback }).catch(() => null);
+            replyMsg = await message.channel.send(payload).catch(() => null);
           }
-        } catch (_) {}
+        } catch (err) {
+          console.error('[kaçcm error]:', err);
+        }
+      } else {
+        const questionPayload = createQuestionPayload(currentQuestion);
+        try {
+          if (typeof message.reply === 'function') {
+            replyMsg = await message.reply(questionPayload).catch(async () => {
+              if (message.channel) return await message.channel.send(questionPayload).catch(() => null);
+              return null;
+            });
+          } else if (message.channel) {
+            replyMsg = await message.channel.send(questionPayload).catch(() => null);
+          }
+        } catch (err) {
+          console.error('[kaçcm test error]:', err);
+        }
       }
 
       if (!replyMsg || typeof replyMsg.createMessageComponentCollector !== 'function') {
         return;
       }
-      const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
+
+      const collector = replyMsg.createMessageComponentCollector({ time: 120000 });
 
       collector.on('collect', async (interaction) => {
         if (interaction.user.id !== message.author.id) {
           return interaction.reply({ content: '❌ Bu butonları sadece komutu kullanan kişi tıklayabilir!', ephemeral: true }).catch(() => {});
         }
 
-        if (interaction.customId.startsWith('old_system_cm_')) {
+        if (interaction.customId.startsWith('cm_ans_')) {
+          const parts = interaction.customId.split('_');
+          const optIdx = parseInt(parts[2], 10);
+          const selectedOpt = currentQuestion.options[optIdx] || currentQuestion.options[0];
+
+          currentCm = calculateCm(selectedOpt.modifier);
+          lastQA = { question: currentQuestion.question, answer: selectedOpt.label };
+
+          if (!dbUser) {
+            dbUser = new User({
+              discordId: target.id,
+              username: target.username || 'Kullanıcı',
+              gender,
+              city,
+              sexualOrientation: orientation,
+              cmLockData: { value: currentCm, expiresAt: now + (2 * 24 * 60 * 60 * 1000) }
+            });
+          } else {
+            dbUser.username = target.username || dbUser.username || 'Kullanıcı';
+            dbUser.cmLockData = { value: currentCm, expiresAt: now + (2 * 24 * 60 * 60 * 1000) };
+          }
+          await dbUser.save().catch(() => {});
+
+          const reportEmbed = createReportEmbed(target, currentCm, 0, lastQA);
+          await interaction.update({
+            content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
+            embeds: [reportEmbed],
+            components: [getNewSystemRow()]
+          }).catch(() => {});
+        }
+        else if (interaction.customId.startsWith('reroll_cm_')) {
+          currentQuestion = getRandomQuestion();
+          hasUsedViagra = false;
+          isOldSystem = false;
+          const questionPayload = createQuestionPayload(currentQuestion);
+          await interaction.update({
+            content: questionPayload.content,
+            embeds: questionPayload.embeds,
+            components: questionPayload.components
+          }).catch(() => {});
+        }
+        else if (interaction.customId.startsWith('old_system_cm_')) {
           isOldSystem = true;
           await interaction.update({
             content: `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
             embeds: [],
             components: [getOldSystemRow()]
           }).catch(() => {});
-        } else if (interaction.customId.startsWith('new_system_cm_')) {
+        }
+        else if (interaction.customId.startsWith('new_system_cm_')) {
           isOldSystem = false;
-          const currentEmbed = createEmbed(target, currentCm);
+          const currentEmbed = createReportEmbed(target, currentCm, 0, lastQA);
           await interaction.update({
             content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
             embeds: [currentEmbed],
             components: [getNewSystemRow()]
           }).catch(() => {});
-        } else if (interaction.customId.startsWith('reroll_cm_')) {
-          currentCm = calculateCm();
-          hasUsedViagra = false;
-          if (isOldSystem) {
-            await interaction.update({
-              content: `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
-              embeds: [],
-              components: [getOldSystemRow()]
-            }).catch(() => {});
-          } else {
-            const newEmbed = createEmbed(target, currentCm);
-            await interaction.update({
-              content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
-              embeds: [newEmbed],
-              components: [getNewSystemRow()]
-            }).catch(() => {});
-          }
-        } else if (interaction.customId.startsWith('viagra_cm_')) {
+        }
+        else if (interaction.customId.startsWith('viagra_cm_')) {
           if (hasUsedViagra) {
             return interaction.reply({ content: '⚠️ **Zaten takviye aldın! Aşırı doz kalp krizine yol açabilir! 💊💀**', ephemeral: true }).catch(() => {});
           }
           hasUsedViagra = true;
           const bonus = Math.floor(Math.random() * 5) + 3;
-          currentCm += bonus;
+          currentCm = Math.min(50, currentCm + bonus);
           if (isOldSystem) {
             await interaction.update({
               content: `📏 **${targetName}** kullanıcısının malafatı Mavi Hap takviyesiyle tam olarak **${currentCm} cm** oldu! 💊🚀 ¯\\_(ツ)_/¯`,
@@ -830,7 +944,7 @@ module.exports = [
               components: [getOldSystemRow()]
             }).catch(() => {});
           } else {
-            const boostedEmbed = createEmbed(target, currentCm, bonus);
+            const boostedEmbed = createReportEmbed(target, currentCm, bonus, lastQA);
             await interaction.update({
               content: `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`,
               embeds: [boostedEmbed],
@@ -838,16 +952,18 @@ module.exports = [
             }).catch(() => {});
           }
           await interaction.followUp({ content: `💊 **Mavi Hap Etkisini Gösterdi!** Malafat **+${bonus} cm** daha uzadı! 🚀🔥`, ephemeral: true }).catch(() => {});
-        } else if (interaction.customId.startsWith('fantasy_cm_')) {
+        }
+        else if (interaction.customId.startsWith('fantasy_cm_')) {
           const newPos = fantasyPositions[Math.floor(Math.random() * fantasyPositions.length)];
           const fantasyEmbed = new EmbedBuilder()
             .setTitle(`🍑 FANTEZİ ÇARKI - ${targetName}`)
             .setColor(0xec4899)
             .setDescription(`🔥 **Rastgele Fantezi Kartı Çekildi!**\n\n👉 **Bugünün Önerilen Pozisyonu:**\n**${newPos}**\n\n*Partneriniz hazırsa hemen deneyebilirsiniz!* 😉🔞`);
           await interaction.reply({ content: `🍑 **${targetName}** için Fantezi Kartı:`, embeds: [fantasyEmbed], ephemeral: true }).catch(() => {});
-        } else if (interaction.customId.startsWith('compare_cm_')) {
+        }
+        else if (interaction.customId.startsWith('compare_cm_')) {
           const user1Cm = currentCm;
-          const user2Cm = calculateCm();
+          const user2Cm = calculateCm(0);
           const p1 = target;
           const p2 = message.author;
           const p1Name = p1?.username || 'Kullanıcı 1';
