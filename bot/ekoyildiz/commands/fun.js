@@ -2,7 +2,9 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder
 } = require('discord.js');
 
 const ataturkPhotos = [
@@ -337,19 +339,24 @@ module.exports = [
         return '🏔️ **Kutup Ayısı:** Sıfır tepki, keşiş gibi sakin ve huzurlu.';
       };
 
-      const buildFireEmbed = (user, s) => new EmbedBuilder()
-        .setTitle(`🌶️ LİBİDO & ATEŞ ÖLÇER — ${user.username}`)
-        .setThumbnail(user.displayAvatarURL())
-        .setDescription(
-          `👤 **Kullanıcı:** ${user}\n\n` +
-          `🌡️ **Ateş Seviyesi:** **%${s}**\n` +
-          `\`${makeFireBar(s)}\`\n\n` +
-          `📢 **Durum Analizi:**\n${getFireDesc(s)}\n\n` +
-          `💡 **Önerilen Reçete:** ${s >= 75 ? '🚿 Buzlu Soğuk Duş + Loş Oda' : '☕ Ilık Papatya Çayı'}`
-        )
-        .setColor(s >= 70 ? 0xef4444 : (s >= 40 ? 0xf59e0b : 0x3b82f6))
-        .setFooter({ text: 'EkoYıldız Ateş Departmanı' })
-        .setTimestamp();
+      const buildFireEmbed = (user, s) => {
+        const avatarUrl = typeof user?.displayAvatarURL === 'function' ? user.displayAvatarURL() : null;
+        const embed = new EmbedBuilder()
+          .setTitle(`🌶️ LİBİDO & ATEŞ ÖLÇER — ${user?.username || 'Kullanıcı'}`)
+          .setDescription(
+            `👤 **Kullanıcı:** ${user}\n\n` +
+            `🌡️ **Ateş Seviyesi:** **%${s}**\n` +
+            `\`${makeFireBar(s)}\`\n\n` +
+            `📢 **Durum Analizi:**\n${getFireDesc(s)}\n\n` +
+            `💡 **Önerilen Reçete:** ${s >= 75 ? '🚿 Buzlu Soğuk Duş + Loş Oda' : '☕ Ilık Papatya Çayı'}`
+          )
+          .setColor(s >= 70 ? 0xef4444 : (s >= 40 ? 0xf59e0b : 0x3b82f6))
+          .setFooter({ text: 'EkoYıldız Ateş Departmanı' })
+          .setTimestamp();
+
+        if (avatarUrl) embed.setThumbnail(avatarUrl);
+        return embed;
+      };
 
       const getFireRow = () => new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`fire_shower_${message.author.id}`).setLabel('🚿 Soğuk Duş Al (-30%)').setStyle(ButtonStyle.Primary),

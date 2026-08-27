@@ -2322,8 +2322,8 @@ function initializeDiscordHandlers(client) {
       try {
         // Sadece net ve açık küfürler / hakaretler (Masum kelimeler ve sohbet ifadeleri kesinlikle hariç tutulmuştur)
         const swearWords = [
-          "amk", "aq", "amq", "anaskm", "amınakoyim", "amınakoyayım", "aminakoyim", "amınakodumun", "amkoyim",
-          "orospu", "orospucocugu", "orospuçocuğu", "orosbu", "oç", "oc",
+          "amk", "amq", "anaskm", "amınakoyim", "amınakoyayım", "aminakoyim", "amınakodumun", "amkoyim",
+          "orospu", "orospucocugu", "orospuçocuğu", "orosbu",
           "yarrak", "yarak", "yarram", "yarragim", "yarrağım",
           "amcık", "amcik", "amcığı", "amına", "amını", "amina", "amini",
           "siktir", "siktirgit", "sikeyim", "siktim", "siktiğimin", "sikerim", "sikiş", "sikis", "sikim", "sikem", "sikişmek", "sikismek",
