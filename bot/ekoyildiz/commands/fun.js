@@ -660,7 +660,7 @@ module.exports = [
       let isOldSystem = false;
 
       const getNewSystemRow = () => {
-        const row = new ActionRowBuilder().addComponents(
+        const buttons = [
           new ButtonBuilder()
             .setCustomId(`reroll_cm_${message.author.id}`)
             .setLabel('🎲 Yeniden Ölç')
@@ -672,22 +672,26 @@ module.exports = [
           new ButtonBuilder()
             .setCustomId(`fantasy_cm_${message.author.id}`)
             .setLabel('🍑 Fantezi Çarkı')
-            .setStyle(ButtonStyle.Secondary),
-          new ButtonBuilder()
-            .setCustomId(`old_system_cm_${message.author.id}`)
-            .setLabel('📜 Eski Sisteme Geç (Sade Metin)')
             .setStyle(ButtonStyle.Secondary)
-        );
+        ];
 
         if (target && target.id !== message.author.id) {
-          row.addComponents(
+          buttons.push(
             new ButtonBuilder()
               .setCustomId(`compare_cm_${message.author.id}`)
-              .setLabel('⚔️ Düello / Karşılaştır')
+              .setLabel('⚔️ Karşılaştır')
               .setStyle(ButtonStyle.Success)
           );
+        } else {
+          buttons.push(
+            new ButtonBuilder()
+              .setCustomId(`old_system_cm_${message.author.id}`)
+              .setLabel('📜 Sade Metin')
+              .setStyle(ButtonStyle.Secondary)
+          );
         }
-        return row;
+
+        return new ActionRowBuilder().addComponents(buttons);
       };
 
       const getOldSystemRow = () => new ActionRowBuilder().addComponents(

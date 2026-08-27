@@ -260,10 +260,11 @@ function createRoleBasedHelpPayload(member, user, categoryKey = null) {
     accessibleKeys.forEach(k => {
       const cat = CATEGORIES[k];
       if (cat) {
+        const cmdPills = cat.commands.slice(0, 5).map(c => `\`${c.name.split(' ')[0]}\``).join(' ');
         embed.addFields({
-          name: `${cat.emoji} ${cat.title}`,
-          value: `\`${cat.commands.length} Komut\` • Örn: \`${cat.commands[0].name}\``,
-          inline: true
+          name: cat.title,
+          value: `${cmdPills}${cat.commands.length > 5 ? ` *+${cat.commands.length - 5} daha*` : ''}`,
+          inline: false
         });
       }
     });
