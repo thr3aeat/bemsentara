@@ -121,6 +121,9 @@ const CATEGORIES = {
       { name: `${PREFIX}fıkra / ${PREFIX}espri`, desc: 'Gülümseten fıkra ve soğuk/komik espriler anlatır.' },
       { name: `${PREFIX}iltifat / ${PREFIX}övgü @üye`, desc: 'Etiketlenen kişiye tatlı ve samimi bir iltifat gönderir.' },
       { name: `${PREFIX}kapaklaf @üye`, desc: 'Etiketlenen kişiye efsane bir kapak söz fırlatır.' },
+      { name: `${PREFIX}yönelim / ${PREFIX}tercih`, desc: 'Cinsel yöneliminizi (Hetero, Eşcinsel, Biseksüel, Pan, Aseksüel vb.) belirler ve eğlence komutlarını ilgi alanınıza göre özelleştirir.' },
+      { name: `${PREFIX}fantezi`, desc: 'Cinsel yöneliminize özel kişiselleştirilmiş fantezi senaryosu üretir.' },
+      { name: `${PREFIX}cinseluyum @üye`, desc: 'Etiketlediğiniz kişiyle tensel ve cinsel uyumunuzu analiz eder.' },
       { name: `${PREFIX}sarıl / ${PREFIX}öp / ${PREFIX}şaplak @üye`, desc: 'Sosyal sevgi ve eğlenceli etkileşim komutları.' }
     ]
   },

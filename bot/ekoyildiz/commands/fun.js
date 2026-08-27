@@ -1289,5 +1289,187 @@ Lütfen ${dateStr} tarihi için:
         return message.reply({ embeds: [embed], components: [historyRow] }).catch(() => {});
       }
     }
+  },
+
+  // ── 9. CİNSEL YÖNELİM KARTIS VE TERCİH MERKEZİ ─────────────────────────────
+  {
+    name: 'yönelim',
+    aliases: ['yonelim', 'cinselyonelim', 'tercih', 'orientation'],
+    category: 'Eğlence',
+    description: 'Cinsel yöneliminizi (Heteroseksüel, Eşcinsel/Gay/Lesbian, Biseksüel, Panseksüel, Aseksüel, Aseküel, Demiseksüel, vb.) seçer ve eğlence komutlarını ilgi alanınıza göre özelleştirir.',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message) {
+      const User = require('../../../models/User');
+      let dbUser = await User.findOne({ discordId: message.author.id });
+
+      const orientations = [
+        { label: 'Heteroseksüel (Karşı Cins İlgisi)', value: 'Heteroseksüel', emoji: '👫', desc: 'Karşı cinse yönelik çekim ve romantik ilgi.' },
+        { label: 'Eşcinsel / Gey / Lezbiyen (Kendi Cinsi)', value: 'Eşcinsel', emoji: '🏳️‍🌈', desc: 'Aynı cinse yönelik çekim ve tutkulu ilgi.' },
+        { label: 'Biseksüel (Her İki Cins)', value: 'Biseksüel', emoji: '💖', desc: 'Hem kendi cinsine hem de karşı cinse yönelik ilgi.' },
+        { label: 'Panseksüel (Cinsiyetten Bağımsız)', value: 'Panseksüel', emoji: '✨', desc: 'Cinsiyet kimliğinden bağımsız olarak ruha ilgi.' },
+        { label: 'Aseksüel (Düşük/Yok Cinsel Çekim)', value: 'Aseksüel', emoji: '🛡️', desc: 'Cinsel çekim hissetmeyen, duygusal bağ odaklı.' },
+        { label: 'Demiseksüel (Derin Duygusal Bağ Odaklı)', value: 'Demiseksüel', emoji: '💫', desc: 'Yalnızca derin duygusal bağ kurulduğunda çekim duyan.' }
+      ];
+
+      const currentOrientation = dbUser?.sexualOrientation || 'Belirtilmedi';
+
+      const embed = new EmbedBuilder()
+        .setTitle('🌈 CİNSEL YÖNELİM & TERCİH PROFİLİ')
+        .setThumbnail(message.author.displayAvatarURL())
+        .setDescription(
+          `Merhaba **${message.author.username}**!\n\n` +
+          `📌 **Mevcut Cinsel Yönelim Profiliniz:** \`${currentOrientation}\`\n\n` +
+          `💡 **Nasıl Çalışır?**\n` +
+          `Burada seçeceğiniz yönelim, bot içerisindeki fantezi çarkı, uyum testi, libido ve flört komutlarının metinlerini doğrudan sizin cinsel ilgi alanınıza özel olarak kişiselleştirir.\n\n` +
+          `👇 **Aşağıdaki menüden kendi cinsel yöneliminizi seçin:**`
+        )
+        .setColor(0xec4899)
+        .setFooter({ text: 'EkoYıldız Özgür Yönelim & Eğlence Motoru' })
+        .setTimestamp();
+
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`set_orientation_${message.author.id}`)
+        .setPlaceholder('🌈 Cinsel Yöneliminizi Seçin...')
+        .addOptions(
+          orientations.map(o => new StringSelectMenuOptionBuilder()
+            .setLabel(o.label)
+            .setValue(o.value)
+            .setDescription(o.desc)
+            .setEmoji(o.emoji)
+            .setDefault(o.value === currentOrientation)
+          )
+        );
+
+      const row = new ActionRowBuilder().addComponents(selectMenu);
+      const replyMsg = await message.reply({ embeds: [embed], components: [row] });
+
+      const collector = replyMsg.createMessageComponentCollector({ time: 60000 });
+      collector.on('collect', async i => {
+        if (i.user.id !== message.author.id) {
+          return i.reply({ content: '❌ Bu menüyü sadece komutu çalıştıran kullanıcı değiştirebilir!', ephemeral: true });
+        }
+        const selectedVal = i.values[0];
+
+        if (!dbUser) {
+          dbUser = new User({ discordId: message.author.id, username: message.author.username });
+        }
+        dbUser.sexualOrientation = selectedVal;
+        await dbUser.save();
+
+        const updatedEmbed = new EmbedBuilder()
+          .setTitle('✅ CİNSEL YÖNELİM PROFİLİNİZ GÜNCELLENDİ!')
+          .setDescription(`✨ Cinsel yönelim tercihiniz **${selectedVal}** olarak kaydedildi!\n\nArtık tüm fantezi, uyum, flört ve eğlence komutları sizin cinsel ilgi dünyanıza göre kişiselleştirilmiş olarak çalışacaktır. 🎉`)
+          .setColor(0x10b981)
+          .setFooter({ text: 'EkoYıldız Profil Sistemi' });
+
+        await i.update({ embeds: [updatedEmbed], components: [] });
+      });
+    }
+  },
+
+  // ── 10. ÖZEL FANTEZİ ÇARKI (YÖNELİME ÖZEL) ─────────────────────────────────
+  {
+    name: 'fantezi',
+    aliases: ['fantezicarki', 'fantezi-carki', 'fantasyroll'],
+    category: 'Eğlence',
+    description: 'Kendi cinsel yöneliminize ve ilgi alanınıza özel kurgulanmış fantezi senaryosu üretir.',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message) {
+      const User = require('../../../models/User');
+      const dbUser = await User.findOne({ discordId: message.author.id });
+      const orientation = dbUser?.sexualOrientation || 'Heteroseksüel';
+
+      const fantasiesByOrientation = {
+        'Heteroseksüel': [
+          '🌌 Loş ışıklı bir otel odasında şampanya eşliğinde tutkulu bir gece misyoneri.',
+          '🏎️ Gece sahil kenarında parkedilmiş lüks bir arabada yüksek adrenalinli macera.',
+          '🕯️ Mum ışıkları ve ipek çarşaflar arasında unutulmaz bir romantik ritim.'
+        ],
+        'Eşcinsel': [
+          '🏳️‍🌈 Özel bir kulübün VIP odasında göz göze, derin ve elektrikli bir yakınlaşma.',
+          '🔥 Gece yarısı havuz kenarında tutkulu ve sınırları zorlayan harika bir fantezi.',
+          '✨ İki tutkulu ruhun romantik bir akşam yemeği sonrasında birbirine kenetlenmesi.'
+        ],
+        'Biseksüel': [
+          '💎 Çift yönlü tutku: Sınırların kalktığı, yüksek enerjili ve özgürlüklü bir parti fantezisi.',
+          '🔮 Hem duygusal hem de cinsel ateşin zirve yaptığı sürpriz bir akşam.',
+          '🎭 Farklı evrenlerin ve arzuların buluştuğu romantik ve çılgın bir senaryo.'
+        ],
+        'Panseksüel': [
+          '✨ Ruhların ve bedenlerin cinsiyet kavramından tamamen bağımsız şekilde büyüleyici uyumu.',
+          '🌌 Kozmik bir derinlik: Saf arzu ve zihinsel çekimin harmanlandığı özel bir gece.',
+          '🎨 Sanatsal ve özgür; sadece duygunun ve tutkunun konuştuğu eşsiz anlar.'
+        ],
+        'Aseksüel': [
+          '☕ Yıldızların altında kahve eşliğinde saatlerce süren derin felsefi ve duygusal sohbet.',
+          '🛋️ Sıcak bir battaniyenin altında film izlerken hissedilen saf ve huzurlu yakınlık.',
+          '🌌 Birbirinin ruhuna dokunan, tamamen cinsellikten uzak ama %100 sadık bir bağ.'
+        ],
+        'Demiseksüel': [
+          '💖 Yıllardır süren derin dostluğun ve güvenin aniden alevlenen tutkulu meyvesi.',
+          '🔒 Yalnızca kalpler tamamen açıldığında ortaya çıkan büyüleyici ve özel temas.',
+          '🕊️ Ruhsal bütünleşmenin ardından gelen unutulmaz ve romantik anlar.'
+        ]
+      };
+
+      const options = fantasiesByOrientation[orientation] || fantasiesByOrientation['Heteroseksüel'];
+      const chosenFantasy = options[Math.floor(Math.random() * options.length)];
+
+      const embed = new EmbedBuilder()
+        .setTitle(`🍑 CİNSEL FANTEZİ ÇARKI — ${message.author.username}`)
+        .setThumbnail(message.author.displayAvatarURL())
+        .setDescription(
+          `👤 **Kullanıcı:** ${message.author}\n` +
+          `🌈 **Kayıtlı Yönelim Profiliniz:** \`${orientation}\`\n\n` +
+          `✨ **Sizin Yöneliminize Özel Çıkan Senaryo:**\n` +
+          `>>> **${chosenFantasy}**\n\n` +
+          `💡 *Cinsel yöneliminizi değiştirmek için \`e!yönelim\` komutunu kullanabilirsiniz.*`
+        )
+        .setColor(0xec4899)
+        .setFooter({ text: 'EkoYıldız Kişiselleştirilmiş Fantezi Motoru' })
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] });
+    }
+  },
+
+  // ── 11. CİNSEL UYUM VE TEN UYUMU TESTİ ──────────────────────────────────────
+  {
+    name: 'cinseluyum',
+    aliases: ['tenuyumu', 'ten-uyumu', 'cinsel-uyum', 'sexualharmony'],
+    category: 'Eğlence',
+    description: 'Etiketlediğiniz kişiyle cinsel, tensel ve duygusal çekim uyumunuzu ölçer.',
+    userPermissions: [],
+    botPermissions: [],
+    async execute(message) {
+      const target = message.mentions?.users?.first?.();
+      if (!target) return message.reply('💞 Ten ve cinsel uyumunuzu ölçmek istediğiniz kişiyi etiketleyin!');
+      if (target.id === message.author.id) return message.reply('❌ Kendi kendinizle ten uyumu ölçemezsiniz!');
+
+      const harmonyScore = Math.floor(Math.random() * 41) + 60; // 60-100%
+      const User = require('../../../models/User');
+      const dbUser = await User.findOne({ discordId: message.author.id });
+      const orientation = dbUser?.sexualOrientation || 'Heteroseksüel';
+
+      const embed = new EmbedBuilder()
+        .setTitle('🔥 CİNSEL & TENSEL UYUM ANALİZİ')
+        .setDescription(
+          `${message.author} ⚡ ${target}\n\n` +
+          `💖 **Genel Uyum Skoru:** **%${harmonyScore}**\n` +
+          `🌈 **Sizin Yönelim Temanız:** \`${orientation}\`\n\n` +
+          `🔥 **Tensel Çekim:** **%${Math.min(100, harmonyScore + 5)}** *(Tenler birbirini çekiyor!)*\n` +
+          `🌊 **Tutku & Ritim:** **%${harmonyScore}** *(Ritim mükemmel tutuyor)*\n` +
+          `💬 **Fantezi Uyum Seviyesi:** **%${Math.max(50, harmonyScore - 8)}**\n\n` +
+          `📢 **Uzman Yorumu:**\n` +
+          `> Aranızdaki kimyasal elektrik oldukça yüksek! Birbirinizin dokunuşlarına tepki verme ihtimaliniz maksimum seviyede.`
+        )
+        .setColor(0xef4444)
+        .setFooter({ text: 'EkoYıldız Kimya & Uyum Laboratuvarı' })
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] });
+    }
   }
 ];

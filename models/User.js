@@ -38,6 +38,7 @@ const User = {
       profileBgUrl: null,
       profileMusicUrl: null,
       customStatus: null,
+      sexualOrientation: "Belirtilmedi",
       joinedAt: new Date(),
     };
     return Promise.resolve(users.create({ ...defaults, ...data }));
@@ -78,6 +79,7 @@ function UserConstructor(data) {
     profileBgUrl: null,
     profileMusicUrl: null,
     customStatus: null,
+    sexualOrientation: "Belirtilmedi",
     joinedAt: new Date(),
   };
   const merged = { ...defaults, ...data };
