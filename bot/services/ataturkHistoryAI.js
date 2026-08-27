@@ -6,19 +6,74 @@ const { getHistoricalFallbackEvent } = require("./historyDataset");
 
 const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
+let lastPostedDateTR = null;
+let isPostingInProgress = false;
+
+function getTurkeyTimeInfo() {
+  const now = new Date();
+  const trDateStr = now.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }); // "YYYY-MM-DD"
+  const trHour = parseInt(now.toLocaleTimeString("en-GB", { timeZone: "Europe/Istanbul", hour12: false, hour: "2-digit" }), 10);
+  
+  const dayStr = now.toLocaleDateString("en-US", { timeZone: "Europe/Istanbul", day: "numeric" });
+  const monthStr = now.toLocaleDateString("en-US", { timeZone: "Europe/Istanbul", month: "numeric" });
+  const day = parseInt(dayStr, 10);
+  const month = parseInt(monthStr, 10) - 1; // 0-indexed
+
+  return { now, trDateStr, trHour, day, month };
+}
+
+async function checkAndCatchUpAtaturkHistory(client) {
+  if (isPostingInProgress) return;
+
+  const { trDateStr, trHour } = getTurkeyTimeInfo();
+  if (lastPostedDateTR === trDateStr) return;
+
+  if (trHour >= 9) {
+    try {
+      isPostingInProgress = true;
+      const success = await postAtaturkHistory(client);
+      if (success) {
+        lastPostedDateTR = trDateStr;
+      }
+    } catch (err) {
+      console.error("❌ [AtaturkHistoryAI] Catch-up hatası:", err.message);
+    } finally {
+      isPostingInProgress = false;
+    }
+  }
+}
+
 /**
- * Her gün sabah 09:00'da Atatürk ve Türk tarihi özel gün paylaşımı yapar.
+ * Her gün sabah 09:00'da (TR Saati) Atatürk ve Türk tarihi özel gün paylaşımı yapar.
  * @param {import('discord.js').Client} client
  */
 function startAtaturkHistoryScheduler(client) {
   cron.schedule("0 9 * * *", async () => {
     try {
-      console.log("🕒 [AtaturkHistoryAI] Günlük görev başlatılıyor...");
-      await postAtaturkHistory(client);
+      console.log("🕒 [AtaturkHistoryAI] 09:00 TR Zamanlanmış görevi tetiklendi...");
+      await checkAndCatchUpAtaturkHistory(client);
     } catch (err) {
       console.error("❌ [AtaturkHistoryAI] Cron hatası:", err);
     }
+  }, {
+    timezone: "Europe/Istanbul"
   });
+
+  cron.schedule("*/20 * * * *", async () => {
+    try {
+      await checkAndCatchUpAtaturkHistory(client);
+    } catch (err) {
+      console.error("❌ [AtaturkHistoryAI] Periyodik kontrol hatası:", err.message);
+    }
+  }, {
+    timezone: "Europe/Istanbul"
+  });
+
+  setTimeout(() => {
+    checkAndCatchUpAtaturkHistory(client).catch(() => {});
+  }, 10000);
+
+  console.log("✅ [AtaturkHistoryAI] 7/24 Kesintisiz Tarihte Bugün Zamanlayıcısı Aktif.");
 }
 
 /**
@@ -28,20 +83,23 @@ function startAtaturkHistoryScheduler(client) {
  */
 async function postAtaturkHistory(client, customDate = null) {
   try {
-    const today = customDate instanceof Date ? customDate : new Date();
-    const day = today.getDate();
-    const month = today.getMonth();
+    const { day, month, now } = customDate ? {
+      day: customDate.getDate(),
+      month: customDate.getMonth(),
+      now: customDate
+    } : getTurkeyTimeInfo();
+
     const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     const dateStr = `${day} ${months[month]}`;
 
-    const yesterday = new Date(today);
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayDay = yesterday.getDate();
     const yesterdayMonth = months[yesterday.getMonth()];
     const yesterdayStr = `${yesterdayDay} ${yesterdayMonth}`;
 
     // 1. Özel Gün / Bayram Kontrolü
-    const specialDay = getSpecialDayInfo(today);
+    const specialDay = getSpecialDayInfo(now);
 
     let title = `📅 Tarihte Bugün – ${dateStr}`;
     let embedColor = 0xdc143c; // Normal kırmızı
@@ -81,7 +139,7 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
 
     let aiContent = "";
     try {
-      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1200, temperature: 0.6 });
+      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1000, temperature: 0.6 });
       if (!aiContent || aiContent.trim().length < 80) {
         throw new Error("AI yanıtı yetersiz veya çok kısa");
       }
@@ -98,6 +156,12 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
       }
     }
 
+    if (aiContent && aiContent.length > 4000) {
+      aiContent = aiContent.substring(0, 3990) + "\n\n*(Devamı kesildi...)*";
+    }
+
+    const botAvatar = client.user ? client.user.displayAvatarURL() : undefined;
+
     for (const channelId of TARGET_CHANNEL_IDS) {
       const channel = await client.channels.fetch(channelId).catch(() => null);
       if (channel && channel.isTextBased()) {
@@ -108,7 +172,7 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
           .setTitle(title)
           .setDescription(aiContent)
           .setColor(embedColor)
-          .setFooter({ text: footerText, iconURL: client.user.displayAvatarURL() })
+          .setFooter({ text: footerText, iconURL: botAvatar })
           .setTimestamp();
 
         if (specialField) {
@@ -121,12 +185,15 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
         console.warn(`⚠️ [AtaturkHistoryAI] Hedef kanal bulunamadı veya metin kanalı değil: ${channelId}`);
       }
     }
+    return true;
   } catch (error) {
     console.error("❌ [AtaturkHistoryAI] Mesaj gönderim hatası:", error);
+    return false;
   }
 }
 
 module.exports = {
   startAtaturkHistoryScheduler,
-  postAtaturkHistory
+  postAtaturkHistory,
+  checkAndCatchUpAtaturkHistory
 };

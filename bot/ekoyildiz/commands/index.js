@@ -1,5 +1,10 @@
 const { PermissionsBitField } = require('discord.js');
 const logger = require('../utils/logger');
+const {
+  createRoleBasedHelpPayload,
+  createCommandSuggestionPayload,
+  findClosestCommand
+} = require('../../services/helpService');
 
 const moderationCommands = require('./moderation');
 const funCommands = require('./fun');
@@ -53,14 +58,16 @@ function normalizeCmd(str) {
 }
 
 function registerCommand(cmd) {
+  if (!cmd || !cmd.name) return;
   const primaryKey = cmd.name.toLowerCase();
   const normKey = normalizeCmd(cmd.name);
 
   commands.set(primaryKey, cmd);
   if (normKey) commands.set(normKey, cmd);
 
-  if (cmd.aliases) {
+  if (Array.isArray(cmd.aliases)) {
     for (const alias of cmd.aliases) {
+      if (!alias) continue;
       commands.set(alias.toLowerCase(), cmd);
       const normAlias = normalizeCmd(alias);
       if (normAlias) commands.set(normAlias, cmd);
@@ -86,17 +93,17 @@ function loadAllCommands() {
 
 loadAllCommands();
 
-async function checkPermissions(message, userPerms = [], botPerms = []) {
+async function checkPermissions(message, userPerms = [], botPerms = [], client = null) {
   if (!message.guild) return { pass: true };
 
   // Kullanıcı Member Nesnesini Doğrula
   if (!message.member) {
     try {
-      message.member = await message.guild.members.fetch(message.author.id);
+      message.member = await message.guild.members.fetch(message.author.id).catch(() => null);
     } catch (e) {}
   }
 
-  if (message.member && userPerms.length > 0) {
+  if (message.member && Array.isArray(userPerms) && userPerms.length > 0) {
     for (const perm of userPerms) {
       const flag = PermissionsBitField.Flags[perm];
       if (flag && !message.member.permissions.has(flag)) {
@@ -110,11 +117,12 @@ async function checkPermissions(message, userPerms = [], botPerms = []) {
   }
 
   // Bot Member Yetki Kontrolü
-  const botMember = message.guild.members.me || (message.client.user ? await message.guild.members.fetch(message.client.user.id).catch(() => null) : null);
-  if (botMember && botPerms.length > 0) {
+  const botUser = client?.user || message.client?.user;
+  const botMember = message.guild.members?.me || (botUser && message.guild.members?.fetch ? await message.guild.members.fetch(botUser.id).catch(() => null) : null);
+  if (botMember && Array.isArray(botPerms) && botPerms.length > 0) {
     for (const perm of botPerms) {
       const flag = PermissionsBitField.Flags[perm];
-      if (flag && !botMember.permissions.has(flag)) {
+      if (flag && botMember.permissions && !botMember.permissions.has(flag)) {
         const trName = PERM_NAMES_TR[perm] || perm;
         return {
           pass: false,
@@ -127,21 +135,89 @@ async function checkPermissions(message, userPerms = [], botPerms = []) {
   return { pass: true };
 }
 
+/**
+ * Akıllı komut öneri ve etkileşimli yardım mesajını gönderir
+ */
+async function sendCommandSuggestion(message, typedCmd, suggestedCmd, client) {
+  const payload = createCommandSuggestionPayload(message.member, message.author, typedCmd, suggestedCmd);
+  const sentMsg = await message.reply(payload).catch(() => null);
+  if (!sentMsg) return true;
+
+  const collector = sentMsg.createMessageComponentCollector({ time: 90000 });
+
+  collector.on('collect', async (interaction) => {
+    if (interaction.user.id !== message.author.id) {
+      return interaction.reply({ content: '❌ Bu butonları sadece komutu yazan kişi kullanabilir!', ephemeral: true });
+    }
+
+    const customId = interaction.customId;
+
+    // 1. "Evet, aradığım bu" veya Butonla Komut Çalıştırma
+    if (customId.startsWith('cmd_suggest_run_')) {
+      const parts = customId.split('_');
+      const targetCmdName = parts.slice(4).join('_') || parts[3];
+      const cmdToRun = commands.get(targetCmdName.toLowerCase()) || commands.get(normalizeCmd(targetCmdName));
+
+      if (cmdToRun) {
+        await interaction.deferUpdate().catch(() => {});
+        try {
+          const context = {
+            client: client || message.client,
+            commands,
+            afkData,
+            levelData,
+            dailyData,
+            warnData,
+            disabledCommands
+          };
+          await cmdToRun.execute(message, [], context);
+          await sentMsg.delete().catch(() => {});
+        } catch (execErr) {
+          logger.error('ÖNERİ KOMUT ÇALIŞTIRMA HATASI', execErr);
+          await message.reply(`❌ **e!${targetCmdName}** çalıştırılırken hata: \`${execErr.message}\``).catch(() => {});
+        }
+      } else {
+        // Yardım panelini aç
+        const helpPayload = createRoleBasedHelpPayload(message.member, message.author);
+        await interaction.update(helpPayload).catch(() => {});
+      }
+      collector.stop();
+    }
+    // 2. "Hayır, aradığım bu değil" -> Yetkiye Göre Tüm Komutları Aç
+    else if (customId.startsWith('cmd_suggest_all_')) {
+      const helpPayload = createRoleBasedHelpPayload(message.member, message.author);
+      await interaction.update(helpPayload).catch(() => {});
+    }
+    // 3. Dropdown Kategori Seçimi
+    else if (customId.startsWith('s_help_role_select_') || customId === 's_help_category_select') {
+      const selectedCategory = interaction.values?.[0];
+      const catPayload = createRoleBasedHelpPayload(message.member, message.author, selectedCategory);
+      await interaction.update(catPayload).catch(() => {});
+    }
+  });
+
+  collector.on('end', () => {
+    // Süre dolduğunda butonları pasif yap
+    sentMsg.edit({ components: [] }).catch(() => {});
+  });
+
+  return true;
+}
+
 async function handleGuildMessage(message, client) {
   if (!message.author || message.author.bot) return;
 
   const content = (message.content || '').trim();
 
-  // Message Content Boş Uyarısı (Developer Portal Intent Kapalı Olabilir)
+  // Message Content Boş Uyarısı
   if (!content && message.guild && (!message.attachments || message.attachments.size === 0)) {
-    logger.warn('INTENT UYARISI', 'Discord Developer Portal üzerinde "MESSAGE CONTENT INTENT" kapalı olabilir.');
     return;
   }
 
-  // 1. AFK Kontrolü (Mesaj Yazan Kişi AFK ise kaldır)
+  // 1. AFK Kontrolü
   if (afkData.has(message.author.id)) {
     afkData.delete(message.author.id);
-    message.reply(`👋 Hoş geldin **${message.author.username}**! AFK modundan çıkış yaptın.`).then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    message.reply(`👋 Hoş geldin **${message.author.username}**! AFK modundan çıkış yaptın.`).then(m => setTimeout(() => m.delete().catch(() => {}), 5000)).catch(() => {});
   }
 
   // 2. Etiketlenen Kişi AFK mı?
@@ -149,7 +225,7 @@ async function handleGuildMessage(message, client) {
     message.mentions.users.forEach(u => {
       if (afkData.has(u.id)) {
         const data = afkData.get(u.id);
-        message.reply(`💤 **${u.username}** şu an AFK! Sebep: *${data.reason}* (<t:${Math.floor(data.timestamp / 1000)}:R>)`);
+        message.reply(`💤 **${u.username}** şu an AFK! Sebep: *${data.reason}* (<t:${Math.floor(data.timestamp / 1000)}:R>)`).catch(() => {});
       }
     });
   }
@@ -168,67 +244,116 @@ async function handleGuildMessage(message, client) {
     levelData.set(levelKey, userLevel);
   }
 
-  // 4. Komut Ön Eki (Prefix) Ayrıştırma: 'e!', '!', veya Bot Mention
-  const botMention1 = client?.user ? `<@${client.user.id}>` : null;
-  const botMention2 = client?.user ? `<@!${client.user.id}>` : null;
+  // 4. Komut Ön Eki (Prefix) Ayrıştırma: 'e!', '!', '.', 's!' veya Bot Mention
+  const botUser = client?.user || message.client?.user;
+  const botMention1 = botUser ? `<@${botUser.id}>` : null;
+  const botMention2 = botUser ? `<@!${botUser.id}>` : null;
 
   let commandBody = null;
+  let isPrefixExplicit = false;
+  const lowerContent = content.toLowerCase();
 
-  if (content.toLowerCase().startsWith('e!')) {
+  if (lowerContent.startsWith('e!')) {
     commandBody = content.slice(2).trim();
-  } else if (content.toLowerCase().startsWith('e !')) {
+    isPrefixExplicit = true;
+  } else if (lowerContent.startsWith('e !')) {
     commandBody = content.slice(3).trim();
+    isPrefixExplicit = true;
+  } else if (lowerContent.startsWith('s!')) {
+    commandBody = content.slice(2).trim();
+    isPrefixExplicit = true;
+  } else if (lowerContent.startsWith('s !')) {
+    commandBody = content.slice(3).trim();
+    isPrefixExplicit = true;
   } else if (botMention1 && content.startsWith(botMention1)) {
     commandBody = content.slice(botMention1.length).trim();
+    isPrefixExplicit = true;
   } else if (botMention2 && content.startsWith(botMention2)) {
     commandBody = content.slice(botMention2.length).trim();
+    isPrefixExplicit = true;
   } else if (content.startsWith('!')) {
     commandBody = content.slice(1).trim();
   } else if (content.startsWith('.')) {
     commandBody = content.slice(1).trim();
   }
 
-  if (!commandBody) return;
+  if (commandBody === null) return false;
+
+  // 4.1. Kullanıcı sadece 'e!' veya 's!' yazdıysa
+  if (commandBody.length === 0) {
+    if (isPrefixExplicit) {
+      await sendCommandSuggestion(message, '', null, client);
+      return true;
+    }
+    return false;
+  }
 
   const args = commandBody.split(/ +/);
   const rawCmd = args.shift();
-  if (!rawCmd) return;
+  if (!rawCmd) {
+    if (isPrefixExplicit) {
+      await sendCommandSuggestion(message, '', null, client);
+      return true;
+    }
+    return false;
+  }
 
   const commandName = rawCmd.toLowerCase();
   const normCmdName = normalizeCmd(rawCmd);
 
   const command = commands.get(commandName) || commands.get(normCmdName);
-  if (!command) return;
+
+  // 4.2. Komut bulunamadıysa ve e! veya s! ile çağrıldıysa: "Aradığınız komut bu mu?" tetikle
+  if (!command) {
+    if (isPrefixExplicit) {
+      const closest = findClosestCommand(rawCmd, commands);
+      await sendCommandSuggestion(message, rawCmd, closest, client);
+      return true;
+    }
+    return false;
+  }
 
   logger.info('KOMUT ÇALIŞTIRILIYOR', `Kullanıcı: ${message.author.tag} | Komut: ${command.name} | Sunucu: ${message.guild ? message.guild.name : 'DM'}`);
 
-  // 4.9. Sunucu Yetkilendirme Kontrolü (Eko 1031620522406072350)
+  // 4.9. Sunucu Yetkilendirme Kontrolü
   if (message.guild) {
-    const { isGuildAuthorized } = require('../../services/guildAuthService');
-    const authorized = await isGuildAuthorized(message.guild);
-    if (!authorized) {
-      return message.reply('❌ Merhaba, bu bot Eko Yıldız\'a özeldir. Bu sebeple bu sunucuda herhangi bir komutumu veya sistemimi kullanamazsınız!').catch(() => {});
+    try {
+      const { isGuildAuthorized } = require('../../services/guildAuthService');
+      const authorized = await isGuildAuthorized(message.guild);
+      if (!authorized) {
+        message.reply('❌ Merhaba, bu bot Eko Yıldız\'a özeldir. Bu sebeple bu sunucuda herhangi bir komutumu veya sistemimi kullanamazsınız!').catch(() => {});
+        return true;
+      }
+    } catch (authErr) {
+      console.warn('[GuildAuth Error]:', authErr.message);
     }
   }
 
-  // 5. Engellenmiş Kanal Kontrolü (1518692482970550322 vb.)
+  // 5. Engellenmiş Kanal Kontrolü
   const BLOCKED_CHANNELS = ['1518692482970550322'];
   if (message.channel && BLOCKED_CHANNELS.includes(message.channel.id)) {
-    return message.reply('❌ Bu kanalda komut kullanımı engellenmiştir! Lütfen **başka bir kanalda veya bot komut kanalında kullanın!**').then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
+    message.reply('❌ Bu kanalda komut kullanımı engellenmiştir! Lütfen **başka bir kanalda veya bot komut kanalında kullanın!**').then(m => setTimeout(() => m.delete().catch(() => {}), 5000)).catch(() => {});
+    return true;
   }
 
-  // 5.1. Dinamik Engellenmiş Komut Kontrolü (Sadece Sunucu İçi)
+  // 5.1. Dinamik Engellenmiş Komut Kontrolü
   if (message.guild && message.channel) {
     const disableKey = `${message.guild.id}_${message.channel.id}`;
     if (disabledCommands.has(disableKey) && disabledCommands.get(disableKey).has(command.name)) {
-      return message.reply('❌ Bu komut bu kanalda yetkililer tarafından engellenmiştir.');
+      message.reply('❌ Bu komut bu kanalda yetkililer tarafından engellenmiştir.').catch(() => {});
+      return true;
     }
   }
 
   // 6. Özel Yetki Kontrolü
-  const permCheck = await checkPermissions(message, command.userPermissions, command.botPermissions);
-  if (!permCheck.pass) {
-    return message.reply(permCheck.error);
+  try {
+    const permCheck = await checkPermissions(message, command.userPermissions, command.botPermissions, client);
+    if (!permCheck.pass) {
+      message.reply(permCheck.error).catch(() => {});
+      return true;
+    }
+  } catch (permErr) {
+    console.warn('[PermCheck Error]:', permErr.message);
   }
 
   // 7. Komutu Çalıştır
@@ -247,7 +372,7 @@ async function handleGuildMessage(message, client) {
     return true;
   } catch (err) {
     logger.error('KOMUT HATASI', `e!${commandName} komutunda hata:`, err);
-    message.reply('❌ Komut çalıştırılırken bir hata oluştu. Hata kaydedildi.').catch(() => {});
+    message.reply(`❌ **e!${commandName}** komutu çalıştırılırken bir hata oluştu: \`${err.message || 'Bilinmeyen hata'}\``).catch(() => {});
     return true;
   }
 }

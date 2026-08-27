@@ -83,7 +83,7 @@ async function checkServiceHealth(service) {
 }
 
 async function performSystemCheck(client) {
-  if (!client || !client.isReady()) {
+  if (!client || (typeof client.isReady === 'function' && !client.isReady())) {
     logger.warn('MONİTOR', 'Client hazır olmadığı için sistem kontrolü atlandı.');
     return { allActive: false, results: [], uptimeStr: '0 saniye' };
   }
@@ -128,7 +128,7 @@ async function performSystemCheck(client) {
 
   // Bildirim Kanalında TEK DÜZ METİN MESAJI YÖNETİMİ (1518692466860101915)
   try {
-    const channel = await client.channels.fetch(config.STATUS_CHANNEL_ID).catch(() => null);
+    const channel = client?.channels?.fetch ? await client.channels.fetch(config.STATUS_CHANNEL_ID).catch(() => null) : null;
     if (channel && channel.isTextBased()) {
       let targetMessage = null;
 

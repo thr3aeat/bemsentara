@@ -1212,7 +1212,7 @@ Lütfen ${dateStr} tarihi için:
 
       let aiContent = "";
       try {
-        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1000, temperature: 0.65 });
         if (!aiContent || aiContent.trim().length < 120) {
           throw new Error("AI yanıtı yetersiz");
         }
@@ -1220,11 +1220,17 @@ Lütfen ${dateStr} tarihi için:
         aiContent = getHistoricalFallbackEvent(day, month);
       }
 
+      if (aiContent && aiContent.length > 4000) {
+        aiContent = aiContent.substring(0, 3990) + "\n\n*(Devamı kesildi...)*";
+      }
+
+      const botAvatar = message.client?.user ? message.client.user.displayAvatarURL() : undefined;
+
       const embed = new EmbedBuilder()
         .setTitle(embedTitle)
         .setDescription(aiContent)
         .setColor(embedColor)
-        .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: message.client.user?.displayAvatarURL() })
+        .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: botAvatar })
         .setTimestamp();
 
       if (specialDay) {

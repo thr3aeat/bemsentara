@@ -4022,6 +4022,42 @@ function initializeDiscordHandlers(client) {
         return;
       }
 
+      // ── Akıllı Komut Öneri Butonları (cmd_suggest_) ────────────────────────
+      if (interaction.isButton() && interaction.customId?.startsWith('cmd_suggest_')) {
+        const { createRoleBasedHelpPayload } = require('../services/helpService');
+        const customId = interaction.customId;
+
+        if (customId.startsWith('cmd_suggest_all_')) {
+          const payload = createRoleBasedHelpPayload(interaction.member, interaction.user);
+          await interaction.update(payload).catch(() => {});
+          return;
+        } else if (customId.startsWith('cmd_suggest_run_')) {
+          const parts = customId.split('_');
+          const cmdName = parts.slice(4).join('_') || parts[3];
+          const { commands } = require('../ekoyildiz/commands');
+          const targetCmd = commands.get(cmdName?.toLowerCase());
+          if (targetCmd) {
+            await interaction.reply({
+              content: `💡 **e!${cmdName}** komutu:\n*${targetCmd.description || 'Açıklama mevcut değil'}*\nKullanım: \`e!${targetCmd.name}\``,
+              ephemeral: true
+            }).catch(() => {});
+          } else {
+            const payload = createRoleBasedHelpPayload(interaction.member, interaction.user);
+            await interaction.update(payload).catch(() => {});
+          }
+          return;
+        }
+      }
+
+      // ── Rol Tabanlı Komut Kategori Dropdown Menüsü ──────────────────────────
+      if (interaction.isStringSelectMenu() && (interaction.customId?.startsWith('s_help_role_select_') || interaction.customId === 's_help_category_select')) {
+        const { createRoleBasedHelpPayload } = require('../services/helpService');
+        const selectedCat = interaction.values?.[0];
+        const payload = createRoleBasedHelpPayload(interaction.member, interaction.user, selectedCat);
+        await interaction.update(payload).catch(() => {});
+        return;
+      }
+
       // ── Verification Code Butonu ──────────────────────────────────────────
       if (interaction.isButton() && interaction.customId?.startsWith('verify_show_code_')) {
         const code = interaction.customId.split('_')[3];

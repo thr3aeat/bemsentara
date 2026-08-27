@@ -19,8 +19,9 @@ function createDiscordClient() {
       Partials.User,
     ],
     rest: {
-      // Rate limit alınırsa beklemek yerine hemen hata fırlat (discord.js v14+)
-      rejectOnRateLimit: () => true,
+      // Discord.js varsayılan akıllı kuyruk yönetimi (Rate limit alınırsa otomatik bekler ve tekrar dener)
+      retries: 3,
+      timeout: 15000,
     },
   });
 }

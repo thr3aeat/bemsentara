@@ -154,12 +154,16 @@ Lütfen ${dateStr} tarihi için:
 
       let aiContent = "";
       try {
-        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+        aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1000, temperature: 0.65 });
         if (!aiContent || aiContent.trim().length < 120) {
           throw new Error("AI yanıtı yetersiz");
         }
       } catch (aiErr) {
         aiContent = getHistoricalFallbackEvent(day, month);
+      }
+
+      if (aiContent && aiContent.length > 4000) {
+        aiContent = aiContent.substring(0, 3990) + "\n\n*(Devamı kesildi...)*";
       }
 
       const embed = new EmbedBuilder()

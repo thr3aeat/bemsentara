@@ -1,24 +1,137 @@
 const cron = require("node-cron");
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
 const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1518692463177498674";
 
+// Günlük paylaşım takip durumu (YYYY-MM-DD)
+let lastPostedDateTR = null;
+let isPostingInProgress = false;
+
 /**
- * Her gün sabah 09:00'da tarih ve özel gün paylaşımı yapar.
+ * Türkiye (Europe/Istanbul) saat dilimine göre güncel tarih bilgilerini döner.
+ */
+function getTurkeyTimeInfo() {
+  const now = new Date();
+  const trDateStr = now.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }); // "YYYY-MM-DD"
+  const trHour = parseInt(now.toLocaleTimeString("en-GB", { timeZone: "Europe/Istanbul", hour12: false, hour: "2-digit" }), 10);
+  
+  // TR saat dilimindeki gün ve ay bilgisi
+  const dayStr = now.toLocaleDateString("en-US", { timeZone: "Europe/Istanbul", day: "numeric" });
+  const monthStr = now.toLocaleDateString("en-US", { timeZone: "Europe/Istanbul", month: "numeric" });
+  const day = parseInt(dayStr, 10);
+  const month = parseInt(monthStr, 10) - 1; // 0-indexed
+
+  return { now, trDateStr, trHour, day, month };
+}
+
+/**
+ * Kanalda bugüne ait bir "Tarihte Bugün" mesajı zaten atılmış mı kontrol eder.
+ * @param {import('discord.js').TextChannel} channel
+ * @param {string} dateHeaderStr - Örn: "27 Ağustos"
+ * @returns {Promise<boolean>}
+ */
+async function hasAlreadyPostedToday(channel, dateHeaderStr) {
+  try {
+    if (!channel || !channel.isTextBased()) return false;
+    const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+    if (!messages) return false;
+
+    const todayEmbed = messages.find(m => {
+      if (!m.embeds || m.embeds.length === 0) return false;
+      const title = m.embeds[0]?.title || "";
+      return title.includes("Tarihte Bugün") && title.includes(dateHeaderStr);
+    });
+
+    return !!todayEmbed;
+  } catch (err) {
+    console.warn("⚠️ [EkoYildizHistoryAI] Mesaj geçmişi kontrol hatası:", err.message);
+    return false;
+  }
+}
+
+/**
+ * Günlük kontrolü yapar ve gerekiyorsa otomatik paylaşır.
+ * @param {import('discord.js').Client} client
+ */
+async function checkAndCatchUpEkoYildizHistory(client) {
+  if (isPostingInProgress) return;
+
+  const { trDateStr, trHour, day, month } = getTurkeyTimeInfo();
+  const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  const dateHeaderStr = `${day} ${months[month]}`;
+
+  // Hafızada zaten bugün paylaşıldığı kayıtlıysa geç
+  if (lastPostedDateTR === trDateStr) {
+    return;
+  }
+
+  // Sabah 09:00 veya sonrasıysa kontrol et
+  if (trHour >= 9) {
+    try {
+      const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
+      if (channel && channel.isTextBased()) {
+        const alreadySent = await hasAlreadyPostedToday(channel, dateHeaderStr);
+        if (alreadySent) {
+          lastPostedDateTR = trDateStr;
+          console.log(`ℹ️ [EkoYildizHistoryAI] ${dateHeaderStr} Tarihte Bugün mesajı kanalda zaten mevcut, tekrar atılmadı.`);
+          return;
+        }
+
+        console.log(`🕒 [EkoYildizHistoryAI] ${dateHeaderStr} için Tarihte Bugün paylaşımı başlatılıyor...`);
+        isPostingInProgress = true;
+        const success = await postEkoYildizHistory(client);
+        if (success) {
+          lastPostedDateTR = trDateStr;
+        }
+      }
+    } catch (err) {
+      console.error("❌ [EkoYildizHistoryAI] Catch-up kontrol hatası:", err);
+    } finally {
+      isPostingInProgress = false;
+    }
+  }
+}
+
+/**
+ * Her gün sabah 09:00'da (TR Saati) tarih ve özel gün paylaşımı yapar.
+ * Ayrıca bot başladığında ve 15 dakikada bir otomatik kontrol yaparak gün kaçırılmasını engeller.
  * @param {import('discord.js').Client} client
  */
 function startEkoYildizHistoryScheduler(client) {
+  // 1. Cron: Her gün 09:00 Europe/Istanbul
   cron.schedule("0 9 * * *", async () => {
     try {
-      console.log("🕒 [EkoYildizHistoryAI] Günlük görev başlatılıyor...");
-      await postEkoYildizHistory(client);
+      console.log("🕒 [EkoYildizHistoryAI] 09:00 TR Zamanlanmış görevi tetiklendi...");
+      await checkAndCatchUpEkoYildizHistory(client);
     } catch (err) {
       console.error("❌ [EkoYildizHistoryAI] Cron hatası:", err);
     }
+  }, {
+    timezone: "Europe/Istanbul"
   });
+
+  // 2. Periyodik Kontrol: Her 15 dakikada bir kontrol et (Kaçan gün/saatleri telafi etmek için)
+  cron.schedule("*/15 * * * *", async () => {
+    try {
+      await checkAndCatchUpEkoYildizHistory(client);
+    } catch (err) {
+      console.error("❌ [EkoYildizHistoryAI] 15dk telafi kontrol hatası:", err.message);
+    }
+  }, {
+    timezone: "Europe/Istanbul"
+  });
+
+  // 3. Bot hazır olduğunda 5 sn sonra telafi kontrolü yap
+  setTimeout(() => {
+    checkAndCatchUpEkoYildizHistory(client).catch(err => {
+      console.error("❌ [EkoYildizHistoryAI] Başlangıç kontrol hatası:", err.message);
+    });
+  }, 5000);
+
+  console.log("✅ [EkoYildizHistoryAI] 7/24 Kesintisiz Tarihte Bugün Zamanlayıcısı (Europe/Istanbul) Aktif.");
 }
 
 /**
@@ -31,23 +144,26 @@ async function postEkoYildizHistory(client, customDate = null) {
     const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
     if (!channel || !channel.isTextBased()) {
       console.warn("⚠️ [EkoYildizHistoryAI] Hedef kanal bulunamadı veya metin kanalı değil:", TARGET_CHANNEL_ID);
-      return;
+      return false;
     }
 
-    const today = customDate instanceof Date ? customDate : new Date();
-    const day = today.getDate();
-    const month = today.getMonth();
+    const { day, month, now } = customDate ? {
+      day: customDate.getDate(),
+      month: customDate.getMonth(),
+      now: customDate
+    } : getTurkeyTimeInfo();
+
     const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     const dateStr = `${day} ${months[month]}`;
 
-    const yesterday = new Date(today);
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayDay = yesterday.getDate();
     const yesterdayMonth = months[yesterday.getMonth()];
     const yesterdayStr = `${yesterdayDay} ${yesterdayMonth}`;
 
     // 1. Özel Gün / Bayram Kontrolü
-    const specialDay = getSpecialDayInfo(today);
+    const specialDay = getSpecialDayInfo(now);
     const isFirstDayOfMonth = (day === 1 && !specialDay);
 
     let embedTitle = `📅 Tarihte Bugün – ${dateStr}`;
@@ -98,7 +214,7 @@ Lütfen ${dateStr} tarihi için:
 
     let aiContent = "";
     try {
-      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1600, temperature: 0.65 });
+      aiContent = await chatWithAI([{ role: 'user', content: userPrompt }], systemPrompt, 'ticket', { max_tokens: 1000, temperature: 0.65 });
       if (!aiContent || aiContent.trim().length < 120) {
         throw new Error("AI yanıtı yetersiz veya çok kısa");
       }
@@ -114,18 +230,23 @@ Lütfen ${dateStr} tarihi için:
       }
     }
 
+    if (aiContent && aiContent.length > 4000) {
+      aiContent = aiContent.substring(0, 3990) + "\n\n*(Devamı kesildi...)*";
+    }
+
+    const botAvatar = client.user ? client.user.displayAvatarURL() : undefined;
+
     const embed = new EmbedBuilder()
       .setTitle(embedTitle)
       .setDescription(aiContent)
       .setColor(embedColor)
-      .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: client.user.displayAvatarURL() })
+      .setFooter({ text: "EkoYıldız Genişletilmiş Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: botAvatar })
       .setTimestamp();
 
     if (specialField) {
       embed.addFields(specialField);
     }
 
-    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
     const historyRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`tb_detail_ataturk_${day}_${month}`)
@@ -172,5 +293,6 @@ Lütfen ${dateStr} tarihi için:
 
 module.exports = {
   startEkoYildizHistoryScheduler,
-  postEkoYildizHistory
+  postEkoYildizHistory,
+  checkAndCatchUpEkoYildizHistory
 };

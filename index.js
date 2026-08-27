@@ -200,12 +200,33 @@ discordBot.once("ready", async () => {
   }
 });
 
-cron.schedule("*/14 * * * *", async () => {
+// ── 7/24 Kesintisiz Çalışma: Global Çökme Önleyici (Anti-Crash) ─────────────
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("[7/24 Anti-Crash] Yakalanmamış Promise Reddi (unhandledRejection):", reason?.stack || reason?.message || reason);
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("[7/24 Anti-Crash] Yakalanmamış İstisna (uncaughtException):", err?.stack || err?.message || err);
+});
+
+process.on("uncaughtExceptionMonitor", (err) => {
+  logger.error("[7/24 Anti-Crash] İstisna Gözlemcisi:", err?.message || err);
+});
+
+// ── 7/24 Self-Ping Keep-Alive (Her 4 dakikada bir sunucuyu uyanık tut) ────────
+cron.schedule("*/4 * * * *", async () => {
   try {
-    await axios.get(`${BASE_URL}/api/health`);
-    logger.info(`Self-ping OK`);
+    const healthUrl = `${BASE_URL}/api/health`;
+    await axios.get(healthUrl, { timeout: 8000 });
+    logger.info(`7/24 Self-ping OK (${healthUrl})`);
   } catch (e) {
-    logger.warn("Self-ping failed:", e.message);
+    // Alternatif endpoint dene
+    try {
+      await axios.get(`${BASE_URL}/`, { timeout: 8000 });
+      logger.info(`7/24 Self-ping OK (fallback /)`);
+    } catch (fallbackErr) {
+      logger.warn("7/24 Self-ping failed:", fallbackErr.message);
+    }
   }
 });
 
