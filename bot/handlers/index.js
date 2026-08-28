@@ -1797,6 +1797,26 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Sahte / Seed İtiraf Simülasyonu Tetikleme (-itiraf-seed / .itiraf-seed / !itiraf-seed) ──
+    if (message.guild && (lowerContent.startsWith("-itiraf-seed") || lowerContent.startsWith(".itiraf-seed") || lowerContent.startsWith("!itiraf-seed") || lowerContent.startsWith("e!itiraf-seed"))) {
+      try {
+        const isAdmin = message.member?.permissions?.has("Administrator") || message.author.id === "1031620522406072350";
+        if (!isAdmin) {
+          return message.reply("❌ Bu komutu yalnızca **yöneticiler** kullanabilir.");
+        }
+        const { triggerSeedActivity } = require("../services/confessionService");
+        const seedId = await triggerSeedActivity(message.client);
+        if (seedId) {
+          await message.reply({ content: `✅ **Aktivite Simülasyon İtirafı (#${seedId}) paylaşıldı!**\n⏳ 2-5 dk sonra organik tepkiler, 5-10 dk sonra thread altına sahte anonim yorumlar gelecektir.` }).catch(() => {});
+        } else {
+          await message.reply({ content: "❌ Seed aktivitesi tetiklenirken bir hata oluştu." }).catch(() => {});
+        }
+        return;
+      } catch (seedErr) {
+        console.error("[-itiraf-seed komut hatası]:", seedErr.message);
+      }
+    }
+
     // ── EkoYıldız Destekçiler Komutu (-destekci / -destekçi / -supporters) ──
     if (message.guild && (lowerContent.startsWith('-destekci') || lowerContent.startsWith('-destekçi') || lowerContent.startsWith('-supporters'))) {
       try {
