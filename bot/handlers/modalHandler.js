@@ -211,6 +211,20 @@ async function handleModalSubmit(interaction) {
     return interaction.reply({ embeds: [responseEmbed], components: [row], ephemeral: true });
   }
 
+  // ── İtiraf & Anonim Köprü Sistemi Modalleri ─────────────────────────────────
+  if (interaction.customId.startsWith('confession_modal_create_')) {
+    const { handleConfessionModalSubmit } = require('../services/confessionService');
+    return handleConfessionModalSubmit(interaction);
+  }
+  if (interaction.customId.startsWith('confession_modal_unlock_')) {
+    const { handleUnlockModalSubmit } = require('../services/confessionService');
+    return handleUnlockModalSubmit(interaction);
+  }
+  if (interaction.customId.startsWith('confession_modal_thread_reply_')) {
+    const { handleThreadReplyModalSubmit } = require('../services/confessionService');
+    return handleThreadReplyModalSubmit(interaction);
+  }
+
   // ── Birim İçi Talep / Emir Modalleri ──────────────────────────────────────
   if (interaction.customId.startsWith('modal_unit_')) {
     const { handleRequestModal } = require("../services/unitRequestService");

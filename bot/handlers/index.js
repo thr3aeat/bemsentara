@@ -440,6 +440,16 @@ function initializeDiscordHandlers(client) {
       console.error('[RulesService] Yükleme Hatası:', err.message);
     }
 
+    // İtiraf & Anonim Köprü Sistemini Başlat (Discord Components V2)
+    try {
+      const { ensureConfessionPanel } = require('../services/confessionService');
+      await ensureConfessionPanel(client).catch(err => {
+        console.error('[ConfessionService] Başlatma Hatası:', err.message);
+      });
+    } catch (err) {
+      console.error('[ConfessionService] Yükleme Hatası:', err.message);
+    }
+
 
     // Sunucu Yetki ve Güvenlik Denetimi (Eko 1031620522406072350 Kontrolü)
     try {
@@ -1635,6 +1645,15 @@ function initializeDiscordHandlers(client) {
       if (handled) return;
     } catch (_) {}
 
+    // ── İtiraf Anonim Köprü (Ghost Bridge Relay): DM Mesajlarını Yönlendir ──
+    try {
+      const { handleDirectMessageRelay } = require('../services/confessionService');
+      const handled = await handleDirectMessageRelay(message);
+      if (handled) return;
+    } catch (confRelayErr) {
+      console.error('[ConfessionRelay Error]:', confRelayErr.message);
+    }
+
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
 
@@ -1758,6 +1777,22 @@ function initializeDiscordHandlers(client) {
         return;
       } catch (rulesErr) {
         console.error("[-kurallar komut hatası]:", rulesErr.message);
+      }
+    }
+
+    // ── İtiraf Paneli Yenileme Komutu (-itiraf-panel / .itiraf-panel / !itiraf-panel) ──
+    if (message.guild && (lowerContent.startsWith("-itiraf-panel") || lowerContent.startsWith(".itiraf-panel") || lowerContent.startsWith("!itiraf-panel") || lowerContent.startsWith("e!itiraf-panel"))) {
+      try {
+        const isAdmin = message.member?.permissions?.has("Administrator") || message.author.id === "1031620522406072350";
+        if (!isAdmin) {
+          return message.reply("❌ Bu komutu yalnızca **yöneticiler** kullanabilir.");
+        }
+        const { ensureConfessionPanel } = require("../services/confessionService");
+        await ensureConfessionPanel(message.client);
+        await message.reply({ content: "✅ **İtiraf oluşturma paneli (Components V2, accent colorsuz) başarıyla güncellendi/gönderildi!**" }).catch(() => {});
+        return;
+      } catch (panelErr) {
+        console.error("[-itiraf-panel komut hatası]:", panelErr.message);
       }
     }
 

@@ -98,6 +98,56 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── Gelişmiş İtiraf & Anonim Köprü Sistemi Butonları ─────────────────────────
+  if (customId.startsWith('confession_')) {
+    const confessionService = require('../services/confessionService');
+    if (customId === 'confession_btn_public') {
+      return confessionService.openConfessionModal(interaction, 'public');
+    }
+    if (customId === 'confession_btn_anonymous') {
+      return confessionService.openConfessionModal(interaction, 'anonymous');
+    }
+    if (customId === 'confession_btn_locked') {
+      return confessionService.openConfessionModal(interaction, 'locked');
+    }
+    if (customId.startsWith('confession_react_')) {
+      const parts = customId.replace('confession_react_', '').split('_');
+      const reactionType = parts[0];
+      const confessionId = parts[1];
+      return confessionService.handleConfessionReaction(interaction, confessionId, reactionType);
+    }
+    if (customId.startsWith('confession_dm_author_')) {
+      const confessionId = customId.replace('confession_dm_author_', '');
+      return confessionService.handleConfessionDMStart(interaction, confessionId);
+    }
+    if (customId.startsWith('confession_thread_reply_')) {
+      const confessionId = customId.replace('confession_thread_reply_', '');
+      return confessionService.openThreadReplyModal(interaction, confessionId);
+    }
+    if (customId.startsWith('confession_unlock_')) {
+      const confessionId = customId.replace('confession_unlock_', '');
+      return confessionService.openUnlockModal(interaction, confessionId);
+    }
+    if (customId.startsWith('confession_report_')) {
+      const confessionId = customId.replace('confession_report_', '');
+      return confessionService.handleConfessionReport(interaction, confessionId);
+    }
+    if (customId.startsWith('confession_bridge_')) {
+      const rest = customId.replace('confession_bridge_', '');
+      const firstUnder = rest.indexOf('_');
+      const action = rest.substring(0, firstUnder);
+      const sessionId = rest.substring(firstUnder + 1);
+      return confessionService.handleBridgeButton(interaction, action, sessionId);
+    }
+    if (customId.startsWith('confession_mod_')) {
+      const rest = customId.replace('confession_mod_', '');
+      const firstUnder = rest.indexOf('_');
+      const action = rest.substring(0, firstUnder);
+      const targetId = rest.substring(firstUnder + 1);
+      return confessionService.handleModQueueAction(interaction, action, targetId);
+    }
+  }
+
   // ── 2 Günde Bir Moderatör DM İpucu & Kontrol Butonları ───────────────────
   if (customId === 'btn_modcheck_open_modal' || customId === 'modcheck_open_modal') {
     const { handleModCheckOpenModal } = require('../services/modCheckService');
