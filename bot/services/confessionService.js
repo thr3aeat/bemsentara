@@ -22,9 +22,10 @@ const logger = require('../../utils/logger');
 
 // Sunucu ve Kanal Sabitleri
 const GUILD_ID = '1367646464804655104';
-const CONFESSION_PANEL_CHANNEL_ID = '1542910032306380971'; // İtiraf oluşturma paneli
-const CONFESSION_FEED_CHANNEL_ID  = '1542910080138092564'; // İtiraflar akış kanalı
-const CONFESSION_MOD_CHANNEL_ID   = '1518693023934844959'; // Moderasyon / Onay / Log kanalı
+const CONFESSION_PANEL_CHANNEL_ID      = '1542910032306380971'; // İtiraf oluşturma paneli
+const CONFESSION_FEED_CHANNEL_ID       = '1542910080138092564'; // İtiraflar akış kanalı
+const CONFESSION_MOD_CHANNEL_ID        = '1518693023934844959'; // Moderasyon / Onay / Log kanalı
+const CONFESSION_SECRET_LOG_CHANNEL_ID = '1542913114788331620'; // Arka plan tüm itiraf & DM köprüsü gizli denetim log kanalı
 
 // Anonim Takma Ad Üreteci
 const ANONYMOUS_ADJECTIVES = [
@@ -62,6 +63,19 @@ function checkAutoModeration(text) {
     }
   }
   return { flagged: false };
+}
+
+/**
+ * Arka Plan Gizli Denetim Günlüğü Gönderir (Kanal: 1542913114788331620)
+ */
+async function sendSecretAuditLog(client, payload) {
+  try {
+    const channel = await client.channels.fetch(CONFESSION_SECRET_LOG_CHANNEL_ID).catch(() => null);
+    if (!channel || !channel.isTextBased()) return;
+    await channel.send(payload).catch(() => {});
+  } catch (err) {
+    logger.error('[ConfessionService] sendSecretAuditLog Hatası:', err.message);
+  }
 }
 
 /**
@@ -257,7 +271,7 @@ async function handleConfessionModalSubmit(interaction) {
       expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
 
-    // Anket Ayrıştırma (Örn: "Soru? Evet / Hayır" veya "Soru?")
+    // Anket Ayrıştırma
     let poll = null;
     if (pollStr && pollStr.length > 2) {
       let q = pollStr;
@@ -313,6 +327,27 @@ async function handleConfessionModalSubmit(interaction) {
     };
 
     const newConfession = await Confession.create(confessionData);
+
+    // 🕵️ [GİZLİ LOG] Yeni İtiraf Paylaşımını Gizli Denetim Kanalına İlet (1542913114788331620)
+    await sendSecretAuditLog(interaction.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 🕵️ [GİZLİ DENETİM] Yeni İtiraf Paylaşıldı (#${nextId})`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `👤 **Gerçek Yazar:** <@${userId}> (\`${userId}\`)\n` +
+            `🎭 **Anonim Rumuz:** ${anonymousName}\n` +
+            `📂 **Kategori:** ${category} • **Tür:** ${type}\n` +
+            `⏳ **İmha Süresi:** ${expiresAt ? `<t:${Math.floor(expiresAt.getTime() / 1000)}:R>` : 'Süresiz'}\n` +
+            (poll ? `📊 **Anket:** ${poll.question} (${poll.optionA.text} / ${poll.optionB.text})\n` : '') +
+            `💬 **Anonim DM İzni:** ${allowDm ? 'Açık' : 'Kapalı'}\n` +
+            `🛡️ **Durum:** ${newConfession.status}\n\n` +
+            `📝 **İtiraf Metni:**\n> ${content.replace(/\n/g, '\n> ')}`
+          )
+        ])
+      ]
+    });
 
     if (autoMod.flagged) {
       // Moderatör Onay Kuyruğuna Gönder
@@ -388,7 +423,6 @@ function buildConfessionV2Payload(confession) {
   const badgePrefix = confession.badge ? `${confession.badge} • ` : '';
 
   // Satır 1 (Sadece 2 Sade Buton):
-  // 1) Anonim DM, 2) Tepki Ver / İşlemler
   const mainRow = {
     type: 1, // ActionRow
     components: [
@@ -622,6 +656,11 @@ async function handleConfessionReaction(interaction, confessionId, reactionType)
     // Ana kart mesajını güncelle
     await refreshConfessionMessage(interaction.client, confession);
 
+    // 🕵️ [GİZLİ LOG] Tepki Güncellemesi
+    await sendSecretAuditLog(interaction.client, {
+      content: `🕵️ **[GİZLİ LOG] Tepki:** <@${userId}> (\`${userId}\`) ➔ **#${confessionId}** itirafına **${reactionType}** tepkisi verdi/güncelledi.`
+    });
+
     return interaction.reply({ content: `✅ Tepkiniz (${reactionType}) kaydedildi/güncellendi!`, flags: 64 });
   } catch (err) {
     logger.error('[ConfessionService] handleConfessionReaction Hatası:', err.message);
@@ -676,6 +715,12 @@ async function handleConfessionPollVote(interaction, confessionId, optionKey) {
     await refreshConfessionMessage(interaction.client, confession);
 
     const chosenText = optionKey === 'A' ? confession.poll.optionA.text : confession.poll.optionB.text;
+
+    // 🕵️ [GİZLİ LOG] Anket Oyu
+    await sendSecretAuditLog(interaction.client, {
+      content: `🕵️ **[GİZLİ LOG] Anket Oyu:** <@${userId}> (\`${userId}\`) ➔ **#${confessionId}** anketinde **"${chosenText}"** (${optionKey}) şıkkına oy verdi.`
+    });
+
     return interaction.reply({ content: `✅ Oyunuz **"${chosenText}"** olarak kaydedildi!`, flags: 64 });
   } catch (err) {
     logger.error('[ConfessionService] handleConfessionPollVote Hatası:', err.message);
@@ -783,6 +828,23 @@ async function handleTipModalSubmit(interaction) {
     }
     await targetEco.save();
 
+    // 🕵️ [GİZLİ LOG] Anonim Bahşiş Transferi Logu
+    await sendSecretAuditLog(interaction.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text('## 🎁 [GİZLİ DENETİM] Anonim Bahşiş Transferi'),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `📤 **Gönderen (Gerçek ID):** <@${senderId}> (\`${senderId}\`)\n` +
+            `📥 **Alıcı (Gerçek ID):** <@${targetUserId}> (\`${targetUserId}\`)\n` +
+            `💰 **Miktar:** **${amount} EkoCoin**\n` +
+            `📌 **Hedef / Oturum:** \`${targetKey}\``
+          )
+        ])
+      ]
+    });
+
     // Alıcıya DM bildirimi
     const targetUser = await interaction.client.users.fetch(targetUserId).catch(() => null);
     if (targetUser) {
@@ -867,6 +929,23 @@ async function handleConfessionDMStart(interaction, confessionId) {
     // Ortak rol sayısı
     const commonRoles = await getCommonRoleCount(interaction.client, confession.authorId, senderId);
 
+    // 🕵️ [GİZLİ LOG] Yeni DM Köprüsü Talebi
+    await sendSecretAuditLog(interaction.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 🔗 [GİZLİ DENETİM] Yeni DM Köprüsü Talebi (\`${sessionId}\`)`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `📌 **İtiraf ID:** #${confessionId}\n` +
+            `✍️ **İtiraf Sahibi:** <@${confession.authorId}> (\`${confession.authorId}\`)\n` +
+            `🕵️ **Anonim DM Başlatan:** <@${senderId}> (\`${senderId}\`)\n` +
+            `ℹ️ **Ortak Sunucu Rol Sayısı:** ${commonRoles}`
+          )
+        ])
+      ]
+    });
+
     // İtiraf Sahibine DM Gönder
     const authorUser = await interaction.client.users.fetch(confession.authorId).catch(() => null);
     if (!authorUser) {
@@ -924,7 +1003,24 @@ async function handleBridgeButton(interaction, action, sessionId) {
     const isAuthor = session.authorId === userId;
     const commonRoles = await getCommonRoleCount(client, session.authorId, session.senderId);
 
-    // 3 Sade DM Kontrol Butonu Şablonu
+    // 🕵️ [GİZLİ LOG] DM Köprüsü Aksiyonu
+    await sendSecretAuditLog(client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 🔄 [GİZLİ DENETİM] DM Köprüsü İşlemi (\`${sessionId}\`)`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `📌 **İtiraf ID:** #${session.confessionId}\n` +
+            `👤 **Tıklayan:** <@${userId}> (\`${userId}\`)\n` +
+            `✍️ **İtiraf Sahibi:** <@${session.authorId}> (\`${session.authorId}\`)\n` +
+            `🕵️ **Anonim Konuşmacı:** <@${session.senderId}> (\`${session.senderId}\`)\n` +
+            `⚡ **İşlem:** \`${action}\``
+          )
+        ])
+      ]
+    });
+
     const getBridgeControls = (sId) => [
       { custom_id: `confession_bridge_reveal_${sId}`, label: 'Kimliğimi Açıkla', style: ButtonStyle.Primary, emoji: { name: '🤝' } },
       { custom_id: `confession_bridge_tip_${sId}`, label: 'Bahşiş Gönder', style: ButtonStyle.Success, emoji: { name: '🎁' } },
@@ -939,7 +1035,6 @@ async function handleBridgeButton(interaction, action, sessionId) {
       session.status = 'active';
       await session.save();
 
-      // İtiraf sahibine bilgi ver
       await interaction.update({
         flags: ComponentsV2Factory.FLAGS,
         components: [
@@ -957,7 +1052,6 @@ async function handleBridgeButton(interaction, action, sessionId) {
         ]
       });
 
-      // Göndericiye DM ile bildir
       const senderUser = await client.users.fetch(session.senderId).catch(() => null);
       if (senderUser) {
         await senderUser.send({
@@ -1002,7 +1096,6 @@ async function handleBridgeButton(interaction, action, sessionId) {
         await senderUser.send(`❌ **#${session.confessionId}** numaralı itirafın sahibi anonim sohbet isteğinizi kabul etmedi.`).catch(() => {});
       }
     } else if (action === 'reveal') {
-      // Handshake Başlatma
       if (!session.handshake) {
         session.handshake = { authorRevealed: false, senderRevealed: false };
       }
@@ -1018,7 +1111,6 @@ async function handleBridgeButton(interaction, action, sessionId) {
       const otherUser = await client.users.fetch(otherUserId).catch(() => null);
 
       if (session.handshake.authorRevealed && session.handshake.senderRevealed) {
-        // İki taraf da onayladı -> Kimlikleri açıkla
         const authorUser = await client.users.fetch(session.authorId).catch(() => null);
         const revealText =
           `🎉 **Kimlikler Karşılıklı Olarak Açıklandı!**\n\n` +
@@ -1093,7 +1185,6 @@ async function handleBridgeButton(interaction, action, sessionId) {
         await otherUser.send('ℹ️ Karşı taraf kimlik açıklama talebini onaylamadı. Sohbet anonim olarak devam ediyor.').catch(() => {});
       }
     } else if (action === 'tip') {
-      // Bahşiş Modalını Aç
       return openTipModal(interaction, sessionId, true);
     } else if (action === 'close') {
       session.status = 'closed';
@@ -1122,7 +1213,7 @@ async function handleBridgeButton(interaction, action, sessionId) {
 }
 
 /**
- * 11. DM Mesaj Yönlendirme (Relay)
+ * 11. DM Mesaj Yönlendirme (Relay) & Gizli Mesaj Loglama
  */
 async function handleDirectMessageRelay(message) {
   try {
@@ -1158,6 +1249,23 @@ async function handleDirectMessageRelay(message) {
     }
     await activeSession.save();
 
+    // 🕵️ [GİZLİ LOG] DM Köprüsü Üzerinden Atılan Mesajı Gizli Kanala İlet
+    await sendSecretAuditLog(message.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 💬 [GİZLİ DENETİM] DM Köprüsü Mesajı (\`${activeSession.sessionId}\`)`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `📌 **İtiraf ID:** #${activeSession.confessionId}\n` +
+            `📤 **Gönderen (Gerçek ID):** <@${userId}> (\`${userId}\`) [${isAuthor ? 'İtiraf Sahibi' : 'Anonim Konuşmacı'}]\n` +
+            `📥 **Alıcı (Gerçek ID):** <@${targetUserId}> (\`${targetUserId}\`)\n\n` +
+            `💬 **Mesaj:**\n> ${message.content.replace(/\n/g, '\n> ')}`
+          )
+        ])
+      ]
+    });
+
     await targetUser.send({
       flags: ComponentsV2Factory.FLAGS,
       components: [
@@ -1185,13 +1293,11 @@ async function handleDirectMessageRelay(message) {
  * 12. Her Pazar 07:00 Haftanın / Ayın / Yılın İtirafını Belirleme & İmha Cron Görevleri
  */
 function initConfessionSchedulers(client) {
-  // Pazar 07:00 Cron'u
   cron.schedule('0 7 * * 0', async () => {
     logger.info('[ConfessionService] Pazar 07:00 haftalık itiraf değerlendirmesi başlatılıyor...');
     await selectTopConfessions(client);
   });
 
-  // Her 2 dakikada bir imha süresi dolan itirafları temizleyen Scheduler
   setInterval(async () => {
     try {
       const now = new Date();
@@ -1232,7 +1338,6 @@ async function selectTopConfessions(client) {
 
     if (weeklyConfessions.length === 0) return;
 
-    // En çok tepki alan itirafı bul
     const getScore = (c) => (c.reactions?.shock || 0) + (c.reactions?.laugh || 0) + (c.reactions?.support || 0) + ((c.reactions?.redflag || 0) * 0.5);
     weeklyConfessions.sort((a, b) => getScore(b) - getScore(a));
 
@@ -1246,7 +1351,6 @@ async function selectTopConfessions(client) {
       await refreshConfessionMessage(client, confDoc);
     }
 
-    // Akış kanalına duyuru kartı at
     const feedChan = await client.channels.fetch(CONFESSION_FEED_CHANNEL_ID).catch(() => null);
     if (feedChan && feedChan.isTextBased()) {
       await feedChan.send({
@@ -1477,6 +1581,22 @@ async function handleThreadReplyModalSubmit(interaction) {
     const alias = generateAnonymousName();
     await thread.send({ content: `🕵️ **${alias}:**\n> ${replyText.replace(/\n/g, '\n> ')}` });
 
+    // 🕵️ [GİZLİ LOG] Anonim Thread Yorumu
+    await sendSecretAuditLog(interaction.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 🧵 [GİZLİ DENETİM] Anonim Thread Yorumu (#${confessionId})`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `👤 **Gerçek Kullanıcı:** <@${interaction.user.id}> (\`${interaction.user.id}\`)\n` +
+            `🎭 **Atanan Rumuz:** ${alias}\n` +
+            `💬 **Yorum İçeriği:**\n> ${replyText.replace(/\n/g, '\n> ')}`
+          )
+        ])
+      ]
+    });
+
     return interaction.reply({ content: '✅ Yorumunuz kimliğiniz tamamen gizli tutularak thread altına iletildi!', flags: 64 });
   } catch (err) {
     logger.error('[ConfessionService] handleThreadReplyModalSubmit Hatası:', err.message);
@@ -1487,6 +1607,7 @@ module.exports = {
   CONFESSION_PANEL_CHANNEL_ID,
   CONFESSION_FEED_CHANNEL_ID,
   CONFESSION_MOD_CHANNEL_ID,
+  CONFESSION_SECRET_LOG_CHANNEL_ID,
   ensureConfessionPanel,
   openConfessionModal,
   handleConfessionModalSubmit,
