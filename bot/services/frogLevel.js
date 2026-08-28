@@ -28,6 +28,112 @@ const FROG_ROLES = [
   { level: 16, name: '🦖 Kral Penguen', id: '1518695643063910541' },
 ];
 
+// ── Seviye Kademe Yetkileri & Ayrıcalıkları (Perks) ──────────────────────────
+const FROG_PERKS = {
+  0: {
+    title: '🦖 Yavru Dinazor — Başlangıç Kademesi',
+    icon: '🦖',
+    summary: 'Temel sohbet ve reaksiyon özgürlüğü.',
+    perks: ['Sohbet kanallarında mesaj gönderebilme', 'Mesajlara emoji reaksiyonu ekleyebilme']
+  },
+  1: {
+    title: '🦕 Uyanık Dinazor — Medya & Görsel Paylaşımı',
+    icon: '🦕',
+    summary: 'Sohbete resim, GIF ve dosya gönderebilme, bağlantı önizlemeleri.',
+    perks: ['Görsel ve dosya yükleme (Attach Files)', 'Zengin link önizlemeleri (Embed Links)']
+  },
+  2: {
+    title: '🧠 Zeki Dinazor — Harici Emoji & Çıkartmalar',
+    icon: '🧠',
+    summary: 'Tüm sunucu emojilerini ve çıkartmalarını serbestçe kullanma.',
+    perks: ['Harici emoji kullanımı (Use External Emojis)', 'Harici çıkartma kullanımı (Use External Stickers)', '+%5 Lucky Drop XP şansı']
+  },
+  3: {
+    title: '👑 Efsane Dinazor — Ses Aktiviteleri & Güvenilirlik',
+    icon: '👑',
+    summary: 'Ses odalarında oyun başlatabilme, itiraf DM köprüsünde güvenilirlik rozeti.',
+    perks: ['Ses odalarında oyun ve etkinlik başlatma (Watch Together vb.)', 'İtiraf sisteminde Güvenilir Üye statüsü']
+  },
+  4: {
+    title: '👹 Boss Dinazor — Ses Paneli (Soundboard)',
+    icon: '👹',
+    summary: 'Ses odalarında ses efektleri ve soundboard çalabilme.',
+    perks: ['Sunucu ses panelini kullanabilme (Use Soundboard)', 'Harici ses paneli efektlerini kullanma (Use External Sounds)']
+  },
+  5: {
+    title: '😎 Havalı Dinazor — Alt Başlık Açma & 1.25x XP Hızı',
+    icon: '😎',
+    summary: 'Sohbette kendi tartışma alt başlıklarını açabilme, kalıcı 1.25x XP hızı.',
+    perks: ['Herkese açık alt başlık (Thread) açabilme', 'Kalıcı 1.25x XP Hız Çarpanı', 'Milestone Başarı Rozeti']
+  },
+  6: {
+    title: '🔥 Olay Dinazor — Yayın & Ekran Paylaşımı',
+    icon: '🔥',
+    summary: 'Ses kanallarında yüksek kalite ekran ve kamera yayını açabilme.',
+    perks: ['Ses odalarında 1080p canlı yayın ve kamera açma (Stream & Video)', 'Öncelikli Konuşmacı ayrıcalığı']
+  },
+  7: {
+    title: '💥 Bela Dinazor — Takma Ad Değiştirme (Change Nickname)',
+    icon: '💥',
+    summary: 'Sunucudaki görünen takma adını özgürce değiştirebilme.',
+    perks: ['Sunucuda kendi ismini/takma adını değiştirme yetkisi', 'Günlük ilk mesajda +100 XP bonusu']
+  },
+  8: {
+    title: '🌪️ Kaos Dinazor — Alt Başlık Yönetimi & Özel Renkler',
+    icon: '🌪️',
+    summary: 'Kendi açtığı threadleri kilitleyebilme ve yönetebilme.',
+    perks: ['Kendi açtığı alt başlıkları yönetme ve kilitleme', 'Özel sohbet rengi ve V2 bileşenleri']
+  },
+  9: {
+    title: '⚡ Alpha Dinazor — Alpha Dinazor & 1.50x XP Hızı',
+    icon: '⚡',
+    summary: 'Alpha Dinazor özel ses odası erişimi ve kalıcı 1.50x XP boostu.',
+    perks: ['Özel Alpha Dinazor ses odalarına giriş', 'Kalıcı 1.50x XP Çarpanı']
+  },
+  10: {
+    title: '😇 İyi Dinazor — Özel Profil Rengi & Biyografi',
+    icon: '😇',
+    summary: '-profilrenk #HEX ve -profilbio ile seviye kartını tamamen özelleştirme.',
+    perks: ['-profilrenk #HEX ile özel kart rengi belirleme', '-profilbio ile özel biyografi ekleme', 'İyi Dinazor Elit Rozeti']
+  },
+  11: {
+    title: '🌀 Garip Dinazor — 1. Sezon Şampiyonu & Pasif Gelir',
+    icon: '🌀',
+    summary: 'Dinazor sezonu finalisti, haftalık düzenli EkoCoin geliri.',
+    perks: ['1. Sezon Şampiyonu Altın Rozeti', 'Haftalık 500 EkoCoin otomatik pasif gelir']
+  },
+  12: {
+    title: '🎮 Oyuncu Penguen — 2. Sezon & Roblox Rank 5',
+    icon: '🎮',
+    summary: 'Roblox EkoYıldız grubunda otomatik Rank 5 terfisi ve sunucu anketleri.',
+    perks: ['Roblox grubunda Seviye 5 Rütbesi', 'Sunucuda resmi anket (Poll) oluşturma yetkisi', '2. Sezon Penguen Hiyerarşisi']
+  },
+  13: {
+    title: '🕶️ Havalı Penguen — Ses Amplifikasyonu & VIP Statü',
+    icon: '🕶️',
+    summary: 'Ses odalarında ses düzeyini artırabilme ve elit penguen rolü.',
+    perks: ['Ses odalarında ses düzeyi amplifikasyonu', 'Havalı Penguen Özel Statüsü']
+  },
+  14: {
+    title: '🚀 Hiper Penguen — 2.0x XP Boost & VIP Çekilişler',
+    icon: '🚀',
+    summary: 'Kalıcı 2.0x XP hızı ve özel VIP çekilişlerine katılım hakkı.',
+    perks: ['Kalıcı 2.0x XP Hız Çarpanı (Sohbet & Ses)', 'Özel VIP Çekilişlerine Katılım Hakkı']
+  },
+  15: {
+    title: '🌋 Volkanik Penguen — Özel Kişisel Discord Rolü (-ozelrol)',
+    icon: '🌋',
+    summary: 'Kendi adına özel isimli ve renkli kişisel Discord rolü oluşturabilme.',
+    perks: ['Sunucuda kendine özel renkli rol oluşturma (-ozelrol)', 'Kişisel rolü yönetebilme']
+  },
+  16: {
+    title: '🦖 Kral Penguen — Efsanevi Maksimum Seviye',
+    icon: '👑',
+    summary: 'Sunucunun en üst düzey şampiyonu, tam VIP erişimi ve ebedi kral tacı.',
+    perks: ['Sunucu İçi Kral Penguen & Sentara Efsanesi Statüsü', 'Tüm bot VIP komutlarına tam erişim', 'Kalıcı 2.50x XP Hızı & Ebedi Taç']
+  }
+};
+
 // ── Her seviye için gereken XP (Dengeli Artış Eğrisi - Az Daha Zorlaştırılmış) ──
 // 180 base XP, her seviyede %40 artış + seviye başı bonus XP (1.40 çarpan)
 function xpToNextLevel(currentLevel) {
@@ -132,18 +238,30 @@ async function addMessageXP(member, client) {
     xpGain *= 2;
   }
 
+  // Level Perks Hız Çarpanları (Level 5+: 1.25x, Level 9+: 1.50x, Level 14+: 2.0x, Level 16: 2.5x)
+  if (p.level >= 16) {
+    xpGain = Math.ceil(xpGain * 2.5);
+  } else if (p.level >= 14) {
+    xpGain = Math.ceil(xpGain * 2.0);
+  } else if (p.level >= 9) {
+    xpGain = Math.ceil(xpGain * 1.5);
+  } else if (p.level >= 5) {
+    xpGain = Math.ceil(xpGain * 1.25);
+  }
+
   // Server booster multiplier (2x XP)
   if (member.premiumSince) {
     xpGain = Math.ceil(xpGain * 2);
   }
 
-  // 🎲 Lucky Drop (Şanslı Mesaj Bonusu - %5 Şansla 10-30 XP)
-  if (Math.random() < 0.05) {
+  // 🎲 Lucky Drop (Level 2+ olanlara %10 şansla, diğerlerine %5 şansla 10-30 XP)
+  const luckyChance = p.level >= 2 ? 0.10 : 0.05;
+  if (Math.random() < luckyChance) {
     const bonusXp = Math.floor(Math.random() * 20) + 10;
     xpGain += bonusXp;
   }
 
-  // 📅 Günlük Seri / Giriş Bonusu (Günün ilk mesajında +50 XP)
+  // 📅 Günlük Seri / Giriş Bonusu (Level 7+ için +100 XP, diğerleri için +50 XP)
   const today = todayStr();
   let lastMsgDate = null;
   if (p.lastMessageAt) {
@@ -154,7 +272,8 @@ async function addMessageXP(member, client) {
   }
 
   if (lastMsgDate !== today) {
-    xpGain += 50; // Günün ilk mesajı için +50 XP bonus
+    const dailyBonus = p.level >= 7 ? 100 : 50;
+    xpGain += dailyBonus;
     p.dailyStreak = (p.dailyStreak || 0) + 1;
   }
 
@@ -448,38 +567,37 @@ async function levelUp(p, member, client) {
   const newRoleInfo = FROG_ROLES[newLevel];
   const isSeason2Transition = newLevel === 12;
 
-  // ── Sunucu İçi Genel Duyuru (SADECE Milestone Seviyelerde: 5, 10, 12, 16) ─────────────
-  // Sıradan seviyelerde (1, 2, 3, 4, 6, 7...) kanala duyuru geçilmez, spam önlenir!
+  // ── Sunucu İçi Genel Duyuru (SADECE Milestone Seviyelerde: 5, 10, 12, 16 veya her seviye) ─────────────
   const isMilestone = [5, 10, 12, 16].includes(newLevel);
+  const unlockedPerk = FROG_PERKS[newLevel];
 
-  if (isMilestone) {
-    try {
-      const guild = member.guild;
-      const channel = await guild.channels.fetch(LEVEL_LOG_CHANNEL_ID).catch(() => null) ||
-        guild.channels.cache.get(LEVEL_LOG_CHANNEL_ID) ||
-        guild.channels.cache.find(c => c.isTextBased?.() && (c.name.includes('seviye') || c.name.includes('genel'))) ||
-        guild.systemChannel;
+  try {
+    const guild = member.guild;
+    const channel = await guild.channels.fetch(LEVEL_LOG_CHANNEL_ID).catch(() => null) ||
+      guild.channels.cache.get(LEVEL_LOG_CHANNEL_ID) ||
+      guild.channels.cache.find(c => c.isTextBased?.() && (c.name.includes('seviye') || c.name.includes('genel'))) ||
+      guild.systemChannel;
 
-      if (channel && channel.isTextBased()) {
-        const embed = new EmbedBuilder()
-          .setColor(isFinal ? 0xFFD700 : (isSeason2Transition ? 0xE67E22 : 0x2ECC71))
-          .setTitle(isFinal ? '🏆 EFSANEVİ UNVAN KAZANILDI!' : (isSeason2Transition ? '🐧 2. SEZONA GEÇİŞ YAPILDI!' : '🎉 MİLESTONE SEVİYE ATLADI!'))
-          .setDescription(`**<@${member.id}>** yeni bir dönüm noktasına ulaştı!\n\n` +
-                          `**Önceki Rütbe:** ${FROG_ROLES[oldLevel]?.name}\n` +
-                          `**Yeni Rütbe:** **${newRoleInfo.name}**`)
-          .addFields(
-            { name: '📊 Seviye', value: `\`${newLevel} / ${maxLevel}\``, inline: true },
-            { name: '✨ Toplam XP', value: `\`${p.xp.toLocaleString()} XP\``, inline: true }
-          )
-          .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-          .setFooter({ text: 'Eko Yıldız • Seviye Log Sistemi', iconURL: guild.iconURL() })
-          .setTimestamp();
+    if (channel && channel.isTextBased() && isMilestone) {
+      const embed = new EmbedBuilder()
+        .setColor(isFinal ? 0xFFD700 : (isSeason2Transition ? 0xE67E22 : 0x2ECC71))
+        .setTitle(isFinal ? '🏆 EFSANEVİ UNVAN KAZANILDI!' : (isSeason2Transition ? '🐧 2. SEZONA GEÇİŞ YAPILDI!' : '🎉 MİLESTONE SEVİYE ATLADI!'))
+        .setDescription(`**<@${member.id}>** yeni bir dönüm noktasına ulaştı!\n\n` +
+                        `**Önceki Rütbe:** ${FROG_ROLES[oldLevel]?.name}\n` +
+                        `**Yeni Rütbe:** **${newRoleInfo.name}**\n\n` +
+                        (unlockedPerk ? `🔓 **Açılan Yeni Yetkiler:**\n${unlockedPerk.perks.map(p => `• ${p}`).join('\n')}` : ''))
+        .addFields(
+          { name: '📊 Seviye', value: `\`${newLevel} / ${maxLevel}\``, inline: true },
+          { name: '✨ Toplam XP', value: `\`${p.xp.toLocaleString()} XP\``, inline: true }
+        )
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+        .setFooter({ text: 'Eko Yıldız • Seviye & Yetki Sistemi', iconURL: guild.iconURL() })
+        .setTimestamp();
 
-        await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
-      }
-    } catch (err) {
-      console.warn('[frogLevel] Seviye log kanalına mesaj gönderilemedi:', err.message);
+      await channel.send({ content: `<@${member.id}>`, embeds: [embed] });
     }
+  } catch (err) {
+    console.warn('[frogLevel] Seviye log kanalına mesaj gönderilemedi:', err.message);
   }
 
   // ── DM BİLDİRİM SİSTEMİ (Sadece Yüksek / Kritik Olaylarda) ───────────────
@@ -498,7 +616,8 @@ async function levelUp(p, member, client) {
             `Tebrikler **${member.displayName}**! 🎉\n\n` +
             `İlk sezonu başarıyla tamamlayıp **2. Sezona (Penguen Sezonu)** adım attın! Artık sunucunun en kıdemli üyelerinden birisin.\n\n` +
             `🔹 **Yeni Unvanın:** ${newRoleInfo.name}\n` +
-            `🔹 **Kazanılan Ayrıcalık:** Roblox grubunda otomatik Seviye 5 yetkisi tanımlandı!`
+            `🔹 **Kazanılan Ayrıcalık:** Roblox grubunda otomatik Seviye 5 yetkisi tanımlandı!\n\n` +
+            (unlockedPerk ? `🔓 **Açılan Tüm Yetkiler:**\n${unlockedPerk.perks.map(p => `• ${p}`).join('\n')}` : '')
           )
           .addFields(
             { name: '🔥 Sonraki Hedef', value: 'Penguen hiyerarşisinde zirveye oynamaya devam et!', inline: false }
@@ -512,7 +631,8 @@ async function levelUp(p, member, client) {
             `**İnanılmaz Bir Başarı!** 🏆\n\n` +
             `Sayın **${member.displayName}**, Eko Yıldız sunucusundaki tüm seviye yolculuğunu tamamlayarak **Maksimum Seviyeye** ulaştın!\n\n` +
             `👑 **Açılan Son Rol:** **${newRoleInfo.name}**\n` +
-            `⭐ **Toplam Biriken XP:** \`${p.xp.toLocaleString()} XP\``
+            `⭐ **Toplam Biriken XP:** \`${p.xp.toLocaleString()} XP\`\n\n` +
+            (unlockedPerk ? `🔓 **Efsanevi Yetkiler:**\n${unlockedPerk.perks.map(p => `• ${p}`).join('\n')}` : '')
           )
           .addFields(
             { name: '💎 Sunucu Efsanesi', value: 'Artık sunucunun en üst düzey ve saygın üyelerinden birisin. Emeklerin için teşekkürler!', inline: false }
@@ -549,6 +669,8 @@ async function getFrogProfile(userId, client) {
     bar,
     currentRole,
     nextRole,
+    currentPerks: FROG_PERKS[p.level] || null,
+    nextPerks: FROG_PERKS[p.level + 1] || null,
     totalMessages: p.totalMessages,
     totalVoiceMinutes: p.totalVoiceMinutes,
     promotions: p.promotions || [],
@@ -644,6 +766,7 @@ module.exports = {
   onVoiceJoin,
   onVoiceLeave,
   FROG_ROLES,
+  FROG_PERKS,
   FROG_GUILD_ID,
   xpToNextLevel,
   totalXpForLevel,

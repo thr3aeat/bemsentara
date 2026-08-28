@@ -109,6 +109,33 @@ function renderProgressBar(percentage) {
 }
 
 /**
+ * Etkileşimin önceden defer/reply edilip edilmediğini kontrol ederek güvenli yanıt gönderir.
+ */
+async function safeReply(interaction, options) {
+  try {
+    if (!interaction) return;
+    if (typeof options === 'string') {
+      options = { content: options, flags: 64 };
+    }
+    if (interaction.deferred || interaction.replied) {
+      return await interaction.editReply(options).catch(async () => {
+        return await interaction.followUp(options).catch(() => {});
+      });
+    } else {
+      return await interaction.reply(options).catch(async (err) => {
+        if (err.code === 40060 || err.message?.includes('already been acknowledged')) {
+          return await interaction.editReply(options).catch(async () => {
+            return await interaction.followUp(options).catch(() => {});
+          });
+        }
+      });
+    }
+  } catch (e) {
+    logger.error('[safeReply] Error:', e.message);
+  }
+}
+
+/**
  * 1. İtiraf Oluşturma Panelini Başlatır / Günceller (Sadece 2 Sade Buton, Components V2, Accent Colorsuz)
  */
 async function ensureConfessionPanel(client) {
@@ -862,28 +889,32 @@ async function handleTipModalSubmit(interaction) {
  */
 async function handleConfessionDMStart(interaction, confessionId) {
   try {
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ flags: 64 }).catch(() => {});
+    }
+
     const senderId = interaction.user.id;
     const confession = await Confession.findOne({ confessionId: Number(confessionId) }).lean();
     if (!confession) {
-      return interaction.reply({ content: '❌ İtiraf bulunamadı.', flags: 64 });
+      return safeReply(interaction, { content: '❌ İtiraf bulunamadı.', flags: 64 });
     }
 
     if (!confession.allowDm) {
-      return interaction.reply({ content: '🔒 Bu itirafın sahibi anonim DM bağlantılarını devre dışı bırakmış.', flags: 64 });
+      return safeReply(interaction, { content: '🔒 Bu itirafın sahibi anonim DM bağlantılarını devre dışı bırakmış.', flags: 64 });
     }
 
     if (confession.authorId === senderId) {
-      return interaction.reply({ content: '❌ Kendi itirafınıza anonim DM başlatamazsınız!', flags: 64 });
+      return safeReply(interaction, { content: '❌ Kendi itirafınıza anonim DM başlatamazsınız!', flags: 64 });
     }
 
     const isBlocked = await ConfessionBlock.findOne({ authorId: confession.authorId, blockedUserId: senderId }).lean();
     if (isBlocked) {
-      return interaction.reply({ content: '❌ Bu itirafın sahibi sizinle iletişimi engelledi.', flags: 64 });
+      return safeReply(interaction, { content: '❌ Bu itirafın sahibi sizinle iletişimi engelledi.', flags: 64 });
     }
 
     const isBlacklisted = await ConfessionBlacklist.findOne({ userId: senderId }).lean();
     if (isBlacklisted) {
-      return interaction.reply({ content: '❌ İtiraf sisteminden yasaklandınız.', flags: 64 });
+      return safeReply(interaction, { content: '❌ İtiraf sisteminden yasaklandınız.', flags: 64 });
     }
 
     const existingActiveSession = await ConfessionSession.findOne({
@@ -893,7 +924,7 @@ async function handleConfessionDMStart(interaction, confessionId) {
       status: 'active'
     });
     if (existingActiveSession) {
-      return interaction.reply({
+      return safeReply(interaction, {
         content: `💬 Bu itirafın yazarıyla zaten aktif bir oturumunuz bulunuyor! Bot ile olan DM kutunuzdan mesaj gönderebilirsiniz. (Oturum: \`${existingActiveSession.sessionId}\`)`,
         flags: 64
       });
@@ -930,7 +961,7 @@ async function handleConfessionDMStart(interaction, confessionId) {
 
     const authorUser = await interaction.client.users.fetch(confession.authorId).catch(() => null);
     if (!authorUser) {
-      return interaction.reply({ content: '❌ İtiraf sahibine ulaşılamadı (DM kapalı olabilir).', flags: 64 });
+      return safeReply(interaction, { content: '❌ İtiraf sahibine ulaşılamadı (DM kapalı olabilir).', flags: 64 });
     }
 
     try {
@@ -954,13 +985,13 @@ async function handleConfessionDMStart(interaction, confessionId) {
         ]
       });
     } catch (dmErr) {
-      return interaction.reply({
+      return safeReply(interaction, {
         content: '❌ İtiraf sahibinin DM kutusu kapalı olduğu için bağlantı isteği iletilemedi.',
         flags: 64
       });
     }
 
-    return interaction.reply({
+    return safeReply(interaction, {
       content: `✅ **#${confessionId}** itirafının yazarına anonim bağlantı isteği gönderildi! Yazar onayladığında bot DM kutunuz üzerinden sohbete başlayabilirsiniz.`,
       flags: 64
     });
@@ -1628,9 +1659,9 @@ async function handleConfessionReport(interaction, confessionId) {
             ComponentsV2Factory.text(`## 🚩 İtiraf Bildirisi (#${confessionId})`),
             ComponentsV2Factory.separator(true),
             ComponentsV2Factory.text(
-              `👤 **Bildiren:** <@${interaction.user.id}> (\`${interaction.user.id}\`)\n` +
-              `✍️ **İtiraf Sahibi:** <@${confession.authorId}> (\`${confession.authorId}\`)\n` +
-              `📝 **İçerik:**\n> ${confession.content.replace(/\n/g, '\n> ')}`
+              `📂 **Kategori:** ${confession.category}\n` +
+              `🎭 **Paylaşan:** ${confession.type === 'public' ? `<@${confession.authorId}>` : confession.anonymousName}\n\n` +
+              `📝 **İtiraf İçeriği:**\n> ${confession.content.replace(/\n/g, '\n> ')}`
             ),
             ComponentsV2Factory.separator(true),
             ComponentsV2Factory.actionRow([
@@ -1641,6 +1672,22 @@ async function handleConfessionReport(interaction, confessionId) {
         ]
       });
     }
+
+    // 🕵️ [GİZLİ LOG] Gerçek kimlikler gizli log kanalına (1542913114788331620) gider
+    await sendSecretAuditLog(interaction.client, {
+      flags: ComponentsV2Factory.FLAGS,
+      components: [
+        ComponentsV2Factory.container([
+          ComponentsV2Factory.text(`## 🚩 [GİZLİ DENETİM] İtiraf Bildirisi (#${confessionId})`),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.text(
+            `🚨 **Bildiren:** <@${interaction.user.id}> (\`${interaction.user.id}\`)\n` +
+            `✍️ **İtiraf Sahibi:** <@${confession.authorId}> (\`${confession.authorId}\`)\n` +
+            `📝 **İçerik:**\n> ${confession.content.replace(/\n/g, '\n> ')}`
+          )
+        ])
+      ]
+    });
 
     return interaction.reply({ content: '✅ Bildiriminiz moderasyon ekibine iletildi. Teşekkür ederiz.', flags: 64 });
   } catch (err) {
@@ -1720,7 +1767,7 @@ async function handleModQueueAction(interaction, action, confessionIdOrUserId) {
           ComponentsV2Factory.container([
             ComponentsV2Factory.text(`## 🚫 Yazar Kara Listeye Alındı (#${confessionId})`),
             ComponentsV2Factory.separator(true),
-            ComponentsV2Factory.text(`Yazar (<@${confession.authorId}>) <@${interaction.user.id}> tarafından kara listeye alındı.`)
+            ComponentsV2Factory.text(`İtiraf sahibi <@${interaction.user.id}> tarafından kara listeye alındı ve itiraf kaldırıldı.`)
           ])
         ]
       });

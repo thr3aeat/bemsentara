@@ -1851,6 +1851,150 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Seviye Yetkileri Komutu (-yetkiler / -perks / .yetkiler / !yetkiler) ──
+    if (message.guild && (lowerContent.startsWith('-yetkiler') || lowerContent.startsWith('-perks') || lowerContent.startsWith('.yetkiler') || lowerContent.startsWith('!yetkiler') || lowerContent.startsWith('e!yetkiler'))) {
+      try {
+        const { FROG_ROLES, FROG_PERKS } = require('../services/frogLevel');
+        const lines = FROG_ROLES.map(r => {
+          const perk = FROG_PERKS[r.level];
+          const perkList = perk?.perks ? perk.perks.map(p => `  └ ${p}`).join('\n') : '  └ Temel izinler';
+          return `**[Lv.${r.level}] ${r.name}**\n${perkList}`;
+        });
+
+        const { EmbedBuilder } = require('discord.js');
+        const embed = new EmbedBuilder()
+          .setColor(0x4ade80)
+          .setTitle('🐸 EkoYıldız Seviye & Sohbet Yetkileri Ağacı')
+          .setDescription(
+            'Sohbette mesaj yazıp ses odalarında vakit geçirdikçe XP kazanır, seviye atlar ve **ufak ufak yeni yetkilerin** kilidini açarsınız!\n\n' +
+            lines.slice(0, 9).join('\n\n')
+          )
+          .setFooter({ text: 'Sayfa 1/2 • Seviye 0 - 8 Yetkileri' });
+
+        const embed2 = new EmbedBuilder()
+          .setColor(0xe67e22)
+          .setTitle('🦖 EkoYıldız Seviye & Sohbet Yetkileri Ağacı (2. Sezon & İleri Kademeler)')
+          .setDescription(lines.slice(9).join('\n\n'))
+          .setFooter({ text: 'Sayfa 2/2 • Seviye 9 - 16 Yetkileri' });
+
+        await message.reply({ embeds: [embed, embed2] }).catch(() => {});
+        return;
+      } catch (perksErr) {
+        console.error('[-yetkiler komut hatası]:', perksErr.message);
+      }
+    }
+
+    // ── Seviye & Profil Komutu (-seviye / -level / .seviye / !seviye) ──
+    if (message.guild && (lowerContent.startsWith('-seviye') || lowerContent.startsWith('-level') || lowerContent.startsWith('.seviye') || lowerContent.startsWith('!seviye') || lowerContent.startsWith('e!seviye'))) {
+      try {
+        const target = message.mentions.users.first() || message.author;
+        const { getFrogProfile } = require('../services/frogLevel');
+        const profile = await getFrogProfile(target.id, message.client);
+
+        if (!profile) {
+          return message.reply(`❌ **${target.username}** henüz hiç XP kazanmamış. Sunucuda mesaj yazmaya veya seste kalmaya başlasın!`);
+        }
+
+        const isSeason2 = profile.level >= 12;
+        const member = await message.guild.members.fetch(target.id).catch(() => null);
+        const isBooster = member && member.premiumSince;
+
+        let boosterText = isBooster ? '\n⚡ **Server Booster** (2x XP Aktif!)' : '';
+        let legendText = profile.level === 16 ? '\n👑 **Sentara Efsanesi** (Maksimum Seviye!)' : '';
+
+        let embedColor = isSeason2 ? 0xe67e22 : 0x4ade80;
+        if (profile.profileColor) {
+          const hex = profile.profileColor.replace('#', '');
+          const parsed = parseInt(hex, 16);
+          if (!isNaN(parsed)) embedColor = parsed;
+        }
+
+        const description = `**${profile.currentRole?.name || 'Yavru Kurbağa'}**${boosterText}${legendText}\n\n` +
+          `XP: **${profile.currentXP.toLocaleString()}** / **${profile.neededXP > 0 ? profile.neededXP.toLocaleString() : 'MAX'}**\n` +
+          `\`${profile.bar}\` ${profile.neededXP > 0 ? Math.floor((profile.currentXP / profile.neededXP) * 100) : 100}%\n\n` +
+          (profile.profileBio ? `*${profile.profileBio}*\n` : '');
+
+        const currentPerksText = profile.currentPerks?.perks?.length
+          ? profile.currentPerks.perks.map(p => `• ${p}`).join('\n')
+          : 'Temel üye yetkileri';
+
+        const nextPerksText = profile.nextPerks?.perks?.length
+          ? profile.nextPerks.perks.map(p => `• ${p}`).join('\n')
+          : '👑 Maksimum kademe yetkilerine ulaşıldı!';
+
+        const { EmbedBuilder } = require('discord.js');
+        const embed = new EmbedBuilder()
+          .setColor(embedColor)
+          .setTitle(isSeason2 ? `🦖 ${target.username} — Dinazor Sezonu (2. Sezon)` : `🐸 ${target.username} — Kurbağa Seviyesi`)
+          .setThumbnail(target.displayAvatarURL({ dynamic: true }))
+          .setDescription(description)
+          .addFields(
+            { name: '📊 Seviye', value: isSeason2 ? `${profile.level - 11}/5 (Toplam: ${profile.level}/16)` : `${profile.level}/11 (Toplam: ${profile.level}/16)`, inline: true },
+            { name: '✨ Toplam XP', value: profile.xp.toLocaleString(), inline: true },
+            { name: '📝 Mesaj', value: (profile.totalMessages || 0).toLocaleString(), inline: true },
+            { name: '🎤 Ses (dk)', value: (profile.totalVoiceMinutes || 0).toLocaleString(), inline: true },
+            { name: '⬆️ Sonraki rol', value: profile.nextRole?.name || '🏆 MAX SEVİYE', inline: true },
+            { name: '🔓 Kazanılan Yetkiler & Ayrıcalıklar', value: currentPerksText, inline: false },
+            { name: '🚀 Sonraki Seviyede Açılacak Yetkiler', value: nextPerksText, inline: false }
+          )
+          .setFooter({ text: isSeason2 ? 'Eko Yıldız • Dinazor Sezonu 🦖' : 'Eko Yıldız • Kurbağa Sistemi 🐸' })
+          .setTimestamp();
+
+        await message.reply({ embeds: [embed] }).catch(() => {});
+        return;
+      } catch (lvlErr) {
+        console.error('[-seviye komut hatası]:', lvlErr.message);
+      }
+    }
+
+    // ── Özel Profil Rengi Komutu (-profilrenk #HEX) (Level 10+) ──
+    if (message.guild && (lowerContent.startsWith('-profilrenk') || lowerContent.startsWith('.profilrenk') || lowerContent.startsWith('!profilrenk'))) {
+      try {
+        const FrogLevel = require('../../models/FrogLevel');
+        const p = await FrogLevel.findOne({ userId: message.author.id });
+        if (!p || p.level < 10) {
+          return message.reply('❌ Özel profil rengi belirleyebilmek için en az **Seviye 10 (😇 İyi Dinazor)** olmalısınız!');
+        }
+
+        const args = message.content.split(/\s+/);
+        const hex = args[1]?.trim();
+        if (!hex || !/^#?([0-9A-Fa-f]{6})$/.test(hex)) {
+          return message.reply('❌ Geçerli bir HEX renk kodu girmelisiniz! Örnek: `-profilrenk #FF5733` veya `-profilrenk #2ECC71`');
+        }
+
+        const formattedHex = hex.startsWith('#') ? hex : `#${hex}`;
+        p.profileColor = formattedHex;
+        await p.save();
+
+        return message.reply(`✅ Profil renginiz başarıyla **${formattedHex}** olarak güncellendi!`);
+      } catch (colorErr) {
+        console.error('[-profilrenk komut hatası]:', colorErr.message);
+      }
+    }
+
+    // ── Özel Profil Biyografisi Komutu (-profilbio <metin>) (Level 10+) ──
+    if (message.guild && (lowerContent.startsWith('-profilbio') || lowerContent.startsWith('.profilbio') || lowerContent.startsWith('!profilbio'))) {
+      try {
+        const FrogLevel = require('../../models/FrogLevel');
+        const p = await FrogLevel.findOne({ userId: message.author.id });
+        if (!p || p.level < 10) {
+          return message.reply('❌ Özel profil biyografisi yazabilmek için en az **Seviye 10 (😇 İyi Dinazor)** olmalısınız!');
+        }
+
+        const bio = message.content.substring(message.content.indexOf(' ')).trim();
+        if (!bio || bio.length > 120) {
+          return message.reply('❌ Biyografi 1 ile 120 karakter arasında olmalıdır! Örnek: `-profilbio EkoYıldız kıdemli üyesi.`');
+        }
+
+        p.profileBio = bio;
+        await p.save();
+
+        return message.reply(`✅ Profil biyografiniz başarıyla güncellendi:\n> *${bio}*`);
+      } catch (bioErr) {
+        console.error('[-profilbio komut hatası]:', bioErr.message);
+      }
+    }
+
     const accidentalGreetingPattern = /yanlış(?:lıkla|lıkla)|uwu|oops|ne yazık ki|yanlışlıkla bu mesajı/;
     const greetingKeywords = /iyi geceler|iyi akşamlar|iyi günler|günaydın|akşamlar|geceler|hayırlı işler/;
 
@@ -3954,7 +4098,7 @@ function initializeDiscordHandlers(client) {
         try {
           if (!interaction.deferred && !interaction.replied) {
             const customId = interaction.customId || '';
-            const opensModal = customId.includes('_modal_') || customId.endsWith('_modal') || customId.startsWith('tv_modal_') || customId === 'rename' || customId === 'user_limit' || customId === 'bitrate' || customId === 'region' || customId === 'ban_user' || customId === 'unban_user' || customId === 'whitelist' || customId === 'kick_user' || customId === 'transfer';
+            const opensModal = customId.includes('_modal_') || customId.endsWith('_modal') || customId.startsWith('tv_modal_') || customId.startsWith('confession_btn_') || customId.startsWith('confession_tip_') || customId.startsWith('confession_thread_reply_') || customId === 'rename' || customId === 'user_limit' || customId === 'bitrate' || customId === 'region' || customId === 'ban_user' || customId === 'unban_user' || customId === 'whitelist' || customId === 'kick_user' || customId === 'transfer';
             
             if (!opensModal) {
               if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {

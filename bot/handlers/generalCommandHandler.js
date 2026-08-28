@@ -2837,6 +2837,14 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
         `\`${profile.bar}\` ${profile.neededXP > 0 ? Math.floor((profile.currentXP / profile.neededXP) * 100) : 100}%\n\n` +
         (profile.profileBio ? `*${profile.profileBio}*\n` : '');
 
+      const currentPerksText = profile.currentPerks?.perks?.length
+        ? profile.currentPerks.perks.map(p => `• ${p}`).join('\n')
+        : 'Temel üye yetkileri';
+
+      const nextPerksText = profile.nextPerks?.perks?.length
+        ? profile.nextPerks.perks.map(p => `• ${p}`).join('\n')
+        : '👑 Maksimum kademe yetkilerine ulaşıldı!';
+
       const embed = new EmbedBuilder()
         .setColor(embedColor)
         .setTitle(isSeason2 ? `🦖 ${target.username} — Dinazor Sezonu (2. Sezon)` : `🐸 ${target.username} — Kurbağa Seviyesi`)
@@ -2848,11 +2856,39 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
           { name: '📝 Mesaj', value: (profile.totalMessages || 0).toLocaleString(), inline: true },
           { name: '🎤 Ses (dk)', value: (profile.totalVoiceMinutes || 0).toLocaleString(), inline: true },
           { name: '⬆️ Sonraki rol', value: profile.nextRole?.name || '🏆 MAX SEVİYE', inline: true },
+          { name: '🔓 Kazanılan Yetkiler & Ayrıcalıklar', value: currentPerksText, inline: false },
+          { name: '🚀 Sonraki Seviyede Açılacak Yetkiler', value: nextPerksText, inline: false }
         )
         .setFooter({ text: isSeason2 ? 'Eko Yıldız • Dinazor Sezonu 🦖' : 'Eko Yıldız • Kurbağa Sistemi 🐸' })
         .setTimestamp();
 
       return interaction.editReply({ embeds: [embed] });
+    }
+
+    if (commandName === "yetkiler") {
+      const { FROG_ROLES, FROG_PERKS } = require('../services/frogLevel');
+      const lines = FROG_ROLES.map(r => {
+        const perk = FROG_PERKS[r.level];
+        const perkList = perk?.perks ? perk.perks.map(p => `  └ ${p}`).join('\n') : '  └ Temel izinler';
+        return `**[Lv.${r.level}] ${r.name}**\n${perkList}`;
+      });
+
+      const embed = new EmbedBuilder()
+        .setColor(0x4ade80)
+        .setTitle('🐸 EkoYıldız Seviye & Sohbet Yetkileri Ağacı')
+        .setDescription(
+          'Sohbette mesaj yazıp ses odalarında vakit geçirdikçe XP kazanır, seviye atlar ve **ufak ufak yeni yetkilerin** kilidini açarsınız!\n\n' +
+          lines.slice(0, 9).join('\n\n')
+        )
+        .setFooter({ text: 'Sayfa 1/2 • Seviye 0 - 8 Yetkileri' });
+
+      const embed2 = new EmbedBuilder()
+        .setColor(0xe67e22)
+        .setTitle('🦖 EkoYıldız Seviye & Sohbet Yetkileri Ağacı (2. Sezon & İleri Kademeler)')
+        .setDescription(lines.slice(9).join('\n\n'))
+        .setFooter({ text: 'Sayfa 2/2 • Seviye 9 - 16 Yetkileri' });
+
+      return interaction.editReply({ embeds: [embed, embed2] });
     }
 
     if (commandName === "seviyetop") {
