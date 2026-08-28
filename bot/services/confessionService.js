@@ -182,7 +182,7 @@ async function openConfessionModal(interaction, type) {
 
     const categoryInput = new TextInputBuilder()
       .setCustomId('category')
-      .setLabel('Kategori (Komik Anı / Aşk / Sunucu / Dertleşme)')
+      .setLabel('Kategori (Komik, Aşk, Sunucu, Dertleşme)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('Örn: Komik Anı veya Dertleşme / Tavsiye')
       .setRequired(true)
@@ -190,7 +190,7 @@ async function openConfessionModal(interaction, type) {
 
     const contentInput = new TextInputBuilder()
       .setCustomId('content')
-      .setLabel('İtiraf Metniniz (Maks 1000 karakter)')
+      .setLabel('İtiraf Metniniz')
       .setStyle(TextInputStyle.Paragraph)
       .setPlaceholder('İtirafınızı buraya yazınız...')
       .setRequired(true)
@@ -206,7 +206,7 @@ async function openConfessionModal(interaction, type) {
 
     const pollInput = new TextInputBuilder()
       .setCustomId('poll_input')
-      .setLabel('Anket Ekle (İsteğe bağlı: Soru? Şık1 / Şık2)')
+      .setLabel('Anket (İsteğe Bağlı)')
       .setStyle(TextInputStyle.Short)
       .setPlaceholder('Örn: Haklı mıyım? (Evet / Hayır)')
       .setRequired(false)
