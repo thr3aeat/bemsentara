@@ -22,9 +22,9 @@ const logger = require('../../utils/logger');
 
 // Sunucu ve Kanal Sabitleri
 const GUILD_ID = '1367646464804655104';
-const CONFESSION_PANEL_CHANNEL_ID = '1542910032306380971'; // İtiraf oluşturma paneli
-const CONFESSION_FEED_CHANNEL_ID = '1542910032306380971'; // İtiraflar akış kanalı (aynı kanal)
-const CONFESSION_MOD_CHANNEL_ID = '1518693023934844959'; // Moderasyon / Onay / Log kanalı
+const CONFESSION_PANEL_CHANNEL_ID      = '1542910032306380971'; // İtiraf oluşturma paneli (sabit panel)
+const CONFESSION_FEED_CHANNEL_ID       = '1542914464083349664'; // İtirafların düşeceği akış kanalı
+const CONFESSION_MOD_CHANNEL_ID        = '1518693023934844959'; // Moderasyon / Onay / Log kanalı
 const CONFESSION_SECRET_LOG_CHANNEL_ID = '1542913114788331620'; // Arka plan tüm itiraf & DM köprüsü gizli denetim log kanalı
 
 // Anonim Takma Ad Üreteci
