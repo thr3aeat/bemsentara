@@ -16,6 +16,28 @@ const confessionSchema = new mongoose.Schema({
   anonymousName: { type: String, default: '🕵️ Anonim Dedektif #01' },
   allowDm: { type: Boolean, default: true },
   password: { type: String, default: null },
+  badge: { type: String, default: null }, // '👑 Haftanın İtirafı', '🌟 Ayın İtirafı', '🏆 Yılın İtirafı'
+  expiresAt: { type: Date, default: null, index: true }, // 12 saat, 24 saat veya süresiz (null)
+  isExpired: { type: Boolean, default: false },
+  
+  // Anket Alanı
+  poll: {
+    question: { type: String, default: null },
+    optionA: {
+      text: { type: String, default: 'Evet' },
+      count: { type: Number, default: 0 }
+    },
+    optionB: {
+      text: { type: String, default: 'Hayır' },
+      count: { type: Number, default: 0 }
+    },
+    voters: {
+      type: Map,
+      of: String,
+      default: {}
+    }
+  },
+
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
   reviewerId: { type: String, default: null },
   reviewReason: { type: String, default: null },
@@ -39,6 +61,13 @@ const confessionSessionSchema = new mongoose.Schema({
   authorId: { type: String, required: true, index: true },
   senderId: { type: String, required: true, index: true },
   status: { type: String, enum: ['pending', 'active', 'closed'], default: 'pending' },
+  
+  // Gizli El Sıkışma (Handshake) Protokolü
+  handshake: {
+    authorRevealed: { type: Boolean, default: false },
+    senderRevealed: { type: Boolean, default: false }
+  },
+
   messages: [
     {
       sender: { type: String, enum: ['author', 'sender'], required: true },

@@ -107,14 +107,25 @@ async function handleButtonInteraction(interaction) {
     if (customId === 'confession_btn_anonymous') {
       return confessionService.openConfessionModal(interaction, 'anonymous');
     }
-    if (customId === 'confession_btn_locked') {
-      return confessionService.openConfessionModal(interaction, 'locked');
+    if (customId.startsWith('confession_actions_')) {
+      const confessionId = customId.replace('confession_actions_', '');
+      return confessionService.openConfessionActions(interaction, confessionId);
     }
     if (customId.startsWith('confession_react_')) {
       const parts = customId.replace('confession_react_', '').split('_');
       const reactionType = parts[0];
       const confessionId = parts[1];
       return confessionService.handleConfessionReaction(interaction, confessionId, reactionType);
+    }
+    if (customId.startsWith('confession_poll_vote_')) {
+      const parts = customId.replace('confession_poll_vote_', '').split('_');
+      const optionKey = parts[0]; // 'A' or 'B'
+      const confessionId = parts[1];
+      return confessionService.handleConfessionPollVote(interaction, confessionId, optionKey);
+    }
+    if (customId.startsWith('confession_tip_author_')) {
+      const confessionId = customId.replace('confession_tip_author_', '');
+      return confessionService.openTipModal(interaction, confessionId, false);
     }
     if (customId.startsWith('confession_dm_author_')) {
       const confessionId = customId.replace('confession_dm_author_', '');
@@ -124,16 +135,21 @@ async function handleButtonInteraction(interaction) {
       const confessionId = customId.replace('confession_thread_reply_', '');
       return confessionService.openThreadReplyModal(interaction, confessionId);
     }
-    if (customId.startsWith('confession_unlock_')) {
-      const confessionId = customId.replace('confession_unlock_', '');
-      return confessionService.openUnlockModal(interaction, confessionId);
-    }
     if (customId.startsWith('confession_report_')) {
       const confessionId = customId.replace('confession_report_', '');
       return confessionService.handleConfessionReport(interaction, confessionId);
     }
     if (customId.startsWith('confession_bridge_')) {
       const rest = customId.replace('confession_bridge_', '');
+      // Handle reveal_accept and reveal_reject
+      if (rest.startsWith('reveal_accept_')) {
+        const sessionId = rest.replace('reveal_accept_', '');
+        return confessionService.handleBridgeButton(interaction, 'reveal_accept', sessionId);
+      }
+      if (rest.startsWith('reveal_reject_')) {
+        const sessionId = rest.replace('reveal_reject_', '');
+        return confessionService.handleBridgeButton(interaction, 'reveal_reject', sessionId);
+      }
       const firstUnder = rest.indexOf('_');
       const action = rest.substring(0, firstUnder);
       const sessionId = rest.substring(firstUnder + 1);

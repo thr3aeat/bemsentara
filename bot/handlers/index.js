@@ -442,10 +442,11 @@ function initializeDiscordHandlers(client) {
 
     // İtiraf & Anonim Köprü Sistemini Başlat (Discord Components V2)
     try {
-      const { ensureConfessionPanel } = require('../services/confessionService');
+      const { ensureConfessionPanel, initConfessionSchedulers } = require('../services/confessionService');
       await ensureConfessionPanel(client).catch(err => {
         console.error('[ConfessionService] Başlatma Hatası:', err.message);
       });
+      initConfessionSchedulers(client);
     } catch (err) {
       console.error('[ConfessionService] Yükleme Hatası:', err.message);
     }

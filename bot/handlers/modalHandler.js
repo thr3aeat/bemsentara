@@ -216,9 +216,9 @@ async function handleModalSubmit(interaction) {
     const { handleConfessionModalSubmit } = require('../services/confessionService');
     return handleConfessionModalSubmit(interaction);
   }
-  if (interaction.customId.startsWith('confession_modal_unlock_')) {
-    const { handleUnlockModalSubmit } = require('../services/confessionService');
-    return handleUnlockModalSubmit(interaction);
+  if (interaction.customId.startsWith('confession_modal_tip_')) {
+    const { handleTipModalSubmit } = require('../services/confessionService');
+    return handleTipModalSubmit(interaction);
   }
   if (interaction.customId.startsWith('confession_modal_thread_reply_')) {
     const { handleThreadReplyModalSubmit } = require('../services/confessionService');
