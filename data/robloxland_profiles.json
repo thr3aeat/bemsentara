@@ -10,5 +10,17 @@
     "totalSpent": 250,
     "vipTier": "Standart",
     "joinedAt": "2026-08-29T22:45:08.744Z"
+  },
+  "user_test_99": {
+    "userId": "user_test_99",
+    "level": 35,
+    "xp": 0,
+    "landCoins": 1100,
+    "trustScore": 90,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T22:47:06.353Z"
   }
 }

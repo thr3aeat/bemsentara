@@ -269,16 +269,18 @@ function initializeDiscordHandlers(client) {
       console.error("[ready] ArchiveService yüklenemedi:", arcErr.message);
     }
 
-    // RobloxDevs / Robloxland Tek Seferlik Paneller Kurulumu
+    // RobloxDevs / Robloxland Tek Seferlik Paneller Kurulumu & Seviye Ses XP Takibi
     try {
       const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
+      const { initVoiceXpTracker } = require("../services/robloxLandLevelService");
       setTimeout(() => {
         deployRobloxDevsSetup(client).catch(err => {
           console.error("[ready] RobloxDevsSetup deploy error:", err.message);
         });
+        initVoiceXpTracker(client);
       }, 8000);
     } catch (rdErr) {
-      console.error("[ready] RobloxDevsSetupService yüklenemedi:", rdErr.message);
+      console.error("[ready] RobloxDevsSetupService / LevelService yüklenemedi:", rdErr.message);
     }
 
     // Aras AI soruşturma botu (DISCORDTOKENVERY token ile)
@@ -1708,6 +1710,29 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── RobloxLand Seviye Sistemi (Mesaj XP) ──────────────────────────────
+    try {
+      const { handleMessageXp } = require("../services/robloxLandLevelService");
+      handleMessageXp(message).catch(() => {});
+    } catch (_) {}
+
+    // ── RobloxLand 65 Seviye Rolü Kurulum Komutu (!rolünüstüneyeniroller / !rolunustuneyeniroller) ──
+    if (
+      lowerContent.startsWith("!rolünüstüneyeniroller") ||
+      lowerContent.startsWith("!rolunustuneyeniroller") ||
+      lowerContent.startsWith("!rolünüstüneroller") ||
+      lowerContent.startsWith("!rolunustuneroller") ||
+      lowerContent.startsWith(".rolünüstüneyeniroller") ||
+      lowerContent.startsWith(".rolunustuneyeniroller")
+    ) {
+      try {
+        const { handleRolunUstuneYeniRoller } = require("../services/robloxLandLevelService");
+        return await handleRolunUstuneYeniRoller(message, message.content.split("\n"));
+      } catch (lvlErr) {
+        return message.reply(`❌ Seviye rolleri oluşturulurken hata: ${lvlErr.message}`);
+      }
+    }
+
     // ── RobloxLand Sipariş Sorgulama Komutu (!sipariş <kod> / !siparis <kod>) ──
     if (lowerContent.startsWith("!sipariş") || lowerContent.startsWith("!siparis") || lowerContent.startsWith(".siparis") || lowerContent.startsWith("/sipariş") || lowerContent.startsWith("/siparis")) {
       const args = content.trim().split(/\s+/).slice(1);
@@ -1736,29 +1761,12 @@ function initializeDiscordHandlers(client) {
     }
 
     // ── RobloxLand Profil Komutu (!profil / .profil) ──────────────────────────
-    if (lowerContent === "!profil" || lowerContent === ".profil" || lowerContent === "!profile") {
-      const DataStore = require("../services/robloxLandDataStore");
-      const p = DataStore.getUserProfile(message.author.id, message.member);
-
-      const fullBlocks = Math.floor(p.trustScore / 10);
-      const emptyBlocks = 10 - fullBlocks;
-      const trustBar = "█".repeat(fullBlocks) + "░".repeat(Math.max(0, emptyBlocks));
-
-      return message.reply(
-        `# 👤 ROBLOXLND — TOPLULUK PROFİLİN\n\n` +
-        `🏷️ **Kullanıcı:** <@${message.author.id}> (\`${message.author.id}\`)\n` +
-        `📅 **Sunucuya Katılım:** <t:${Math.floor(new Date(p.joinedAt || Date.now()).getTime() / 1000)}:R>\n` +
-        `📈 **Seviye:** \`Level ${p.level || 1}\` (${p.xp || 45} / 100 XP)\n\n` +
-        `### 🛡️ Güven Puanı: \`${p.trustScore || 92}/100\`\n` +
-        `\`${trustBar}\` (🟢 Güvenilir Üye)\n\n` +
-        `### 💎 Mağaza & Ticaret Geçmişi\n` +
-        `🪙 **LandCoin Bakiyesi:** \`${p.landCoins || 50} Coin\`\n` +
-        `🎫 **Açılan Destek Talebi:** \`${p.openedTickets || 0}\`\n` +
-        `🛒 **Tamamlanan Sipariş:** \`${p.completedOrders || 0}\`\n` +
-        `💰 **Toplam Harcama:** \`${p.totalSpent || 0} TL\`\n` +
-        `👑 **VIP Durumu:** \`${p.vipTier || "Standart Müşteri"}\`\n\n` +
-        `-# Her 100 TL harcamanızda 10 LandCoin hesabınıza otomatik yüklenir.`
-      );
+    if (lowerContent.startsWith("!profil") || lowerContent.startsWith(".profil") || lowerContent.startsWith("!profile")) {
+      const { buildUserProfileCard } = require("../services/robloxLandLevelService");
+      const targetUser = message.mentions.users.first() || message.author;
+      const targetMember = message.guild.members.cache.get(targetUser.id) || await message.guild.members.fetch(targetUser.id).catch(() => null);
+      const card = buildUserProfileCard(targetUser, targetMember);
+      return message.reply(card);
     }
 
     // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────

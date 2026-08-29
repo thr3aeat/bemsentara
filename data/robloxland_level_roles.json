@@ -1,0 +1,327 @@
+{
+  "1": {
+    "id": "role_101",
+    "name": "🌱 Çaylak Dev",
+    "color": "#A8B0B8"
+  },
+  "2": {
+    "id": "role_102",
+    "name": "🐣 Minik Dev",
+    "color": "#A3B6C2"
+  },
+  "3": {
+    "id": "role_103",
+    "name": "🔧 Acemi Dev",
+    "color": "#8FA9B8"
+  },
+  "4": {
+    "id": "role_104",
+    "name": "☕ Uykulu Dev",
+    "color": "#7F8C8D"
+  },
+  "5": {
+    "id": "role_105",
+    "name": "👀 Uyanık Dev",
+    "color": "#6FA8DC"
+  },
+  "6": {
+    "id": "role_106",
+    "name": "🧠 Meraklı Dev",
+    "color": "#5DADE2"
+  },
+  "7": {
+    "id": "role_107",
+    "name": "💻 Kodlayan Dev",
+    "color": "#3498DB"
+  },
+  "8": {
+    "id": "role_108",
+    "name": "🔨 Çalışkan Dev",
+    "color": "#2E86C1"
+  },
+  "9": {
+    "id": "role_109",
+    "name": "⚙️ Sistemci Dev",
+    "color": "#2874A6"
+  },
+  "10": {
+    "id": "role_110",
+    "name": "🚀 Hızlı Dev",
+    "color": "#1F618D"
+  },
+  "11": {
+    "id": "role_111",
+    "name": "🔥 Ateşli Dev",
+    "color": "#E67E22"
+  },
+  "12": {
+    "id": "role_112",
+    "name": "🎯 Keskin Dev",
+    "color": "#D35400"
+  },
+  "13": {
+    "id": "role_113",
+    "name": "🧩 Zeki Dev",
+    "color": "#16A085"
+  },
+  "14": {
+    "id": "role_114",
+    "name": "🛠️ Usta Dev",
+    "color": "#138D75"
+  },
+  "15": {
+    "id": "role_115",
+    "name": "💡 Parlak Dev",
+    "color": "#F4D03F"
+  },
+  "16": {
+    "id": "role_116",
+    "name": "⚡ Turbo Dev",
+    "color": "#F1C40F"
+  },
+  "17": {
+    "id": "role_117",
+    "name": "🧪 Deneysel Dev",
+    "color": "#48C9B0"
+  },
+  "18": {
+    "id": "role_118",
+    "name": "🐛 Bug Avcısı Dev",
+    "color": "#28B463"
+  },
+  "19": {
+    "id": "role_119",
+    "name": "🧹 Bug Temizleyen Dev",
+    "color": "#239B56"
+  },
+  "20": {
+    "id": "role_120",
+    "name": "😎 Havalı Dev",
+    "color": "#17A589"
+  },
+  "21": {
+    "id": "role_121",
+    "name": "🧑💻 Profesyonel Dev",
+    "color": "#5B2C6F"
+  },
+  "22": {
+    "id": "role_122",
+    "name": "🏗️ Builder Dev",
+    "color": "#6C3483"
+  },
+  "23": {
+    "id": "role_123",
+    "name": "📜 Script Dev",
+    "color": "#7D3C98"
+  },
+  "24": {
+    "id": "role_124",
+    "name": "🎨 Yaratıcı Dev",
+    "color": "#8E44AD"
+  },
+  "25": {
+    "id": "role_125",
+    "name": "🤖 Botçu Dev",
+    "color": "#9B59B6"
+  },
+  "26": {
+    "id": "role_126",
+    "name": "🗺️ Map Ustası Dev",
+    "color": "#AF7AC5"
+  },
+  "27": {
+    "id": "role_127",
+    "name": "🧱 Model Ustası Dev",
+    "color": "#BB8FCE"
+  },
+  "28": {
+    "id": "role_128",
+    "name": "🖥️ Sistem Ustası Dev",
+    "color": "#A569BD"
+  },
+  "29": {
+    "id": "role_129",
+    "name": "💎 Premium Dev",
+    "color": "#884EA0"
+  },
+  "30": {
+    "id": "role_130",
+    "name": "👑 Kıdemli Dev",
+    "color": "#76448A"
+  },
+  "31": {
+    "id": "role_131",
+    "name": "🥷 Gizli Dev",
+    "color": "#34495E"
+  },
+  "32": {
+    "id": "role_132",
+    "name": "🧙 Büyücü Dev",
+    "color": "#512E5F"
+  },
+  "33": {
+    "id": "role_133",
+    "name": "🦾 Güçlü Dev",
+    "color": "#1B4F72"
+  },
+  "34": {
+    "id": "role_134",
+    "name": "🧠 Büyük Beyin Dev",
+    "color": "#21618C"
+  },
+  "35": {
+    "id": "role_135",
+    "name": "🌟 Yıldız Dev",
+    "color": "#D4AC0D"
+  },
+  "36": {
+    "id": "role_136",
+    "name": "☄️ Meteor Dev",
+    "color": "#CA6F1E"
+  },
+  "37": {
+    "id": "role_137",
+    "name": "🌙 Gececi Dev",
+    "color": "#2C3E50"
+  },
+  "38": {
+    "id": "role_138",
+    "name": "☀️ Gündüzcü Dev",
+    "color": "#F5B041"
+  },
+  "39": {
+    "id": "role_139",
+    "name": "🛸 Uzaylı Dev",
+    "color": "#1ABC9C"
+  },
+  "40": {
+    "id": "role_140",
+    "name": "🚀 Roket Dev",
+    "color": "#148F77"
+  },
+  "41": {
+    "id": "role_141",
+    "name": "🏆 Şampiyon Dev",
+    "color": "#F39C12"
+  },
+  "42": {
+    "id": "role_142",
+    "name": "🎖️ Elit Dev",
+    "color": "#E67E22"
+  },
+  "43": {
+    "id": "role_143",
+    "name": "💠 Kristal Dev",
+    "color": "#48C9B0"
+  },
+  "44": {
+    "id": "role_144",
+    "name": "💎 Elmas Dev",
+    "color": "#5DADE2"
+  },
+  "45": {
+    "id": "role_145",
+    "name": "👑 Kral Dev",
+    "color": "#F4D03F"
+  },
+  "46": {
+    "id": "role_146",
+    "name": "🦁 Alfa Dev",
+    "color": "#E74C3C"
+  },
+  "47": {
+    "id": "role_147",
+    "name": "🐉 Ejder Dev",
+    "color": "#C0392B"
+  },
+  "48": {
+    "id": "role_148",
+    "name": "⚔️ Savaşçı Dev",
+    "color": "#922B21"
+  },
+  "49": {
+    "id": "role_149",
+    "name": "🔱 Titan Dev",
+    "color": "#7B241C"
+  },
+  "50": {
+    "id": "role_150",
+    "name": "🌌 Kozmik Dev",
+    "color": "#4A235A"
+  },
+  "51": {
+    "id": "role_151",
+    "name": "🪐 Galaktik Dev",
+    "color": "#512E5F"
+  },
+  "52": {
+    "id": "role_152",
+    "name": "🌠 Astral Dev",
+    "color": "#6C3483"
+  },
+  "53": {
+    "id": "role_153",
+    "name": "🌀 Boyutlararası Dev",
+    "color": "#7D3C98"
+  },
+  "54": {
+    "id": "role_154",
+    "name": "⚡ Ultra Dev",
+    "color": "#8E44AD"
+  },
+  "55": {
+    "id": "role_155",
+    "name": "💫 Mega Dev",
+    "color": "#A569BD"
+  },
+  "56": {
+    "id": "role_156",
+    "name": "👁️ Her Şeyi Gören Dev",
+    "color": "#D35400"
+  },
+  "57": {
+    "id": "role_157",
+    "name": "🧬 Evrimleşmiş Dev",
+    "color": "#E74C3C"
+  },
+  "58": {
+    "id": "role_158",
+    "name": "🗿 Kadim Dev",
+    "color": "#B7950B"
+  },
+  "59": {
+    "id": "role_159",
+    "name": "🏛️ Efsanevi Dev",
+    "color": "#D4AC0D"
+  },
+  "60": {
+    "id": "role_160",
+    "name": "🔥 Efsane Dev",
+    "color": "#F1C40F"
+  },
+  "61": {
+    "id": "role_161",
+    "name": "🌌 Mitik Dev",
+    "color": "#9B59B6"
+  },
+  "62": {
+    "id": "role_162",
+    "name": "👑 Yüce Dev",
+    "color": "#E8DAEF"
+  },
+  "63": {
+    "id": "role_163",
+    "name": "💀 Ölümsüz Dev",
+    "color": "#ECF0F1"
+  },
+  "64": {
+    "id": "role_164",
+    "name": "♾️ Sonsuz Dev",
+    "color": "#00FFFF"
+  },
+  "65": {
+    "id": "role_165",
+    "name": "🌠 Tanrısal Dev",
+    "color": "#FFD700"
+  }
+}
