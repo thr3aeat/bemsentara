@@ -297,6 +297,22 @@ async function start() {
             const { deployFaqPanelOnStartup } = require("./bot/services/robloxLandFaqService");
             deployFaqPanelOnStartup(discordBot).catch(() => {});
           } catch (_) {}
+
+          // ── EkoYıldız Hakkında Webhook & RobloxLand Butonu Otomatik Güncelleme ──
+          try {
+            const { sendEkoHookAbout } = require("./bot/services/ekoHookService");
+            sendEkoHookAbout(discordBot).catch(() => {});
+          } catch (_) {}
+
+          // ── RobloxLand Davet Önbelleği & 2X Seviye İzleyici ──
+          try {
+            const { cacheGuildInvites } = require("./bot/services/robloxLandInviteService");
+            const targetGuild = discordBot.guilds.cache.get("1537407325290237973") || await discordBot.guilds.fetch("1537407325290237973").catch(() => null);
+            if (targetGuild) {
+              await cacheGuildInvites(targetGuild);
+            }
+          } catch (_) {}
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;

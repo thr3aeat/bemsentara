@@ -352,6 +352,12 @@ async function handleMessageXp(message) {
   if (isWeekend) multiplier = 2.0;
   if (message.member?.premiumSince) multiplier *= 1.5; // Booster 1.5x
 
+  // EkoYıldız Özel Davetiyle Giren Üyelere 2X Seviye / XP Katlayıcı
+  const profilePre = DataStore.getUserProfile(userId, message.member);
+  if (profilePre.isEkoInvite || (profilePre.xpMultiplier && profilePre.xpMultiplier > 1)) {
+    multiplier *= (profilePre.xpMultiplier || 2.0);
+  }
+
   const baseGain = Math.floor(Math.random() * 11) + 15; // 15 - 25 XP
   const finalXp = Math.round(baseGain * multiplier);
 

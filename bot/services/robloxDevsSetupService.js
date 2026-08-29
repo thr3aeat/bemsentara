@@ -223,6 +223,11 @@ function buildAboutUsPayload() {
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
       {
+        style: ButtonStyle.Link,
+        label: "🌐 RobloxLand Discord",
+        url: "https://discord.gg/eJ2dPBXT4R"
+      },
+      {
         style: ButtonStyle.Primary,
         label: "💬 Destek & İletişim",
         custom_id: "robloxland_open_ticket_destek",
@@ -1708,6 +1713,7 @@ async function handleRobloxDevsInteraction(interaction) {
 module.exports = {
   deployRobloxDevsSetup,
   handleRobloxDevsInteraction,
+  buildAboutUsPayload,
   CHANNELS,
   TICKET_CATEGORY_ID,
   STAFF_LOG_CHANNEL_ID

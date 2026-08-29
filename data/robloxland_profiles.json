@@ -22,5 +22,20 @@
     "totalSpent": 0,
     "vipTier": "Standart",
     "joinedAt": "2026-08-29T22:47:06.353Z"
+  },
+  "user_invite_eko_999": {
+    "userId": "user_invite_eko_999",
+    "level": 2,
+    "xp": 305,
+    "landCoins": 120,
+    "trustScore": 100,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T23:15:31.026Z",
+    "isEkoInvite": true,
+    "inviteCode": "eJ2dPBXT4R",
+    "xpMultiplier": 2
   }
 }

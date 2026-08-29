@@ -4613,9 +4613,8 @@ async function checkStaffVerifications(client) {
     const { ROBLOX, ADMIN_GUILD_ID } = require('./staffAutomation');
 
     for (const p of allProgress) {
-      // 🚨 EĞER KULLANICI İÇİN 'EKSİK DOĞRULAMA DM' KAPATILDIYSA UYARIYI ATLA
-      if (p.settings?.skipIncompleteVerificationDM || p.settings?.disableVerificationDM) {
-        console.log(`[staffSystem] checkStaffVerifications: ${p.userId} için 'Eksik Doğrulama' DM bildirimi kapalı, mesaj gönderimi atlandı.`);
+      // 🚨 EĞER KULLANICI İÇİN 'EKSİK DOĞRULAMA DM' KAPATILDIYSA VEYA ZATEN UYARI ALDIYSA ASLA SPAMLAMA
+      if (p.verificationWarned || p.verificationWarnCount >= 1 || p.settings?.skipIncompleteVerificationDM || p.settings?.disableVerificationDM) {
         continue;
       }
 
@@ -4686,6 +4685,10 @@ async function checkStaffVerifications(client) {
           if (discordUser) {
             await discordUser.send({ embeds: [embed], components: [row] });
             notifiedCount++;
+            p.verificationWarned = true;
+            p.verificationWarnCount = (p.verificationWarnCount || 0) + 1;
+            p.lastVerificationWarnedAt = new Date();
+            await p.save().catch(() => {});
           }
         } catch (_) { }
       }

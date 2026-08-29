@@ -605,6 +605,14 @@ function initializeDiscordHandlers(client) {
         console.error('[guildMemberAdd] restoreKonusRoles hatası:', err.message);
       }
 
+      // RobloxLand EkoYıldız Özel Daveti (eJ2dPBXT4R) ve 2X Seviye Bonusu
+      try {
+        const { handleMemberJoinInvite } = require('../services/robloxLandInviteService');
+        await handleMemberJoinInvite(member, client);
+      } catch (invErr) {
+        console.error('[guildMemberAdd] RobloxLand invite tracking error:', invErr.message);
+      }
+
       const { TARGET_GUILD_ID, UNVERIFIED_ROLE_ID, TMT_GUILD_ID, TMT_UNVERIFIED_ROLE_ID, GUILD2_ID } = require("../../config");
       const { PermissionFlagsBits } = require('discord.js');
 

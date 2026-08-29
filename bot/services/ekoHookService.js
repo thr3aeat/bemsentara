@@ -114,8 +114,13 @@ async function sendEkoHookAbout(client, targetChannelId = CHANNEL_ID, options = 
         .setEmoji('🟣')
     );
 
-    // ActionRow 2: Sosyal Medya ve İletişim
+    // ActionRow 2: Sosyal Medya ve RobloxLand
     const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel('RobloxLand')
+        .setURL('https://discord.gg/eJ2dPBXT4R')
+        .setStyle(ButtonStyle.Link)
+        .setEmoji('🎮'),
       new ButtonBuilder()
         .setLabel('Instagram')
         .setURL('https://www.instagram.com/ekonqt/')

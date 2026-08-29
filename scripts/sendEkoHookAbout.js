@@ -91,8 +91,13 @@ async function sendAboutWebhook() {
           .setEmoji('🟢')
       );
 
-      // ActionRow 2: Sosyal Medya ve Destek
+      // ActionRow 2: Sosyal Medya, RobloxLand ve Destek
       const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('RobloxLand')
+          .setURL('https://discord.gg/eJ2dPBXT4R')
+          .setStyle(ButtonStyle.Link)
+          .setEmoji('🎮'),
         new ButtonBuilder()
           .setLabel('Twitch')
           .setURL('https://www.twitch.tv/ekoyildiz')
@@ -109,7 +114,7 @@ async function sendAboutWebhook() {
           .setStyle(ButtonStyle.Link)
           .setEmoji('🎵'),
         new ButtonBuilder()
-          .setLabel('Bize Ulaşın / İletişim')
+          .setLabel('Bize Ulaşın')
           .setURL('https://ptb.discord.com/channels/1367646464804655104/1518692475189854218')
           .setStyle(ButtonStyle.Link)
           .setEmoji('📩')
