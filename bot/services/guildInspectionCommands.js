@@ -34,9 +34,14 @@ function getChannelTypeName(type) {
 
 /**
  * Uzun metin dizilerini Discord'un 2000 karakter sınırına göre satır satır bölümlere (partlara) ayırır.
+ * Boş mesaj gönderme hatalarını kesin olarak engeller.
  */
 function splitIntoChunks(headerPrefix, lines, maxLen = 1850) {
-  if (!lines || lines.length === 0) {
+  const validLines = (lines || [])
+    .map(l => (l !== null && l !== undefined ? String(l).trim() : ""))
+    .filter(l => l.length > 0);
+
+  if (validLines.length === 0) {
     return [`${headerPrefix}\n\n*(Kayıt bulunamadı)*`];
   }
 
@@ -44,7 +49,7 @@ function splitIntoChunks(headerPrefix, lines, maxLen = 1850) {
   let currentChunk = [];
   let currentLength = 0;
 
-  for (const line of lines) {
+  for (const line of validLines) {
     const lineLen = line.length + 1; // + newline
     if (currentLength + lineLen > maxLen && currentChunk.length > 0) {
       rawChunks.push(currentChunk.join("\n"));
@@ -63,19 +68,46 @@ function splitIntoChunks(headerPrefix, lines, maxLen = 1850) {
   const totalParts = rawChunks.length;
   return rawChunks.map((content, idx) => {
     const partNum = idx + 1;
-    return `${headerPrefix} (Bölüm ${partNum}/${totalParts}) - Toplam ${lines.length} Kayıt:\n\n${content}`;
+    const header = `${headerPrefix} (Bölüm ${partNum}/${totalParts}) - Toplam ${validLines.length} Kayıt:\n\n`;
+    const fullText = header + content;
+    return fullText.trim().length > 0 ? fullText : `${headerPrefix}\n\n*(Kayıt bulunamadı)*`;
   });
 }
 
 /**
  * Bölünmüş mesajları sırayla Discord kanalına gönderir.
+ * Boş içerik veya DiscordAPIError[50006] hatalarını önler.
  */
 async function sendChunkedMessages(message, chunks) {
-  for (let i = 0; i < chunks.length; i++) {
-    if (i === 0) {
-      await message.reply({ content: chunks[i], allowedMentions: { parse: [] } });
-    } else {
-      await message.channel.send({ content: chunks[i], allowedMentions: { parse: [] } });
+  const validChunks = (chunks || [])
+    .map(c => (c !== null && c !== undefined ? String(c).trim() : ""))
+    .filter(c => c.length > 0);
+
+  if (validChunks.length === 0) {
+    await message.reply("ℹ️ Gösterilecek herhangi bir kayıt bulunamadı.").catch(() => {});
+    return;
+  }
+
+  let firstReplied = false;
+  for (let i = 0; i < validChunks.length; i++) {
+    const text = validChunks[i];
+    if (!text) continue;
+
+    try {
+      if (!firstReplied) {
+        await message.reply({ content: text, allowedMentions: { parse: [] } });
+        firstReplied = true;
+      } else {
+        await message.channel.send({ content: text, allowedMentions: { parse: [] } });
+      }
+    } catch (sendErr) {
+      // Mesaj silinmişse veya reply başarısızsa direkt kanala gönder
+      try {
+        await message.channel.send({ content: text, allowedMentions: { parse: [] } });
+        firstReplied = true;
+      } catch (fallbackErr) {
+        console.error("[Guild Inspection sendChunkedMessages error]:", fallbackErr.message);
+      }
     }
   }
 }
@@ -87,7 +119,7 @@ function checkPermission(message) {
   if (!message.guild) return false;
   if (message.guild.id === TARGET_GUILD_ID) return true;
   if (message.author.id === "1031620522406072350" || message.author.id === message.guild.ownerId) return true;
-  
+
   return (
     message.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
     message.member?.permissions?.has(PermissionFlagsBits.ManageGuild) ||
@@ -106,7 +138,7 @@ async function handleTumKategoriler(message, isEditMode = false) {
 
   await message.guild.channels.fetch().catch(() => {});
   const categories = message.guild.channels.cache
-    .filter(c => c.type === ChannelType.GuildCategory)
+    .filter(c => c && c.type === ChannelType.GuildCategory)
     .sort((a, b) => a.position - b.position);
 
   if (categories.size === 0) {
@@ -115,11 +147,13 @@ async function handleTumKategoriler(message, isEditMode = false) {
 
   const lines = [];
   categories.forEach((cat) => {
-    const childChannels = message.guild.channels.cache.filter(c => c.parentId === cat.id);
+    if (!cat) return;
+    const childChannels = message.guild.channels.cache.filter(c => c && c.parentId === cat.id);
+    const catName = cat.name || "İsimsiz Kategori";
     if (isEditMode) {
-      lines.push(`Kategori İsmi: ${cat.name} | Kategori ID: ${cat.id} | Sıra: ${cat.position} | Kanal Sayısı: ${childChannels.size}`);
+      lines.push(`Kategori İsmi: ${catName} | Kategori ID: ${cat.id} | Sıra: ${cat.position} | Kanal Sayısı: ${childChannels.size}`);
     } else {
-      lines.push(`📁 **${cat.name}** | ID: \`${cat.id}\` | Sıra: \`${cat.position}\` | Kanal Sayısı: \`${childChannels.size}\``);
+      lines.push(`📁 **${catName}** | ID: \`${cat.id}\` | Sıra: \`${cat.position}\` | Kanal Sayısı: \`${childChannels.size}\``);
     }
   });
 
@@ -141,7 +175,7 @@ async function handleTumRoller(message, isEditMode = false) {
 
   await message.guild.roles.fetch().catch(() => {});
   const roles = message.guild.roles.cache
-    .filter(r => r.id !== message.guild.id && r.name !== '@everyone' && !r.name.toLowerCase().includes('everyone'))
+    .filter(r => r && r.id !== message.guild.id && r.name !== "@everyone" && !r.name.toLowerCase().includes("everyone"))
     .sort((a, b) => b.position - a.position);
 
   if (roles.size === 0) {
@@ -150,12 +184,14 @@ async function handleTumRoller(message, isEditMode = false) {
 
   const lines = [];
   roles.forEach((role) => {
-    const memberCount = role.members.size;
-    const colorHex = role.hexColor !== "#000000" ? role.hexColor : "Varsayılan";
+    if (!role) return;
+    const memberCount = role.members ? role.members.size : 0;
+    const colorHex = role.hexColor && role.hexColor !== "#000000" ? role.hexColor : "Varsayılan";
+    const roleName = role.name || "İsimsiz Rol";
     if (isEditMode) {
-      lines.push(`Rol İsmi: ${role.name} | Rol ID: ${role.id} | Sıra: ${role.position} | Renk: ${colorHex} | Üye Sayısı: ${memberCount}`);
+      lines.push(`Rol İsmi: ${roleName} | Rol ID: ${role.id} | Sıra: ${role.position} | Renk: ${colorHex} | Üye Sayısı: ${memberCount}`);
     } else {
-      lines.push(`🛡️ **${role.name}** | ID: \`${role.id}\` | Sıra: \`${role.position}\` | Renk: \`${colorHex}\` | Üyeler: \`${memberCount}\``);
+      lines.push(`🛡️ **${roleName}** | ID: \`${role.id}\` | Sıra: \`${role.position}\` | Renk: \`${colorHex}\` | Üyeler: \`${memberCount}\``);
     }
   });
 
@@ -177,7 +213,7 @@ async function handleTumKanallar(message, isEditMode = false) {
 
   await message.guild.channels.fetch().catch(() => {});
   const channels = message.guild.channels.cache
-    .filter(c => c.type !== ChannelType.GuildCategory)
+    .filter(c => c && c.type !== ChannelType.GuildCategory)
     .sort((a, b) => {
       const posA = a.parent ? a.parent.position * 1000 + a.position : a.position;
       const posB = b.parent ? b.parent.position * 1000 + b.position : b.position;
@@ -190,14 +226,16 @@ async function handleTumKanallar(message, isEditMode = false) {
 
   const lines = [];
   channels.forEach((ch) => {
+    if (!ch) return;
     const categoryName = ch.parent ? ch.parent.name : "Kategorisiz";
     const categoryId = ch.parentId || "Yok";
     const typeName = getChannelTypeName(ch.type);
+    const chName = ch.name || "isimsiz-kanal";
 
     if (isEditMode) {
-      lines.push(`Kanal İsmi: #${ch.name} | Kanal ID: ${ch.id} | Kategori İsmi: ${categoryName} | Kategori ID: ${categoryId} | Tür: ${typeName}`);
+      lines.push(`Kanal İsmi: #${chName} | Kanal ID: ${ch.id} | Kategori İsmi: ${categoryName} | Kategori ID: ${categoryId} | Tür: ${typeName}`);
     } else {
-      lines.push(`💬 **#${ch.name}** | ID: \`${ch.id}\` | Kategori: **${categoryName}** (\`${categoryId}\`) | Tür: \`${typeName}\``);
+      lines.push(`💬 **#${chName}** | ID: \`${ch.id}\` | Kategori: **${categoryName}** (\`${categoryId}\`) | Tür: \`${typeName}\``);
     }
   });
 
@@ -217,7 +255,7 @@ async function handleTumKanalAciklamalari(message, isEditMode = false) {
     return message.reply("❌ Bu komutu kullanmak için `Yönetici` veya `Kanalları Yönet` yetkisine sahip olmalısınız.");
   }
 
-  const rawLines = message.content.split("\n");
+  const rawLines = (message.content || "").split("\n");
   const updatePairs = [];
 
   // Çok satırlı girdi varsa ve güncelleme isteniyorsa
@@ -276,30 +314,29 @@ async function handleTumKanalAciklamalari(message, isEditMode = false) {
       }
     }
 
-    let resultText = `**Toplu Kanal Açıklaması Güncelleme Sonucu:**\n\n`;
+    const reportLines = [];
     if (success.length > 0) {
-      resultText += `✅ **Başarıyla Güncellenenler (${success.length}):**\n`;
-      success.forEach(s => {
-        resultText += `- #${s.name} (\`${s.id}\`)\n`;
-      });
-      resultText += "\n";
+      reportLines.push(`✅ **Başarıyla Güncellenenler (${success.length}):**`);
+      success.forEach(s => reportLines.push(`- #${s.name} (\`${s.id}\`)`));
+      reportLines.push("");
     }
     if (failed.length > 0) {
-      resultText += `❌ **Başarısız Olanlar (${failed.length}):**\n`;
+      reportLines.push(`❌ **Başarısız Olanlar (${failed.length}):**`);
       failed.forEach(f => {
         const namePart = f.name ? `#${f.name} ` : "";
-        resultText += `- ${namePart}(\`${f.channelId}\`): ${f.reason}\n`;
+        reportLines.push(`- ${namePart}(\`${f.channelId}\`): ${f.reason}`);
       });
     }
 
-    const resultChunks = splitIntoChunks("📝 **Açıklama Güncelleme Raporu**", resultText.split("\n"));
+    const resultChunks = splitIntoChunks("📝 **Açıklama Güncelleme Raporu**", reportLines);
+    await statusMsg.delete().catch(() => {});
     return sendChunkedMessages(message, resultChunks);
   }
 
   // Güncelleme değilse, mevcut kanal açıklamalarını listele
   await message.guild.channels.fetch().catch(() => {});
   const channels = message.guild.channels.cache
-    .filter(c => c.type !== ChannelType.GuildCategory)
+    .filter(c => c && c.type !== ChannelType.GuildCategory)
     .sort((a, b) => {
       const posA = a.parent ? a.parent.position * 1000 + a.position : a.position;
       const posB = b.parent ? b.parent.position * 1000 + b.position : b.position;
@@ -312,14 +349,16 @@ async function handleTumKanalAciklamalari(message, isEditMode = false) {
 
   const lines = [];
   channels.forEach((ch) => {
+    if (!ch) return;
     const categoryName = ch.parent ? ch.parent.name : "Kategorisiz";
     const categoryId = ch.parentId || "Yok";
     const topic = ch.topic ? ch.topic.trim() : "(Açıklama Yok)";
+    const chName = ch.name || "isimsiz-kanal";
 
     if (isEditMode) {
-      lines.push(`Kanal İsmi: #${ch.name} | Kanal ID: ${ch.id} | Kategori İsmi: ${categoryName} | Kategori ID: ${categoryId} | Açıklama: ${topic}`);
+      lines.push(`Kanal İsmi: #${chName} | Kanal ID: ${ch.id} | Kategori İsmi: ${categoryName} | Kategori ID: ${categoryId} | Açıklama: ${topic}`);
     } else {
-      lines.push(`📝 **#${ch.name}** | ID: \`${ch.id}\` | Kategori: **${categoryName}** (\`${categoryId}\`)\n↳ *Açıklama:* ${topic}`);
+      lines.push(`📝 **#${chName}** | ID: \`${ch.id}\` | Kategori: **${categoryName}** (\`${categoryId}\`)\n↳ *Açıklama:* ${topic}`);
     }
   });
 
@@ -340,7 +379,9 @@ async function handleTumEmojiler(message, isEditMode = false) {
   }
 
   await message.guild.emojis.fetch().catch(() => {});
-  const emojis = message.guild.emojis.cache.sort((a, b) => a.name.localeCompare(b.name));
+  const emojis = message.guild.emojis.cache
+    .filter(e => e && e.id)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   if (emojis.size === 0) {
     return message.reply("ℹ️ Sunucuda özel emoji bulunamadı.");
@@ -348,12 +389,16 @@ async function handleTumEmojiler(message, isEditMode = false) {
 
   const lines = [];
   emojis.forEach((emoji) => {
+    if (!emoji) return;
     const typeStr = emoji.animated ? "Hareketli (GIF)" : "Sabit (PNG)";
-    const mentionCode = emoji.toString();
+    const mentionCode = emoji.toString() || `:${emoji.name}:`;
+    const emojiName = emoji.name || "isimsiz_emoji";
+    const emojiUrl = emoji.url || "Yok";
+
     if (isEditMode) {
-      lines.push(`Emoji İsmi: :${emoji.name}: | Emoji ID: ${emoji.id} | Tür: ${typeStr} | Kod: ${mentionCode} | URL: ${emoji.url}`);
+      lines.push(`Emoji İsmi: :${emojiName}: | Emoji ID: ${emoji.id} | Tür: ${typeStr} | Kod: ${mentionCode} | URL: ${emojiUrl}`);
     } else {
-      lines.push(`${mentionCode} **:${emoji.name}:** | ID: \`${emoji.id}\` | Tür: \`${typeStr}\` | Kod: \`${mentionCode}\``);
+      lines.push(`${mentionCode} **:${emojiName}:** | ID: \`${emoji.id}\` | Tür: \`${typeStr}\` | Kod: \`${mentionCode}\``);
     }
   });
 
@@ -374,7 +419,9 @@ async function handleTumCikartmalar(message, isEditMode = false) {
   }
 
   await message.guild.stickers.fetch().catch(() => {});
-  const stickers = message.guild.stickers.cache.sort((a, b) => a.name.localeCompare(b.name));
+  const stickers = message.guild.stickers.cache
+    .filter(s => s && s.id)
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
   if (stickers.size === 0) {
     return message.reply("ℹ️ Sunucuda özel çıkartma (sticker) bulunamadı.");
@@ -382,12 +429,16 @@ async function handleTumCikartmalar(message, isEditMode = false) {
 
   const lines = [];
   stickers.forEach((st) => {
-    const desc = st.description ? st.description : "Açıklama yok";
-    const format = st.format ? st.format : "Bilinmiyor";
+    if (!st) return;
+    const desc = st.description ? st.description.trim() : "Açıklama yok";
+    const format = st.format ? String(st.format) : "Bilinmiyor";
+    const stName = st.name || "İsimsiz Çıkartma";
+    const stUrl = st.url || "Yok";
+
     if (isEditMode) {
-      lines.push(`Çıkartma İsmi: ${st.name} | Çıkartma ID: ${st.id} | Açıklama: ${desc} | Format: ${format} | URL: ${st.url}`);
+      lines.push(`Çıkartma İsmi: ${stName} | Çıkartma ID: ${st.id} | Açıklama: ${desc} | Format: ${format} | URL: ${stUrl}`);
     } else {
-      lines.push(`🏷️ **${st.name}** | ID: \`${st.id}\` | Format: \`${format}\` | Açıklama: *${desc}*`);
+      lines.push(`🏷️ **${stName}** | ID: \`${st.id}\` | Format: \`${format}\` | Açıklama: *${desc}*`);
     }
   });
 
@@ -409,7 +460,7 @@ async function handleTumSesKanallari(message, isEditMode = false) {
 
   await message.guild.channels.fetch().catch(() => {});
   const voiceChannels = message.guild.channels.cache
-    .filter(c => c.type === ChannelType.GuildVoice || c.type === ChannelType.GuildStageVoice)
+    .filter(c => c && (c.type === ChannelType.GuildVoice || c.type === ChannelType.GuildStageVoice))
     .sort((a, b) => a.position - b.position);
 
   if (voiceChannels.size === 0) {
@@ -418,17 +469,19 @@ async function handleTumSesKanallari(message, isEditMode = false) {
 
   const lines = [];
   voiceChannels.forEach((vc) => {
+    if (!vc) return;
     const catName = vc.parent ? vc.parent.name : "Kategorisiz";
     const catId = vc.parentId || "Yok";
     const limit = vc.userLimit ? `${vc.userLimit} Kişi` : "Sınırsız";
     const bitrate = vc.bitrate ? `${Math.round(vc.bitrate / 1000)} kbps` : "Bilinmiyor";
-    const connectedCount = vc.members.size;
+    const connectedCount = vc.members ? vc.members.size : 0;
     const typeStr = vc.type === ChannelType.GuildStageVoice ? "Sahne Kanalı" : "Ses Kanalı";
+    const vcName = vc.name || "isimsiz-ses";
 
     if (isEditMode) {
-      lines.push(`Ses Kanalı: #${vc.name} | ID: ${vc.id} | Kategori: ${catName} | Kategori ID: ${catId} | Tür: ${typeStr} | Limit: ${limit} | Bitrate: ${bitrate} | Odadaki Üye: ${connectedCount}`);
+      lines.push(`Ses Kanalı: #${vcName} | ID: ${vc.id} | Kategori: ${catName} | Kategori ID: ${catId} | Tür: ${typeStr} | Limit: ${limit} | Bitrate: ${bitrate} | Odadaki Üye: ${connectedCount}`);
     } else {
-      lines.push(`🔊 **#${vc.name}** | ID: \`${vc.id}\` | Kategori: **${catName}** | Limit: \`${limit}\` | Bitrate: \`${bitrate}\` | Üyeler: \`${connectedCount}\``);
+      lines.push(`🔊 **#${vcName}** | ID: \`${vc.id}\` | Kategori: **${catName}** | Limit: \`${limit}\` | Bitrate: \`${bitrate}\` | Üyeler: \`${connectedCount}\``);
     }
   });
 
@@ -450,18 +503,18 @@ async function handleTumYetkililer(message, isEditMode = false) {
 
   await message.guild.members.fetch().catch(() => {});
   const staffMembers = message.guild.members.cache
-    .filter(m => !m.user.bot && (
-      m.permissions.has(PermissionFlagsBits.Administrator) ||
-      m.permissions.has(PermissionFlagsBits.ManageGuild) ||
-      m.permissions.has(PermissionFlagsBits.ManageChannels) ||
-      m.permissions.has(PermissionFlagsBits.ManageMessages) ||
-      m.permissions.has(PermissionFlagsBits.ModerateMembers) ||
-      m.roles.cache.some(r => {
-        const ln = r.name.toLowerCase();
+    .filter(m => m && !m.user?.bot && (
+      m.permissions?.has(PermissionFlagsBits.Administrator) ||
+      m.permissions?.has(PermissionFlagsBits.ManageGuild) ||
+      m.permissions?.has(PermissionFlagsBits.ManageChannels) ||
+      m.permissions?.has(PermissionFlagsBits.ManageMessages) ||
+      m.permissions?.has(PermissionFlagsBits.ModerateMembers) ||
+      m.roles?.cache?.some(r => {
+        const ln = (r.name || "").toLowerCase();
         return ln.includes("mod") || ln.includes("yetkili") || ln.includes("personel") || ln.includes("admin") || ln.includes("kurucu") || ln.includes("rehber");
       })
     ))
-    .sort((a, b) => (b.roles.highest?.position || 0) - (a.roles.highest?.position || 0));
+    .sort((a, b) => (b.roles?.highest?.position || 0) - (a.roles?.highest?.position || 0));
 
   if (staffMembers.size === 0) {
     return message.reply("ℹ️ Sunucuda yetkili üye bulunamadı.");
@@ -469,14 +522,16 @@ async function handleTumYetkililer(message, isEditMode = false) {
 
   const lines = [];
   staffMembers.forEach((m) => {
-    const highestRole = m.roles.highest ? m.roles.highest.name : "Rolsüz";
-    const highestRoleId = m.roles.highest ? m.roles.highest.id : "Yok";
-    const isAdmin = m.permissions.has(PermissionFlagsBits.Administrator) ? "Evet" : "Hayır";
+    if (!m || !m.user) return;
+    const highestRole = m.roles?.highest ? m.roles.highest.name : "Rolsüz";
+    const highestRoleId = m.roles?.highest ? m.roles.highest.id : "Yok";
+    const isAdmin = m.permissions?.has(PermissionFlagsBits.Administrator) ? "Evet" : "Hayır";
+    const tag = m.user.tag || m.user.username || m.id;
 
     if (isEditMode) {
-      lines.push(`Yetkili: ${m.user.tag} | Kullanıcı ID: ${m.id} | En Yüksek Rol: ${highestRole} | Rol ID: ${highestRoleId} | Yönetici Yetkisi: ${isAdmin}`);
+      lines.push(`Yetkili: ${tag} | Kullanıcı ID: ${m.id} | En Yüksek Rol: ${highestRole} | Rol ID: ${highestRoleId} | Yönetici Yetkisi: ${isAdmin}`);
     } else {
-      lines.push(`👮 **${m.user.tag}** (<@${m.id}>) | ID: \`${m.id}\` | Rol: **${highestRole}** | Yönetici: \`${isAdmin}\``);
+      lines.push(`👮 **${tag}** (<@${m.id}>) | ID: \`${m.id}\` | Rol: **${highestRole}** | Yönetici: \`${isAdmin}\``);
     }
   });
 
@@ -503,13 +558,15 @@ async function handleTumWebhooklar(message, isEditMode = false) {
 
   const lines = [];
   webhooks.forEach((wh) => {
+    if (!wh) return;
     const channelName = wh.channel ? wh.channel.name : "Bilinmiyor";
-    const creator = wh.owner ? wh.owner.tag : "Bilinmiyor";
+    const creator = wh.owner ? (wh.owner.tag || wh.owner.username || wh.owner.id) : "Bilinmiyor";
+    const whName = wh.name || "İsimsiz Webhook";
 
     if (isEditMode) {
-      lines.push(`Webhook İsmi: ${wh.name} | Webhook ID: ${wh.id} | Kanal: #${channelName} | Kanal ID: ${wh.channelId} | Oluşturan: ${creator}`);
+      lines.push(`Webhook İsmi: ${whName} | Webhook ID: ${wh.id} | Kanal: #${channelName} | Kanal ID: ${wh.channelId} | Oluşturan: ${creator}`);
     } else {
-      lines.push(`🔗 **${wh.name}** | ID: \`${wh.id}\` | Kanal: **#${channelName}** (\`${wh.channelId}\`) | Oluşturan: \`${creator}\``);
+      lines.push(`🔗 **${whName}** | ID: \`${wh.id}\` | Kanal: **#${channelName}** (\`${wh.channelId}\`) | Oluşturan: \`${creator}\``);
     }
   });
 
@@ -530,35 +587,37 @@ async function handleSunucuBilgi(message) {
   }
 
   const guild = message.guild;
+  if (!guild) return message.reply("❌ Sunucu bilgisi alınamadı.");
+
   await guild.channels.fetch().catch(() => {});
   await guild.roles.fetch().catch(() => {});
   await guild.emojis.fetch().catch(() => {});
   await guild.stickers.fetch().catch(() => {});
 
   const totalMembers = guild.memberCount || guild.members.cache.size;
-  const botCount = guild.members.cache.filter(m => m.user.bot).size;
+  const botCount = guild.members.cache.filter(m => m && m.user?.bot).size;
   const humanCount = totalMembers - botCount;
 
-  const categories = guild.channels.cache.filter(c => c.type === ChannelType.GuildCategory).size;
-  const textChannels = guild.channels.cache.filter(c => c.type === ChannelType.GuildText).size;
-  const voiceChannels = guild.channels.cache.filter(c => c.type === ChannelType.GuildVoice).size;
-  const announcementChannels = guild.channels.cache.filter(c => c.type === ChannelType.GuildAnnouncement).size;
-  const forumChannels = guild.channels.cache.filter(c => c.type === ChannelType.GuildForum).size;
-  const stageChannels = guild.channels.cache.filter(c => c.type === ChannelType.GuildStageVoice).size;
+  const categories = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildCategory).size;
+  const textChannels = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildText).size;
+  const voiceChannels = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildVoice).size;
+  const announcementChannels = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildAnnouncement).size;
+  const forumChannels = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildForum).size;
+  const stageChannels = guild.channels.cache.filter(c => c && c.type === ChannelType.GuildStageVoice).size;
 
-  const normalEmojis = guild.emojis.cache.filter(e => !e.animated).size;
-  const animatedEmojis = guild.emojis.cache.filter(e => e.animated).size;
+  const normalEmojis = guild.emojis.cache.filter(e => e && !e.animated).size;
+  const animatedEmojis = guild.emojis.cache.filter(e => e && e.animated).size;
   const totalStickers = guild.stickers.cache.size;
 
-  const totalRoles = guild.roles.cache.filter(r => r.id !== guild.id).size;
+  const totalRoles = guild.roles.cache.filter(r => r && r.id !== guild.id).size;
   const boostLevel = guild.premiumTier || 0;
   const boostCount = guild.premiumSubscriptionCount || 0;
 
   const report =
-    `📊 **${guild.name} — Tam Sunucu Detay Özeti**\n\n` +
+    `📊 **${guild.name || "Sunucu"} — Tam Sunucu Detay Özeti**\n\n` +
     `🆔 **Sunucu ID:** \`${guild.id}\`\n` +
     `👑 **Sunucu Sahibi:** <@${guild.ownerId}> (\`${guild.ownerId}\`)\n` +
-    `📅 **Kuruluş Tarihi:** <t:${Math.floor(guild.createdTimestamp / 1000)}:F>\n\n` +
+    `📅 **Kuruluş Tarihi:** <t:${Math.floor((guild.createdTimestamp || Date.now()) / 1000)}:F>\n\n` +
     `👥 **Üyeler:**\n` +
     `• Toplam Üye: **${totalMembers}** (Gerçek: **${humanCount}**, Bot: **${botCount}**)\n` +
     `• Takviye (Boost): Seviye **${boostLevel}** (**${boostCount}** Takviye)\n\n` +
@@ -578,7 +637,7 @@ async function handleSunucuBilgi(message) {
     "`!tumkategoriler`, `!tumkanallar`, `!tumroller`, `!tumemojiler`, `!tumcikartmalar`, `!tumseskanallari`, `!tumyetkililer` " +
     `komutlarını kullanabilirsiniz.*`;
 
-  await message.reply(report);
+  await message.reply({ content: report, allowedMentions: { parse: [] } });
 }
 
 /**
@@ -611,7 +670,7 @@ async function handleSunucuYardim(message) {
     `🔒 **Arşiv Komutu:**\n` +
     `• \`!arsiv [kanal_id, kanal_id_2...]\` — Kanalları gizli arşiv kategorisine taşır ve görünmez yapar.`;
 
-  await message.reply(guide);
+  await message.reply({ content: guide, allowedMentions: { parse: [] } });
 }
 
 /**
@@ -619,6 +678,10 @@ async function handleSunucuYardim(message) {
  */
 async function handleGuildInspectionMessage(message) {
   const content = (message.content || "").trim();
+  if (!content.startsWith("!") && !content.startsWith(".") && !content.startsWith("-")) {
+    return false;
+  }
+
   const firstLine = content.split("\n")[0].trim().toLowerCase();
   const commandWord = firstLine.split(/\s+/)[0];
 
