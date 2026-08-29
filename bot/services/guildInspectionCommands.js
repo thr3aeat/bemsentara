@@ -36,7 +36,7 @@ function getChannelTypeName(type) {
  * Uzun metin dizilerini Discord'un 2000 karakter sınırına göre satır satır bölümlere (partlara) ayırır.
  * Boş mesaj gönderme hatalarını kesin olarak engeller.
  */
-function splitIntoChunks(headerPrefix, lines, maxLen = 1850) {
+function splitIntoChunks(headerPrefix, lines, maxLen = 1500) {
   const validLines = (lines || [])
     .map(l => (l !== null && l !== undefined ? String(l).trim() : ""))
     .filter(l => l.length > 0);
@@ -76,38 +76,40 @@ function splitIntoChunks(headerPrefix, lines, maxLen = 1850) {
 
 /**
  * Bölünmüş mesajları sırayla Discord kanalına gönderir.
- * Boş içerik veya DiscordAPIError[50006] hatalarını önler.
+ * 1. Bölüm dahil tüm bölümlerin eksiksiz ve sırayla kanala düşmesini sağlar.
  */
 async function sendChunkedMessages(message, chunks) {
   const validChunks = (chunks || [])
     .map(c => (c !== null && c !== undefined ? String(c).trim() : ""))
     .filter(c => c.length > 0);
 
-  if (validChunks.length === 0) {
-    await message.reply("ℹ️ Gösterilecek herhangi bir kayıt bulunamadı.").catch(() => {});
+  const targetChannel = message.channel;
+  if (!targetChannel || typeof targetChannel.send !== "function") {
     return;
   }
 
-  let firstReplied = false;
+  if (validChunks.length === 0) {
+    await targetChannel.send("ℹ️ Gösterilecek herhangi bir kayıt bulunamadı.").catch(() => {});
+    return;
+  }
+
   for (let i = 0; i < validChunks.length; i++) {
     const text = validChunks[i];
     if (!text) continue;
 
     try {
-      if (!firstReplied) {
-        await message.reply({ content: text, allowedMentions: { parse: [] } });
-        firstReplied = true;
-      } else {
-        await message.channel.send({ content: text, allowedMentions: { parse: [] } });
-      }
+      await targetChannel.send({ content: text, allowedMentions: { parse: [] } });
     } catch (sendErr) {
-      // Mesaj silinmişse veya reply başarısızsa direkt kanala gönder
+      console.error(`[Guild Inspection sendChunkedMessages part ${i + 1} error]:`, sendErr.message);
       try {
-        await message.channel.send({ content: text, allowedMentions: { parse: [] } });
-        firstReplied = true;
+        await targetChannel.send({ content: text.slice(0, 1500), allowedMentions: { parse: [] } });
       } catch (fallbackErr) {
-        console.error("[Guild Inspection sendChunkedMessages error]:", fallbackErr.message);
+        console.error(`[Guild Inspection fallback error part ${i + 1}]:`, fallbackErr.message);
       }
+    }
+
+    if (i < validChunks.length - 1) {
+      await new Promise(res => setTimeout(res, 350));
     }
   }
 }
@@ -339,12 +341,12 @@ async function handleTumRoller(message, isEditMode = false) {
   }
 
   // Güncelleme değilse mevcut rolleri listele
-  await message.guild.roles.fetch().catch(() => {});
-  const roles = message.guild.roles.cache
-    .filter(r => r && r.id !== message.guild.id && r.name !== "@everyone" && !r.name.toLowerCase().includes("everyone"))
+  const fetchedRoles = await message.guild.roles.fetch().catch(() => message.guild.roles.cache);
+  const roles = (fetchedRoles || message.guild.roles.cache)
+    .filter(r => r && r.id !== message.guild.id && r.name !== "@everyone")
     .sort((a, b) => b.position - a.position);
 
-  if (roles.size === 0) {
+  if (!roles || roles.size === 0) {
     return message.reply("ℹ️ Sunucuda listelenecek özel rol bulunamadı.");
   }
 
