@@ -291,6 +291,87 @@ async function handleTumKanallar(message, isEditMode = false) {
     return message.reply("❌ Bu komutu kullanmak için `Yönetici` veya `Kanalları Yönet` yetkisine sahip olmalısınız.");
   }
 
+  const rawLines = (message.content || "").split("\n");
+  const updatePairs = [];
+
+  // Çok satırlı girdi varsa ve kanal isim güncellemesi isteniyorsa
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i].trim();
+    if (i === 0) {
+      line = line.replace(/^![a-zA-Z0-9çğıöşüÇĞİÖŞÜ_-]+/i, "").trim();
+    }
+    if (!line) continue;
+
+    // 1) "kanal_id ----- yeni kanal ismi" formatı
+    if (line.includes("-----")) {
+      const parts = line.split("-----");
+      const channelId = parts[0].trim().replace(/[<#>]/g, "");
+      const newName = parts.slice(1).join("-----").trim().replace(/^#+/, "");
+      if (channelId && newName) updatePairs.push({ channelId, newName });
+    }
+    // 2) "Kanal ID: 12345 | Kanal İsmi: ..." formatı
+    else if (/Kanal ID:\s*([0-9]+)/i.test(line) && /Kanal İsmi:\s*(.*)/i.test(line)) {
+      const idMatch = line.match(/Kanal ID:\s*([0-9]+)/i);
+      const nameMatch = line.match(/Kanal İsmi:\s*([^|]+)/i);
+      if (idMatch && idMatch[1] && nameMatch && nameMatch[1]) {
+        const cleanName = nameMatch[1].trim().replace(/^#+/, "");
+        updatePairs.push({ channelId: idMatch[1], newName: cleanName });
+      }
+    }
+  }
+
+  // Toplu güncelleme parametreleri verilmişse kanalların isimlerini değiştir
+  if (updatePairs.length > 0) {
+    const statusMsg = await message.reply(`🔄 **${updatePairs.length}** kanalın ismi güncelleniyor, lütfen bekleyin...`);
+    const success = [];
+    const failed = [];
+
+    for (const pair of updatePairs) {
+      const { channelId, newName } = pair;
+      try {
+        let ch = message.guild.channels.cache.get(channelId);
+        if (!ch) {
+          ch = await message.guild.channels.fetch(channelId).catch(() => null);
+        }
+
+        if (!ch) {
+          failed.push({ channelId, reason: "Kanal bulunamadı." });
+          continue;
+        }
+
+        if (ch.type === ChannelType.GuildCategory) {
+          failed.push({ channelId, name: ch.name, reason: "Kategorileri yeniden adlandırmak için !tumkategorilerduzenle kullanınız." });
+          continue;
+        }
+
+        const oldName = ch.name;
+        await ch.setName(newName, `Yetkili: ${message.author.tag} tarafından kanal ismi güncellendi.`);
+        success.push({ id: ch.id, oldName, newName: ch.name });
+      } catch (err) {
+        failed.push({ channelId, reason: err.message || "Bilinmeyen hata" });
+      }
+    }
+
+    const reportLines = [];
+    if (success.length > 0) {
+      reportLines.push(`✅ **İsmi Başarıyla Güncellenen Kanallar (${success.length}):**`);
+      success.forEach(s => reportLines.push(`- **#${s.oldName}** ➔ **#${s.newName}** (\`${s.id}\`)`));
+      reportLines.push("");
+    }
+    if (failed.length > 0) {
+      reportLines.push(`❌ **Başarısız Olanlar (${failed.length}):**`);
+      failed.forEach(f => {
+        const namePart = f.name ? `**#${f.name}** ` : "";
+        reportLines.push(`- ${namePart}(\`${f.channelId}\`): ${f.reason}`);
+      });
+    }
+
+    const resultChunks = splitIntoChunks("💬 **Kanal İsimleri Güncelleme Raporu**", reportLines);
+    await statusMsg.delete().catch(() => {});
+    return sendChunkedMessages(message, resultChunks);
+  }
+
+  // Güncelleme değilse kanalları listele
   await message.guild.channels.fetch().catch(() => {});
   const channels = message.guild.channels.cache
     .filter(c => c && c.type !== ChannelType.GuildCategory)
