@@ -1669,6 +1669,15 @@ function initializeDiscordHandlers(client) {
       console.error('[ConfessionRelay Error]:', confRelayErr.message);
     }
 
+    // ── RobloxLand İstek & Öneri Kanalı (1538469516953001994) Otomatik Tik/Çarpı & Yönetici DM ──
+    try {
+      const { handleSuggestionMessage } = require('../services/robloxLandSuggestionService');
+      const sugHandled = await handleSuggestionMessage(message, client);
+      if (sugHandled) return;
+    } catch (sugErr) {
+      console.error('[SuggestionMessage Error]:', sugErr.message);
+    }
+
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
 
@@ -4673,6 +4682,15 @@ function initializeDiscordHandlers(client) {
         if (handled) return;
       } catch (rdIntErr) {
         console.error("[RobloxDevs Interaction Error]:", rdIntErr.message);
+      }
+
+      // ── RobloxLand İstek & Öneri Yanıt ve Anonim DM Köprüsü ────────────────
+      try {
+        const { handleSuggestionInteraction } = require("../services/robloxLandSuggestionService");
+        const handledSug = await handleSuggestionInteraction(interaction, client);
+        if (handledSug) return;
+      } catch (sugIntErr) {
+        console.error("[SuggestionInteraction Error]:", sugIntErr.message);
       }
 
       await handleInteraction(interaction);
