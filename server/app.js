@@ -12,14 +12,24 @@ const pagesRoutes = require("./routes/pages");
 const logger = require("../utils/logger");
 
 const app = express();
+const {
+  noSqlSanitizerMiddleware,
+  responseDataRedactorMiddleware,
+  csrfOriginGuardMiddleware,
+  pinBruteForceGuardMiddleware,
+  strictRoleGuardMiddleware
+} = require("./services/securityShieldService");
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(helmet({
   contentSecurityPolicy: false,
-  referrerPolicy: { policy: "no-referrer" },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: { policy: "same-origin" },
   crossOriginResourcePolicy: { policy: "same-origin" },
+  xContentTypeOptions: true,
+  xFrameOptions: { action: "sameorigin" }
 }));
 app.use(
   cors({
@@ -29,8 +39,14 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ limit: "5mb", extended: true }));
+
+// ── 🛡️ GÜVENLİK KALKANI: NoSQL Enjeksiyonu & Hassas Veri Sızdırmazlık ─────────
+app.use(noSqlSanitizerMiddleware);
+app.use(responseDataRedactorMiddleware);
+app.use(csrfOriginGuardMiddleware);
+app.use(pinBruteForceGuardMiddleware);
 
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -59,7 +75,11 @@ const authLimiter = rateLimit({
 
 const path = require("path");
 
-app.use("/public", express.static(path.join(__dirname, "public")));
+app.use("/public", express.static(path.join(__dirname, "public"), {
+  dotfiles: "ignore",
+  index: false,
+  maxAge: "1d"
+}));
 
 app.use("/api/", apiLimiter);
 app.use("/auth/", authLimiter);
@@ -84,8 +104,9 @@ app.use(
   session({
     store: new FileSessionStore(),
     secret: SESSION_SECRET,
-    resave: true,
+    resave: false,
     saveUninitialized: false,
+    name: "__ekoyildiz_sid",
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
@@ -98,18 +119,20 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ── 🛡️ KATİ ADMİN VE YETKİLİ SAYFA ERİŞİM GÜVENLİĞİ ──────────────────────────
+app.use(strictRoleGuardMiddleware);
+
 // ── View Engine Setup (EJS) ──
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
 // ── Ban kontrolü: banlı kullanıcılar siteye giremez ─────────────────────────
 app.use((req, res, next) => {
-  // Auth ve API rotalarını atla
-  if (req.path.startsWith('/auth') || req.path.startsWith('/api') || req.path === '/login' || req.path === '/logout' || req.path === '/') {
-    return next();
-  }
   if (req.user && req.user.isBanned) {
+    if (req.path === '/logout') return next();
+    if (req.path.startsWith('/api/')) {
+      return res.status(403).json({ error: "Hesabınız yasaklandığı için bu işlemi gerçekleştiremezsiniz." });
+    }
     return res.status(403).send(`<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Erişim Engellendi</title>
     <style>body{background:#050508;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center}
     .box{background:rgba(20,20,30,.8);border:1px solid rgba(248,113,113,.3);border-radius:20px;padding:3rem;max-width:480px}
