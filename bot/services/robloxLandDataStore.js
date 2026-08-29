@@ -198,6 +198,14 @@ function addToBlacklist(userId, reason, officerId, caseId = null) {
   });
 }
 
+function getBlacklist() {
+  return loadJson(BLACKLIST_FILE, {});
+}
+
+function getAllCases() {
+  return loadJson(CASES_FILE, {});
+}
+
 function checkBlacklist(userId) {
   const all = loadJson(BLACKLIST_FILE, {});
   return all[userId] || null;
@@ -234,7 +242,9 @@ module.exports = {
   getNextCaseId,
   saveCase,
   getCase,
+  getAllCases,
   addToBlacklist,
+  getBlacklist,
   checkBlacklist,
   getCoupons,
   checkCoupon

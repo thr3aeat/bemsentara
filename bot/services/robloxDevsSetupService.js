@@ -23,7 +23,7 @@ const STAFF_LOG_CHANNEL_ID = "1543382733408174220";
 
 const CHANNELS = {
   RULES: "1538465174602649611",
-  SCAMMERS: "1538466110158938162",
+  SCAMMERS: "1538466803980959815",
   ORDER_RULES: "1538464717444747274",
   ABOUT_US: "1538465264142786621",
   STAFF_APPLY: "1538465462394814485",
@@ -107,36 +107,54 @@ function buildRulesPayload() {
   return ComponentsV2Factory.buildPayload(content);
 }
 
-// ─── 2. Dolandırıcılar & Kara Liste Paneli (1538466110158938162) ───────────────
+// ─── 2. Dolandırıcılar & Kara Liste Paneli (1538466803980959815) ───────────────
 function buildScammerPanelPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 🚨 RobloxLand — Dolandırıcı Kara Liste & Güvenlik Sistemi\n\n` +
-      `Topluluğumuzda güvenli ticareti sağlamak adına dolandırıcılık teşebbüsünde bulunan, sahte dekont atan veya teslimat yapmayan kullanıcılar bu sistem üzerinden kayıt altına alınır.\n\n` +
-      `### ⚠️ Güvenlik İlkelerimiz:\n` +
-      `• Sunucumuzdaki hiçbir yetkili sizden hesap şifrenizi veya e-posta doğrulama kodunuzu istemez.\n` +
-      `• DM üzerinden size indirim vadeden veya yetkili olduğunu iddia eden kişilere itibar etmeyiniz.\n` +
-      `• Şüpheli bir durumla karşılaştığınızda derhal aşağıdaki **Dolandırıcı Bildir** butonuna basarak ihbar ediniz.\n\n` +
-      `### 🔎 Güvenlik & Kara Liste Sorgulama\n` +
-      `Ticaret yapmadan önce kullanıcının Discord ID'sini girerek **Güven Puanını** ve kara liste kaydını anında sorgulayabilirsiniz.`
+      `# 🚨 ROBLOXLND — RESMİ DOLANDIRICILIK & ŞİKAYET MERKEZİ\n\n` +
+      `RobloxLand güvencesiyle topluluğumuzda güvenli ticareti sağlamak adına dolandırıcılık teşebbüsünde bulunan, sahte dekont ileten, teslimat yapmayan veya üyelerimizi mağdur eden şahıslar için anında soruşturma başlatılır.\n\n` +
+      `### ⚖️ Şikayet & Vaka İnceleme Süreci:\n` +
+      `1. **📁 İhbar Oluşturma:** Aşağıdaki **🚨 Dolandırıcı Şikayet Et** butonuna tıklayarak şüphelinin Discord ID'sini, Roblox kullanıcı adını ve kanıt linklerini (SS/Video/Dekont) iletiniz.\n` +
+      `2. **🏷️ Otomatik Vaka Dosyası:** İhbarınız anında özel dosya numarasıyla (\`#SC-XXXX\`) güvenlik ve yönetim birimimize atanır.\n` +
+      `3. **🔍 Delil Doğrulama:** Kanıtlar yetkililerimizce incelenir, şüpheliye savunma hakkı tanınır veya derhal **Kalıcı Kara Listeye (Blacklist)** alınır.\n` +
+      `4. **🚫 Otomatik Yaptırım:** Kara listeye alınan şahıs tüm platformda ifşa edilir, güven puanı \`0/100\`e düşürülür ve sunucudan kalıcı olarak uzaklaştırılır.\n\n` +
+      `### 🛡️ Temel Güvenlik İlkelerimiz:\n` +
+      `• Sunucumuzdaki hiçbir yetkili sizden **hesap şifrenizi**, **e-posta doğrulama kodunuzu** veya **.ROBLOSECURITY** çerezinizi istemez.\n` +
+      `• DM üzerinden size indirim vadeden veya "ben yetkiliyim bilet açmana gerek yok" diyen kişilere asla itibar etmeyiniz.\n` +
+      `• Ticaret yapmadan önce mutlaka aşağıdaki **🔎 Şüpheli / ID Sorgula** butonuyla karşı tarafın sicilini ve güven puanını kontrol ediniz.\n\n` +
+      `-# ⚠️ Asılsız ihbar, montaj kanıt veya iftira girişiminde bulunan kullanıcılar hakkında ters işlem uygulanır.`
     ),
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
       {
         style: ButtonStyle.Danger,
-        label: "🚨 Dolandırıcı Bildir",
+        label: "🚨 Dolandırıcı Şikayet Et (Form)",
         custom_id: "robloxland_scam_report",
         emoji: { name: "⚠️" }
       },
       {
         style: ButtonStyle.Primary,
-        label: "🔎 Kullanıcı / ID Sorgula",
+        label: "🔎 Şüpheli / ID Sorgula",
         custom_id: "robloxland_user_lookup",
         emoji: { name: "🔍" }
       },
       {
         style: ButtonStyle.Secondary,
-        label: "👤 Profilim",
+        label: "📜 Kara Liste (Son Vakalar)",
+        custom_id: "robloxland_view_blacklist",
+        emoji: { name: "📋" }
+      }
+    ]),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Success,
+        label: "🛡️ Güvenli Ticaret & Escrow Rehberi",
+        custom_id: "robloxland_escrow_guide",
+        emoji: { name: "🛡️" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "👤 Profilim & Güven Puanım",
         custom_id: "robloxland_open_my_profile",
         emoji: { name: "👤" }
       }
@@ -1485,15 +1503,24 @@ async function handleRobloxDevsInteraction(interaction) {
     return true;
   }
 
-  // 16. Dolandırıcı Vaka Sistemi & Kara Liste Sorgulama
+  // 16. Dolandırıcı Vaka Sistemi (5 Alanlı Kapsamlı Şikayet Modalı)
   if (interaction.isButton() && customId === "robloxland_scam_report") {
-    const modal = new ModalBuilder().setCustomId("robloxland_scam_report_modal").setTitle("Dolandırıcı Bildirimi");
+    const modal = new ModalBuilder().setCustomId("robloxland_scam_report_modal").setTitle("Dolandırıcı Şikayet Formu");
     modal.addComponents(
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("scam_user").setLabel("Şüphelinin Kullanıcı Adı veya ID'si").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder().setCustomId("scam_user").setLabel("Şüpheli Discord ID / Kullanıcı Adı").setPlaceholder("Örn: 1031620522406072350 veya Alp#0001").setStyle(TextInputStyle.Short).setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("scam_proof").setLabel("Olay Detayı ve Kanıt Linkleri").setPlaceholder("Ekran görüntüsü linkleri, dekont bilgisi vb.").setStyle(TextInputStyle.Paragraph).setRequired(true)
+        new TextInputBuilder().setCustomId("scam_roblox_user").setLabel("Şüphelinin Roblox Kullanıcı Adı").setPlaceholder("Örn: RobloxTrader34").setStyle(TextInputStyle.Short).setRequired(false)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("scam_amount").setLabel("Mağduriyet / Zarar Tutarı").setPlaceholder("Örn: 500 TL IBAN / 2.000 Robux / Grup").setStyle(TextInputStyle.Short).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("scam_proof").setLabel("Kanıt Linkleri (SS / Video / Dekont)").setPlaceholder("HızlıResim, Imgur veya YouTube linkleri").setStyle(TextInputStyle.Short).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("scam_details").setLabel("Olayın Özeti ve Açıklaması").setPlaceholder("Ticaret nasıl başladı, ne zaman dolandırıldınız vb.").setStyle(TextInputStyle.Paragraph).setRequired(true)
       )
     );
     await interaction.showModal(modal);
@@ -1502,20 +1529,26 @@ async function handleRobloxDevsInteraction(interaction) {
 
   if (interaction.isModalSubmit() && customId === "robloxland_scam_report_modal") {
     const scamTarget = interaction.fields.getTextInputValue("scam_user");
+    const scamRoblox = interaction.fields.getTextInputValue("scam_roblox_user") || "Belirtilmedi";
+    const scamAmount = interaction.fields.getTextInputValue("scam_amount");
     const scamProof = interaction.fields.getTextInputValue("scam_proof");
+    const scamDetails = interaction.fields.getTextInputValue("scam_details");
     const caseId = DataStore.getNextCaseId();
 
     DataStore.saveCase(caseId, {
       caseId,
       reporterId: user.id,
       suspect: scamTarget,
+      suspectRoblox: scamRoblox,
+      amount: scamAmount,
       proof: scamProof,
+      details: scamDetails,
       status: "İnceleniyor",
       createdAt: new Date().toISOString()
     });
 
     await interaction.reply({
-      content: `✅ **Vaka #${caseId}** başarıyla oluşturuldu ve güvenlik birimine iletildi. İhbarınız için teşekkür ederiz.`,
+      content: `✅ **Vaka #${caseId}** başarıyla oluşturuldu ve güvenlik birimine iletildi. Dosyanız incelenmeye alınmıştır.`,
       ephemeral: true
     });
 
@@ -1524,16 +1557,19 @@ async function handleRobloxDevsInteraction(interaction) {
       if (logChan && logChan.isTextBased()) {
         await logChan.send(ComponentsV2Factory.buildPayload([
           ComponentsV2Factory.text(
-            `# 🚨 Vaka #${caseId} — Dolandırıcılık İhbarı\n\n` +
-            `👤 **Şikayet Eden:** <@${user.id}>\n` +
-            `🎯 **Şüpheli:** \`${scamTarget}\`\n` +
+            `# 🚨 VAKA #${caseId} — DOLANDIRICILIK İHBARI\n\n` +
+            `👤 **Şikayet Eden:** <@${user.id}> (\`${user.id}\`)\n` +
+            `🎯 **Şüpheli Discord:** \`${scamTarget}\`\n` +
+            `🎮 **Şüpheli Roblox:** \`${scamRoblox}\`\n` +
+            `💰 **Zarar Tutarı:** \`${scamAmount}\`\n` +
             `🟡 **Durum:** İnceleniyor\n\n` +
-            `### 📂 Kanıt & Olay Detayı:\n${scamProof}`
+            `### 📂 Kanıt Linkleri:\n${scamProof}\n\n` +
+            `### 📝 Olay Açıklaması:\n${scamDetails}`
           ),
           ComponentsV2Factory.separator(true),
           ComponentsV2Factory.actionRow([
             { style: ButtonStyle.Success, label: "🙋 Vakayı Üstlen", custom_id: `robloxland_case_claim_${caseId}`, emoji: { name: "🙋" } },
-            { style: ButtonStyle.Danger, label: "🚫 Kara Listeye Ekle", custom_id: `robloxland_case_ban_${caseId}_${scamTarget}`, emoji: { name: "🔴" } },
+            { style: ButtonStyle.Danger, label: "🚫 Kara Listeye Ekle & Banla", custom_id: `robloxland_case_ban_${caseId}_${scamTarget}`, emoji: { name: "🔴" } },
             { style: ButtonStyle.Secondary, label: "✅ Güvenli / İptal", custom_id: `robloxland_case_close_${caseId}`, emoji: { name: "✅" } }
           ])
         ]));
@@ -1570,6 +1606,49 @@ async function handleRobloxDevsInteraction(interaction) {
         ephemeral: true
       });
     }
+    return true;
+  }
+
+  // 17.1 Kara Liste Son Vakalar Butonu (📜 Kara Liste)
+  if (interaction.isButton() && customId === "robloxland_view_blacklist") {
+    const blacklist = DataStore.getBlacklist();
+    const entries = Object.entries(blacklist);
+
+    let text = "# 📜 ROBLOXLND — RESMİ KARA LİSTE VERİTABANI\n\n";
+    if (entries.length === 0) {
+      text += "🟢 *Şu anda aktif kara listeye alınmış onaylı bir dolandırıcı kaydı bulunmamaktadır. Tüm ticaretler denetim altındadır.*";
+    } else {
+      text += "🔴 **Son Onaylanan Dolandırıcılık Vakaları:**\n\n";
+      const recent = entries.slice(-5).reverse();
+      for (const [suspectId, info] of recent) {
+        text += `• **Kullanıcı:** <@${suspectId}> (\`${suspectId}\`)\n  └ 📁 Vaka: \`${info.caseId || "SC-0038"}\` • Sebep: *${info.reason}*\n`;
+      }
+    }
+    text += "\n-# Ticaret yapmadan önce karşı tarafın ID'sini mutlaka sorgulayınız.";
+
+    await interaction.reply({
+      ...ComponentsV2Factory.buildPayload([ComponentsV2Factory.text(text)]),
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 17.2 Güvenli Ticaret & Escrow Rehberi Butonu
+  if (interaction.isButton() && customId === "robloxland_escrow_guide") {
+    const guideText =
+      "# 🛡️ ROBLOXLND — GÜVENLİ TİCARET & ESCROW REHBERİ\n\n" +
+      "Sunucumuzda ticaret yaparken mağdur olmamak için aşağıdaki kuralları mutlaka uygulayınız:\n\n" +
+      "### 📌 Temel Koruma Maddeleri:\n" +
+      "1. **Asla DM'den Ticaret Yapmayın:** Tüm işlemlerinizi sunucunun resmi sipariş veya destek biletlerinde gerçekleştiriniz.\n" +
+      "2. **Şifre ve Çerez Paylaşmayın:** Hiçbir yetkilimiz sizden Roblox hesap şifrenizi veya `.ROBLOSECURITY` bilginizi talep etmez.\n" +
+      "3. **Güven Puanı & ID Kontrolü:** Tanımadığınız biriyle takas yapmadan önce **🔎 Şüpheli / ID Sorgula** butonunu kullanarak karşı tarafın sicilini kontrol ediniz.\n" +
+      "4. **Dekont ve Teslimat Kanıtı:** Para transferi yaparken açıklama kısmına sipariş kodunuzu yazınız ve dekontunuzu bilet kanalına yükleyiniz.\n\n" +
+      "-# Şüpheli bir durum fark ettiğiniz an 🚨 Dolandırıcı Şikayet Et butonunu kullanarak bildirimde bulununuz.";
+
+    await interaction.reply({
+      ...ComponentsV2Factory.buildPayload([ComponentsV2Factory.text(guideText)]),
+      ephemeral: true
+    });
     return true;
   }
 

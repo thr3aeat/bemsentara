@@ -1,0 +1,26 @@
+{
+  "SC-0036": {
+    "caseId": "SC-0036",
+    "reporterId": "victim_user_1",
+    "suspect": "999888777666555444",
+    "suspectRoblox": "ScamMaster99",
+    "amount": "1.250 TL IBAN",
+    "proof": "https://imgur.com/evidence1, https://youtube.com/watch?v=123",
+    "details": "Robux satışı için IBAN'a para gönderildi fakat kullanıcı parayı alıp engelledi.",
+    "status": "İnceleniyor",
+    "createdAt": "2026-08-29T22:59:25.970Z",
+    "updatedAt": "2026-08-29T22:59:25.971Z"
+  },
+  "SC-0037": {
+    "caseId": "SC-0037",
+    "reporterId": "victim_user_1",
+    "suspect": "999888777666555444",
+    "suspectRoblox": "ScamMaster99",
+    "amount": "1.250 TL IBAN",
+    "proof": "https://imgur.com/evidence1, https://youtube.com/watch?v=123",
+    "details": "Robux satışı için IBAN'a para gönderildi fakat kullanıcı parayı alıp engelledi.",
+    "status": "İnceleniyor",
+    "createdAt": "2026-08-29T22:59:37.595Z",
+    "updatedAt": "2026-08-29T22:59:37.596Z"
+  }
+}
