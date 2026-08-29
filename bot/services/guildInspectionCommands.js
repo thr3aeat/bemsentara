@@ -141,7 +141,7 @@ async function handleTumRoller(message, isEditMode = false) {
 
   await message.guild.roles.fetch().catch(() => {});
   const roles = message.guild.roles.cache
-    .filter(r => r.id !== message.guild.id) // @everyone hariç
+    .filter(r => r.id !== message.guild.id && r.name !== '@everyone' && !r.name.toLowerCase().includes('everyone'))
     .sort((a, b) => b.position - a.position);
 
   if (roles.size === 0) {
@@ -160,8 +160,8 @@ async function handleTumRoller(message, isEditMode = false) {
   });
 
   const header = isEditMode
-    ? `📋 **[DÜZENLEME FORMATI] Sunucudaki Tüm Roller (@everyone hariç)**`
-    : `🛡️ **Sunucudaki Tüm Roller (@everyone hariç)**`;
+    ? `📋 **[DÜZENLEME FORMATI] Sunucudaki Tüm Roller**`
+    : `🛡️ **Sunucudaki Tüm Roller**`;
 
   const chunks = splitIntoChunks(header, lines);
   await sendChunkedMessages(message, chunks);
