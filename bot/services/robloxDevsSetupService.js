@@ -184,16 +184,23 @@ function buildOrderRulesPayload() {
 function buildAboutUsPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 🌟 RobloxLand — Biz Kimiz?\n\n` +
-      `**RobloxLand**, Roblox ekosisteminde geliştiricileri, tasarımcıları, oyuncuları ve alıcıları tek bir çatı altında toplayan profesyonel bir topluluk ve dijital hizmet merkezidir.\n\n` +
-      `### 🚀 Ne Yapıyoruz?\n` +
-      `• **Roblox Geliştirme:** Harita yapımı (Map Building), modelleme, script yazımı ve sistem entegrasyonları.\n` +
-      `• **Grafik & Tasarım:** Özel 3D GFX, logo, banner, thumbnail ve arayüz (UI) tasarımları.\n` +
-      `• **Dijital Varlıklar:** Robux tedariği, grup satışı, takipçi/üye sistemleri ve bot hizmetleri.\n` +
-      `• **Güvenli Pazar:** Alıcı ve satıcıyı koruyan, dolandırıcılığa karşı şeffaf ve denetlenen ticaret ortamı.\n\n` +
-      `### 💎 Vizyonumuz\n` +
-      `Türkiye'nin en güvenilir, hızlı ve kaliteli Roblox geliştirici ve dijital ürün platformu olmak.\n\n` +
-      `-# Bizimle iletişime geçmek ve hizmet almak için destek talebi açabilirsiniz.`
+      `# 🌟 ROBLOXLND — BİZ KİMİZ?\n\n` +
+      `**RobloxLand**, Roblox ekosisteminde geliştiricileri, mimarları, tasarımcıları, yatırımcıları ve oyuncuları tek bir kurumsal çatı altında toplayan Türkiye'nin en büyük yeni nesil dijital merkezidir.\n\n` +
+      `<:award58:1235320330948575263> **Türkiye'nin 1 numaralı topluluk yöneticisi-map dağıtıcısı-pazar yeri olduğumuzu iddia ediyoruz.**\n\n` +
+      `### 💎 Bizi Farklı Kılan Nedir?\n` +
+      `• 🗺️ **Lider Map & Sistem Dağıtımı:** En kaliteli Roblox oyun haritaları, optimize edilmiş açık kaynak/özel script sistemleri ve profesyonel mekanikler.\n` +
+      `• 🛡️ **%100 Güvenli Pazar Yeri & Escrow:** Dolandırıcılığa karşı sıfır tolerans, doğrulanmış üreticiler ve bilet güvencesiyle denetimli ticaret.\n` +
+      `• 🎨 **Stüdyo Kalitesinde Tasarım:** 3D GFX render, logo, UI/UX ve özel marka giydirmeleri.\n` +
+      `• ⚡ **Kesintisiz Dijital Tedarik:** Robux, grup transferleri, üye & bot altyapıları ile anında teslimat.\n\n` +
+      `### 📊 RobloxLand İstatistik & Standartları\n` +
+      `\`\`\`\n` +
+      `👑 Topluluk Standardı : %100 Şeffaf ve Kurumsal\n` +
+      `🔒 Güvenlik Seviyesi  : Escrow & Kara Liste Korumalı\n` +
+      `⚡ Teslimat Hızı      : 7/24 Aktif Satış ve Destek Ekibi\n` +
+      `\`\`\`\n\n` +
+      `🤝 **Sen de Ekosistemin Bir Parçası Ol!**\n` +
+      `Projelerini hayata geçirmek, güvenle alışveriş yapmak veya yetkili kadromuza katılmak için aşağıdaki butonları kullanabilirsin.\n\n` +
+      `-# RobloxLand Ecosystem • Güvenin ve Kalitenin Değişmeyen Adresi`
     ),
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
@@ -202,6 +209,12 @@ function buildAboutUsPayload() {
         label: "💬 Destek & İletişim",
         custom_id: "robloxland_open_ticket_destek",
         emoji: { name: "📞" }
+      },
+      {
+        style: ButtonStyle.Success,
+        label: "🛒 Mağaza & Satın Al",
+        custom_id: "robloxland_start_order_flow",
+        emoji: { name: "🛍️" }
       },
       {
         style: ButtonStyle.Secondary,

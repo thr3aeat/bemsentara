@@ -973,6 +973,19 @@ async function handleGuildInspectionMessage(message) {
     return true;
   }
 
+  // 0.1 Seviye Rollerini Ayrı Göster & Sırala (!ekoasrtaerkltaerkk / !ekosirala)
+  if (norm.includes("ekoasr") || norm.includes("ekosirala") || norm.includes("seviyerolleri")) {
+    const { reorderAndHoistLevelRoles } = require("./robloxLandLevelService");
+    const statusMsg = await message.reply("⏳ **65 Seviye Rolü 'Çevrimiçi üyelerden ayrı göster' (Hoist) yapılıyor ve taban rolün üstüne sıralanıyor...**");
+    const ok = await reorderAndHoistLevelRoles(message.guild);
+    if (ok) {
+      await statusMsg.edit("✅ **Tüm 65 seviye rolü başarıyla 'Çevrimiçi üyelerden ayrı göster' yapıldı ve taban rolün (`👤 Dev`) hemen üzerine hiyerarşik sırayla dizildi!**");
+    } else {
+      await statusMsg.edit("❌ Seviye rolleri sıralanırken hata oluştu veya seviye rolleri bulunamadı.");
+    }
+    return true;
+  }
+
   // 3. Roller
   if (norm.includes("rol")) {
     const isEdit = norm.includes("duzen") || norm.includes("guncel") || content.includes("-----");

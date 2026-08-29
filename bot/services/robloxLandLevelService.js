@@ -110,7 +110,7 @@ async function handleRolunUstuneYeniRoller(message, lines) {
   const createdRoles = [];
   const errors = [];
 
-  // 1. Rolleri oluştur / güncelle
+  // 1. Rolleri oluştur / güncelle (hoist: true -> ayrı göster)
   for (const def of roleDefs) {
     try {
       let role = guild.roles.cache.find(r => r.name.toLowerCase() === def.name.toLowerCase());
@@ -118,12 +118,16 @@ async function handleRolunUstuneYeniRoller(message, lines) {
         role = await guild.roles.create({
           name: def.name,
           color: def.color,
+          hoist: true,
           reason: `RobloxLand Level ${def.level} Rolü`,
           permissions: []
         });
       } else {
-        if (role.hexColor.toLowerCase() !== def.color.toLowerCase()) {
-          await role.setColor(def.color).catch(() => {});
+        const updates = {};
+        if (role.hexColor.toLowerCase() !== def.color.toLowerCase()) updates.color = def.color;
+        if (!role.hoist) updates.hoist = true;
+        if (Object.keys(updates).length > 0) {
+          await role.edit(updates).catch(() => {});
         }
       }
       rolesMap[def.level] = { id: role.id, name: role.name, color: def.color };
@@ -135,34 +139,87 @@ async function handleRolunUstuneYeniRoller(message, lines) {
 
   saveLevelRolesMap(rolesMap);
 
-  // 2. Taban rolün üstüne sırala
-  if (baseRoleId) {
-    try {
-      const baseRole = guild.roles.cache.get(baseRoleId);
-      if (baseRole) {
-        // En düşük seviyeden en yükseğe doğru taban rolün pozisyonu üzerine ayarla
-        const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
-        const botHighest = botMember ? botMember.roles.highest.position : 999;
-        let startPos = Math.min(baseRole.position + 1, botHighest - 1);
-
-        for (let i = 0; i < createdRoles.length; i++) {
-          const rObj = createdRoles[i];
-          const targetPos = Math.min(startPos + i, botHighest - 1);
-          await rObj.role.setPosition(targetPos).catch(() => {});
-        }
-      }
-    } catch (posErr) {
-      console.warn("[LevelService] Position sort error:", posErr.message);
-    }
-  }
+  // 2. Taban rolün üstüne sırala ve hoist ayarla
+  await reorderAndHoistLevelRoles(guild, baseRoleId, createdRoles);
 
   const successText =
-    `✅ **${createdRoles.length} Seviye Rolü Başarıyla Kuruldu & Sıralandı!**\n\n` +
+    `✅ **${createdRoles.length} Seviye Rolü Başarıyla Kuruldu, Sıralandı ve Ayrı Göster (Hoist) Yapıldı!**\n\n` +
     `🎯 **Taban Rol:** ${baseRoleId ? `<@&${baseRoleId}>` : "Belirtilmedi"}\n` +
     `🏆 **Seviye Aralığı:** Lv. 1 (${roleDefs[0]?.name}) ➔ Lv. ${roleDefs[roleDefs.length - 1]?.level} (${roleDefs[roleDefs.length - 1]?.name})\n` +
+    `👁️ **Ayrı Gösterim:** Tüm 65 seviye rolü üyeler listesinde diğerlerinden ayrı gösterilecek şekilde ayarlandı.\n` +
     `💾 **Kayıt:** Seviye sistemi veritabanına aktarıldı. Üyeler mesaj yazdıkça ve seslide durdukça otomatik rol alacaktır!`;
 
   await statusMsg.edit(successText).catch(() => {});
+  return true;
+}
+
+/**
+ * Tüm 65 Seviye Rolünü Ayrı Göster (Hoist: true) Yapar ve Taban Rolün Üstüne Sıralar
+ */
+async function reorderAndHoistLevelRoles(guild, baseRoleId = "1537412517666619454", customRoleList = null) {
+  if (!guild) return false;
+
+  await guild.roles.fetch().catch(() => {});
+  const rolesMap = getLevelRolesMap();
+  const baseRole = baseRoleId ? guild.roles.cache.get(baseRoleId) : null;
+  const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+  const botHighest = botMember ? botMember.roles.highest.position : 999;
+
+  const roleObjs = [];
+
+  // Seviye 1'den 65'e sıralı liste oluştur
+  for (let lvl = 1; lvl <= 65; lvl++) {
+    let r = null;
+    if (customRoleList) {
+      const match = customRoleList.find(x => x.level === lvl);
+      if (match) r = match.role;
+    }
+    if (!r && rolesMap[lvl]?.id) {
+      r = guild.roles.cache.get(rolesMap[lvl].id);
+    }
+    if (!r && rolesMap[lvl]?.name) {
+      r = guild.roles.cache.find(x => x.name.toLowerCase() === rolesMap[lvl].name.toLowerCase());
+    }
+    if (r) {
+      roleObjs.push({ level: lvl, role: r });
+    }
+  }
+
+  if (roleObjs.length === 0) return false;
+
+  // 1. Hoist (Ayrı Göster) Aç
+  for (const item of roleObjs) {
+    if (!item.role.hoist) {
+      await item.role.setHoist(true).catch(() => {});
+    }
+  }
+
+  // 2. setPositions ile tek seferde toplu veya kademeli sırala
+  if (baseRole) {
+    try {
+      const startPos = Math.min(baseRole.position + 1, botHighest - 1);
+      const positionsPayload = roleObjs.map((item, idx) => ({
+        role: item.role.id,
+        position: Math.min(startPos + idx, botHighest - 1)
+      }));
+
+      if (typeof guild.roles.setPositions === "function") {
+        await guild.roles.setPositions(positionsPayload).catch(async () => {
+          // Fallback tek tek
+          for (let i = 0; i < roleObjs.length; i++) {
+            await roleObjs[i].role.setPosition(Math.min(startPos + i, botHighest - 1)).catch(() => {});
+          }
+        });
+      } else {
+        for (let i = 0; i < roleObjs.length; i++) {
+          await roleObjs[i].role.setPosition(Math.min(startPos + i, botHighest - 1)).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn("[LevelService] Reorder positions error:", e.message);
+    }
+  }
+
   return true;
 }
 
@@ -400,6 +457,7 @@ function buildUserProfileCard(targetUser, member) {
 
 module.exports = {
   handleRolunUstuneYeniRoller,
+  reorderAndHoistLevelRoles,
   handleMessageXp,
   processLevelUp,
   initVoiceXpTracker,

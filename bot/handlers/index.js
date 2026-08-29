@@ -1743,6 +1743,28 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── RobloxLand Seviye Rollerini Ayrı Göster & Sırala Komutu (!ekoasrtaerkltaerkk) ──
+    if (
+      lowerContent.startsWith("!ekoasrtaerkltaerkk") ||
+      lowerContent.startsWith("!ekosirala") ||
+      lowerContent.startsWith("!seviyerolleriniduzenle") ||
+      lowerContent.startsWith("!seviyerollerisirala") ||
+      lowerContent.startsWith(".ekoasrtaerkltaerkk")
+    ) {
+      try {
+        const { reorderAndHoistLevelRoles } = require("../services/robloxLandLevelService");
+        const statusMsg = await message.reply("⏳ **65 Seviye Rolü 'Çevrimiçi üyelerden ayrı göster' (Hoist) yapılıyor ve taban rolün üstüne sıralanıyor...**");
+        const ok = await reorderAndHoistLevelRoles(message.guild);
+        if (ok) {
+          return statusMsg.edit("✅ **Tüm 65 seviye rolü başarıyla 'Çevrimiçi üyelerden ayrı göster' yapıldı ve taban rolün (`👤 Dev`) hemen üzerine hiyerarşik sırayla dizildi!**");
+        } else {
+          return statusMsg.edit("❌ Seviye rolleri sıralanırken hata oluştu veya seviye rolleri bulunamadı.");
+        }
+      } catch (err) {
+        return message.reply(`❌ Hata: ${err.message}`);
+      }
+    }
+
     // ── RobloxLand Sipariş Sorgulama Komutu (!sipariş <kod> / !siparis <kod>) ──
     if (lowerContent.startsWith("!sipariş") || lowerContent.startsWith("!siparis") || lowerContent.startsWith(".siparis") || lowerContent.startsWith("/sipariş") || lowerContent.startsWith("/siparis")) {
       const args = content.trim().split(/\s+/).slice(1);
