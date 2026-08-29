@@ -253,6 +253,92 @@ async function handleTumRoller(message, isEditMode = false) {
     return message.reply("❌ Bu komutu kullanmak için `Yönetici` veya `Rolleri Yönet` yetkisine sahip olmalısınız.");
   }
 
+  const rawLines = (message.content || "").split("\n");
+  const updatePairs = [];
+
+  // Çok satırlı girdi varsa ve rol isim güncellemesi isteniyorsa
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i].trim();
+    if (i === 0) {
+      line = line.replace(/^[!\.\-\_]+[a-zA-Z0-9çğıöşüÇĞİÖŞÜ_-]+/i, "").trim();
+    }
+    if (!line || line === "+") continue;
+
+    // 1) "rol_id ----- yeni rol ismi" formatı
+    if (line.includes("-----")) {
+      const parts = line.split("-----");
+      const roleId = parts[0].trim().replace(/[<@&>]/g, "");
+      const newName = parts.slice(1).join("-----").trim();
+      if (roleId && newName) updatePairs.push({ roleId, newName });
+    }
+    // 2) "Rol ID: 12345 | Rol İsmi: ..." formatı
+    else if (/Rol ID:\s*([0-9]+)/i.test(line) && /Rol İsmi:\s*(.*)/i.test(line)) {
+      const idMatch = line.match(/Rol ID:\s*([0-9]+)/i);
+      const nameMatch = line.match(/Rol İsmi:\s*([^|]+)/i);
+      if (idMatch && idMatch[1] && nameMatch && nameMatch[1]) {
+        updatePairs.push({ roleId: idMatch[1], newName: nameMatch[1].trim() });
+      }
+    }
+  }
+
+  // Toplu güncelleme parametreleri verilmişse rollerin isimlerini güncelle
+  if (updatePairs.length > 0) {
+    const statusMsg = await message.reply(`🔄 **${updatePairs.length}** rolün ismi güncelleniyor, lütfen bekleyin...`);
+    const success = [];
+    const failed = [];
+
+    for (const pair of updatePairs) {
+      const { roleId, newName } = pair;
+      try {
+        let role = message.guild.roles.cache.get(roleId);
+        if (!role) {
+          role = await message.guild.roles.fetch(roleId).catch(() => null);
+        }
+
+        if (!role) {
+          failed.push({ roleId, reason: "Rol sunucuda bulunamadı." });
+          continue;
+        }
+
+        if (role.id === message.guild.id || role.name === "@everyone") {
+          failed.push({ roleId, name: role.name, reason: "@everyone rolü yeniden adlandırılamaz." });
+          continue;
+        }
+
+        const botMember = message.guild.members.me || await message.guild.members.fetchMe().catch(() => null);
+        if (botMember && role.position >= botMember.roles.highest.position) {
+          failed.push({ roleId, name: role.name, reason: "Rol hiyerarşisi: Bu rol botun yetkisinden daha üst sırada." });
+          continue;
+        }
+
+        const oldName = role.name;
+        await role.setName(newName, `Yetkili: ${message.author.tag} tarafından toplu rol ismi güncellemesi yapıldı.`);
+        success.push({ id: role.id, oldName, newName: role.name });
+      } catch (err) {
+        failed.push({ roleId, reason: err.message || "Bilinmeyen hata" });
+      }
+    }
+
+    const reportLines = [];
+    if (success.length > 0) {
+      reportLines.push(`✅ **İsmi Başarıyla Güncellenen Roller (${success.length}):**`);
+      success.forEach(s => reportLines.push(`- **${s.oldName}** ➔ **${s.newName}** (\`${s.id}\`)`));
+      reportLines.push("");
+    }
+    if (failed.length > 0) {
+      reportLines.push(`❌ **Başarısız Olanlar (${failed.length}):**`);
+      failed.forEach(f => {
+        const namePart = f.name ? `**${f.name}** ` : "";
+        reportLines.push(`- ${namePart}(\`${f.roleId}\`): ${f.reason}`);
+      });
+    }
+
+    const resultChunks = splitIntoChunks("🛡️ **Rol İsimleri Güncelleme Raporu**", reportLines);
+    await statusMsg.delete().catch(() => {});
+    return sendChunkedMessages(message, resultChunks);
+  }
+
+  // Güncelleme değilse mevcut rolleri listele
   await message.guild.roles.fetch().catch(() => {});
   const roles = message.guild.roles.cache
     .filter(r => r && r.id !== message.guild.id && r.name !== "@everyone" && !r.name.toLowerCase().includes("everyone"))
@@ -880,7 +966,7 @@ async function handleGuildInspectionMessage(message) {
 
   // 3. Roller
   if (norm.includes("rol")) {
-    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    const isEdit = norm.includes("duzen") || norm.includes("guncel") || content.includes("-----");
     await handleTumRoller(message, isEdit);
     return true;
   }

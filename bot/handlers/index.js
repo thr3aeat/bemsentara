@@ -1,4 +1,4 @@
-const { ChannelType } = require("discord.js");
+const { ChannelType, PermissionFlagsBits } = require("discord.js");
 const { handleButtonInteraction } = require("./buttonHandler");
 const { handleSelectInteraction } = require("./selectHandler");
 const { handleModalSubmit } = require("./modalHandler");
