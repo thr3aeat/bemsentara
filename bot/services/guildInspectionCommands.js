@@ -136,6 +136,86 @@ async function handleTumKategoriler(message, isEditMode = false) {
     return message.reply("❌ Bu komutu kullanmak için `Yönetici` veya `Kanalları Yönet` yetkisine sahip olmalısınız.");
   }
 
+  const rawLines = (message.content || "").split("\n");
+  const updatePairs = [];
+
+  // Çok satırlı girdi varsa ve kategori isim güncellemesi isteniyorsa
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i].trim();
+    if (i === 0) {
+      line = line.replace(/^![a-zA-Z0-9çğıöşüÇĞİÖŞÜ_-]+/i, "").trim();
+    }
+    if (!line) continue;
+
+    // 1) "kategori_id ----- yeni kategori ismi" formatı
+    if (line.includes("-----")) {
+      const parts = line.split("-----");
+      const catId = parts[0].trim().replace(/[<#>]/g, "");
+      const newName = parts.slice(1).join("-----").trim();
+      if (catId && newName) updatePairs.push({ catId, newName });
+    }
+    // 2) "Kategori ID: 12345 | Kategori İsmi: ..." formatı
+    else if (/Kategori ID:\s*([0-9]+)/i.test(line) && /Kategori İsmi:\s*(.*)/i.test(line)) {
+      const idMatch = line.match(/Kategori ID:\s*([0-9]+)/i);
+      const nameMatch = line.match(/Kategori İsmi:\s*([^|]+)/i);
+      if (idMatch && idMatch[1] && nameMatch && nameMatch[1]) {
+        updatePairs.push({ catId: idMatch[1], newName: nameMatch[1].trim() });
+      }
+    }
+  }
+
+  // Toplu güncelleme parametreleri verilmişse kategorileri yeniden adlandır
+  if (updatePairs.length > 0) {
+    const statusMsg = await message.reply(`🔄 **${updatePairs.length}** kategorinin ismi güncelleniyor, lütfen bekleyin...`);
+    const success = [];
+    const failed = [];
+
+    for (const pair of updatePairs) {
+      const { catId, newName } = pair;
+      try {
+        let cat = message.guild.channels.cache.get(catId);
+        if (!cat) {
+          cat = await message.guild.channels.fetch(catId).catch(() => null);
+        }
+
+        if (!cat) {
+          failed.push({ catId, reason: "Kategori bulunamadı." });
+          continue;
+        }
+
+        if (cat.type !== ChannelType.GuildCategory) {
+          failed.push({ catId, name: cat.name, reason: "Bu kanal bir kategori değil." });
+          continue;
+        }
+
+        const oldName = cat.name;
+        await cat.setName(newName, `Yetkili: ${message.author.tag} tarafından kategori ismi güncellendi.`);
+        success.push({ id: cat.id, oldName, newName });
+      } catch (err) {
+        failed.push({ catId, reason: err.message || "Bilinmeyen hata" });
+      }
+    }
+
+    const reportLines = [];
+    if (success.length > 0) {
+      reportLines.push(`✅ **İsmi Başarıyla Güncellenen Kategoriler (${success.length}):**`);
+      success.forEach(s => reportLines.push(`- **${s.oldName}** ➔ **${s.newName}** (\`${s.id}\`)`));
+      reportLines.push("");
+    }
+    if (failed.length > 0) {
+      reportLines.push(`❌ **Başarısız Olanlar (${failed.length}):**`);
+      failed.forEach(f => {
+        const namePart = f.name ? `**${f.name}** ` : "";
+        reportLines.push(`- ${namePart}(\`${f.catId}\`): ${f.reason}`);
+      });
+    }
+
+    const resultChunks = splitIntoChunks("📁 **Kategori Güncelleme Raporu**", reportLines);
+    await statusMsg.delete().catch(() => {});
+    return sendChunkedMessages(message, resultChunks);
+  }
+
+  // Güncelleme değilse mevcut kategorileri listele
   await message.guild.channels.fetch().catch(() => {});
   const categories = message.guild.channels.cache
     .filter(c => c && c.type === ChannelType.GuildCategory)
