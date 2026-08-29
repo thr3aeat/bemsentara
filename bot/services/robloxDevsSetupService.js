@@ -64,8 +64,8 @@ function saveSetupState(state) {
 function buildRulesPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 📜 RobloxDevs — Topluluk & Sunucu Kuralları\n\n` +
-      `RobloxDevs sunucusunda herkesin güvenli, saygılı ve profesyonel bir ortamda ticaret ve geliştirme yapabilmesi için aşağıdaki kurallara uyulması zorunludur.\n\n` +
+      `# 📜 RobloxLand — Topluluk & Sunucu Kuralları\n\n` +
+      `RobloxLand sunucusunda herkesin güvenli, saygılı ve profesyonel bir ortamda ticaret ve geliştirme yapabilmesi için aşağıdaki kurallara uyulması zorunludur.\n\n` +
       `### 1. Genel Ahlak ve Saygı\n` +
       `• Herhangi bir üyeye, geliştiriciye veya yetkiliye hakaret, küfür, argo, aşağılama ve toksik davranışlar kesinlikle yasaktır.\n` +
       `• Din, dil, ırk, siyaset ve cinsiyet ayrımcılığına sıfır tolerans gösterilir (Doğrudan kalıcı uzaklaştırma).\n\n` +
@@ -77,7 +77,7 @@ function buildRulesPayload() {
       `• Güvenliğiniz için tüm alışverişlerinizi resmi destek talebi (ticket) üzerinden yetkililer eşliğinde gerçekleştiriniz.\n\n` +
       `### 4. Spam ve Düzen\n` +
       `• Kanallarda flood, spam, caps-lock kullanımı ve gereksiz etiketleme yapmak yasaktır.\n\n` +
-      `-# RobloxDevs • Kurallara uymayanlar sunucu yönetimince sorgusuz ceza alma hakkına tabidir.`
+      `-# RobloxLand • Kurallara uymayanlar sunucu yönetimince sorgusuz ceza alma hakkına tabidir.`
     ),
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
@@ -101,7 +101,7 @@ function buildRulesPayload() {
 function buildScammerPanelPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 🚨 RobloxDevs — Dolandırıcı Kara Liste & Güvenlik Sistemi\n\n` +
+      `# 🚨 RobloxLand — Dolandırıcı Kara Liste & Güvenlik Sistemi\n\n` +
       `Topluluğumuzda güvenli ticareti sağlamak adına dolandırıcılık teşebbüsünde bulunan, sahte dekont atan veya teslimat yapmayan kullanıcılar bu sistem üzerinden kayıt altına alınır.\n\n` +
       `### ⚠️ Dikkat Edilmesi Gerekenler:\n` +
       `• Sunucumuzdaki hiçbir yetkili sizden hesap şifrenizi veya e-posta doğrulama kodunuzu istemez.\n` +
@@ -134,7 +134,7 @@ function buildScammerPanelPayload() {
 function buildOrderRulesPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 💰 RobloxDevs — Sipariş & Satış Kuralları\n\n` +
+      `# 💰 RobloxLand — Sipariş & Satış Kuralları\n\n` +
       `Tüm müşterilerimizin haklarını ve güvenliğini korumak amacıyla sipariş süreçleri belirli kurallar çerçevesinde yürütülmektedir.\n\n` +
       `### 📌 Sipariş Esasları:\n` +
       `1. **Ödeme Önceliği:** Tüm siparişler ödeme alındıktan sonra işleme alınır ve sıraya eklenir.\n` +
@@ -162,8 +162,8 @@ function buildOrderRulesPayload() {
 function buildAboutUsPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 🌟 RobloxDevs & Robloxland — Biz Kimiz?\n\n` +
-      `**RobloxDevs**, Roblox ekosisteminde geliştiricileri, tasarımcıları, oyuncuları ve alıcıları tek bir çatı altında toplayan profesyonel bir topluluk ve dijital hizmet merkezidir.\n\n` +
+      `# 🌟 RobloxLand — Biz Kimiz?\n\n` +
+      `**RobloxLand**, Roblox ekosisteminde geliştiricileri, tasarımcıları, oyuncuları ve alıcıları tek bir çatı altında toplayan profesyonel bir topluluk ve dijital hizmet merkezidir.\n\n` +
       `### 🚀 Ne Yapıyoruz?\n` +
       `• **Roblox Geliştirme:** Harita yapımı (Map Building), modelleme, script yazımı ve sistem entegrasyonları.\n` +
       `• **Grafik & Tasarım:** Özel GFX, logo, banner, thumbnail ve arayüz (UI) tasarımları.\n` +
@@ -255,7 +255,7 @@ function buildTicketPanelPayload() {
 function buildAdPackagesPayload() {
   const content = [
     ComponentsV2Factory.text(
-      `# 📢 Robloxland & RobloxDevs — Reklam & Sponsorluk Paketleri\n\n` +
+      `# 📢 RobloxLand — Reklam & Sponsorluk Paketleri\n\n` +
       `Sunucunuzu, oyununuzu, grubunuzu veya YouTube kanalınızı binlerce aktif kullanıcıya tanıtmak için indirimli reklam paketlerimiz:\n\n` +
       `### 📦 1. Ucuz Paket\n` +
       `• \`📬︱reklam・paylaşım\` kanalında **Here** etiketi ile kalıcı paylaşım.\n` +
@@ -428,82 +428,105 @@ function buildSalePayload(info) {
   return ComponentsV2Factory.buildPayload(content);
 }
 
-// ─── TEK SEFERLİĞİNE OTOMATİK KURULUM ──────────────────────────────────────────
-async function deployRobloxDevsSetup(client, force = false) {
-  const state = getSetupState();
-  if (state.deployed && !force) {
-    return { success: true, message: "Zaten daha önce kuruldu (atlandı)." };
-  }
+/**
+ * Kanalda botun daha önce attığı bir panel mesajı varsa düzenler, yoksa yeni gönderir.
+ */
+async function sendOrEditPanel(channel, client, payload) {
+  if (!channel || !channel.isTextBased()) return false;
+  try {
+    const fetched = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+    const botId = client.user?.id;
+    const existingBotMsg = fetched ? fetched.find(m => m.author.id === botId) : null;
 
-  console.log("[RobloxDevsSetup] 🚀 RobloxDevs & Robloxland panelleri kuruluyor...");
+    if (existingBotMsg) {
+      await existingBotMsg.edit(payload);
+      return "edit";
+    } else {
+      await channel.send(payload);
+      return "send";
+    }
+  } catch (err) {
+    console.error(`[RobloxLandSetup] sendOrEditPanel error in #${channel.name || channel.id}:`, err.message);
+    try {
+      await channel.send(payload);
+      return "send_fallback";
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+// ─── OTOMATİK KURULUM VE MEVCUT MESAJLARI GÜNCELLEME ──────────────────────────
+async function deployRobloxDevsSetup(client, force = false) {
+  console.log("[RobloxLandSetup] 🚀 RobloxLand panelleri kontrol ediliyor ve güncelleniyor...");
 
   const results = [];
   const guild = client.guilds.cache.get(GUILD_ID) || await client.guilds.fetch(GUILD_ID).catch(() => null);
   if (!guild) {
-    console.warn(`[RobloxDevsSetup] Hedef sunucu (${GUILD_ID}) bulunamadı.`);
+    console.warn(`[RobloxLandSetup] Hedef sunucu (${GUILD_ID}) bulunamadı.`);
     return { success: false, message: "Sunucu bulunamadı." };
   }
 
   // 1. Kurallar
   try {
     const ch = await guild.channels.fetch(CHANNELS.RULES).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildRulesPayload());
-      results.push("Kurallar");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildRulesPayload());
+      if (action) results.push(`Kurallar (${action})`);
     }
   } catch (e) { console.error("Rules deploy error:", e.message); }
 
   // 2. Dolandırıcılar
   try {
     const ch = await guild.channels.fetch(CHANNELS.SCAMMERS).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildScammerPanelPayload());
-      results.push("Dolandırıcılar");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildScammerPanelPayload());
+      if (action) results.push(`Dolandırıcılar (${action})`);
     }
   } catch (e) { console.error("Scammers deploy error:", e.message); }
 
   // 3. Sipariş Kuralları
   try {
     const ch = await guild.channels.fetch(CHANNELS.ORDER_RULES).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildOrderRulesPayload());
-      results.push("Sipariş Kuralları");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildOrderRulesPayload());
+      if (action) results.push(`Sipariş Kuralları (${action})`);
     }
   } catch (e) { console.error("Order rules deploy error:", e.message); }
 
   // 4. Biz Kimiz
   try {
     const ch = await guild.channels.fetch(CHANNELS.ABOUT_US).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildAboutUsPayload());
-      results.push("Biz Kimiz");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildAboutUsPayload());
+      if (action) results.push(`Biz Kimiz (${action})`);
     }
   } catch (e) { console.error("About us deploy error:", e.message); }
 
   // 5. Yetkili Alım
   try {
     const ch = await guild.channels.fetch(CHANNELS.STAFF_APPLY).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildStaffApplyPayload());
-      results.push("Yetkili Alım");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildStaffApplyPayload());
+      if (action) results.push(`Yetkili Alım (${action})`);
     }
   } catch (e) { console.error("Staff apply deploy error:", e.message); }
 
   // 6. Destek Paneli
   try {
     const ch = await guild.channels.fetch(CHANNELS.TICKET_PANEL).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildTicketPanelPayload());
-      results.push("Destek Paneli");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildTicketPanelPayload());
+      if (action) results.push(`Destek Paneli (${action})`);
     }
   } catch (e) { console.error("Ticket panel deploy error:", e.message); }
 
   // 7. Reklam Paketleri
   try {
     const ch = await guild.channels.fetch(CHANNELS.AD_PACKAGES).catch(() => null);
-    if (ch && ch.isTextBased()) {
-      await ch.send(buildAdPackagesPayload());
-      results.push("Reklam Paketleri");
+    if (ch) {
+      const action = await sendOrEditPanel(ch, client, buildAdPackagesPayload());
+      if (action) results.push(`Reklam Paketleri (${action})`);
     }
   } catch (e) { console.error("Ad packages deploy error:", e.message); }
 
@@ -511,15 +534,15 @@ async function deployRobloxDevsSetup(client, force = false) {
   for (const [chanId, info] of Object.entries(SALES_CONFIG)) {
     try {
       const ch = await guild.channels.fetch(chanId).catch(() => null);
-      if (ch && ch.isTextBased()) {
-        await ch.send(buildSalePayload(info));
-        results.push(info.title);
+      if (ch) {
+        const action = await sendOrEditPanel(ch, client, buildSalePayload(info));
+        if (action) results.push(`${info.title} (${action})`);
       }
     } catch (e) { console.error(`Sale channel ${chanId} deploy error:`, e.message); }
   }
 
-  saveSetupState({ deployed: true, deployedAt: new Date().toISOString(), results });
-  console.log(`[RobloxDevsSetup] ✅ Başarıyla kurulan paneller: ${results.join(", ")}`);
+  saveSetupState({ deployed: true, lastUpdated: new Date().toISOString(), results });
+  console.log(`[RobloxLandSetup] ✅ Başarıyla güncellenen paneller: ${results.join(", ")}`);
   return { success: true, results };
 }
 

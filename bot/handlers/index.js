@@ -1688,18 +1688,18 @@ function initializeDiscordHandlers(client) {
       console.error('[Guild Inspection Command Error]:', inspErr.message);
     }
 
-    // ── RobloxDevs & Robloxland Manuel Kurulum Komutu (!robloxdevskur / !robloxdevs-setup) ──
+    // ── RobloxLand Manuel Kurulum Komutu (!robloxlandkur / !robloxland-setup / !robloxdevskur) ──
     if (
       message.guild &&
-      (lowerContent === "!robloxdevskur" || lowerContent === "!robloxdevs-setup" || lowerContent === "!robloxdevskurulum") &&
+      (lowerContent === "!robloxlandkur" || lowerContent === "!robloxland-setup" || lowerContent === "!robloxlandkurulum" || lowerContent === "!robloxdevskur" || lowerContent === "!robloxdevs-setup") &&
       (message.member?.permissions?.has(PermissionFlagsBits.Administrator) || message.author.id === "1031620522406072350" || message.author.id === message.guild.ownerId)
     ) {
       try {
         const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
-        const statusMsg = await message.reply("⏳ **RobloxDevs & Robloxland panelleri kanallara kuruluyor...**");
+        const statusMsg = await message.reply("⏳ **RobloxLand panelleri kanallara kuruluyor...**");
         const res = await deployRobloxDevsSetup(client, true);
         if (res.success) {
-          return statusMsg.edit(`✅ **RobloxDevs & Robloxland panelleri başarıyla kuruldu!**\n📋 Kurulan Paneller: ${res.results.join(", ")}`);
+          return statusMsg.edit(`✅ **RobloxLand panelleri başarıyla kuruldu!**\n📋 Kurulan Paneller: ${res.results.join(", ")}`);
         } else {
           return statusMsg.edit(`❌ Kurulum sırasında hata: ${res.message}`);
         }
