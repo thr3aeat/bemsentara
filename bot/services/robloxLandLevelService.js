@@ -139,12 +139,12 @@ async function handleRolunUstuneYeniRoller(message, lines) {
 
   saveLevelRolesMap(rolesMap);
 
-  // 2. Taban rolün üstüne sırala ve hoist ayarla
-  await reorderAndHoistLevelRoles(guild, baseRoleId, createdRoles);
+  // 2. Taban rolün üstü ve Üst rolün altı olacak şekilde sırala ve hoist ayarla
+  await reorderAndHoistLevelRoles(guild, baseRoleId, "1537426467204370543", createdRoles);
 
   const successText =
     `✅ **${createdRoles.length} Seviye Rolü Başarıyla Kuruldu, Sıralandı ve Ayrı Göster (Hoist) Yapıldı!**\n\n` +
-    `🎯 **Taban Rol:** ${baseRoleId ? `<@&${baseRoleId}>` : "Belirtilmedi"}\n` +
+    `🎯 **Sıralama Aralığı:** <@&1537412517666619454> (Alt) ➔ **[Lv. 1 - Lv. 65 Seviye Rolleri]** ➔ <@&1537426467204370543> (Üst)\n` +
     `🏆 **Seviye Aralığı:** Lv. 1 (${roleDefs[0]?.name}) ➔ Lv. ${roleDefs[roleDefs.length - 1]?.level} (${roleDefs[roleDefs.length - 1]?.name})\n` +
     `👁️ **Ayrı Gösterim:** Tüm 65 seviye rolü üyeler listesinde diğerlerinden ayrı gösterilecek şekilde ayarlandı.\n` +
     `💾 **Kayıt:** Seviye sistemi veritabanına aktarıldı. Üyeler mesaj yazdıkça ve seslide durdukça otomatik rol alacaktır!`;
@@ -154,14 +154,16 @@ async function handleRolunUstuneYeniRoller(message, lines) {
 }
 
 /**
- * Tüm 65 Seviye Rolünü Ayrı Göster (Hoist: true) Yapar ve Taban Rolün Üstüne Sıralar
+ * Tüm 65 Seviye Rolünü Ayrı Göster (Hoist: true) Yapar ve 
+ * 1537412517666619454'ün üstünde, 1537426467204370543'ün altında olacak şekilde sıralar.
  */
-async function reorderAndHoistLevelRoles(guild, baseRoleId = "1537412517666619454", customRoleList = null) {
+async function reorderAndHoistLevelRoles(guild, baseRoleId = "1537412517666619454", topRoleId = "1537426467204370543", customRoleList = null) {
   if (!guild) return false;
 
   await guild.roles.fetch().catch(() => {});
   const rolesMap = getLevelRolesMap();
   const baseRole = baseRoleId ? guild.roles.cache.get(baseRoleId) : null;
+  const topRole = topRoleId ? guild.roles.cache.get(topRoleId) : null;
   const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
   const botHighest = botMember ? botMember.roles.highest.position : 999;
 
@@ -198,10 +200,23 @@ async function reorderAndHoistLevelRoles(guild, baseRoleId = "153741251766661945
   if (baseRole) {
     try {
       const startPos = Math.min(baseRole.position + 1, botHighest - 1);
-      const positionsPayload = roleObjs.map((item, idx) => ({
-        role: item.role.id,
-        position: Math.min(startPos + idx, botHighest - 1)
-      }));
+      const positionsPayload = [];
+
+      // Level 1 -> Level 65: baseRole'un üstüne artan sırayla
+      for (let i = 0; i < roleObjs.length; i++) {
+        positionsPayload.push({
+          role: roleObjs[i].role.id,
+          position: Math.min(startPos + i, botHighest - 1)
+        });
+      }
+
+      // Üst rol (1537426467204370543) level 65'in hemen üstünde olsun
+      if (topRole) {
+        positionsPayload.push({
+          role: topRole.id,
+          position: Math.min(startPos + roleObjs.length, botHighest - 1)
+        });
+      }
 
       if (typeof guild.roles.setPositions === "function") {
         await guild.roles.setPositions(positionsPayload).catch(async () => {
@@ -209,10 +224,16 @@ async function reorderAndHoistLevelRoles(guild, baseRoleId = "153741251766661945
           for (let i = 0; i < roleObjs.length; i++) {
             await roleObjs[i].role.setPosition(Math.min(startPos + i, botHighest - 1)).catch(() => {});
           }
+          if (topRole) {
+            await topRole.setPosition(Math.min(startPos + roleObjs.length, botHighest - 1)).catch(() => {});
+          }
         });
       } else {
         for (let i = 0; i < roleObjs.length; i++) {
           await roleObjs[i].role.setPosition(Math.min(startPos + i, botHighest - 1)).catch(() => {});
+        }
+        if (topRole) {
+          await topRole.setPosition(Math.min(startPos + roleObjs.length, botHighest - 1)).catch(() => {});
         }
       }
     } catch (e) {
