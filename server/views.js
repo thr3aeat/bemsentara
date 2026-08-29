@@ -45,7 +45,20 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${_esc(title)} — Sentara Premium</title>
+  <title>${_esc(title)} — RobloxLand & Sentara</title>
+
+  <!-- Discord & OpenGraph Modern Rich Embed Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RobloxLand & Sentara Ecosystem">
+  <meta property="og:title" content="${_esc(title)} — RobloxLand & Sentara">
+  <meta property="og:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi. 7/24 kesintisiz hizmet, 65 seviye hiyerarşisi ve güvenli ticaret.">
+  <meta property="og:image" content="https://i.imgur.com/PFcAc6q.png">
+  <meta name="theme-color" content="#7C3AED">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${_esc(title)} — RobloxLand & Sentara">
+  <meta name="twitter:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
+  <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
+
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   ${extraHead}
   <style>
@@ -418,6 +431,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     </button>
     <nav class="nav-links" id="nav-links">
       ${navLink('/', 'Ana Sayfa')}
+      ${navLink('/status', '📊 Sistem Durumu')}
       ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
       ${groupAdminLink}
       ${staffLinks}
@@ -622,7 +636,20 @@ function renderMainPage(user = null) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EkoYıldız — Resmi Topluluk & Destek Portalı</title>
+  <title>RobloxLand & Sentara — Resmi Topluluk & Pazar Yeri Portalı</title>
+
+  <!-- Discord & OpenGraph Modern Rich Embed Meta Tags -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RobloxLand & Sentara Ecosystem">
+  <meta property="og:title" content="RobloxLand & Sentara — Resmi Topluluk & Pazar Yeri">
+  <meta property="og:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi. 7/24 kesintisiz hizmet ve güvenli ticaret.">
+  <meta property="og:image" content="https://i.imgur.com/PFcAc6q.png">
+  <meta name="theme-color" content="#7C3AED">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RobloxLand & Sentara — Resmi Topluluk & Pazar Yeri">
+  <meta name="twitter:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
+  <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
+
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -10102,6 +10129,11 @@ const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugO
 const { renderTumModlarPage } = require("./views/tumModlarPage");
 const { renderEkoYildizAnayasaPage } = require("./views/ekoYildizAnayasaPage");
 const { render404Page } = require("./views/notFoundPage");
+const { renderStatusPage: _renderStatusPage } = require("./views/statusPage");
+
+function renderStatusPage(user = null) {
+  return _renderStatusPage(user, _layout, _esc);
+}
 
 module.exports = {
   renderMainPage,
@@ -10136,6 +10168,7 @@ module.exports = {
   renderClosedFormPage,
   renderTumModlarPage,
   renderEkoYildizAnayasaPage,
+  renderStatusPage,
   render404Page,
   // Internal helpers (exported for testing)
   _esc,

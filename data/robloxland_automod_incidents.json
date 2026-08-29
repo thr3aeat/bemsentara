@@ -1,0 +1,24 @@
+{
+  "INC-MTEZSFSP": {
+    "incidentId": "INC-MTEZSFSP",
+    "userId": "bad_user_1",
+    "userTag": "Kufurbaz#0001",
+    "channelId": "1538469516953001994",
+    "channelName": "istek-kanali",
+    "content": "burası çok kötü amk",
+    "detected": "amk",
+    "createdAt": 1788044937721,
+    "currentTier": 1,
+    "resolved": true,
+    "resolvedBy": "mod_user_1",
+    "resolution": "🔇 15 Dakika Susturuldu (Timeout)",
+    "alertMessages": [
+      {
+        "roleId": "1538465689554260079",
+        "channelId": "1543382733408174220",
+        "messageId": "m_alert_101"
+      }
+    ],
+    "resolvedAt": 1788044937723
+  }
+}

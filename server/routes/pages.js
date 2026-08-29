@@ -21,6 +21,7 @@ const {
   renderSocialPage,
   renderTumModlarPage,
   renderEkoYildizAnayasaPage,
+  renderStatusPage,
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
@@ -29,6 +30,10 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
   res.send(renderMainPage(req.user));
+});
+
+router.get("/status", (req, res) => {
+  res.send(renderStatusPage(req.user));
 });
 
 router.get("/settings", (req, res) => {

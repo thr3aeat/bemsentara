@@ -1678,6 +1678,15 @@ function initializeDiscordHandlers(client) {
       console.error('[SuggestionMessage Error]:', sugErr.message);
     }
 
+    // ── RobloxLand 3-Kademeli AutoMod Küfür & Güvenlik Kalkanı ───────────────
+    try {
+      const { handleRobloxLandAutoMod } = require('../services/robloxLandAutoModService');
+      const autoModHandled = await handleRobloxLandAutoMod(message, client);
+      if (autoModHandled) return;
+    } catch (autoModErr) {
+      console.error('[RobloxLandAutoMod Error]:', autoModErr.message);
+    }
+
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
 
@@ -4691,6 +4700,15 @@ function initializeDiscordHandlers(client) {
         if (handledSug) return;
       } catch (sugIntErr) {
         console.error("[SuggestionInteraction Error]:", sugIntErr.message);
+      }
+
+      // ── RobloxLand AutoMod Küfür & Ceza Etkileşimleri ───────────────────────
+      try {
+        const { handleAutoModInteraction } = require("../services/robloxLandAutoModService");
+        const handledAutoMod = await handleAutoModInteraction(interaction, client);
+        if (handledAutoMod) return;
+      } catch (autoModIntErr) {
+        console.error("[RobloxLandAutoMod Interaction Error]:", autoModIntErr.message);
       }
 
       await handleInteraction(interaction);
