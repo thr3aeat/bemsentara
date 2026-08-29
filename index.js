@@ -293,6 +293,10 @@ async function start() {
           await registerAllCommands().catch(err => {
             logger.warn('[registerAllCommands] Komut kayıt uyarısı:', err && err.message);
           });
+          try {
+            const { deployFaqPanelOnStartup } = require("./bot/services/robloxLandFaqService");
+            deployFaqPanelOnStartup(discordBot).catch(() => {});
+          } catch (_) {}
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;

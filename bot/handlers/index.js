@@ -4711,6 +4711,15 @@ function initializeDiscordHandlers(client) {
         console.error("[RobloxLandAutoMod Interaction Error]:", autoModIntErr.message);
       }
 
+      // ── RobloxLand 15 Bölümlük SSS Etkileşimleri (Bölüm Seç, Önceki, Sonraki) ──
+      try {
+        const { handleFaqInteraction } = require("../services/robloxLandFaqService");
+        const handledFaq = await handleFaqInteraction(interaction);
+        if (handledFaq) return;
+      } catch (faqIntErr) {
+        console.error("[RobloxLandFAQ Interaction Error]:", faqIntErr.message);
+      }
+
       await handleInteraction(interaction);
     } catch (err) {
       console.error("[interactionCreate]", err);

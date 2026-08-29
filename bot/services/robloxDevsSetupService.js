@@ -443,39 +443,14 @@ function buildPaymentMethodsPayload() {
 
 // ─── 9. Sıkça Sorulan Sorular (SSS) Paneli (1538465557031030835) ─────────────────
 function buildFaqPayload() {
-  const content = [
-    ComponentsV2Factory.text(
-      `# ❓ ROBLOXLND — SIKÇA SORULAN SORULAR (SSS)\n\n` +
-      `Müşterilerimizin ve üyelerimizin en çok merak ettiği soruların yanıtları:\n\n` +
-      `**S1: Satın aldığım Robux / Ürün ne zaman teslim edilir?**\n` +
-      `C: Robux, grup ve üye siparişleri ödeme onayından sonra ortalama 5–30 dakika içerisinde teslim edilir. Harita ve bot siparişleri teslimat takvimine göre ilerler.\n\n` +
-      `**S2: Hesap şifremi vermem gerekiyor mu?**\n` +
-      `C: Kesinlikle HAYIR! Hiçbir işlemde hesap şifreniz istenmez. Yalnızca Roblox kullanıcı adınız veya profil linkiniz yeterlidir.\n\n` +
-      `**S3: Dolandırıcılığa karşı nasıl korunurum?**\n` +
-      `C: Asla DM üzerinden kimseyle ticaret yapmayınız. Tüm işlemlerinizi bu sunucudaki resmi ticket kanalları üzerinden yetkililerle yürütünüz.\n\n` +
-      `**S4: Siparişimi nasıl takip edebilirim?**\n` +
-      `C: Size verilen \`#RBLX-XXXX\` sipariş kodunu \`!sipariş RBLX-XXXX\` yazarak canlı olarak sorgulayabilirsiniz.\n\n` +
-      `**S5: LandCoin ve VIP sistemi nedir?**\n` +
-      `C: Her 100 TL harcamanızda 10 LandCoin kazanırsınız. LandCoin'lerinizle ücretsiz indirim, reklam ve VIP üyelik alabilirsiniz.`
-    ),
-    ComponentsV2Factory.separator(true),
-    ComponentsV2Factory.actionRow([
-      {
-        style: ButtonStyle.Primary,
-        label: "🎫 Destek Al",
-        custom_id: "robloxland_open_ticket_destek",
-        emoji: { name: "💬" }
-      },
-      {
-        style: ButtonStyle.Secondary,
-        label: "👤 Profilim & Puanlarım",
-        custom_id: "robloxland_open_my_profile",
-        emoji: { name: "👤" }
-      }
-    ])
-  ];
-
-  return ComponentsV2Factory.buildPayload(content);
+  try {
+    const { buildFaqChapterPayload } = require("./robloxLandFaqService");
+    return buildFaqChapterPayload(1);
+  } catch (_) {
+    return {
+      content: `# ❓ ROBLOXLND — SIKÇA SORULAN SORULAR (SSS)\n\nDetaylı bilgi için bilet açabilirsiniz.`
+    };
+  }
 }
 
 // ─── 10. Seviye Sistemi Log Paneli (1538481757404274708) ────────────────────────
