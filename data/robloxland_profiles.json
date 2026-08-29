@@ -37,5 +37,19 @@
     "isEkoInvite": true,
     "inviteCode": "eJ2dPBXT4R",
     "xpMultiplier": 2
+  },
+  "user_rblx_111": {
+    "userId": "user_rblx_111",
+    "level": 1,
+    "xp": 150,
+    "landCoins": 0,
+    "trustScore": 90,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T23:17:44.148Z",
+    "isEkoInvite": true,
+    "xpMultiplier": 2
   }
 }
