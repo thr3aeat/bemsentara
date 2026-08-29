@@ -1,0 +1,14 @@
+{
+  "user_test_123": {
+    "userId": "user_test_123",
+    "level": 1,
+    "xp": 45,
+    "landCoins": 75,
+    "trustScore": 92,
+    "openedTickets": 2,
+    "completedOrders": 1,
+    "totalSpent": 250,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T22:45:08.744Z"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "chan_ticket_999": {
+    "ticketId": "RBLX-00482",
+    "channelId": "chan_ticket_999",
+    "ownerId": "user_test_123",
+    "ownerTag": "AlpDev#0001",
+    "type": "siparis",
+    "typeLabel": "🛒 Sipariş & Satış",
+    "productName": "Özel 3D GFX Kapak",
+    "robloxUser": "AlpDevRoblox",
+    "budget": "250 TL IBAN",
+    "orderDetails": "EKOSTAR10 kuponu uygulansın",
+    "status": "Bekliyor",
+    "orderStep": 4,
+    "openedAt": "2026-08-29T22:45:18.501Z",
+    "updatedAt": "2026-08-29T22:45:18.504Z"
+  }
+}

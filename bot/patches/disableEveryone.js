@@ -58,9 +58,20 @@ function _sanitizeOptions(opts) {
   const hasPoll = !!out.poll;
   const hasStickers = Array.isArray(out.stickers) && out.stickers.length > 0;
 
-  // If completely empty, inject zero-width space / fallback so Discord API never rejects it
-  if (!hasContent && !hasEmbeds && !hasFiles && !hasComponents && !hasPoll && !hasStickers) {
-    out.content = '\u200B';
+  // Discord Components V2 (flags & 8192 veya type 17/10/9/14) legacy content alanı kullanımını yasaklar.
+  let isV2 = out.flags !== undefined && (Number(out.flags) & 8192) !== 0;
+  if (!isV2 && Array.isArray(out.components)) {
+    isV2 = out.components.some(c => c && (c.type === 17 || c.type === 10 || c.type === 9 || c.type === 14));
+  }
+
+  if (isV2) {
+    delete out.content;
+    out.flags = (Number(out.flags) || 0) | 8192;
+  } else {
+    // If completely empty, inject zero-width space / fallback so Discord API never rejects it
+    if (!hasContent && !hasEmbeds && !hasFiles && !hasComponents && !hasPoll && !hasStickers) {
+      out.content = '\u200B';
+    }
   }
 
   if (out.embeds && Array.isArray(out.embeds)) {

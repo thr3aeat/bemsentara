@@ -1708,6 +1708,59 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── RobloxLand Sipariş Sorgulama Komutu (!sipariş <kod> / !siparis <kod>) ──
+    if (lowerContent.startsWith("!sipariş") || lowerContent.startsWith("!siparis") || lowerContent.startsWith(".siparis") || lowerContent.startsWith("/sipariş") || lowerContent.startsWith("/siparis")) {
+      const args = content.trim().split(/\s+/).slice(1);
+      const code = args[0]?.trim();
+      const DataStore = require("../services/robloxLandDataStore");
+
+      if (!code) {
+        return message.reply("ℹ️ Lütfen sorgulamak istediğiniz sipariş numarasını giriniz: `!sipariş RBLX-00482`");
+      }
+
+      const found = DataStore.findTicketByNumber(code);
+      if (!found) {
+        return message.reply(`❌ **${code}** numaralı aktif bir sipariş kaydı bulunamadı.`);
+      }
+
+      const stepText = ["🟢 Sipariş Oluşturuldu", "💳 Ödeme Alındı", "🛠️ Yapım Aşamasında", "🔍 Kontrol Bekliyor", "🎉 Teslim Edildi"][found.orderStep || 0];
+
+      return message.reply(
+        `📦 **SİPARİŞ BİLGİSİ (#${found.ticketId})**\n\n` +
+        `• **Müşteri:** <@${found.ownerId}>\n` +
+        `• **Ürün:** \`${found.productName || "Özel Sipariş"}\`\n` +
+        `• **Durum / Aşama:** ${stepText}\n` +
+        `• **İlgilenen Yetkili:** ${found.claimedBy ? `<@${found.claimedBy}>` : "Sıraya Alındı"}\n` +
+        `• **Oluşturulma:** <t:${Math.floor(new Date(found.openedAt || Date.now()).getTime() / 1000)}:R>`
+      );
+    }
+
+    // ── RobloxLand Profil Komutu (!profil / .profil) ──────────────────────────
+    if (lowerContent === "!profil" || lowerContent === ".profil" || lowerContent === "!profile") {
+      const DataStore = require("../services/robloxLandDataStore");
+      const p = DataStore.getUserProfile(message.author.id, message.member);
+
+      const fullBlocks = Math.floor(p.trustScore / 10);
+      const emptyBlocks = 10 - fullBlocks;
+      const trustBar = "█".repeat(fullBlocks) + "░".repeat(Math.max(0, emptyBlocks));
+
+      return message.reply(
+        `# 👤 ROBLOXLND — TOPLULUK PROFİLİN\n\n` +
+        `🏷️ **Kullanıcı:** <@${message.author.id}> (\`${message.author.id}\`)\n` +
+        `📅 **Sunucuya Katılım:** <t:${Math.floor(new Date(p.joinedAt || Date.now()).getTime() / 1000)}:R>\n` +
+        `📈 **Seviye:** \`Level ${p.level || 1}\` (${p.xp || 45} / 100 XP)\n\n` +
+        `### 🛡️ Güven Puanı: \`${p.trustScore || 92}/100\`\n` +
+        `\`${trustBar}\` (🟢 Güvenilir Üye)\n\n` +
+        `### 💎 Mağaza & Ticaret Geçmişi\n` +
+        `🪙 **LandCoin Bakiyesi:** \`${p.landCoins || 50} Coin\`\n` +
+        `🎫 **Açılan Destek Talebi:** \`${p.openedTickets || 0}\`\n` +
+        `🛒 **Tamamlanan Sipariş:** \`${p.completedOrders || 0}\`\n` +
+        `💰 **Toplam Harcama:** \`${p.totalSpent || 0} TL\`\n` +
+        `👑 **VIP Durumu:** \`${p.vipTier || "Standart Müşteri"}\`\n\n` +
+        `-# Her 100 TL harcamanızda 10 LandCoin hesabınıza otomatik yüklenir.`
+      );
+    }
+
     // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
     if (lowerContent.startsWith("!gruptancek") || lowerContent.startsWith(".gruptancek") || lowerContent.startsWith("-gruptancek")) {
       try {

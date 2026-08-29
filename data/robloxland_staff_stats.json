@@ -1,0 +1,17 @@
+{
+  "staff": {
+    "staffId": "staff",
+    "resolvedTickets": 0,
+    "totalRatingScore": 5,
+    "ratingCount": 1,
+    "completedSales": 0,
+    "ratings": [
+      {
+        "score": 5,
+        "raterId": "user_test_123",
+        "feedback": "",
+        "date": "2026-08-29T22:45:18.507Z"
+      }
+    ]
+  }
+}
