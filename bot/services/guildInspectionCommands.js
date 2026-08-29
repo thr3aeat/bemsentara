@@ -423,7 +423,7 @@ async function handleTumKanalAciklamalari(message, isEditMode = false) {
   for (let i = 0; i < rawLines.length; i++) {
     let line = rawLines[i].trim();
     if (i === 0) {
-      line = line.replace(/^![a-zA-Z0-9çğıöşüÇĞİÖŞÜ_-]+/i, "").trim();
+      line = line.replace(/^[!\.\-\_]+[a-zA-Z0-9çğıöşüÇĞİÖŞÜ_-]+/i, "").trim();
     }
     if (!line) continue;
 
@@ -835,6 +835,21 @@ async function handleSunucuYardim(message) {
 }
 
 /**
+ * Komut adını normalize eden yardımcı fonksiyon
+ */
+function normalizeCommand(str) {
+  return (str || "")
+    .toLowerCase()
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/**
  * Mesaj içeriğindeki komutları kontrol eden ana yönlendirici
  */
 async function handleGuildInspectionMessage(message) {
@@ -843,215 +858,83 @@ async function handleGuildInspectionMessage(message) {
     return false;
   }
 
-  const firstLine = content.split("\n")[0].trim().toLowerCase();
+  const firstLine = content.split("\n")[0].trim();
   const commandWord = firstLine.split(/\s+/)[0];
+  const norm = normalizeCommand(commandWord);
 
-  // 1. Kategoriler
-  if (["!tumkategoriler", "!tümkategoriler"].includes(commandWord)) {
-    await handleTumKategoriler(message, false);
-    return true;
-  }
-  if ([
-    "!tumkategorilerduzenle",
-    "!tümkategorilerdüzenle",
-    "!tumkategoriler-duzenle",
-    "!tümkategoriler-düzenle",
-    "!tumkategoriduzenle",
-    "!tümkategoridüzenle"
-  ].includes(commandWord)) {
-    await handleTumKategoriler(message, true);
+  if (!norm) return false;
+
+  // 1. Kanal Açıklamaları (Önce kontrol edilir çünkü hem 'kanal' hem 'acikla' içerir)
+  if (norm.includes("kanal") && (norm.includes("acikla") || norm.includes("topic") || norm.includes("tanim"))) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel") || norm.includes("set") || content.includes("-----");
+    await handleTumKanalAciklamalari(message, isEdit);
     return true;
   }
 
-  // 2. Roller
-  if (["!tumroller", "!tümroller", "!tumrollerveidleriveisimleri"].includes(commandWord)) {
-    await handleTumRoller(message, false);
-    return true;
-  }
-  if ([
-    "!tumrollerduzenle",
-    "!tümrollerdüzenle",
-    "!tumroller-duzenle",
-    "!tümroller-düzenle",
-    "!tumrolduzenle",
-    "!tümroldüzenle"
-  ].includes(commandWord)) {
-    await handleTumRoller(message, true);
+  // 2. Kategoriler
+  if (norm.includes("kategori")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel") || content.includes("-----");
+    await handleTumKategoriler(message, isEdit);
     return true;
   }
 
-  // 3. Kanallar
-  if (["!tumkanallar", "!tümkanallar"].includes(commandWord) && !firstLine.includes("aciklama") && !firstLine.includes("açıklama") && !firstLine.includes("duzenle") && !firstLine.includes("düzenle")) {
-    await handleTumKanallar(message, false);
-    return true;
-  }
-  if ([
-    "!tumkanallarduzenle",
-    "!tümkanallardüzenle",
-    "!tumkanallar-duzenle",
-    "!tümkanallar-düzenle",
-    "!tumkanalduzenle",
-    "!tümkanaldüzenle"
-  ].includes(commandWord)) {
-    await handleTumKanallar(message, true);
+  // 3. Roller
+  if (norm.includes("rol")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumRoller(message, isEdit);
     return true;
   }
 
-  // 4. Kanal Açıklamaları
-  if ([
-    "!tumkanalaciklamalari",
-    "!tümkanalaçıklamaları",
-    "!tumkanalaciklamalar",
-    "!tümkanalaçıklamalar",
-    "!tumkanallarınaciklamalari",
-    "!tümkanallarınaçıklamaları"
-  ].includes(commandWord)) {
-    await handleTumKanalAciklamalari(message, false);
-    return true;
-  }
-  if ([
-    "!tumkanalaciklamalariduzenle",
-    "!tümkanalaçıklamalarıdüzenle",
-    "!tumkanalaciklamalarduzenle",
-    "!tümkanalaçıklamardüzenle",
-    "!tumkanalaciklamalar-duzenle",
-    "!tümkanalaçıklamalar-düzenle",
-    "!tumkanallaraciklamaduzenle",
-    "!tumkanallaraciklama",
-    "!tümkanallaraciklama",
-    "!tumkanallaraciklamaguncelle"
-  ].includes(commandWord)) {
-    await handleTumKanalAciklamalari(message, true);
+  // 4. Kanallar (Ses kanalları hariç)
+  if (norm.includes("kanal") && !norm.includes("ses")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel") || content.includes("-----");
+    await handleTumKanallar(message, isEdit);
     return true;
   }
 
   // 5. Emojiler
-  if (["!tumemojiler", "!tümemojiler", "!tumemoji", "!tümemoji"].includes(commandWord)) {
-    await handleTumEmojiler(message, false);
-    return true;
-  }
-  if ([
-    "!tumemojilerduzenle",
-    "!tümemojilerdüzenle",
-    "!tumemojiduzenle",
-    "!tümemojidüzenle",
-    "!tumemojiler-duzenle",
-    "!tümemojiler-düzenle"
-  ].includes(commandWord)) {
-    await handleTumEmojiler(message, true);
+  if (norm.includes("emoji")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumEmojiler(message, isEdit);
     return true;
   }
 
   // 6. Çıkartmalar (Stickers)
-  if ([
-    "!tumcikartmalar",
-    "!tümçıkartmalar",
-    "!tumstickerlar",
-    "!tümstickerlar",
-    "!tumcikartma",
-    "!tümçıkartma",
-    "!tumsticker",
-    "!tümsticker"
-  ].includes(commandWord)) {
-    await handleTumCikartmalar(message, false);
-    return true;
-  }
-  if ([
-    "!tumcikartmalarduzenle",
-    "!tümçıkartmalardüzenle",
-    "!tumstickerlarduzenle",
-    "!tümstickerlardüzenle",
-    "!tumcikartma-duzenle",
-    "!tumsticker-duzenle"
-  ].includes(commandWord)) {
-    await handleTumCikartmalar(message, true);
+  if (norm.includes("cikart") || norm.includes("sticker")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumCikartmalar(message, isEdit);
     return true;
   }
 
   // 7. Ses Kanalları
-  if ([
-    "!tumseskanallari",
-    "!tümseskanalları",
-    "!tumsesler",
-    "!tümsesler",
-    "!tumseskanalları",
-    "!tümseskanallari"
-  ].includes(commandWord)) {
-    await handleTumSesKanallari(message, false);
-    return true;
-  }
-  if ([
-    "!tumseskanallariduzenle",
-    "!tümseskanallarıdüzenle",
-    "!tumsesduzenle",
-    "!tümsesdüzenle",
-    "!tumseskanallar-duzenle"
-  ].includes(commandWord)) {
-    await handleTumSesKanallari(message, true);
+  if (norm.includes("ses")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumSesKanallari(message, isEdit);
     return true;
   }
 
   // 8. Yetkililer / Personeller
-  if ([
-    "!tumyetkililer",
-    "!tümyetkililer",
-    "!tumpersoneller",
-    "!tümpersoneller",
-    "!tumpersonel",
-    "!tümpersonel",
-    "!tumkadro",
-    "!tümkadro"
-  ].includes(commandWord)) {
-    await handleTumYetkililer(message, false);
-    return true;
-  }
-  if ([
-    "!tumyetkililerduzenle",
-    "!tümyetkililerdüzenle",
-    "!tumpersonelduzenle",
-    "!tümpersoneldüzenle",
-    "!tumyetkili-duzenle"
-  ].includes(commandWord)) {
-    await handleTumYetkililer(message, true);
+  if (norm.includes("yetkili") || norm.includes("personel") || norm.includes("kadro")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumYetkililer(message, isEdit);
     return true;
   }
 
   // 9. Webhooklar
-  if (["!tumwebhooklar", "!tümwebhooklar", "!tumwebhook", "!tümwebhook"].includes(commandWord)) {
-    await handleTumWebhooklar(message, false);
-    return true;
-  }
-  if ([
-    "!tumwebhooklarduzenle",
-    "!tümwebhooklardüzenle",
-    "!tumwebhookduzenle",
-    "!tümwebhookdüzenle"
-  ].includes(commandWord)) {
-    await handleTumWebhooklar(message, true);
+  if (norm.includes("webhook")) {
+    const isEdit = norm.includes("duzen") || norm.includes("guncel");
+    await handleTumWebhooklar(message, isEdit);
     return true;
   }
 
   // 10. Sunucu Bilgisi / Özeti
-  if ([
-    "!sunucubilgi",
-    "!tumsunucubilgi",
-    "!sunucuozet",
-    "!sunucuözet",
-    "!tumsunucuozet",
-    "!tumsunucuözet",
-    "!serverinfo"
-  ].includes(commandWord)) {
+  if (norm.includes("sunucubilgi") || norm.includes("sunucuozet") || norm.includes("serverinfo")) {
     await handleSunucuBilgi(message);
     return true;
   }
 
   // 11. Rehber
-  if ([
-    "!sunucukomutlari",
-    "!sunucukomutları",
-    "!incelekomutlari",
-    "!incelekomutları"
-  ].includes(commandWord)) {
+  if (norm.includes("sunucukomut") || norm.includes("sunucuyardim") || norm.includes("incelekomut") || norm.includes("serverhelp")) {
     await handleSunucuYardim(message);
     return true;
   }
