@@ -966,6 +966,13 @@ async function handleGuildInspectionMessage(message) {
     return true;
   }
 
+  // 0. Rolün Üstüne Yeni Roller Kurulumu (!rolünüstüneyeniroller / !rolunustuneyeniroller)
+  if (norm.includes("rolunustune") || norm.includes("rolustune") || norm.includes("yenirol")) {
+    const { handleRolunUstuneYeniRoller } = require("./robloxLandLevelService");
+    await handleRolunUstuneYeniRoller(message, message.content.split("\n"));
+    return true;
+  }
+
   // 3. Roller
   if (norm.includes("rol")) {
     const isEdit = norm.includes("duzen") || norm.includes("guncel") || content.includes("-----");

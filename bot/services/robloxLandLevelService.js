@@ -86,12 +86,16 @@ async function handleRolunUstuneYeniRoller(message, lines) {
     }
 
     // Seviye rolleri: 01 ----- 🌱 Çaylak Dev -- #A8B0B8
-    const roleMatch = trimmed.match(/^(\d{1,2})\s*[-–—]+\s*(.*?)\s*[-–—]+\s*(#[0-9A-Fa-f]{6})/);
-    if (roleMatch) {
-      const level = parseInt(roleMatch[1], 10);
-      const name = roleMatch[2].trim();
-      const color = roleMatch[3].trim();
-      roleDefs.push({ level, name, color });
+    const numMatch = trimmed.match(/^(\d{1,2})\b/);
+    const hexMatch = trimmed.match(/#[0-9A-Fa-f]{6}\b/);
+    if (numMatch && hexMatch) {
+      const level = parseInt(numMatch[1], 10);
+      const color = hexMatch[0];
+      let namePart = trimmed.replace(/^(\d{1,2})/, "").replace(/#[0-9A-Fa-f]{6}\b/, "");
+      namePart = namePart.replace(/^[\s\-–—\.:]+/, "").replace(/[\s\-–—\.:]+$/, "").trim();
+      if (namePart.length > 0) {
+        roleDefs.push({ level, name: namePart, color });
+      }
     }
   }
 
