@@ -1690,23 +1690,33 @@ function initializeDiscordHandlers(client) {
       console.error('[Guild Inspection Command Error]:', inspErr.message);
     }
 
-    // ── RobloxLand Manuel Kurulum Komutu (!robloxlandkur / !robloxland-setup / !robloxdevskur) ──
+    // ── RobloxLand Kurulum & Güncelleme Komutu (!robloxlandguncelleme / !robloxlandkur / !robloxland-guncelle) ──
     if (
       message.guild &&
-      (lowerContent === "!robloxlandkur" || lowerContent === "!robloxland-setup" || lowerContent === "!robloxlandkurulum" || lowerContent === "!robloxdevskur" || lowerContent === "!robloxdevs-setup") &&
+      (
+        lowerContent === "!robloxlandguncelleme" ||
+        lowerContent === "!robloxland-guncelleme" ||
+        lowerContent === "!robloxlandguncelle" ||
+        lowerContent === "!robloxland-guncelle" ||
+        lowerContent === "!robloxlandyenile" ||
+        lowerContent === "!robloxlandkur" ||
+        lowerContent === "!robloxland-setup" ||
+        lowerContent === "!robloxlandkurulum" ||
+        lowerContent === "!robloxdevskur"
+      ) &&
       (message.member?.permissions?.has(PermissionFlagsBits.Administrator) || message.author.id === "1031620522406072350" || message.author.id === message.guild.ownerId)
     ) {
       try {
         const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
-        const statusMsg = await message.reply("⏳ **RobloxLand panelleri kanallara kuruluyor...**");
+        const statusMsg = await message.reply("⏳ **RobloxLand panelleri ve Components V2 mesajları düzenlenerek güncelleniyor...**");
         const res = await deployRobloxDevsSetup(client, true);
         if (res.success) {
-          return statusMsg.edit(`✅ **RobloxLand panelleri başarıyla kuruldu!**\n📋 Kurulan Paneller: ${res.results.join(", ")}`);
+          return statusMsg.edit(`✅ **RobloxLand panelleri başarıyla güncellendi (edit)!**\n📋 Güncellenen Paneller: ${res.results.join(", ")}`);
         } else {
-          return statusMsg.edit(`❌ Kurulum sırasında hata: ${res.message}`);
+          return statusMsg.edit(`❌ Güncelleme sırasında hata: ${res.message}`);
         }
       } catch (rdCmdErr) {
-        return message.reply(`❌ Kurulum hatası: ${rdCmdErr.message}`);
+        return message.reply(`❌ Güncelleme hatası: ${rdCmdErr.message}`);
       }
     }
 
