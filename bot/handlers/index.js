@@ -269,6 +269,18 @@ function initializeDiscordHandlers(client) {
       console.error("[ready] ArchiveService yüklenemedi:", arcErr.message);
     }
 
+    // RobloxDevs / Robloxland Tek Seferlik Paneller Kurulumu
+    try {
+      const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
+      setTimeout(() => {
+        deployRobloxDevsSetup(client).catch(err => {
+          console.error("[ready] RobloxDevsSetup deploy error:", err.message);
+        });
+      }, 8000);
+    } catch (rdErr) {
+      console.error("[ready] RobloxDevsSetupService yüklenemedi:", rdErr.message);
+    }
+
     // Aras AI soruşturma botu (DISCORDTOKENVERY token ile)
     try {
       const { initVeryBot } = require("../services/banInvestigationAI");
@@ -1674,6 +1686,26 @@ function initializeDiscordHandlers(client) {
       if (handled) return;
     } catch (inspErr) {
       console.error('[Guild Inspection Command Error]:', inspErr.message);
+    }
+
+    // ── RobloxDevs & Robloxland Manuel Kurulum Komutu (!robloxdevskur / !robloxdevs-setup) ──
+    if (
+      message.guild &&
+      (lowerContent === "!robloxdevskur" || lowerContent === "!robloxdevs-setup" || lowerContent === "!robloxdevskurulum") &&
+      (message.member?.permissions?.has(PermissionFlagsBits.Administrator) || message.author.id === "1031620522406072350" || message.author.id === message.guild.ownerId)
+    ) {
+      try {
+        const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
+        const statusMsg = await message.reply("⏳ **RobloxDevs & Robloxland panelleri kanallara kuruluyor...**");
+        const res = await deployRobloxDevsSetup(client, true);
+        if (res.success) {
+          return statusMsg.edit(`✅ **RobloxDevs & Robloxland panelleri başarıyla kuruldu!**\n📋 Kurulan Paneller: ${res.results.join(", ")}`);
+        } else {
+          return statusMsg.edit(`❌ Kurulum sırasında hata: ${res.message}`);
+        }
+      } catch (rdCmdErr) {
+        return message.reply(`❌ Kurulum hatası: ${rdCmdErr.message}`);
+      }
     }
 
     // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
@@ -4541,6 +4573,15 @@ function initializeDiscordHandlers(client) {
         await handleRobloxInteractions(interaction);
         return;
       }
+      // ── RobloxDevs & Robloxland Etkileşimleri (Yetkili Alım, Destek, Satış, Dolandırıcı Bildir, Reklam) ──
+      try {
+        const { handleRobloxDevsInteraction } = require("../services/robloxDevsSetupService");
+        const handled = await handleRobloxDevsInteraction(interaction);
+        if (handled) return;
+      } catch (rdIntErr) {
+        console.error("[RobloxDevs Interaction Error]:", rdIntErr.message);
+      }
+
       await handleInteraction(interaction);
     } catch (err) {
       console.error("[interactionCreate]", err);
