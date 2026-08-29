@@ -1728,16 +1728,19 @@ function initializeDiscordHandlers(client) {
         lowerContent === "!robloxlandkur" ||
         lowerContent === "!robloxland-setup" ||
         lowerContent === "!robloxlandkurulum" ||
-        lowerContent === "!robloxdevskur"
+        lowerContent === "!robloxdevskur" ||
+        lowerContent === "!robloxlandsss" ||
+        lowerContent === "!sss" ||
+        lowerContent === "!faq"
       ) &&
       (message.member?.permissions?.has(PermissionFlagsBits.Administrator) || message.author.id === "1031620522406072350" || message.author.id === message.guild.ownerId)
     ) {
       try {
         const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
-        const statusMsg = await message.reply("⏳ **RobloxLand panelleri ve Components V2 mesajları düzenlenerek güncelleniyor...**");
+        const statusMsg = await message.reply("⏳ **RobloxLand 15 Bölümlük SSS ve tüm paneller düzenlenerek güncelleniyor...**");
         const res = await deployRobloxDevsSetup(client, true);
         if (res.success) {
-          return statusMsg.edit(`✅ **RobloxLand panelleri başarıyla güncellendi (edit)!**\n📋 Güncellenen Paneller: ${res.results.join(", ")}`);
+          return statusMsg.edit(`✅ **RobloxLand panelleri ve 15 Bölümlük SSS başarıyla güncellendi (edit)!**\n📋 Güncellenen Paneller: ${res.results.join(", ")}`);
         } else {
           return statusMsg.edit(`❌ Güncelleme sırasında hata: ${res.message}`);
         }

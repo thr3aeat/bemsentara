@@ -41,35 +41,63 @@ function saveIncidents(data) {
   }
 }
 
-// ─── 1. KÜFÜR VE HAKARET REGEX & NORMALİZASYON ────────────────────────────────
-const HOMOGLYPHS = {
-  'а': 'a', 'ä': 'a', 'â': 'a', 'à': 'a', 'á': 'a',
-  'с': 'c', 'ç': 'c',
-  'е': 'e', 'ё': 'e', 'è': 'e', 'é': 'e',
-  'ı': 'i', '1': 'i', 'l': 'i', 'İ': 'i', 'I': 'i',
-  'о': 'o', 'ö': 'o', '0': 'o',
-  'ş': 's', '$': 's', '5': 's',
-  'ü': 'u', 'ù': 'u', 'ú': 'u'
-};
-
-const SWEAR_REGEX = /\b(oç|orospu|orospucocugu|pic|piç|amk|aq|sik|sikerim|sikim|siktir|yarrak|yarak|got|göt|götveren|amcık|amcik|kahpe|kancık|yavsak|yavşak|dalyarak|pezevenk|ibne|taşak|tasak|puşt|pust)\b/i;
-
-function normalizeText(text) {
-  if (!text) return "";
-  let clean = text.toLowerCase();
-  for (const [k, v] of Object.entries(HOMOGLYPHS)) {
-    clean = clean.split(k).join(v);
-  }
-  // Harf tekrarlarını teke indir (ör: sssiiikkk -> sik)
-  clean = clean.replace(/(.)\1{2,}/g, '$1');
-  return clean;
-}
+// ─── 1. BELİRLİ KÜFÜR KELİME LİSTESİ (SYNTAX YOK, SADECE BELİRLİ KELİMELER) ───
+const EXACT_SWEAR_WORDS = new Set([
+  "oç",
+  "oc",
+  "orospu",
+  "orospu çocuğu",
+  "orospuçocuğu",
+  "orospucocugu",
+  "piç",
+  "pic",
+  "amk",
+  "aq",
+  "sik",
+  "sikerim",
+  "sikim",
+  "sikeyim",
+  "siktir",
+  "siktirgit",
+  "yarrak",
+  "yarak",
+  "amcık",
+  "amcik",
+  "götveren",
+  "gotveren",
+  "kahpe",
+  "kancık",
+  "kancik",
+  "yavşak",
+  "yavsak",
+  "dalyarak",
+  "pezevenk",
+  "ibne",
+  "puşt",
+  "pust"
+]);
 
 function detectProfanity(text) {
   if (!text) return null;
-  const norm = normalizeText(text);
-  const match = norm.match(SWEAR_REGEX);
-  return match ? match[0] : null;
+  const raw = text.toLowerCase().trim();
+
+  // 1. Çok kelimeli tam eşleşmeler (ör: "orospu çocuğu")
+  for (const swear of EXACT_SWEAR_WORDS) {
+    if (swear.includes(" ") && raw.includes(swear)) {
+      return swear;
+    }
+  }
+
+  // 2. Noktalama ve boşluklarla ayrılmış kesin kelime eşleşmesi (Syntax/Regex karmaşası yok)
+  const words = raw.split(/[\s,.\-_!?/\\|;:()\[\]{}'"+*#~`<>]+/);
+  for (const w of words) {
+    const cleanWord = w.trim();
+    if (cleanWord && EXACT_SWEAR_WORDS.has(cleanWord)) {
+      return cleanWord;
+    }
+  }
+
+  return null;
 }
 
 // ─── 2. KÜFÜR TESPİTİ VE KADEMELİ MODERASYON YÖNETİMİ ─────────────────────────

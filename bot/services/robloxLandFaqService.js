@@ -4,7 +4,8 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  StringSelectMenuBuilder
+  StringSelectMenuBuilder,
+  EmbedBuilder
 } = require("discord.js");
 const ComponentsV2Factory = require("../utils/componentsV2Factory");
 
@@ -740,16 +741,11 @@ function buildFaqChapterPayload(chapterId = 1) {
   const ch = FAQ_CHAPTERS.find(c => c.id === Number(chapterId)) || FAQ_CHAPTERS[0];
   const total = FAQ_CHAPTERS.length;
 
-  let body = `# ❓ ROBLOXLND — SIKÇA SORULAN SORULAR (SSS)\n`;
-  body += `### 📖 ${ch.title} (${ch.id} / ${total})\n`;
-  body += `*${ch.desc}*\n\n`;
+  let desc = `### 📖 ${ch.title} (${ch.id} / ${total})\n*${ch.desc}*\n\n`;
 
   for (const item of ch.questions) {
-    body += `**❓ ${item.q}**\n`;
-    body += `💬 ${item.a}\n\n`;
+    desc += `**❓ ${item.q}**\n💬 ${item.a}\n\n`;
   }
-
-  body += `-# Aşağıdaki açılır menüden veya butonlardan 15 bölüm arasında dilediğiniz gibi gezinebilirsiniz.`;
 
   // 15 Bölüm Select Menüsü
   const selectOptions = FAQ_CHAPTERS.map(c => ({
@@ -789,8 +785,14 @@ function buildFaqChapterPayload(chapterId = 1) {
       .setStyle(ButtonStyle.Secondary)
   );
 
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle(`❓ ROBLOXLND — SIKÇA SORULAN SORULAR (SSS)`)
+    .setDescription(desc.slice(0, 4000))
+    .setFooter({ text: `Bölüm ${ch.id} / ${total} • Açılır menüden veya butonlardan gezinebilirsiniz.` });
+
   return {
-    content: body,
+    embeds: [embed],
     components: [selectRow, btnRow]
   };
 }
@@ -818,7 +820,45 @@ async function handleFaqInteraction(interaction) {
   return false;
 }
 
-// ─── 4. BOT YENİDEN BAŞLATILDIĞINDA TEK SEFERLİK OTOMATİK GÜNCELLEME ───────────
+// ─── 4. SSS PANELİ GÖNDERME VE GÜNCELLEME ─────────────────────────────────────
+async function deployFaqPanel(channel, client) {
+  if (!channel || !channel.isTextBased()) return false;
+  console.log(`[FaqService] SSS Kanalı (#${channel.name || channel.id}) güncelleniyor...`);
+
+  const payload = buildFaqChapterPayload(1);
+  let existingBotMsg = null;
+
+  try {
+    const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+    const botId = client.user?.id;
+    existingBotMsg = messages ? messages.find(m => m.author.id === botId && !m.flags?.has?.(8192)) : null;
+
+    if (existingBotMsg) {
+      await existingBotMsg.edit(payload);
+      console.log("[FaqService] ✅ SSS Paneli Var Olan Mesajda Güncellendi.");
+      return true;
+    } else {
+      await channel.send(payload);
+      console.log("[FaqService] ✅ SSS Paneli Sıfırdan Gönderildi.");
+      return true;
+    }
+  } catch (err) {
+    console.warn(`[FaqService] Edit error (${err.message}), sending fresh message...`);
+    try {
+      if (existingBotMsg) {
+        await existingBotMsg.delete().catch(() => {});
+      }
+      await channel.send(payload);
+      console.log("[FaqService] ✅ SSS Paneli Temiz Mesaj Olarak Gönderildi.");
+      return true;
+    } catch (finalErr) {
+      console.error("[FaqService] Final send error:", finalErr.message);
+      return false;
+    }
+  }
+}
+
+// ─── 5. BOT YENİDEN BAŞLATILDIĞINDA TEK SEFERLİK OTOMATİK GÜNCELLEME ───────────
 let hasDeployedFaq = false;
 
 async function deployFaqPanelOnStartup(client) {
@@ -832,23 +872,7 @@ async function deployFaqPanelOnStartup(client) {
     const channel = guild.channels.cache.get(FAQ_CHANNEL_ID) || await guild.channels.fetch(FAQ_CHANNEL_ID).catch(() => null);
     if (!channel || !channel.isTextBased()) return;
 
-    console.log("[FaqService] SSS Kanalı (1538465557031030835) 15 Bölümlük Devasa Panel Güncelleniyor...");
-
-    const payload = buildFaqChapterPayload(1);
-
-    // Kanalda botun mevcut mesajı var mı kontrol et
-    const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-    const botMsg = messages?.find(m => m.author.id === client.user?.id);
-
-    if (botMsg) {
-      await botMsg.edit(payload).catch(async () => {
-        await channel.send(payload).catch(() => {});
-      });
-      console.log("[FaqService] ✅ SSS Paneli Var Olan Mesajda Güncellendi.");
-    } else {
-      await channel.send(payload).catch(() => {});
-      console.log("[FaqService] ✅ SSS Paneli Sıfırdan Gönderildi.");
-    }
+    await deployFaqPanel(channel, client);
   } catch (err) {
     console.error("[FaqService] Deploy error:", err.message);
   }
@@ -857,6 +881,7 @@ async function deployFaqPanelOnStartup(client) {
 module.exports = {
   buildFaqChapterPayload,
   handleFaqInteraction,
+  deployFaqPanel,
   deployFaqPanelOnStartup,
   FAQ_CHAPTERS,
   FAQ_CHANNEL_ID

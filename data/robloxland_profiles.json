@@ -51,5 +51,34 @@
     "joinedAt": "2026-08-29T23:17:44.148Z",
     "isEkoInvite": true,
     "xpMultiplier": 2
+  },
+  "u_both_2": {
+    "userId": "u_both_2",
+    "level": 1,
+    "xp": 150,
+    "landCoins": 0,
+    "trustScore": 90,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T23:20:29.557Z",
+    "isEkoInvite": true,
+    "xpMultiplier": 2
+  },
+  "u_both_3": {
+    "userId": "u_both_3",
+    "level": 1,
+    "xp": 150,
+    "landCoins": 0,
+    "trustScore": 100,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-29T23:20:29.560Z",
+    "isEkoInvite": true,
+    "inviteCode": "eJ2dPBXT4R",
+    "xpMultiplier": 2
   }
 }
