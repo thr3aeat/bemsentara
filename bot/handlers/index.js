@@ -1667,6 +1667,15 @@ function initializeDiscordHandlers(client) {
       console.error('[EkoYildiz Command Handler Error]:', cmdErr.message);
     }
 
+    // ── Sunucu İnceleme ve Düzenleme Komutları (!tumkategoriler, !tumroller, !tumkanallar, !tumkanalaciklamalari vb.) ──
+    try {
+      const { handleGuildInspectionMessage } = require('../services/guildInspectionCommands');
+      const handled = await handleGuildInspectionMessage(message);
+      if (handled) return;
+    } catch (inspErr) {
+      console.error('[Guild Inspection Command Error]:', inspErr.message);
+    }
+
     // ── Roblox TMTCOOKIE Gruptan Çekme Komutu (!gruptancek) ─────────────────
     if (lowerContent.startsWith("!gruptancek") || lowerContent.startsWith(".gruptancek") || lowerContent.startsWith("-gruptancek")) {
       try {
@@ -1712,26 +1721,25 @@ function initializeDiscordHandlers(client) {
       }
     }
 
-    // ── Otomatik Gizli Arşiv Komutu (-arşiv / -arsiv) ──────────────────────────
-    if (message.guild && (lowerContent === "-arşiv" || lowerContent === "-arsiv" || lowerContent.startsWith("-arşiv ") || lowerContent.startsWith("-arsiv "))) {
+    // ── Otomatik Gizli Arşiv Komutu (!arsiv / !arşiv / .arsiv / -arsiv) ──────────────────────────
+    if (
+      message.guild &&
+      (
+        lowerContent === "!arsiv" || lowerContent === "!arşiv" ||
+        lowerContent.startsWith("!arsiv ") || lowerContent.startsWith("!arşiv ") ||
+        lowerContent.startsWith("!arsiv\n") || lowerContent.startsWith("!arşiv\n") ||
+        lowerContent === "-arşiv" || lowerContent === "-arsiv" ||
+        lowerContent.startsWith("-arşiv ") || lowerContent.startsWith("-arsiv ") ||
+        lowerContent === ".arşiv" || lowerContent === ".arsiv" ||
+        lowerContent.startsWith(".arşiv ") || lowerContent.startsWith(".arsiv ")
+      )
+    ) {
       try {
-        const channel = message.channel;
-        if (channel && channel.type === ChannelType.GuildText) {
-          const { handleArchiveChannel } = require("../services/archiveService");
-
-          let cleanName = channel.name;
-          const norm = cleanName.toLowerCase().replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g').replace(/ç/g, 'c').replace(/ö/g, 'o').replace(/ü/g, 'u');
-          if (!norm.endsWith("-arsiv")) {
-            cleanName = `${channel.name}-arsiv`;
-            await channel.setName(cleanName, "Arşiv Komutu İle İsim Güncellemesi").catch(() => { });
-          }
-
-          await handleArchiveChannel(channel);
-          await message.reply({ content: "🔒 **Kanal başarıyla arşivlendi ve gizlendi.** (Bu arşivi artık @everyone ve Moderatörler görüntüleyemez.)" }).catch(() => { });
-          return;
-        }
+        const { handleArsivCommand } = require("../services/archiveService");
+        await handleArsivCommand(message);
+        return;
       } catch (archErr) {
-        console.error("[-arşiv komut hatası]:", archErr.message);
+        console.error("[!arsiv komut hatası]:", archErr.message);
       }
     }
 
@@ -3335,163 +3343,7 @@ function initializeDiscordHandlers(client) {
       return;
     }
 
-    if (message.content === "!tumrollerveidleriveisimleri") {
-      const roles = message.guild.roles.cache
-        .filter(r => r.name !== '@everyone')
-        .sort((a, b) => b.position - a.position);
-      let replyText = "**Sunucudaki Roller (everyone hariç):**\n\n";
-      roles.forEach((role) => {
-        replyText += `**İsim:** ${role.name} | **ID:** \`${role.id}\`\n`;
-      });
-      if (replyText.length > 2000) {
-        const chunks = replyText.match(/[\s\S]{1,1999}/g) || [];
-        for (const chunk of chunks) await message.reply(chunk);
-      } else {
-        await message.reply(replyText);
-      }
-    }
-
-    if (message.content === "!tumkanallar" || message.content === "!tümkanallar") {
-      const { PermissionFlagsBits } = require('discord.js');
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels) && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return message.reply("❌ Bu komutu kullanmak için `Kanalları Yönet` veya `Yönetici` yetkisine sahip olmalısınız.");
-      }
-
-      const channels = message.guild.channels.cache
-        .sort((a, b) => a.position - b.position);
-
-      let replyText = "**Sunucudaki Kanallar (İsim = ID):**\n\n";
-      channels.forEach((channel) => {
-        replyText += `${channel.name} = ${channel.id}\n`;
-      });
-
-      if (replyText.length > 2000) {
-        const chunks = replyText.match(/[\s\S]{1,1999}/g) || [];
-        for (const chunk of chunks) await message.reply(chunk);
-      } else {
-        await message.reply(replyText);
-      }
-    }
-
-    if (message.content === "!tumkanallaraciklamasiz" || message.content === "!tümkanallaraçıklamasız") {
-      const { PermissionFlagsBits } = require('discord.js');
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels) && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return message.reply("❌ Bu komutu kullanmak için `Kanalları Yönet` veya `Yönetici` yetkisine sahip olmalısınız.");
-      }
-
-      const channels = message.guild.channels.cache
-        .filter(c => typeof c.setTopic === 'function' && (!c.topic || c.topic.trim() === ""))
-        .sort((a, b) => a.position - b.position);
-
-      if (channels.size === 0) {
-        return message.reply("ℹ️ Sunucuda açıklaması olmayan (ve açıklama eklenebilir olan) herhangi bir yazı kanalı bulunamadı.");
-      }
-
-      let replyText = "**Açıklaması Olmayan Kanallar (İsim = ID):**\n\n";
-      channels.forEach((channel) => {
-        replyText += `${channel.name} = ${channel.id}\n`;
-      });
-
-      if (replyText.length > 2000) {
-        const chunks = replyText.match(/[\s\S]{1,1999}/g) || [];
-        for (const chunk of chunks) await message.reply(chunk);
-      } else {
-        await message.reply(replyText);
-      }
-    }
-
-    if (message.content.startsWith("!tumkanallaraciklama") || message.content.startsWith("!tümkanallaraciklama")) {
-      const { PermissionFlagsBits } = require('discord.js');
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageChannels) && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        return message.reply("❌ Bu komutu kullanmak için `Kanalları Yönet` veya `Yönetici` yetkisine sahip olmalısınız.");
-      }
-
-      const lines = message.content.split("\n");
-      const pairs = [];
-
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
-        if (i === 0) {
-          if (line.startsWith("!tumkanallaraciklama")) {
-            line = line.slice("!tumkanallaraciklama".length).trim();
-          } else if (line.startsWith("!tümkanallaraciklama")) {
-            line = line.slice("!tümkanallaraciklama".length).trim();
-          }
-        }
-
-        if (!line) continue;
-
-        const parts = line.split("-----");
-        if (parts.length >= 2) {
-          const channelId = parts[0].trim();
-          const description = parts.slice(1).join("-----").trim();
-          if (channelId) {
-            pairs.push({ channelId, description });
-          }
-        }
-      }
-
-      if (pairs.length === 0) {
-        return message.reply("❌ Lütfen güncellenecek kanalları şu formatta belirtin:\n`!tümkanallaraciklama`\n`kanal_id ----- yeni_açıklama`\n`kanal_id_2 ----- yeni_açıklama_2`");
-      }
-
-      const statusMsg = await message.reply(`🔄 ${pairs.length} kanalın açıklaması güncelleniyor, lütfen bekleyin...`);
-
-      const success = [];
-      const failed = [];
-
-      for (const pair of pairs) {
-        const { channelId, description } = pair;
-        try {
-          let channel = message.guild.channels.cache.get(channelId);
-          if (!channel) {
-            channel = await message.guild.channels.fetch(channelId).catch(() => null);
-          }
-
-          if (!channel) {
-            failed.push({ channelId, reason: "Kanal bulunamadı." });
-            continue;
-          }
-
-          if (typeof channel.setTopic !== 'function') {
-            failed.push({ channel: channel.name, channelId, reason: "Bu kanal türü açıklama/topic desteklemiyor." });
-            continue;
-          }
-
-          await channel.setTopic(description, `Yetkili: ${message.author.tag} tarafından güncellendi.`);
-          success.push({ name: channel.name, id: channel.id });
-        } catch (err) {
-          console.error(`Kanal ${channelId} açıklaması güncellenirken hata:`, err);
-          failed.push({ channelId, reason: err.message || "Bilinmeyen hata." });
-        }
-      }
-
-      let resultText = `**Açıklama Güncelleme Sonucu:**\n\n`;
-      if (success.length > 0) {
-        resultText += `✅ **Başarıyla Güncellenenler:**\n`;
-        success.forEach(s => {
-          resultText += `- #${s.name} (${s.id})\n`;
-        });
-        resultText += `\n`;
-      }
-      if (failed.length > 0) {
-        resultText += `❌ **Başarısız Olanlar:**\n`;
-        failed.forEach(f => {
-          const nameStr = f.channel ? `#${f.channel} ` : "";
-          resultText += `- ${nameStr}(${f.channelId}): ${f.reason}\n`;
-        });
-      }
-
-      if (resultText.length > 2000) {
-        const chunks = resultText.match(/[\s\S]{1,1999}/g) || [];
-        await statusMsg.edit(chunks[0]);
-        for (let i = 1; i < chunks.length; i++) {
-          await message.reply(chunks[i]);
-        }
-      } else {
-        await statusMsg.edit(resultText);
-      }
-    }
+    // (Sunucu inceleme ve düzenleme komutları guildInspectionCommands modülünde yönetilmektedir)
 
     if (message.content === "!emojiguncelle" || message.content === "!emojigüncelle") {
       const { PermissionFlagsBits } = require('discord.js');
