@@ -16,8 +16,7 @@ const TYPE_SEPARATOR     = ComponentType.Separator || 14;
 const TYPE_ACTION_ROW    = ComponentType.ActionRow || 1;
 const TYPE_BUTTON        = ComponentType.Button || 2;
 
-// MessageFlags.IsComponentsV2 (1 << 13 = 8192)
-const FLAGS_V2 = MessageFlags.IsComponentsV2 || (1 << 13);
+const FLAGS_V2 = MessageFlags && MessageFlags.IsComponentsV2 ? MessageFlags.IsComponentsV2 : undefined;
 
 class ComponentsV2Factory {
   static get FLAGS() {

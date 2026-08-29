@@ -709,10 +709,11 @@ function buildSalePayload(info) {
 // ─── YARDIMCI: IN-PLACE EDIT VEYA YENİ MESAJ GÖNDERME ──────────────────────────
 async function sendOrEditPanel(channel, client, payload) {
   if (!channel || !channel.isTextBased()) return false;
+  let existingBotMsg = null;
   try {
     const fetched = await channel.messages.fetch({ limit: 15 }).catch(() => null);
     const botId = client.user?.id;
-    const existingBotMsg = fetched ? fetched.find(m => m.author.id === botId) : null;
+    existingBotMsg = fetched ? fetched.find(m => m.author.id === botId) : null;
 
     if (existingBotMsg) {
       await existingBotMsg.edit(payload);
@@ -722,11 +723,15 @@ async function sendOrEditPanel(channel, client, payload) {
       return "send";
     }
   } catch (err) {
-    console.error(`[RobloxLandSetup] sendOrEditPanel error in #${channel.name || channel.id}:`, err.message);
+    console.warn(`[RobloxLandSetup] sendOrEditPanel edit error in #${channel.name || channel.id} (${err.message}), sending fresh...`);
     try {
+      if (existingBotMsg) {
+        await existingBotMsg.delete().catch(() => {});
+      }
       await channel.send(payload);
       return "send_fallback";
-    } catch (_) {
+    } catch (sendErr) {
+      console.error(`[RobloxLandSetup] sendOrEditPanel final send error in #${channel.name || channel.id}:`, sendErr.message);
       return false;
     }
   }

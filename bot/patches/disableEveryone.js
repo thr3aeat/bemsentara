@@ -58,15 +58,16 @@ function _sanitizeOptions(opts) {
   const hasPoll = !!out.poll;
   const hasStickers = Array.isArray(out.stickers) && out.stickers.length > 0;
 
-  // Discord Components V2 (flags & 8192 veya type 17/10/9/14) legacy content alanı kullanımını yasaklar.
-  let isV2 = out.flags !== undefined && (Number(out.flags) & 8192) !== 0;
-  if (!isV2 && Array.isArray(out.components)) {
-    isV2 = out.components.some(c => c && (c.type === 17 || c.type === 10 || c.type === 9 || c.type === 14));
-  }
+  // Discord Components V2 tespiti: Container(17), TextDisplay(10), Section(9), Separator(14)
+  let isV2 = Array.isArray(out.components) && out.components.some(c => c && (c.type === 17 || c.type === 10 || c.type === 9 || c.type === 14));
 
   if (isV2) {
     delete out.content;
-    out.flags = (Number(out.flags) || 0) | 8192;
+    // 8192 (IS_VOICE_MESSAGE) bayrağını temizle
+    if (out.flags !== undefined) {
+      out.flags = Number(out.flags) & ~8192;
+      if (out.flags === 0) delete out.flags;
+    }
   } else {
     // If completely empty, inject zero-width space / fallback so Discord API never rejects it
     if (!hasContent && !hasEmbeds && !hasFiles && !hasComponents && !hasPoll && !hasStickers) {
