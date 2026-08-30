@@ -20,6 +20,7 @@ const DataStore = require("./robloxLandDataStore");
 const GUILD_ID = "1537407325290237973";
 const TICKET_CATEGORY_ID = "1538466419245719663";
 const STAFF_LOG_CHANNEL_ID = "1543382733408174220";
+const STAFF_RECRUITER_ROLE_ID = "1537411928585015366"; // Yetkili Alım Sorumlusu Rolü
 
 const CHANNELS = {
   RULES: "1538465174602649611",
@@ -985,22 +986,25 @@ async function handleRobloxDevsInteraction(interaction) {
     try {
       const logChan = guild?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await guild?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
       if (logChan && logChan.isTextBased()) {
-        await logChan.send(ComponentsV2Factory.buildPayload([
-          ComponentsV2Factory.text(
-            `# 📋 Yeni Yetkili Başvurusu!\n\n` +
-            `👤 **Başvuran:** <@${user.id}> (\`${user.id}\`)\n` +
-            `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
-            `**1. İsim / Yaş:**\n${name}\n\n` +
-            `**2. Satış Mağazasında Bulundu mu?:**\n${exp}\n\n` +
-            `**3. Müşteri Çekebilir mi?:**\n${customers}\n\n` +
-            `**4. Başka Bir Yerde Yetkili mi?:**\n${other}`
-          ),
-          ComponentsV2Factory.separator(true),
-          ComponentsV2Factory.actionRow([
-            { style: ButtonStyle.Success, label: "✅ Kabul Et", custom_id: `robloxland_staff_accept_${user.id}`, emoji: { name: "🎉" } },
-            { style: ButtonStyle.Danger, label: "❌ Reddet", custom_id: `robloxland_staff_reject_${user.id}`, emoji: { name: "🚫" } }
+        await logChan.send({
+          content: `🔔 <@&${STAFF_RECRUITER_ROLE_ID}> **Yeni Bir Yetkili Alım Başvurusu Geldi!**`,
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# 📋 Yeni Yetkili Başvurusu!\n\n` +
+              `👤 **Başvuran:** <@${user.id}> (\`${user.id}\`)\n` +
+              `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+              `**1. İsim / Yaş:**\n${name}\n\n` +
+              `**2. Satış Mağazasında Bulundu mu?:**\n${exp}\n\n` +
+              `**3. Müşteri Çekebilir mi?:**\n${customers}\n\n` +
+              `**4. Başka Bir Yerde Yetkili mi?:**\n${other}`
+            ),
+            ComponentsV2Factory.separator(true),
+            ComponentsV2Factory.actionRow([
+              { style: ButtonStyle.Success, label: "✅ Kabul Et", custom_id: `robloxland_staff_accept_${user.id}`, emoji: { name: "🎉" } },
+              { style: ButtonStyle.Danger, label: "❌ Reddet", custom_id: `robloxland_staff_reject_${user.id}`, emoji: { name: "🚫" } }
+            ])
           ])
-        ]));
+        });
       }
     } catch (_) {}
     return true;
@@ -1008,12 +1012,26 @@ async function handleRobloxDevsInteraction(interaction) {
 
   // 3. Yetkili Başvuru Kabul / Red
   if (interaction.isButton() && (customId.startsWith("robloxland_staff_accept_") || customId.startsWith("robloxland_staff_reject_"))) {
+    const isRecruiter = interaction.member?.roles?.cache?.has(STAFF_RECRUITER_ROLE_ID) ||
+      interaction.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
+      interaction.user.id === "1031620522406072350" ||
+      interaction.guild?.ownerId === interaction.user.id;
+
+    if (!isRecruiter) {
+      return interaction.reply({
+        content: `❌ Bu başvuruyu sadece **Yetkili Alım Sorumluları** (<@&${STAFF_RECRUITER_ROLE_ID}>) ve Yöneticiler değerlendirebilir!`,
+        ephemeral: true
+      });
+    }
+
     const isAccept = customId.startsWith("robloxland_staff_accept_");
     const targetUserId = customId.replace("robloxland_staff_accept_", "").replace("robloxland_staff_reject_", "");
 
     await interaction.reply({
-      content: isAccept ? `✅ <@${targetUserId}> kullanıcısının başvurusu **kabul edildi** ve DM bildirimi gönderildi.` : `❌ <@${targetUserId}> kullanıcısının başvurusu **reddedildi** ve DM bildirimi gönderildi.`,
-      ephemeral: true
+      content: isAccept 
+        ? `✅ <@${targetUserId}> kullanıcısının başvurusu <@${interaction.user.id}> tarafından **kabul edildi** ve DM bildirimi gönderildi.` 
+        : `❌ <@${targetUserId}> kullanıcısının başvurusu <@${interaction.user.id}> tarafından **reddedildi** ve DM bildirimi gönderildi.`,
+      ephemeral: false
     });
 
     try {
