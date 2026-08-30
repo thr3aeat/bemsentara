@@ -46,6 +46,74 @@ function getXpForLevel(level) {
   return Math.round(8000 + Math.pow(level - 50, 2.1) * 140);
 }
 
+// ─── 1.1. SEVİYE YETKİLERİ & AYRICALIKLARI (Görüntü Yükleme, Tepki Verme vb.) ────
+function getPermissionsForLevel(level) {
+  const perms = [
+    PermissionFlagsBits.ViewChannel,
+    PermissionFlagsBits.SendMessages,
+    PermissionFlagsBits.ReadMessageHistory
+  ];
+
+  // Seviye 1+: Tepki Verme (AddReactions)
+  if (level >= 1) {
+    perms.push(PermissionFlagsBits.AddReactions);
+  }
+
+  // Seviye 2+: Görüntü / Dosya Yükleme (AttachFiles) & Bağlantı Yerleştir (EmbedLinks)
+  if (level >= 2) {
+    perms.push(PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks);
+  }
+
+  // Seviye 3+: Harici Emoji & Harici Çıkartmalar
+  if (level >= 3) {
+    perms.push(PermissionFlagsBits.UseExternalEmojis, PermissionFlagsBits.UseExternalStickers);
+  }
+
+  // Seviye 5+: Alt Başlık (Thread) Oluşturabilme
+  if (level >= 5) {
+    perms.push(PermissionFlagsBits.CreatePublicThreads, PermissionFlagsBits.SendMessagesInThreads);
+  }
+
+  // Seviye 7+: Sunucuda Kendi Takma Adını Değiştirme (ChangeNickname)
+  if (level >= 7) {
+    perms.push(PermissionFlagsBits.ChangeNickname);
+  }
+
+  // Seviye 10+: Sesli Yayın (Stream) & Ses Paneli (Soundboard)
+  if (level >= 10) {
+    perms.push(PermissionFlagsBits.Stream, PermissionFlagsBits.UseSoundboard);
+  }
+
+  // Seviye 15+: Ses Aktiviteleri & Harici Ses Efektleri
+  if (level >= 15) {
+    perms.push(PermissionFlagsBits.UseEmbeddedActivities, PermissionFlagsBits.UseExternalSounds);
+  }
+
+  return perms;
+}
+
+/**
+ * Sunucudaki tüm seviye rollerinin yetkilerini otomatik olarak senkronize eder.
+ */
+async function syncLevelRolePermissions(guild) {
+  if (!guild) return;
+  try {
+    await guild.roles.fetch().catch(() => {});
+    const rolesMap = getLevelRolesMap();
+    for (let lvl = 1; lvl <= 65; lvl++) {
+      const roleInfo = rolesMap[lvl];
+      if (!roleInfo || !roleInfo.id) continue;
+      const role = guild.roles.cache.get(roleInfo.id) || guild.roles.cache.find(r => r.name.toLowerCase() === (roleInfo.name || '').toLowerCase());
+      if (role) {
+        const requiredPerms = getPermissionsForLevel(lvl);
+        await role.setPermissions(requiredPerms).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('[LevelService] syncLevelRolePermissions error:', err.message);
+  }
+}
+
 function getLevelRolesMap() {
   return loadJson(ROLES_MAP_FILE, {});
 }
@@ -127,9 +195,10 @@ async function handleRolunUstuneYeniRoller(message, lines) {
   const createdRoles = [];
   const errors = [];
 
-  // 1. Rolleri oluştur / güncelle (hoist: true -> ayrı göster)
+  // 1. Rolleri oluştur / güncelle (hoist: true -> ayrı göster, permissions: getPermissionsForLevel(level))
   for (const def of roleDefs) {
     try {
+      const perms = getPermissionsForLevel(def.level);
       let role = guild.roles.cache.find(r => r.name.toLowerCase() === def.name.toLowerCase());
       if (!role) {
         role = await guild.roles.create({
@@ -137,15 +206,13 @@ async function handleRolunUstuneYeniRoller(message, lines) {
           color: def.color,
           hoist: true,
           reason: `RobloxLand Level ${def.level} Rolü`,
-          permissions: []
+          permissions: perms
         });
       } else {
-        const updates = {};
+        const updates = { permissions: perms };
         if (role.hexColor.toLowerCase() !== def.color.toLowerCase()) updates.color = def.color;
         if (!role.hoist) updates.hoist = true;
-        if (Object.keys(updates).length > 0) {
-          await role.edit(updates).catch(() => {});
-        }
+        await role.edit(updates).catch(() => {});
       }
       rolesMap[def.level] = { id: role.id, name: role.name, color: def.color };
       createdRoles.push({ level: def.level, role });
@@ -312,6 +379,19 @@ async function processLevelUp(member, newLevel, oldLevel, guild) {
     const oldName = oldRoleInfo?.name || `Seviye ${oldLevel}`;
     const newName = newRoleInfo?.name || `Seviye ${newLevel}`;
 
+    const permsUnlocked = [];
+    if (newLevel === 1) permsUnlocked.push('💬 Mesajlara Tepki Verme (Add Reactions)');
+    if (newLevel === 2) permsUnlocked.push('🖼️ Görsel / Dosya Yükleme & Link Önizleme');
+    if (newLevel === 3) permsUnlocked.push('✨ Harici Emoji & Çıkartma Kullanımı');
+    if (newLevel === 5) permsUnlocked.push('🧵 Alt Başlık (Thread) Açabilme');
+    if (newLevel === 7) permsUnlocked.push('🏷️ Sunucu İçi Takma Ad Değiştirme');
+    if (newLevel === 10) permsUnlocked.push('📺 Sesli Ekran Yayını & Ses Paneli (Soundboard)');
+    if (newLevel >= 15 && oldLevel < 15) permsUnlocked.push('🎮 Ses Aktiviteleri (Watch Together vb.)');
+
+    const perkText = permsUnlocked.length > 0
+      ? `\n\n🔓 **Açılan Yeni Yetkiler:**\n` + permsUnlocked.map(p => `• ${p}`).join('\n')
+      : '';
+
     const levelUpMsg =
       `🎉 **LEVEL UP!**\n\n` +
       `${userDisplay} seviye atladı!\n\n` +
@@ -320,7 +400,8 @@ async function processLevelUp(member, newLevel, oldLevel, guild) {
       `🌟 **${newName}**\n\n` +
       `Seviye **${oldLevel}** → **${newLevel}**\n` +
       `+1 Yeni Rol\n` +
-      `+${coinBonus} LandCoin 🪙`;
+      `+${coinBonus} LandCoin 🪙` +
+      perkText;
 
     await logChan.send({
       content: levelUpMsg,
@@ -519,5 +600,7 @@ module.exports = {
   initVoiceXpTracker,
   buildUserProfileCard,
   getXpForLevel,
-  getLevelRolesMap
+  getLevelRolesMap,
+  getPermissionsForLevel,
+  syncLevelRolePermissions
 };

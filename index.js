@@ -304,12 +304,14 @@ async function start() {
             sendEkoHookAbout(discordBot).catch(() => {});
           } catch (_) {}
 
-          // ── RobloxLand Davet Önbelleği & 2X Seviye İzleyici ──
+          // ── RobloxLand Davet Önbelleği, 2X Seviye İzleyici & Seviye Rol Yetkileri ──
           try {
             const { cacheGuildInvites } = require("./bot/services/robloxLandInviteService");
+            const { syncLevelRolePermissions } = require("./bot/services/robloxLandLevelService");
             const targetGuild = discordBot.guilds.cache.get("1537407325290237973") || await discordBot.guilds.fetch("1537407325290237973").catch(() => null);
             if (targetGuild) {
-              await cacheGuildInvites(targetGuild);
+              await cacheGuildInvites(targetGuild).catch(() => {});
+              await syncLevelRolePermissions(targetGuild).catch(() => {});
             }
           } catch (_) {}
 
