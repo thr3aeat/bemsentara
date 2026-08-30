@@ -14,7 +14,21 @@ function _sanitizeString(s) {
 
 function _sanitizeEmbed(embed) {
   if (!embed) return embed;
-  const e = embed.data ? embed.data : { ...embed };
+  if (embed && embed.data) {
+    if (embed.data.title) embed.data.title = _sanitizeString(embed.data.title);
+    if (embed.data.description) embed.data.description = _sanitizeString(embed.data.description);
+    if (embed.data.footer && embed.data.footer.text) embed.data.footer.text = _sanitizeString(embed.data.footer.text);
+    if (Array.isArray(embed.data.fields)) {
+      embed.data.fields = embed.data.fields.map(f => ({
+        name: _sanitizeString(f.name || '\u200B'),
+        value: _sanitizeString(f.value || '\u200B'),
+        inline: Boolean(f.inline)
+      }));
+    }
+    return embed;
+  }
+
+  const e = { ...embed };
   if (e.title) e.title = _sanitizeString(e.title);
   if (e.description) e.description = _sanitizeString(e.description);
   if (e.footer && e.footer.text) e.footer.text = _sanitizeString(e.footer.text);
@@ -22,7 +36,7 @@ function _sanitizeEmbed(embed) {
     e.fields = e.fields.map(f => ({
       name: _sanitizeString(f.name || '\u200B'),
       value: _sanitizeString(f.value || '\u200B'),
-      inline: f.inline || false
+      inline: Boolean(f.inline)
     }));
   }
   return e;

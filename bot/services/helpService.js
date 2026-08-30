@@ -294,7 +294,10 @@ function createRoleBasedHelpPayload(member, user, categoryKey = null) {
   });
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
-  return { embeds: [embed], components: [row] };
+  const headerContent = selectedCat
+    ? `📂 **Eko Yıldız Komut Merkezi — ${selectedCat.title}**`
+    : `🌟 **EKO YILDIZ KOMUT MERKEZİ & YARDIM MENÜSÜ**`;
+  return { content: headerContent, embeds: [embed], components: [row] };
 }
 
 /**
@@ -374,15 +377,15 @@ function createCommandSuggestionPayload(member, user, typedCmd, suggestedCmd = n
     .setDescription(
       isExplicitQuery
         ? `Girdiğiniz **\`e!${typedCmd}\`** komutu bulunamadı.\n\n` +
-          `💡 **En Yakın Önerilen Komut:** \`e!${targetCmd.name}\`\n` +
-          `📝 **Açıklama:** *${targetCmd.description || 'Komut açıklaması'}*\n\n` +
-          `Yetkiniz: **${roleBadge.badge}**\n\n` +
-          `Lütfen aşağıdaki butonlarla seçiminizi yapın:`
+        `💡 **En Yakın Önerilen Komut:** \`e!${targetCmd.name}\`\n` +
+        `📝 **Açıklama:** *${targetCmd.description || 'Komut açıklaması'}*\n\n` +
+        `Yetkiniz: **${roleBadge.badge}**\n\n` +
+        `Lütfen aşağıdaki butonlarla seçiminizi yapın:`
         : `Merhaba <@${userId}>! **e!** (veya **s!**) komut ön ekini yazdınız.\n\n` +
-          `💡 **Popüler / Önerilen Komut:** \`e!${targetCmd.name}\`\n` +
-          `📝 **Açıklama:** *${targetCmd.description}*\n\n` +
-          `Yetkiniz: **${roleBadge.badge}**\n\n` +
-          `Aşağıdaki butonları kullanarak doğrudan komutu çalıştırabilir veya tüm komutlarınızı görüntüleyebilirsiniz:`
+        `💡 **Popüler / Önerilen Komut:** \`e!${targetCmd.name}\`\n` +
+        `📝 **Açıklama:** *${targetCmd.description}*\n\n` +
+        `Yetkiniz: **${roleBadge.badge}**\n\n` +
+        `Aşağıdaki butonları kullanarak doğrudan komutu çalıştırabilir veya tüm komutlarınızı görüntüleyebilirsiniz:`
     )
     .setFooter({ text: 'Eko Yıldız Akıllı Komut Arama & Öneri Motoru' })
     .setTimestamp();
@@ -420,18 +423,18 @@ async function sendHelpMenu(interactionOrMessage, categoryKey = null) {
 
   if (isInteraction) {
     if (interactionOrMessage.replied || interactionOrMessage.deferred) {
-      await interactionOrMessage.editReply(payload).catch(() => {});
+      await interactionOrMessage.editReply(payload).catch(() => { });
     } else {
-      await interactionOrMessage.reply({ ...payload, ephemeral: true }).catch(() => {});
+      await interactionOrMessage.reply({ ...payload, ephemeral: true }).catch(() => { });
     }
   } else if (interactionOrMessage.reply) {
     await interactionOrMessage.reply(payload).catch(async () => {
       if (interactionOrMessage.channel) {
-        await interactionOrMessage.channel.send(payload).catch(() => {});
+        await interactionOrMessage.channel.send(payload).catch(() => { });
       }
     });
   } else if (interactionOrMessage.channel) {
-    await interactionOrMessage.channel.send(payload).catch(() => {});
+    await interactionOrMessage.channel.send(payload).catch(() => { });
   }
 }
 
