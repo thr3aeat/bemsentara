@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const DataStore = require("./robloxLandDataStore");
 
+const GUILD_ID = "1537407325290237973";
 const LEVEL_LOG_CHANNEL_ID = "1538481757404274708";
 const ROLES_MAP_FILE = path.join(__dirname, "../../data/robloxland_level_roles.json");
 const USER_STATS_FILE = path.join(__dirname, "../../data/robloxland_user_activity.json");
@@ -22,11 +23,27 @@ function saveJson(file, data) {
   }
 }
 
-// ─── 1. XP HESAPLAMA VE SEVİYE EĞRİSİ (Progressive XP Curve) ───────────────────
+// ─── 1. XP HESAPLAMA VE SEVİYE EĞRİSİ (Dengelenmiş & Kolaylaştırılmış Curve) ────
 function getXpForLevel(level) {
-  if (level <= 1) return 100;
-  // Seviye 1: 100 XP, Seviye 10: ~1500 XP, Seviye 25: ~7000 XP, Seviye 40: ~18000 XP, Seviye 65: ~70000 XP
-  return Math.round(50 * Math.pow(level, 1.72) + 50);
+  if (level <= 1) return 60;
+  if (level <= 10) {
+    // 1 - 10 Seviyeler (Başlangıç: Çok kolay ve hızlı ilerleme, anında rol kazanımı)
+    // Seviye 1: 60 XP, Seviye 5: 160 XP, Seviye 10: 285 XP
+    return Math.round(60 + (level - 1) * 25);
+  }
+  if (level <= 30) {
+    // 11 - 30 Seviyeler (Orta: Rahat ve motive edici tırmanış)
+    // Seviye 15: ~430 XP, Seviye 20: ~710 XP, Seviye 30: ~1,500 XP
+    return Math.round(285 + Math.pow(level - 10, 1.55) * 35);
+  }
+  if (level <= 50) {
+    // 31 - 50 Seviyeler (İleri: Dengeli ve keyifli ilerleme)
+    // Seviye 35: ~2,580 XP, Seviye 40: ~4,080 XP, Seviye 50: ~8,000 XP
+    return Math.round(1500 + Math.pow(level - 30, 1.7) * 70);
+  }
+  // 51 - 65 Seviyeler (Son Roller: Efsanevi, Mitik, Ölümsüz, Tanrısal Dev - Prestijli ve Zor!)
+  // Seviye 55: ~10,600 XP, Seviye 60: ~17,200 XP, Seviye 65: ~28,000 XP
+  return Math.round(8000 + Math.pow(level - 50, 2.1) * 140);
 }
 
 function getLevelRolesMap() {
@@ -269,7 +286,7 @@ async function processLevelUp(member, newLevel, oldLevel, guild) {
   }
 
   // 2. LandCoin ve Profil Güncellemesi
-  const coinBonus = newLevel * 10 + 50;
+  const coinBonus = newLevel * 15 + 60;
   DataStore.updateUserProfile(member.id, (p) => {
     p.level = newLevel;
     p.landCoins = (p.landCoins || 0) + coinBonus;
@@ -315,13 +332,13 @@ async function processLevelUp(member, newLevel, oldLevel, guild) {
 }
 
 // ─── 4. MESAJ XP SİSTEMİ (Anti-Farm, Cooldown, Multiplier) ────────────────────
-const MESSAGE_COOLDOWN_MS = 50 * 1000; // 50 saniye spam engeli
+const MESSAGE_COOLDOWN_MS = 20 * 1000; // 20 saniye akıcı sohbet süresi
 
 async function handleMessageXp(message) {
   if (!message.guild || message.author.bot) return;
 
   const content = message.content ? message.content.trim() : "";
-  if (content.length < 5) return; // Minimum 5 karakter
+  if (content.length < 3) return; // Minimum 3 karakter (sa, as, tm, eyw gibi mesajlar dahil)
 
   // Komutları yoksay
   if (content.startsWith("!") || content.startsWith(".") || content.startsWith("/") || content.startsWith("-")) return;
@@ -341,7 +358,7 @@ async function handleMessageXp(message) {
     return;
   }
 
-  // Cooldown kontrolü
+  // Cooldown kontrolü (20 saniye)
   if (now - (activity.lastMessageTime || 0) < MESSAGE_COOLDOWN_MS) {
     return;
   }
@@ -358,7 +375,7 @@ async function handleMessageXp(message) {
     multiplier *= (profilePre.xpMultiplier || 2.0);
   }
 
-  const baseGain = Math.floor(Math.random() * 11) + 15; // 15 - 25 XP
+  const baseGain = Math.floor(Math.random() * 16) + 20; // 20 - 35 XP
   const finalXp = Math.round(baseGain * multiplier);
 
   activity.lastMessageTime = now;
@@ -402,10 +419,11 @@ async function handleMessageXp(message) {
 function initVoiceXpTracker(client) {
   setInterval(async () => {
     try {
-      const guild = client.guilds.cache.get(GUILD_ID);
+      const guild = client.guilds.cache.get(GUILD_ID) || await client.guilds.fetch(GUILD_ID).catch(() => null);
       if (!guild) return;
 
       const voiceChannels = guild.channels.cache.filter(c => c && c.isVoiceBased() && c.id !== guild.afkChannelId);
+      const isWeekend = [0, 6].includes(new Date().getDay());
 
       for (const [, vChan] of voiceChannels) {
         const activeMembers = vChan.members.filter(m => m && !m.user.bot && !m.voice.deaf && !m.voice.mute);
@@ -416,7 +434,18 @@ function initVoiceXpTracker(client) {
           activity.voiceMinutes = (activity.voiceMinutes || 0) + 1;
           saveUserActivity(member.id, activity);
 
-          const voiceXp = Math.floor(Math.random() * 5) + 8; // 8 - 12 XP
+          let multiplier = 1.0;
+          if (isWeekend) multiplier = 2.0;
+          if (member.premiumSince) multiplier *= 1.5;
+
+          const profilePre = DataStore.getUserProfile(member.id, member);
+          if (profilePre.isEkoInvite || (profilePre.xpMultiplier && profilePre.xpMultiplier > 1)) {
+            multiplier *= (profilePre.xpMultiplier || 2.0);
+          }
+
+          const baseVoice = Math.floor(Math.random() * 11) + 15; // 15 - 25 XP
+          const voiceXp = Math.round(baseVoice * multiplier);
+
           const profile = DataStore.getUserProfile(member.id, member);
           let currentXp = (profile.xp || 0) + voiceXp;
           let currentLevel = profile.level || 1;

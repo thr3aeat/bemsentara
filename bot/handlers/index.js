@@ -1821,8 +1821,20 @@ function initializeDiscordHandlers(client) {
       );
     }
 
-    // ── RobloxLand Profil Komutu (!profil / .profil) ──────────────────────────
-    if (lowerContent.startsWith("!profil") || lowerContent.startsWith(".profil") || lowerContent.startsWith("!profile")) {
+    // ── RobloxLand Profil Komutu (!profil / .profil / !seviye / !rank / !level) ──
+    if (
+      lowerContent.startsWith("!profil") ||
+      lowerContent.startsWith(".profil") ||
+      lowerContent.startsWith("!profile") ||
+      ((message.guild?.id === "1537407325290237973") && (
+        lowerContent.startsWith("!seviye") ||
+        lowerContent.startsWith(".seviye") ||
+        lowerContent.startsWith("!rank") ||
+        lowerContent.startsWith(".rank") ||
+        lowerContent.startsWith("!level") ||
+        lowerContent.startsWith(".level")
+      ))
+    ) {
       const { buildUserProfileCard } = require("../services/robloxLandLevelService");
       const targetUser = message.mentions.users.first() || message.author;
       const targetMember = message.guild.members.cache.get(targetUser.id) || await message.guild.members.fetch(targetUser.id).catch(() => null);
