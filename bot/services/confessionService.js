@@ -178,19 +178,48 @@ async function ensureConfessionPanel(client) {
     };
 
     const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+    const isConfessionPanel = (m) => {
+      if (!m || m.author.id !== client.user.id) return false;
+      const raw = JSON.stringify(m).toLowerCase();
+      if (raw.includes('confession_btn_public') || raw.includes('confession_btn_anonymous') || raw.includes('sentara itiraf')) {
+        return true;
+      }
+      if (Array.isArray(m.components)) {
+        for (const top of m.components) {
+          if (top.customId === 'confession_btn_public' || top.customId === 'confession_btn_anonymous') return true;
+          if (Array.isArray(top.components)) {
+            for (const sub of top.components) {
+              if (sub.customId === 'confession_btn_public' || sub.customId === 'confession_btn_anonymous') return true;
+              if (Array.isArray(sub.components)) {
+                for (const leaf of sub.components) {
+                  if (leaf.customId === 'confession_btn_public' || leaf.customId === 'confession_btn_anonymous') return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    };
+
     let existingMsg = null;
-    if (messages) {
-      existingMsg = messages.find(m =>
-        m.author.id === client.user.id &&
-        m.components && m.components.some(row =>
-          row.components && row.components.some(btn => btn.customId === 'confession_btn_public' || btn.customId === 'confession_btn_anonymous')
-        )
-      );
+    if (messages && messages.size > 0) {
+      const allFound = messages.filter(isConfessionPanel);
+      if (allFound.size > 0) {
+        existingMsg = allFound.first();
+        // Varsa mükerrer (fazlalık) eski panelleri temizle
+        if (allFound.size > 1) {
+          const toDelete = allFound.filter(m => m.id !== existingMsg.id);
+          for (const [, dupMsg] of toDelete) {
+            await dupMsg.delete().catch(() => {});
+          }
+        }
+      }
     }
 
     if (existingMsg) {
-      await existingMsg.edit(panelPayload);
-      logger.info('[ConfessionService] İtiraf paneli güncellendi.');
+      await existingMsg.edit(panelPayload).catch(() => {});
+      logger.info('[ConfessionService] İtiraf paneli zaten mevcut (güncellendi, yeni mesaj atılmadı).');
     } else {
       await channel.send(panelPayload);
       logger.success('[ConfessionService] İtiraf paneli başarıyla gönderildi.');
