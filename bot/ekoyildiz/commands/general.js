@@ -60,7 +60,7 @@ module.exports = [
         )
         .setColor(0x8b5cf6);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `📊 **${target.username}** kullanıcısının seviye kartı:`, embeds: [embed] });
     }
   },
   {
@@ -91,7 +91,7 @@ module.exports = [
         .setDescription(desc)
         .setColor(0xeab308);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: '🏆 **Sunucu Seviye & XP Sıralaması (Top 10):**', embeds: [embed] });
     }
   },
   {
@@ -120,7 +120,7 @@ module.exports = [
         .setImage(avatarUrl)
         .setColor(0x3b82f6);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `🖼 **${user.username}** kullanıcısının profil fotoğrafı:`, embeds: [embed] });
     }
   },
   {
@@ -139,7 +139,7 @@ module.exports = [
         .setDescription(emojiList.length > 4000 ? emojiList.substring(0, 4000) + '...' : emojiList)
         .setColor(0x10b981);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `😃 **Sunucu Özel Emojileri (${emojis.size} adet):**`, embeds: [embed] });
     }
   },
   {
@@ -189,7 +189,7 @@ module.exports = [
         )
         .setColor(0x6366f1);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `👤 **${tag}** Kullanıcı Kimlik Kartı:`, embeds: [embed] });
     }
   },
   {
@@ -220,7 +220,7 @@ module.exports = [
         .setImage(`https://mc-heads.net/body/${username}`)
         .setColor(0x22c55e);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `⛏️ **Minecraft Oyuncu Kartı:** \`${username}\``, embeds: [embed] });
     }
   },
   {
@@ -244,7 +244,7 @@ module.exports = [
         )
         .setColor(0xec4899);
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `🏰 **${guild.name}** Sunucu Detay Raporu:`, embeds: [embed] });
     }
   },
   {

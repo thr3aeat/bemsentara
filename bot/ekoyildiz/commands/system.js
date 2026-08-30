@@ -27,9 +27,9 @@ module.exports = [
         .setTimestamp();
 
       if (loadingMsg && typeof loadingMsg.edit === 'function') {
-        await loadingMsg.edit({ content: '', embeds: [embed] }).catch(() => {});
+        await loadingMsg.edit({ content: '🌐 **EkoYıldız Sistem Durum Raporu:**', embeds: [embed] }).catch(() => {});
       } else {
-        await message.reply({ embeds: [embed] }).catch(() => {});
+        await message.reply({ content: '🌐 **EkoYıldız Sistem Durum Raporu:**', embeds: [embed] }).catch(() => {});
       }
     }
   },
@@ -53,7 +53,7 @@ module.exports = [
         .setColor(0x3b82f6)
         .setTimestamp();
 
-      await sent.edit({ content: '', embeds: [embed] });
+      await sent.edit({ content: '🏓 **Bot ve WebSocket Gecikme Süreleri:**', embeds: [embed] });
     }
   },
   {
@@ -83,7 +83,7 @@ module.exports = [
         .setFooter({ text: 'EkoYıldız 7/24 Kesintisiz Bot Motoru' })
         .setTimestamp();
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: '🤖 **EkoYıldız Bot Sistem Kaynakları:**', embeds: [embed] });
     }
   }
 ];

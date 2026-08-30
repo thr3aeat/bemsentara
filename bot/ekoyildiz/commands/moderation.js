@@ -41,7 +41,7 @@ module.exports = [
         .setDescription(`**Yasaklanan:** ${target.user.tag} (\`${target.id}\`)\n**Yetkili:** ${message.author.tag}\n**Sebep:** ${reason}`)
         .setColor(0xef4444)
         .setTimestamp();
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `🔨 **${target.user.tag}** sunucudan yasaklandı!`, embeds: [embed] });
     }
   },
   {
@@ -62,7 +62,7 @@ module.exports = [
         .setDescription(`**Yasaklanan ID:** \`${userId}\`\n**Yetkili:** ${message.author.tag}\n**Sebep:** ${reason}`)
         .setColor(0xdc2626)
         .setTimestamp();
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `⚡ \`${userId}\` ID'li kullanıcıya ForceBan uygulandı!`, embeds: [embed] });
     }
   },
   {
@@ -102,7 +102,7 @@ module.exports = [
         .setDescription(`**Atılan:** ${target.user.tag}\n**Yetkili:** ${message.author.tag}\n**Sebep:** ${reason}`)
         .setColor(0xf59e0b)
         .setTimestamp();
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `👢 **${target.user.tag}** sunucudan atıldı!`, embeds: [embed] });
     }
   },
   {
@@ -129,7 +129,7 @@ module.exports = [
         .setDescription(`**Susturulan:** ${target.user.tag}\n**Süre:** ${durationStr}\n**Yetkili:** ${message.author.tag}\n**Sebep:** ${reason}`)
         .setColor(0xef4444)
         .setTimestamp();
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `🔇 **${target.user.tag}** susturuldu! (${durationStr})`, embeds: [embed] });
     }
   },
   {
@@ -171,7 +171,7 @@ module.exports = [
         .setColor(0xeab308)
         .setTimestamp();
 
-      return message.reply({ embeds: [embed] });
+      return message.reply({ content: `⚠️ **${target.user.tag}** uyarıldı! (Toplam: ${warns.length})`, embeds: [embed] });
     }
   },
   {

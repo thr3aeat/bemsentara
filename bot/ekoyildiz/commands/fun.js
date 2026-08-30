@@ -267,6 +267,7 @@ module.exports = [
       );
 
       const msg = await message.reply({
+        content: `💖 **Aşk Ölçer Analizi:** <@${message.author.id}> & <@${target.id}>`,
         embeds: [buildShipEmbed(message.author, target, loveScore, passionScore, bedroomScore)],
         components: [getShipRow()]
       });
