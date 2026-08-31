@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   buildLevelRoleTransition,
+  getMissingLevelRoleIds,
   getLevelRolesMap
 } = require('../bot/services/robloxLandLevelService');
 
@@ -48,6 +49,16 @@ test('multi-level jump grants both target and previous role', () => {
 
   assert.deepEqual(result.addRoleIds, ['55555555555555555', '44444444444444444']);
   assert.deepEqual(result.removeRoleIds, ['11111111111111111']);
+});
+
+test('existing profile level gets its missing current and previous roles without removals', () => {
+  const roles = {
+    4: { id: '44444444444444444' },
+    5: { id: '55555555555555555' }
+  };
+  const missing = getMissingLevelRoleIds([], roles, 5);
+
+  assert.deepEqual(missing, ['55555555555555555', '44444444444444444']);
 });
 
 test('RobloxLand role map contains real Discord IDs instead of placeholders', () => {

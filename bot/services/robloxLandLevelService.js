@@ -50,6 +50,59 @@ function buildLevelRoleTransition(currentRoleIds, rolesMap, newLevel) {
   };
 }
 
+function getMissingLevelRoleIds(currentRoleIds, rolesMap, level) {
+  const safeLevel = Math.max(1, Math.min(65, Number(level) || 1));
+  return buildLevelRoleTransition(currentRoleIds, rolesMap, safeLevel).addRoleIds;
+}
+
+/**
+ * Profili mevcut olduğu halde rolü eksik kalan üyeleri küçük gruplar hâlinde
+ * düzeltir. Eski roller silinmez; yalnızca üyenin seviyesine uygun mevcut ve
+ * önceki seviye rolü eksikse eklenir.
+ */
+async function syncMissingLevelRoles(client, batchSize = 10) {
+  const guild = client?.guilds?.cache?.get(GUILD_ID) || await client?.guilds?.fetch(GUILD_ID).catch(() => null);
+  if (!guild) return { checked: 0, granted: 0 };
+
+  const profiles = DataStore.getAllUserProfiles();
+  const userIds = Object.keys(profiles).sort();
+  if (!userIds.length) return { checked: 0, granted: 0 };
+
+  await guild.roles.fetch().catch(() => {});
+  const rolesMap = getLevelRolesMap();
+  const start = Number(client.__robloxLandLevelRoleCursor || 0) % userIds.length;
+  const targetIds = Array.from({ length: Math.min(batchSize, userIds.length) }, (_, index) => userIds[(start + index) % userIds.length]);
+  client.__robloxLandLevelRoleCursor = (start + targetIds.length) % userIds.length;
+
+  let granted = 0;
+  for (const userId of targetIds) {
+    const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
+    if (!member || member.user.bot) continue;
+
+    const currentRoleIds = Array.from(member.roles.cache.keys());
+    const missingRoleIds = getMissingLevelRoleIds(currentRoleIds, rolesMap, profiles[userId]?.level);
+    const editableRoleIds = missingRoleIds.filter(roleId => guild.roles.cache.get(roleId)?.editable);
+    if (!editableRoleIds.length) continue;
+
+    try {
+      await member.roles.add(editableRoleIds, "RobloxLand: profile seviyesi için eksik seviye rolü tamamlandı");
+      granted += editableRoleIds.length;
+    } catch (err) {
+      console.warn(`[LevelService] Missing role sync failed for ${userId}:`, err.message);
+    }
+  }
+
+  return { checked: targetIds.length, granted };
+}
+
+function initMissingLevelRoleSync(client) {
+  if (client.__robloxLandLevelRoleSyncTimer) return;
+  client.__robloxLandLevelRoleSyncTimer = setInterval(() => {
+    syncMissingLevelRoles(client).catch(err => console.warn("[LevelService] missing role sync error:", err.message));
+  }, 5000);
+  setTimeout(() => syncMissingLevelRoles(client).catch(() => {}), 15000);
+}
+
 // ─── 1. XP HESAPLAMA VE SEVİYE EĞRİSİ (Dengelenmiş & Kolaylaştırılmış Curve) ────
 function getXpForLevel(level) {
   if (level <= 1) return 60;
@@ -641,6 +694,9 @@ module.exports = {
   getPermissionsForLevel,
   syncLevelRolePermissions,
   buildLevelRoleTransition,
+  getMissingLevelRoleIds,
+  syncMissingLevelRoles,
+  initMissingLevelRoleSync,
   getUserActivity,
   saveUserActivity
 };

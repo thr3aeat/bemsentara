@@ -101,6 +101,10 @@ function updateUserProfile(userId, updateFn) {
   return updated;
 }
 
+function getAllUserProfiles() {
+  return loadJson(PROFILES_FILE, {});
+}
+
 // ─── 3. STAFF STATS & RATINGS ────────────────────────────────────────────────
 const STAFF_STATS_FILE = "robloxland_staff_stats.json";
 
@@ -236,6 +240,7 @@ module.exports = {
   findTicketByNumber,
   getUserProfile,
   updateUserProfile,
+  getAllUserProfiles,
   getStaffStats,
   addStaffRating,
   incrementStaffStat,

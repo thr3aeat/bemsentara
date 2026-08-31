@@ -274,13 +274,14 @@ function initializeDiscordHandlers(client) {
     // RobloxDevs / Robloxland Tek Seferlik Paneller Kurulumu & Seviye Ses XP Takibi
     try {
       const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
-      const { initVoiceXpTracker } = require("../services/robloxLandLevelService");
+      const { initVoiceXpTracker, initMissingLevelRoleSync } = require("../services/robloxLandLevelService");
       const { initAchievementTracker } = require("../services/robloxLandAchievementService");
       setTimeout(() => {
         deployRobloxDevsSetup(client).catch(err => {
           console.error("[ready] RobloxDevsSetup deploy error:", err.message);
         });
         initVoiceXpTracker(client);
+        initMissingLevelRoleSync(client);
         initAchievementTracker(client);
       }, 8000);
     } catch (rdErr) {
