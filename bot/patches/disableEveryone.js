@@ -47,6 +47,19 @@ function _sanitizeOptions(opts) {
     return { content: '\u200B' };
   }
 
+  // Message#reply prepares a MessagePayload and then forwards that instance to
+  // channel.send().  Re-spreading this internal payload loses its nested
+  // `options` (content/embeds/components) and produces a blank zero-width
+  // message.  It has already passed through this guard at the reply boundary,
+  // so it must be forwarded unchanged.
+  if (
+    typeof opts === 'object' &&
+    opts.constructor?.name === 'MessagePayload' &&
+    typeof opts.resolveBody === 'function'
+  ) {
+    return opts;
+  }
+
   // If passed as a primitive string
   if (typeof opts === 'string') {
     const sanitized = _sanitizeString(opts).trim();
