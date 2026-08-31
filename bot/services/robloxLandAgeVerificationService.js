@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { Readable } = require('stream');
 const {
   ChannelType,
   PermissionFlagsBits,
@@ -13,8 +14,12 @@ const {
 const {
   joinVoiceChannel,
   getVoiceConnection,
-  EndBehaviorType
+  EndBehaviorType,
+  VoiceConnectionStatus,
+  createAudioPlayer,
+  createAudioResource
 } = require('@discordjs/voice');
+const prism = require('prism-media');
 const ComponentsV2Factory = require('../utils/componentsV2Factory');
 
 // Hedef Sabitler
@@ -45,7 +50,7 @@ const TEKERLEMELER = [
   "Değirmene girdi köpek, değirmenci vurdu kötek; hem kepek yedi köpek, hem kötek yedi köpek."
 ];
 
-// Aktif ticket oturumları belleği: ticketId -> { textChannelId, voiceChannelId, userId, staffId, tekerleme, chunks, startTime, connection }
+// Aktif ticket oturumları belleği: ticketId -> { textChannelId, voiceChannelId, userId, staffId, tekerleme, audioChunks, startTime, connection }
 const activeAgeTickets = new Map();
 
 /**
@@ -71,6 +76,27 @@ function createWavHeader(dataLength, sampleRate = 48000, numChannels = 2, bitDep
   buffer.writeUInt32LE(dataLength, 40);
 
   return buffer;
+}
+
+/**
+ * Discord voice gateway'inin çift yönlü UDP veri iletimini tetiklemesi için sessiz paket çalar
+ */
+function sendKeepAliveSilence(connection) {
+  try {
+    const player = createAudioPlayer();
+    const silenceBuffer = Buffer.from([0xf8, 0xff, 0xfe]);
+    const silenceStream = new Readable({
+      read() {
+        this.push(silenceBuffer);
+        this.push(null);
+      }
+    });
+    const resource = createAudioResource(silenceStream, { inputType: 1 });
+    player.play(resource);
+    connection.subscribe(player);
+  } catch (err) {
+    console.warn('[AgeVerify] Keepalive silence error:', err.message);
+  }
 }
 
 /**
@@ -140,7 +166,6 @@ async function findActiveStaffMember(guild) {
       )
     );
 
-    // Çevrimiçi olanları önceliklendir (online, idle, dnd)
     const onlineStaff = staffMembers.find(m => m.presence && m.presence.status !== 'offline');
     if (onlineStaff) return onlineStaff;
 
@@ -353,6 +378,55 @@ async function openAgeVerificationTicket(interaction) {
 }
 
 /**
+ * Kullanıcı ses kanalına bağlandığında veya konuştuğunda Opus stream'i çözer ve kaydeder
+ */
+function startAudioCapture(connection, ticketData) {
+  try {
+    sendKeepAliveSilence(connection);
+
+    const receiver = connection.receiver;
+    const userId = ticketData.userId;
+
+    const setupUserStream = (targetId) => {
+      if (targetId !== userId) return;
+
+      const opusStream = receiver.subscribe(userId, {
+        end: { behavior: EndBehaviorType.Manual }
+      });
+
+      const decoder = new prism.opus.Decoder({
+        rate: 48000,
+        channels: 2,
+        frameSize: 960
+      });
+
+      opusStream.pipe(decoder);
+
+      decoder.on('data', (pcmChunk) => {
+        ticketData.audioChunks.push(pcmChunk);
+      });
+
+      decoder.on('error', (err) => {
+        console.warn(`[AgeVerify] Opus decoder warning: ${err.message}`);
+      });
+    };
+
+    // Doğrudan abone ol
+    setupUserStream(userId);
+
+    // Konuşma algılandığında tekrar bağla
+    receiver.speaking.on('start', (speakingUserId) => {
+      if (speakingUserId === userId) {
+        setupUserStream(userId);
+      }
+    });
+
+  } catch (err) {
+    console.error('[AgeVerify] Audio capture setup error:', err.message);
+  }
+}
+
+/**
  * "Kullanıcıdan Konuşmasını İste" Butonunu Yönetir
  */
 async function handleAskToSpeak(interaction, ticketId) {
@@ -370,7 +444,7 @@ async function handleAskToSpeak(interaction, ticketId) {
   const guild = interaction.guild;
   const voiceChannel = guild.channels.cache.get(ticketData.voiceChannelId) || await guild.channels.fetch(ticketData.voiceChannelId).catch(() => null);
 
-  // Bot Sese Katılsın ve Kayıt Başlatsın
+  // Bot Sese Katılsın ve Canlı Kayıt Başlatsın
   let connection = null;
   try {
     if (voiceChannel) {
@@ -385,21 +459,13 @@ async function handleAskToSpeak(interaction, ticketId) {
       ticketData.connection = connection;
       ticketData.audioChunks = [];
 
-      // Kullanıcının sesini dinle ve kaydet
-      const receiver = connection.receiver;
-      const audioStream = receiver.subscribe(ticketData.userId, {
-        end: {
-          behavior: EndBehaviorType.Manual
-        }
-      });
-
-      audioStream.on('data', (chunk) => {
-        ticketData.audioChunks.push(chunk);
-      });
-
-      audioStream.on('error', (err) => {
-        console.warn(`[AgeVerify] Audio stream warning: ${err.message}`);
-      });
+      if (connection.state.status === VoiceConnectionStatus.Ready) {
+        startAudioCapture(connection, ticketData);
+      } else {
+        connection.on(VoiceConnectionStatus.Ready, () => {
+          startAudioCapture(connection, ticketData);
+        });
+      }
     }
   } catch (voiceErr) {
     console.error('[AgeVerify] Join voice error:', voiceErr.message);
@@ -412,7 +478,7 @@ async function handleAskToSpeak(interaction, ticketId) {
       `👤 **Aday:** <@${ticketData.userId}>\n\n` +
       `Lütfen mikrofonunuzu açarak aşağıdaki tekerlemeyi tane tane ve sesli bir şekilde okuyunuz:\n\n` +
       `> 🗣️ **"${tekerleme}"**\n\n` +
-      `*Bot <#${ticketData.voiceChannelId}> ses kanalına katıldı ve kaydı başlattı.* 🎙️🔴`
+      `*Bot <#${ticketData.voiceChannelId}> ses kanalına katıldı ve sesinizi dinleyip kaydetmeye başladı.* 🎙️🔴`
     ),
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
@@ -457,14 +523,14 @@ async function handleFinishAndApprove(interaction, ticketId) {
     } catch (_) {}
   }
 
-  // 2. Ses Kaydı Dosyası Oluştur (WAV)
+  // 2. Ses Kaydı Dosyası Oluştur (WAV: 48kHz Stereo 16-bit PCM)
   let rawPcm = Buffer.concat(ticketData.audioChunks || []);
   if (rawPcm.length === 0) {
-    // Eğer opus decode edilmeden doğrudan paket gelmediyse 1 saniyelik temiz sessiz PCM oluştur
-    rawPcm = Buffer.alloc(48000 * 2 * 2);
+    // Eğer mikrofon tamamen sessiz kaldıysa veya boşsa 1.5 saniyelik temiz PCM oluştur
+    rawPcm = Buffer.alloc(48000 * 2 * 2 * 1.5);
   }
 
-  const wavHeader = createWavHeader(rawPcm.length);
+  const wavHeader = createWavHeader(rawPcm.length, 48000, 2, 16);
   const fullWavBuffer = Buffer.concat([wavHeader, rawPcm]);
   const audioAttachment = new AttachmentBuilder(fullWavBuffer, {
     name: `yas_dogrulama_${userId}.wav`,

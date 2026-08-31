@@ -23,6 +23,7 @@
     "mongoose": "8.4.0",
     "noblox.js": "^9.0.0",
     "node-cron": "^3.0.3",
+    "opusscript": "^0.0.8",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
     "passport-local": "^1.0.0",

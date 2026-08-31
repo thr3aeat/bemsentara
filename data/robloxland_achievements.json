@@ -3,8 +3,8 @@
     "test-user-award-1": {
       "userId": "test-user-award-1",
       "awarded": {
-        "first_word": "2026-08-31T16:45:30.875Z",
-        "new_dev": "2026-08-31T16:45:30.924Z"
+        "first_word": "2026-08-31T16:50:16.201Z",
+        "new_dev": "2026-08-31T16:50:16.224Z"
       },
       "chat": {
         "messages": 5,
@@ -57,10 +57,10 @@
     "test-user-query-1": {
       "userId": "test-user-query-1",
       "awarded": {
-        "first_word": "2026-08-31T16:45:30.929Z",
-        "chat_started": "2026-08-31T16:45:30.929Z",
-        "new_dev": "2026-08-31T16:45:30.930Z",
-        "settling": "2026-08-31T16:45:30.930Z"
+        "first_word": "2026-08-31T16:50:16.229Z",
+        "chat_started": "2026-08-31T16:50:16.229Z",
+        "new_dev": "2026-08-31T16:50:16.229Z",
+        "settling": "2026-08-31T16:50:16.229Z"
       },
       "chat": {
         "messages": 200,
