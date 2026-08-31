@@ -942,11 +942,14 @@ function normalizeCommand(str) {
  */
 async function handleGuildInspectionMessage(message) {
   const content = (message.content || "").trim();
-  if (!content.startsWith("!") && !content.startsWith(".") && !content.startsWith("-")) {
+  const namedPrefix = content.match(/^[es]\s*!\s*/i);
+  const routedContent = namedPrefix ? content.slice(namedPrefix[0].length) : content;
+
+  if (!namedPrefix && !content.startsWith("!") && !content.startsWith(".") && !content.startsWith("-")) {
     return false;
   }
 
-  const firstLine = content.split("\n")[0].trim();
+  const firstLine = routedContent.split("\n")[0].trim();
   const commandWord = firstLine.split(/\s+/)[0];
   const norm = normalizeCommand(commandWord);
 

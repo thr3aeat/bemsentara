@@ -236,6 +236,16 @@ async function handleGuildMessage(message, client) {
 
   // 4.2. Komut bulunamadıysa ve e! veya s! ile çağrıldıysa: "Aradığınız komut bu mu?" tetikle
   if (!command) {
+    // Sunucu inceleme komutları ayrı bir modülde tutuluyor. e!/s! ile
+    // çağrıldıklarında öneri ekranına düşmeden önce o yönlendiriciye bırak.
+    try {
+      const { handleGuildInspectionMessage } = require('../../services/guildInspectionCommands');
+      const handledInspection = await handleGuildInspectionMessage(message);
+      if (handledInspection) return true;
+    } catch (inspectionErr) {
+      logger.error('SUNUCU İNCELEME KOMUT HATASI', inspectionErr);
+    }
+
     if (isPrefixExplicit) {
       const closest = findClosestCommand(rawCmd, commands);
       await sendCommandSuggestion(message, rawCmd, closest, client);
