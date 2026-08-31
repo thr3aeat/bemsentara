@@ -748,6 +748,23 @@ async function deployRobloxDevsSetup(client, force = false) {
     }
   }
 
+  // Özel Davet Paneli & 16+ Yaş Doğrulama Paneli
+  try {
+    const { deployInvitePanel } = require("./robloxLandInviteService");
+    const invRes = await deployInvitePanel(client);
+    if (invRes) results.push("Özel Davet Paneli (ok)");
+  } catch (err) {
+    console.error("Invite panel deploy error:", err.message);
+  }
+
+  try {
+    const { deployAgeVerificationPanel } = require("./robloxLandAgeVerificationService");
+    const ageRes = await deployAgeVerificationPanel(client);
+    if (ageRes) results.push("16+ Yaş Doğrulama Paneli (ok)");
+  } catch (err) {
+    console.error("Age verify panel deploy error:", err.message);
+  }
+
   saveSetupState({ deployed: true, lastUpdated: new Date().toISOString(), results });
   console.log(`[RobloxLandSetup] ✅ Başarıyla güncellenen paneller: ${results.join(", ")}`);
   return { success: true, results };
@@ -1775,6 +1792,13 @@ async function handleRobloxDevsInteraction(interaction) {
     const { handleInviteInteraction } = require("./robloxLandInviteService");
     const handledInv = await handleInviteInteraction(interaction);
     if (handledInv) return true;
+  } catch (_) {}
+
+  // 20. RobloxLand 16+ Yaş Doğrulama & Sesli Onay Sistemi
+  try {
+    const { handleAgeVerificationInteraction } = require("./robloxLandAgeVerificationService");
+    const handledAge = await handleAgeVerificationInteraction(interaction);
+    if (handledAge) return true;
   } catch (_) {}
 
   return false;
