@@ -11,6 +11,11 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
+  if (customId.startsWith('rl_selfrole_')) {
+    const { handleSelfRoleInteraction } = require('../services/robloxLandSelfRolePanelService');
+    return handleSelfRoleInteraction(interaction);
+  }
+
   // ── Destek Kategorisi Seçim Menüleri (EkoYıldız, TMT, Genel Destek) ──
   if (customId === "support_category" || customId === "tmt_support_category" || customId === "ekoyildiz_support_category") {
     const category = interaction.values[0];

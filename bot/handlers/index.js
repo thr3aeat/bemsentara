@@ -232,10 +232,12 @@ function initializeDiscordHandlers(client) {
     try {
       const { ensureUserAuditPanel } = require("../services/userAuditPanelService");
       const { ensureRecruitmentPanelMessage } = require("../services/staffRecruitmentPanelService");
+      const { ensureSelfRolePanel } = require("../services/robloxLandSelfRolePanelService");
       await ensureUserAuditPanel(client);
       await ensureRecruitmentPanelMessage(client);
+      await ensureSelfRolePanel(client);
     } catch (panelErr) {
-      console.error("[UserAuditPanel/RecruitmentPanel] Initial load error:", panelErr.message);
+      console.error("[UserAuditPanel/RecruitmentPanel/SelfRolePanel] Initial load error:", panelErr.message);
     }
 
     startAuditLogPoller(client);
