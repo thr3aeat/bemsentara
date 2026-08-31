@@ -7,10 +7,11 @@ const {
   SENIORITY_TIERS,
   TARGET_ROLE_IDS,
   calculateSeniorityRoleAssignments,
-  syncRobloxLandSeniorityRoles
+  syncRobloxLandSeniorityRoles,
+  handleMemberVipRoleUpdate
 } = require('../bot/services/robloxLandSeniorityRoleService');
 
-test('calculates correct seniority order based on account creation timestamp', () => {
+test('tüm VIP üyeleri 5 kademeli VIP rollerine dağıtılır ve taban rolde kimse kalmaz', () => {
   const members = [
     {
       id: 'user_2022',
@@ -39,7 +40,7 @@ test('calculates correct seniority order based on account creation timestamp', (
     },
     {
       id: 'user_2023',
-      user: { bot: false, createdTimestamp: 1672531200000 }, // Jan 1, 2023
+      user: { bot: false, createdTimestamp: 1672531200000 }, // Jan 1, 2023 (Newest)
       roleIds: [BASE_ROLE_ID]
     },
     {
@@ -51,46 +52,74 @@ test('calculates correct seniority order based on account creation timestamp', (
 
   const plan = calculateSeniorityRoleAssignments(members);
 
-  // 6 valid members (bot excluded)
+  // 6 geçerli üye (bot hariç)
   assert.equal(plan.length, 6);
 
-  // Rank 1: user_2018 -> Kızıl alev (1544019657491615814)
+  // 1. Sıra: user_2018 -> Kızıl alev (1544019657491615814)
   assert.equal(plan[0].userId, 'user_2018');
   assert.equal(plan[0].rank, 1);
   assert.equal(plan[0].targetRoleId, '1544019657491615814');
   assert.deepEqual(plan[0].rolesToAdd, ['1544019657491615814']);
   assert.deepEqual(plan[0].rolesToRemove, [BASE_ROLE_ID]);
 
-  // Rank 2: user_2019 -> Altın taç (1544016562753904760)
+  // 2. Sıra: user_2019 -> Kızıl alev (Dilimleme gereği en eskiler)
   assert.equal(plan[1].userId, 'user_2019');
   assert.equal(plan[1].rank, 2);
-  assert.equal(plan[1].targetRoleId, '1544016562753904760');
+  assert.equal(plan[1].targetRoleId, '1544019657491615814');
 
-  // Rank 3: user_2020_jan -> Zümrüt (1544017553637253200)
+  // 3. Sıra: user_2020_jan -> Altın taç (1544016562753904760)
   assert.equal(plan[2].userId, 'user_2020_jan');
   assert.equal(plan[2].rank, 3);
-  assert.equal(plan[2].targetRoleId, '1544017553637253200');
+  assert.equal(plan[2].targetRoleId, '1544016562753904760');
 
-  // Rank 4: user_2020_june -> Mor galaksi (1544018013005676564)
+  // 4. Sıra: user_2020_june -> Zümrüt (1544017553637253200)
   assert.equal(plan[3].userId, 'user_2020_june');
   assert.equal(plan[3].rank, 4);
-  assert.equal(plan[3].targetRoleId, '1544018013005676564');
+  assert.equal(plan[3].targetRoleId, '1544017553637253200');
 
-  // Rank 5: user_2022 -> Mavi elmas (1544018426589085776)
+  // 5. Sıra: user_2022 -> Mor galaksi (1544018013005676564)
   assert.equal(plan[4].userId, 'user_2022');
   assert.equal(plan[4].rank, 5);
-  assert.equal(plan[4].targetRoleId, '1544018426589085776');
+  assert.equal(plan[4].targetRoleId, '1544018013005676564');
 
-  // Rank 6: user_2023 -> Beyond top 5, stays in BASE_ROLE_ID, targetRoleId is null
+  // 6. Sıra: user_2023 -> Mavi elmas (1544018426589085776)
   assert.equal(plan[5].userId, 'user_2023');
   assert.equal(plan[5].rank, 6);
-  assert.equal(plan[5].targetRoleId, null);
-  assert.deepEqual(plan[5].rolesToAdd, []);
-  assert.deepEqual(plan[5].rolesToRemove, []);
-  assert.equal(plan[5].needsUpdate, false);
+  assert.equal(plan[5].targetRoleId, '1544018426589085776');
+  assert.deepEqual(plan[5].rolesToAdd, ['1544018426589085776']);
+  assert.deepEqual(plan[5].rolesToRemove, [BASE_ROLE_ID]);
 });
 
-test('accounts from same month/year are properly ordered by precise timestamp', () => {
+test('manuel olarak yanlış VIP rolü verilmişse geri çekilip hesap yaşına uygun doğru rol verilir', () => {
+  const members = [
+    {
+      id: 'old_account_2017',
+      user: { bot: false, createdTimestamp: 1500000000000 },
+      roleIds: ['1544018426589085776'] // Yanlışlıkla en düşük VIP (Mavi elmas) verilmiş
+    },
+    {
+      id: 'new_account_2024',
+      user: { bot: false, createdTimestamp: 1720000000000 },
+      roleIds: ['1544019657491615814'] // Yanlışlıkla en yüksek VIP (Kızıl alev) verilmiş
+    }
+  ];
+
+  const plan = calculateSeniorityRoleAssignments(members);
+
+  // Eski hesap (2017) -> Kızıl alev almalı, Mavi elmas geri çekilmeli
+  const oldPlan = plan.find(p => p.userId === 'old_account_2017');
+  assert.equal(oldPlan.targetRoleId, '1544019657491615814'); // Kızıl alev
+  assert.deepEqual(oldPlan.rolesToAdd, ['1544019657491615814']);
+  assert.deepEqual(oldPlan.rolesToRemove, ['1544018426589085776']);
+
+  // Yeni hesap (2024) -> Altın taç / Mavi elmas almalı, Kızıl alev geri çekilmeli
+  const newPlan = plan.find(p => p.userId === 'new_account_2024');
+  assert.equal(newPlan.targetRoleId, '1544016562753904760'); // 2 üyeden 2. sıra
+  assert.deepEqual(newPlan.rolesToAdd, ['1544016562753904760']);
+  assert.deepEqual(newPlan.rolesToRemove, ['1544019657491615814']); // Hatalı verilen Kızıl alev çekilir!
+});
+
+test('aynı yıl ve ayda açılan hesaplar milisaniye hassasiyetinde sıralanır', () => {
   const members = [
     {
       id: 'account_b',
@@ -109,12 +138,12 @@ test('accounts from same month/year are properly ordered by precise timestamp', 
   assert.equal(plan[1].userId, 'account_b');
 });
 
-test('existing target role holders are recognized and unnecessary role edits are avoided', () => {
+test('zaten doğru VIP rolüne sahip üyelerde gereksiz rol güncellemesi yapılmaz', () => {
   const members = [
     {
-      id: 'top1_already_has_role',
+      id: 'user_correct',
       user: { bot: false, createdTimestamp: 1500000000000 },
-      roleIds: ['1544019657491615814'] // Already has Kızıl alev
+      roleIds: ['1544019657491615814'] // Zaten Kızıl alev rolünde
     }
   ];
 
@@ -125,49 +154,7 @@ test('existing target role holders are recognized and unnecessary role edits are
   assert.deepEqual(plan[0].rolesToRemove, []);
 });
 
-test('members dropping out of top 5 get tier roles removed and base role restored', () => {
-  const members = [
-    {
-      id: 'u1',
-      user: { bot: false, createdTimestamp: 1000000000000 },
-      roleIds: [BASE_ROLE_ID]
-    },
-    {
-      id: 'u2',
-      user: { bot: false, createdTimestamp: 1100000000000 },
-      roleIds: [BASE_ROLE_ID]
-    },
-    {
-      id: 'u3',
-      user: { bot: false, createdTimestamp: 1200000000000 },
-      roleIds: [BASE_ROLE_ID]
-    },
-    {
-      id: 'u4',
-      user: { bot: false, createdTimestamp: 1300000000000 },
-      roleIds: [BASE_ROLE_ID]
-    },
-    {
-      id: 'u5',
-      user: { bot: false, createdTimestamp: 1400000000000 },
-      roleIds: [BASE_ROLE_ID]
-    },
-    {
-      id: 'u6_dropped',
-      user: { bot: false, createdTimestamp: 1500000000000 },
-      roleIds: ['1544018426589085776'] // Formerly rank 5 Mavi elmas
-    }
-  ];
-
-  const plan = calculateSeniorityRoleAssignments(members);
-  const dropped = plan.find(p => p.userId === 'u6_dropped');
-  assert.equal(dropped.rank, 6);
-  assert.equal(dropped.needsUpdate, true);
-  assert.deepEqual(dropped.rolesToAdd, [BASE_ROLE_ID]);
-  assert.deepEqual(dropped.rolesToRemove, ['1544018426589085776']);
-});
-
-test('syncRobloxLandSeniorityRoles executes role add and remove operations accurately on guild members', async () => {
+test('syncRobloxLandSeniorityRoles fonksiyonu hatalı rolleri temizleyip doğru VIP rolünü atar', async () => {
   const added = [];
   const removed = [];
 
