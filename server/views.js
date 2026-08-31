@@ -60,6 +60,8 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
 
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
   ${extraHead}
   <style>
     :root {
@@ -412,6 +414,43 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     /* ── Selection ── */
     ::selection { background: rgba(167,139,250,0.3); color:#fff; }
 
+    /* ── Google AdSense Responsive Unit ── */
+    .site-ad-wrapper {
+      width: 100%;
+      max-width: 960px;
+      margin: 3rem auto 1rem;
+      padding: 0.75rem 1rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.09);
+      border-radius: 16px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), var(--glass-glow);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+    }
+    .site-ad-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      opacity: 0.6;
+      user-select: none;
+    }
+    .site-ad-wrapper ins.adsbygoogle {
+      display: block;
+      width: 100%;
+      min-height: 50px;
+    }
+
     /* ── Responsive ── */
     @media (max-width:768px) {
       header { flex-wrap:wrap; gap:0.75rem; }
@@ -444,6 +483,17 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
   <main>
     ${content}
+    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
+      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-8395596912297122"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
   </main>
 
   <script>
@@ -651,6 +701,8 @@ function renderMainPage(user = null) {
   <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
 
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #07070f;
@@ -879,6 +931,43 @@ function renderMainPage(user = null) {
     }
     .btn-submit-modal:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(244,63,94,0.5); }
 
+    /* ── Google AdSense Responsive Unit ── */
+    .site-ad-wrapper {
+      width: 100%;
+      max-width: 960px;
+      margin: 2.5rem auto 1.5rem;
+      padding: 0.75rem 1rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(244, 63, 94, 0.2);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80px;
+    }
+    .site-ad-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      opacity: 0.6;
+      user-select: none;
+    }
+    .site-ad-wrapper ins.adsbygoogle {
+      display: block;
+      width: 100%;
+      min-height: 50px;
+    }
+
     footer {
       border-top: 1px solid rgba(255,255,255,0.06); padding: 3rem 2rem; text-align: center; color: var(--muted);
       background: rgba(5,5,10,0.8); margin-top: 6rem;
@@ -982,6 +1071,20 @@ function renderMainPage(user = null) {
     </div>
   </div>
 
+  <div class="section-container" style="margin: 2rem auto;">
+    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
+      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-8395596912297122"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+  </div>
+
   <div class="section-container">
     <div class="widget-box">
       <div class="widget-info">
@@ -995,6 +1098,20 @@ function renderMainPage(user = null) {
       <div>
         <iframe src="https://ptb.discord.com/widget?id=1367646464804655104&theme=dark" width="100%" height="450" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts" style="border-radius:24px; border:1px solid rgba(244,63,94,0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.6);"></iframe>
       </div>
+    </div>
+  </div>
+
+  <div class="section-container" style="margin: 3rem auto 1rem;">
+    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
+      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-8395596912297122"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
     </div>
   </div>
 

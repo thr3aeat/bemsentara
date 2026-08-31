@@ -75,6 +75,11 @@ const authLimiter = rateLimit({
 
 const path = require("path");
 
+app.get("/ads.txt", (req, res) => {
+  res.type("text/plain");
+  res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
+});
+
 app.use("/public", express.static(path.join(__dirname, "public"), {
   dotfiles: "ignore",
   index: false,

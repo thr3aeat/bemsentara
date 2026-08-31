@@ -28,6 +28,11 @@ const { isSiteAdmin } = require("../../utils/adminCheck");
 
 const router = express.Router();
 
+router.get("/ads.txt", (req, res) => {
+  res.type("text/plain");
+  res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
+});
+
 router.get("/", (req, res) => {
   res.send(renderMainPage(req.user));
 });
