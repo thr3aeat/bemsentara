@@ -315,6 +315,15 @@ async function start() {
             }
           } catch (_) {}
 
+          // ── RobloxLand Hesap Yaşı / Kıdem Rolleri & 2 Günde Bir Sabah Cronu ──
+          try {
+            const { syncRobloxLandSeniorityRoles, startSeniorityRoleScheduler } = require("./bot/services/robloxLandSeniorityRoleService");
+            startSeniorityRoleScheduler(discordBot);
+            syncRobloxLandSeniorityRoles(discordBot).catch((err) => {
+              logger.warn(`[SeniorityRoles] Başlangıç senkronizasyon uyarısı: ${err && err.message}`);
+            });
+          } catch (_) {}
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;
