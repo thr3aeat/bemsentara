@@ -140,54 +140,67 @@ function buildForumSetupPayload(thread, authorId) {
     ComponentsV2Factory.text(
       `# 📑 MERHABA! ROBLOXLND FORUMUNA HOŞ GELDİNİZ!\n\n` +
       `👋 Merhaba <@${authorId}>! Forum konunuz başarıyla oluşturuldu.\n\n` +
-      `Gönderinizi daha görünür kılmak, doğru kitleye ulaştırmak ve etkileşimleri artırmak için aşağıdaki menülerden konunuzun **kategorisini** ve **otomatik tepkilerini** seçebilirsiniz:`
+      `Gönderinizi daha görünür kılmak, doğru kitleye ulaştırmak ve etkileşimleri artırmak için aşağıdaki menülerden konunuzun **kategorisini**, **alt başlığını** ve **otomatik tepkilerini** düzenleyebilirsiniz.\n\n` +
+      `-# 💡 *Düzenleme tamamlandığında aşağıdaki "✅ Tamamla & Paneli Kapat" butonuna basabilirsiniz; mesaj otomatik olarak temizlenecektir.*`
     ),
     ComponentsV2Factory.separator(true),
     // Kategori Seçim Menüsü
-    new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`robloxland_forum_category_${thread.id}`)
-        .setPlaceholder("🏷️ Konunuzun kategorisini seçin...")
-        .addOptions(
-          FORUM_CATEGORIES.map(cat => ({
+    {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: `robloxland_forum_category_${thread.id}`,
+          placeholder: "🏷️ Konunuzun kategorisini seçin...",
+          options: FORUM_CATEGORIES.map(cat => ({
             label: cat.label,
             value: cat.value,
             description: cat.description,
-            emoji: cat.emoji
+            emoji: { name: cat.emoji }
           }))
-        )
-    ),
+        }
+      ]
+    },
     // Tepki Seçim Menüsü
-    new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId(`robloxland_forum_reaction_${thread.id}`)
-        .setPlaceholder("⚡ Foruma eklenecek otomatik tepkileri seçin...")
-        .addOptions(
-          REACTION_PACKS.map(rp => ({
+    {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: `robloxland_forum_reaction_${thread.id}`,
+          placeholder: "⚡ Foruma eklenecek otomatik tepkileri seçin...",
+          options: REACTION_PACKS.map(rp => ({
             label: rp.label,
             value: rp.value,
             description: rp.description
           }))
-        )
-    ),
+        }
+      ]
+    },
     ComponentsV2Factory.separator(true),
     // Hızlı Aksiyon Butonları
     ComponentsV2Factory.actionRow([
       {
-        style: ButtonStyle.Secondary,
-        label: "✏️ Başlığı Yeniden Adlandır",
+        style: ButtonStyle.Primary,
+        label: "📝 Başlık & Alt Başlık Düzenle",
         custom_id: `robloxland_forum_rename_${thread.id}`,
         emoji: { name: "✏️" }
       },
       {
+        style: ButtonStyle.Success,
+        label: "✅ Tamamla & Paneli Kapat",
+        custom_id: `robloxland_forum_finish_${thread.id}`,
+        emoji: { name: "✨" }
+      },
+      {
         style: ButtonStyle.Secondary,
-        label: "🔒 Konuyu Kilitle",
+        label: "🔒 Kilitle",
         custom_id: `robloxland_forum_lock_${thread.id}`,
         emoji: { name: "🔒" }
       },
       {
         style: ButtonStyle.Danger,
-        label: "🗑️ Konuyu Sil",
+        label: "🗑️ Sil",
         custom_id: `robloxland_forum_delete_${thread.id}`,
         emoji: { name: "🗑️" }
       }
@@ -259,7 +272,6 @@ async function handleForumInteraction(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Mevcut başlıktan eski ön ekleri temizle
       let cleanName = thread.name;
       for (const cat of FORUM_CATEGORIES) {
         cleanName = cleanName.replace(cat.tagPrefix, '').trim();
@@ -288,7 +300,6 @@ async function handleForumInteraction(interaction) {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      // Başlangıç mesajını bul ve tepkileri ekle
       const starterMessage = (typeof thread.fetchStarterMessage === 'function')
         ? await thread.fetchStarterMessage().catch(() => null)
         : null;
@@ -310,40 +321,114 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 3. Başlığı Yeniden Adlandır Butonu (Modal Açar)
+  // 3. Başlık & Alt Başlık Düzenleme Modalı Aç
   if (customId.startsWith('robloxland_forum_rename_')) {
     const modal = new ModalBuilder()
       .setCustomId(`robloxland_forum_modal_rename_${thread.id}`)
-      .setTitle("✏️ Forum Konusu Başlığını Güncelle");
+      .setTitle("📝 Başlık & Alt Başlık Düzenleyici");
 
-    const input = new TextInputBuilder()
-      .setCustomId("new_title")
-      .setLabel("Yeni Konu Başlığı")
+    let cleanName = thread.name || "";
+    for (const cat of FORUM_CATEGORIES) {
+      cleanName = cleanName.replace(cat.tagPrefix, '').trim();
+    }
+
+    const mainTitleInput = new TextInputBuilder()
+      .setCustomId("main_title")
+      .setLabel("Ana Konu Başlığı")
       .setStyle(TextInputStyle.Short)
-      .setValue(thread.name || "")
-      .setMaxLength(100)
+      .setValue(cleanName)
+      .setMaxLength(65)
       .setMinLength(3)
       .setRequired(true);
 
-    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    const subTitleInput = new TextInputBuilder()
+      .setCustomId("sub_title")
+      .setLabel("Alt Başlık / Slogan / Detay (İsteğe Bağlı)")
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder("Örn: [Ekip Aranıyor] • 100K+ Ziyaret / Satılık")
+      .setMaxLength(30)
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(mainTitleInput),
+      new ActionRowBuilder().addComponents(subTitleInput)
+    );
+
     await interaction.showModal(modal);
     return true;
   }
 
-  // 4. Başlık Güncelleme Modal Submit
+  // 4. Başlık & Alt Başlık Modal Gönderimi ve Otomatik Mesaj Temizleme
   if (customId.startsWith('robloxland_forum_modal_rename_')) {
-    const newTitle = interaction.fields.getTextInputValue("new_title")?.trim();
-    if (!newTitle) {
-      return await interaction.reply({ content: "❌ Başlık boş bırakılamaz.", ephemeral: true });
+    const mainTitle = interaction.fields.getTextInputValue("main_title")?.trim();
+    const subTitle = interaction.fields.getTextInputValue("sub_title")?.trim();
+
+    if (!mainTitle) {
+      return await interaction.reply({ content: "❌ Ana başlık boş bırakılamaz.", ephemeral: true });
     }
 
     await interaction.deferReply({ ephemeral: true });
-    await thread.setName(newTitle.slice(0, 100)).catch(() => {});
-    await interaction.editReply({ content: `✅ Konu başlığı başarıyla güncellendi: **${newTitle}**` });
+
+    // Mevcut kategori ön ekini koru
+    let currentCategoryPrefix = "";
+    for (const cat of FORUM_CATEGORIES) {
+      if (thread.name.startsWith(cat.tagPrefix)) {
+        currentCategoryPrefix = cat.tagPrefix + " ";
+        break;
+      }
+    }
+
+    let finalTitle = `${currentCategoryPrefix}${mainTitle}`;
+    if (subTitle) {
+      finalTitle += ` — ${subTitle}`;
+    }
+    finalTitle = finalTitle.slice(0, 100);
+
+    await thread.setName(finalTitle).catch(() => {});
+
+    await interaction.editReply({
+      content: `✅ **Forum Başlığı ve Alt Başlığı Güncellendi!**\n• **Yeni Başlık:** \`${finalTitle}\`\n\n🧹 *Kurulum paneli mesajı temizleniyor...*`
+    });
+
+    // Otomatik olarak kurulum paneli mesajını sil
+    setTimeout(async () => {
+      try {
+        if (interaction.message && typeof interaction.message.delete === 'function') {
+          await interaction.message.delete().catch(() => {});
+        } else {
+          const msgs = await thread.messages.fetch({ limit: 10 }).catch(() => null);
+          const botSetupMsg = msgs?.find(m => m.author.id === interaction.client.user?.id && m.components?.length > 0);
+          if (botSetupMsg) await botSetupMsg.delete().catch(() => {});
+        }
+      } catch (_) {}
+    }, 3000);
+
     return true;
   }
 
-  // 5. Konuyu Kilitle Butonu
+  // 5. "Tamamla & Paneli Kapat" Butonu (Mesajı Otomatik Siler)
+  if (customId.startsWith('robloxland_forum_finish_')) {
+    await interaction.reply({
+      content: '✨ **Forum düzenlemeniz tamamlandı!** Kurulum paneli 2 saniye içinde kaldırılacaktır.',
+      ephemeral: true
+    });
+
+    setTimeout(async () => {
+      try {
+        if (interaction.message && typeof interaction.message.delete === 'function') {
+          await interaction.message.delete().catch(() => {});
+        } else {
+          const msgs = await thread.messages.fetch({ limit: 10 }).catch(() => null);
+          const botSetupMsg = msgs?.find(m => m.author.id === interaction.client.user?.id && m.components?.length > 0);
+          if (botSetupMsg) await botSetupMsg.delete().catch(() => {});
+        }
+      } catch (_) {}
+    }, 2000);
+
+    return true;
+  }
+
+  // 6. Konuyu Kilitle Butonu
   if (customId.startsWith('robloxland_forum_lock_')) {
     await interaction.deferReply({ ephemeral: true });
     const isLocked = thread.locked;
@@ -361,7 +446,7 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 6. Konuyu Sil Butonu
+  // 7. Konuyu Sil Butonu
   if (customId.startsWith('robloxland_forum_delete_')) {
     await interaction.reply({
       content: '🗑️ Forum konusu 3 saniye içinde silinecektir...',
@@ -377,11 +462,25 @@ async function handleForumInteraction(interaction) {
   return false;
 }
 
+function initForumService(client) {
+  if (client && !client.__robloxLandForumAttached) {
+    client.__robloxLandForumAttached = true;
+    client.on('threadCreate', async (thread, newlyCreated) => {
+      try {
+        await handleThreadCreate(thread, newlyCreated);
+      } catch (err) {
+        console.error('[threadCreate] RobloxLand Forum error:', err.message);
+      }
+    });
+  }
+}
+
 module.exports = {
   GUILD_ID,
   FORUM_CATEGORY_ID,
   FORUM_CATEGORIES,
   REACTION_PACKS,
+  initForumService,
   buildForumSetupPayload,
   handleThreadCreate,
   handleForumInteraction,
