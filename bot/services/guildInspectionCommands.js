@@ -1,6 +1,8 @@
 const { ChannelType, PermissionFlagsBits } = require("discord.js");
 
 const TARGET_GUILD_ID = "1537407325290237973";
+const ROBLOXLAND_MESSAGE_BATCH_SIZE = 10;
+const ROBLOXLAND_MESSAGE_WINDOW_MS = 5_000;
 
 /**
  * Kanal türünü Türkçe okunabilir metne dönüştürür.
@@ -78,7 +80,7 @@ function splitIntoChunks(headerPrefix, lines, maxLen = 1500) {
  * Bölünmüş mesajları sırayla Discord kanalına gönderir.
  * 1. Bölüm dahil tüm bölümlerin eksiksiz ve sırayla kanala düşmesini sağlar.
  */
-async function sendChunkedMessages(message, chunks) {
+async function sendChunkedMessages(message, chunks, options = {}) {
   const validChunks = (chunks || [])
     .map(c => (c !== null && c !== undefined ? String(c).trim() : ""))
     .filter(c => c.length > 0);
@@ -93,7 +95,19 @@ async function sendChunkedMessages(message, chunks) {
     return;
   }
 
+  const batchSize = Math.max(1, Number(options.batchSize) || ROBLOXLAND_MESSAGE_BATCH_SIZE);
+  const windowMs = Math.max(0, Number.isFinite(options.windowMs) ? options.windowMs : ROBLOXLAND_MESSAGE_WINDOW_MS);
+  const wait = typeof options.wait === "function"
+    ? options.wait
+    : ms => new Promise(resolve => setTimeout(resolve, ms));
+
   for (let i = 0; i < validChunks.length; i++) {
+    // Toplam mesaj sayısı sınırlanmaz. Her 10 mesajdan sonra yeni 5 saniyelik
+    // pencereye geçilir; uzun/normal listeler sonraki partilerde devam eder.
+    if (i > 0 && i % batchSize === 0 && windowMs > 0) {
+      await wait(windowMs);
+    }
+
     const text = validChunks[i];
     if (!text) continue;
 
@@ -108,9 +122,6 @@ async function sendChunkedMessages(message, chunks) {
       }
     }
 
-    if (i < validChunks.length - 1) {
-      await new Promise(res => setTimeout(res, 350));
-    }
   }
 }
 
@@ -1054,6 +1065,9 @@ async function handleGuildInspectionMessage(message) {
 }
 
 module.exports = {
+  ROBLOXLAND_MESSAGE_BATCH_SIZE,
+  ROBLOXLAND_MESSAGE_WINDOW_MS,
+  sendChunkedMessages,
   handleGuildInspectionMessage,
   handleTumKategoriler,
   handleTumRoller,
