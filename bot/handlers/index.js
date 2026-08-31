@@ -275,11 +275,13 @@ function initializeDiscordHandlers(client) {
     try {
       const { deployRobloxDevsSetup } = require("../services/robloxDevsSetupService");
       const { initVoiceXpTracker } = require("../services/robloxLandLevelService");
+      const { initAchievementTracker } = require("../services/robloxLandAchievementService");
       setTimeout(() => {
         deployRobloxDevsSetup(client).catch(err => {
           console.error("[ready] RobloxDevsSetup deploy error:", err.message);
         });
         initVoiceXpTracker(client);
+        initAchievementTracker(client);
       }, 8000);
     } catch (rdErr) {
       console.error("[ready] RobloxDevsSetupService / LevelService yüklenemedi:", rdErr.message);
@@ -1030,6 +1032,8 @@ function initializeDiscordHandlers(client) {
   client.on("messageDelete", async (message) => {
     try {
       if (message.partial) return;
+      const { trackMessageDelete } = require("../services/robloxLandAchievementService");
+      await trackMessageDelete(message);
       const { TMT_GUILD_ID, GUILD2_ID } = require("../../config");
       if (message.guild && message.guild.id === TMT_GUILD_ID && !message.author?.bot) {
         const { logTMTMessageDelete } = require("../services/tmtLogger");
@@ -1048,6 +1052,10 @@ function initializeDiscordHandlers(client) {
   client.on("messageUpdate", async (oldMessage, newMessage) => {
     try {
       if (oldMessage.partial || newMessage.partial) return;
+      if (oldMessage.content !== newMessage.content) {
+        const { trackMessageEdit } = require("../services/robloxLandAchievementService");
+        await trackMessageEdit(newMessage);
+      }
       const { TMT_GUILD_ID, GUILD2_ID } = require("../../config");
       if (newMessage.guild && newMessage.guild.id === TMT_GUILD_ID && !newMessage.author?.bot && oldMessage.content !== newMessage.content) {
         const { logTMTMessageUpdate } = require("../services/tmtLogger");
@@ -1327,6 +1335,13 @@ function initializeDiscordHandlers(client) {
       if (!userId) {
         console.warn('[voiceStateUpdate] No user ID found');
         return;
+      }
+
+      try {
+        const { trackVoiceState } = require("../services/robloxLandAchievementService");
+        await trackVoiceState(oldState, newState);
+      } catch (achievementErr) {
+        console.warn("[RobloxLandAchievements] voice state error:", achievementErr.message);
       }
 
       // Moderatör Okulu Ses Kanal Kontrolü
@@ -1699,6 +1714,14 @@ function initializeDiscordHandlers(client) {
 
     const content = (message.content || "").trim();
     const lowerContent = content.toLowerCase();
+
+    // ── RobloxLand günlük mesaj serisi ────────────────────────────────────
+    try {
+      const { handleStreakCommand } = require("../services/robloxLandAchievementService");
+      if (await handleStreakCommand(message)) return;
+    } catch (streakErr) {
+      console.error("[RobloxLand Streak Command Error]:", streakErr.message);
+    }
 
     // ── EkoYıldız Port Edilen Komutlar (e! / ! / Bot Mention) ──────────────
     try {

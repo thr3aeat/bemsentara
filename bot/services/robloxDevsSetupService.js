@@ -257,12 +257,13 @@ function buildStaffApplyPayload() {
   const content = [
     ComponentsV2Factory.text(
       `# **Robloxland Yetkili Alım Formu!**\n\n` +
-      `*İsim*:\n\n` +
-      `*Hiç Satış Mağzasında Bulundunmu*:\n\n` +
-      `*Müşteri Çeke Bilirmisin*:\n\n` +
-      `*Başka Bir Yerde Yetkilimisin?*:\n\n\n` +
-      `-# Formu Doldurmak Zorunlu\n\n` +
-      `Ekibimize katılmak ve Robloxland bünyesinde yetkili/satış danışmanı olmak için aşağıdaki butona tıklayarak başvuru formunu eksiksiz doldurunuz.`
+      `Ekibimize katılmak ve Robloxland bünyesinde yetkili/satış danışmanı olmak için başvuru formunu eksiksiz doldur.\n\n` +
+      `### 🎙️ Süreç Nasıl İşliyor?\n` +
+      `1. Kısa başvuru formunu gönderirsin.\n` +
+      `2. Alım sorumlusu uygun görürse seni DM üzerinden mülakata davet eder.\n` +
+      `3. Beş soruluk senaryo mülakatını yanıtlarsın; cevapların ekibe iletilir.\n` +
+      `4. Son karar DM kutuna gelir. Evet, insan kaynakları artık cebinde. 😄\n\n` +
+      `-# Form ve mülakat cevapları yalnızca yetkili alım ekibi tarafından değerlendirilir.`
     ),
     ComponentsV2Factory.separator(true),
     ComponentsV2Factory.actionRow([
@@ -987,10 +988,9 @@ async function handleRobloxDevsInteraction(interaction) {
       const logChan = guild?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await guild?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
       if (logChan && logChan.isTextBased()) {
         await logChan.send({
-          content: `🔔 <@&${STAFF_RECRUITER_ROLE_ID}> **Yeni Bir Yetkili Alım Başvurusu Geldi!**`,
           ...ComponentsV2Factory.buildPayload([
             ComponentsV2Factory.text(
-              `# 📋 Yeni Yetkili Başvurusu!\n\n` +
+              `🔔 <@&${STAFF_RECRUITER_ROLE_ID}>\n# 📋 Yeni Yetkili Başvurusu!\n\n` +
               `👤 **Başvuran:** <@${user.id}> (\`${user.id}\`)\n` +
               `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
               `**1. İsim / Yaş:**\n${name}\n\n` +
@@ -1000,13 +1000,102 @@ async function handleRobloxDevsInteraction(interaction) {
             ),
             ComponentsV2Factory.separator(true),
             ComponentsV2Factory.actionRow([
+              { style: ButtonStyle.Primary, label: "🎙️ Mülakata Al", custom_id: `robloxland_staff_interview_${user.id}`, emoji: { name: "🎙️" } },
               { style: ButtonStyle.Success, label: "✅ Kabul Et", custom_id: `robloxland_staff_accept_${user.id}`, emoji: { name: "🎉" } },
               { style: ButtonStyle.Danger, label: "❌ Reddet", custom_id: `robloxland_staff_reject_${user.id}`, emoji: { name: "🚫" } }
             ])
-          ])
+          ]),
+          allowedMentions: { roles: [STAFF_RECRUITER_ROLE_ID] }
         });
       }
     } catch (_) {}
+    return true;
+  }
+
+  // 2.1 Başvuruyu yazılı mülakata taşı
+  if (interaction.isButton() && customId.startsWith("robloxland_staff_interview_")) {
+    const isRecruiter = interaction.member?.roles?.cache?.has(STAFF_RECRUITER_ROLE_ID) ||
+      interaction.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
+      interaction.user.id === "1031620522406072350" ||
+      interaction.guild?.ownerId === interaction.user.id;
+    if (!isRecruiter) {
+      return interaction.reply({ content: `❌ Mülakat davetini yalnızca <@&${STAFF_RECRUITER_ROLE_ID}> ve yöneticiler gönderebilir.`, ephemeral: true });
+    }
+
+    const targetUserId = customId.replace("robloxland_staff_interview_", "");
+    const targetUser = await interaction.client.users.fetch(targetUserId).catch(() => null);
+    if (!targetUser) return interaction.reply({ content: "❌ Aday bulunamadı.", ephemeral: true });
+
+    const sent = await targetUser.send({
+      ...ComponentsV2Factory.buildPayload([
+        ComponentsV2Factory.text(
+          `# 🎙️ RobloxLand Yetkili Mülakatı\n\n` +
+          `Başvurun ilk aşamayı geçti! Aşağıdaki butonla beş soruluk yazılı mülakatı başlatabilirsin.\n\n` +
+          `Cevaplarını dürüst ve anlaşılır yaz; “bilmiyorum ama Google'larım” bazen “her şeyi biliyorum”dan daha güvenlidir. 😄`
+        ),
+        ComponentsV2Factory.separator(true),
+        ComponentsV2Factory.actionRow([
+          { style: ButtonStyle.Success, label: "🎙️ Mülakatı Başlat", custom_id: `robloxland_interview_start_${targetUserId}`, emoji: { name: "🚀" } }
+        ])
+      ])
+    }).then(() => true).catch(() => false);
+
+    await interaction.reply({
+      content: sent ? `✅ <@${targetUserId}> adayına mülakat daveti DM'den gönderildi.` : "❌ Adayın DM kutusu kapalı; mülakat daveti gönderilemedi.",
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 2.2 Aday mülakat formunu açar
+  if (interaction.isButton() && customId.startsWith("robloxland_interview_start_")) {
+    const targetUserId = customId.replace("robloxland_interview_start_", "");
+    if (interaction.user.id !== targetUserId) return interaction.reply({ content: "❌ Bu mülakat daveti sana ait değil.", ephemeral: true });
+    const modal = new ModalBuilder().setCustomId(`robloxland_interview_modal_${targetUserId}`).setTitle("RobloxLand Yetkili Mülakatı");
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_customer").setLabel("Öfkeli müşteriyi nasıl sakinleştirirsin?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_scam").setLabel("Dolandırıcılık şüphesinde ne yaparsın?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_security").setLabel("Müşteri senden özel işlem isterse?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_team").setLabel("Ekip içi anlaşmazlığı nasıl çözersin?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_reason").setLabel("Neden seni seçmeliyiz?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true))
+    );
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // 2.3 Tamamlanan mülakatı yetkili değerlendirme kanalına gönder
+  if (interaction.isModalSubmit() && customId.startsWith("robloxland_interview_modal_")) {
+    const targetUserId = customId.replace("robloxland_interview_modal_", "");
+    if (interaction.user.id !== targetUserId) return interaction.reply({ content: "❌ Bu mülakat sana ait değil.", ephemeral: true });
+    const answers = [
+      ["Öfkeli müşteri", interaction.fields.getTextInputValue("int_customer")],
+      ["Dolandırıcılık şüphesi", interaction.fields.getTextInputValue("int_scam")],
+      ["Özel işlem / güvenlik", interaction.fields.getTextInputValue("int_security")],
+      ["Ekip içi anlaşmazlık", interaction.fields.getTextInputValue("int_team")],
+      ["Neden seni seçmeliyiz?", interaction.fields.getTextInputValue("int_reason")]
+    ];
+    await interaction.reply({ content: "✅ Mülakat cevapların alım ekibine iletildi. Sonuç yalnızca karar verildiğinde DM'den gönderilecek. Bol şans! 🍀", ephemeral: true });
+
+    const guildRef = interaction.client.guilds.cache.get(GUILD_ID) || await interaction.client.guilds.fetch(GUILD_ID).catch(() => null);
+    const logChan = guildRef?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await guildRef?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
+    if (logChan?.isTextBased()) {
+      await logChan.send({
+        ...ComponentsV2Factory.buildPayload([
+          ComponentsV2Factory.text(
+            `🎙️ <@&${STAFF_RECRUITER_ROLE_ID}>\n# Yetkili Mülakatı Tamamlandı\n\n` +
+            `👤 **Aday:** <@${targetUserId}> (\`${targetUserId}\`)\n` +
+            `📅 **Tamamlanma:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+            answers.map(([title, answer], i) => `**${i + 1}. ${title}:**\n${answer}`).join("\n\n")
+          ),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.actionRow([
+            { style: ButtonStyle.Success, label: "✅ Mülakatı Geçti", custom_id: `robloxland_staff_accept_${targetUserId}`, emoji: { name: "🎉" } },
+            { style: ButtonStyle.Danger, label: "❌ Mülakatı Geçemedi", custom_id: `robloxland_staff_reject_${targetUserId}`, emoji: { name: "🚫" } }
+          ])
+        ]),
+        allowedMentions: { roles: [STAFF_RECRUITER_ROLE_ID] }
+      });
+    }
     return true;
   }
 
@@ -1732,6 +1821,7 @@ module.exports = {
   deployRobloxDevsSetup,
   handleRobloxDevsInteraction,
   buildAboutUsPayload,
+  buildStaffApplyPayload,
   CHANNELS,
   TICKET_CATEGORY_ID,
   STAFF_LOG_CHANNEL_ID

@@ -162,7 +162,8 @@ function getUserActivity(userId) {
       achievementsCount: 1,
       prestige: 0,
       lastMessageTime: 0,
-      lastMessageContent: ""
+      lastMessageContent: "",
+      recentMessages: []
     };
   }
   return all[userId];
@@ -447,7 +448,9 @@ async function handleMessageXp(message) {
   if (!message.guild || message.author.bot) return;
 
   const content = message.content ? message.content.trim() : "";
-  if (content.length < 3) return; // Minimum 3 karakter (sa, as, tm, eyw gibi mesajlar dahil)
+  const normalizedContent = content.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ");
+  const meaningfulChars = normalizedContent.replace(/[^a-z0-9çğıöşü]/gi, "");
+  if (meaningfulChars.length < 5 || new Set(meaningfulChars).size < 2) return;
 
   // Komutları yoksay
   if (content.startsWith("!") || content.startsWith(".") || content.startsWith("/") || content.startsWith("-")) return;
@@ -461,9 +464,13 @@ async function handleMessageXp(message) {
   const userId = message.author.id;
   const now = Date.now();
   const activity = getUserActivity(userId);
+  activity.recentMessages = (activity.recentMessages || []).filter(item => now - Number(item.at || 0) <= 10 * 60 * 1000);
 
   // Spam ve aynı mesaj engeli
-  if (activity.lastMessageContent && activity.lastMessageContent.toLowerCase() === content.toLowerCase()) {
+  if (
+    (activity.lastMessageContent && activity.lastMessageContent.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ") === normalizedContent) ||
+    activity.recentMessages.some(item => item.content === normalizedContent)
+  ) {
     return;
   }
 
@@ -488,17 +495,19 @@ async function handleMessageXp(message) {
   const finalXp = Math.round(baseGain * multiplier);
 
   activity.lastMessageTime = now;
-  activity.lastMessageContent = content;
+  activity.lastMessageContent = normalizedContent;
+  activity.recentMessages.push({ content: normalizedContent, at: now });
+  if (activity.recentMessages.length > 20) activity.recentMessages = activity.recentMessages.slice(-20);
   activity.messagesCount = (activity.messagesCount || 0) + 1;
 
-  // Streak güncellemesi
-  const todayStr = new Date().toISOString().slice(0, 10);
-  if (activity.lastActiveDate !== todayStr) {
-    activity.streakDays = (activity.streakDays || 0) + 1;
-    activity.lastActiveDate = todayStr;
-  }
-
   saveUserActivity(userId, activity);
+
+  try {
+    const { trackValidMessage } = require("./robloxLandAchievementService");
+    await trackValidMessage(message);
+  } catch (err) {
+    console.warn("[LevelService] achievement message tracking error:", err.message);
+  }
 
   // Profil XP ve Seviye Kontrolü
   const profile = DataStore.getUserProfile(userId, message.member);
@@ -610,9 +619,9 @@ function buildUserProfileCard(targetUser, member) {
     `📊 **Sunucu Sırası:** #${Math.max(1, 66 - currentLevel)}\n\n` +
     `💬 **Mesaj:** ${(activity.messagesCount || 0).toLocaleString()}\n` +
     `🔊 **Ses Süresi:** ${voiceHours}s ${voiceMins}dk\n` +
-    `🔥 **Seri:** ${activity.streakDays || 1} Gün\n` +
+    `🔥 **Seri:** ${activity.streakDays || 0} Gün\n` +
     `🎯 **Görev:** ${activity.tasksCompleted || 0}\n` +
-    `🏆 **Başarım:** ${activity.achievementsCount || 1}\n\n` +
+    `🏆 **Başarım:** ${activity.achievementsCount || 0}\n\n` +
     `\`${bar}\` **${percent}%**\n\n` +
     `**Sonraki Rol:**\n` +
     `🌟 **${nextRole}**\n` +
@@ -631,5 +640,7 @@ module.exports = {
   getLevelRolesMap,
   getPermissionsForLevel,
   syncLevelRolePermissions,
-  buildLevelRoleTransition
+  buildLevelRoleTransition,
+  getUserActivity,
+  saveUserActivity
 };
