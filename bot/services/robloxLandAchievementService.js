@@ -10,92 +10,513 @@ const LEGACY_ACTIVITY_FILE = path.join(__dirname, "../../data/robloxland_user_ac
 const TICK_MS = 60 * 1000;
 
 const ACHIEVEMENTS = [
-  // Ses
-  { key: "lone_wolf", name: "Yalnız Kurt", color: "#5865F2", test: p => p.voice.aloneMinutes >= 60 },
-  { key: "silent_night", name: "Sessiz Gece", color: "#191970", test: p => p.voice.midnightMinutes >= 60 },
-  { key: "night_guard", name: "Gece Bekçisi", color: "#283593", test: p => p.voice.nightMinutes >= 180 },
-  { key: "voice_regular", name: "Ses Müdavimi", color: "#7289DA", test: p => p.voice.totalMinutes >= 600 },
-  { key: "worn_headset", name: "Kulaklık Eskitti", color: "#9B59B6", test: p => p.voice.totalMinutes >= 3000 },
-  { key: "voice_legend", name: "Ses Efsanesi", color: "#8E44AD", test: p => p.voice.totalMinutes >= 6000 },
-  { key: "in_the_crowd", name: "Kalabalığın İçinde", color: "#3498DB", test: p => p.voice.crowdMinutes >= 60 },
-  { key: "duo_team", name: "İkili Takım", color: "#1ABC9C", test: p => maxValue(p.voice.partnerMinutes) >= 180 },
-  { key: "until_morning", name: "Sabaha Kadar", color: "#34495E", test: p => p.voice.lateNightMinutes >= 300 },
-  { key: "mic_master", name: "Mikrofon Ustası", color: "#00A8FF", test: p => p.voice.days.length >= 7 },
-  { key: "voice_traveler", name: "Gezgin Sesçi", color: "#5DADE2", test: p => p.voice.channels.length >= 10 },
-  { key: "afk_king", name: "AFK Kralı", color: "#7F8C8D", test: p => p.voice.afkMinutes >= 600 },
+  // ── Ses Başarımları (12) ──
+  {
+    key: "lone_wolf",
+    name: "Yalnız Kurt",
+    color: "#5865F2",
+    description: "Seste 1 saat boyunca tek başına kalarak sessizliğin ve odağın gücünü kanıtladın. Kendi başına bir ordu!",
+    test: p => p.voice.aloneMinutes >= 60
+  },
+  {
+    key: "silent_night",
+    name: "Sessiz Gece",
+    color: "#191970",
+    description: "Gece yarısı (00:00 - 05:00) ses odasında nöbet tuttun. Geceyi aydınlatan fener sensin!",
+    test: p => p.voice.midnightMinutes >= 60
+  },
+  {
+    key: "night_guard",
+    name: "Gece Bekçisi",
+    color: "#283593",
+    description: "Gecenin karanlığında ses kanallarında tam 3 saat nöbet tuttun. RobloxLand sana emanet!",
+    test: p => p.voice.nightMinutes >= 180
+  },
+  {
+    key: "voice_regular",
+    name: "Ses Müdavimi",
+    color: "#7289DA",
+    description: "Ses kanallarında toplam 10 saati geride bıraktın. Artık buraların gediklisisin!",
+    test: p => p.voice.totalMinutes >= 600
+  },
+  {
+    key: "worn_headset",
+    name: "Kulaklık Eskitti",
+    color: "#9B59B6",
+    description: "Seste toplam 50 saati devirdin. O kulaklık artık vücudunun bir parçası haline geldi!",
+    test: p => p.voice.totalMinutes >= 3000
+  },
+  {
+    key: "voice_legend",
+    name: "Ses Efsanesi",
+    color: "#8E44AD",
+    description: "Ses kanallarında 100 saati aştın! Sunucunun efsane sesçisi unvanı artık senin.",
+    test: p => p.voice.totalMinutes >= 6000
+  },
+  {
+    key: "in_the_crowd",
+    name: "Kalabalığın İçinde",
+    color: "#3498DB",
+    description: "10+ kişilik kalabalık bir ses odasında en az 1 saat vakit geçirdin. Coşku ve eğlence zirvede!",
+    test: p => p.voice.crowdMinutes >= 60
+  },
+  {
+    key: "duo_team",
+    name: "İkili Takım",
+    color: "#1ABC9C",
+    description: "Aynı arkadaşınla seste aralıksız 3 saat geçirdin. Gerçek bir takım ruhu!",
+    test: p => maxValue(p.voice.partnerMinutes) >= 180
+  },
+  {
+    key: "until_morning",
+    name: "Sabaha Kadar",
+    color: "#34495E",
+    description: "Gece 23:00'ten sabah 06:00'ya kadar tam 5 saat seste kaldın. Uyku da neymiş?",
+    test: p => p.voice.lateNightMinutes >= 300
+  },
+  {
+    key: "mic_master",
+    name: "Mikrofon Ustası",
+    color: "#00A8FF",
+    description: "Haftanın 7 günü ses kanallarında aktif oldun. Mikrofonun hiç soğumuyor!",
+    test: p => p.voice.days.length >= 7
+  },
+  {
+    key: "voice_traveler",
+    name: "Gezgin Sesçi",
+    color: "#5DADE2",
+    description: "Sunucudaki en az 10 farklı ses kanalını ziyaret ettin. Ayak basmadık oda bırakmadın!",
+    test: p => p.voice.channels.length >= 10
+  },
+  {
+    key: "afk_king",
+    name: "AFK Kralı",
+    color: "#7F8C8D",
+    description: "AFK kanalında toplam 10 saat vakit geçirdin. Hareketsizlik sanattır, sen de ustasısın!",
+    test: p => p.voice.afkMinutes >= 600
+  },
 
-  // Sohbet
-  { key: "first_word", name: "İlk Kelime", color: "#BDC3C7", test: p => p.chat.messages >= 1 },
-  { key: "chat_started", name: "Muhabbet Başladı", color: "#2ECC71", test: p => p.chat.messages >= 100 },
-  { key: "chatter", name: "Sohbetçi", color: "#27AE60", test: p => p.chat.messages >= 500 },
-  { key: "talkative", name: "Konuşkan", color: "#16A085", test: p => p.chat.messages >= 1000 },
-  { key: "wont_stop", name: "Durmuyor", color: "#00B894", test: p => p.chat.messages >= 5000 },
-  { key: "keyboard_warrior", name: "Klavye Savaşçısı", color: "#00CEC9", test: p => p.chat.messages >= 10000 },
-  { key: "historian", name: "RobloxLand Tarihçisi", color: "#F1C40F", test: p => p.chat.messages >= 25000 },
-  { key: "night_owl", name: "Gece Kuşu", color: "#2C3E50", test: p => p.chat.nightMessages >= 1 },
-  { key: "good_morning", name: "Günaydın RobloxLand", color: "#F9CA24", test: p => p.chat.morningMessages >= 1 },
-  { key: "last_word", name: "Son Sözü Söyleyen", color: "#E67E22", test: p => p.chat.lastWordWins >= 1 },
-  { key: "chat_marathon", name: "Maraton Sohbetçi", color: "#FF7675", test: p => maxValue(p.chat.dailyMessages) >= 500 },
-  { key: "everywhere", name: "Her Yerdeyim", color: "#6C5CE7", test: p => p.chat.channels.length >= 20 },
-  { key: "loyal_chatter", name: "Sadık Sohbetçi", color: "#A29BFE", test: p => activeInLastDays(p.chat.days, 30) >= 25 },
-  { key: "returned", name: "Geri Döndü", color: "#74B9FF", test: p => p.chat.returnedAfter30Days },
+  // ── Sohbet Başarımları (14) ──
+  {
+    key: "first_word",
+    name: "İlk Kelime",
+    color: "#BDC3C7",
+    description: "RobloxLand sohbetine ilk adımını attın ve ilk mesajını gönderdin. Topluluğumuza hoş geldin!",
+    test: p => p.chat.messages >= 1
+  },
+  {
+    key: "chat_started",
+    name: "Muhabbet Başladı",
+    color: "#2ECC71",
+    description: "Sohbette 100 mesaj barajını aştın. Ortamın sıcaklığına alıştın bile!",
+    test: p => p.chat.messages >= 100
+  },
+  {
+    key: "chatter",
+    name: "Sohbetçi",
+    color: "#27AE60",
+    description: "500 mesajla sohbetin nabzını tuttun. Parmaklarına sağlık!",
+    test: p => p.chat.messages >= 500
+  },
+  {
+    key: "talkative",
+    name: "Konuşkan",
+    color: "#16A085",
+    description: "Tam 1.000 mesaja ulaştın! Sohbetin neşesi ve akışı senden sorulur.",
+    test: p => p.chat.messages >= 1000
+  },
+  {
+    key: "wont_stop",
+    name: "Durmuyor",
+    color: "#00B894",
+    description: "5.000 mesaj! Hızına kimse yetişemiyor, durdurulamaz bir sohbet makinesisin.",
+    test: p => p.chat.messages >= 5000
+  },
+  {
+    key: "keyboard_warrior",
+    name: "Klavye Savaşçısı",
+    color: "#00CEC9",
+    description: "10.000 mesaj barajını yıktın geçtin! Klavyendeki tuşlar aşınmış olmalı.",
+    test: p => p.chat.messages >= 10000
+  },
+  {
+    key: "historian",
+    name: "RobloxLand Tarihçisi",
+    color: "#F1C40F",
+    description: "Tam 25.000 mesaj! RobloxLand'in canlı tarihi ve hafızası oldun.",
+    test: p => p.chat.messages >= 25000
+  },
+  {
+    key: "night_owl",
+    name: "Gece Kuşu",
+    color: "#2C3E50",
+    description: "Gece 03:00 - 05:00 arasında sohbete mesaj bıraktın. Gece yaşayanlar loncasına katıldın!",
+    test: p => p.chat.nightMessages >= 1
+  },
+  {
+    key: "good_morning",
+    name: "Günaydın RobloxLand",
+    color: "#F9CA24",
+    description: "Sabahın ilk ışıklarında (06:00 - 07:00) sohbete enerji kattın. Erken kalkan yol alır!",
+    test: p => p.chat.morningMessages >= 1
+  },
+  {
+    key: "last_word",
+    name: "Son Sözü Söyleyen",
+    color: "#E67E22",
+    description: "Bir kanalda son mesajı sen yazdın ve 6 saat boyunca kimse üstüne yazamadı. Son söz her zaman senin!",
+    test: p => p.chat.lastWordWins >= 1
+  },
+  {
+    key: "chat_marathon",
+    name: "Maraton Sohbetçi",
+    color: "#FF7675",
+    description: "Tek bir günde tam 500 mesaj gönderdin. Gerçek bir maraton koşucusu!",
+    test: p => maxValue(p.chat.dailyMessages) >= 500
+  },
+  {
+    key: "everywhere",
+    name: "Her Yerdeyim",
+    color: "#6C5CE7",
+    description: "Sunucudaki 20 farklı metin kanalında aktif oldun. Seni her kanalda görmek mümkün!",
+    test: p => p.chat.channels.length >= 20
+  },
+  {
+    key: "loyal_chatter",
+    name: "Sadık Sohbetçi",
+    color: "#A29BFE",
+    description: "Son 30 günün en az 25 gününde sohbette aktif oldun. İstikrarının önünde saygıyla eğiliyoruz!",
+    test: p => activeInLastDays(p.chat.days, 30) >= 25
+  },
+  {
+    key: "returned",
+    name: "Geri Döndü",
+    color: "#74B9FF",
+    description: "30 günden uzun bir aranın ardından RobloxLand'e geri döndün. Efsaneler asla unutulmaz!",
+    test: p => p.chat.returnedAfter30Days
+  },
 
-  // Sunucuda kalma
-  { key: "new_dev", name: "Yeni Dev", color: "#95A5A6", test: (p, c) => c.joinDays >= 1 },
-  { key: "settling", name: "Yerleşmeye Başladı", color: "#3498DB", test: (p, c) => c.joinDays >= 7 },
-  { key: "loyal_dev", name: "Sadık Dev", color: "#2ECC71", test: (p, c) => c.joinDays >= 30 },
-  { key: "senior_dev", name: "Kıdemli Dev", color: "#F39C12", test: (p, c) => c.joinDays >= 90 },
-  { key: "old_timer", name: "Eski Toprak", color: "#E67E22", test: (p, c) => c.joinDays >= 180 },
-  { key: "veteran", name: "RobloxLand Veteranı", color: "#E74C3C", test: (p, c) => c.joinDays >= 365 },
-  { key: "fossil", name: "Fosil Dev", color: "#8E44AD", test: (p, c) => c.joinDays >= 500 },
-  { key: "immortal", name: "Ölümsüz Dev", color: "#FFD700", test: (p, c) => c.joinDays >= 1000 },
+  // ── Sunucuda Kalma / Kıdem Başarımları (8) ──
+  {
+    key: "new_dev",
+    name: "Yeni Dev",
+    color: "#95A5A6",
+    description: "RobloxLand ailesinde 1 günü geride bıraktın. Geliştirici yolculuğun resmen başladı!",
+    test: (p, c) => c.joinDays >= 1
+  },
+  {
+    key: "settling",
+    name: "Yerleşmeye Başladı",
+    color: "#3498DB",
+    description: "Sunucumuzda 1 haftayı tamamladın. Artık buraların havasına alıştın!",
+    test: (p, c) => c.joinDays >= 7
+  },
+  {
+    key: "loyal_dev",
+    name: "Sadık Dev",
+    color: "#2ECC71",
+    description: "Tam 1 aydır (30 gün) bizimlesin. Sadakatin ve desteğin için teşekkürler!",
+    test: (p, c) => c.joinDays >= 30
+  },
+  {
+    key: "senior_dev",
+    name: "Kıdemli Dev",
+    color: "#F39C12",
+    description: "3 aydır (90 gün) bu topluluğun temel taşlarındansın. Kıdemin saygı uyandırıyor!",
+    test: (p, c) => c.joinDays >= 90
+  },
+  {
+    key: "old_timer",
+    name: "Eski Toprak",
+    color: "#E67E22",
+    description: "Yarım yılı (180 gün) devirdin. Eskilerden kim kaldı deseler ilk akla gelenlerdensin!",
+    test: (p, c) => c.joinDays >= 180
+  },
+  {
+    key: "veteran",
+    name: "RobloxLand Veteranı",
+    color: "#E74C3C",
+    description: "Tam 1 yıldır (365 gün) RobloxLand ailesindesin. Gerçek bir topluluk gazisi ve emektarı!",
+    test: (p, c) => c.joinDays >= 365
+  },
+  {
+    key: "fossil",
+    name: "Fosil Dev",
+    color: "#8E44AD",
+    description: "500 gündür buradasın! Sunucunun temelleri atılırken de buradaydın, hâlâ dimdik ayaktasın.",
+    test: (p, c) => c.joinDays >= 500
+  },
+  {
+    key: "immortal",
+    name: "Ölümsüz Dev",
+    color: "#FFD700",
+    description: "Tam 1.000 gün! Zaman senin için durmuş gibi, sunucunun ölümsüz efsanesi!",
+    test: (p, c) => c.joinDays >= 1000
+  },
 
-  // Komik / troll
-  { key: "anyone_there", name: "Kimse Yok Mu?", color: "#F1C40F", test: p => p.voice.emptyJoins >= 5 },
-  { key: "talking_wall", name: "Duvarla Konuşuyor", color: "#F1C40F", test: p => p.voice.aloneMinutes >= 120 },
-  { key: "fell_asleep", name: "Uyuyakaldı", color: "#F1C40F", test: p => p.voice.longestSessionMinutes >= 360 },
-  { key: "close_discord", name: "Discord’u Kapat Artık", color: "#F1C40F", test: p => maxActiveMinutes(p) >= 600 },
-  { key: "touch_grass", name: "Çime Dokun", color: "#F1C40F", test: p => maxValue(p.chat.dailyMessages) >= 1000 },
-  { key: "npc", name: "NPC", color: "#F1C40F", test: p => maxChannelDays(p.chat.channelDays) >= 50 },
-  { key: "i_live_here", name: "Ben Burada Yaşıyorum", color: "#F1C40F", test: p => p.voice.totalMinutes >= 30000 },
-  { key: "wrong_channel", name: "Yanlış Kanal", color: "#F1C40F", test: p => p.chat.quickDeletes >= 1 },
-  { key: "indecisive", name: "Kararsız", color: "#F1C40F", test: p => p.voice.recentSwitches.length >= 10 },
-  { key: "in_and_out", name: "Girdi Çıktı", color: "#F1C40F", test: p => maxValue(p.voice.dailyJoins) >= 20 },
-  { key: "ping_hunter", name: "Ping Avcısı", color: "#F1C40F", test: p => p.social.mentionedBy.length >= 100 },
-  { key: "emoji_addict", name: "Emoji Bağımlısı", color: "#F1C40F", test: p => p.chat.emojis >= 1000 },
-  { key: "caps_minister", name: "Caps Lock Bakanı", color: "#F1C40F", test: p => p.chat.capsMessages >= 100 },
-  { key: "edit_master", name: "Edit Ustası", color: "#F1C40F", test: p => p.chat.edits >= 100 },
-  { key: "ghost", name: "Hayalet", color: "#F1C40F", test: (p, c) => c.joinDays >= 30 && p.chat.messages === 0 },
-  { key: "silent_follower", name: "Sessiz Takipçi", color: "#F1C40F", test: (p, c) => c.joinDays >= 60 && p.chat.messages < 10 },
+  // ── Komik / Troll Başarımları (16) ──
+  {
+    key: "anyone_there",
+    name: "Kimse Yok Mu?",
+    color: "#F1C40F",
+    description: "5 kez boş ses odalarına girip yankını dinledin. Biri gelir elbet!",
+    test: p => p.voice.emptyJoins >= 5
+  },
+  {
+    key: "talking_wall",
+    name: "Duvarla Konuşuyor",
+    color: "#F1C40F",
+    description: "Seste 2 saat tek başına kaldın. Duvarlar bile seni dinlemekten keyif alıyor!",
+    test: p => p.voice.aloneMinutes >= 120
+  },
+  {
+    key: "fell_asleep",
+    name: "Uyuyakaldı",
+    color: "#F1C40F",
+    description: "Seste tek oturumda 6 saat kaldın. Mikrofon açık uyuya kaldığını kimseye söylemeyeceğiz!",
+    test: p => p.voice.longestSessionMinutes >= 360
+  },
+  {
+    key: "close_discord",
+    name: "Discord’u Kapat Artık",
+    color: "#F1C40F",
+    description: "Günde 10 saat aktif kaldın. Gözlerini biraz dinlendir, Discord bir yere kaçmıyor!",
+    test: p => maxActiveMinutes(p) >= 600
+  },
+  {
+    key: "touch_grass",
+    name: "Çime Dokun",
+    color: "#F1C40F",
+    description: "Bir günde 1.000 mesaj attın! Pencereyi aç ve biraz temiz hava al, çimlere basmak ücretsiz 😄",
+    test: p => maxValue(p.chat.dailyMessages) >= 1000
+  },
+  {
+    key: "npc",
+    name: "NPC",
+    color: "#F1C40F",
+    description: "Aynı kanalda 50 gün boyunca aktif oldun. Görev veren NPC gibi hep aynı yerdesin!",
+    test: p => maxChannelDays(p.chat.channelDays) >= 50
+  },
+  {
+    key: "i_live_here",
+    name: "Ben Burada Yaşıyorum",
+    color: "#F1C40F",
+    description: "Seste toplam 500 saati (30.000 dk) aştın. İkametgâhını buraya aldırmanın vakti geldi!",
+    test: p => p.voice.totalMinutes >= 30000
+  },
+  {
+    key: "wrong_channel",
+    name: "Yanlış Kanal",
+    color: "#F1C40F",
+    description: "Mesajını attıktan sonraki 5 saniye içinde sildin. 'Görmediniz sayın' hamlesi başarıyla tamamlandı!",
+    test: p => p.chat.quickDeletes >= 1
+  },
+  {
+    key: "indecisive",
+    name: "Kararsız",
+    color: "#F1C40F",
+    description: "10 dakika içinde 10 kez ses kanalı değiştirdin. Karar vermek gerçekten zor!",
+    test: p => p.voice.recentSwitches.length >= 10
+  },
+  {
+    key: "in_and_out",
+    name: "Girdi Çıktı",
+    color: "#F1C40F",
+    description: "Günde 20 kez ses kanalına girip çıktın. Kapı açılıp kapanmaktan aşındı!",
+    test: p => maxValue(p.voice.dailyJoins) >= 20
+  },
+  {
+    key: "ping_hunter",
+    name: "Ping Avcısı",
+    color: "#F1C40F",
+    description: "Tam 100 kez başkaları tarafından etiketlendin. Popülariten tavan yaptı!",
+    test: p => p.social.mentionedBy.length >= 100
+  },
+  {
+    key: "emoji_addict",
+    name: "Emoji Bağımlısı",
+    color: "#F1C40F",
+    description: "Mesajlarında toplam 1.000 emoji kullandın. Duygularını kelimeler yerine emojiler anlatıyor!",
+    test: p => p.chat.emojis >= 1000
+  },
+  {
+    key: "caps_minister",
+    name: "Caps Lock Bakanı",
+    color: "#F1C40F",
+    description: "100 mesajını büyük harflerle (CAPS LOCK) yazdın. Sesini tüm sunucuya duyurdun!",
+    test: p => p.chat.capsMessages >= 100
+  },
+  {
+    key: "edit_master",
+    name: "Edit Ustası",
+    color: "#F1C40F",
+    description: "100 mesajını düzenledin (edit). Mükemmeliyetçilik tam olarak böyle bir şey!",
+    test: p => p.chat.edits >= 100
+  },
+  {
+    key: "ghost",
+    name: "Hayalet",
+    color: "#F1C40F",
+    description: "30 gündür sunucudasın ama tek bir mesaj bile yazmadın. Görünmezlik pelerinin çok havalı!",
+    test: (p, c) => c.joinDays >= 30 && p.chat.messages === 0
+  },
+  {
+    key: "silent_follower",
+    name: "Sessiz Takipçi",
+    color: "#F1C40F",
+    description: "60 gündür buradasın ve 10'dan az mesaj attın. Gölgeden izlemeyi tercih eden gizemli üye!",
+    test: (p, c) => c.joinDays >= 60 && p.chat.messages < 10
+  },
 
-  // Sosyal
-  { key: "first_friend", name: "İlk Arkadaş", color: "#E91E63", test: p => maxValue(p.voice.partnerMinutes) >= 30 },
-  { key: "socializing", name: "Sosyalleşiyor", color: "#E91E63", test: p => p.social.voicePeople.length >= 25 },
-  { key: "knows_everyone", name: "Herkesi Tanıyor", color: "#E91E63", test: p => p.social.voicePeople.length >= 100 },
-  { key: "party_formed", name: "Parti Kuruldu", color: "#E91E63", test: p => p.voice.partyMinutes >= 120 },
-  { key: "twins", name: "İkizler", color: "#E91E63", test: p => maxValue(p.voice.partnerMinutes) >= 1500 },
-  { key: "inseparable", name: "Ayrılmaz İkili", color: "#E91E63", test: p => maxValue(p.voice.partnerMinutes) >= 6000 },
-  { key: "community_person", name: "Topluluk İnsanı", color: "#E91E63", test: p => p.social.repliedTo.length >= 100 },
-  { key: "welcome_team", name: "Hoş Geldin Ekibi", color: "#E91E63", test: p => p.social.welcomed.length >= 50 },
-  { key: "helpful", name: "Yardımsever", color: "#E91E63", test: p => p.social.helped.length >= 50 },
+  // ── Sosyal Başarımlar (9) ──
+  {
+    key: "first_friend",
+    name: "İlk Arkadaş",
+    color: "#E91E63",
+    description: "Biriyle seste baş başa 30 dakika geçirdin. Güzel bir dostluğun ilk tohumları!",
+    test: p => maxValue(p.voice.partnerMinutes) >= 30
+  },
+  {
+    key: "socializing",
+    name: "Sosyalleşiyor",
+    color: "#E91E63",
+    description: "Ses kanallarında 25 farklı kişiyle birlikte bulundun. Çevren hızla genişliyor!",
+    test: p => p.social.voicePeople.length >= 25
+  },
+  {
+    key: "knows_everyone",
+    name: "Herkesi Tanıyor",
+    color: "#E91E63",
+    description: "100 farklı kişiyle seste vakit geçirdin. Sunucuda tanımadığın kimse kalmadı!",
+    test: p => p.social.voicePeople.length >= 100
+  },
+  {
+    key: "party_formed",
+    name: "Parti Kuruldu",
+    color: "#E91E63",
+    description: "Kalabalık ses odasında 2 saatten fazla eğlendin. Gerçek bir parti ortamı!",
+    test: p => p.voice.partyMinutes >= 120
+  },
+  {
+    key: "twins",
+    name: "İkizler",
+    color: "#E91E63",
+    description: "Aynı kişiyle seste toplam 25 saat geçirdin. Ayrılmaz bir ikili oldunuz!",
+    test: p => maxValue(p.voice.partnerMinutes) >= 1500
+  },
+  {
+    key: "inseparable",
+    name: "Ayrılmaz İkili",
+    color: "#E91E63",
+    description: "Aynı kişiyle seste tam 100 saat geçirdin! Aranızdan su sızmıyor.",
+    test: p => maxValue(p.voice.partnerMinutes) >= 6000
+  },
+  {
+    key: "community_person",
+    name: "Topluluk İnsanı",
+    color: "#E91E63",
+    description: "100 kişinin mesajına yanıt verdin. İletişim gücünle topluluğu bir arada tutuyorsun!",
+    test: p => p.social.repliedTo.length >= 100
+  },
+  {
+    key: "welcome_team",
+    name: "Hoş Geldin Ekibi",
+    color: "#E91E63",
+    description: "Aramıza yeni katılan 50 üyeye sıcak bir 'Hoş geldin' dedin. Harika bir misafirperverlik!",
+    test: p => p.social.welcomed.length >= 50
+  },
+  {
+    key: "helpful",
+    name: "Yardımsever",
+    color: "#E91E63",
+    description: "Destek ve yardım kanallarında 50 kez insanlara destek oldun. İyilik meleği!",
+    test: p => p.social.helped.length >= 50
+  },
 
-  // Streak
-  { key: "streak_3", name: "3’te 3", color: "#FF6B35", test: p => p.streak.current >= 3 },
-  { key: "streak_7", name: "Bir Hafta Bizimle", color: "#FF6B35", test: p => p.streak.current >= 7 },
-  { key: "streak_14", name: "Seri Başladı", color: "#FF6B35", test: p => p.streak.current >= 14 },
-  { key: "streak_30", name: "Bir Ay Kaçırmadı", color: "#FF6B35", test: p => p.streak.current >= 30 },
-  { key: "streak_60", name: "Durmak Yok", color: "#FF6B35", test: p => p.streak.current >= 60 },
-  { key: "streak_100", name: "Demir Dev", color: "#FF6B35", test: p => p.streak.current >= 100 },
-  { key: "streak_365", name: "Makine", color: "#FF6B35", test: p => p.streak.current >= 365 },
+  // ── Streak Başarımları (7) ──
+  {
+    key: "streak_3",
+    name: "3’te 3",
+    color: "#FF6B35",
+    description: "Üst üste 3 gün boyunca sunucuda aktif oldun. Seri ısınıyor!",
+    test: p => p.streak.current >= 3
+  },
+  {
+    key: "streak_7",
+    name: "Bir Hafta Bizimle",
+    color: "#FF6B35",
+    description: "Aralıksız 7 gün aktif kaldın. 1 haftalık muazzam seri!",
+    test: p => p.streak.current >= 7
+  },
+  {
+    key: "streak_14",
+    name: "Seri Başladı",
+    color: "#FF6B35",
+    description: "Tam 14 gün boyunca her gün buradaydın. 2 haftalık istikrar!",
+    test: p => p.streak.current >= 14
+  },
+  {
+    key: "streak_30",
+    name: "Bir Ay Kaçırmadı",
+    color: "#FF6B35",
+    description: "30 gün boyunca tek bir gün bile aksatmadın. 1 aylık sadakat abidesi!",
+    test: p => p.streak.current >= 30
+  },
+  {
+    key: "streak_60",
+    name: "Durmak Yok",
+    color: "#FF6B35",
+    description: "60 gün boyunca her gün aktif oldun. Bu azim takdire şayan!",
+    test: p => p.streak.current >= 60
+  },
+  {
+    key: "streak_100",
+    name: "Demir Dev",
+    color: "#FF6B35",
+    description: "Tam 100 günlük kesintisiz seri! Gerçek bir demir irade.",
+    test: p => p.streak.current >= 100
+  },
+  {
+    key: "streak_365",
+    name: "Makine",
+    color: "#FF6B35",
+    description: "365 gün boyunca her gün aktif kaldın! 1 yıl kesintisiz seriyle adını tarihe altın harflerle yazdırdın.",
+    test: p => p.streak.current >= 365
+  }
 ];
 
+// Tekil in-memory önbellek (Veri çakışmalarını ve mükerrer DM spamını önler)
+let memoryCache = null;
+
 function loadData() {
-  try { return fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, "utf8")) : { users: {}, channels: {}, messages: {} }; }
-  catch (_) { return { users: {}, channels: {}, messages: {} }; }
+  if (memoryCache) return memoryCache;
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (fs.existsSync(DATA_FILE)) {
+      memoryCache = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    }
+  } catch (_) {}
+
+  if (!memoryCache || typeof memoryCache !== "object") {
+    memoryCache = { users: {}, channels: {}, messages: {} };
+  }
+  if (!memoryCache.users) memoryCache.users = {};
+  if (!memoryCache.channels) memoryCache.channels = {};
+  if (!memoryCache.messages) memoryCache.messages = {};
+  return memoryCache;
 }
 
+let saveTimeout = null;
 function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+  memoryCache = data || memoryCache || { users: {}, channels: {}, messages: {} };
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(memoryCache, null, 2), "utf8");
+  } catch (e) {
+    console.error("[RobloxLandAchievements] Save error:", e.message);
+  }
 }
 
 function blankProgress(userId) {
@@ -125,18 +546,21 @@ function normalizeProgress(raw, userId) {
 }
 
 function getProgress(data, userId) {
-  const isNew = !data.users[userId];
-  const p = normalizeProgress(data.users[userId], userId);
+  const store = data || loadData();
+  const isNew = !store.users[userId];
+  const p = normalizeProgress(store.users[userId], userId);
   if (isNew) {
     try {
-      const legacy = JSON.parse(fs.readFileSync(LEGACY_ACTIVITY_FILE, "utf8"))[userId];
-      if (legacy) {
-        p.chat.messages = Math.max(0, Number(legacy.messagesCount || 0));
-        p.voice.totalMinutes = Math.max(0, Number(legacy.voiceMinutes || 0));
+      if (fs.existsSync(LEGACY_ACTIVITY_FILE)) {
+        const legacy = JSON.parse(fs.readFileSync(LEGACY_ACTIVITY_FILE, "utf8"))[userId];
+        if (legacy) {
+          p.chat.messages = Math.max(0, Number(legacy.messagesCount || 0));
+          p.voice.totalMinutes = Math.max(0, Number(legacy.voiceMinutes || 0));
+        }
       }
     } catch (_) {}
   }
-  data.users[userId] = p;
+  store.users[userId] = p;
   return p;
 }
 
@@ -170,31 +594,103 @@ function updateStreak(p, today) {
   p.streak.lastDate = today;
 }
 
+/**
+ * Başarım bildirim DM mesajını oluşturur (Her başarımın kendine özel mesajı/açıklaması bulunur)
+ */
+function buildAchievementDmMessage(wonAchievements) {
+  if (!wonAchievements || wonAchievements.length === 0) return null;
+
+  if (wonAchievements.length === 1) {
+    const ach = wonAchievements[0];
+    return (
+      `🏆 **Tebrikler! RobloxLand'de yeni bir gizli başarım açtın!**\n\n` +
+      `✨ **${ach.name}**\n` +
+      `📝 *${ach.description}*\n\n` +
+      `🎭 **${ach.name}** rolü hesabına tanımlandı. Rozet vitrinine eklendi!`
+    );
+  }
+
+  const items = wonAchievements.map(ach => 
+    `✨ **${ach.name}**\n` +
+    `   └ *${ach.description}*`
+  ).join("\n\n");
+
+  return (
+    `🏆 **Tebrikler! RobloxLand'de ${wonAchievements.length} yeni gizli başarım açtın!**\n\n` +
+    `${items}\n\n` +
+    `🎭 Kazanılan roller hesabına tanımlandı. Rozet dolabına +${wonAchievements.length} başarı eklendi!`
+  );
+}
+
 async function awardEligible(member, p, data) {
-  if (!member || member.guild?.id !== GUILD_ID) return [];
+  if (!member || member.guild?.id !== GUILD_ID || member.user?.bot) return [];
+  const store = data || loadData();
+  const userProgress = p || getProgress(store, member.id);
   const context = { joinDays: joinDays(member) };
   const won = [];
+
   for (const achievement of ACHIEVEMENTS) {
-    if (p.awarded[achievement.key] || !achievement.test(p, context)) continue;
+    // Zaten verilmişse kesinlikle atla
+    if (userProgress.awarded[achievement.key]) continue;
+
+    // Şartları sağlamıyorsa atla
+    if (!achievement.test(userProgress, context)) continue;
+
+    // Kullanıcı zaten Discord'da bu role sahipse (geçmişten kalan), ödülü kaydedip DM spamını engelle
+    const memberRolesList = member.roles?.cache
+      ? (typeof member.roles.cache.values === "function" ? [...member.roles.cache.values()] : Array.from(member.roles.cache))
+      : [];
+    const existingRole = memberRolesList.find(r => r?.name === achievement.name);
+    if (existingRole) {
+      userProgress.awarded[achievement.key] = new Date().toISOString();
+      continue;
+    }
+
     try {
-      let role = member.guild.roles.cache.find(r => r.name === achievement.name);
-      if (!role) {
-        role = await member.guild.roles.create({ name: achievement.name, color: achievement.color, hoist: false, reason: "RobloxLand Başarım Sistemi" });
+      const guildRolesList = member.guild?.roles?.cache
+        ? (typeof member.guild.roles.cache.values === "function" ? [...member.guild.roles.cache.values()] : Array.from(member.guild.roles.cache))
+        : [];
+      let role = guildRolesList.find(r => r?.name === achievement.name);
+      if (!role && typeof member.guild?.roles?.create === "function") {
+        role = await member.guild.roles.create({
+          name: achievement.name,
+          color: achievement.color,
+          hoist: false,
+          reason: "RobloxLand Başarım Sistemi"
+        });
       }
-      if (!member.roles.cache.has(role.id)) await member.roles.add(role, `Başarım açıldı: ${achievement.name}`);
-      p.awarded[achievement.key] = new Date().toISOString();
-      won.push(achievement.name);
+
+      // Önceden kaydet (Olası çökme veya tekrar tetiklenmelerde mükerrer DM ve spamı %100 engeller)
+      userProgress.awarded[achievement.key] = new Date().toISOString();
+
+      if (role && typeof member.roles?.add === "function") {
+        const hasRole = member.roles.cache?.has ? member.roles.cache.has(role.id) : memberRolesList.some(r => r?.id === role.id);
+        if (!hasRole) {
+          await member.roles.add(role, `Başarım açıldı: ${achievement.name}`).catch(err => {
+            console.warn(`[RobloxLandAchievements] Rol eklenemedi (${achievement.name}):`, err.message);
+          });
+        }
+      }
+
+      won.push(achievement);
     } catch (err) {
       console.warn(`[RobloxLandAchievements] ${achievement.name} verilemedi (${member.id}):`, err.message);
+      // Hata durumunda bile mükerrer spam yapmaması için işaretle
+      userProgress.awarded[achievement.key] = new Date().toISOString();
     }
   }
-  if (won.length) {
-    data.users[member.id] = p;
-    saveData(data);
-    const list = won.map(name => `• **${name}**`).join("\n");
-    await member.send(`🏆 **RobloxLand'de ${won.length === 1 ? "bir gizli başarım" : `${won.length} gizli başarım`} açtın!**\n${list}\n\nRol${won.length === 1 ? "ün" : "lerin"} hesabına eklendi. Rozet dolabına +${won.length}; çimlere dokunmak hâlâ ücretsiz. 😄`).catch(() => {});
+
+  if (won.length > 0) {
+    store.users[member.id] = userProgress;
+    saveData(store);
+
+    const dmText = buildAchievementDmMessage(won);
+    if (dmText && typeof member.send === "function") {
+      await member.send(dmText).catch(() => {});
+    }
   }
-  return won;
+
+  return won.map(w => w.name);
 }
 
 function emojiCount(content) {
@@ -266,7 +762,8 @@ async function trackValidMessage(message) {
     const targetMember = message.guild.members.cache.get(targetId) || await message.guild.members.fetch(targetId).catch(() => null);
     if (targetMember) await awardEligible(targetMember, targetP, data);
   }
-  // Mevcut profil kartıyla uyumluluk.
+
+  // Mevcut profil kartıyla uyumluluk
   try {
     const { getUserActivity, saveUserActivity } = require("./robloxLandLevelService");
     const activity = getUserActivity(message.author.id);
@@ -361,7 +858,7 @@ async function tickVoice(client) {
       touched.push([member, p]);
     }
   }
-  // Son mesajı altı saat değişmeyen kanallar.
+  // Son mesajı altı saat değişmeyen kanallar
   for (const channelState of Object.values(data.channels)) {
     if (!channelState.awarded && Date.now() - channelState.at >= 6 * 3600000) {
       const member = await guild.members.fetch(channelState.userId).catch(() => null);
@@ -436,5 +933,7 @@ module.exports = {
   trackMessageDelete,
   trackMessageEdit,
   trackVoiceState,
+  awardEligible,
+  buildAchievementDmMessage,
   _test: { blankProgress, istanbulParts, updateStreak, emojiCount, isCapsHeavy, maxValue }
 };

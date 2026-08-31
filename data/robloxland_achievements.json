@@ -1,0 +1,60 @@
+{
+  "users": {
+    "test-user-award-1": {
+      "userId": "test-user-award-1",
+      "awarded": {
+        "first_word": "2026-08-31T16:29:12.956Z",
+        "new_dev": "2026-08-31T16:29:12.976Z"
+      },
+      "chat": {
+        "messages": 5,
+        "dailyMessages": {},
+        "days": [],
+        "channels": [],
+        "channelDays": {},
+        "nightMessages": 0,
+        "morningMessages": 0,
+        "emojis": 0,
+        "capsMessages": 0,
+        "edits": 0,
+        "quickDeletes": 0,
+        "lastWordWins": 0,
+        "returnedAfter30Days": false,
+        "lastValidAt": 0
+      },
+      "voice": {
+        "totalMinutes": 0,
+        "aloneMinutes": 0,
+        "midnightMinutes": 0,
+        "nightMinutes": 0,
+        "lateNightMinutes": 0,
+        "crowdMinutes": 0,
+        "partyMinutes": 0,
+        "afkMinutes": 0,
+        "days": [],
+        "channels": [],
+        "partnerMinutes": {},
+        "emptyJoins": 0,
+        "recentSwitches": [],
+        "dailyJoins": {},
+        "sessionStartedAt": 0,
+        "longestSessionMinutes": 0
+      },
+      "social": {
+        "voicePeople": [],
+        "mentionedBy": [],
+        "repliedTo": [],
+        "welcomed": [],
+        "helped": []
+      },
+      "streak": {
+        "current": 0,
+        "longest": 0,
+        "lastDate": ""
+      },
+      "activeMinutes": {}
+    }
+  },
+  "channels": {},
+  "messages": {}
+}
