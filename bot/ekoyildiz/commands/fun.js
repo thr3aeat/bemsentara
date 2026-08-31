@@ -989,7 +989,26 @@ module.exports = [
         const disabledRow = new ActionRowBuilder().addComponents(
           activeRow.components.map(b => ButtonBuilder.from(b).setDisabled(true))
         );
-        replyMsg.edit({ components: [disabledRow] }).catch(() => { });
+        // Send the complete body on timeout.  A component-only edit can leave
+        // some Discord clients showing just “(düzenlendi)” and the buttons.
+        const timeoutPayload = isOldSystem
+          ? {
+              content: `📏 **${targetName}** kullanıcısının malafatı tam olarak **${currentCm} cm**! ¯\\_(ツ)_/¯`,
+              embeds: [],
+              components: [disabledRow]
+            }
+          : {
+              content: currentCm > 0
+                ? `📏 **${targetName}** kullanıcısının Kaç CM / Malafat Analiz Raporu:`
+                : `🧪 **${targetName}** için Malafat Test Sorusu:`,
+              embeds: [currentCm > 0
+                ? createReportEmbed(target, currentCm, 0, lastQA)
+                : createQuestionPayload(currentQuestion).embeds[0]],
+              components: [disabledRow]
+            };
+        replyMsg.edit(timeoutPayload).catch(err => {
+          console.error('[kaçcm timeout edit error]:', err);
+        });
       });
     }
   },

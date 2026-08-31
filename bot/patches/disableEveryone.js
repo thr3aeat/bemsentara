@@ -111,6 +111,33 @@ function _sanitizeOptions(opts) {
   return out;
 }
 
+/**
+ * Discord normally keeps omitted fields while editing a message.  Supplying
+ * the current legacy content/embed values explicitly makes component-only
+ * edits safe as well (notably collector timeout edits).  Components V2 must
+ * not be mixed with legacy content or embeds, so those payloads are excluded.
+ */
+function _preserveLegacyEditBody(message, payload) {
+  if (!payload || typeof payload !== 'object') return payload;
+
+  const isV2 = Array.isArray(payload.components) && payload.components.some(
+    component => component && (component.type === 17 || component.type === 10 || component.type === 9 || component.type === 14)
+  );
+  if (isV2) return payload;
+
+  const hasOwnContent = Object.prototype.hasOwnProperty.call(payload, 'content');
+  const hasOwnEmbeds = Object.prototype.hasOwnProperty.call(payload, 'embeds');
+
+  if (!hasOwnContent && typeof message?.content === 'string') {
+    payload.content = message.content;
+  }
+  if (!hasOwnEmbeds && Array.isArray(message?.embeds)) {
+    payload.embeds = message.embeds;
+  }
+
+  return payload;
+}
+
 module.exports = function applyGlobalMessageGuard() {
   try {
     const classes = require('discord.js');
@@ -212,6 +239,8 @@ module.exports = function applyGlobalMessageGuard() {
           } else {
             payload = _sanitizeOptions(content);
           }
+
+          payload = _preserveLegacyEditBody(this, payload);
 
           try {
             return await origEdit.call(this, payload);
@@ -324,3 +353,7 @@ module.exports = function applyGlobalMessageGuard() {
     try { console.error('[globalMessageGuard] patch failed:', err.message); } catch (_) {}
   }
 };
+
+// Kept non-public in normal use; exported only so regression tests can verify
+// that the global guard never turns a rich message into a button-only edit.
+module.exports._test = { _sanitizeOptions, _preserveLegacyEditBody };
