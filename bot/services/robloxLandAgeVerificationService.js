@@ -655,6 +655,26 @@ async function handleRejectAgeVerification(interaction, ticketId) {
   return true;
 }
 
+function isAuthorizedStaff(member) {
+  if (!member) return false;
+  const rolesList = member.roles?.cache
+    ? (typeof member.roles.cache.some === 'function'
+      ? member.roles.cache
+      : Array.from(member.roles.cache.values ? member.roles.cache.values() : []))
+    : [];
+
+  return Boolean(
+    (member.permissions?.has && (
+      member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+      member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+      member.permissions.has(PermissionFlagsBits.Administrator) ||
+      member.permissions.has(PermissionFlagsBits.ManageChannels)
+    )) ||
+    (member.roles?.cache?.has && member.roles.cache.has(STAFF_ROLE_ID)) ||
+    (Array.isArray(rolesList) ? rolesList.some(r => /yetkili|admin|mod|yönetici|sorumlu|kurucu/i.test(r?.name || '')) : (typeof rolesList.some === 'function' && rolesList.some(r => /yetkili|admin|mod|yönetici|sorumlu|kurucu/i.test(r?.name || ''))))
+  );
+}
+
 /**
  * Yaş Doğrulama Etkileşim Yönlendiricisi
  */
@@ -662,24 +682,38 @@ async function handleAgeVerificationInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId) return false;
 
-  // 1. Panel Butonu
+  // 1. Panel Butonu (Tüm üyeler açabilir)
   if (customId === 'robloxland_open_age_ticket') {
     return await openAgeVerificationTicket(interaction);
   }
 
-  // 2. "Kullanıcıdan Konuşmasını İste" Butonu
+  // 2. Yetkili Kontrolü Gerektiren Ticket Yönetim Butonları
+  if (
+    customId.startsWith('robloxland_age_ask_speak_') ||
+    customId.startsWith('robloxland_age_finish_') ||
+    customId.startsWith('robloxland_age_reject_')
+  ) {
+    if (!isAuthorizedStaff(interaction.member)) {
+      return await interaction.reply({
+        content: '❌ Bu işlem butonunu yalnızca RobloxLand yetkilileri kullanabilir.',
+        ephemeral: true
+      });
+    }
+  }
+
+  // "Kullanıcıdan Konuşmasını İste" Butonu
   if (customId.startsWith('robloxland_age_ask_speak_')) {
     const ticketId = customId.replace('robloxland_age_ask_speak_', '');
     return await handleAskToSpeak(interaction, ticketId);
   }
 
-  // 3. "Kaydı Bitir & Onayla" Butonu
+  // "Kaydı Bitir & Onayla" Butonu
   if (customId.startsWith('robloxland_age_finish_')) {
     const ticketId = customId.replace('robloxland_age_finish_', '');
     return await handleFinishAndApprove(interaction, ticketId);
   }
 
-  // 4. "Reddet & Kapat" Butonu
+  // "Reddet & Kapat" Butonu
   if (customId.startsWith('robloxland_age_reject_')) {
     const ticketId = customId.replace('robloxland_age_reject_', '');
     return await handleRejectAgeVerification(interaction, ticketId);

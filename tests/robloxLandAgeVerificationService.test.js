@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   buildAgeVerificationPanelPayload,
   createWavHeader,
+  handleAgeVerificationInteraction,
   TEKERLEMELER,
   AGE_VERIFY_PANEL_CHANNEL_ID,
   SENSITIVE_ROLE_ID,
@@ -40,4 +41,29 @@ test('tekerleme pool has at least 15 rich Turkish tekerlemes', () => {
   for (const t of TEKERLEMELER) {
     assert.ok(typeof t === 'string' && t.length > 10);
   }
+});
+
+test('unauthorized users cannot click ticket management buttons', async () => {
+  let replyContent = '';
+  let replyEphemeral = false;
+
+  const mockNonStaffInteraction = {
+    customId: 'robloxland_age_ask_speak_yas-1234',
+    member: {
+      permissions: {
+        has: () => false
+      },
+      roles: {
+        cache: new Map()
+      }
+    },
+    reply: async (opts) => {
+      replyContent = opts.content;
+      replyEphemeral = opts.ephemeral;
+    }
+  };
+
+  const res = await handleAgeVerificationInteraction(mockNonStaffInteraction);
+  assert.ok(replyContent.includes('yalnızca RobloxLand yetkilileri'));
+  assert.equal(replyEphemeral, true);
 });
