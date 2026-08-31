@@ -55,6 +55,22 @@ function getMissingLevelRoleIds(currentRoleIds, rolesMap, level) {
   return buildLevelRoleTransition(currentRoleIds, rolesMap, safeLevel).addRoleIds;
 }
 
+async function ensureMemberLevelRoles(member, level, rolesMap = getLevelRolesMap()) {
+  if (!member?.guild || member.user?.bot) return [];
+  const currentRoleIds = Array.from(member.roles?.cache?.keys?.() || []);
+  const missingRoleIds = getMissingLevelRoleIds(currentRoleIds, rolesMap, level);
+  const editableRoleIds = missingRoleIds.filter(roleId => member.guild.roles.cache.get(roleId)?.editable);
+  if (!editableRoleIds.length) return [];
+
+  try {
+    await member.roles.add(editableRoleIds, "RobloxLand: mevcut profile seviyesi için eksik seviye rolü tamamlandı");
+    return editableRoleIds;
+  } catch (err) {
+    console.warn(`[LevelService] Missing level role add failed for ${member.id}:`, err.message);
+    return [];
+  }
+}
+
 /**
  * Profili mevcut olduğu halde rolü eksik kalan üyeleri küçük gruplar hâlinde
  * düzeltir. Eski roller silinmez; yalnızca üyenin seviyesine uygun mevcut ve
@@ -78,15 +94,9 @@ async function syncMissingLevelRoles(client, batchSize = 10) {
   for (const userId of targetIds) {
     const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
     if (!member || member.user.bot) continue;
-
-    const currentRoleIds = Array.from(member.roles.cache.keys());
-    const missingRoleIds = getMissingLevelRoleIds(currentRoleIds, rolesMap, profiles[userId]?.level);
-    const editableRoleIds = missingRoleIds.filter(roleId => guild.roles.cache.get(roleId)?.editable);
-    if (!editableRoleIds.length) continue;
-
     try {
-      await member.roles.add(editableRoleIds, "RobloxLand: profile seviyesi için eksik seviye rolü tamamlandı");
-      granted += editableRoleIds.length;
+      const addedRoleIds = await ensureMemberLevelRoles(member, profiles[userId]?.level, rolesMap);
+      granted += addedRoleIds.length;
     } catch (err) {
       console.warn(`[LevelService] Missing role sync failed for ${userId}:`, err.message);
     }
@@ -98,9 +108,19 @@ async function syncMissingLevelRoles(client, batchSize = 10) {
 function initMissingLevelRoleSync(client) {
   if (client.__robloxLandLevelRoleSyncTimer) return;
   client.__robloxLandLevelRoleSyncTimer = setInterval(() => {
-    syncMissingLevelRoles(client).catch(err => console.warn("[LevelService] missing role sync error:", err.message));
+    if (client.__robloxLandLevelRoleSyncRunning) return;
+    client.__robloxLandLevelRoleSyncRunning = true;
+    syncMissingLevelRoles(client, 25)
+      .catch(err => console.warn("[LevelService] missing role sync error:", err.message))
+      .finally(() => { client.__robloxLandLevelRoleSyncRunning = false; });
   }, 5000);
-  setTimeout(() => syncMissingLevelRoles(client).catch(() => {}), 15000);
+  setTimeout(() => {
+    if (client.__robloxLandLevelRoleSyncRunning) return;
+    client.__robloxLandLevelRoleSyncRunning = true;
+    syncMissingLevelRoles(client, 25)
+      .catch(() => {})
+      .finally(() => { client.__robloxLandLevelRoleSyncRunning = false; });
+  }, 15000);
 }
 
 // ─── 1. XP HESAPLAMA VE SEVİYE EĞRİSİ (Dengelenmiş & Kolaylaştırılmış Curve) ────
@@ -540,6 +560,7 @@ async function handleMessageXp(message) {
 
   // EkoYıldız Özel Davetiyle Giren Üyelere 2X Seviye / XP Katlayıcı
   const profilePre = DataStore.getUserProfile(userId, message.member);
+  await ensureMemberLevelRoles(message.member, profilePre.level);
   if (profilePre.isEkoInvite || (profilePre.xpMultiplier && profilePre.xpMultiplier > 1)) {
     multiplier *= (profilePre.xpMultiplier || 2.0);
   }
@@ -610,6 +631,7 @@ function initVoiceXpTracker(client) {
           if (member.premiumSince) multiplier *= 1.5;
 
           const profilePre = DataStore.getUserProfile(member.id, member);
+          await ensureMemberLevelRoles(member, profilePre.level);
           if (profilePre.isEkoInvite || (profilePre.xpMultiplier && profilePre.xpMultiplier > 1)) {
             multiplier *= (profilePre.xpMultiplier || 2.0);
           }
@@ -695,6 +717,7 @@ module.exports = {
   syncLevelRolePermissions,
   buildLevelRoleTransition,
   getMissingLevelRoleIds,
+  ensureMemberLevelRoles,
   syncMissingLevelRoles,
   initMissingLevelRoleSync,
   getUserActivity,

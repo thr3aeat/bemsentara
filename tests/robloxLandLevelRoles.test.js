@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {
   buildLevelRoleTransition,
   getMissingLevelRoleIds,
+  ensureMemberLevelRoles,
   getLevelRolesMap
 } = require('../bot/services/robloxLandLevelService');
 
@@ -59,6 +60,30 @@ test('existing profile level gets its missing current and previous roles without
   const missing = getMissingLevelRoleIds([], roles, 5);
 
   assert.deepEqual(missing, ['55555555555555555', '44444444444444444']);
+});
+
+test('existing member receives missing roles even when their level did not change', async () => {
+  const added = [];
+  const member = {
+    id: 'member-1',
+    user: { bot: false },
+    guild: { roles: { cache: new Map([
+      ['44444444444444444', { editable: true }],
+      ['55555555555555555', { editable: true }]
+    ]) } },
+    roles: {
+      cache: new Map(),
+      add: async ids => added.push(...ids)
+    }
+  };
+
+  const assigned = await ensureMemberLevelRoles(member, 5, {
+    4: { id: '44444444444444444' },
+    5: { id: '55555555555555555' }
+  });
+
+  assert.deepEqual(assigned, ['55555555555555555', '44444444444444444']);
+  assert.deepEqual(added, ['55555555555555555', '44444444444444444']);
 });
 
 test('RobloxLand role map contains real Discord IDs instead of placeholders', () => {
