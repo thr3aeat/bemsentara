@@ -528,6 +528,13 @@ async function handleAskToSpeak(interaction, ticketId) {
     return await interaction.reply({ content: '❌ Bu doğrulama oturumu bulunamadı.', ephemeral: true });
   }
 
+  if (ticketData.userId === interaction.user?.id) {
+    return await interaction.reply({
+      content: '❌ Kendi yaş doğrulama talebinizi kendiniz yönetemez veya onaylayamazsınız! Başka bir yetkilinin işlemi gerçekleştirmesi gerekmektedir.',
+      ephemeral: true
+    });
+  }
+
   // Rastgele Tekerleme Seç
   const tekerleme = TEKERLEMELER[Math.floor(Math.random() * TEKERLEMELER.length)];
   ticketData.tekerleme = tekerleme;
@@ -602,6 +609,13 @@ async function handleFinishAndApprove(interaction, ticketId) {
   const ticketData = activeAgeTickets.get(ticketId);
   if (!ticketData) {
     return await interaction.reply({ content: '❌ Bu doğrulama oturumu bulunamadı.', ephemeral: true });
+  }
+
+  if (ticketData.userId === interaction.user?.id) {
+    return await interaction.reply({
+      content: '❌ Kendi yaş doğrulama talebinizi kendiniz onaylayamazsınız! Başka bir yetkilinin işlemi gerçekleştirmesi gerekmektedir.',
+      ephemeral: true
+    });
   }
 
   await interaction.deferReply();
@@ -731,6 +745,13 @@ async function handleRejectAgeVerification(interaction, ticketId) {
     return await interaction.reply({ content: '❌ Bu doğrulama oturumu bulunamadı.', ephemeral: true });
   }
 
+  if (ticketData.userId === interaction.user?.id) {
+    return await interaction.reply({
+      content: '❌ Kendi yaş doğrulama talebinizi kendiniz reddedemez veya kapatamazsınız! Başka bir yetkilinin işlemi gerçekleştirmesi gerekmektedir.',
+      ephemeral: true
+    });
+  }
+
   await interaction.deferReply();
 
   const guild = interaction.guild;
@@ -817,6 +838,19 @@ async function handleAgeVerificationInteraction(interaction) {
         ephemeral: true
       });
     }
+
+    const ticketId = customId
+      .replace('robloxland_age_ask_speak_', '')
+      .replace('robloxland_age_finish_', '')
+      .replace('robloxland_age_reject_', '');
+
+    const ticketData = activeAgeTickets.get(ticketId);
+    if (ticketData && ticketData.userId === interaction.user?.id) {
+      return await interaction.reply({
+        content: '❌ Kendi yaş doğrulama talebinizi kendiniz yönetemez, onaylayamaz veya kapatamazsınız! Başka bir yetkilinin işlemi gerçekleştirmesi gerekmektedir.',
+        ephemeral: true
+      });
+    }
   }
 
   // "Kullanıcıdan Konuşmasını İste" Butonu
@@ -849,6 +883,7 @@ module.exports = {
   STAFF_LOG_CHANNEL_ID,
   DESIGNATED_STAFF_ID,
   TEKERLEMELER,
+  activeAgeTickets,
   buildAgeVerificationPanelPayload,
   deployAgeVerificationPanel,
   openAgeVerificationTicket,

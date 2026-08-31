@@ -192,3 +192,58 @@ test('unauthorized users cannot click ticket management buttons', async () => {
   assert.ok(replyContent.includes('yalnızca RobloxLand yetkilileri'));
   assert.equal(replyEphemeral, true);
 });
+
+test('staff users cannot approve, reject or trigger speak test on their own ticket', async () => {
+  const { activeAgeTickets } = require('../bot/services/robloxLandAgeVerificationService');
+  const staffUserId = 'staff-user-koray-123';
+  const ticketId = 'yas-test-self';
+
+  activeAgeTickets.set(ticketId, {
+    ticketId,
+    textChannelId: 'txt-1',
+    voiceChannelId: 'vc-1',
+    userId: staffUserId,
+    staffId: DESIGNATED_STAFF_ID,
+    isWaitingStaff: false,
+    staffNotified: true,
+    tekerleme: null,
+    audioChunks: [],
+    startTime: Date.now()
+  });
+
+  const buttons = [
+    `robloxland_age_ask_speak_${ticketId}`,
+    `robloxland_age_finish_${ticketId}`,
+    `robloxland_age_reject_${ticketId}`
+  ];
+
+  for (const customId of buttons) {
+    let replyContent = '';
+    let replyEphemeral = false;
+
+    const mockStaffSelfInteraction = {
+      customId,
+      user: { id: staffUserId },
+      member: {
+        id: staffUserId,
+        permissions: {
+          has: () => true // Has admin/mod perms
+        },
+        roles: {
+          cache: new Map([['admin-role', { name: 'Yönetici' }]])
+        }
+      },
+      reply: async (opts) => {
+        replyContent = opts.content;
+        replyEphemeral = opts.ephemeral;
+      }
+    };
+
+    await handleAgeVerificationInteraction(mockStaffSelfInteraction);
+    assert.ok(replyContent.includes('Kendi yaş doğrulama talebinizi kendiniz'), `Failed for button ${customId}`);
+    assert.equal(replyEphemeral, true);
+  }
+
+  activeAgeTickets.delete(ticketId);
+});
+

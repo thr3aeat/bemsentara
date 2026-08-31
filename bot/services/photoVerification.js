@@ -205,6 +205,13 @@ async function handleSubscriberButtons(interaction, client) {
       });
     }
 
+    if (userId === moderatorId) {
+      return interaction.reply({
+        content: '❌ Kendi abone onay talebinizi kendiniz onaylayamaz veya reddedemezsiniz.',
+        ephemeral: true
+      });
+    }
+
     if (isApprove) {
       // ── KABUL ET AKIŞI ───────────────────────────────────────────────────
       await interaction.deferReply({ ephemeral: true });
