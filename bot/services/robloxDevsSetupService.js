@@ -1801,6 +1801,13 @@ async function handleRobloxDevsInteraction(interaction) {
     if (handledAge) return true;
   } catch (_) {}
 
+  // 21. RobloxLand Başarım & Rozet Vitrini Etkileşimleri
+  try {
+    const { handleAchievementInteraction } = require("./robloxLandAchievementService");
+    const handledAch = await handleAchievementInteraction(interaction);
+    if (handledAch) return true;
+  } catch (_) {}
+
   return false;
 }
 

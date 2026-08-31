@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { ButtonStyle } = require("discord.js");
 const ComponentsV2Factory = require("../utils/componentsV2Factory");
 
 const GUILD_ID = "1537407325290237973";
@@ -661,6 +662,60 @@ function updateStreak(p, today) {
 }
 
 /**
+ * Modern Components V2 Başarım Bildirim Kartı (Accent colorsuz, çizgili ve butonlu)
+ */
+function buildAchievementComponentsV2Payload(wonAchievements) {
+  if (!wonAchievements || wonAchievements.length === 0) return null;
+
+  let textContent = '';
+  if (wonAchievements.length === 1) {
+    const ach = wonAchievements[0];
+    textContent =
+      `# 🏆 YENİ GİZLİ BAŞARIM KİLİDİ AÇILDI!\n\n` +
+      `### ✨ ${ach.name}\n` +
+      `📝 *${ach.description}*\n\n` +
+      `> 🎭 **${ach.name}** rolü hesabınıza tanımlandı. Rozet vitrininize +1 başarı eklendi!`;
+  } else {
+    const items = wonAchievements.map(ach => 
+      `### ✨ ${ach.name}\n` +
+      `└ *${ach.description}*`
+    ).join("\n\n");
+
+    textContent =
+      `# 🏆 ${wonAchievements.length} YENİ GİZLİ BAŞARIM KİLİDİ AÇILDI!\n\n` +
+      `${items}\n\n` +
+      `> 🎭 Kazanılan tüm roller hesabınıza tanımlandı. Rozet vitrininize +${wonAchievements.length} başarı eklendi!`;
+  }
+
+  const content = [
+    ComponentsV2Factory.text(textContent),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Primary,
+        label: "🎖️ Rozet Vitrinim",
+        custom_id: "robloxland_view_my_achievements",
+        emoji: { name: "🏆" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🔥 Günlük Seri Durumu",
+        custom_id: "robloxland_streak_check",
+        emoji: { name: "🔥" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "👤 Profilim",
+        custom_id: "robloxland_open_my_profile",
+        emoji: { name: "👤" }
+      }
+    ])
+  ];
+
+  return ComponentsV2Factory.buildPayload(content);
+}
+
+/**
  * Başarım bildirim DM mesajını oluşturur (Her başarımın kendine özel mesajı/açıklaması bulunur)
  */
 function buildAchievementDmMessage(wonAchievements) {
@@ -768,9 +823,16 @@ async function awardEligible(member, p, data) {
       store.users[userId] = userProgress;
       saveData(store);
 
+      const v2Payload = buildAchievementComponentsV2Payload(won);
       const dmText = buildAchievementDmMessage(won);
-      if (dmText && typeof member.send === "function") {
-        await member.send(dmText).catch(() => {});
+      if (typeof member.send === "function") {
+        if (v2Payload) {
+          await member.send(v2Payload).catch(async () => {
+            if (dmText) await member.send(dmText).catch(() => {});
+          });
+        } else if (dmText) {
+          await member.send(dmText).catch(() => {});
+        }
       }
     }
 
@@ -1033,6 +1095,86 @@ async function handleStreakCommand(message) {
   return true;
 }
 
+async function handleAchievementInteraction(interaction) {
+  const customId = interaction.customId;
+  if (!customId) return false;
+
+  if (customId === "robloxland_view_my_achievements") {
+    await interaction.deferReply({ ephemeral: true });
+    const userAch = getUserAchievements(interaction.user.id);
+    const total = userAch.totalCount;
+    const unlocked = userAch.unlockedCount;
+    const pct = Math.round((unlocked / total) * 100);
+
+    const filledBars = Math.min(10, Math.round((unlocked / total) * 10));
+    const emptyBars = 10 - filledBars;
+    const progressBar = `[${'█'.repeat(filledBars)}${'░'.repeat(emptyBars)}] %${pct}`;
+
+    const recentItems = userAch.achievements.slice(-8).reverse().map((a, i) => 
+      `**${i + 1}.** ✨ **${a.name}**\n   └ *${a.description}*`
+    ).join("\n\n");
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 🎖️ ${interaction.user.username} — RobloxLand Rozet Vitrini\n\n` +
+        `📊 **Başarım İlerlemesi:** \`${unlocked} / ${total}\` (${progressBar})\n\n` +
+        `### 🌟 Son Açılan Gizli Başarımlar:\n` +
+        (recentItems || `*Henüz açılmış gizli başarımın bulunmuyor. Sohbette ve ses odalarında aktif kalarak gizli başarımları keşfet!*`) +
+        `\n\n-# RobloxLand Gizli Başarım Sistemi • Toplam ${total} Başarım`
+      ),
+      ComponentsV2Factory.separator(true),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Secondary,
+          label: "🔥 Günlük Seri Durumu",
+          custom_id: "robloxland_streak_check",
+          emoji: { name: "🔥" }
+        },
+        {
+          style: ButtonStyle.Secondary,
+          label: "👤 Profilim",
+          custom_id: "robloxland_open_my_profile",
+          emoji: { name: "👤" }
+        }
+      ])
+    ]);
+
+    await interaction.editReply(payload);
+    return true;
+  }
+
+  if (customId === "robloxland_streak_check") {
+    await interaction.deferReply({ ephemeral: true });
+    const streak = getStreak(interaction.user.id);
+    const next = [3, 7, 14, 30, 60, 100, 365].find(n => n > streak.current);
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 🔥 ${interaction.user.username} — Günlük Streak Durumu\n\n` +
+        `• **Güncel Seri:** \`${streak.current} gün\`\n` +
+        `• **En Uzun Seri:** \`${streak.longest} gün\`\n` +
+        `• **Bugünkü Durum:** ${streak.lastDate === istanbulParts().date ? "✅ **Bugün mesaj atıldı, seri korundu!**" : "⏳ **Bugün henüz mesaj atmadın!**"}\n\n` +
+        (next ? `🎯 Sonraki streak başarımına **${next - streak.current} gün** kaldı!` : "🏆 Tüm streak başarımlarını tamamladın!") +
+        `\n\n-# Seri kazanmak için her gün sunucuda en az 1 anlamlı mesaj yazmalısın.`
+      ),
+      ComponentsV2Factory.separator(true),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Primary,
+          label: "🎖️ Rozet Vitrinim",
+          custom_id: "robloxland_view_my_achievements",
+          emoji: { name: "🏆" }
+        }
+      ])
+    ]);
+
+    await interaction.editReply(payload);
+    return true;
+  }
+
+  return false;
+}
+
 module.exports = {
   GUILD_ID,
   ACHIEVEMENTS,
@@ -1040,6 +1182,7 @@ module.exports = {
   getUserAchievements,
   hasAchievement,
   handleStreakCommand,
+  handleAchievementInteraction,
   initAchievementTracker,
   trackValidMessage,
   trackMessageDelete,
@@ -1047,5 +1190,6 @@ module.exports = {
   trackVoiceState,
   awardEligible,
   buildAchievementDmMessage,
+  buildAchievementComponentsV2Payload,
   _test: { blankProgress, istanbulParts, updateStreak, emojiCount, isCapsHeavy, maxValue }
 };

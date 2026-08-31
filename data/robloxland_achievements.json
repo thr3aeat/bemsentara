@@ -1,13 +1,26 @@
 {
   "users": {
     "test-user-award-1": {
-      "userId": "test-user-award-1",
       "awarded": {
-        "first_word": "2026-08-31T16:53:48.350Z",
-        "new_dev": "2026-08-31T16:53:48.370Z"
+        "first_word": "2026-08-31T16:56:07.553Z"
       },
       "chat": {
-        "messages": 5,
+        "messages": 1
+      },
+      "voice": {},
+      "social": {},
+      "streak": {}
+    },
+    "test-user-query-1": {
+      "userId": "test-user-query-1",
+      "awarded": {
+        "first_word": "2026-08-31T16:53:48.377Z",
+        "chat_started": "2026-08-31T16:53:48.378Z",
+        "new_dev": "2026-08-31T16:53:48.379Z",
+        "settling": "2026-08-31T16:53:48.379Z"
+      },
+      "chat": {
+        "messages": 200,
         "dailyMessages": {},
         "days": [],
         "channels": [],
@@ -54,16 +67,11 @@
       },
       "activeMinutes": {}
     },
-    "test-user-query-1": {
-      "userId": "test-user-query-1",
-      "awarded": {
-        "first_word": "2026-08-31T16:53:48.377Z",
-        "chat_started": "2026-08-31T16:53:48.378Z",
-        "new_dev": "2026-08-31T16:53:48.379Z",
-        "settling": "2026-08-31T16:53:48.379Z"
-      },
+    "test-ach-user-1": {
+      "userId": "test-ach-user-1",
+      "awarded": {},
       "chat": {
-        "messages": 200,
+        "messages": 0,
         "dailyMessages": {},
         "days": [],
         "channels": [],
