@@ -8,6 +8,8 @@ const {
   handleStreakCommand,
   buildAchievementDmMessage,
   awardEligible,
+  getUserAchievements,
+  hasAchievement,
   _test
 } = require("../bot/services/robloxLandAchievementService");
 const { buildStaffApplyPayload, handleRobloxDevsInteraction } = require("../bot/services/robloxDevsSetupService");
@@ -83,6 +85,38 @@ test("awardEligible bir kez kazanılan başarımı mükerrer olarak vermez ve DM
   const secondWon = await awardEligible(mockMember, p, fakeData);
   assert.deepEqual(secondWon, []);
   assert.equal(dmSent.length, 1, "Mükerrer DM gönderilmemeli!");
+});
+
+test("getUserAchievements ve hasAchievement sorguları doğru çalışır", async () => {
+  const mockMember = {
+    id: "test-user-query-1",
+    guild: {
+      id: GUILD_ID,
+      roles: {
+        cache: new Map(),
+        create: async opts => ({ id: `role_${opts.name}`, name: opts.name })
+      }
+    },
+    roles: {
+      cache: new Map(),
+      add: async () => {}
+    },
+    joinedTimestamp: Date.now() - 10 * 86400000,
+    send: async () => {}
+  };
+
+  const p = _test.blankProgress("test-user-query-1");
+  p.chat.messages = 200; // qualifies for first_word & chat_started
+  await awardEligible(mockMember, p);
+
+  assert.equal(hasAchievement("test-user-query-1", "first_word"), true);
+  assert.equal(hasAchievement("test-user-query-1", "chat_started"), true);
+  assert.equal(hasAchievement("test-user-query-1", "immortal"), false);
+
+  const summary = getUserAchievements("test-user-query-1");
+  assert.equal(summary.userId, "test-user-query-1");
+  assert.equal(summary.totalCount, 66);
+  assert.ok(summary.unlockedCount >= 2);
 });
 
 test("streak yalnızca ardışık takvim günlerinde büyür ve boşlukta sıfırlanır", () => {
