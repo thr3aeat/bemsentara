@@ -23,6 +23,33 @@ function saveJson(file, data) {
   }
 }
 
+/**
+ * Bir üye her zaman mevcut seviye rolüyle birlikte bir önceki mevcut seviye
+ * rolünü taşır. Arada rolü tanımlanmamış bir seviye varsa (örn. Lv.11), en
+ * yakın iki gerçek rol seçilir. Böylece sahte/eksik bir rol ID'si denenmez.
+ */
+function buildLevelRoleTransition(currentRoleIds, rolesMap, newLevel) {
+  const orderedRoleIds = Object.entries(rolesMap || {})
+    .map(([level, role]) => ({ level: Number(level), id: role?.id }))
+    .filter(item => Number.isFinite(item.level) && item.level <= newLevel && /^\d{17,20}$/.test(String(item.id || '')))
+    .sort((a, b) => b.level - a.level);
+
+  const keepRoleIds = [...new Set(orderedRoleIds.map(item => item.id))].slice(0, 2);
+  const allLevelRoleIds = new Set(
+    Object.values(rolesMap || {})
+      .map(role => role?.id)
+      .filter(id => /^\d{17,20}$/.test(String(id || '')))
+  );
+  const assignedIds = Array.from(currentRoleIds || []);
+
+  return {
+    addRoleId: keepRoleIds[0] || null,
+    addRoleIds: keepRoleIds.filter(id => !assignedIds.includes(id)),
+    keepRoleIds,
+    removeRoleIds: assignedIds.filter(id => allLevelRoleIds.has(id) && !keepRoleIds.includes(id))
+  };
+}
+
 // ─── 1. XP HESAPLAMA VE SEVİYE EĞRİSİ (Dengelenmiş & Kolaylaştırılmış Curve) ────
 function getXpForLevel(level) {
   if (level <= 1) return 60;
@@ -336,17 +363,18 @@ async function processLevelUp(member, newLevel, oldLevel, guild) {
   const newRoleInfo = rolesMap[newLevel];
   const oldRoleInfo = rolesMap[oldLevel];
 
-  // 1. Rolleri otomatik takas et (Eski seviye rollerini al, yenisini ver)
+  // 1. Yeni rolü ve bir önceki rolü tut; daha eski seviye rollerini kaldır.
   try {
-    const allLevelRoleIds = Object.values(rolesMap).map(r => r.id).filter(Boolean);
-    if (member.roles?.cache?.filter) {
-      const rolesToRemove = member.roles.cache.filter(r => r && allLevelRoleIds.includes(r.id) && r.id !== newRoleInfo?.id);
-      if (rolesToRemove.size > 0) {
-        await member.roles.remove(rolesToRemove).catch(() => {});
-      }
+    const currentRoleIds = member.roles?.cache?.keys
+      ? Array.from(member.roles.cache.keys())
+      : [];
+    const transition = buildLevelRoleTransition(currentRoleIds, rolesMap, newLevel);
+
+    if (transition.removeRoleIds.length > 0) {
+      await member.roles.remove(transition.removeRoleIds, `RobloxLand Lv.${newLevel}: eski seviye rolleri temizlendi`).catch(() => {});
     }
-    if (newRoleInfo?.id) {
-      await member.roles.add(newRoleInfo.id).catch(() => {});
+    if (transition.addRoleIds.length > 0) {
+      await member.roles.add(transition.addRoleIds, `RobloxLand Lv.${newLevel}: mevcut ve önceki seviye rolleri`).catch(() => {});
     }
   } catch (roleErr) {
     console.warn("[LevelService] Role swap error:", roleErr.message);
@@ -602,5 +630,6 @@ module.exports = {
   getXpForLevel,
   getLevelRolesMap,
   getPermissionsForLevel,
-  syncLevelRolePermissions
+  syncLevelRolePermissions,
+  buildLevelRoleTransition
 };

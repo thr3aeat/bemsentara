@@ -1,326 +1,326 @@
 {
   "1": {
-    "id": "role_501",
+    "id": "1543392692866908163",
     "name": "🌱 Çaylak Dev",
     "color": "#A8B0B8"
   },
   "2": {
-    "id": "role_502",
+    "id": "1543392694166880386",
     "name": "🐣 Minik Dev",
     "color": "#A3B6C2"
   },
   "3": {
-    "id": "role_503",
+    "id": "1543392695660183583",
     "name": "🔧 Acemi Dev",
     "color": "#8FA9B8"
   },
   "4": {
-    "id": "role_504",
+    "id": "1543392696402706493",
     "name": "☕ Uykulu Dev",
     "color": "#7F8C8D"
   },
   "5": {
-    "id": "role_505",
+    "id": "1543392697945952256",
     "name": "👀 Uyanık Dev",
     "color": "#6FA8DC"
   },
   "6": {
-    "id": "role_506",
+    "id": "1543392698889797682",
     "name": "🧠 Meraklı Dev",
     "color": "#5DADE2"
   },
   "7": {
-    "id": "role_507",
+    "id": "1543392700295020605",
     "name": "💻 Kodlayan Dev",
     "color": "#3498DB"
   },
   "8": {
-    "id": "role_508",
+    "id": "1543392701729210368",
     "name": "🔨 Çalışkan Dev",
     "color": "#2E86C1"
   },
   "9": {
-    "id": "role_509",
+    "id": "1543392703520309328",
     "name": "⚙️ Sistemci Dev",
     "color": "#2874A6"
   },
   "10": {
-    "id": "role_510",
+    "id": "1543392704543588362",
     "name": "🚀 Hızlı Dev",
     "color": "#1F618D"
   },
   "11": {
-    "id": "role_511",
+    "id": null,
     "name": "🔥 Ateşli Dev",
     "color": "#E67E22"
   },
   "12": {
-    "id": "role_512",
+    "id": "1543392706582290604",
     "name": "🎯 Keskin Dev",
     "color": "#D35400"
   },
   "13": {
-    "id": "role_513",
+    "id": "1543392707576201316",
     "name": "🧩 Zeki Dev",
     "color": "#16A085"
   },
   "14": {
-    "id": "role_514",
+    "id": "1543392708369055785",
     "name": "🛠️ Usta Dev",
     "color": "#138D75"
   },
   "15": {
-    "id": "role_515",
+    "id": "1543392709643997204",
     "name": "💡 Parlak Dev",
     "color": "#F4D03F"
   },
   "16": {
-    "id": "role_516",
+    "id": "1543392710692442114",
     "name": "⚡ Turbo Dev",
     "color": "#F1C40F"
   },
   "17": {
-    "id": "role_517",
+    "id": "1543392711883628655",
     "name": "🧪 Deneysel Dev",
     "color": "#48C9B0"
   },
   "18": {
-    "id": "role_518",
+    "id": "1543392717168582656",
     "name": "🐛 Bug Avcısı Dev",
     "color": "#28B463"
   },
   "19": {
-    "id": "role_519",
+    "id": "1543392717739135121",
     "name": "🧹 Bug Temizleyen Dev",
     "color": "#239B56"
   },
   "20": {
-    "id": "role_520",
+    "id": "1543392719026790561",
     "name": "😎 Havalı Dev",
     "color": "#17A589"
   },
   "21": {
-    "id": "role_521",
+    "id": "1543392720234745937",
     "name": "🧑💻 Profesyonel Dev",
     "color": "#5B2C6F"
   },
   "22": {
-    "id": "role_522",
+    "id": "1543392721778253954",
     "name": "🏗️ Builder Dev",
     "color": "#6C3483"
   },
   "23": {
-    "id": "role_523",
+    "id": "1543392722994593822",
     "name": "📜 Script Dev",
     "color": "#7D3C98"
   },
   "24": {
-    "id": "role_524",
+    "id": "1543392724193902712",
     "name": "🎨 Yaratıcı Dev",
     "color": "#8E44AD"
   },
   "25": {
-    "id": "role_525",
+    "id": "1543392725376700556",
     "name": "🤖 Botçu Dev",
     "color": "#9B59B6"
   },
   "26": {
-    "id": "role_526",
+    "id": "1543392726525939795",
     "name": "🗺️ Map Ustası Dev",
     "color": "#AF7AC5"
   },
   "27": {
-    "id": "role_527",
+    "id": "1543392727721443368",
     "name": "🧱 Model Ustası Dev",
     "color": "#BB8FCE"
   },
   "28": {
-    "id": "role_528",
+    "id": "1543392728656912485",
     "name": "🖥️ Sistem Ustası Dev",
     "color": "#A569BD"
   },
   "29": {
-    "id": "role_529",
+    "id": "1543392729810341989",
     "name": "💎 Premium Dev",
     "color": "#884EA0"
   },
   "30": {
-    "id": "role_530",
+    "id": "1543392730577633422",
     "name": "👑 Kıdemli Dev",
     "color": "#76448A"
   },
   "31": {
-    "id": "role_531",
+    "id": "1543392731555041400",
     "name": "🥷 Gizli Dev",
     "color": "#34495E"
   },
   "32": {
-    "id": "role_532",
+    "id": "1543392732666400898",
     "name": "🧙 Büyücü Dev",
     "color": "#512E5F"
   },
   "33": {
-    "id": "role_533",
+    "id": "1543392733564244069",
     "name": "🦾 Güçlü Dev",
     "color": "#1B4F72"
   },
   "34": {
-    "id": "role_534",
+    "id": "1543392734461825116",
     "name": "🧠 Büyük Beyin Dev",
     "color": "#21618C"
   },
   "35": {
-    "id": "role_535",
+    "id": "1543392735195570246",
     "name": "🌟 Yıldız Dev",
     "color": "#D4AC0D"
   },
   "36": {
-    "id": "role_536",
+    "id": "1543392735942148207",
     "name": "☄️ Meteor Dev",
     "color": "#CA6F1E"
   },
   "37": {
-    "id": "role_537",
+    "id": "1543392737741643878",
     "name": "🌙 Gececi Dev",
     "color": "#2C3E50"
   },
   "38": {
-    "id": "role_538",
+    "id": "1543392738676834394",
     "name": "☀️ Gündüzcü Dev",
     "color": "#F5B041"
   },
   "39": {
-    "id": "role_539",
+    "id": "1543392739746381914",
     "name": "🛸 Uzaylı Dev",
     "color": "#1ABC9C"
   },
   "40": {
-    "id": "role_540",
+    "id": "1543392740396503162",
     "name": "🚀 Roket Dev",
     "color": "#148F77"
   },
   "41": {
-    "id": "role_541",
+    "id": "1543392741483094048",
     "name": "🏆 Şampiyon Dev",
     "color": "#F39C12"
   },
   "42": {
-    "id": "role_542",
+    "id": "1543392742254837781",
     "name": "🎖️ Elit Dev",
     "color": "#E67E22"
   },
   "43": {
-    "id": "role_543",
+    "id": "1543392743777378335",
     "name": "💠 Kristal Dev",
     "color": "#48C9B0"
   },
   "44": {
-    "id": "role_544",
+    "id": "1543392745740177408",
     "name": "💎 Elmas Dev",
     "color": "#5DADE2"
   },
   "45": {
-    "id": "role_545",
+    "id": "1543392746570518550",
     "name": "👑 Kral Dev",
     "color": "#F4D03F"
   },
   "46": {
-    "id": "role_546",
+    "id": "1543392749661855774",
     "name": "🦁 Alfa Dev",
     "color": "#E74C3C"
   },
   "47": {
-    "id": "role_547",
+    "id": "1543392750064640101",
     "name": "🐉 Ejder Dev",
     "color": "#C0392B"
   },
   "48": {
-    "id": "role_548",
+    "id": "1543392751847080016",
     "name": "⚔️ Savaşçı Dev",
     "color": "#922B21"
   },
   "49": {
-    "id": "role_549",
+    "id": "1543392753189392505",
     "name": "🔱 Titan Dev",
     "color": "#7B241C"
   },
   "50": {
-    "id": "role_550",
+    "id": "1543392754288300215",
     "name": "🌌 Kozmik Dev",
     "color": "#4A235A"
   },
   "51": {
-    "id": "role_551",
+    "id": "1543392754921504809",
     "name": "🪐 Galaktik Dev",
     "color": "#512E5F"
   },
   "52": {
-    "id": "role_552",
+    "id": "1543392755882000387",
     "name": "🌠 Astral Dev",
     "color": "#6C3483"
   },
   "53": {
-    "id": "role_553",
+    "id": "1543392757085904906",
     "name": "🌀 Boyutlararası Dev",
     "color": "#7D3C98"
   },
   "54": {
-    "id": "role_554",
+    "id": "1543392758004457553",
     "name": "⚡ Ultra Dev",
     "color": "#8E44AD"
   },
   "55": {
-    "id": "role_555",
+    "id": "1543392758532800516",
     "name": "💫 Mega Dev",
     "color": "#A569BD"
   },
   "56": {
-    "id": "role_556",
+    "id": "1543392760281829457",
     "name": "👁️ Her Şeyi Gören Dev",
     "color": "#D35400"
   },
   "57": {
-    "id": "role_557",
+    "id": "1543392761456361605",
     "name": "🧬 Evrimleşmiş Dev",
     "color": "#E74C3C"
   },
   "58": {
-    "id": "role_558",
+    "id": "1543392763230421033",
     "name": "🗿 Kadim Dev",
     "color": "#B7950B"
   },
   "59": {
-    "id": "role_559",
+    "id": "1543392764350173274",
     "name": "🏛️ Efsanevi Dev",
     "color": "#D4AC0D"
   },
   "60": {
-    "id": "role_560",
+    "id": "1543392765671383181",
     "name": "🔥 Efsane Dev",
     "color": "#F1C40F"
   },
   "61": {
-    "id": "role_561",
+    "id": "1543392766770421801",
     "name": "🌌 Mitik Dev",
     "color": "#9B59B6"
   },
   "62": {
-    "id": "role_562",
+    "id": "1543392770251821070",
     "name": "👑 Yüce Dev",
     "color": "#E8DAEF"
   },
   "63": {
-    "id": "role_563",
+    "id": "1543392779319644280",
     "name": "💀 Ölümsüz Dev",
     "color": "#ECF0F1"
   },
   "64": {
-    "id": "role_564",
+    "id": "1543392780859220058",
     "name": "♾️ Sonsuz Dev",
     "color": "#00FFFF"
   },
   "65": {
-    "id": "role_565",
+    "id": "1543392782050263130",
     "name": "🌠 Tanrısal Dev",
     "color": "#FFD700"
   }
