@@ -60,6 +60,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
 
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta name="google-adsense-account" content="ca-pub-8395596912297122">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
   ${extraHead}
@@ -701,6 +702,7 @@ function renderMainPage(user = null) {
   <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
 
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <meta name="google-adsense-account" content="ca-pub-8395596912297122">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
   <style>
