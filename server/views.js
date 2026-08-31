@@ -486,9 +486,11 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     ${content}
     <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
       <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <!-- eko123 -->
       <ins class="adsbygoogle"
            style="display:block"
            data-ad-client="ca-pub-8395596912297122"
+           data-ad-slot="2087413721"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
       <script>
@@ -1076,9 +1078,11 @@ function renderMainPage(user = null) {
   <div class="section-container" style="margin: 2rem auto;">
     <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
       <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <!-- eko123 -->
       <ins class="adsbygoogle"
            style="display:block"
            data-ad-client="ca-pub-8395596912297122"
+           data-ad-slot="2087413721"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
       <script>
@@ -1106,9 +1110,11 @@ function renderMainPage(user = null) {
   <div class="section-container" style="margin: 3rem auto 1rem;">
     <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
       <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
+      <!-- eko123 -->
       <ins class="adsbygoogle"
            style="display:block"
            data-ad-client="ca-pub-8395596912297122"
+           data-ad-slot="2087413721"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
       <script>
