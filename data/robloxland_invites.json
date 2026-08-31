@@ -1,0 +1,18 @@
+{
+  "users": {
+    "inviter_test_user": {
+      "userId": "inviter_test_user",
+      "code": "test_code_123",
+      "invitedCount": 2,
+      "invitedUsers": [
+        "user_1",
+        "user_2"
+      ],
+      "hasXpBoost": false,
+      "hasSecretChannelAccess": false
+    }
+  },
+  "codes": {
+    "test_code_123": "inviter_test_user"
+  }
+}

@@ -324,6 +324,14 @@ async function start() {
             });
           } catch (_) {}
 
+          // ── RobloxLand Özel Davet Paneli (1544022394111529010) & Dolandırıcılar Paneli ──
+          try {
+            const { deployInvitePanel } = require("./bot/services/robloxLandInviteService");
+            const { renderScammerPanel } = require("./bot/services/robloxLandScammerService");
+            deployInvitePanel(discordBot).catch(() => {});
+            renderScammerPanel(discordBot).catch(() => {});
+          } catch (_) {}
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;

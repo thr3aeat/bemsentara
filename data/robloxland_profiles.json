@@ -80,5 +80,18 @@
     "isEkoInvite": true,
     "inviteCode": "eJ2dPBXT4R",
     "xpMultiplier": 2
+  },
+  "inviter_test_user": {
+    "userId": "inviter_test_user",
+    "level": 1,
+    "xp": 0,
+    "landCoins": 0,
+    "trustScore": 90,
+    "openedTickets": 0,
+    "completedOrders": 0,
+    "totalSpent": 0,
+    "vipTier": "Standart",
+    "joinedAt": "2026-08-31T16:38:57.033Z",
+    "xpMultiplier": 2
   }
 }

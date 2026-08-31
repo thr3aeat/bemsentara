@@ -110,59 +110,8 @@ function buildRulesPayload() {
 
 // ─── 2. Dolandırıcılar & Kara Liste Paneli (1538466803980959815) ───────────────
 function buildScammerPanelPayload() {
-  const content = [
-    ComponentsV2Factory.text(
-      `# 🚨 ROBLOXLND — RESMİ DOLANDIRICILIK & ŞİKAYET MERKEZİ\n\n` +
-      `RobloxLand güvencesiyle topluluğumuzda güvenli ticareti sağlamak adına dolandırıcılık teşebbüsünde bulunan, sahte dekont ileten, teslimat yapmayan veya üyelerimizi mağdur eden şahıslar için anında soruşturma başlatılır.\n\n` +
-      `### ⚖️ Şikayet & Vaka İnceleme Süreci:\n` +
-      `1. **📁 İhbar Oluşturma:** Aşağıdaki **🚨 Dolandırıcı Şikayet Et** butonuna tıklayarak şüphelinin Discord ID'sini, Roblox kullanıcı adını ve kanıt linklerini (SS/Video/Dekont) iletiniz.\n` +
-      `2. **🏷️ Otomatik Vaka Dosyası:** İhbarınız anında özel dosya numarasıyla (\`#SC-XXXX\`) güvenlik ve yönetim birimimize atanır.\n` +
-      `3. **🔍 Delil Doğrulama:** Kanıtlar yetkililerimizce incelenir, şüpheliye savunma hakkı tanınır veya derhal **Kalıcı Kara Listeye (Blacklist)** alınır.\n` +
-      `4. **🚫 Otomatik Yaptırım:** Kara listeye alınan şahıs tüm platformda ifşa edilir, güven puanı \`0/100\`e düşürülür ve sunucudan kalıcı olarak uzaklaştırılır.\n\n` +
-      `### 🛡️ Temel Güvenlik İlkelerimiz:\n` +
-      `• Sunucumuzdaki hiçbir yetkili sizden **hesap şifrenizi**, **e-posta doğrulama kodunuzu** veya **.ROBLOSECURITY** çerezinizi istemez.\n` +
-      `• DM üzerinden size indirim vadeden veya "ben yetkiliyim bilet açmana gerek yok" diyen kişilere asla itibar etmeyiniz.\n` +
-      `• Ticaret yapmadan önce mutlaka aşağıdaki **🔎 Şüpheli / ID Sorgula** butonuyla karşı tarafın sicilini ve güven puanını kontrol ediniz.\n\n` +
-      `-# ⚠️ Asılsız ihbar, montaj kanıt veya iftira girişiminde bulunan kullanıcılar hakkında ters işlem uygulanır.`
-    ),
-    ComponentsV2Factory.separator(true),
-    ComponentsV2Factory.actionRow([
-      {
-        style: ButtonStyle.Danger,
-        label: "🚨 Dolandırıcı Şikayet Et (Form)",
-        custom_id: "robloxland_scam_report",
-        emoji: { name: "⚠️" }
-      },
-      {
-        style: ButtonStyle.Primary,
-        label: "🔎 Şüpheli / ID Sorgula",
-        custom_id: "robloxland_user_lookup",
-        emoji: { name: "🔍" }
-      },
-      {
-        style: ButtonStyle.Secondary,
-        label: "📜 Kara Liste (Son Vakalar)",
-        custom_id: "robloxland_view_blacklist",
-        emoji: { name: "📋" }
-      }
-    ]),
-    ComponentsV2Factory.actionRow([
-      {
-        style: ButtonStyle.Success,
-        label: "🛡️ Güvenli Ticaret & Escrow Rehberi",
-        custom_id: "robloxland_escrow_guide",
-        emoji: { name: "🛡️" }
-      },
-      {
-        style: ButtonStyle.Secondary,
-        label: "👤 Profilim & Güven Puanım",
-        custom_id: "robloxland_open_my_profile",
-        emoji: { name: "👤" }
-      }
-    ])
-  ];
-
-  return ComponentsV2Factory.buildPayload(content);
+  const { buildScammerPanelPayload: getScammerPayload } = require("./robloxLandScammerService");
+  return getScammerPayload();
 }
 
 // ─── 3. Sipariş Kuralları Paneli (1538464717444747274) ──────────────────────────
@@ -1813,6 +1762,20 @@ async function handleRobloxDevsInteraction(interaction) {
     }
     return true;
   }
+
+  // 18. RobloxLand Karaliste & Dolandırıcılar Sistemi (Modal/Buton)
+  try {
+    const { handleScammerInteraction } = require("./robloxLandScammerService");
+    const handledScam = await handleScammerInteraction(interaction);
+    if (handledScam) return true;
+  } catch (_) {}
+
+  // 19. RobloxLand Özel Davet Sistemi (Link Oluştur, İstatistik, Sıralama)
+  try {
+    const { handleInviteInteraction } = require("./robloxLandInviteService");
+    const handledInv = await handleInviteInteraction(interaction);
+    if (handledInv) return true;
+  } catch (_) {}
 
   return false;
 }
