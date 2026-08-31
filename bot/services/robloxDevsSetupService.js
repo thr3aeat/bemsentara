@@ -1808,6 +1808,13 @@ async function handleRobloxDevsInteraction(interaction) {
     if (handledAch) return true;
   } catch (_) {}
 
+  // 22. RobloxLand Forum Düzenleme & Otomatik Tepki Sistemi (1538475901778530324)
+  try {
+    const { handleForumInteraction } = require("./robloxLandForumService");
+    const handledForum = await handleForumInteraction(interaction);
+    if (handledForum) return true;
+  } catch (_) {}
+
   return false;
 }
 

@@ -17,7 +17,8 @@ const {
   EndBehaviorType,
   VoiceConnectionStatus,
   createAudioPlayer,
-  createAudioResource
+  createAudioResource,
+  StreamType
 } = require('@discordjs/voice');
 const prism = require('prism-media');
 const ComponentsV2Factory = require('../utils/componentsV2Factory');
@@ -30,6 +31,7 @@ const SENSITIVE_CATEGORY_ID = '1544024714702491648';       // 16+ Hassas kanalla
 const SENSITIVE_ROLE_ID = '1544024330005119068';           // 16+ Hassas Erişim Rolü
 const STAFF_LOG_CHANNEL_ID = '1543382733408174220';        // Ses kaydı ve yetkili log kanalı
 const STAFF_ROLE_ID = '1537411928585015366';               // Yetkili Rolü
+const DESIGNATED_STAFF_ID = '1497600770634289194';         // Belirtilen Yetkili Kullanıcı ID
 
 // Zengin Türkçe Tekerleme Havuzu
 const TEKERLEMELER = [
@@ -50,13 +52,13 @@ const TEKERLEMELER = [
   "Değirmene girdi köpek, değirmenci vurdu kötek; hem kepek yedi köpek, hem kötek yedi köpek."
 ];
 
-// Aktif ticket oturumları belleği: ticketId -> { textChannelId, voiceChannelId, userId, staffId, tekerleme, audioChunks, startTime, connection }
+// Aktif ticket oturumları belleği: ticketId -> { ticketId, textChannelId, voiceChannelId, userId, staffId, isWaitingStaff, staffNotified, tekerleme, audioChunks, startTime, connection }
 const activeAgeTickets = new Map();
 
 /**
- * 48kHz Stereo 16-bit PCM WAV Header oluşturucu
+ * 16-bit PCM WAV Header oluşturucu
  */
-function createWavHeader(dataLength, sampleRate = 48000, numChannels = 2, bitDepth = 16) {
+function createWavHeader(dataLength, sampleRate = 24000, numChannels = 1, bitDepth = 16) {
   const buffer = Buffer.alloc(44);
   const byteRate = sampleRate * numChannels * (bitDepth / 8);
   const blockAlign = numChannels * (bitDepth / 8);
@@ -79,23 +81,44 @@ function createWavHeader(dataLength, sampleRate = 48000, numChannels = 2, bitDep
 }
 
 /**
+ * 48kHz Stereo 16-bit PCM verisini 24kHz Mono 16-bit PCM verisine dönüştürür
+ * Bu sayede dosya boyutu 4 kat küçülür ve Discord dosya yükleme limitine takılmaz.
+ */
+function convertStereo48kToMono24k(stereoBuffer) {
+  if (!stereoBuffer || stereoBuffer.length < 4) {
+    return Buffer.alloc(0);
+  }
+
+  const numInputSamples = Math.floor(stereoBuffer.length / 4);
+  const numOutputSamples = Math.floor(numInputSamples / 2);
+  const outBuffer = Buffer.alloc(numOutputSamples * 2);
+
+  for (let i = 0; i < numOutputSamples; i++) {
+    const inOffset = i * 2 * 4;
+    if (inOffset + 3 < stereoBuffer.length) {
+      const left = stereoBuffer.readInt16LE(inOffset);
+      const right = stereoBuffer.readInt16LE(inOffset + 2);
+      const mono = Math.floor((left + right) / 2);
+      outBuffer.writeInt16LE(mono, i * 2);
+    }
+  }
+
+  return outBuffer;
+}
+
+/**
  * Discord voice gateway'inin çift yönlü UDP veri iletimini tetiklemesi için sessiz paket çalar
  */
 function sendKeepAliveSilence(connection) {
   try {
     const player = createAudioPlayer();
-    const silenceBuffer = Buffer.from([0xf8, 0xff, 0xfe]);
-    const silenceStream = new Readable({
-      read() {
-        this.push(silenceBuffer);
-        this.push(null);
-      }
-    });
-    const resource = createAudioResource(silenceStream, { inputType: 1 });
+    const silenceFrame = Buffer.from([0xf8, 0xff, 0xfe]);
+    const silenceStream = Readable.from([silenceFrame, silenceFrame]);
+    const resource = createAudioResource(silenceStream, { inputType: StreamType.Opus });
     player.play(resource);
     connection.subscribe(player);
   } catch (err) {
-    console.warn('[AgeVerify] Keepalive silence error:', err.message);
+    console.warn('[AgeVerify] Keepalive silence warning:', err.message);
   }
 }
 
@@ -109,7 +132,7 @@ function buildAgeVerificationPanelPayload() {
       `Hassas kanallara erişmek için bu kanaldan ticket oluşturabilirsiniz. Eğer 16 yaşından üstün değilseniz ve mikrofonunuzu açamıyorsanız lütfen oluşturmayın gereksiz yere oluşturanlar yaptırımlarla karşılaşacaktır!\n\n` +
       `### 🎙️ Doğrulama Süreci Nasıl İşler?\n` +
       `1. Aşağıdaki **🔒 16+ Yaş Doğrulama Talebi Aç** butonuna basarak size özel sesli onay odası açın.\n` +
-      `2. Aktif yetkilimiz odaya bağlandığında bot size mikrofondan okumanız için özel bir tekerleme verecektir.\n` +
+      `2. Görevli yetkilimiz (<@${DESIGNATED_STAFF_ID}>) odaya bağlandığında bot size mikrofondan okumanız için özel bir tekerleme verecektir.\n` +
       `3. Tekerlemeyi net bir şekilde sesli okuduğunuzda yetkili kaydı onaylayacak ve **16+ Hassas Erişim Rolü** hesabınıza otomatik tanımlanacaktır.\n` +
       `4. Onay sonrası bu panel gizlenecek ve tüm hassas kanallar erişiminize açılacaktır.\n\n` +
       `-# ⚠️ Ses kayıtları güvenlik ve denetim amacıyla log kanalında arşivlenir.`
@@ -129,10 +152,96 @@ function buildAgeVerificationPanelPayload() {
 }
 
 /**
- * Paneli 1544023655527219330 kanalına yerleştirir/günceller
+ * Belirtilen yetkilinin aktif / çevrimiçi olup olmadığını kontrol eder
+ */
+async function checkStaffActiveStatus(guild, staffId = DESIGNATED_STAFF_ID) {
+  try {
+    const member = guild.members.cache.get(staffId) || await guild.members.fetch(staffId).catch(() => null);
+    if (!member) return { member: null, isOnline: false };
+
+    const isOnline = Boolean(member.presence && member.presence.status !== 'offline');
+    return { member, isOnline };
+  } catch (_) {
+    return { member: null, isOnline: false };
+  }
+}
+
+/**
+ * Yetkili aktif olduğunda bekleyen ticket sahiplerine ve yetkiliye DM bildirimi gönderir
+ */
+async function checkAndNotifyWaitingTickets(client) {
+  try {
+    const guild = client.guilds.cache.get(GUILD_ID) || await client.guilds.fetch(GUILD_ID).catch(() => null);
+    if (!guild) return;
+
+    const { member: staffMember, isOnline } = await checkStaffActiveStatus(guild, DESIGNATED_STAFF_ID);
+    if (!isOnline) return;
+
+    for (const [ticketId, tData] of activeAgeTickets.entries()) {
+      if (tData.isWaitingStaff && !tData.staffNotified) {
+        tData.staffNotified = true;
+        tData.isWaitingStaff = false;
+
+        // 1. Yetkiliye DM Gönder
+        try {
+          const staffUser = staffMember?.user || await client.users.fetch(DESIGNATED_STAFF_ID).catch(() => null);
+          if (staffUser) {
+            await staffUser.send({
+              content:
+                `🔔 **RobloxLand 16+ Yaş Doğrulama Talebi Bekliyor!**\n\n` +
+                `👤 <@${tData.userId}> kullanıcısı sesli yaş doğrulaması için sizi bekliyor.\n` +
+                `• **Yazı Kanalı:** <#${tData.textChannelId}>\n` +
+                `• **Ses Kanalı:** <#${tData.voiceChannelId}>`
+            }).catch(() => {});
+          }
+        } catch (_) {}
+
+        // 2. Adaya DM Gönder
+        try {
+          const candidateUser = await client.users.fetch(tData.userId).catch(() => null);
+          if (candidateUser) {
+            await candidateUser.send({
+              content:
+                `🟢 **Yetkilimiz Aktif Oldu!**\n\n` +
+                `Yetkilimiz (<@${DESIGNATED_STAFF_ID}>) şu anda aktif duruma geçti. Lütfen sesli doğrulama odanıza geçiniz:\n` +
+                `• **Yazı Kanalı:** <#${tData.textChannelId}>\n` +
+                `• **Ses Kanalı:** <#${tData.voiceChannelId}>`
+            }).catch(() => {});
+          }
+        } catch (_) {}
+
+        // 3. Ticket Kanalına Mesaj Gönder
+        try {
+          const txtChan = guild.channels.cache.get(tData.textChannelId) || await guild.channels.fetch(tData.textChannelId).catch(() => null);
+          if (txtChan && txtChan.isTextBased()) {
+            await txtChan.send({
+              content: `🟢 <@${DESIGNATED_STAFF_ID}> ve <@${tData.userId}>, yetkilimiz aktif duruma geçti! Ses kanalına katılarak **🎙️ Kullanıcıdan Konuşmasını İste** adımıyla devam edebilirsiniz.`
+            }).catch(() => {});
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (err) {
+    console.warn('[AgeVerify] checkAndNotifyWaitingTickets error:', err.message);
+  }
+}
+
+/**
+ * Paneli 1544023655527219330 kanalına yerleştirir/günceller ve presence dinleyicisini bağlar
  */
 async function deployAgeVerificationPanel(client) {
   try {
+    if (client && !client.__ageVerifyPresenceAttached) {
+      client.__ageVerifyPresenceAttached = true;
+      client.on('presenceUpdate', (oldPresence, newPresence) => {
+        if (newPresence && newPresence.userId === DESIGNATED_STAFF_ID) {
+          if (newPresence.status !== 'offline') {
+            checkAndNotifyWaitingTickets(client).catch(() => {});
+          }
+        }
+      });
+    }
+
     const channel = client.channels.cache.get(AGE_VERIFY_PANEL_CHANNEL_ID) || await client.channels.fetch(AGE_VERIFY_PANEL_CHANNEL_ID).catch(() => null);
     if (!channel || !channel.isTextBased()) return false;
 
@@ -149,29 +258,6 @@ async function deployAgeVerificationPanel(client) {
   } catch (err) {
     console.error("[AgeVerify] Deploy error:", err.message);
     return false;
-  }
-}
-
-/**
- * Aktif / Çevrimiçi Yetkiliyi Bulur
- */
-async function findActiveStaffMember(guild) {
-  try {
-    const members = await guild.members.fetch().catch(() => guild.members.cache);
-    const staffMembers = members.filter(m => 
-      !m.user.bot && (
-        m.roles.cache.has(STAFF_ROLE_ID) ||
-        m.permissions.has(PermissionFlagsBits.ManageGuild) ||
-        m.permissions.has(PermissionFlagsBits.ModerateMembers)
-      )
-    );
-
-    const onlineStaff = staffMembers.find(m => m.presence && m.presence.status !== 'offline');
-    if (onlineStaff) return onlineStaff;
-
-    return staffMembers.first() || null;
-  } catch (_) {
-    return null;
   }
 }
 
@@ -204,8 +290,8 @@ async function openAgeVerificationTicket(interaction) {
   await interaction.deferReply({ ephemeral: true });
 
   const ticketId = `yas-${Date.now().toString().slice(-4)}`;
-  const activeStaff = await findActiveStaffMember(guild);
-  const staffMention = activeStaff ? `<@${activeStaff.id}>` : `<@&${STAFF_ROLE_ID}>`;
+  const { member: staffMember, isOnline: isStaffOnline } = await checkStaffActiveStatus(guild, DESIGNATED_STAFF_ID);
+  const staffMention = `<@${DESIGNATED_STAFF_ID}>`;
 
   // 1. Özel Metin Kanalı Oluştur
   const textChannel = await guild.channels.create({
@@ -227,6 +313,15 @@ async function openAgeVerificationTicket(interaction) {
         ]
       },
       {
+        id: DESIGNATED_STAFF_ID,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.ReadMessageHistory,
+          PermissionFlagsBits.ManageChannels
+        ]
+      },
+      {
         id: STAFF_ROLE_ID,
         allow: [
           PermissionFlagsBits.ViewChannel,
@@ -235,14 +330,6 @@ async function openAgeVerificationTicket(interaction) {
           PermissionFlagsBits.ManageChannels
         ]
       },
-      ...(activeStaff ? [{
-        id: activeStaff.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory
-        ]
-      }] : []),
       ...(interaction.client.user?.id ? [{
         id: interaction.client.user.id,
         allow: [
@@ -281,6 +368,15 @@ async function openAgeVerificationTicket(interaction) {
         ]
       },
       {
+        id: DESIGNATED_STAFF_ID,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.Connect,
+          PermissionFlagsBits.Speak,
+          PermissionFlagsBits.MuteMembers
+        ]
+      },
+      {
         id: STAFF_ROLE_ID,
         allow: [
           PermissionFlagsBits.ViewChannel,
@@ -289,14 +385,6 @@ async function openAgeVerificationTicket(interaction) {
           PermissionFlagsBits.MuteMembers
         ]
       },
-      ...(activeStaff ? [{
-        id: activeStaff.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.Connect,
-          PermissionFlagsBits.Speak
-        ]
-      }] : []),
       ...(interaction.client.user?.id ? [{
         id: interaction.client.user.id,
         allow: [
@@ -323,19 +411,28 @@ async function openAgeVerificationTicket(interaction) {
     textChannelId: textChannel.id,
     voiceChannelId: voiceChannel.id,
     userId: user.id,
-    staffId: activeStaff?.id || null,
+    staffId: DESIGNATED_STAFF_ID,
+    isWaitingStaff: !isStaffOnline,
+    staffNotified: isStaffOnline,
     tekerleme: null,
     audioChunks: [],
     startTime: Date.now(),
-    connection: null
+    connection: null,
+    isCapturing: false,
+    opusDecoder: null,
+    opusStream: null
   });
 
-  // Metin kanalına yetkili ve adayı etiketleyerek kontrol paneli gönder
+  // Durum kartı metni
+  const staffStatusText = isStaffOnline
+    ? `🛡️ **Görevli Yetkili:** ${staffMention} (🟢 Çevrimiçi)`
+    : `🛡️ **Görevli Yetkili:** ${staffMention} (🔴 Çevrimdışı)\n\n⚠️ **Yetkilimiz şu anda aktif değil.** Yetkilimiz aktif olduğunda hem kendisine hem de size DM üzerinden anında bilgilendirme iletilecektir.`;
+
   const controlPayload = ComponentsV2Factory.buildPayload([
     ComponentsV2Factory.text(
       `# 🎙️ 16+ YAŞ DOĞRULAMA VE SES ONAY TALEBİ (#${ticketId})\n\n` +
       `👋 **Aday:** <@${user.id}> (\`${user.tag}\`)\n` +
-      `🛡️ **Görevli Yetkili:** ${staffMention}\n` +
+      `${staffStatusText}\n` +
       `🔊 **Özel Ses Kanalı:** <#${voiceChannel.id}>\n\n` +
       `### 📌 İşlem Adımları:\n` +
       `1. Hem aday <@${user.id}> hem de yetkili <#${voiceChannel.id}> ses odasına katılsın.\n` +
@@ -371,56 +468,52 @@ async function openAgeVerificationTicket(interaction) {
     ...controlPayload
   });
 
-  await interaction.editReply({
-    content: `✅ Yaş doğrulama talebiniz açıldı:\n• **Yazı Kanalı:** <#${textChannel.id}>\n• **Ses Kanalı:** <#${voiceChannel.id}>`
-  });
+  const replyMsg = isStaffOnline
+    ? `✅ Yaş doğrulama talebiniz açıldı:\n• **Yazı Kanalı:** <#${textChannel.id}>\n• **Ses Kanalı:** <#${voiceChannel.id}>`
+    : `✅ Yaş doğrulama talebiniz açıldı:\n• **Yazı Kanalı:** <#${textChannel.id}>\n• **Ses Kanalı:** <#${voiceChannel.id}>\n\n⚠️ **Yetkilimiz (${staffMention}) şu anda aktif değil.** Yetkilimiz aktif olduğunda hem kendisine hem de size DM üzerinden bilgilendirme iletilecektir.`;
+
+  await interaction.editReply({ content: replyMsg });
   return true;
 }
 
 /**
- * Kullanıcı ses kanalına bağlandığında veya konuştuğunda Opus stream'i çözer ve kaydeder
+ * Kullanıcı ses kanalına bağlandığında Opus stream'i çözer ve kaydeder
  */
 function startAudioCapture(connection, ticketData) {
+  if (!connection || !ticketData || ticketData.isCapturing) return;
+  ticketData.isCapturing = true;
+
   try {
     sendKeepAliveSilence(connection);
 
     const receiver = connection.receiver;
     const userId = ticketData.userId;
 
-    const setupUserStream = (targetId) => {
-      if (targetId !== userId) return;
+    const opusStream = receiver.subscribe(userId, {
+      end: { behavior: EndBehaviorType.Manual }
+    });
 
-      const opusStream = receiver.subscribe(userId, {
-        end: { behavior: EndBehaviorType.Manual }
-      });
+    const decoder = new prism.opus.Decoder({
+      rate: 48000,
+      channels: 2,
+      frameSize: 960
+    });
 
-      const decoder = new prism.opus.Decoder({
-        rate: 48000,
-        channels: 2,
-        frameSize: 960
-      });
+    ticketData.opusDecoder = decoder;
+    ticketData.opusStream = opusStream;
 
-      opusStream.pipe(decoder);
+    opusStream.pipe(decoder);
 
-      decoder.on('data', (pcmChunk) => {
+    decoder.on('data', (pcmChunk) => {
+      // Bellek sızıntısını ve aşırı dosya boyutunu önlemek için maksimum 3000 chunk sakla
+      if (ticketData.audioChunks.length < 3000) {
         ticketData.audioChunks.push(pcmChunk);
-      });
-
-      decoder.on('error', (err) => {
-        console.warn(`[AgeVerify] Opus decoder warning: ${err.message}`);
-      });
-    };
-
-    // Doğrudan abone ol
-    setupUserStream(userId);
-
-    // Konuşma algılandığında tekrar bağla
-    receiver.speaking.on('start', (speakingUserId) => {
-      if (speakingUserId === userId) {
-        setupUserStream(userId);
       }
     });
 
+    decoder.on('error', (err) => {
+      console.warn(`[AgeVerify] Opus decoder warning: ${err.message}`);
+    });
   } catch (err) {
     console.error('[AgeVerify] Audio capture setup error:', err.message);
   }
@@ -458,6 +551,7 @@ async function handleAskToSpeak(interaction, ticketId) {
 
       ticketData.connection = connection;
       ticketData.audioChunks = [];
+      ticketData.isCapturing = false;
 
       if (connection.state.status === VoiceConnectionStatus.Ready) {
         startAudioCapture(connection, ticketData);
@@ -516,40 +610,57 @@ async function handleFinishAndApprove(interaction, ticketId) {
   const client = interaction.client;
   const userId = ticketData.userId;
 
-  // 1. Bot sesten ayrılsın
+  // 1. Akışları ve Bot Bağlantısını Temizle
+  if (ticketData.opusDecoder) {
+    try { ticketData.opusDecoder.destroy(); } catch (_) {}
+  }
+  if (ticketData.opusStream) {
+    try { ticketData.opusStream.destroy(); } catch (_) {}
+  }
   if (ticketData.connection) {
     try {
       ticketData.connection.destroy();
     } catch (_) {}
   }
 
-  // 2. Ses Kaydı Dosyası Oluştur (WAV: 48kHz Stereo 16-bit PCM)
+  // 2. Ses Kaydı Dosyası Oluştur (24kHz Mono 16-bit PCM - Kompakt & Yüksek Kalite)
   let rawPcm = Buffer.concat(ticketData.audioChunks || []);
   if (rawPcm.length === 0) {
-    // Eğer mikrofon tamamen sessiz kaldıysa veya boşsa 1.5 saniyelik temiz PCM oluştur
-    rawPcm = Buffer.alloc(48000 * 2 * 2 * 1.5);
+    rawPcm = Buffer.alloc(24000 * 2 * 1.5); // 1.5 saniyelik temiz PCM
+  } else {
+    rawPcm = convertStereo48kToMono24k(rawPcm);
   }
 
-  const wavHeader = createWavHeader(rawPcm.length, 48000, 2, 16);
+  // Discord 8MB limitini aşmaması için en fazla 6 MB tut
+  if (rawPcm.length > 6 * 1024 * 1024) {
+    rawPcm = rawPcm.subarray(rawPcm.length - 6 * 1024 * 1024);
+  }
+
+  const wavHeader = createWavHeader(rawPcm.length, 24000, 1, 16);
   const fullWavBuffer = Buffer.concat([wavHeader, rawPcm]);
   const audioAttachment = new AttachmentBuilder(fullWavBuffer, {
     name: `yas_dogrulama_${userId}.wav`,
     description: `RobloxLand 16+ Yaş Doğrulama Ses Kaydı - ${userId}`
   });
 
-  // 3. Log Kanalına (1543382733408174220) Gönder
+  // 3. Log Kanalına (1543382733408174220) Güvenli Gönderim
   try {
     const logChannel = client.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await client.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
     if (logChannel && logChannel.isTextBased()) {
+      const logContent =
+        `🎙️ **[16+ YAŞ DOĞRULAMA SES KAYDI ONAYLANDI]**\n` +
+        `• 👤 **Aday:** <@${userId}> (\`${userId}\`)\n` +
+        `• 🛡️ **Onaylayan Yetkili:** <@${interaction.user.id}>\n` +
+        `• 📜 **Okunan Tekerleme:** "${ticketData.tekerleme || 'Genel Sesli Mülakat'}"\n` +
+        `• 📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>`;
+
       await logChannel.send({
-        content:
-          `🎙️ **[16+ YAŞ DOĞRULAMA SES KAYDI ONAYLANDI]**\n` +
-          `• 👤 **Aday:** <@${userId}> (\`${userId}\`)\n` +
-          `• 🛡️ **Onaylayan Yetkili:** <@${interaction.user.id}>\n` +
-          `• 📜 **Okunan Tekerleme:** "${ticketData.tekerleme || 'Genel Sesli Mülakat'}"\n` +
-          `• 📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>`,
+        content: logContent,
         files: [audioAttachment]
-      }).catch(err => console.error("[AgeVerify] Log send error:", err.message));
+      }).catch(async (err) => {
+        console.error("[AgeVerify] File log send error, falling back to text log:", err.message);
+        await logChannel.send({ content: `${logContent}\n⚠️ *(Ses kaydı dosyası Discord boyut sınırından dolayı eklenemedi)*` }).catch(() => {});
+      });
     }
   } catch (logErr) {
     console.error("[AgeVerify] Log error:", logErr.message);
@@ -625,6 +736,12 @@ async function handleRejectAgeVerification(interaction, ticketId) {
   const guild = interaction.guild;
   const userId = ticketData.userId;
 
+  if (ticketData.opusDecoder) {
+    try { ticketData.opusDecoder.destroy(); } catch (_) {}
+  }
+  if (ticketData.opusStream) {
+    try { ticketData.opusStream.destroy(); } catch (_) {}
+  }
   if (ticketData.connection) {
     try { ticketData.connection.destroy(); } catch (_) {}
   }
@@ -664,6 +781,7 @@ function isAuthorizedStaff(member) {
     : [];
 
   return Boolean(
+    member.id === DESIGNATED_STAFF_ID ||
     (member.permissions?.has && (
       member.permissions.has(PermissionFlagsBits.ManageGuild) ||
       member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
@@ -729,10 +847,14 @@ module.exports = {
   SENSITIVE_CATEGORY_ID,
   SENSITIVE_ROLE_ID,
   STAFF_LOG_CHANNEL_ID,
+  DESIGNATED_STAFF_ID,
   TEKERLEMELER,
   buildAgeVerificationPanelPayload,
   deployAgeVerificationPanel,
   openAgeVerificationTicket,
   handleAgeVerificationInteraction,
+  checkStaffActiveStatus,
+  checkAndNotifyWaitingTickets,
+  convertStereo48kToMono24k,
   createWavHeader
 };
