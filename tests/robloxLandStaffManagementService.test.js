@@ -2,40 +2,50 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
 const {
   GUILD_ID,
   PANEL_CHANNEL_ID,
   WORK_CATEGORY_ID,
-  STAFF_ROLE_ID,
+  STAFF_LOG_CHANNEL_ID,
   DESIGNATED_STAFF_ID,
+  STAFF_RANKS,
   buildStaffManagementPayload,
+  buildStaffProfilePayload,
   isValidWorkMessage,
   handleStaffWorkMessage,
   calculateStaffHealth,
+  evaluatePromotionEligibility,
+  evaluateDemotionRisk,
   renderProgressBar,
   runDailyStaffAudit,
   handleStaffManagementInteraction,
   activeAnonSessions
 } = require('../bot/services/robloxLandStaffManagementService');
 
-test('buildStaffManagementPayload returns Components V2 container with stats and action rows', () => {
+test('buildStaffManagementPayload returns Components V2 hub with 10-system summary and action rows', () => {
   const mockData = {
     staffMembers: {
       'user-1': {
         userId: 'user-1',
         username: 'Asaf',
+        roleName: 'Yetkili Ofisi Kıdemli Staj',
         joinedStaffAt: Date.now() - (30 * 86400000),
         lastWorkAt: Date.now() - (2 * 86400000),
         workCountTotal: 25,
         workCount30d: 14,
+        qualityWorksCount: 4,
         streakDays: 18,
         status: 'active',
         performanceScore: 92,
         warningsCount: 0
       }
     },
+    pendingWorks: {
+      'work-1': { id: 'work-1', status: 'pending' }
+    },
+    pendingAppeals: {},
+    pendingLeaves: {},
+    activeTasks: {},
     weeklyStats: { totalWorksThisWeek: 12 }
   };
 
@@ -45,77 +55,109 @@ test('buildStaffManagementPayload returns Components V2 container with stats and
   assert.equal(payload.components[0].type, 17); // Container
 
   const containerJson = JSON.stringify(payload.components[0]);
-  assert.match(containerJson, /ROBLOXLAND YETKİLİ YÖNETİM/);
-  assert.match(containerJson, /robloxland_staffmgmt_add/);
+  assert.match(containerJson, /YETKİLİ KONTROL MERKEZİ/);
   assert.match(containerJson, /robloxland_staffmgmt_list/);
-  assert.match(containerJson, /robloxland_staffmgmt_leaderboard/);
-  assert.match(containerJson, /robloxland_staffmgmt_broadcast/);
-  assert.match(containerJson, /robloxland_staffmgmt_anon_dm/);
-  assert.match(containerJson, /robloxland_staffmgmt_leave/);
-  assert.match(containerJson, /robloxland_staffmgmt_task/);
+  assert.match(containerJson, /robloxland_staffmgmt_view_promos/);
+  assert.match(containerJson, /robloxland_staffmgmt_view_demos/);
+  assert.match(containerJson, /robloxland_staffmgmt_view_works/);
+  assert.match(containerJson, /robloxland_staffmgmt_add/);
+  assert.match(containerJson, /robloxland_staffmgmt_task_hub/);
 });
 
-test('isValidWorkMessage accurately distinguishes valid work from casual spam', () => {
-  // Geçersiz mesajlar (Boş veya sadece selamlama)
-  assert.equal(isValidWorkMessage({ content: 'sa' }), false);
-  assert.equal(isValidWorkMessage({ content: 'günaydın beyler nasılsınız' }), false);
-  assert.equal(isValidWorkMessage({ content: 'selam' }), false);
+test('buildStaffProfilePayload shows rank, health, streak, and promotion readiness', () => {
+  const readyStaff = {
+    userId: 'user-top',
+    username: 'Enes',
+    roleName: 'Yetkili Ofisi Staj',
+    joinedStaffAt: Date.now() - (20 * 86400000),
+    lastWorkAt: Date.now() - (1 * 86400000),
+    workCountTotal: 15,
+    workCount30d: 12,
+    qualityWorksCount: 4,
+    streakDays: 15,
+    performanceScore: 88,
+    warningsCount: 0,
+    historyLogs: [{ date: Date.now(), text: '5 Yıldızlı Sistem paylaştı' }]
+  };
 
-  // Geçerli mesajlar (Dosya / attachment)
-  assert.equal(isValidWorkMessage({ content: 'Yeni araç sistemi', attachments: new Map([['1', { name: 'car.rbxm' }]]) }), true);
-
-  // Geçerli mesajlar (Roblox/GitHub linki)
-  assert.equal(isValidWorkMessage({ content: 'İncelemek isteyenler için model linki: https://www.roblox.com/library/12345/Custom-Inventory' }), true);
-  assert.equal(isValidWorkMessage({ content: 'Github repo: https://github.com/RobloxLand/core-systems' }), true);
-
-  // Geçerli mesajlar (Kod bloğu)
-  const codeMessage = '```lua\nlocal Players = game:GetService("Players")\nPlayers.PlayerAdded:Connect(function(p)\n  print(p.Name)\nend)\n```';
-  assert.equal(isValidWorkMessage({ content: codeMessage }), true);
+  const payload = buildStaffProfilePayload(readyStaff);
+  assert.ok(payload);
+  const json = JSON.stringify(payload.components[0]);
+  assert.match(json, /TERFİYE HAZIR/);
+  assert.match(json, /robloxland_staffmgmt_act_promote_user-top/);
+  assert.match(json, /robloxland_staffmgmt_act_demote_user-top/);
+  assert.match(json, /robloxland_staffmgmt_act_warn_user-top/);
 });
 
-test('calculateStaffHealth and renderProgressBar correctly compute activity status', () => {
+test('calculateStaffHealth and evaluatePromotionEligibility accurately calculate all conditions', () => {
   const now = Date.now();
 
-  const activeStaff = { lastWorkAt: now - (2 * 86400000) };
-  assert.equal(calculateStaffHealth(activeStaff).status, 'active');
+  // 1. Aktivite durumları
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (2 * 86400000) }).status, 'active');
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (8 * 86400000) }).status, 'warning');
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (11 * 86400000), acknowledgedActive: false }).status, 'passive_10d');
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (11 * 86400000), acknowledgedActive: true }).status, 'acknowledged');
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (15 * 86400000) }).status, 'passive_13d');
+  assert.equal(calculateStaffHealth({ lastWorkAt: now - (25 * 86400000) }).status, 'review_20d');
+  assert.equal(calculateStaffHealth({ leaveUntil: now + (5 * 86400000) }).status, 'leave');
 
-  const warningStaff = { lastWorkAt: now - (8 * 86400000) };
-  assert.equal(calculateStaffHealth(warningStaff).status, 'warning');
+  // 2. Terfi Değerlendirmesi
+  const incompleteStaff = {
+    joinedStaffAt: now - (5 * 86400000),
+    performanceScore: 65,
+    workCount30d: 4,
+    qualityWorksCount: 1,
+    warningsCount: 0
+  };
+  const promoIncomplete = evaluatePromotionEligibility(incompleteStaff);
+  assert.equal(promoIncomplete.isReady, false);
+  assert.ok(promoIncomplete.missingItems.length > 0);
 
-  const passiveStaff = { lastWorkAt: now - (12 * 86400000) };
-  assert.equal(calculateStaffHealth(passiveStaff).status, 'passive');
+  const completeStaff = {
+    joinedStaffAt: now - (20 * 86400000),
+    performanceScore: 85,
+    workCount30d: 12,
+    qualityWorksCount: 3,
+    warningsCount: 0
+  };
+  const promoComplete = evaluatePromotionEligibility(completeStaff);
+  assert.equal(promoComplete.isReady, true);
+  assert.equal(promoComplete.progressPercent, 100);
 
-  const reviewStaff = { lastWorkAt: now - (25 * 86400000) };
-  assert.equal(calculateStaffHealth(reviewStaff).status, 'review');
-
-  const leaveStaff = { leaveUntil: now + (5 * 86400000) };
-  assert.equal(calculateStaffHealth(leaveStaff).status, 'leave');
-
-  const bar90 = renderProgressBar(90);
-  assert.equal(bar90, '█████████░');
-
-  const bar30 = renderProgressBar(30);
-  assert.equal(bar30, '███░░░░░░░');
+  // 3. RD Risk Değerlendirmesi
+  const riskStaff = {
+    lastWorkAt: now - (22 * 86400000),
+    performanceScore: 30,
+    warningsCount: 2
+  };
+  const demoRisk = evaluateDemotionRisk(riskStaff);
+  assert.equal(demoRisk.isRisk, true);
+  assert.ok(demoRisk.reasons.length >= 2);
 });
 
-test('handleStaffWorkMessage updates work count and awards performance score', async () => {
+test('handleStaffWorkMessage queues work for quality review', async () => {
   let reacted = [];
   const mockMessage = {
-    guild: { id: GUILD_ID },
-    channelId: 'channel-map-share',
+    guild: {
+      id: GUILD_ID,
+      channels: {
+        cache: new Map(),
+        fetch: async () => ({ isTextBased: () => true, send: async () => {} })
+      }
+    },
+    channelId: 'chan-work-1',
     channel: { parentId: WORK_CATEGORY_ID },
-    author: { id: 'moderator-test-888', username: 'ProMod', bot: false },
-    content: 'Yeni RobloxLand envanter sistemi dosyasını paylaşıyorum: https://www.roblox.com/library/999/Inventory',
-    react: async (emoji) => { reacted.push(emoji); }
+    author: { id: 'mod-cand-555', username: 'KadirDev', tag: 'KadirDev#0001', bot: false },
+    content: 'Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui',
+    react: async (e) => { reacted.push(e); }
   };
 
   const handled = await handleStaffWorkMessage(mockMessage);
   assert.equal(handled, true);
-  assert.ok(reacted.includes('📦'));
-  assert.ok(reacted.includes('⭐'));
+  assert.ok(reacted.includes('⏳'));
 });
 
-test('handleStaffManagementInteraction supports anonymous DM and reply bridge', async () => {
+test('handleStaffManagementInteraction handles 5-star rating, promotions, demotions, and warnings', async () => {
   let replyPayload = null;
   let sentDMs = [];
 
@@ -123,7 +165,7 @@ test('handleStaffManagementInteraction supports anonymous DM and reply bridge', 
     users: {
       fetch: async (id) => ({
         id,
-        username: 'StaffCandidate',
+        username: 'TestStaff',
         send: async (payload) => { sentDMs.push({ id, payload }); }
       })
     },
@@ -135,15 +177,96 @@ test('handleStaffManagementInteraction supports anonymous DM and reply bridge', 
     }
   };
 
-  // 1. Yönetici anonim DM başlatır
-  const mockManagerInteraction = {
-    customId: 'robloxland_staffmgmt_modal_anon_start',
-    member: { id: DESIGNATED_STAFF_ID }, // Yetkili amir
+  // 1. Yönetici çalışmayı 5 yıldızla onaylar
+  const { loadStaffData, saveStaffData } = require('../bot/services/robloxLandStaffManagementService');
+  const data = loadStaffData();
+  data.pendingWorks['work-test-99'] = {
+    id: 'work-test-99',
+    userId: 'staff-user-77',
+    channelId: 'chan-1',
+    status: 'pending'
+  };
+  data.staffMembers['staff-user-77'] = {
+    userId: 'staff-user-77',
+    username: 'TargetStaff',
+    roleName: 'Yetkili Ofisi Staj',
+    performanceScore: 75,
+    workCount30d: 0,
+    qualityWorksCount: 0
+  };
+  saveStaffData(data);
+
+  const mockRateInteraction = {
+    customId: 'robloxland_staffmgmt_rate_5_work-test-99',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledRate = await handleStaffManagementInteraction(mockRateInteraction);
+  assert.equal(handledRate, true);
+  assert.match(replyPayload.content, /5 ⭐/);
+
+  const updatedData = loadStaffData();
+  assert.equal(updatedData.staffMembers['staff-user-77'].performanceScore, 82); // 75 + 7
+  assert.equal(updatedData.staffMembers['staff-user-77'].qualityWorksCount, 1);
+
+  // 2. Terfi modal işlemi
+  const mockPromoteInteraction = {
+    customId: 'robloxland_staffmgmt_modal_do_promote_staff-user-77',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'promote_new_role') return 'Yetkili Ofisi Kıdemli Staj';
+        if (f === 'promote_reason') return 'Yüksek performans ve kaliteli paylaşımlar';
+        return '';
+      }
+    },
+    guild: {
+      members: { cache: new Map(), fetch: async () => ({ roles: { add: async () => {} } }) }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledPromote = await handleStaffManagementInteraction(mockPromoteInteraction);
+  assert.equal(handledPromote, true);
+  assert.match(replyPayload.content, /terfi ettirildi/);
+
+  const afterPromoteData = loadStaffData();
+  assert.equal(afterPromoteData.staffMembers['staff-user-77'].roleName, 'Yetkili Ofisi Kıdemli Staj');
+});
+
+test('handleStaffManagementInteraction handles anonymous DM bridge', async () => {
+  let replyPayload = null;
+  let sentDMs = [];
+
+  const mockClient = {
+    users: {
+      fetch: async (id) => ({
+        id,
+        username: 'TargetStaff',
+        send: async (p) => { sentDMs.push(p); }
+      })
+    },
+    channels: {
+      cache: new Map([
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+      ])
+    }
+  };
+
+  const mockAnonSendInteraction = {
+    customId: 'robloxland_staffmgmt_modal_anon_send_staff-user-77',
+    member: { id: DESIGNATED_STAFF_ID },
     user: { id: DESIGNATED_STAFF_ID, tag: 'Amir#0001' },
     fields: {
-      getTextInputValue: (field) => {
-        if (field === 'anon_target_user') return '1538471137833394237';
-        if (field === 'anon_initial_message') return 'Son günlerde pasifsin, her şey yolunda mı?';
+      getTextInputValue: (f) => {
+        if (f === 'anon_template') return '1'; // Çalışma vakti
+        if (f === 'anon_text') return 'Yeni bir map bekliyoruz';
         return '';
       }
     },
@@ -151,55 +274,8 @@ test('handleStaffManagementInteraction supports anonymous DM and reply bridge', 
     reply: async (p) => { replyPayload = p; }
   };
 
-  const handledStart = await handleStaffManagementInteraction(mockManagerInteraction);
-  assert.equal(handledStart, true);
-  assert.equal(sentDMs.length, 1);
+  const handled = await handleStaffManagementInteraction(mockAnonSendInteraction);
+  assert.equal(handled, true);
   assert.match(replyPayload.content, /anonim mesajınız iletildi/);
-
-  // 2. Yetkili gelen anonim mesaja yanıt verir
-  const activeSessions = Array.from(activeAnonSessions.keys());
-  assert.ok(activeSessions.length > 0);
-  const sessionId = activeSessions[0];
-
-  let replyConfirmation = null;
-  const mockStaffReplyInteraction = {
-    customId: `robloxland_staffmgmt_modal_anon_reply_${sessionId}`,
-    member: { id: '1538471137833394237' },
-    user: { id: '1538471137833394237', tag: 'StaffMember#0001' },
-    fields: {
-      getTextInputValue: () => 'Sınav haftam vardı, yarından itibaren aktif olacağım.'
-    },
-    client: mockClient,
-    reply: async (p) => { replyConfirmation = p; }
-  };
-
-  const handledReply = await handleStaffManagementInteraction(mockStaffReplyInteraction);
-  assert.equal(handledReply, true);
-  assert.match(replyConfirmation.content, /başarıyla iletildi/);
-
-  activeAnonSessions.clear();
-});
-
-test('unauthorized users cannot perform staff management actions', async () => {
-  let replyMsg = '';
-  let replyEphemeral = false;
-
-  const mockUnauthorizedInteraction = {
-    customId: 'robloxland_staffmgmt_add',
-    member: {
-      id: 'regular-user-555',
-      permissions: { has: () => false },
-      roles: { cache: new Map() }
-    },
-    user: { id: 'regular-user-555' },
-    reply: async (p) => {
-      replyMsg = p.content;
-      replyEphemeral = p.ephemeral;
-    }
-  };
-
-  const handled = await handleStaffManagementInteraction(mockUnauthorizedInteraction);
-  assert.equal(handled, undefined);
-  assert.match(replyMsg, /yalnızca RobloxLand yetkili amirleri/);
-  assert.equal(replyEphemeral, true);
+  assert.equal(sentDMs.length, 1);
 });

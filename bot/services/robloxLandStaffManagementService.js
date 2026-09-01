@@ -18,31 +18,43 @@ const ComponentsV2Factory = require('../utils/componentsV2Factory');
 const GUILD_ID = '1537407325290237973';
 const PANEL_CHANNEL_ID = '1544367634433183765'; // Yetkili Alımları & Yönetim Kanalı
 const WORK_CATEGORY_ID = '1538471137833394237'; // Sistem, Map & Paylaşım Kanalları Kategorisi
-const STAFF_ROLE_ID = '1537411928585015366';
-const DESIGNATED_STAFF_ID = '1497600770634289194';
 const STAFF_LOG_CHANNEL_ID = '1543382733408174220';
+const DESIGNATED_STAFF_ID = '1497600770634289194';
+
+// ── Sunucu Yetkili Rol Hiyerarşisi ──────────────────────────────────────────
+const STAFF_RANKS = [
+  { rank: 1, name: "Yetkili Ofisi Başkanı", id: "1544392306101067878" },
+  { rank: 2, name: "Yetkili Ofisi Müdürü", id: "1544393164067053618" },
+  { rank: 3, name: "Yetkili Ofisi Müdür Yardımcısı", id: "1544393522784903278" },
+  { rank: 4, name: "Yetkili Ofisi Baş Staj", id: "1544393943570190456" },
+  { rank: 5, name: "Yetkili Ofisi Kıdemli Staj", id: "1544393943570190456" },
+  { rank: 6, name: "Yetkili Ofisi Staj", id: "1544394096918003712" }
+];
+
+const ALL_STAFF_ROLE_IDS = Array.from(new Set(STAFF_RANKS.map(r => r.id)));
 
 const DATA_FILE = path.join(__dirname, '../../data/robloxland_staff_management.json');
 
-// Bellek İçi Anonim DM Oturumları: sessionId -> { sessionId, staffUserId, managerUserId, createdAt, messages: [] }
+// Bellek İçi Anonim DM Oturumları: sessionId -> { sessionId, staffUserId, managerUserId, createdAt, active: true }
 const activeAnonSessions = new Map();
 
 function loadStaffData() {
+  let data = null;
   try {
     if (fs.existsSync(DATA_FILE)) {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     }
   } catch (err) {
     console.error('[StaffManagement] Load error:', err.message);
   }
-  return {
-    staffMembers: {}, // userId -> { userId, username, joinedStaffAt, lastWorkAt, workCountTotal, workCount30d, streakDays, status, leaveUntil, leaveReason, performanceScore, warningsCount, historyLogs: [], assignedTasks: [] }
-    panelMessageId: null,
-    weeklyStats: {
-      weekNumber: getWeekNumber(),
-      totalWorksThisWeek: 0
-    }
-  };
+  if (!data || typeof data !== 'object') data = {};
+  if (!data.staffMembers) data.staffMembers = {};
+  if (!data.pendingWorks) data.pendingWorks = {};
+  if (!data.pendingAppeals) data.pendingAppeals = {};
+  if (!data.pendingLeaves) data.pendingLeaves = {};
+  if (!data.activeTasks) data.activeTasks = {};
+  if (!data.weeklyStats) data.weeklyStats = { weekNumber: getWeekNumber(), totalWorksThisWeek: 0 };
+  return data;
 }
 
 function saveStaffData(data) {
@@ -64,7 +76,7 @@ function getWeekNumber(d = new Date()) {
 }
 
 /**
- * Yetkili Yetki Kontrolü
+ * Yönetici Yetki Kontrolü
  */
 function isAuthorizedManager(member) {
   if (!member) return false;
@@ -82,35 +94,153 @@ function isAuthorizedManager(member) {
       member.permissions.has(PermissionFlagsBits.Administrator) ||
       member.permissions.has(PermissionFlagsBits.ModerateMembers)
     )) ||
-    (member.roles?.cache?.has && member.roles.cache.has(STAFF_ROLE_ID)) ||
-    (Array.isArray(rolesList) ? rolesList.some(r => /kurucu|yönetici|admin|ik|sorumlu/i.test(r?.name || '')) : (typeof rolesList.some === 'function' && rolesList.some(r => /kurucu|yönetici|admin|ik|sorumlu/i.test(r?.name || ''))))
+    (member.roles?.cache?.has && (
+      member.roles.cache.has(STAFF_RANKS[0].id) ||
+      member.roles.cache.has(STAFF_RANKS[1].id) ||
+      member.roles.cache.has(STAFF_RANKS[2].id)
+    )) ||
+    (Array.isArray(rolesList) ? rolesList.some(r => /başkan|müdür|yönetici|admin|ik|kurucu/i.test(r?.name || '')) : (typeof rolesList.some === 'function' && rolesList.some(r => /başkan|müdür|yönetici|admin|ik|kurucu/i.test(r?.name || ''))))
   );
 }
 
 /**
- * Yetkili Sağlık Durumunu Hesaplar
+ * 1. Yetkili Aktivite & Sağlık Durumunu Hesaplar
  */
 function calculateStaffHealth(staff) {
   const now = Date.now();
   if (staff.leaveUntil && staff.leaveUntil > now) {
+    const untilDate = new Date(staff.leaveUntil).toLocaleDateString('tr-TR');
     return {
       status: 'leave',
-      badge: '🏖️ İzinli',
-      desc: `İzinli (${new Date(staff.leaveUntil).toLocaleDateString('tr-TR')}'e kadar)`
+      badge: `🏖️ İzinli — ${untilDate}'e kadar`,
+      shortBadge: '🏖️ İzinli',
+      desc: `İzinli (${untilDate}'e kadar)`
     };
   }
 
   const daysSinceWork = Math.floor((now - (staff.lastWorkAt || staff.joinedStaffAt || now)) / (1000 * 60 * 60 * 24));
 
   if (daysSinceWork <= 6) {
-    return { status: 'active', badge: '🟢 Çok Aktif', daysSinceWork, desc: `${daysSinceWork} gün önce çalışma yaptı` };
+    return {
+      status: 'active',
+      badge: '🟢 Aktif',
+      shortBadge: '🟢 Aktif',
+      daysSinceWork,
+      desc: daysSinceWork === 0 ? 'Bugün çalışma yaptı' : `${daysSinceWork} gün önce çalışma yaptı`
+    };
   } else if (daysSinceWork <= 9) {
-    return { status: 'warning', badge: '🟡 Yakında Çalışma Gerekli', daysSinceWork, desc: `${daysSinceWork} gündür paylaşım yapmadı` };
+    return {
+      status: 'warning',
+      badge: '🟡 Çalışma bekleniyor',
+      shortBadge: '🟡 Bekleniyor',
+      daysSinceWork,
+      desc: `${daysSinceWork} gündür paylaşım yapmadı`
+    };
+  } else if (daysSinceWork <= 12) {
+    if (staff.acknowledgedActive) {
+      return {
+        status: 'acknowledged',
+        badge: '🟡 Aktif olduğunu belirtti',
+        shortBadge: '🟡 Aktif Belirtti',
+        daysSinceWork,
+        desc: `${daysSinceWork} gündür çalışma yok (Aktifim dedi)`
+      };
+    }
+    return {
+      status: 'passive_10d',
+      badge: '🟠 10 gündür çalışma yok',
+      shortBadge: '🟠 10 Gün Yok',
+      daysSinceWork,
+      desc: '10 gündür sistem/map paylaşmadı (DM gönderildi)'
+    };
   } else if (daysSinceWork <= 19) {
-    return { status: 'passive', badge: '🟠 Pasifleşiyor / Uyarıda', daysSinceWork, desc: `${daysSinceWork} gündür çalışma yapmadı (DM gönderildi)` };
+    return {
+      status: 'passive_13d',
+      badge: '🔴 13 gündür çalışma yok',
+      shortBadge: '🔴 13 Gün Yok',
+      daysSinceWork,
+      desc: '13 gündür çalışma yapılmadı (Ciddi uyarı DM gönderildi)'
+    };
   } else {
-    return { status: 'review', badge: '🔴 İnceleme / RD Önerisi', daysSinceWork, desc: `${daysSinceWork} gündür inaktif!` };
+    return {
+      status: 'review_20d',
+      badge: '⚠️ YÖNETİCİ İNCELEMESİ GEREKLİ (🔴 RD ADAYI)',
+      shortBadge: '🔴 RD Adayı',
+      daysSinceWork,
+      desc: `${daysSinceWork} gündür tamamen inaktif!`
+    };
   }
+}
+
+/**
+ * 3. Akıllı Terfi Şartlarını Değerlendirir
+ */
+function evaluatePromotionEligibility(staff) {
+  const now = Date.now();
+  const daysInRank = Math.floor((now - (staff.lastPromotionAt || staff.joinedStaffAt || now)) / (1000 * 60 * 60 * 24));
+  const performance = staff.performanceScore || 70;
+  const works30d = staff.workCount30d || 0;
+  const activeWarnings = staff.warningsCount || 0;
+  const qualityWorks = staff.qualityWorksCount || 0;
+
+  const reqDays = 14;
+  const reqPerf = 80;
+  const reqWorks = 10;
+  const reqQuality = 3;
+
+  const passedDays = daysInRank >= reqDays;
+  const passedPerf = performance >= reqPerf;
+  const passedWorks = works30d >= reqWorks;
+  const passedWarnings = activeWarnings === 0;
+  const passedQuality = qualityWorks >= reqQuality;
+
+  const completedCount = [passedDays, passedPerf, passedWorks, passedWarnings, passedQuality].filter(Boolean).length;
+  const progressPercent = Math.round((completedCount / 5) * 100);
+  const isReady = progressPercent === 100;
+
+  const missingItems = [];
+  if (!passedDays) missingItems.push(`${reqDays - daysInRank} gün görev süresi`);
+  if (!passedPerf) missingItems.push(`${reqPerf - performance} performans puanı`);
+  if (!passedWorks) missingItems.push(`${reqWorks - works30d} sistem/map paylaşımı`);
+  if (!passedWarnings) missingItems.push(`Aktif uyarıların temizlenmesi (${activeWarnings} uyarı var)`);
+  if (!passedQuality) missingItems.push(`${reqQuality - qualityWorks} kaliteli çalışma (4+ yıldız)`);
+
+  return {
+    isReady,
+    progressPercent,
+    daysInRank,
+    performance,
+    works30d,
+    activeWarnings,
+    qualityWorks,
+    passedDays,
+    passedPerf,
+    passedWorks,
+    passedWarnings,
+    passedQuality,
+    missingItems
+  };
+}
+
+/**
+ * 4. Akıllı RD (Rütbe Düşürme) Kriterlerini Değerlendirir
+ */
+function evaluateDemotionRisk(staff) {
+  const health = calculateStaffHealth(staff);
+  const performance = staff.performanceScore || 70;
+  const activeWarnings = staff.warningsCount || 0;
+
+  const reasons = [];
+  if (health.daysSinceWork >= 20) reasons.push(`${health.daysSinceWork} gündür çalışma yok`);
+  if (performance < 35) reasons.push(`Performans ${performance}/100 (35 altı)`);
+  if (activeWarnings >= 2) reasons.push(`${activeWarnings} aktif uyarı`);
+
+  const isRisk = reasons.length >= 2 || health.daysSinceWork >= 20;
+
+  return {
+    isRisk,
+    reasons
+  };
 }
 
 /**
@@ -125,58 +255,83 @@ function renderProgressBar(score = 100) {
 }
 
 /**
- * Ana Yetkili Yönetim Merkezi Paneli Payload'u
+ * 10. Ana Yönetici Kontrol Merkezi Paneli (Hub Payload)
  */
 function buildStaffManagementPayload(data = loadStaffData()) {
   const staffList = Object.values(data.staffMembers || {});
   const totalStaff = staffList.length;
 
   let activeCount = 0;
-  let warningCount = 0;
-  let passiveCount = 0;
+  let lowActiveCount = 0;
   let leaveCount = 0;
-  let topStaff = null;
-  const needReview = [];
+  let reviewCount = 0;
+
+  const promotionCandidates = [];
+  const demotionCandidates = [];
 
   for (const staff of staffList) {
     const health = calculateStaffHealth(staff);
     if (health.status === 'leave') leaveCount++;
     else if (health.status === 'active') activeCount++;
-    else if (health.status === 'warning') warningCount++;
-    else {
-      passiveCount++;
-      needReview.push(staff);
-    }
+    else if (health.status === 'warning' || health.status === 'acknowledged') lowActiveCount++;
+    else reviewCount++;
 
-    if (!topStaff || (staff.workCount30d || 0) > (topStaff.workCount30d || 0)) {
-      topStaff = staff;
-    }
+    const promo = evaluatePromotionEligibility(staff);
+    if (promo.isReady) promotionCandidates.push(staff);
+
+    const demo = evaluateDemotionRisk(staff);
+    if (demo.isRisk) demotionCandidates.push(staff);
   }
 
-  const topStaffText = topStaff && topStaff.workCount30d > 0
-    ? `<@${topStaff.userId}> (${topStaff.workCount30d} paylaşım 🔥 ${topStaff.streakDays || 1} gün seri)`
-    : 'Henüz kayıt yok';
-
-  const reviewText = needReview.length > 0
-    ? needReview.slice(0, 3).map(s => `• <@${s.userId}> (${calculateStaffHealth(s).desc})`).join('\n')
-    : '🟢 Kontrol bekleyen pasif yetkili bulunmuyor.';
+  const pendingWorksCount = Object.values(data.pendingWorks || {}).filter(w => w.status === 'pending').length;
+  const pendingAppealsCount = Object.values(data.pendingAppeals || {}).filter(a => a.status === 'pending').length;
+  const pendingLeavesCount = Object.values(data.pendingLeaves || {}).filter(l => l.status === 'pending').length;
+  const activeTasksCount = Object.values(data.activeTasks || {}).filter(t => t.status !== 'completed').length;
 
   const currentWeekWorks = data.weeklyStats?.totalWorksThisWeek || 0;
 
   const content = [
     ComponentsV2Factory.text(
-      `# 🛡️ ROBLOXLND YETKİLİ YÖNETİM MERKEZİ\n` +
-      `*Yetkili kadrosunun haftalık/aylık performansını, 10 günlük paylaşım takibini ve idari işlemlerini bu panelden yönetebilirsiniz.*\n\n` +
+      `# 🛡️ ROBLOXLND YETKİLİ KONTROL MERKEZİ\n` +
+      `*Gelişmiş yetkili kadro takibi, kalite kontrollü çalışma sistemi ve akıllı terfi/RD yönetim merkezi.*\n\n` +
       `### 📊 Kadro Durumu & İstatistikler:\n` +
-      `• 👥 **Toplam Yetkili:** \`${totalStaff}\`\n` +
-      `• 🟢 **Aktif:** \`${activeCount}\` | 🟡 **Yakında Gerekli:** \`${warningCount}\` | 🔴 **Pasif/Uyarı:** \`${passiveCount}\` | 🏖️ **İzinli:** \`${leaveCount}\`\n\n` +
-      `• 📦 **Bu Hafta Paylaşılan Sistem/Map:** \`${currentWeekWorks}\` adet\n` +
-      `• 🏆 **Ayın En Aktif Yetkilisi:** ${topStaffText}\n\n` +
-      `### ⚠️ Dikkat & Kontrol Bekleyenler:\n` +
-      `${reviewText}\n\n` +
-      `-# 💡 *Sistem, 1538471137833394237 kategorisine atılan geçerli model, kod ve map paylaşımlarını 7/24 otomatik olarak çalışma sayar ve serileri işler.*`
+      `• 👥 **Toplam Kadro:** \`${totalStaff}\` Yetkili\n` +
+      `• 🟢 **Aktif:** \`${activeCount}\` | 🟡 **Düşük Aktivite:** \`${lowActiveCount}\` | 🏖️ **İzinli:** \`${leaveCount}\` | 🔴 **İnceleme Gerekli:** \`${reviewCount}\`\n\n` +
+      `### 💡 Akıllı Durum & Bekleyen İşlemler:\n` +
+      `• ⬆️ **Terfi Adayları:** \`${promotionCandidates.length}\` yetkili terfiye hazır\n` +
+      `• ⬇️ **RD Adayları:** \`${demotionCandidates.length}\` yetkili inceleme/risk altında\n` +
+      `• 📦 **Kalite Kontrolü Bekleyen Paylaşım:** \`${pendingWorksCount}\` çalışma\n` +
+      `• ⚖️ **Bekleyen Uyarı İtirazı:** \`${pendingAppealsCount}\` | 🏖️ **İzin Talebi:** \`${pendingLeavesCount}\` | 📋 **Aktif Görev:** \`${activeTasksCount}\`\n\n` +
+      `• 📦 **Bu Hafta Onaylanan Sistem/Map:** \`${currentWeekWorks}\` adet\n\n` +
+      `-# 💡 *Sistem, 1538471137833394237 kategorisindeki çalışmaları 7/24 denetler; 10. ve 13. günlerde otomatik DM ile durum kontrolü sağlar.*`
     ),
     ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Primary,
+        label: "👥 Yetkili Kadrosu & Profiller",
+        custom_id: "robloxland_staffmgmt_list",
+        emoji: { name: "👥" }
+      },
+      {
+        style: ButtonStyle.Success,
+        label: `⬆️ Terfi Adayları (${promotionCandidates.length})`,
+        custom_id: "robloxland_staffmgmt_view_promos",
+        emoji: { name: "⬆️" }
+      },
+      {
+        style: ButtonStyle.Danger,
+        label: `🔴 İnceleme / RD (${demotionCandidates.length})`,
+        custom_id: "robloxland_staffmgmt_view_demos",
+        emoji: { name: "⚠️" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: `📦 Çalışma İncele (${pendingWorksCount})`,
+        custom_id: "robloxland_staffmgmt_view_works",
+        emoji: { name: "📦" }
+      }
+    ]),
     ComponentsV2Factory.actionRow([
       {
         style: ButtonStyle.Success,
@@ -185,48 +340,108 @@ function buildStaffManagementPayload(data = loadStaffData()) {
         emoji: { name: "➕" }
       },
       {
-        style: ButtonStyle.Primary,
-        label: "👥 Yetkili Kadrosu & Sağlık",
-        custom_id: "robloxland_staffmgmt_list",
-        emoji: { name: "👥" }
-      },
-      {
-        style: ButtonStyle.Primary,
-        label: "📊 Performans & Seri Tablosu",
-        custom_id: "robloxland_staffmgmt_leaderboard",
-        emoji: { name: "🏆" }
+        style: ButtonStyle.Secondary,
+        label: "📋 Görevler",
+        custom_id: "robloxland_staffmgmt_task_hub",
+        emoji: { name: "📋" }
       },
       {
         style: ButtonStyle.Secondary,
-        label: "📨 Mesaj Gönder",
-        custom_id: "robloxland_staffmgmt_broadcast",
-        emoji: { name: "📨" }
-      }
-    ]),
-    ComponentsV2Factory.actionRow([
-      {
-        style: ButtonStyle.Secondary,
-        label: "🕵️ Anonim Görüşme Başlat",
-        custom_id: "robloxland_staffmgmt_anon_dm",
-        emoji: { name: "🕵️" }
-      },
-      {
-        style: ButtonStyle.Secondary,
-        label: "🏖️ İzin Yönetimi",
-        custom_id: "robloxland_staffmgmt_leave",
-        emoji: { name: "🏖️" }
-      },
-      {
-        style: ButtonStyle.Secondary,
-        label: "🎯 Görev Ata",
-        custom_id: "robloxland_staffmgmt_task",
-        emoji: { name: "🎯" }
+        label: "🏖️ İzinler & İtirazlar",
+        custom_id: "robloxland_staffmgmt_requests_hub",
+        emoji: { name: "⚖️" }
       },
       {
         style: ButtonStyle.Secondary,
         label: "🔄 Yenile",
         custom_id: "robloxland_staffmgmt_refresh",
         emoji: { name: "🔄" }
+      }
+    ])
+  ];
+
+  return ComponentsV2Factory.buildPayload(content);
+}
+
+/**
+ * 2. Gelişmiş Yetkili Profil Kartı Payload'u
+ */
+function buildStaffProfilePayload(staff) {
+  const health = calculateStaffHealth(staff);
+  const promo = evaluatePromotionEligibility(staff);
+  const demo = evaluateDemotionRisk(staff);
+  const perfBar = renderProgressBar(staff.performanceScore || 80);
+
+  let promoSection = '';
+  if (promo.isReady) {
+    promoSection = `### ⬆️ Terfi Durumu: ✅ TERFİYE HAZIR!\n` +
+                   `> Bu yetkili tüm terfi kriterlerini eksiksiz tamamladı. Yöneticiler terfi butonunu kullanarak rütbesini yükseltebilir.\n`;
+  } else {
+    promoSection = `### ⬆️ Terfi İlerlemesi: %${promo.progressPercent}\n` +
+                   `• ${promo.passedDays ? '✅' : '❌'} 14 gün görev süresi (${promo.daysInRank}/14 gün)\n` +
+                   `• ${promo.passedWorks ? '✅' : '❌'} 10 sistem/map çalışması (${promo.works30d}/10)\n` +
+                   `• ${promo.passedPerf ? '✅' : '❌'} 80+ Performans puanı (${promo.performance}/80)\n` +
+                   `• ${promo.passedQuality ? '✅' : '❌'} En az 3 kaliteli çalışma (${promo.qualityWorks}/3)\n` +
+                   `• ${promo.passedWarnings ? '✅' : '❌'} Aktif uyarı olmaması (${promo.activeWarnings} uyarı)\n` +
+                   `*Eksikler:* ${promo.missingItems.length ? promo.missingItems.join(', ') : 'Yok'}\n`;
+  }
+
+  let demoWarning = '';
+  if (demo.isRisk) {
+    demoWarning = `\n> ⚠️ **YÖNETİCİ İNCELEMESİ GEREKLİ (RD ADAYI)**\n` +
+                  `> *Risk Gerekçeleri:* ${demo.reasons.join(', ')}\n`;
+  }
+
+  const logsText = (staff.historyLogs && staff.historyLogs.length > 0)
+    ? staff.historyLogs.slice(0, 5).map(l => `• <t:${Math.floor(l.date / 1000)}:d> — ${l.text}`).join('\n')
+    : '• Henüz işlem kaydı bulunmuyor.';
+
+  const content = [
+    ComponentsV2Factory.text(
+      `# 👤 YETKİLİ PROFİL KARTI — <@${staff.userId}>\n\n` +
+      `• 🏷️ **Rütbe:** \`${staff.roleName || 'Yetkili'}\`\n` +
+      `• 🛡️ **Durum:** ${health.badge}\n` +
+      `• ⭐ **Performans:** \`${staff.performanceScore || 80}/100\` [${perfBar}]\n\n` +
+      `• 📦 **Bu Ayki Çalışmalar:** \`${staff.workCount30d || 0}\` adet | 🌟 **Kaliteli Çalışma:** \`${staff.qualityWorksCount || 0}\`\n` +
+      `• 🔥 **Çalışma Serisi:** \`${staff.streakDays || 1}\` gün\n` +
+      `• ⚠️ **Aktif Uyarılar:** \`${staff.warningsCount || 0}\`\n` +
+      `• 📅 **Son Çalışma:** ${health.desc}\n` +
+      demoWarning + `\n` +
+      promoSection + `\n` +
+      `### 📋 Son İşlem Geçmişi (Sicil):\n` +
+      logsText
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Success,
+        label: promo.isReady ? "⬆️ Terfi Et (Hazır)" : "⬆️ Terfi",
+        custom_id: `robloxland_staffmgmt_act_promote_${staff.userId}`,
+        emoji: { name: "⬆️" }
+      },
+      {
+        style: ButtonStyle.Danger,
+        label: "⬇️ RD Değerlendir",
+        custom_id: `robloxland_staffmgmt_act_demote_${staff.userId}`,
+        emoji: { name: "⬇️" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "⚠️ Uyar",
+        custom_id: `robloxland_staffmgmt_act_warn_${staff.userId}`,
+        emoji: { name: "⚠️" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🕵️ Anonim Mesaj",
+        custom_id: `robloxland_staffmgmt_act_anonmsg_${staff.userId}`,
+        emoji: { name: "🕵️" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🔙 Kadro Listesi",
+        custom_id: "robloxland_staffmgmt_list",
+        emoji: { name: "🔙" }
       }
     ])
   ];
@@ -242,17 +457,15 @@ function isValidWorkMessage(message) {
   const content = message.content || '';
   const hasAttachment = Boolean(message.attachments && message.attachments.size > 0);
 
-  // Linkler: roblox, github, devforum, pastebin vb.
   const hasValidLink = /(roblox\.com|github\.com|devforum\.roblox\.com|pastebin\.com|mediafire\.com|drive\.google\.com)/i.test(content);
-  // Kod blokları veya belirgin model/sistem açıklaması
   const hasCodeBlock = content.includes('```') && content.length >= 30;
-  const hasDetailedWorkDescription = content.length >= 60 && /(sistem|model|map|script|ui|gui|harita|plugin|animasyon)/i.test(content);
+  const hasDetailedWorkDescription = content.length >= 50 && /(sistem|model|map|script|ui|gui|harita|plugin|animasyon)/i.test(content);
 
   return hasAttachment || hasValidLink || hasCodeBlock || hasDetailedWorkDescription;
 }
 
 /**
- * Kategorideki Paylaşım Mesajını Dinler ve Yetkili Çalışmasını Kaydeder
+ * 6. Kategorideki Paylaşım Mesajını Dinler ve Kalite Kontrol Havuzuna Gönderir
  */
 async function handleStaffWorkMessage(message) {
   if (!message || !message.guild || message.guild.id !== GUILD_ID) return false;
@@ -269,16 +482,18 @@ async function handleStaffWorkMessage(message) {
 
   const data = loadStaffData();
   const userId = message.author.id;
+  const workId = `work-${Date.now().toString().slice(-6)}`;
 
   if (!data.staffMembers[userId]) {
-    // Kayıtlı değilse otomatik profil oluştur
     data.staffMembers[userId] = {
       userId,
       username: message.author.username,
+      roleName: "Moderatör",
       joinedStaffAt: Date.now(),
       lastWorkAt: Date.now(),
-      workCountTotal: 1,
-      workCount30d: 1,
+      workCountTotal: 0,
+      workCount30d: 0,
+      qualityWorksCount: 0,
       streakDays: 1,
       status: 'active',
       leaveUntil: null,
@@ -286,53 +501,83 @@ async function handleStaffWorkMessage(message) {
       performanceScore: 80,
       warningsCount: 0,
       historyLogs: [
-        { date: Date.now(), text: 'Sisteme katıldı ve ilk sistem/map paylaşımını yaptı (+5 Puan)' }
+        { date: Date.now(), text: 'Kadroya katıldı ve ilk çalışmasını gönderdi (İncelemede)' }
       ],
       assignedTasks: []
     };
-  } else {
-    const staff = data.staffMembers[userId];
-    const prevWork = staff.lastWorkAt || staff.joinedStaffAt || 0;
-    const daysSince = Math.floor((Date.now() - prevWork) / (1000 * 60 * 60 * 24));
-
-    staff.lastWorkAt = Date.now();
-    staff.workCountTotal = (staff.workCountTotal || 0) + 1;
-    staff.workCount30d = (staff.workCount30d || 0) + 1;
-    staff.performanceScore = Math.min(100, (staff.performanceScore || 70) + 5);
-
-    if (daysSince <= 7) {
-      staff.streakDays = (staff.streakDays || 0) + 1;
-    } else {
-      staff.streakDays = 1;
-    }
-
-    staff.historyLogs = staff.historyLogs || [];
-    staff.historyLogs.unshift({
-      date: Date.now(),
-      text: `Sistem/Map paylaştı (<#${message.channelId}>) — +5 Performans Puanı (Güncel: ${staff.performanceScore}/100)`
-    });
-    if (staff.historyLogs.length > 20) staff.historyLogs = staff.historyLogs.slice(0, 20);
   }
 
-  // Haftalık sayaç
-  const currentWeek = getWeekNumber();
-  if (data.weeklyStats?.weekNumber !== currentWeek) {
-    data.weeklyStats = { weekNumber: currentWeek, totalWorksThisWeek: 1 };
-  } else {
-    data.weeklyStats.totalWorksThisWeek = (data.weeklyStats.totalWorksThisWeek || 0) + 1;
-  }
+  // Kalite Kontrol Havuzuna Ekle (⏳ İnceleme Bekliyor)
+  data.pendingWorks[workId] = {
+    id: workId,
+    userId,
+    username: message.author.username,
+    channelId: message.channelId,
+    messageId: message.id,
+    content: message.content?.slice(0, 300) || 'Dosya / Attachment Paylaşımı',
+    submittedAt: Date.now(),
+    status: 'pending',
+    stars: 0,
+    reviewReason: ''
+  };
 
   saveStaffData(data);
 
-  // Tepki vererek teyit et
-  await message.react('📦').catch(() => {});
-  await message.react('⭐').catch(() => {});
+  // Tepki ile iletildiğini belirt
+  await message.react('⏳').catch(() => {});
+
+  // Yönetim Kanalına Bildir
+  try {
+    const mgmtChan = message.guild.channels.cache.get(PANEL_CHANNEL_ID) ||
+                     await message.guild.channels.fetch(PANEL_CHANNEL_ID).catch(() => null);
+    if (mgmtChan && mgmtChan.isTextBased()) {
+      await mgmtChan.send({
+        ...ComponentsV2Factory.buildPayload([
+          ComponentsV2Factory.text(
+            `# 📦 YENİ SİSTEM/MAP ÇALIŞMASI GELDİ (#${workId})\n\n` +
+            `👤 **Gönderen:** <@${userId}> (\`${message.author.tag}\`)\n` +
+            `📍 **Kanal:** <#${message.channelId}>\n` +
+            `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+            `**Açıklama / İçerik:**\n> ${message.content?.slice(0, 250) || 'Dosya/Model eki paylaşıldı.'}\n\n` +
+            `*Lütfen çalışmanın kalitesini değerlendirerek onaylayınız veya revize isteyiniz:*`
+          ),
+          ComponentsV2Factory.separator(true),
+          ComponentsV2Factory.actionRow([
+            {
+              style: ButtonStyle.Success,
+              label: "⭐ 5 Yıldız (+7 Puan)",
+              custom_id: `robloxland_staffmgmt_rate_5_${workId}`,
+              emoji: { name: "🌟" }
+            },
+            {
+              style: ButtonStyle.Primary,
+              label: "⭐ 3 Yıldız (+4 Puan)",
+              custom_id: `robloxland_staffmgmt_rate_3_${workId}`,
+              emoji: { name: "⭐" }
+            },
+            {
+              style: ButtonStyle.Secondary,
+              label: "⭐ 1 Yıldız (+1 Puan)",
+              custom_id: `robloxland_staffmgmt_rate_1_${workId}`,
+              emoji: { name: "✨" }
+            },
+            {
+              style: ButtonStyle.Danger,
+              label: "❌ Reddet / Revize",
+              custom_id: `robloxland_staffmgmt_rate_reject_${workId}`,
+              emoji: { name: "🚫" }
+            }
+          ])
+        ])
+      });
+    }
+  } catch (_) {}
 
   return true;
 }
 
 /**
- * 10 Günlük & 13 Günlük Periyodik Denetim Motoru
+ * 1. 10 Günlük & 13 Günlük Periyodik Denetim & Uyarı Motoru
  */
 async function runDailyStaffAudit(client) {
   const data = loadStaffData();
@@ -348,38 +593,39 @@ async function runDailyStaffAudit(client) {
       const user = await client.users.fetch(staff.userId).catch(() => null);
       if (!user) continue;
 
-      // 10. Gün Uyarısı (İlk Nazik Hatırlatma)
-      if (daysSinceWork === 10 && !staff.warned10d) {
+      // 10. Gün: İlk Nazik Hatırlatma DM
+      if (daysSinceWork >= 10 && daysSinceWork < 13 && !staff.warned10d) {
         staff.warned10d = true;
-        staff.performanceScore = Math.max(0, (staff.performanceScore || 70) - 10);
+        staff.acknowledgedActive = false;
+        staff.performanceScore = Math.max(0, (staff.performanceScore || 70) - 5);
         staff.historyLogs = staff.historyLogs || [];
-        staff.historyLogs.unshift({ date: now, text: '10 gündür çalışma yapılmadığı için aktivite hatırlatması yapıldı (-10 Puan)' });
+        staff.historyLogs.unshift({ date: now, text: '10 gündür çalışma yapılmadığı için aktivite hatırlatması yapıldı (-5 Puan)' });
 
         const dmPayload = ComponentsV2Factory.buildPayload([
           ComponentsV2Factory.text(
             `# 🔔 RobloxLand Yetkili Aktivite Kontrolü\n\n` +
             `Selam **${user.username}** 👋\n\n` +
-            `Bir süredir sistem/map kategorisinde herhangi bir paylaşım yapmadığını fark ettik (Son 10 gün).\n` +
-            `Durumunu teyit etmek ve sana destek olmak için ulaşıyoruz. Aktif misin?\n\n` +
+            `Bir süredir sistem veya map paylaşmadığını fark ettik (Son 10 gün).\n` +
+            `Aktif misin?\n\n` +
             `-# Lütfen aşağıdaki butonlardan durumunu seç:`
           ),
           ComponentsV2Factory.separator(true),
           ComponentsV2Factory.actionRow([
             {
               style: ButtonStyle.Success,
-              label: "✅ Aktifim, Çalışıyorum",
+              label: "✅ Aktifim",
               custom_id: `robloxland_staff_dm_active_${staff.userId}`,
               emoji: { name: "✅" }
             },
             {
               style: ButtonStyle.Primary,
-              label: "🏖️ İzinliyim / Mola",
+              label: "🏖️ İzinliyim",
               custom_id: `robloxland_staff_dm_leave_${staff.userId}`,
               emoji: { name: "🏖️" }
             },
             {
               style: ButtonStyle.Secondary,
-              label: "💬 Yönetime Yaz",
+              label: "💬 Sorun Var / Yönetime Yaz",
               custom_id: `robloxland_staff_dm_reply_${staff.userId}`,
               emoji: { name: "💬" }
             }
@@ -389,20 +635,20 @@ async function runDailyStaffAudit(client) {
         await user.send(dmPayload).catch(() => {});
       }
 
-      // 13. Gün Uyarısı (3 gün daha geçince)
-      if (daysSinceWork === 13 && !staff.warned13d) {
+      // 13. Gün: Ciddi Hatırlatma DM (3 gün daha bir şey atmazsa)
+      if (daysSinceWork >= 13 && !staff.warned13d) {
         staff.warned13d = true;
         staff.performanceScore = Math.max(0, (staff.performanceScore || 70) - 10);
         staff.historyLogs = staff.historyLogs || [];
-        staff.historyLogs.unshift({ date: now, text: '13 gündür çalışma yapılmadığı için 2. kontrol uyarısı gönderildi' });
+        staff.historyLogs.unshift({ date: now, text: '13 gündür çalışma yapılmadığı için 2. kontrol uyarısı gönderildi (-10 Puan)' });
 
         const dmPayload13 = ComponentsV2Factory.buildPayload([
           ComponentsV2Factory.text(
-            `# ⚠️ RobloxLand Yetkili Durum Hatırlatması\n\n` +
+            `# ⚠️ RobloxLand Yetkili Durum Uyarısı\n\n` +
             `Selam **${user.username}**,\n\n` +
-            `3 gündür hâlâ herhangi bir sistem veya map paylaşmadığını görüyoruz (Toplam 13 gün).\n` +
-            `Bir sorun mu var? Eğer sınavların, işlerin veya yardıma ihtiyacın olan bir konu varsa lütfen yönetime bildir.\n\n` +
-            `Ekibimizin aktifliği topluluğumuz için çok değerlidir.`
+            `3 gündür hâlâ hiç sistem-map atmadın! Bir şey mi oldu?\n` +
+            `Eğer yardıma ihtiyacın varsa veya mazeretin bulunuyorsa lütfen yönetime bildir.\n\n` +
+            `Topluluğumuz için yetkili kadromuzun aktifliği büyük önem taşımaktadır.`
           ),
           ComponentsV2Factory.separator(true),
           ComponentsV2Factory.actionRow([
@@ -430,7 +676,7 @@ async function runDailyStaffAudit(client) {
 }
 
 /**
- * Yetkili Yönetim Etkileşimlerini İşler (Buttons & Modals)
+ * Tüm Etkileşimleri Yönetir (Buttons, Select Menus, Modals)
  */
 async function handleStaffManagementInteraction(interaction) {
   const customId = interaction.customId;
@@ -441,18 +687,18 @@ async function handleStaffManagementInteraction(interaction) {
   const { guild, member, user } = interaction;
   const data = loadStaffData();
 
-  // 1. DM Butonları (Yetkili DM'sinden gelenler)
+  // ── 1. DM Üzerinden Gelen Yetkili Butonları ──
   if (customId.startsWith('robloxland_staff_dm_')) {
     if (customId.startsWith('robloxland_staff_dm_active_')) {
       const staffId = customId.replace('robloxland_staff_dm_active_', '');
       if (data.staffMembers[staffId]) {
-        data.staffMembers[staffId].warned10d = false;
+        data.staffMembers[staffId].acknowledgedActive = true;
         data.staffMembers[staffId].historyLogs = data.staffMembers[staffId].historyLogs || [];
         data.staffMembers[staffId].historyLogs.unshift({ date: Date.now(), text: 'DM uyarısına "Aktifim" yanıtı verdi' });
         saveStaffData(data);
       }
       return await interaction.reply({
-        content: '✅ **Geri bildirimin alındı!** En kısa sürede sistem/map paylaşımını bekliyoruz. İyi çalışmalar!',
+        content: '✅ **Geri bildirimin alındı!** Panelde durumun `🟡 Aktif olduğunu belirtti` olarak güncellendi. Lütfen en kısa sürede sistem/map paylaşımını gerçekleştir.',
         ephemeral: true
       });
     }
@@ -461,13 +707,13 @@ async function handleStaffManagementInteraction(interaction) {
       const staffId = customId.replace('robloxland_staff_dm_leave_', '');
       const modal = new ModalBuilder()
         .setCustomId(`robloxland_staffmgmt_modal_dmleave_${staffId}`)
-        .setTitle("🏖️ İzin Bildirimi Formu");
+        .setTitle("🏖️ İzin & Mazeret Talep Formu");
 
       modal.addComponents(
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
             .setCustomId("leave_days")
-            .setLabel("İzin Süresi (Gün Sayısı Olarak)")
+            .setLabel("İzin Süresi (Gün Sayısı)")
             .setPlaceholder("Örn: 3, 7 veya 14")
             .setStyle(TextInputStyle.Short)
             .setMaxLength(3)
@@ -476,8 +722,8 @@ async function handleStaffManagementInteraction(interaction) {
         new ActionRowBuilder().addComponents(
           new TextInputBuilder()
             .setCustomId("leave_reason")
-            .setLabel("İzin Gerekçeniz")
-            .setPlaceholder("Örn: Sınav haftası / Tatil / Kişisel sebepler")
+            .setLabel("İzin Gerekçesi")
+            .setPlaceholder("Örn: Sınav haftam / Tatil / Kişisel işler")
             .setStyle(TextInputStyle.Paragraph)
             .setMaxLength(200)
             .setRequired(true)
@@ -511,57 +757,67 @@ async function handleStaffManagementInteraction(interaction) {
     }
   }
 
-  // 2. DM Modal Yanıtları
+  // ── 2. DM Modalları ──
   if (customId.startsWith('robloxland_staffmgmt_modal_dmleave_')) {
     const staffId = customId.replace('robloxland_staffmgmt_modal_dmleave_', '');
     const daysRaw = parseInt(interaction.fields.getTextInputValue('leave_days'), 10) || 7;
     const days = Math.max(1, Math.min(60, daysRaw));
     const reason = interaction.fields.getTextInputValue('leave_reason') || 'Belirtilmedi';
 
-    if (data.staffMembers[staffId]) {
-      data.staffMembers[staffId].leaveUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
-      data.staffMembers[staffId].leaveReason = reason;
-      data.staffMembers[staffId].historyLogs = data.staffMembers[staffId].historyLogs || [];
-      data.staffMembers[staffId].historyLogs.unshift({ date: Date.now(), text: `İzin aldı (${days} gün): ${reason}` });
-      saveStaffData(data);
-    }
+    const leaveId = `leave-${Date.now().toString().slice(-5)}`;
+    data.pendingLeaves[leaveId] = {
+      id: leaveId,
+      userId: staffId,
+      username: user.username,
+      durationDays: days,
+      reason: reason,
+      submittedAt: Date.now(),
+      status: 'pending'
+    };
+    saveStaffData(data);
 
-    await interaction.reply({
-      content: `🏖️ **İzniniz kaydedildi!** ${days} gün boyunca (${new Date(Date.now() + days * 86400000).toLocaleDateString('tr-TR')} tarihine kadar) sistem çalışma uyarısı göndermeyecektir.`,
-      ephemeral: true
-    });
-    return true;
-  }
-
-  if (customId.startsWith('robloxland_staffmgmt_modal_dmreply_')) {
-    const staffId = customId.replace('robloxland_staffmgmt_modal_dmreply_', '');
-    const text = interaction.fields.getTextInputValue('reply_text');
-
+    // Yönetim Kanalına Bildir
     try {
-      const logChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
-                      interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
-      if (logChan && logChan.isTextBased()) {
-        await logChan.send({
+      const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
+                       interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
+      if (mgmtChan && mgmtChan.isTextBased()) {
+        await mgmtChan.send({
           ...ComponentsV2Factory.buildPayload([
             ComponentsV2Factory.text(
-              `# 💬 Yetkili Yanıtı Geldi!\n\n` +
-              `👤 **Yetkili:** <@${staffId}> (\`${staffId}\`)\n` +
-              `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
-              `**Mesaj:**\n> ${text}`
-            )
+              `# 🏖️ YENİ İZİN TALEBİ GELDİ (#${leaveId})\n\n` +
+              `👤 **Yetkili:** <@${staffId}> (\`${user.tag}\`)\n` +
+              `⏱️ **Talep Edilen Süre:** \`${days} Gün\`\n` +
+              `📝 **Gerekçe:** ${reason}\n\n` +
+              `*İzin onaylandığında aktivite sayacı durdurulur:*`
+            ),
+            ComponentsV2Factory.separator(true),
+            ComponentsV2Factory.actionRow([
+              {
+                style: ButtonStyle.Success,
+                label: "✅ İzni Onayla",
+                custom_id: `robloxland_staffmgmt_approve_leave_${leaveId}`,
+                emoji: { name: "✅" }
+              },
+              {
+                style: ButtonStyle.Danger,
+                label: "❌ Reddet",
+                custom_id: `robloxland_staffmgmt_reject_leave_${leaveId}`,
+                emoji: { name: "🚫" }
+              }
+            ])
           ])
         });
       }
     } catch (_) {}
 
     await interaction.reply({
-      content: '✅ Mesajınız yönetim kanalına başarıyla iletildi. Teşekkürler!',
+      content: `🏖️ **İzin talebiniz alındı!** (${days} gün). Yönetim onayladığında aktivite uyarıların durdurulacaktır.`,
       ephemeral: true
     });
     return true;
   }
 
-  // ── Yönetici Yetki Kontrolü ──
+  // ── 3. Yönetici İşlemleri (Yetki Denetimi) ──
   if (!isAuthorizedManager(member)) {
     return await interaction.reply({
       content: '❌ Bu yönetim panelini yalnızca RobloxLand yetkili amirleri ve yöneticileri kullanabilir.',
@@ -569,7 +825,856 @@ async function handleStaffManagementInteraction(interaction) {
     });
   }
 
-  // 3. Yetkili Ekle Butonu
+  // 6. Kalite Kontrolü Puanlama (5 Yıldız, 3 Yıldız, 1 Yıldız, Reddet)
+  if (customId.startsWith('robloxland_staffmgmt_rate_')) {
+    const parts = customId.split('_');
+    const action = parts[3]; // '5', '3', '1', 'reject'
+    const workId = parts.slice(4).join('_');
+
+    const work = data.pendingWorks[workId];
+    if (!work) {
+      return await interaction.reply({ content: '❌ Bu çalışma kaydı bulunamadı veya daha önce incelendi.', ephemeral: true });
+    }
+
+    const targetUserId = work.userId;
+    const staff = data.staffMembers[targetUserId];
+
+    if (action === 'reject') {
+      work.status = 'rejected';
+      work.reviewReason = 'Kalite standardı karşılanmadı / mükerrer içerik';
+      saveStaffData(data);
+
+      try {
+        const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+        if (u) {
+          await u.send(`❌ <#${work.channelId}> kanalında paylaştığınız sistem/map çalışması yönetim tarafından incelenmiş ve **reddedilmiştir**.\n• **Sebep:** Kalite standardı karşılanmadı veya daha önce sunucuda paylaşılmış.`);
+        }
+      } catch (_) {}
+
+      await interaction.reply({ content: `🚫 Çalışma (#${workId}) reddedildi ve yetkiliye bildirildi.`, ephemeral: true });
+      return true;
+    }
+
+    const stars = parseInt(action, 10) || 5;
+    let scoreAdd = 5;
+    if (stars === 5) scoreAdd = 7;
+    else if (stars === 3) scoreAdd = 4;
+    else if (stars === 1) scoreAdd = 1;
+
+    work.status = 'approved';
+    work.stars = stars;
+
+    if (staff) {
+      staff.lastWorkAt = Date.now();
+      staff.warned10d = false;
+      staff.warned13d = false;
+      staff.acknowledgedActive = false;
+      staff.workCountTotal = (staff.workCountTotal || 0) + 1;
+      staff.workCount30d = (staff.workCount30d || 0) + 1;
+      if (stars >= 4) staff.qualityWorksCount = (staff.qualityWorksCount || 0) + 1;
+
+      staff.performanceScore = Math.min(100, (staff.performanceScore || 70) + scoreAdd);
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `Sistem/Map onaylandı (${stars} ⭐) — +${scoreAdd} Performans Puanı (İnceleyen: ${user.tag})`
+      });
+    }
+
+    // Haftalık sayaç
+    const currentWeek = getWeekNumber();
+    if (data.weeklyStats?.weekNumber !== currentWeek) {
+      data.weeklyStats = { weekNumber: currentWeek, totalWorksThisWeek: 1 };
+    } else {
+      data.weeklyStats.totalWorksThisWeek = (data.weeklyStats.totalWorksThisWeek || 0) + 1;
+    }
+
+    saveStaffData(data);
+
+    try {
+      const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (u) {
+        await u.send(`🎉 Tebrikler! <#${work.channelId}> kanalındaki çalışmanız **${stars} Yıldız** ile onaylandı ve hesabınıza **+${scoreAdd} Performans Puanı** eklendi!`);
+      }
+    } catch (_) {}
+
+    await interaction.reply({ content: `✅ Çalışma onaylandı! (${stars} ⭐, +${scoreAdd} Puan yetkiliye tanımlandı).`, ephemeral: true });
+    return true;
+  }
+
+  // 9. İzin Talebini Onayla / Reddet
+  if (customId.startsWith('robloxland_staffmgmt_approve_leave_') || customId.startsWith('robloxland_staffmgmt_reject_leave_')) {
+    const isApprove = customId.startsWith('robloxland_staffmgmt_approve_leave_');
+    const leaveId = customId.replace('robloxland_staffmgmt_approve_leave_', '').replace('robloxland_staffmgmt_reject_leave_', '');
+
+    const leave = data.pendingLeaves[leaveId];
+    if (!leave) {
+      return await interaction.reply({ content: '❌ İzin talebi bulunamadı.', ephemeral: true });
+    }
+
+    leave.status = isApprove ? 'approved' : 'rejected';
+    const staff = data.staffMembers[leave.userId];
+
+    if (isApprove && staff) {
+      staff.leaveUntil = Date.now() + (leave.durationDays * 24 * 60 * 60 * 1000);
+      staff.leaveReason = leave.reason;
+      staff.warned10d = false;
+      staff.warned13d = false;
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({ date: Date.now(), text: `İzin talebi onaylandı (${leave.durationDays} gün): ${leave.reason}` });
+    }
+
+    saveStaffData(data);
+
+    try {
+      const u = await interaction.client.users.fetch(leave.userId).catch(() => null);
+      if (u) {
+        if (isApprove) {
+          await u.send(`🏖️ **İzin talebiniz onaylandı!** ${leave.durationDays} gün boyunca (${new Date(Date.now() + leave.durationDays * 86400000).toLocaleDateString('tr-TR')}'e kadar) aktivite bildirimleri durduruldu.`);
+        } else {
+          await u.send(`❌ İzin talebiniz yönetim tarafından uygun görülmeyerek reddedildi.`);
+        }
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: isApprove ? `✅ <@${leave.userId}> için izin onaylandı.` : `❌ <@${leave.userId}> izin talebi reddedildi.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 4. Yetkili Listesi & Profil Seçim Ekranı
+  if (customId === 'robloxland_staffmgmt_list') {
+    const staffList = Object.values(data.staffMembers || {});
+    if (staffList.length === 0) {
+      return await interaction.reply({ content: 'ℹ️ Kayıtlı yetkili bulunamadı. "➕ Yetkili Ekle" butonu ile yetkili ekleyebilirsiniz.', ephemeral: true });
+    }
+
+    const selectOptions = staffList.slice(0, 25).map(s => ({
+      label: `${s.username || s.userId} (${s.roleName || 'Yetkili'})`,
+      value: s.userId,
+      description: calculateStaffHealth(s).shortBadge
+    }));
+
+    const lines = staffList.map(s => {
+      const health = calculateStaffHealth(s);
+      const promo = evaluatePromotionEligibility(s);
+      const bar = renderProgressBar(s.performanceScore || 80);
+      return `### 👤 <@${s.userId}> — \`${s.roleName || 'Yetkili'}\`\n` +
+             `• **Durum:** ${health.badge} | **Performans:** \`${s.performanceScore || 80}/100\` [${bar}]\n` +
+             `• **Son Çalışma:** ${health.desc} | **30 Gün Paylaşım:** \`${s.workCount30d || 0}\` | **Seri:** \`${s.streakDays || 1} gün\`\n` +
+             `• **Terfi Gelişimi:** \`%${promo.progressPercent}\` ${promo.isReady ? '⭐ (TERFİYE HAZIR!)' : ''}`;
+    });
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 👥 ROBLOXLND YETKİLİ KADROSU & PROFİLLER\n\n` +
+        lines.join('\n\n')
+      ),
+      ComponentsV2Factory.separator(true),
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "robloxland_staffmgmt_select_profile",
+            placeholder: "🔍 Detaylı profilini açmak istediğiniz yetkiliyi seçin...",
+            options: selectOptions
+          }
+        ]
+      },
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Secondary,
+          label: "🔙 Ana Kontrol Merkezi",
+          custom_id: "robloxland_staffmgmt_back_hub",
+          emoji: { name: "🔙" }
+        }
+      ])
+    ]);
+
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // Profil Seçimi Yapıldığında
+  if (customId === 'robloxland_staffmgmt_select_profile') {
+    const selectedUserId = interaction.values?.[0];
+    const staff = data.staffMembers[selectedUserId];
+    if (!staff) {
+      return await interaction.reply({ content: '❌ Seçilen yetkili kaydı bulunamadı.', ephemeral: true });
+    }
+
+    const profilePayload = buildStaffProfilePayload(staff);
+    return await interaction.reply({ ...profilePayload, ephemeral: true });
+  }
+
+  // 3. Terfi Et Butonuna Basıldığında
+  if (customId.startsWith('robloxland_staffmgmt_act_promote_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_promote_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) return await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+
+    // Mevcut rütbeden bir üst rütbeyi bul
+    const currentRoleName = staff.roleName || "Yetkili Ofisi Staj";
+    const currentRankIdx = STAFF_RANKS.findIndex(r => r.name.toLowerCase() === currentRoleName.toLowerCase());
+    const targetRank = currentRankIdx > 0 ? STAFF_RANKS[currentRankIdx - 1] : STAFF_RANKS[0];
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_do_promote_${targetUserId}`)
+      .setTitle("⬆️ Yetkili Terfi Onayı");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("promote_new_role")
+          .setLabel("Yeni Rütbe / Unvan")
+          .setValue(targetRank.name)
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("promote_reason")
+          .setLabel("Terfi Gerekçesi")
+          .setValue("Tüm terfi kriterlerini başarıyla tamamlaması ve yüksek performansı.")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Terfi Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_do_promote_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_modal_do_promote_', '');
+    const newRole = interaction.fields.getTextInputValue("promote_new_role")?.trim();
+    const reason = interaction.fields.getTextInputValue("promote_reason")?.trim();
+    const staff = data.staffMembers[targetUserId];
+
+    if (staff) {
+      const oldRole = staff.roleName || "Moderatör";
+      staff.roleName = newRole;
+      staff.lastPromotionAt = Date.now();
+      staff.qualityWorksCount = 0; // Bir sonraki terfi için sıfırla
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `TERFİ ALDI: ${oldRole} ➔ ${newRole} (Gerekçe: ${reason}) — Onaylayan: ${user.tag}`
+      });
+
+      // Discord rol güncellemesi
+      try {
+        const memberObj = guild.members.cache.get(targetUserId) || await guild.members.fetch(targetUserId).catch(() => null);
+        const targetRankObj = STAFF_RANKS.find(r => r.name.toLowerCase() === newRole.toLowerCase());
+        if (memberObj && targetRankObj) {
+          await memberObj.roles.add(targetRankObj.id, `Terfi: ${reason}`).catch(() => {});
+        }
+      } catch (_) {}
+
+      saveStaffData(data);
+
+      // Yetkiliye Tebrik DM
+      try {
+        const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+        if (u) {
+          await u.send(`🎉 **TEBRİKLER! TERFİ ALDINIZ!**\n\n• **Yeni Rütbeniz:** \`${newRole}\`\n• **Gerekçe:** ${reason}\n\nBaşarılı çalışmalarınızın devamını dileriz!`);
+        }
+      } catch (_) {}
+
+      await interaction.reply({
+        content: `🎉 <@${targetUserId}> adlı yetkili başarıyla **${newRole}** rütbesine terfi ettirildi ve loglandı!`,
+        ephemeral: true
+      });
+    }
+    return true;
+  }
+
+  // 4. RD (Rütbe Düşürme) Butonuna Basıldığında
+  if (customId.startsWith('robloxland_staffmgmt_act_demote_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_demote_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) return await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+
+    const currentRoleName = staff.roleName || "Yetkili Ofisi Kıdemli Staj";
+    const currentRankIdx = STAFF_RANKS.findIndex(r => r.name.toLowerCase() === currentRoleName.toLowerCase());
+    const lowerRank = (currentRankIdx >= 0 && currentRankIdx < STAFF_RANKS.length - 1)
+      ? STAFF_RANKS[currentRankIdx + 1]
+      : STAFF_RANKS[STAFF_RANKS.length - 1];
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_do_demote_${targetUserId}`)
+      .setTitle("⬇️ Rütbe Düşürme (RD) Değerlendirmesi");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("demote_new_role")
+          .setLabel("Yeni (Alt) Rütbe")
+          .setValue(lowerRank.name)
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("demote_reason")
+          .setLabel("Rütbe Düşürme Gerekçesi (Yetkiliye İletilir)")
+          .setPlaceholder("Örn: Uzun süredir çalışma yapılmaması ve aktivite uyarısına yanıt verilmemesi")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // RD Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_do_demote_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_modal_do_demote_', '');
+    const newRole = interaction.fields.getTextInputValue("demote_new_role")?.trim();
+    const reason = interaction.fields.getTextInputValue("demote_reason")?.trim();
+    const staff = data.staffMembers[targetUserId];
+
+    if (staff) {
+      const oldRole = staff.roleName || "Yetkili";
+      staff.roleName = newRole;
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `RÜTBE DÜŞÜRÜLDÜ: ${oldRole} ➔ ${newRole} (Gerekçe: ${reason}) — İşlemi Yapan: ${user.tag}`
+      });
+
+      saveStaffData(data);
+
+      try {
+        const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+        if (u) {
+          await u.send(`ℹ️ **Yetkili Rütbe Güncellemesi Bildirimi**\n\n• **Yeni Rütbeniz:** \`${newRole}\`\n• **Gerekçe:** ${reason}\n\nGörevlerinize düzenli devam ederek tekrar terfi hakkı kazanabilirsiniz.`);
+        }
+      } catch (_) {}
+
+      await interaction.reply({
+        content: `⬇️ <@${targetUserId}> rütbesi **${newRole}** olarak güncellendi ve işlem sicile işlendi.`,
+        ephemeral: true
+      });
+    }
+    return true;
+  }
+
+  // 8. Uyarı Verme Butonuna Basıldığında
+  if (customId.startsWith('robloxland_staffmgmt_act_warn_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_warn_', '');
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_do_warn_${targetUserId}`)
+      .setTitle("⚠️ Yetkiliye Resmi Uyarı Ver");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("warn_level")
+          .setLabel("Uyarı Şiddeti (1: Hafif, 2: Resmi, 3: Son Uyarı)")
+          .setPlaceholder("1, 2 veya 3 yazınız")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(1)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("warn_reason")
+          .setLabel("Uyarı Gerekçesi")
+          .setPlaceholder("Örn: Görevlerin yerine getirilmemesi / Toplantıya mazeretsiz katılmama")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Uyarı Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_do_warn_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_modal_do_warn_', '');
+    const levelRaw = interaction.fields.getTextInputValue("warn_level")?.trim();
+    const reason = interaction.fields.getTextInputValue("warn_reason")?.trim();
+    const staff = data.staffMembers[targetUserId];
+
+    const levelText = levelRaw === '3' ? '🔴 Son Uyarı' : (levelRaw === '2' ? '🟠 Resmi Uyarı' : '🟡 Hafif Uyarı');
+    const warningId = `warn-${Date.now().toString().slice(-5)}`;
+
+    if (staff) {
+      staff.warningsCount = (staff.warningsCount || 0) + 1;
+      staff.performanceScore = Math.max(0, (staff.performanceScore || 70) - 15);
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `UYARI ALDI (${levelText}): ${reason} (-15 Puan) — Veren: ${user.tag}`
+      });
+      saveStaffData(data);
+
+      try {
+        const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+        if (u) {
+          await u.send({
+            ...ComponentsV2Factory.buildPayload([
+              ComponentsV2Factory.text(
+                `# ⚠️ RESMİ YETKİLİ UYARISI ALDINIZ\n\n` +
+                `• **Uyarı Derecesi:** \`${levelText}\`\n` +
+                `• **Gerekçe:** ${reason}\n` +
+                `• **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+                `*Bu uyarının haksız olduğunu düşünüyorsanız aşağıdaki butondan itiraz edebilirsiniz:*`
+              ),
+              ComponentsV2Factory.separator(true),
+              ComponentsV2Factory.actionRow([
+                {
+                  style: ButtonStyle.Secondary,
+                  label: "⚖️ Uyarıya İtiraz Et",
+                  custom_id: `robloxland_staff_appeal_warn_${warningId}_${targetUserId}`,
+                  emoji: { name: "⚖️" }
+                }
+              ])
+            ])
+          });
+        }
+      } catch (_) {}
+
+      await interaction.reply({
+        content: `⚠️ <@${targetUserId}> adlı yetkiliye **${levelText}** verildi ve DM ile tebliğ edildi.`,
+        ephemeral: true
+      });
+    }
+    return true;
+  }
+
+  // 8. Uyarıya İtiraz Etme (Yetkili DM'sinden)
+  if (customId.startsWith('robloxland_staff_appeal_warn_')) {
+    const parts = customId.split('_');
+    const warningId = parts[4];
+    const staffId = parts[5];
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_do_appeal_${warningId}_${staffId}`)
+      .setTitle("⚖️ Uyarı İtiraz Formu");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("appeal_reason")
+          .setLabel("İtiraz Gerekçeniz ve Açıklamanız")
+          .setPlaceholder("Uyarının neden haksız olduğunu veya mazeretinizi yazınız...")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(300)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // İtiraz Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_do_appeal_')) {
+    const parts = customId.split('_');
+    const warningId = parts[5];
+    const staffId = parts[6];
+    const reason = interaction.fields.getTextInputValue("appeal_reason")?.trim();
+
+    const appealId = `appeal-${Date.now().toString().slice(-5)}`;
+    data.pendingAppeals[appealId] = {
+      id: appealId,
+      warningId,
+      userId: staffId,
+      reason,
+      submittedAt: Date.now(),
+      status: 'pending'
+    };
+    saveStaffData(data);
+
+    try {
+      const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
+                       interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
+      if (mgmtChan && mgmtChan.isTextBased()) {
+        await mgmtChan.send({
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# ⚖️ YENİ UYARI İTİRAZI GELDİ (#${appealId})\n\n` +
+              `👤 **İtiraz Eden:** <@${staffId}>\n` +
+              `📝 **İtiraz Gerekçesi:**\n> ${reason}\n\n` +
+              `*İtiraz kabul edilirse yetkilinin uyarısı silinir ve puanı iade edilir:*`
+            ),
+            ComponentsV2Factory.separator(true),
+            ComponentsV2Factory.actionRow([
+              {
+                style: ButtonStyle.Success,
+                label: "✅ İtirazı Kabul Et",
+                custom_id: `robloxland_staffmgmt_accept_appeal_${appealId}_${staffId}`,
+                emoji: { name: "✅" }
+              },
+              {
+                style: ButtonStyle.Danger,
+                label: "❌ Reddet",
+                custom_id: `robloxland_staffmgmt_reject_appeal_${appealId}_${staffId}`,
+                emoji: { name: "🚫" }
+              }
+            ])
+          ])
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: '⚖️ İtirazınız yönetim kuruluna iletildi. İncelendiğinde tarafınıza bildirilecektir.',
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // İtiraz Kabul / Ret
+  if (customId.startsWith('robloxland_staffmgmt_accept_appeal_') || customId.startsWith('robloxland_staffmgmt_reject_appeal_')) {
+    const isAccept = customId.startsWith('robloxland_staffmgmt_accept_appeal_');
+    const parts = customId.split('_');
+    const appealId = parts[4];
+    const staffId = parts[5];
+
+    const appeal = data.pendingAppeals[appealId];
+    if (appeal) appeal.status = isAccept ? 'accepted' : 'rejected';
+
+    const staff = data.staffMembers[staffId];
+    if (isAccept && staff) {
+      staff.warningsCount = Math.max(0, (staff.warningsCount || 1) - 1);
+      staff.performanceScore = Math.min(100, (staff.performanceScore || 70) + 15);
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({ date: Date.now(), text: `İtiraz kabul edildi: Uyarı kaldırıldı (+15 Puan iade edildi)` });
+    }
+
+    saveStaffData(data);
+
+    try {
+      const u = await interaction.client.users.fetch(staffId).catch(() => null);
+      if (u) {
+        if (isAccept) {
+          await u.send(`✅ **Uyarı itirazınız kabul edildi!** Uyarınız sicilinizden silindi ve performans puanınız iade edildi.`);
+        } else {
+          await u.send(`❌ Uyarı itirazınız yönetim tarafından incelenmiş ve **reddedilmiştir**.`);
+        }
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: isAccept ? `✅ <@${staffId}> itirazı kabul edildi ve uyarı silindi.` : `❌ <@${staffId}> itirazı reddedildi.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 10. Terfi Adayları Görünümü
+  if (customId === 'robloxland_staffmgmt_view_promos') {
+    const staffList = Object.values(data.staffMembers || {});
+    const promoCandidates = staffList.filter(s => evaluatePromotionEligibility(s).isReady);
+
+    if (promoCandidates.length === 0) {
+      return await interaction.reply({
+        content: 'ℹ️ Şu anda tüm terfi kriterlerini (14 gün görev, 80+ puan, 10 çalışma, 3 kaliteli çalışma) tamamlamış aday bulunmuyor.',
+        ephemeral: true
+      });
+    }
+
+    const textList = promoCandidates.map(s => {
+      return `### 🟢 <@${s.userId}> — \`${s.roleName || 'Yetkili'}\`\n` +
+             `• **Performans:** \`${s.performanceScore}/100\` | **30 Gün Paylaşım:** \`${s.workCount30d}\` | **Kalite:** \`${s.qualityWorksCount} yıldızlı iş\`\n` +
+             `• 💡 **Öneri:** *Terfi değerlendirmesi öneriliyor.*`;
+    }).join('\n\n');
+
+    const selectOptions = promoCandidates.map(s => ({
+      label: `${s.username || s.userId} (${s.roleName || 'Yetkili'})`,
+      value: s.userId,
+      description: `Performans: ${s.performanceScore}/100 (Hazır)`
+    }));
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# ⬆️ TERFİYE HAZIR ADAYLAR LİSTESİ\n\n` +
+        textList
+      ),
+      ComponentsV2Factory.separator(true),
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "robloxland_staffmgmt_select_profile",
+            placeholder: "⬆️ Terfi ettirmek için yetkili profilini açın...",
+            options: selectOptions
+          }
+        ]
+      }
+    ]);
+
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // 10. RD Adayları Görünümü
+  if (customId === 'robloxland_staffmgmt_view_demos') {
+    const staffList = Object.values(data.staffMembers || {});
+    const demoCandidates = staffList.filter(s => evaluateDemotionRisk(s).isRisk);
+
+    if (demoCandidates.length === 0) {
+      return await interaction.reply({
+        content: '🟢 Tebrikler! Şu anda inceleme gerektiren veya RD adayı olan yetkili bulunmuyor.',
+        ephemeral: true
+      });
+    }
+
+    const textList = demoCandidates.map(s => {
+      const demo = evaluateDemotionRisk(s);
+      return `### 🔴 <@${s.userId}> — \`${s.roleName || 'Yetkili'}\`\n` +
+             `• **Risk Nedenleri:** ${demo.reasons.join(', ')}\n` +
+             `• 💡 **Öneri:** *Yetkiliyle görüşme başlatılması veya RD değerlendirmesi öneriliyor.*`;
+    }).join('\n\n');
+
+    const selectOptions = demoCandidates.map(s => ({
+      label: `${s.username || s.userId} (${s.roleName || 'Yetkili'})`,
+      value: s.userId,
+      description: `Riskli durum incelenmeli`
+    }));
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# ⚠️ DİKKAT & İNCELEME GEREKTİREN YETKİLİLER (RD ADAYLARI)\n\n` +
+        textList
+      ),
+      ComponentsV2Factory.separator(true),
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "robloxland_staffmgmt_select_profile",
+            placeholder: "🔍 İşlem yapmak için yetkili profilini açın...",
+            options: selectOptions
+          }
+        ]
+      }
+    ]);
+
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // 10. Paneli Yenile
+  if (customId === 'robloxland_staffmgmt_refresh') {
+    const payload = buildStaffManagementPayload(data);
+    try {
+      if (interaction.message && typeof interaction.message.edit === 'function') {
+        await interaction.message.edit(payload);
+      }
+    } catch (_) {}
+    return await interaction.reply({ content: '🔄 Yetkili Yönetim Merkezi güncellendi!', ephemeral: true });
+  }
+
+  // 10. Geri Dön
+  if (customId === 'robloxland_staffmgmt_back_hub') {
+    const payload = buildStaffManagementPayload(data);
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // 5. Görev Hub Görünümü
+  if (customId === 'robloxland_staffmgmt_task_hub') {
+    const modal = new ModalBuilder()
+      .setCustomId('robloxland_staffmgmt_modal_create_task')
+      .setTitle("📋 Yeni Görev Oluştur");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("task_target_user")
+          .setLabel("Görev Verilecek Yetkili ID / @Etiket")
+          .setPlaceholder("Örn: 123456789012345678")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("task_desc")
+          .setLabel("Görev Açıklaması")
+          .setPlaceholder("Örn: Modern bir araç sistemi bul ve paylaş")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("task_reward")
+          .setLabel("Ödül Performans Puanı (Örn: 8)")
+          .setValue("8")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Görev Oluştur Modal Submit
+  if (customId === 'robloxland_staffmgmt_modal_create_task') {
+    const rawTarget = interaction.fields.getTextInputValue("task_target_user")?.trim();
+    const cleanId = rawTarget?.replace(/[^0-9]/g, '');
+    const taskDesc = interaction.fields.getTextInputValue("task_desc")?.trim();
+    const reward = parseInt(interaction.fields.getTextInputValue("task_reward"), 10) || 8;
+
+    if (!cleanId || !data.staffMembers[cleanId]) {
+      return await interaction.reply({ content: '❌ Belirtilen yetkili bulunamadı.', ephemeral: true });
+    }
+
+    const taskId = `task-${Date.now().toString().slice(-5)}`;
+    data.activeTasks[taskId] = {
+      id: taskId,
+      assignedTo: cleanId,
+      desc: taskDesc,
+      difficulty: 'Orta',
+      rewardScore: reward,
+      status: 'assigned',
+      assignedBy: user.tag,
+      assignedAt: Date.now()
+    };
+
+    data.staffMembers[cleanId].historyLogs = data.staffMembers[cleanId].historyLogs || [];
+    data.staffMembers[cleanId].historyLogs.unshift({ date: Date.now(), text: `Yeni görev atandı: ${taskDesc}` });
+    saveStaffData(data);
+
+    try {
+      const u = await interaction.client.users.fetch(cleanId).catch(() => null);
+      if (u) {
+        await u.send({
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# 📋 YENİ GÖREV ALDINIZ!\n\n` +
+              `> **Görev:** ${taskDesc}\n` +
+              `• **Ödül:** \`+${reward} Performans Puanı\`\n` +
+              `• **Veren:** ${user.tag}\n\n` +
+              `*Görevi tamamlayıp sistemi paylaştığınızda puanınız otomatik eklenecektir.*`
+            )
+          ])
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({ content: `✅ <@${cleanId}> adlı yetkiliye görev başarıyla atandı (#${taskId}).`, ephemeral: true });
+    return true;
+  }
+
+  // 7. Anonim Mesaj Gönder Butonu
+  if (customId.startsWith('robloxland_staffmgmt_act_anonmsg_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_anonmsg_', '');
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_anon_send_${targetUserId}`)
+      .setTitle("🕵️ Anonim Yönetim Mesajı Gönder");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("anon_template")
+          .setLabel("Şablon Seç (1:Çalışma Vakti, 2:Toplantı, 3:Aktivite, 4:Özel)")
+          .setPlaceholder("1, 2, 3 veya 4")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(1)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("anon_text")
+          .setLabel("Mesaj Metni / Detay")
+          .setPlaceholder("Yetkiliye iletmek istediğiniz mesaj...")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(350)
+          .setRequired(false)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Anonim Mesaj Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_anon_send_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_modal_anon_send_', '');
+    const template = interaction.fields.getTextInputValue("anon_template")?.trim();
+    const customText = interaction.fields.getTextInputValue("anon_text")?.trim() || "";
+
+    let body = "Selam! Çalışma vakti. Bugün müsaitsen yeni bir sistem veya map paylaşmanı bekliyoruz.";
+    if (template === '2') body = "📅 Yetkili toplantısı vardır. Lütfen en kısa sürede yetkili kanalını kontrol ediniz.";
+    else if (template === '3') body = "⚠️ Son zamanlardaki aktivite durumunuz düşüktür. Lütfen durumunuzu kontrol ediniz.";
+    else if (template === '4' && customText) body = customText;
+
+    if (template !== '4' && customText) {
+      body += `\n\n**Ek Not:** ${customText}`;
+    }
+
+    const sessionId = `anon-${Date.now().toString().slice(-5)}`;
+    activeAnonSessions.set(sessionId, {
+      sessionId,
+      staffUserId: targetUserId,
+      managerUserId: user.id,
+      createdAt: Date.now(),
+      active: true
+    });
+
+    try {
+      const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (u) {
+        await u.send({
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# 🛡️ YÖNETİMDEN YENİ BİR MESAJINIZ VAR\n\n` +
+              `> "${body}"\n\n` +
+              `-# Bu mesaj RobloxLand Yönetimi tarafından anonim olarak iletilmiştir.\n` +
+              `-# Yanıt vermek için aşağıdaki "💬 Yanıtla" butonunu kullanabilirsiniz.`
+            ),
+            ComponentsV2Factory.separator(true),
+            ComponentsV2Factory.actionRow([
+              {
+                style: ButtonStyle.Primary,
+                label: "💬 Yanıtla",
+                custom_id: `robloxland_staffmgmt_anon_reply_${sessionId}`,
+                emoji: { name: "💬" }
+              }
+            ])
+          ])
+        });
+      }
+    } catch (err) {
+      return await interaction.reply({ content: `❌ DM iletilemedi: ${err.message}`, ephemeral: true });
+    }
+
+    // Üst Yönetim Loguna Kaydet
+    try {
+      const logChan = interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID) ||
+                      interaction.client.channels.cache.get(PANEL_CHANNEL_ID);
+      if (logChan && logChan.isTextBased()) {
+        await logChan.send({
+          content: `🕵️ **Anonim Mesaj Gönderildi (#${sessionId})**\n` +
+                   `• **Başlatan Yönetici:** <@${user.id}> (\`${user.tag}\`)\n` +
+                   `• **Hedef Yetkili:** <@${targetUserId}>\n` +
+                   `• **Mesaj:** "${body}"`
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({ content: `✅ <@${targetUserId}> adlı yetkiliye anonim mesajınız iletildi (#${sessionId})!`, ephemeral: true });
+    return true;
+  }
+
+  // 10. Yetkili Ekle Butonu
   if (customId === 'robloxland_staffmgmt_add') {
     const modal = new ModalBuilder()
       .setCustomId('robloxland_staffmgmt_modal_add')
@@ -588,8 +1693,8 @@ async function handleStaffManagementInteraction(interaction) {
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId("staff_initial_role")
-          .setLabel("Başlangıç Rolü / Departman")
-          .setPlaceholder("Örn: Discord Moderatör / Geliştirici / Destek")
+          .setLabel("Başlangıç Rolü (Örn: Yetkili Ofisi Staj)")
+          .setValue("Yetkili Ofisi Staj")
           .setStyle(TextInputStyle.Short)
           .setMaxLength(50)
           .setRequired(false)
@@ -600,10 +1705,10 @@ async function handleStaffManagementInteraction(interaction) {
     return true;
   }
 
-  // 4. Yetkili Ekle Modal Submit
+  // Yetkili Ekle Submit
   if (customId === 'robloxland_staffmgmt_modal_add') {
     const rawUser = interaction.fields.getTextInputValue("staff_user_id")?.trim();
-    const roleName = interaction.fields.getTextInputValue("staff_initial_role")?.trim() || "Moderatör";
+    const roleName = interaction.fields.getTextInputValue("staff_initial_role")?.trim() || "Yetkili Ofisi Staj";
     const cleanId = rawUser?.replace(/[^0-9]/g, '');
 
     if (!cleanId || cleanId.length < 16) {
@@ -624,6 +1729,7 @@ async function handleStaffManagementInteraction(interaction) {
       lastWorkAt: Date.now(),
       workCountTotal: 0,
       workCount30d: 0,
+      qualityWorksCount: 0,
       streakDays: 1,
       status: 'active',
       leaveUntil: null,
@@ -639,451 +1745,7 @@ async function handleStaffManagementInteraction(interaction) {
     saveStaffData(data);
 
     await interaction.reply({
-      content: `✅ <@${cleanId}> başarıyla **${roleName}** olarak yetkili kadrosuna eklendi!`,
-      ephemeral: true
-    });
-    return true;
-  }
-
-  // 5. Yetkili Listesi & Sağlık Tablosu
-  if (customId === 'robloxland_staffmgmt_list') {
-    const staffList = Object.values(data.staffMembers || {});
-    if (staffList.length === 0) {
-      return await interaction.reply({ content: 'ℹ️ Kayıtlı yetkili bulunamadı. "➕ Yetkili Ekle" butonu ile yetkili ekleyebilirsiniz.', ephemeral: true });
-    }
-
-    const lines = staffList.map(s => {
-      const health = calculateStaffHealth(s);
-      const bar = renderProgressBar(s.performanceScore || 80);
-      return `### 👤 <@${s.userId}> (\`${s.username || s.userId}\`)\n` +
-             `• **Durum:** ${health.badge} | **Performans:** \`${s.performanceScore || 80}/100\` [${bar}]\n` +
-             `• **Son Çalışma:** ${health.desc} | **30 Gün Paylaşım:** \`${s.workCount30d || 0}\` | **Seri:** \`${s.streakDays || 0} gün\`\n` +
-             `• **Uyarılar:** \`${s.warningsCount || 0}\``;
-    });
-
-    const payload = ComponentsV2Factory.buildPayload([
-      ComponentsV2Factory.text(
-        `# 👥 ROBLOXLND YETKİLİ SAĞLIK & KADRO TABLOSU\n\n` +
-        lines.join('\n\n')
-      ),
-      ComponentsV2Factory.separator(true),
-      ComponentsV2Factory.actionRow([
-        {
-          style: ButtonStyle.Primary,
-          label: "🔍 Yetkili Profili & İşlem",
-          custom_id: "robloxland_staffmgmt_select_profile",
-          emoji: { name: "🔍" }
-        }
-      ])
-    ]);
-
-    return await interaction.reply({ ...payload, ephemeral: true });
-  }
-
-  // 6. Performans & Seri Tablosu
-  if (customId === 'robloxland_staffmgmt_leaderboard') {
-    const staffList = Object.values(data.staffMembers || {});
-    if (staffList.length === 0) {
-      return await interaction.reply({ content: 'ℹ️ Henüz yetkili verisi bulunmuyor.', ephemeral: true });
-    }
-
-    const sortedByWork = [...staffList].sort((a, b) => (b.workCount30d || 0) - (a.workCount30d || 0));
-    const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-
-    const rankingText = sortedByWork.slice(0, 10).map((s, idx) => {
-      const medal = medals[idx] || `\`#${idx + 1}\``;
-      return `${medal} **<@${s.userId}>** — \`${s.workCount30d || 0} Paylaşım\` | 🔥 \`${s.streakDays || 1} Gün Seri\` | ⭐ \`${s.performanceScore || 80}/100 Puan\``;
-    }).join('\n');
-
-    const payload = ComponentsV2Factory.buildPayload([
-      ComponentsV2Factory.text(
-        `# 🏆 YETKİLİ PERFORMANS & AKTİFLİK SIRALAMASI\n\n` +
-        `*Son 30 günlük sistem/map paylaşımları ve aktiflik serileri baz alınmıştır:*\n\n` +
-        `${rankingText}\n\n` +
-        `-# Sistem/Map paylaşımı: +5 Puan | Kaliteli paylaşım: +2 Bonus | 7 Gün Seri: +5 Puan`
-      )
-    ]);
-
-    return await interaction.reply({ ...payload, ephemeral: true });
-  }
-
-  // 7. Paneli Yenile Butonu
-  if (customId === 'robloxland_staffmgmt_refresh') {
-    const payload = buildStaffManagementPayload(data);
-    try {
-      if (interaction.message && typeof interaction.message.edit === 'function') {
-        await interaction.message.edit(payload);
-      }
-    } catch (_) {}
-
-    return await interaction.reply({ content: '🔄 Yetkili yönetim paneli güncellendi!', ephemeral: true });
-  }
-
-  // 8. İzin Yönetimi Modal
-  if (customId === 'robloxland_staffmgmt_leave') {
-    const modal = new ModalBuilder()
-      .setCustomId('robloxland_staffmgmt_modal_adminleave')
-      .setTitle("🏖️ Yetkiliye İzin Tanımla");
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("leave_target_user")
-          .setLabel("Yetkili Discord ID veya @Kullanıcı")
-          .setPlaceholder("Örn: 123456789012345678")
-          .setStyle(TextInputStyle.Short)
-          .setMaxLength(50)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("leave_duration_days")
-          .setLabel("İzin Süresi (Gün Sayısı)")
-          .setPlaceholder("Örn: 3, 7, 14")
-          .setStyle(TextInputStyle.Short)
-          .setMaxLength(3)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("leave_admin_reason")
-          .setLabel("İzin Gerekçesi")
-          .setPlaceholder("Örn: Sınav / Mazeret İzni")
-          .setStyle(TextInputStyle.Paragraph)
-          .setMaxLength(200)
-          .setRequired(false)
-      )
-    );
-
-    await interaction.showModal(modal);
-    return true;
-  }
-
-  // 9. İzin Yönetimi Modal Submit
-  if (customId === 'robloxland_staffmgmt_modal_adminleave') {
-    const rawTarget = interaction.fields.getTextInputValue("leave_target_user")?.trim();
-    const cleanId = rawTarget?.replace(/[^0-9]/g, '');
-    const days = parseInt(interaction.fields.getTextInputValue("leave_duration_days"), 10) || 7;
-    const reason = interaction.fields.getTextInputValue("leave_admin_reason") || "Yönetim tarafından izin verildi";
-
-    if (!cleanId || !data.staffMembers[cleanId]) {
-      return await interaction.reply({ content: '❌ Belirtilen kullanıcı yetkili listesinde bulunamadı.', ephemeral: true });
-    }
-
-    data.staffMembers[cleanId].leaveUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
-    data.staffMembers[cleanId].leaveReason = reason;
-    data.staffMembers[cleanId].historyLogs = data.staffMembers[cleanId].historyLogs || [];
-    data.staffMembers[cleanId].historyLogs.unshift({ date: Date.now(), text: `Yönetici (<@${user.id}>) tarafından ${days} gün izin verildi: ${reason}` });
-
-    saveStaffData(data);
-
-    await interaction.reply({
-      content: `✅ <@${cleanId}> adlı yetkiliye **${days} gün** (${new Date(Date.now() + days * 86400000).toLocaleDateString('tr-TR')} tarihine kadar) izin tanımlandı!`,
-      ephemeral: true
-    });
-    return true;
-  }
-
-  // 10. Anonim Görüşme Başlat Butonu
-  if (customId === 'robloxland_staffmgmt_anon_dm') {
-    const modal = new ModalBuilder()
-      .setCustomId('robloxland_staffmgmt_modal_anon_start')
-      .setTitle("🕵️ Anonim Görüşme Başlat");
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("anon_target_user")
-          .setLabel("Yetkili Discord ID veya @Kullanıcı")
-          .setPlaceholder("Örn: 123456789012345678")
-          .setStyle(TextInputStyle.Short)
-          .setMaxLength(50)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("anon_initial_message")
-          .setLabel("Yetkiliye Gönderilecek Anonim Mesaj")
-          .setPlaceholder("Selam, son günlerde biraz pasif olduğunu fark ettik. Her şey yolunda mı?")
-          .setStyle(TextInputStyle.Paragraph)
-          .setMaxLength(400)
-          .setRequired(true)
-      )
-    );
-
-    await interaction.showModal(modal);
-    return true;
-  }
-
-  // 11. Anonim Görüşme Başlat Modal Submit
-  if (customId === 'robloxland_staffmgmt_modal_anon_start') {
-    const rawTarget = interaction.fields.getTextInputValue("anon_target_user")?.trim();
-    const cleanId = rawTarget?.replace(/[^0-9]/g, '');
-    const messageText = interaction.fields.getTextInputValue("anon_initial_message")?.trim();
-
-    if (!cleanId || cleanId.length < 16) {
-      return await interaction.reply({ content: '❌ Geçersiz kullanıcı ID.', ephemeral: true });
-    }
-
-    const sessionId = `anon-${Date.now().toString().slice(-5)}`;
-    activeAnonSessions.set(sessionId, {
-      sessionId,
-      staffUserId: cleanId,
-      managerUserId: user.id,
-      createdAt: Date.now(),
-      messages: [{ sender: 'manager', text: messageText, time: Date.now() }]
-    });
-
-    try {
-      const targetUser = await interaction.client.users.fetch(cleanId).catch(() => null);
-      if (targetUser) {
-        const dmPayload = ComponentsV2Factory.buildPayload([
-          ComponentsV2Factory.text(
-            `# 📩 YÖNETİMDEN YENİ BİR MESAJINIZ VAR\n\n` +
-            `> "${messageText}"\n\n` +
-            `-# Bu mesaj RobloxLand Üst Yönetimi tarafından anonim olarak gönderilmiştir.\n` +
-            `-# Yanıt vermek için aşağıdaki "💬 Yanıtla" butonunu kullanabilirsiniz.`
-          ),
-          ComponentsV2Factory.separator(true),
-          ComponentsV2Factory.actionRow([
-            {
-              style: ButtonStyle.Primary,
-              label: "💬 Yönetime Yanıtla",
-              custom_id: `robloxland_staffmgmt_anon_reply_${sessionId}`,
-              emoji: { name: "💬" }
-            }
-          ])
-        ]);
-
-        await targetUser.send(dmPayload);
-      }
-    } catch (err) {
-      return await interaction.reply({ content: `❌ DM gönderilemedi: ${err.message}`, ephemeral: true });
-    }
-
-    // Üst Yönetim Loguna Bildir
-    try {
-      const logChan = interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID) ||
-                      interaction.client.channels.cache.get(PANEL_CHANNEL_ID);
-      if (logChan && logChan.isTextBased()) {
-        await logChan.send({
-          content: `🕵️ **Anonim Görüşme Başlatıldı (#${sessionId})**\n` +
-                   `• **Başlatan Yönetici:** <@${user.id}> (\`${user.tag}\`)\n` +
-                   `• **Hedef Yetkili:** <@${cleanId}>\n` +
-                   `• **Mesaj:** "${messageText}"`
-        });
-      }
-    } catch (_) {}
-
-    await interaction.reply({
-      content: `✅ <@${cleanId}> adlı yetkiliye anonim mesajınız iletildi (#${sessionId})!`,
-      ephemeral: true
-    });
-    return true;
-  }
-
-  // 12. Yetkilinin Anonim Mesaja Yanıt Butonu
-  if (customId.startsWith('robloxland_staffmgmt_anon_reply_')) {
-    const sessionId = customId.replace('robloxland_staffmgmt_anon_reply_', '');
-    const modal = new ModalBuilder()
-      .setCustomId(`robloxland_staffmgmt_modal_anon_reply_${sessionId}`)
-      .setTitle("💬 Yönetime Yanıt");
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("anon_reply_text")
-          .setLabel("Yönetime Mesajınız")
-          .setPlaceholder("Açıklamanızı ve durumunuzu buraya yazabilirsiniz...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setMaxLength(400)
-          .setRequired(true)
-      )
-    );
-
-    await interaction.showModal(modal);
-    return true;
-  }
-
-  // 13. Yetkilinin Anonim Yanıt Modalı Submit
-  if (customId.startsWith('robloxland_staffmgmt_modal_anon_reply_')) {
-    const sessionId = customId.replace('robloxland_staffmgmt_modal_anon_reply_', '');
-    const replyText = interaction.fields.getTextInputValue("anon_reply_text")?.trim();
-    const session = activeAnonSessions.get(sessionId);
-
-    // Yönetim Kanalına Köprü Olarak İlet
-    try {
-      const logChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
-                      interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
-      if (logChan && logChan.isTextBased()) {
-        await logChan.send({
-          ...ComponentsV2Factory.buildPayload([
-            ComponentsV2Factory.text(
-              `# 🕵️ Anonim Görüşme Yanıtı (#${sessionId})\n\n` +
-              `👤 **Yetkili:** <@${user.id}> (\`${user.tag}\`)\n` +
-              `🛡️ **Görüşmeyi Başlatan:** <@${session?.managerUserId || DESIGNATED_STAFF_ID}>\n` +
-              `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
-              `**Yetkilinin Yanıtı:**\n> ${replyText}`
-            )
-          ])
-        });
-      }
-    } catch (_) {}
-
-    await interaction.reply({
-      content: '✅ Yanıtınız üst yönetime başarıyla iletildi.',
-      ephemeral: true
-    });
-    return true;
-  }
-
-  // 14. Toplu / Hazır Mesaj Gönder Butonu
-  if (customId === 'robloxland_staffmgmt_broadcast') {
-    const modal = new ModalBuilder()
-      .setCustomId('robloxland_staffmgmt_modal_broadcast')
-      .setTitle("📨 Yetkili Kadrosuna Mesaj");
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("broadcast_type")
-          .setLabel("Mesaj Türü (1:Çalışma, 2:Toplantı, 3:Uyarı, 4:Özel)")
-          .setPlaceholder("1, 2, 3 veya 4 yazınız")
-          .setStyle(TextInputStyle.Short)
-          .setMaxLength(1)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("broadcast_custom_text")
-          .setLabel("Ek Mesaj / Toplantı Detayı (İsteğe Bağlı)")
-          .setPlaceholder("Toplantı saat 21:00'de ses kanalında olacaktır...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setMaxLength(300)
-          .setRequired(false)
-      )
-    );
-
-    await interaction.showModal(modal);
-    return true;
-  }
-
-  // 15. Hazır Mesaj Modal Submit
-  if (customId === 'robloxland_staffmgmt_modal_broadcast') {
-    const type = interaction.fields.getTextInputValue("broadcast_type")?.trim();
-    const extra = interaction.fields.getTextInputValue("broadcast_custom_text")?.trim() || "";
-
-    let messageBody = "👋 **Selam! Çalışma vakti.**\nBugün müsaitsen yeni bir sistem/map paylaşmanı bekliyoruz.";
-    let title = "💼 Çalışma Vakti Hatırlatması";
-
-    if (type === '2') {
-      title = "📅 Yetkili Toplantısı Duyurusu";
-      messageBody = "📅 **Yetkili Toplantısı Var!**\nLütfen belirlenen saatte sesli kanalda hazır bulununuz.";
-    } else if (type === '3') {
-      title = "⚠️ Yetkili Aktivite Uyarısı";
-      messageBody = "⚠️ **Aktivite Kontrolü!**\nSon zamanlardaki sistem/map paylaşım durumunuzu kontrol etmeniz rica olunur.";
-    }
-
-    if (extra) {
-      messageBody += `\n\n**Detay:** ${extra}`;
-    }
-
-    const staffList = Object.values(data.staffMembers || {});
-    let sentCount = 0;
-
-    for (const staff of staffList) {
-      try {
-        const u = await interaction.client.users.fetch(staff.userId).catch(() => null);
-        if (u) {
-          await u.send({
-            ...ComponentsV2Factory.buildPayload([
-              ComponentsV2Factory.text(`# 📢 ${title}\n\n${messageBody}`)
-            ])
-          }).catch(() => {});
-          sentCount++;
-        }
-      } catch (_) {}
-    }
-
-    await interaction.reply({
-      content: `✅ **${sentCount} yetkiliye** "${title}" mesajı DM olarak başarıyla gönderildi!`,
-      ephemeral: true
-    });
-    return true;
-  }
-
-  // 16. Görev Atama Butonu
-  if (customId === 'robloxland_staffmgmt_task') {
-    const modal = new ModalBuilder()
-      .setCustomId('robloxland_staffmgmt_modal_task')
-      .setTitle("🎯 Yetkiliye Özel Görev Ata");
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("task_target_user")
-          .setLabel("Yetkili Discord ID veya @Kullanıcı")
-          .setPlaceholder("Örn: 123456789012345678")
-          .setStyle(TextInputStyle.Short)
-          .setMaxLength(50)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("task_description")
-          .setLabel("Görev Açıklaması")
-          .setPlaceholder("Örn: Cuma gününe kadar araç envanter sistemi paylaş")
-          .setStyle(TextInputStyle.Paragraph)
-          .setMaxLength(250)
-          .setRequired(true)
-      )
-    );
-
-    await interaction.showModal(modal);
-    return true;
-  }
-
-  // 17. Görev Atama Modal Submit
-  if (customId === 'robloxland_staffmgmt_modal_task') {
-    const rawTarget = interaction.fields.getTextInputValue("task_target_user")?.trim();
-    const cleanId = rawTarget?.replace(/[^0-9]/g, '');
-    const taskDesc = interaction.fields.getTextInputValue("task_description")?.trim();
-
-    if (!cleanId || !data.staffMembers[cleanId]) {
-      return await interaction.reply({ content: '❌ Belirtilen kullanıcı yetkili listesinde bulunamadı.', ephemeral: true });
-    }
-
-    data.staffMembers[cleanId].assignedTasks = data.staffMembers[cleanId].assignedTasks || [];
-    data.staffMembers[cleanId].assignedTasks.push({
-      id: Date.now(),
-      desc: taskDesc,
-      assignedBy: user.tag,
-      assignedAt: Date.now(),
-      status: 'pending'
-    });
-
-    data.staffMembers[cleanId].historyLogs = data.staffMembers[cleanId].historyLogs || [];
-    data.staffMembers[cleanId].historyLogs.unshift({ date: Date.now(), text: `Yeni görev atandı: ${taskDesc}` });
-    saveStaffData(data);
-
-    try {
-      const targetUser = await interaction.client.users.fetch(cleanId).catch(() => null);
-      if (targetUser) {
-        await targetUser.send({
-          ...ComponentsV2Factory.buildPayload([
-            ComponentsV2Factory.text(
-              `# 🎯 YENİ YETKİLİ GÖREVİNİZ VAR!\n\n` +
-              `Yönetici **${user.tag}** tarafından size özel bir görev atandı:\n\n` +
-              `> **Görev:** ${taskDesc}\n\n` +
-              `*Görevi tamamladığınızda sistem kategorisinde paylaşarak yönetime bildirebilirsiniz (+5 Performans Puanı).*`
-            )
-          ])
-        }).catch(() => {});
-      }
-    } catch (_) {}
-
-    await interaction.reply({
-      content: `✅ <@${cleanId}> adlı yetkiliye görev başarıyla atandı ve DM ile bildirildi!`,
+      content: `✅ <@${cleanId}> başarıyla **${roleName}** olarak kadroya eklendi!`,
       ephemeral: true
     });
     return true;
@@ -1113,7 +1775,7 @@ async function ensureStaffManagementPanel(client) {
 
     if (!panelMsg) {
       const recent = await channel.messages.fetch({ limit: 30 }).catch(() => null);
-      panelMsg = recent?.find(m => m.author.id === client.user.id && m.content?.includes('ROBLOXLAND YETKİLİ YÖNETİM'));
+      panelMsg = recent?.find(m => m.author.id === client.user.id && m.content?.includes('YETKİLİ KONTROL MERKEZİ'));
     }
 
     if (panelMsg) {
@@ -1160,14 +1822,19 @@ module.exports = {
   GUILD_ID,
   PANEL_CHANNEL_ID,
   WORK_CATEGORY_ID,
-  STAFF_ROLE_ID,
+  STAFF_LOG_CHANNEL_ID,
   DESIGNATED_STAFF_ID,
+  STAFF_RANKS,
+  ALL_STAFF_ROLE_IDS,
   activeAnonSessions,
   loadStaffData,
   saveStaffData,
   calculateStaffHealth,
+  evaluatePromotionEligibility,
+  evaluateDemotionRisk,
   renderProgressBar,
   buildStaffManagementPayload,
+  buildStaffProfilePayload,
   isValidWorkMessage,
   handleStaffWorkMessage,
   runDailyStaffAudit,
