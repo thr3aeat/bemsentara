@@ -14,6 +14,16 @@ const { handleModApprovalButton } = require('../../services/modApprovalGateway')
 async function routeButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  if (customId && (customId.includes('easter_egg') || customId.includes('secret_eko') || customId.startsWith('eko_easter_egg_'))) {
+    try {
+      const { handleEasterEggInteraction } = require('../../services/secretEasterEggService');
+      const handled = await handleEasterEggInteraction(interaction);
+      if (handled) return true;
+    } catch (err) {
+      console.error('[routeButtonInteraction] Easter Egg error:', err.message);
+    }
+  }
+
   if (customId && (customId.startsWith('robloxland_') || customId.startsWith('rl_') || customId.startsWith('rbx_'))) {
     try {
       const { handleRobloxDevsInteraction } = require('../../services/robloxDevsSetupService');

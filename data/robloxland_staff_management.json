@@ -51,29 +51,29 @@
       "performanceScore": 82,
       "workCount30d": 1,
       "qualityWorksCount": 0,
-      "lastWorkAt": 1788284624258,
+      "lastWorkAt": 1788284776212,
       "warned10d": false,
       "warned13d": false,
       "acknowledgedActive": false,
       "workCountTotal": 1,
       "historyLogs": [
         {
-          "date": 1788284624260,
+          "date": 1788284776216,
           "text": "TERFİ ALDI: Yetkili Ofisi Staj ➔ Yetkili Ofisi Kıdemli Staj (Gerekçe: Yüksek performans ve kaliteli paylaşımlar) — Onaylayan: Baskan#0001"
         },
         {
-          "date": 1788284624258,
+          "date": 1788284776212,
           "text": "Sistem/Map onaylandı (5 ⭐) — +7 Performans Puanı (İnceleyen: Baskan#0001)"
         }
       ],
-      "lastPromotionAt": 1788284624260
+      "lastPromotionAt": 1788284776215
     },
     "1497600770634289194": {
       "userId": "1497600770634289194",
       "username": "uı9opıjopş ğşjioğşıojıı",
       "faith": "☪️ İslam",
       "oathStatus": "sworn",
-      "oathDate": 1788284624343,
+      "oathDate": 1788284776306,
       "oathText": "Allah'ın huzurunda adaletle görev yapacağıma namusum üzerine yemin ederim."
     },
     "staff-ptest-1": {
@@ -106,7 +106,7 @@
       "personalityTestCompleted": true,
       "historyLogs": [
         {
-          "date": 1788284624385,
+          "date": 1788284776349,
           "text": "KİŞİLİK & ENVANTER TESTİNİ TAMAMLADI (20/20 Bilgi) (+5 Bonus Puan)"
         }
       ]
@@ -115,7 +115,7 @@
   "panelMessageId": null,
   "weeklyStats": {
     "weekNumber": 36,
-    "totalWorksThisWeek": 16
+    "totalWorksThisWeek": 17
   },
   "pendingWorks": {
     "work-295853": {
@@ -286,6 +286,17 @@
       "channelId": "chan-work-1",
       "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
       "submittedAt": 1788284624252,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-776205": {
+      "id": "work-776205",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284776205,
       "status": "pending",
       "stars": 0,
       "reviewReason": ""

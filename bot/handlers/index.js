@@ -1674,6 +1674,13 @@ function initializeDiscordHandlers(client) {
       }
     }
 
+    // ── Gizli Easter Egg (Eko / Ege İzmirli Mesajı) ──────────────────────────
+    try {
+      const { handleEasterEggMessage } = require('../services/secretEasterEggService');
+      const eggHandled = await handleEasterEggMessage(message);
+      if (eggHandled) return;
+    } catch (_) {}
+
     // ── Ban İtiraz DM Köprüsü: Kullanıcı DM → İtiraz Kanalı ──────────────
     try {
       const handled = await handleAppealDmBridge(message, client);

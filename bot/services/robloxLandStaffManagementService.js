@@ -593,6 +593,11 @@ function buildStaffSettingsPayload(data = loadStaffData()) {
         label: "🔙 Ana Kontrol Merkezi",
         custom_id: "robloxland_staffmgmt_back_hub",
         emoji: { name: "🔙" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🔒",
+        custom_id: "eko_easter_egg_secret_settings"
       }
     ])
   ];
