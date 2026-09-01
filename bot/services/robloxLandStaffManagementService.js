@@ -21,8 +21,8 @@ const WORK_CATEGORY_ID = '1538471137833394237'; // Sistem, Map & Paylaşım Kana
 const STAFF_LOG_CHANNEL_ID = '1543382733408174220';
 const DESIGNATED_STAFF_ID = '1497600770634289194';
 
-// ── Sunucu Yetkili Rol Hiyerarşisi ──────────────────────────────────────────
-const STAFF_RANKS = [
+// ── Sunucu Yetkili Rol Hiyerarşisi (Varsayılanlar) ──────────────────────────
+const DEFAULT_STAFF_RANKS = [
   { rank: 1, name: "Yetkili Ofisi Başkanı", id: "1544392306101067878" },
   { rank: 2, name: "Yetkili Ofisi Müdürü", id: "1544393164067053618" },
   { rank: 3, name: "Yetkili Ofisi Müdür Yardımcısı", id: "1544393522784903278" },
@@ -31,6 +31,15 @@ const STAFF_RANKS = [
   { rank: 6, name: "Yetkili Ofisi Staj", id: "1544394096918003712" }
 ];
 
+const DEFAULT_TEMPLATES = {
+  dm10d: "Selam {username} 👋\n\nBir süredir sistem veya map paylaşmadığını fark ettik (Son 10 gün).\nAktif misin?",
+  dm13d: "Selam {username},\n\n3 gündür hâlâ hiç sistem-map atmadın! Bir şey mi oldu?\nEğer yardıma ihtiyacın varsa veya mazeretin bulunuyorsa lütfen yönetime bildir.\n\nTopluluğumuz için yetkili kadromuzun aktifliği büyük önem taşımaktadır.",
+  workTime: "Selam! Çalışma vakti. Bugün müsaitsen yeni bir sistem veya map paylaşmanı bekliyoruz.",
+  meeting: "📅 Yetkili toplantısı vardır. Lütfen en kısa sürede yetkili kanalını kontrol ediniz.",
+  lowActivity: "⚠️ Son zamanlardaki aktivite durumunuz düşüktür. Lütfen durumunuzu kontrol ediniz."
+};
+
+const STAFF_RANKS = DEFAULT_STAFF_RANKS;
 const ALL_STAFF_ROLE_IDS = Array.from(new Set(STAFF_RANKS.map(r => r.id)));
 
 const DATA_FILE = path.join(__dirname, '../../data/robloxland_staff_management.json');
@@ -54,6 +63,25 @@ function loadStaffData() {
   if (!data.pendingLeaves) data.pendingLeaves = {};
   if (!data.activeTasks) data.activeTasks = {};
   if (!data.weeklyStats) data.weeklyStats = { weekNumber: getWeekNumber(), totalWorksThisWeek: 0 };
+  
+  if (!data.settings) {
+    data.settings = {
+      baskanRoleId: "1544392306101067878",
+      baskanYardimcisiRoleId: "1544393522784903278",
+      roles: [...DEFAULT_STAFF_RANKS],
+      templates: { ...DEFAULT_TEMPLATES }
+    };
+  } else {
+    if (!data.settings.roles || !Array.isArray(data.settings.roles) || data.settings.roles.length === 0) {
+      data.settings.roles = [...DEFAULT_STAFF_RANKS];
+    }
+    if (!data.settings.templates) {
+      data.settings.templates = { ...DEFAULT_TEMPLATES };
+    }
+    if (!data.settings.baskanRoleId) data.settings.baskanRoleId = "1544392306101067878";
+    if (!data.settings.baskanYardimcisiRoleId) data.settings.baskanYardimcisiRoleId = "1544393522784903278";
+  }
+
   return data;
 }
 
@@ -76,11 +104,17 @@ function getWeekNumber(d = new Date()) {
 }
 
 /**
- * Yönetici Yetki Kontrolü
+ * Yönetici Yetki Kontrolü (Dinamik Ayarlarla Entegre)
  */
 function isAuthorizedManager(member) {
   if (!member) return false;
   if (member.id === DESIGNATED_STAFF_ID) return true;
+
+  const data = loadStaffData();
+  const baskanId = data.settings?.baskanRoleId || "1544392306101067878";
+  const baskanYrdId = data.settings?.baskanYardimcisiRoleId || "1544393522784903278";
+  const configuredRoles = data.settings?.roles || DEFAULT_STAFF_RANKS;
+  const highRankIds = configuredRoles.filter(r => r.rank <= 3).map(r => r.id);
 
   const rolesList = member.roles?.cache
     ? (typeof member.roles.cache.some === 'function'
@@ -95,9 +129,9 @@ function isAuthorizedManager(member) {
       member.permissions.has(PermissionFlagsBits.ModerateMembers)
     )) ||
     (member.roles?.cache?.has && (
-      member.roles.cache.has(STAFF_RANKS[0].id) ||
-      member.roles.cache.has(STAFF_RANKS[1].id) ||
-      member.roles.cache.has(STAFF_RANKS[2].id)
+      member.roles.cache.has(baskanId) ||
+      member.roles.cache.has(baskanYrdId) ||
+      highRankIds.some(id => member.roles.cache.has(id))
     )) ||
     (Array.isArray(rolesList) ? rolesList.some(r => /başkan|müdür|yönetici|admin|ik|kurucu/i.test(r?.name || '')) : (typeof rolesList.some === 'function' && rolesList.some(r => /başkan|müdür|yönetici|admin|ik|kurucu/i.test(r?.name || ''))))
   );
@@ -352,10 +386,84 @@ function buildStaffManagementPayload(data = loadStaffData()) {
         emoji: { name: "⚖️" }
       },
       {
+        style: ButtonStyle.Primary,
+        label: "⚙️ Ayarlar & Roller",
+        custom_id: "robloxland_staffmgmt_settings_hub",
+        emoji: { name: "⚙️" }
+      },
+      {
         style: ButtonStyle.Secondary,
         label: "🔄 Yenile",
         custom_id: "robloxland_staffmgmt_refresh",
         emoji: { name: "🔄" }
+      }
+    ])
+  ];
+
+  return ComponentsV2Factory.buildPayload(content);
+}
+
+/**
+ * 11. Sistem & Rol Ayarları Paneli (Settings Payload)
+ */
+function buildStaffSettingsPayload(data = loadStaffData()) {
+  const settings = data.settings || {};
+  const baskanId = settings.baskanRoleId || "1544392306101067878";
+  const baskanYrdId = settings.baskanYardimcisiRoleId || "1544393522784903278";
+  const roles = settings.roles || DEFAULT_STAFF_RANKS;
+  const tpl = settings.templates || DEFAULT_TEMPLATES;
+
+  const rolesText = roles.map(r => `• **Sıra ${r.rank}:** \`${r.name}\` ➔ <@&${r.id}> (\`${r.id}\`)`).join('\n');
+
+  const content = [
+    ComponentsV2Factory.text(
+      `# ⚙️ YETKİLİ SİSTEM & ROL AYARLARI\n` +
+      `*Panelden yetkili hiyerarşi rollerini, başkan/başkan yardımcısı rollerini ve botun gönderdiği otomatik mesaj şablonlarını özelleştirebilirsiniz.*\n\n` +
+      `### 👑 Yetkili Ofisi Üst Yönetim Rolleri:\n` +
+      `• 👑 **Başkan Rolü:** <@&${baskanId}> (\`${baskanId}\`)\n` +
+      `• 💼 **Başkan Yardımcısı Rolü:** <@&${baskanYrdId}> (\`${baskanYrdId}\`)\n\n` +
+      `### 🏷️ Tanımlı Yetkili Rol Hiyerarşisi:\n` +
+      rolesText + `\n\n` +
+      `### 📝 Hazır Mesaj Şablonları:\n` +
+      `• **10. Gün DM Hatırlatması:** \`${tpl.dm10d?.slice(0, 50)}...\`\n` +
+      `• **13. Gün Ciddi DM Uyarısı:** \`${tpl.dm13d?.slice(0, 50)}...\`\n` +
+      `• **Çalışma Vakti Mesajı:** \`${tpl.workTime?.slice(0, 50)}...\`\n` +
+      `• **Toplantı Mesajı:** \`${tpl.meeting?.slice(0, 50)}...\`\n\n` +
+      `-# Lütfen düzenlemek istediğiniz ayar butonuna tıklayınız:`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Primary,
+        label: "👑 Başkan & Yrd. Rolleri Ayarla",
+        custom_id: "robloxland_staffmgmt_btn_set_chief_roles",
+        emoji: { name: "👑" }
+      },
+      {
+        style: ButtonStyle.Success,
+        label: "➕ Rol Ekle / Güncelle",
+        custom_id: "robloxland_staffmgmt_btn_add_role",
+        emoji: { name: "➕" }
+      },
+      {
+        style: ButtonStyle.Danger,
+        label: "🗑️ Rol Sil",
+        custom_id: "robloxland_staffmgmt_btn_delete_role",
+        emoji: { name: "🗑️" }
+      }
+    ]),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Secondary,
+        label: "📝 Mesaj Şablonlarını Düzenle",
+        custom_id: "robloxland_staffmgmt_btn_edit_templates",
+        emoji: { name: "📝" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🔙 Ana Kontrol Merkezi",
+        custom_id: "robloxland_staffmgmt_back_hub",
+        emoji: { name: "🔙" }
       }
     ])
   ];
@@ -1751,6 +1859,278 @@ async function handleStaffManagementInteraction(interaction) {
     return true;
   }
 
+  // ── 11. SİSTEM & ROL AYARLARI ETKİLEŞİMLERİ ──
+  if (customId === 'robloxland_staffmgmt_settings_hub') {
+    const payload = buildStaffSettingsPayload(data);
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // Başkan & Yardımcı Rolü Ayarla Butonu
+  if (customId === 'robloxland_staffmgmt_btn_set_chief_roles') {
+    const settings = data.settings || {};
+    const modal = new ModalBuilder()
+      .setCustomId('robloxland_staffmgmt_modal_set_chief_roles')
+      .setTitle("👑 Başkan & Yardımcı Rolü Ayarla");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("baskan_role_id")
+          .setLabel("Yetkili Ofisi Başkanı Rol ID / Etiket")
+          .setValue(settings.baskanRoleId || "1544392306101067878")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("baskan_yardimcisi_role_id")
+          .setLabel("Yetkili Ofisi Müdür Yardımcısı Rol ID")
+          .setValue(settings.baskanYardimcisiRoleId || "1544393522784903278")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Başkan & Yardımcı Rol Modal Submit
+  if (customId === 'robloxland_staffmgmt_modal_set_chief_roles') {
+    const rawBaskan = interaction.fields.getTextInputValue("baskan_role_id")?.trim();
+    const rawBaskanYrd = interaction.fields.getTextInputValue("baskan_yardimcisi_role_id")?.trim();
+
+    const cleanBaskan = rawBaskan?.replace(/[^0-9]/g, '');
+    const cleanBaskanYrd = rawBaskanYrd?.replace(/[^0-9]/g, '');
+
+    data.settings = data.settings || {};
+    if (cleanBaskan && cleanBaskan.length >= 16) data.settings.baskanRoleId = cleanBaskan;
+    if (cleanBaskanYrd && cleanBaskanYrd.length >= 16) data.settings.baskanYardimcisiRoleId = cleanBaskanYrd;
+
+    saveStaffData(data);
+
+    await interaction.reply({
+      content: `✅ **Üst Yönetim Rolleri Güncellendi!**\n• 👑 **Başkan Rolü:** <@&${data.settings.baskanRoleId}>\n• 💼 **Başkan Yardımcısı:** <@&${data.settings.baskanYardimcisiRoleId}>`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // Yetkili Rolü Ekle / Güncelle Butonu
+  if (customId === 'robloxland_staffmgmt_btn_add_role') {
+    const modal = new ModalBuilder()
+      .setCustomId('robloxland_staffmgmt_modal_add_role')
+      .setTitle("➕ Yetkili Rolü Ekle / Güncelle");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("role_name")
+          .setLabel("Rol İsmi")
+          .setPlaceholder("Örn: Moderatör, Kıdemli Staj, Müdür...")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("role_id")
+          .setLabel("Discord Rol ID")
+          .setPlaceholder("Örn: 1544394096918003712")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("role_rank")
+          .setLabel("Hiyerarşi Sırası (1: En Üst - 10: Staj)")
+          .setValue("6")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(2)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Yetkili Rol Modal Submit
+  if (customId === 'robloxland_staffmgmt_modal_add_role') {
+    const roleName = interaction.fields.getTextInputValue("role_name")?.trim();
+    const rawRoleId = interaction.fields.getTextInputValue("role_id")?.trim();
+    const rankNum = parseInt(interaction.fields.getTextInputValue("role_rank"), 10) || 6;
+    const cleanRoleId = rawRoleId?.replace(/[^0-9]/g, '');
+
+    if (!cleanRoleId || cleanRoleId.length < 16) {
+      return await interaction.reply({ content: '❌ Geçersiz Discord Rol ID belirttiniz.', ephemeral: true });
+    }
+
+    data.settings = data.settings || {};
+    data.settings.roles = data.settings.roles || [...DEFAULT_STAFF_RANKS];
+
+    const existingIdx = data.settings.roles.findIndex(r => r.id === cleanRoleId || r.name.toLowerCase() === roleName.toLowerCase());
+    if (existingIdx >= 0) {
+      data.settings.roles[existingIdx] = { rank: rankNum, name: roleName, id: cleanRoleId };
+    } else {
+      data.settings.roles.push({ rank: rankNum, name: roleName, id: cleanRoleId });
+    }
+
+    data.settings.roles.sort((a, b) => a.rank - b.rank);
+    saveStaffData(data);
+
+    await interaction.reply({
+      content: `✅ **${roleName}** rolü (Sıra: ${rankNum}, ID: \`${cleanRoleId}\`) başarıyla rol hiyerarşisine eklendi/güncellendi!`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // Rol Sil Butonu
+  if (customId === 'robloxland_staffmgmt_btn_delete_role') {
+    const roles = data.settings?.roles || DEFAULT_STAFF_RANKS;
+    if (roles.length <= 1) {
+      return await interaction.reply({ content: '❌ Sistemde en az bir rol bulunmalıdır. Son rolü silemezsiniz.', ephemeral: true });
+    }
+
+    const selectOptions = roles.map(r => ({
+      label: `${r.name} (Sıra ${r.rank})`,
+      value: r.id,
+      description: `Rol ID: ${r.id}`
+    }));
+
+    const payload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 🗑️ SİLMEK İSTEDİĞİNİZ YETKİLİ ROLÜNÜ SEÇİN\n` +
+        `*Seçtiğiniz rol yönetim hiyerarşisinden kaldırılacaktır:*`
+      ),
+      ComponentsV2Factory.separator(true),
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "robloxland_staffmgmt_select_delete_role",
+            placeholder: "🗑️ Silinecek rolü seçiniz...",
+            options: selectOptions
+          }
+        ]
+      },
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Secondary,
+          label: "🔙 Ayarlara Dön",
+          custom_id: "robloxland_staffmgmt_settings_hub",
+          emoji: { name: "🔙" }
+        }
+      ])
+    ]);
+
+    return await interaction.reply({ ...payload, ephemeral: true });
+  }
+
+  // Rol Sil Select Submit
+  if (customId === 'robloxland_staffmgmt_select_delete_role') {
+    const selectedRoleId = interaction.values?.[0];
+    data.settings = data.settings || {};
+    data.settings.roles = (data.settings.roles || DEFAULT_STAFF_RANKS).filter(r => r.id !== selectedRoleId);
+    saveStaffData(data);
+
+    await interaction.reply({
+      content: `🗑️ <@&${selectedRoleId}> rolü başarıyla yetkili hiyerarşisinden silindi.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // Hazır Mesaj Şablonlarını Düzenle Butonu
+  if (customId === 'robloxland_staffmgmt_btn_edit_templates') {
+    const tpl = data.settings?.templates || DEFAULT_TEMPLATES;
+    const modal = new ModalBuilder()
+      .setCustomId('robloxland_staffmgmt_modal_edit_templates')
+      .setTitle("📝 Hazır Mesaj Şablonları");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("tpl_10d")
+          .setLabel("10. Gün DM Hatırlatma Mesajı")
+          .setValue(tpl.dm10d?.slice(0, 300) || "")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(350)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("tpl_13d")
+          .setLabel("13. Gün DM Ciddi Uyarı Mesajı")
+          .setValue(tpl.dm13d?.slice(0, 300) || "")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(350)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("tpl_work")
+          .setLabel("Çalışma Vakti Mesajı")
+          .setValue(tpl.workTime?.slice(0, 200) || "")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("tpl_meeting")
+          .setLabel("Toplantı Mesajı")
+          .setValue(tpl.meeting?.slice(0, 200) || "")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("tpl_low_activity")
+          .setLabel("Düşük Aktivite Mesajı")
+          .setValue(tpl.lowActivity?.slice(0, 200) || "")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(250)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Mesaj Şablonları Modal Submit
+  if (customId === 'robloxland_staffmgmt_modal_edit_templates') {
+    const tpl10d = interaction.fields.getTextInputValue("tpl_10d")?.trim();
+    const tpl13d = interaction.fields.getTextInputValue("tpl_13d")?.trim();
+    const tplWork = interaction.fields.getTextInputValue("tpl_work")?.trim();
+    const tplMeeting = interaction.fields.getTextInputValue("tpl_meeting")?.trim();
+    const tplLowActivity = interaction.fields.getTextInputValue("tpl_low_activity")?.trim();
+
+    data.settings = data.settings || {};
+    data.settings.templates = {
+      dm10d: tpl10d || DEFAULT_TEMPLATES.dm10d,
+      dm13d: tpl13d || DEFAULT_TEMPLATES.dm13d,
+      workTime: tplWork || DEFAULT_TEMPLATES.workTime,
+      meeting: tplMeeting || DEFAULT_TEMPLATES.meeting,
+      lowActivity: tplLowActivity || DEFAULT_TEMPLATES.lowActivity
+    };
+
+    saveStaffData(data);
+
+    await interaction.reply({
+      content: `✅ **Hazır Mesaj & DM Şablonları Başarıyla Güncellendi!**\nBotun gönderdiği otomatik hatırlatmalar ve anonim mesajlar yeni şablonları kullanacaktır.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
   return false;
 }
 
@@ -1835,6 +2215,7 @@ module.exports = {
   renderProgressBar,
   buildStaffManagementPayload,
   buildStaffProfilePayload,
+  buildStaffSettingsPayload,
   isValidWorkMessage,
   handleStaffWorkMessage,
   runDailyStaffAudit,

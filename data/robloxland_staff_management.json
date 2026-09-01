@@ -51,28 +51,28 @@
       "performanceScore": 82,
       "workCount30d": 1,
       "qualityWorksCount": 0,
-      "lastWorkAt": 1788283787634,
+      "lastWorkAt": 1788284168786,
       "warned10d": false,
       "warned13d": false,
       "acknowledgedActive": false,
       "workCountTotal": 1,
       "historyLogs": [
         {
-          "date": 1788283787641,
+          "date": 1788284168790,
           "text": "TERFİ ALDI: Yetkili Ofisi Staj ➔ Yetkili Ofisi Kıdemli Staj (Gerekçe: Yüksek performans ve kaliteli paylaşımlar) — Onaylayan: Baskan#0001"
         },
         {
-          "date": 1788283787634,
+          "date": 1788284168786,
           "text": "Sistem/Map onaylandı (5 ⭐) — +7 Performans Puanı (İnceleyen: Baskan#0001)"
         }
       ],
-      "lastPromotionAt": 1788283787641
+      "lastPromotionAt": 1788284168790
     }
   },
   "panelMessageId": null,
   "weeklyStats": {
     "weekNumber": 36,
-    "totalWorksThisWeek": 4
+    "totalWorksThisWeek": 7
   },
   "pendingWorks": {
     "work-295853": {
@@ -114,9 +114,90 @@
       "status": "pending",
       "stars": 0,
       "reviewReason": ""
+    },
+    "work-150189": {
+      "id": "work-150189",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284150189,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-164071": {
+      "id": "work-164071",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284164071,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-168772": {
+      "id": "work-168772",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284168772,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
     }
   },
   "pendingAppeals": {},
   "pendingLeaves": {},
-  "activeTasks": {}
+  "activeTasks": {},
+  "settings": {
+    "baskanRoleId": "1544392306101067899",
+    "baskanYardimcisiRoleId": "1544393522784903299",
+    "roles": [
+      {
+        "rank": 1,
+        "name": "Yetkili Ofisi Başkanı",
+        "id": "1544392306101067878"
+      },
+      {
+        "rank": 2,
+        "name": "Yetkili Ofisi Müdürü",
+        "id": "1544393164067053618"
+      },
+      {
+        "rank": 3,
+        "name": "Yetkili Ofisi Müdür Yardımcısı",
+        "id": "1544393522784903278"
+      },
+      {
+        "rank": 4,
+        "name": "Yetkili Ofisi Baş Staj",
+        "id": "1544393943570190456"
+      },
+      {
+        "rank": 4,
+        "name": "Kıdemli Denetmen",
+        "id": "1544393943570190888"
+      },
+      {
+        "rank": 5,
+        "name": "Yetkili Ofisi Kıdemli Staj",
+        "id": "1544393943570190456"
+      },
+      {
+        "rank": 6,
+        "name": "Yetkili Ofisi Staj",
+        "id": "1544394096918003712"
+      }
+    ],
+    "templates": {
+      "dm10d": "Özel 10. gün mesajı: {username} aktif misin?",
+      "dm13d": "Özel 13. gün mesajı: {username} 3 gündür ses yok!",
+      "workTime": "Özel çalışma vakti mesajı!",
+      "meeting": "Özel toplantı mesajı!",
+      "lowActivity": "Özel düşük aktivite uyarısı!"
+    }
+  }
 }

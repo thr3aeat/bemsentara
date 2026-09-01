@@ -279,3 +279,94 @@ test('handleStaffManagementInteraction handles anonymous DM bridge', async () =>
   assert.match(replyPayload.content, /anonim mesajınız iletildi/);
   assert.equal(sentDMs.length, 1);
 });
+
+test('handleStaffManagementInteraction allows setting chief roles, adding staff roles, and editing templates', async () => {
+  let replyPayload = null;
+  const { loadStaffData, saveStaffData, buildStaffSettingsPayload } = require('../bot/services/robloxLandStaffManagementService');
+  const data = loadStaffData();
+
+  // 1. Settings payload doğrulaması
+  const settingsPayload = buildStaffSettingsPayload(data);
+  assert.ok(settingsPayload);
+  const settingsJson = JSON.stringify(settingsPayload.components[0]);
+  assert.match(settingsJson, /YETKİLİ SİSTEM & ROL AYARLARI/);
+  assert.match(settingsJson, /robloxland_staffmgmt_btn_set_chief_roles/);
+  assert.match(settingsJson, /robloxland_staffmgmt_btn_add_role/);
+  assert.match(settingsJson, /robloxland_staffmgmt_btn_delete_role/);
+  assert.match(settingsJson, /robloxland_staffmgmt_btn_edit_templates/);
+
+  // 2. Başkan & Başkan Yardımcısı Rollerini Güncelleme
+  const mockChiefRolesInteraction = {
+    customId: 'robloxland_staffmgmt_modal_set_chief_roles',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Admin#0001' },
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'baskan_role_id') return '1544392306101067899';
+        if (f === 'baskan_yardimcisi_role_id') return '1544393522784903299';
+        return '';
+      }
+    },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledChief = await handleStaffManagementInteraction(mockChiefRolesInteraction);
+  assert.equal(handledChief, true);
+  assert.match(replyPayload.content, /Üst Yönetim Rolleri Güncellendi/);
+
+  const updatedAfterChief = loadStaffData();
+  assert.equal(updatedAfterChief.settings.baskanRoleId, '1544392306101067899');
+  assert.equal(updatedAfterChief.settings.baskanYardimcisiRoleId, '1544393522784903299');
+
+  // 3. Yeni Yetkili Rolü Ekleme
+  const mockAddRoleInteraction = {
+    customId: 'robloxland_staffmgmt_modal_add_role',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Admin#0001' },
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'role_name') return 'Kıdemli Denetmen';
+        if (f === 'role_id') return '1544393943570190888';
+        if (f === 'role_rank') return '4';
+        return '';
+      }
+    },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledAddRole = await handleStaffManagementInteraction(mockAddRoleInteraction);
+  assert.equal(handledAddRole, true);
+  assert.match(replyPayload.content, /Kıdemli Denetmen/);
+
+  const updatedAfterRole = loadStaffData();
+  const addedRole = updatedAfterRole.settings.roles.find(r => r.name === 'Kıdemli Denetmen');
+  assert.ok(addedRole);
+  assert.equal(addedRole.id, '1544393943570190888');
+  assert.equal(addedRole.rank, 4);
+
+  // 4. Hazır Mesaj Şablonlarını Güncelleme
+  const mockEditTemplatesInteraction = {
+    customId: 'robloxland_staffmgmt_modal_edit_templates',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Admin#0001' },
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'tpl_10d') return 'Özel 10. gün mesajı: {username} aktif misin?';
+        if (f === 'tpl_13d') return 'Özel 13. gün mesajı: {username} 3 gündür ses yok!';
+        if (f === 'tpl_work') return 'Özel çalışma vakti mesajı!';
+        if (f === 'tpl_meeting') return 'Özel toplantı mesajı!';
+        if (f === 'tpl_low_activity') return 'Özel düşük aktivite uyarısı!';
+        return '';
+      }
+    },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledTemplates = await handleStaffManagementInteraction(mockEditTemplatesInteraction);
+  assert.equal(handledTemplates, true);
+  assert.match(replyPayload.content, /Hazır Mesaj & DM Şablonları Başarıyla Güncellendi/);
+
+  const updatedAfterTpl = loadStaffData();
+  assert.equal(updatedAfterTpl.settings.templates.dm10d, 'Özel 10. gün mesajı: {username} aktif misin?');
+  assert.equal(updatedAfterTpl.settings.templates.workTime, 'Özel çalışma vakti mesajı!');
+});
