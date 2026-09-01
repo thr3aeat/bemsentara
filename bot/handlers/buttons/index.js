@@ -14,6 +14,16 @@ const { handleModApprovalButton } = require('../../services/modApprovalGateway')
 async function routeButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  if (customId && (customId.startsWith('robloxland_') || customId.startsWith('rl_') || customId.startsWith('rbx_'))) {
+    try {
+      const { handleRobloxDevsInteraction } = require('../../services/robloxDevsSetupService');
+      const handled = await handleRobloxDevsInteraction(interaction);
+      if (handled) return true;
+    } catch (err) {
+      console.error('[routeButtonInteraction] RobloxLand error:', err.message);
+    }
+  }
+
   if (customId.startsWith('btn_leave_')) {
     const StaffLeaveService = require('../../services/staffLeaveService');
     if (customId.startsWith('btn_leave_approve_')) {

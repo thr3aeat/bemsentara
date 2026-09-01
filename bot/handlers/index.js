@@ -4142,7 +4142,26 @@ function initializeDiscordHandlers(client) {
         try {
           if (!interaction.deferred && !interaction.replied) {
             const customId = interaction.customId || '';
-            const opensModal = customId.includes('_modal_') || customId.endsWith('_modal') || customId.startsWith('tv_modal_') || customId.startsWith('confession_btn_') || customId.startsWith('confession_tip_') || customId.startsWith('confession_thread_reply_') || customId === 'rename' || customId === 'user_limit' || customId === 'bitrate' || customId === 'region' || customId === 'ban_user' || customId === 'unban_user' || customId === 'whitelist' || customId === 'kick_user' || customId === 'transfer';
+            const opensModal = customId.includes('_modal_') ||
+                               customId.endsWith('_modal') ||
+                               customId.startsWith('robloxland_staff_apply') ||
+                               customId.startsWith('robloxland_staffmgmt_') ||
+                               customId.startsWith('robloxland_forum_rename_') ||
+                               customId.startsWith('robloxland_forum_kick_') ||
+                               customId.startsWith('robloxland_order_') ||
+                               customId.startsWith('robloxland_ticket_') ||
+                               customId.startsWith('robloxland_scam_') ||
+                               customId.startsWith('robloxland_dev_') ||
+                               customId.startsWith('rl_start_dev_') ||
+                               customId.startsWith('rl_dev_verify_') ||
+                               customId.startsWith('tv_modal_') ||
+                               customId.startsWith('confession_btn_') ||
+                               customId.startsWith('confession_tip_') ||
+                               customId.startsWith('confession_thread_reply_') ||
+                               customId === 'rename' || customId === 'user_limit' ||
+                               customId === 'bitrate' || customId === 'region' ||
+                               customId === 'ban_user' || customId === 'unban_user' ||
+                               customId === 'whitelist' || customId === 'kick_user' || customId === 'transfer';
             
             if (!opensModal) {
               if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {
