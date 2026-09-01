@@ -370,3 +370,104 @@ test('handleStaffManagementInteraction allows setting chief roles, adding staff 
   assert.equal(updatedAfterTpl.settings.templates.dm10d, 'Özel 10. gün mesajı: {username} aktif misin?');
   assert.equal(updatedAfterTpl.settings.templates.workTime, 'Özel çalışma vakti mesajı!');
 });
+
+test('handleStaffManagementInteraction handles oath sending, faith selection, swearing oath and kicking staff', async () => {
+  let replyPayload = null;
+  let sentDMs = [];
+
+  const mockClient = {
+    users: {
+      fetch: async (id) => ({
+        id,
+        username: 'CandidateStaff',
+        send: async (p) => { sentDMs.push(p); }
+      })
+    },
+    channels: {
+      cache: new Map([
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+      ])
+    }
+  };
+
+  const { loadStaffData, saveStaffData } = require('../bot/services/robloxLandStaffManagementService');
+  const data = loadStaffData();
+  data.staffMembers['staff-oath-1'] = {
+    userId: 'staff-oath-1',
+    username: 'YeminAdayi',
+    roleName: 'Yetkili Ofisi Staj',
+    performanceScore: 80,
+    oathStatus: 'pending'
+  };
+  saveStaffData(data);
+
+  // 1. Yönetici yetkiliye yemin gönderir
+  const mockSendOathInteraction = {
+    customId: 'robloxland_staffmgmt_act_send_oath_staff-oath-1',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledSend = await handleStaffManagementInteraction(mockSendOathInteraction);
+  assert.equal(handledSend, true);
+  assert.match(replyPayload.content, /Görev & Sadakat Yemini/);
+  assert.equal(sentDMs.length, 1);
+
+  // 2. Yetkili DM'den İslam inancını seçer
+  const mockSelectFaithInteraction = {
+    customId: 'robloxland_staff_oath_select_faith_staff-oath-1',
+    values: ['islam'],
+    user: { id: 'staff-oath-1' },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledSelect = await handleStaffManagementInteraction(mockSelectFaithInteraction);
+  assert.equal(handledSelect, true);
+  const faithCardJson = JSON.stringify(replyPayload.components[0]);
+  assert.match(faithCardJson, /Kuran-ı Kerim/);
+  assert.match(faithCardJson, /robloxland_staff_oath_btn_islam_staff-oath-1/);
+
+  // 3. Yetkili yemin modalına "Yemin Ederim" yazar
+  const mockConfirmOathInteraction = {
+    customId: 'robloxland_staffmgmt_modal_confirm_oath_islam_staff-oath-1',
+    fields: {
+      getTextInputValue: () => 'Evet, Yemin Ederim.'
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledConfirm = await handleStaffManagementInteraction(mockConfirmOathInteraction);
+  assert.equal(handledConfirm, true);
+  assert.match(replyPayload.content, /Görev yemininiz/);
+
+  const updatedSworn = loadStaffData();
+  assert.equal(updatedSworn.staffMembers['staff-oath-1'].oathStatus, 'sworn');
+  assert.equal(updatedSworn.staffMembers['staff-oath-1'].faith, '☪️ İslam');
+  assert.equal(updatedSworn.staffMembers['staff-oath-1'].performanceScore, 85); // +5 Puan
+
+  // 4. Yönetici yetkiliyi kadrodan çıkarır (İhraç)
+  const mockKickInteraction = {
+    customId: 'robloxland_staffmgmt_modal_do_kick_staff-oath-1',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    fields: {
+      getTextInputValue: () => 'Uzun süredir görevlerini yerine getirmedi.'
+    },
+    guild: {
+      members: { cache: new Map(), fetch: async () => ({ roles: { cache: new Map(), remove: async () => {} } }) }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledKick = await handleStaffManagementInteraction(mockKickInteraction);
+  assert.equal(handledKick, true);
+  assert.match(replyPayload.content, /başarıyla kadrodan çıkarıldı/);
+
+  const afterKickData = loadStaffData();
+  assert.equal(afterKickData.staffMembers['staff-oath-1'], undefined);
+});

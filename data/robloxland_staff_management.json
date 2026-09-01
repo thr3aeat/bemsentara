@@ -51,28 +51,28 @@
       "performanceScore": 82,
       "workCount30d": 1,
       "qualityWorksCount": 0,
-      "lastWorkAt": 1788284168786,
+      "lastWorkAt": 1788284304635,
       "warned10d": false,
       "warned13d": false,
       "acknowledgedActive": false,
       "workCountTotal": 1,
       "historyLogs": [
         {
-          "date": 1788284168790,
+          "date": 1788284304640,
           "text": "TERFİ ALDI: Yetkili Ofisi Staj ➔ Yetkili Ofisi Kıdemli Staj (Gerekçe: Yüksek performans ve kaliteli paylaşımlar) — Onaylayan: Baskan#0001"
         },
         {
-          "date": 1788284168786,
+          "date": 1788284304635,
           "text": "Sistem/Map onaylandı (5 ⭐) — +7 Performans Puanı (İnceleyen: Baskan#0001)"
         }
       ],
-      "lastPromotionAt": 1788284168790
+      "lastPromotionAt": 1788284304640
     }
   },
   "panelMessageId": null,
   "weeklyStats": {
     "weekNumber": 36,
-    "totalWorksThisWeek": 7
+    "totalWorksThisWeek": 11
   },
   "pendingWorks": {
     "work-295853": {
@@ -144,6 +144,50 @@
       "channelId": "chan-work-1",
       "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
       "submittedAt": 1788284168772,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-241598": {
+      "id": "work-241598",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284241598,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-287780": {
+      "id": "work-287780",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284287780,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-300044": {
+      "id": "work-300044",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284300044,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-304625": {
+      "id": "work-304625",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284304625,
       "status": "pending",
       "stars": 0,
       "reviewReason": ""

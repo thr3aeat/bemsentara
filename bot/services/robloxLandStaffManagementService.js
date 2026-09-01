@@ -471,6 +471,40 @@ function buildStaffSettingsPayload(data = loadStaffData()) {
   return ComponentsV2Factory.buildPayload(content);
 }
 
+// ── Dinlere & İnançlara Göre Sadakat ve Görev Yeminleri ────────────────────
+const FAITH_OATHS = {
+  islam: {
+    key: "islam",
+    name: "☪️ İslam",
+    oath: "Allah'ın huzurunda ve Kuran-ı Kerim üzerine; RobloxLand topluluğunda adaletle görev yapacağıma, yetkimi kötüye kullanmayacağıma, hak yemeyeceğime, ayrıcalık tanımayacağıma ve gizlilik ilkelerine sadık kalacağıma namusum ve şerefim üzerine yemin ederim."
+  },
+  christianity: {
+    key: "christianity",
+    name: "✝️ Hristiyanlık",
+    oath: "Tanrı'nın huzurunda ve Kutsal İncil üzerine; RobloxLand topluluğunda doğruluk ve dürüstlükle görev yapacağıma, adaletle hükmedeceğime, yetkimi kötüye kullanmayacağıma ve gizlilik kurallarına uyacağıma yemin ederim."
+  },
+  judaism: {
+    key: "judaism",
+    name: "✡️ Musevilik",
+    oath: "Tanrı'nın huzurunda ve Tevrat üzerine; adalet, dürüstlük ve hakkaniyetle görevimi yerine getireceğime, topluluk düzenine ve gizliliğe sadık kalacağıma yemin ederim."
+  },
+  buddhism: {
+    key: "buddhism",
+    name: "☸️ Budizm / Doğu Felsefesi",
+    oath: "Doğruluk, dürüstlük ve erdem yolunda; RobloxLand topluluğunda adaletle, kimseye zarar vermeden ve tarafsızlıkla görev yapacağıma yemin ederim."
+  },
+  deism: {
+    key: "deism",
+    name: "🕊️ Deizm / Teizm",
+    oath: "Yaratıcının huzurunda ve tüm vicdanım üzerine; RobloxLand yetkili kadrosunda hakkaniyetle, adaletle ve dürüstlükle görev yapacağıma yemin ederim."
+  },
+  secular: {
+    key: "secular",
+    name: "🌐 Evrensel / Laik / Vicdani Yemin",
+    oath: "Tüm vicdanım, şerefim ve haysiyetim üzerine; RobloxLand yetkili kadrosunda hiçbir ayrımcılık yapmaksızın, adalet ve tarafsızlıkla görev yapacağıma ve topluluk kurallarına sadık kalacağıma yemin ederim."
+  }
+};
+
 /**
  * 2. Gelişmiş Yetkili Profil Kartı Payload'u
  */
@@ -500,6 +534,10 @@ function buildStaffProfilePayload(staff) {
                   `> *Risk Gerekçeleri:* ${demo.reasons.join(', ')}\n`;
   }
 
+  const oathStatusText = staff.oathStatus === 'sworn'
+    ? `✅ Edildi (\`${staff.faith || 'Evrensel'}\` — <t:${Math.floor((staff.oathDate || Date.now()) / 1000)}:d>)`
+    : `❌ Henüz Edilmedi (Bekleniyor)`;
+
   const logsText = (staff.historyLogs && staff.historyLogs.length > 0)
     ? staff.historyLogs.slice(0, 5).map(l => `• <t:${Math.floor(l.date / 1000)}:d> — ${l.text}`).join('\n')
     : '• Henüz işlem kaydı bulunmuyor.';
@@ -509,6 +547,7 @@ function buildStaffProfilePayload(staff) {
       `# 👤 YETKİLİ PROFİL KARTI — <@${staff.userId}>\n\n` +
       `• 🏷️ **Rütbe:** \`${staff.roleName || 'Yetkili'}\`\n` +
       `• 🛡️ **Durum:** ${health.badge}\n` +
+      `• 📜 **Görev Yemini:** ${oathStatusText}\n` +
       `• ⭐ **Performans:** \`${staff.performanceScore || 80}/100\` [${perfBar}]\n\n` +
       `• 📦 **Bu Ayki Çalışmalar:** \`${staff.workCount30d || 0}\` adet | 🌟 **Kaliteli Çalışma:** \`${staff.qualityWorksCount || 0}\`\n` +
       `• 🔥 **Çalışma Serisi:** \`${staff.streakDays || 1}\` gün\n` +
@@ -541,9 +580,23 @@ function buildStaffProfilePayload(staff) {
       },
       {
         style: ButtonStyle.Secondary,
+        label: "📜 Yemin Gönder",
+        custom_id: `robloxland_staffmgmt_act_send_oath_${staff.userId}`,
+        emoji: { name: "📜" }
+      }
+    ]),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Secondary,
         label: "🕵️ Anonim Mesaj",
         custom_id: `robloxland_staffmgmt_act_anonmsg_${staff.userId}`,
         emoji: { name: "🕵️" }
+      },
+      {
+        style: ButtonStyle.Danger,
+        label: "🚪 Kadrodan Çıkar",
+        custom_id: `robloxland_staffmgmt_act_kick_${staff.userId}`,
+        emoji: { name: "🚪" }
       },
       {
         style: ButtonStyle.Secondary,
@@ -788,7 +841,7 @@ async function runDailyStaffAudit(client) {
  */
 async function handleStaffManagementInteraction(interaction) {
   const customId = interaction.customId;
-  if (!customId || (!customId.startsWith('robloxland_staffmgmt_') && !customId.startsWith('robloxland_staff_dm_'))) {
+  if (!customId || (!customId.startsWith('robloxland_staffmgmt_') && !customId.startsWith('robloxland_staff_dm_') && !customId.startsWith('robloxland_staff_oath_'))) {
     return false;
   }
 
@@ -865,7 +918,7 @@ async function handleStaffManagementInteraction(interaction) {
     }
   }
 
-  // ── 2. DM Modalları ──
+  // ── 2. DM Modalları & Yemin Yanıtları ──
   if (customId.startsWith('robloxland_staffmgmt_modal_dmleave_')) {
     const staffId = customId.replace('robloxland_staffmgmt_modal_dmleave_', '');
     const daysRaw = parseInt(interaction.fields.getTextInputValue('leave_days'), 10) || 7;
@@ -920,6 +973,118 @@ async function handleStaffManagementInteraction(interaction) {
 
     await interaction.reply({
       content: `🏖️ **İzin talebiniz alındı!** (${days} gün). Yönetim onayladığında aktivite uyarıların durdurulacaktır.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 2. Yetkili DM'den Din/İnanç Seçer (DM İçinde)
+  if (customId.startsWith('robloxland_staff_oath_select_faith_')) {
+    const targetUserId = customId.replace('robloxland_staff_oath_select_faith_', '');
+    const selectedKey = interaction.values?.[0] || 'secular';
+    const faith = FAITH_OATHS[selectedKey] || FAITH_OATHS.secular;
+
+    const oathCardPayload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 📜 GÖREV YEMİNİ METNİNİZ (${faith.name})\n\n` +
+        `> "*${faith.oath}*"\n\n` +
+        `Yukarıdaki yemin metnini kabul ediyorsanız lütfen aşağıdaki **✍️ Yemin Et** butonuna tıklayınız ve açılan kutucuğa **Yemin Ederim** yazarak onaylayınız.`
+      ),
+      ComponentsV2Factory.separator(true),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Success,
+          label: "✍️ Yemin Et ('Yemin Ederim')",
+          custom_id: `robloxland_staff_oath_btn_${selectedKey}_${targetUserId}`,
+          emoji: { name: "✍️" }
+        }
+      ])
+    ]);
+
+    await interaction.reply({ ...oathCardPayload, ephemeral: true });
+    return true;
+  }
+
+  // 3. Yetkili "Yemin Et" Butonuna Basar (Modal Açılır)
+  if (customId.startsWith('robloxland_staff_oath_btn_')) {
+    const parts = customId.split('_');
+    const faithKey = parts[4];
+    const targetUserId = parts[5];
+    const faith = FAITH_OATHS[faithKey] || FAITH_OATHS.secular;
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_confirm_oath_${faithKey}_${targetUserId}`)
+      .setTitle("📜 Görev Yeminini Onayla");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("oath_confirm_input")
+          .setLabel("Onaylamak İçin 'Yemin Ederim' Yazınız:")
+          .setPlaceholder("Yemin Ederim")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(30)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // 4. Yemin Modal Submit Edilir (DM İçinde)
+  if (customId.startsWith('robloxland_staffmgmt_modal_confirm_oath_')) {
+    const parts = customId.split('_');
+    const faithKey = parts[5];
+    const targetUserId = parts[6];
+    const faith = FAITH_OATHS[faithKey] || FAITH_OATHS.secular;
+    const confirmInput = interaction.fields.getTextInputValue("oath_confirm_input")?.trim() || "";
+
+    if (!confirmInput.toLowerCase().includes("yemin ederim")) {
+      return await interaction.reply({
+        content: "❌ **Yemin onaylanamadı!** Lütfen kutucuğa tam olarak `Yemin Ederim` yazınız.",
+        ephemeral: true
+      });
+    }
+
+    const staff = data.staffMembers[targetUserId];
+    if (staff) {
+      staff.faith = faith.name;
+      staff.oathStatus = 'sworn';
+      staff.oathDate = Date.now();
+      staff.oathText = faith.oath;
+      staff.performanceScore = Math.min(100, (staff.performanceScore || 80) + 5); // Yemin bonusu
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `GÖREV YEMİNİ ETTİ (${faith.name}): "${faith.oath.slice(0, 60)}..." (+5 Bonus Puan)`
+      });
+
+      saveStaffData(data);
+    }
+
+    // Yönetim Kanalına Log Gönder
+    try {
+      const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
+                       interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
+      if (mgmtChan && mgmtChan.isTextBased()) {
+        await mgmtChan.send({
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# 📜 YENİ GÖREV YEMİNİ KAYDEDİLDİ!\n\n` +
+              `👤 **Yetkili:** <@${targetUserId}>\n` +
+              `🏷️ **İnanç / Tercih:** \`${faith.name}\`\n` +
+              `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+              `> "*${faith.oath}*"\n\n` +
+              `✅ Yetkili resmi olarak "Yemin Ederim" beyanını sunmuş ve göreve başlamıştır.`
+            )
+          ])
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: `🎉 **Tebrikler! Görev yemininiz (${faith.name}) başarıyla kaydedildi.**\nRobloxLand yetkili kadrosuna resmi olarak hoş geldiniz! Görevinizde başarılar ve kolaylıklar dileriz.`,
       ephemeral: true
     });
     return true;
@@ -2122,10 +2287,254 @@ async function handleStaffManagementInteraction(interaction) {
       lowActivity: tplLowActivity || DEFAULT_TEMPLATES.lowActivity
     };
 
-    saveStaffData(data);
-
     await interaction.reply({
       content: `✅ **Hazır Mesaj & DM Şablonları Başarıyla Güncellendi!**\nBotun gönderdiği otomatik hatırlatmalar ve anonim mesajlar yeni şablonları kullanacaktır.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // ── 12. GÖREV YEMİNİ & DİN SEÇİMİ VE KADRODAN ÇIKARMA (İHRAÇ) ──
+
+  // 1. Yönetici Yetkiliye Yemin Gönderir
+  if (customId.startsWith('robloxland_staffmgmt_act_send_oath_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_send_oath_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) return await interaction.reply({ content: '❌ Yetkili kaydı bulunamadı.', ephemeral: true });
+
+    const selectOptions = Object.values(FAITH_OATHS).map(f => ({
+      label: f.name,
+      value: f.key,
+      description: f.oath.slice(0, 50) + "..."
+    }));
+
+    const dmPayload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 📜 ROBLOXLND YETKİLİ GÖREV & SADAKAT YEMİNİ\n\n` +
+        `Değerli yetkilimiz <@${targetUserId}>,\n\n` +
+        `RobloxLand topluluğunda adaleti, dürüstlüğü, tarafsızlığı ve düzeni sağlamak adına göreve başlamadan önce inancınıza / vicdani tercihinize uygun **Görev Yemini** etmeniz gerekmektedir.\n\n` +
+        `Lütfen aşağıdaki menüden inancınızı / tercihinizi seçiniz:`
+      ),
+      ComponentsV2Factory.separator(true),
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `robloxland_staff_oath_select_faith_${targetUserId}`,
+            placeholder: "📜 İnancınızı / Yemin Türünüzü Seçiniz...",
+            options: selectOptions
+          }
+        ]
+      }
+    ]);
+
+    try {
+      const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (u) {
+        await u.send(dmPayload);
+      }
+    } catch (err) {
+      return await interaction.reply({ content: `❌ Yetkilinin DM kutusu kapalı: ${err.message}`, ephemeral: true });
+    }
+
+    await interaction.reply({
+      content: `📜 <@${targetUserId}> adlı yetkiliye DM üzerinden **Görev & Sadakat Yemini** formu iletildi!`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 2. Yetkili DM'den Din/İnanç Seçer
+  if (customId.startsWith('robloxland_staff_oath_select_faith_')) {
+    const targetUserId = customId.replace('robloxland_staff_oath_select_faith_', '');
+    const selectedKey = interaction.values?.[0] || 'secular';
+    const faith = FAITH_OATHS[selectedKey] || FAITH_OATHS.secular;
+
+    const oathCardPayload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 📜 GÖREV YEMİNİ METNİNİZ (${faith.name})\n\n` +
+        `> "*${faith.oath}*"\n\n` +
+        `Yukarıdaki yemin metnini kabul ediyorsanız lütfen aşağıdaki **✍️ Yemin Et** butonuna tıklayınız ve açılan kutucuğa **Yemin Ederim** yazarak onaylayınız.`
+      ),
+      ComponentsV2Factory.separator(true),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Success,
+          label: "✍️ Yemin Et ('Yemin Ederim')",
+          custom_id: `robloxland_staff_oath_btn_${selectedKey}_${targetUserId}`,
+          emoji: { name: "✍️" }
+        }
+      ])
+    ]);
+
+    return await interaction.reply({ ...oathCardPayload, ephemeral: true });
+  }
+
+  // 3. Yetkili "Yemin Et" Butonuna Basar (Modal Açılır)
+  if (customId.startsWith('robloxland_staff_oath_btn_')) {
+    const parts = customId.split('_');
+    const faithKey = parts[4];
+    const targetUserId = parts[5];
+    const faith = FAITH_OATHS[faithKey] || FAITH_OATHS.secular;
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_confirm_oath_${faithKey}_${targetUserId}`)
+      .setTitle("📜 Görev Yeminini Onayla");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("oath_confirm_input")
+          .setLabel("Onaylamak İçin 'Yemin Ederim' Yazınız:")
+          .setPlaceholder("Yemin Ederim")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(30)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // 4. Yemin Modal Submit Edilir
+  if (customId.startsWith('robloxland_staffmgmt_modal_confirm_oath_')) {
+    const parts = customId.split('_');
+    const faithKey = parts[5];
+    const targetUserId = parts[6];
+    const faith = FAITH_OATHS[faithKey] || FAITH_OATHS.secular;
+    const confirmInput = interaction.fields.getTextInputValue("oath_confirm_input")?.trim() || "";
+
+    if (!confirmInput.toLowerCase().includes("yemin ederim")) {
+      return await interaction.reply({
+        content: "❌ **Yemin onaylanamadı!** Lütfen kutucuğa tam olarak `Yemin Ederim` yazınız.",
+        ephemeral: true
+      });
+    }
+
+    const staff = data.staffMembers[targetUserId];
+    if (staff) {
+      staff.faith = faith.name;
+      staff.oathStatus = 'sworn';
+      staff.oathDate = Date.now();
+      staff.oathText = faith.oath;
+      staff.performanceScore = Math.min(100, (staff.performanceScore || 80) + 5); // Yemin bonusu
+      staff.historyLogs = staff.historyLogs || [];
+      staff.historyLogs.unshift({
+        date: Date.now(),
+        text: `GÖREV YEMİNİ ETTİ (${faith.name}): "${faith.oath.slice(0, 60)}..." (+5 Bonus Puan)`
+      });
+
+      saveStaffData(data);
+    }
+
+    // Yönetim Kanalına Log Gönder
+    try {
+      const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
+                       interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
+      if (mgmtChan && mgmtChan.isTextBased()) {
+        await mgmtChan.send({
+          ...ComponentsV2Factory.buildPayload([
+            ComponentsV2Factory.text(
+              `# 📜 YENİ GÖREV YEMİNİ KAYDEDİLDİ!\n\n` +
+              `👤 **Yetkili:** <@${targetUserId}>\n` +
+              `🏷️ **İnanç / Tercih:** \`${faith.name}\`\n` +
+              `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
+              `> "*${faith.oath}*"\n\n` +
+              `✅ Yetkili resmi olarak "Yemin Ederim" beyanını sunmuş ve göreve başlamıştır.`
+            )
+          ])
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: `🎉 **Tebrikler! Görev yemininiz (${faith.name}) başarıyla kaydedildi.**\nRobloxLand yetkili kadrosuna resmi olarak hoş geldiniz! Görevinizde başarılar ve kolaylıklar dileriz.`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 5. Kadrodan Çıkar (İhraç) Butonuna Basıldığında
+  if (customId.startsWith('robloxland_staffmgmt_act_kick_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_kick_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) return await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_do_kick_${targetUserId}`)
+      .setTitle("🚪 Yetkiliyi Kadrodan Çıkar");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("kick_reason")
+          .setLabel("Kadrodan Çıkarma / İhraç Gerekçesi")
+          .setPlaceholder("Örn: Uzun süreli inaktiflik / Yetki kötüye kullanımı / Kural ihlali")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(300)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Kadrodan Çıkar Modal Submit
+  if (customId.startsWith('robloxland_staffmgmt_modal_do_kick_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_modal_do_kick_', '');
+    const reason = interaction.fields.getTextInputValue("kick_reason")?.trim() || "Yönetim kararı";
+    const staff = data.staffMembers[targetUserId];
+
+    // 1. Yetkili rollerini sunucudan kaldır
+    try {
+      const configuredRoles = data.settings?.roles || DEFAULT_STAFF_RANKS;
+      const allRoleIds = configuredRoles.map(r => r.id);
+      const memberObj = guild?.members?.cache?.get(targetUserId) || await guild?.members?.fetch(targetUserId).catch(() => null);
+      if (memberObj) {
+        for (const rId of allRoleIds) {
+          if (memberObj.roles.cache.has(rId)) {
+            await memberObj.roles.remove(rId, `Kadrodan çıkarma: ${reason}`).catch(() => {});
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Yetkiliye DM bilgilendirmesi
+    try {
+      const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (u) {
+        await u.send(
+          `ℹ️ **RobloxLand Yetkili Kadrosu Bilgilendirmesi**\n\n` +
+          `RobloxLand yetkili kadrosundaki göreviniz sonlandırılmıştır.\n` +
+          `• **Gerekçe:** ${reason}\n\n` +
+          `Şimdiye kadar sunucumuza kattığınız emekler için teşekkür ederiz.`
+        );
+      }
+    } catch (_) {}
+
+    // 3. Kadro kaydını sil
+    delete data.staffMembers[targetUserId];
+    saveStaffData(data);
+
+    // 4. Yönetim Logu Gönder
+    try {
+      const logChan = interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID) ||
+                      interaction.client.channels.cache.get(PANEL_CHANNEL_ID);
+      if (logChan && logChan.isTextBased()) {
+        await logChan.send({
+          content: `🚪 **Yetkili Kadrodan Çıkarıldı (İhraç)**\n` +
+                   `• **Kullanıcı:** <@${targetUserId}> (\`${targetUserId}\`)\n` +
+                   `• **İşlemi Yapan Yönetici:** <@${user.id}> (\`${user.tag}\`)\n` +
+                   `• **Gerekçe:** "${reason}"`
+        });
+      }
+    } catch (_) {}
+
+    await interaction.reply({
+      content: `🚪 <@${targetUserId}> adlı yetkili başarıyla kadrodan çıkarıldı, rolleri alındı ve DM ile bilgilendirildi.`,
       ephemeral: true
     });
     return true;
