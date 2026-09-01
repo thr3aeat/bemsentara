@@ -1904,6 +1904,13 @@ async function handleRobloxDevsInteraction(interaction) {
     if (handledForum) return true;
   } catch (_) {}
 
+  // 23. RobloxLand Onaylı Developer Doğrulama Sistemi
+  try {
+    const { handleDevVerificationInteraction } = require("./robloxLandDevVerificationService");
+    const handledDev = await handleDevVerificationInteraction(interaction);
+    if (handledDev) return true;
+  } catch (_) {}
+
   return false;
 }
 

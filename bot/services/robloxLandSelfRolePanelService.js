@@ -1,7 +1,7 @@
-'use strict';
-
 const {
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ContainerBuilder,
   MessageFlags,
   SeparatorBuilder,
@@ -104,7 +104,20 @@ function buildSelfRolePanelPayload() {
       '### 🎁 Bildirim Rolü\nÇekilişleri kaçırma… ya da huzurlu sessizliği seç.\n' +
       '-# Sentara • Rol büfesi 7/24 açık, kasiyer biraz robot.'
     ))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(notificationMenu));
+    .addActionRowComponents(new ActionRowBuilder().addComponents(notificationMenu))
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      '### 🌟 Onaylı Developer Doğrulaması\n' +
+      'GFX, 3D Model, Map/Build veya Sistem/Script uzmanlığınızı kanıtlayarak **Onaylı Developer** unvanı almak için aşağıdaki butondan doğrulama odanızı açabilirsiniz.\n' +
+      '-# Yetkili onayından önce çalışma görseli (SS) ve sahiplik videosu incelenir.'
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('rl_start_dev_verification')
+        .setLabel('✨ Onaylı Developer Kendini Onaylama Başlat')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('💻')
+    ));
 
   return {
     flags: MessageFlags.IsComponentsV2,
@@ -208,6 +221,11 @@ async function handleSelfRoleInteraction(interaction) {
   const selected = interaction.values || [];
   const addIds = [];
   const removeIds = [];
+
+  if (interaction.customId === 'rl_start_dev_verification' || interaction.customId?.startsWith('rl_dev_verify_')) {
+    const { handleDevVerificationInteraction } = require('./robloxLandDevVerificationService');
+    return await handleDevVerificationInteraction(interaction);
+  }
 
   if (interaction.customId === 'rl_selfrole_region') {
     const value = selected[0];
