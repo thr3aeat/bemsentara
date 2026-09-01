@@ -163,13 +163,20 @@ test("e!streak sadece RobloxLand'de Components V2 durum kartı döndürür", asy
   assert.match(text, /Rutin DM gönderilmez/);
 });
 
-test("yetkili alım paneli Eko Yıldız stili ve Discord Mod açık durumunu içerir", () => {
+test("yetkili alım paneli güncel rolleri, kapalı elçiliği ve tıklanabilir rol butonlarını içerir", () => {
   const payload = buildStaffApplyPayload();
   const components = payload.components[0].components;
   const allText = components.map(c => c.content || "").join(" ");
   assert.match(allText, /Discord Moderasyon Takımı/i);
-  assert.match(allText, /RobloxLand Yetkili Ekibi Başvuruları/i);
-  assert.equal(components.at(-1).components[0].custom_id, "robloxland_staff_apply");
+  assert.match(allText, /Topluluk Elçisi/i);
+  assert.match(allText, /kapandı/i);
+  assert.doesNotMatch(allText, /Oyun Moderasyon/i);
+  assert.doesNotMatch(allText, /Etkinlik Yetkilisi/i);
+
+  const actionRow = components.at(-1);
+  assert.equal(actionRow.components[0].custom_id, "robloxland_staff_apply_mod");
+  assert.equal(actionRow.components[1].custom_id, "robloxland_staff_apply_dev");
+  assert.equal(actionRow.components[2].custom_id, "robloxland_staff_apply_debug");
 });
 
 test("alım sorumlusu adaya mülakat daveti gönderebilir", async () => {

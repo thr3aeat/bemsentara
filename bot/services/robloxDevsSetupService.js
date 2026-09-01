@@ -227,22 +227,10 @@ function buildStaffApplyPayload() {
       `  ◦ Başvuru durumu: ${BADGE_ACIK}`
     ),
 
-    // Oyun Moderasyon Takımı
+    // Topluluk Elçiliği — KAPALI
     ComponentsV2Factory.text(
-      `• 🗡️ [**[ Oyun Moderasyon Takımı ]**] başvuru formu kapandı.\n` +
+      `• 👑 [**[ Topluluk Elçisi ]**] başvuru formu kapandı.\n` +
       `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
-    ),
-
-    // Etkinlik Yetkilisi — AÇIK
-    ComponentsV2Factory.text(
-      `• <:etkinlik:1535976275317891194> [**[ Etkinlik Yetkilisi ]**] başvuru formu açık.\n` +
-      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
-    ),
-
-    // Topluluk Elçiliği — AÇIK
-    ComponentsV2Factory.text(
-      `• 👑 [**[ Topluluk Elçisi ]**] başvuru formu açık.\n` +
-      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
     ),
 
     // Geliştirici Ekibi // Geliştirici Ofisi — AÇIK
@@ -260,15 +248,27 @@ function buildStaffApplyPayload() {
     ComponentsV2Factory.separator(true),
 
     ComponentsV2Factory.text(
-      'Başvuru durumları otomatik olarak güncellenmektedir. Ekibimize katılmak için aşağıdaki butona tıklayarak kısa başvuru formunu doldurabilirsiniz.'
+      'Başvurmak istediğiniz yetkili pozisyonunu seçerek aşağıdaki butonlardan doğrudan formu açabilirsiniz.'
     ),
 
     ComponentsV2Factory.actionRow([
       {
         style: ButtonStyle.Success,
-        label: "📝 Yetkili Başvuru Formunu Doldur",
-        custom_id: "robloxland_staff_apply",
-        emoji: { name: "📋" }
+        label: "🛡️ Discord Mod Başvur",
+        custom_id: "robloxland_staff_apply_mod",
+        emoji: { name: "🛡️" }
+      },
+      {
+        style: ButtonStyle.Primary,
+        label: "💻 Geliştirici Ekibi Başvur",
+        custom_id: "robloxland_staff_apply_dev",
+        emoji: { name: "💻" }
+      },
+      {
+        style: ButtonStyle.Primary,
+        label: "🔍 Hata Ayıklama Başvur",
+        custom_id: "robloxland_staff_apply_debug",
+        emoji: { name: "🔍" }
       }
     ])
   ];
@@ -950,11 +950,25 @@ async function handleRobloxDevsInteraction(interaction) {
   if (!interaction.isRepliable()) return false;
   const { customId, guild, user } = interaction;
 
-  // 1. Yetkili Alım Formu Açma
-  if (interaction.isButton() && customId === "robloxland_staff_apply") {
+  // 1. Yetkili Alım Formu Açma (Hangi pozisyona tıklandıysa onun alımı açılır)
+  if (interaction.isButton() && customId.startsWith("robloxland_staff_apply")) {
+    let presetRole = "Discord Moderasyon Takımı";
+    let roleKey = "mod";
+
+    if (customId === "robloxland_staff_apply_dev") {
+      presetRole = "Geliştirici Ekibi // Geliştirici Ofisi";
+      roleKey = "dev";
+    } else if (customId === "robloxland_staff_apply_debug") {
+      presetRole = "Hata Ayıklama Ofisi";
+      roleKey = "debug";
+    } else if (customId === "robloxland_staff_apply_mod") {
+      presetRole = "Discord Moderasyon Takımı";
+      roleKey = "mod";
+    }
+
     const modal = new ModalBuilder()
-      .setCustomId("robloxland_staff_modal")
-      .setTitle("Yetkili Alım Başvuru Formu");
+      .setCustomId(`robloxland_staff_modal_${roleKey}`)
+      .setTitle(`${presetRole.slice(0, 30)} Başvurusu`);
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(
@@ -969,8 +983,8 @@ async function handleRobloxDevsInteraction(interaction) {
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId("staff_role")
-          .setLabel("Başvurduğunuz Pozisyon / Rol")
-          .setPlaceholder("Örn: Discord Mod / Topluluk Elçisi / Etkinlik / Dev")
+          .setLabel("Başvurulan Pozisyon / Rol")
+          .setValue(presetRole)
           .setStyle(TextInputStyle.Short)
           .setMaxLength(80)
           .setRequired(true)
@@ -987,8 +1001,8 @@ async function handleRobloxDevsInteraction(interaction) {
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId("staff_reason")
-          .setLabel("Neden RobloxLand?")
-          .setPlaceholder("Ekibimize ve sunucumuza neler katabilirsiniz?")
+          .setLabel("Neden RobloxLand & Neler Katabilirsiniz?")
+          .setPlaceholder("Bu pozisyon için hedefleriniz ve yetenekleriniz")
           .setStyle(TextInputStyle.Paragraph)
           .setMaxLength(300)
           .setRequired(true)
@@ -1000,7 +1014,7 @@ async function handleRobloxDevsInteraction(interaction) {
   }
 
   // 2. Yetkili Alım Formu Submit
-  if (interaction.isModalSubmit() && customId === "robloxland_staff_modal") {
+  if (interaction.isModalSubmit() && customId.startsWith("robloxland_staff_modal")) {
     const name = interaction.fields.getTextInputValue("staff_name");
     const role = interaction.fields.getTextInputValue("staff_role");
     const exp = interaction.fields.getTextInputValue("staff_exp");
