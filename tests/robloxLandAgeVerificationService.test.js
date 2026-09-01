@@ -247,3 +247,57 @@ test('staff users cannot approve, reject or trigger speak test on their own tick
   activeAgeTickets.delete(ticketId);
 });
 
+test('buildAgeVerificationPromptPayload asks microphone and environment availability and reports staff status', () => {
+  const { buildAgeVerificationPromptPayload } = require('../bot/services/robloxLandAgeVerificationService');
+  
+  // 1. Staff offline case
+  const offlinePayload = buildAgeVerificationPromptPayload(false, `<@${DESIGNATED_STAFF_ID}>`);
+  const offlineText = offlinePayload.components[0].components[0].content;
+  assert.match(offlineText, /mikrofonunuz var mı/i);
+  assert.match(offlineText, /sesli konuşabilecek/i);
+  assert.match(offlineText, /aktif değil/i);
+  assert.match(offlineText, /DM üzerinden/i);
+  assert.equal(offlinePayload.components[0].components.at(-1).components[0].custom_id, 'robloxland_age_confirm_open');
+  assert.equal(offlinePayload.components[0].components.at(-1).components[1].custom_id, 'robloxland_age_cancel_open');
+
+  // 2. Staff online case
+  const onlinePayload = buildAgeVerificationPromptPayload(true, `<@${DESIGNATED_STAFF_ID}>`);
+  const onlineText = onlinePayload.components[0].components[0].content;
+  assert.match(onlineText, /çevrimiçi \/ aktif/i);
+});
+
+test('clicking robloxland_open_age_ticket shows pre-confirmation prompt and cancel button cancels', async () => {
+  let replyPayload;
+  let updateContent;
+
+  const mockGuild = {
+    members: {
+      cache: new Map(),
+      fetch: async () => null
+    }
+  };
+
+  const mockOpenInteraction = {
+    customId: 'robloxland_open_age_ticket',
+    guild: mockGuild,
+    user: { id: 'new-user-456' },
+    member: {
+      roles: { cache: new Map() }
+    },
+    reply: async (payload) => { replyPayload = payload; }
+  };
+
+  await handleAgeVerificationInteraction(mockOpenInteraction);
+  assert.ok(replyPayload);
+  assert.equal(replyPayload.ephemeral, true);
+  assert.match(replyPayload.components[0].components[0].content, /Mikrofon & Ortam|Uygunluk/i);
+
+  const mockCancelInteraction = {
+    customId: 'robloxland_age_cancel_open',
+    update: async (opts) => { updateContent = opts.content; }
+  };
+
+  await handleAgeVerificationInteraction(mockCancelInteraction);
+  assert.match(updateContent, /iptal edildi/i);
+});
+

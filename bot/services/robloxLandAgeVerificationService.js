@@ -152,6 +152,45 @@ function buildAgeVerificationPanelPayload() {
 }
 
 /**
+ * Kullanıcı "Talebi Aç" butonuna tıkladığında gösterilen ön kontrol & mikrofon/aktiflik teyit formu
+ */
+function buildAgeVerificationPromptPayload(isStaffOnline, staffMention = `<@${DESIGNATED_STAFF_ID}>`) {
+  const staffStatusInfo = isStaffOnline
+    ? `🟢 **Görevli Yetkili Durumu:** ${staffMention} şu anda **çevrimiçi / aktif**!\n> Talebi onayladığınızda doğrudan ses odasına katılarak botun vereceği tekerlemeyi mikrofondan sesli okumanız istenecektir.`
+    : `🔴 **Görevli Yetkili Durumu:** ${staffMention} şu anda **aktif değil**.\n> Talebiniz açıldığında yetkilimiz aktif olana kadar beklenir. Yetkili aktif olduğunda size **Discord DM üzerinden anında bilgilendirme** iletilecek ve sese girmeniz istenecektir.`;
+
+  const content = [
+    ComponentsV2Factory.text(
+      `# 🎙️ 16+ Yaş Doğrulama Ön Kontrol & Onay\n\n` +
+      `Sesli yaş doğrulama talebi oluşturmadan önce lütfen aşağıdaki soruları ve durumları teyit ediniz:\n\n` +
+      `### ❓ Uygunluk & Hazırlık Kontrolü:\n` +
+      `• **Çalışır durumda bir mikrofonunuz var mı?**\n` +
+      `• **Şu anda sesli konuşabilecek uygun ve müsait bir ortamda mısınız?**\n\n` +
+      `${staffStatusInfo}\n\n` +
+      `-# ⚠️ Mikrofonu bulunmayan veya konuşamayacak durumda olanların gereksiz talep açması yasaktır.\n\n` +
+      `**Yukarıdaki koşulları ve yetkili durumunu onaylayıp sesli onay odanızı açmak istiyor musunuz?**`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Success,
+        label: "✅ Evet, Onaylıyorum & Odayı Aç",
+        custom_id: "robloxland_age_confirm_open",
+        emoji: { name: "🎙️" }
+      },
+      {
+        style: ButtonStyle.Danger,
+        label: "❌ Vazgeç / İptal",
+        custom_id: "robloxland_age_cancel_open",
+        emoji: { name: "✖️" }
+      }
+    ])
+  ];
+
+  return ComponentsV2Factory.buildPayload(content);
+}
+
+/**
  * Belirtilen yetkilinin aktif / çevrimiçi olup olmadığını kontrol eder
  */
 async function checkStaffActiveStatus(guild, staffId = DESIGNATED_STAFF_ID) {
@@ -287,7 +326,9 @@ async function openAgeVerificationTicket(interaction) {
     }
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  }
 
   const ticketId = `yas-${Date.now().toString().slice(-4)}`;
   const { member: staffMember, isOnline: isStaffOnline } = await checkStaffActiveStatus(guild, DESIGNATED_STAFF_ID);
@@ -821,9 +862,62 @@ async function handleAgeVerificationInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId) return false;
 
-  // 1. Panel Butonu (Tüm üyeler açabilir)
+  // 1. Panel Butonu: Ön Kontrol ve Mikrofon/Aktiflik Teyit Sorusunu Gösterir
   if (customId === 'robloxland_open_age_ticket') {
+    const guild = interaction.guild;
+    const user = interaction.user;
+    const member = interaction.member;
+
+    // Zaten rolü varsa uyar
+    if (member?.roles?.cache?.has && member.roles.cache.has(SENSITIVE_ROLE_ID)) {
+      return await interaction.reply({
+        content: '✅ Zaten 16+ Hassas Erişim Rolüne sahipsiniz!',
+        ephemeral: true
+      });
+    }
+
+    // Kullanıcının açık talebi var mı kontrol et
+    for (const [tId, tData] of activeAgeTickets.entries()) {
+      if (tData.userId === user?.id) {
+        return await interaction.reply({
+          content: `⚠️ Zaten açık bir yaş doğrulama talebiniz bulunuyor: <#${tData.textChannelId}>`,
+          ephemeral: true
+        });
+      }
+    }
+
+    const { isOnline: isStaffOnline } = await checkStaffActiveStatus(guild, DESIGNATED_STAFF_ID);
+    const promptPayload = buildAgeVerificationPromptPayload(isStaffOnline, `<@${DESIGNATED_STAFF_ID}>`);
+
+    return await interaction.reply({
+      ...promptPayload,
+      ephemeral: true
+    });
+  }
+
+  // 1.1 Ön Kontrol Onayı -> Talebi ve Ses/Metin Odalarını Açar
+  if (customId === 'robloxland_age_confirm_open') {
     return await openAgeVerificationTicket(interaction);
+  }
+
+  // 1.2 Ön Kontrol İptal
+  if (customId === 'robloxland_age_cancel_open') {
+    if (interaction.update) {
+      return await interaction.update({
+        content: '❌ Yaş doğrulama talebi açma işlemi iptal edildi. Mikrofonunuz ve ortamınız müsait olduğunda panelden tekrar başlatabilirsiniz.',
+        components: [],
+        embeds: []
+      }).catch(async () => {
+        return await interaction.reply({
+          content: '❌ Yaş doğrulama talebi açma işlemi iptal edildi.',
+          ephemeral: true
+        });
+      });
+    }
+    return await interaction.reply({
+      content: '❌ Yaş doğrulama talebi açma işlemi iptal edildi.',
+      ephemeral: true
+    });
   }
 
   // 2. Yetkili Kontrolü Gerektiren Ticket Yönetim Butonları
@@ -885,6 +979,7 @@ module.exports = {
   TEKERLEMELER,
   activeAgeTickets,
   buildAgeVerificationPanelPayload,
+  buildAgeVerificationPromptPayload,
   deployAgeVerificationPanel,
   openAgeVerificationTicket,
   handleAgeVerificationInteraction,
