@@ -163,11 +163,12 @@ test("e!streak sadece RobloxLand'de Components V2 durum kartı döndürür", asy
   assert.match(text, /Rutin DM gönderilmez/);
 });
 
-test("yetkili alım paneli mülakat aşamasını anlatır", () => {
+test("yetkili alım paneli Eko Yıldız stili ve Discord Mod açık durumunu içerir", () => {
   const payload = buildStaffApplyPayload();
   const components = payload.components[0].components;
-  assert.match(components[0].content, /mülakata/i);
-  assert.match(components[0].content, /beş soruluk/i);
+  const allText = components.map(c => c.content || "").join(" ");
+  assert.match(allText, /Discord Moderasyon Takımı/i);
+  assert.match(allText, /RobloxLand Yetkili Ekibi Başvuruları/i);
   assert.equal(components.at(-1).components[0].custom_id, "robloxland_staff_apply");
 });
 

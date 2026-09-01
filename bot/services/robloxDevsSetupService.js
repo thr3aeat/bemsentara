@@ -20,7 +20,13 @@ const DataStore = require("./robloxLandDataStore");
 const GUILD_ID = "1537407325290237973";
 const TICKET_CATEGORY_ID = "1538466419245719663";
 const STAFF_LOG_CHANNEL_ID = "1543382733408174220";
+const STAFF_RECRUITMENT_MGMT_CHANNEL_ID = "1544367634433183765"; // Yetkili Alımları Yönetim Kanalı
 const STAFF_RECRUITER_ROLE_ID = "1537411928585015366"; // Yetkili Alım Sorumlusu Rolü
+
+// Badges & Banner (Eko Yıldız Stili)
+const BADGE_ACIK = "<:a1:1535976290857783356><:a2:1535976288567693383><:a3:1535976286399242340><:a4:1535976284310470776>";
+const BADGE_KAPALI = "<:k1:1535976282947453009><:k2:1535976281479319583><:k3:1535976280292597830><:k3b:1535978163677433957><:k4:1535976279063666688>";
+const BANNER_IMAGE_URL = "https://i.imgur.com/bSVh4Rl.png";
 
 const CHANNELS = {
   RULES: "1538465174602649611",
@@ -204,17 +210,59 @@ function buildAboutUsPayload() {
 // ─── 5. Yetkili Alım Formu Paneli (1538465462394814485) ─────────────────────────
 function buildStaffApplyPayload() {
   const content = [
+    // Banner görseli — en üstte
+    ComponentsV2Factory.mediaGallery([BANNER_IMAGE_URL]),
+    ComponentsV2Factory.separator(false),
+
+    // Başlık satırı
     ComponentsV2Factory.text(
-      `# **Robloxland Yetkili Alım Formu!**\n\n` +
-      `Ekibimize katılmak ve Robloxland bünyesinde yetkili/satış danışmanı olmak için başvuru formunu eksiksiz doldur.\n\n` +
-      `### 🎙️ Süreç Nasıl İşliyor?\n` +
-      `1. Kısa başvuru formunu gönderirsin.\n` +
-      `2. Alım sorumlusu uygun görürse seni DM üzerinden mülakata davet eder.\n` +
-      `3. Beş soruluk senaryo mülakatını yanıtlarsın; cevapların ekibe iletilir.\n` +
-      `4. Son karar DM kutuna gelir. Evet, insan kaynakları artık cebinde. 😄\n\n` +
-      `-# Form ve mülakat cevapları yalnızca yetkili alım ekibi tarafından değerlendirilir.`
+      '## RobloxLand Yetkili Ekibi Başvuruları'
     ),
+
+    ComponentsV2Factory.separator(false),
+
+    // Discord Moderasyon Takımı (RobloxLand için AÇIK!)
+    ComponentsV2Factory.text(
+      `• <:mod:1535976277654249562> [**[ Discord Moderasyon Takımı ]**] başvuru formu için aşağıdaki butonu kullanın.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+    ),
+
+    // Oyun Moderasyon Takımı
+    ComponentsV2Factory.text(
+      `• 🗡️ [**[ Oyun Moderasyon Takımı ]**] başvuru formu kapandı.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_KAPALI}`
+    ),
+
+    // Etkinlik Yetkilisi — AÇIK
+    ComponentsV2Factory.text(
+      `• <:etkinlik:1535976275317891194> [**[ Etkinlik Yetkilisi ]**] başvuru formu açık.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+    ),
+
+    // Topluluk Elçiliği — AÇIK
+    ComponentsV2Factory.text(
+      `• 👑 [**[ Topluluk Elçisi ]**] başvuru formu açık.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+    ),
+
+    // Geliştirici Ekibi // Geliştirici Ofisi — AÇIK
+    ComponentsV2Factory.text(
+      `• <:dev:1536405010466742415> [**[ Geliştirici Ekibi // Geliştirici Ofisi ]**] alım formu açık.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+    ),
+
+    // Hata Ayıklama Ofisi — AÇIK
+    ComponentsV2Factory.text(
+      `• <:hhata:1536405009187602482> [**[ Hata Ayıklama Ofisi ]**] alım formu açık.\n` +
+      `  ◦ Başvuru durumu: ${BADGE_ACIK}`
+    ),
+
     ComponentsV2Factory.separator(true),
+
+    ComponentsV2Factory.text(
+      'Başvuru durumları otomatik olarak güncellenmektedir. Ekibimize katılmak için aşağıdaki butona tıklayarak kısa başvuru formunu doldurabilirsiniz.'
+    ),
+
     ComponentsV2Factory.actionRow([
       {
         style: ButtonStyle.Success,
@@ -910,16 +958,40 @@ async function handleRobloxDevsInteraction(interaction) {
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("staff_name").setLabel("İsminiz ve Yaşınız").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder()
+          .setCustomId("staff_name")
+          .setLabel("İsim ve Yaşınız")
+          .setPlaceholder("Örn: Ahmet, 18")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(50)
+          .setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("staff_exp").setLabel("Hiç Satış Mağazasında Bulundun mu?").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder()
+          .setCustomId("staff_role")
+          .setLabel("Başvurduğunuz Pozisyon / Rol")
+          .setPlaceholder("Örn: Discord Mod / Topluluk Elçisi / Etkinlik / Dev")
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(80)
+          .setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("staff_customers").setLabel("Müşteri Çekebilir misin?").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder()
+          .setCustomId("staff_exp")
+          .setLabel("Deneyiminiz ve Günlük Aktiflik")
+          .setPlaceholder("Önceki deneyimleriniz ve günde kaç saat aktifsiniz?")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(300)
+          .setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("staff_other").setLabel("Başka Bir Yerde Yetkili misin?").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder()
+          .setCustomId("staff_reason")
+          .setLabel("Neden RobloxLand?")
+          .setPlaceholder("Ekibimize ve sunucumuza neler katabilirsiniz?")
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(300)
+          .setRequired(true)
       )
     );
 
@@ -930,39 +1002,42 @@ async function handleRobloxDevsInteraction(interaction) {
   // 2. Yetkili Alım Formu Submit
   if (interaction.isModalSubmit() && customId === "robloxland_staff_modal") {
     const name = interaction.fields.getTextInputValue("staff_name");
+    const role = interaction.fields.getTextInputValue("staff_role");
     const exp = interaction.fields.getTextInputValue("staff_exp");
-    const customers = interaction.fields.getTextInputValue("staff_customers");
-    const other = interaction.fields.getTextInputValue("staff_other");
+    const reason = interaction.fields.getTextInputValue("staff_reason");
 
     await interaction.reply({
       ...ComponentsV2Factory.buildPayload([
         ComponentsV2Factory.text(
-          `# 📘 RobloxLand — Yetkili Rehberi: Bizde Çalışırsan Bunları Yapmalısın\n\n` +
-          `Tebrikler **${user.username}**, yetkili başvurunuz başarıyla alındı ve yönetime iletildi!\n\n` +
-          `### 🎯 Ekibimizde Dikkat Edilmesi Gereken Temel Görevler:\n` +
-          `1. **Müşteri Memnuniyeti:** Müşterilere karşı daima nazik ve kurumsal bir dille yaklaşınız.\n` +
-          `2. **Aktiflik ve Vardiya:** Biletlere (ticket) hızlı yanıt veriniz, gecikme durumunda diğer yetkililerden destek isteyiniz.\n` +
-          `3. **Güvenlik İlkeleri:** Müşterilerle kesinlikle DM üzerinden özel ticaret yapmayınız.\n` +
-          `4. **Dürüstlük & Şeffaflık:** Teslimat kanıtlarını kayıt altına alınız.\n\n` +
-          `*Başvurunuz incelendikten sonra sonucunuz Discord DM kutunuza otomatik iletilecektir.*`
+          `# 📘 RobloxLand — Yetkili Başvurunuz Alındı!\n\n` +
+          `Tebrikler **${user.username}**, yetkili başvurunuz başarıyla alındı ve yönetim kanalına iletildi!\n\n` +
+          `### 🎯 Başvuru Detayları:\n` +
+          `• **Başvurulan Pozisyon:** ${role}\n` +
+          `• Başvurunuz yetkili alım sorumluları tarafından incelendikten sonra sonucunuz Discord DM kutunuza iletilecektir.\n` +
+          `• Lütfen DM kutunuzun açık olduğundan emin olunuz.`
         )
       ]),
       ephemeral: true
     });
 
     try {
-      const logChan = guild?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await guild?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
+      const logChan = guild?.channels.cache.get(STAFF_RECRUITMENT_MGMT_CHANNEL_ID) || 
+                      await guild?.channels.fetch(STAFF_RECRUITMENT_MGMT_CHANNEL_ID).catch(() => null) ||
+                      guild?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || 
+                      await guild?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
+
       if (logChan && logChan.isTextBased()) {
         await logChan.send({
           ...ComponentsV2Factory.buildPayload([
             ComponentsV2Factory.text(
               `🔔 <@&${STAFF_RECRUITER_ROLE_ID}>\n# 📋 Yeni Yetkili Başvurusu!\n\n` +
               `👤 **Başvuran:** <@${user.id}> (\`${user.id}\`)\n` +
+              `🎯 **Başvurulan Pozisyon:** ${role}\n` +
               `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
               `**1. İsim / Yaş:**\n${name}\n\n` +
-              `**2. Satış Mağazasında Bulundu mu?:**\n${exp}\n\n` +
-              `**3. Müşteri Çekebilir mi?:**\n${customers}\n\n` +
-              `**4. Başka Bir Yerde Yetkili mi?:**\n${other}`
+              `**2. Pozisyon / Rol:**\n${role}\n\n` +
+              `**3. Deneyim & Günlük Aktiflik:**\n${exp}\n\n` +
+              `**4. Neden RobloxLand?:**\n${reason}`
             ),
             ComponentsV2Factory.separator(true),
             ComponentsV2Factory.actionRow([
@@ -996,8 +1071,8 @@ async function handleRobloxDevsInteraction(interaction) {
       ...ComponentsV2Factory.buildPayload([
         ComponentsV2Factory.text(
           `# 🎙️ RobloxLand Yetkili Mülakatı\n\n` +
-          `Başvurun ilk aşamayı geçti! Aşağıdaki butonla beş soruluk yazılı mülakatı başlatabilirsin.\n\n` +
-          `Cevaplarını dürüst ve anlaşılır yaz; “bilmiyorum ama Google'larım” bazen “her şeyi biliyorum”dan daha güvenlidir. 😄`
+          `Başvurun ilk aşamayı geçti! Aşağıdaki butona tıklayarak kısa senaryo mülakatını başlatabilirsin.\n\n` +
+          `Cevaplarını dürüst ve net yaz; değerlendirme ekibimiz cevaplarını inceleyip sana dönüş yapacaktır. Başarılar!`
         ),
         ComponentsV2Factory.separator(true),
         ComponentsV2Factory.actionRow([
@@ -1019,11 +1094,9 @@ async function handleRobloxDevsInteraction(interaction) {
     if (interaction.user.id !== targetUserId) return interaction.reply({ content: "❌ Bu mülakat daveti sana ait değil.", ephemeral: true });
     const modal = new ModalBuilder().setCustomId(`robloxland_interview_modal_${targetUserId}`).setTitle("RobloxLand Yetkili Mülakatı");
     modal.addComponents(
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_customer").setLabel("Öfkeli müşteriyi nasıl sakinleştirirsin?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_scam").setLabel("Dolandırıcılık şüphesinde ne yaparsın?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_security").setLabel("Müşteri senden özel işlem isterse?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_team").setLabel("Ekip içi anlaşmazlığı nasıl çözersin?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true)),
-      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_reason").setLabel("Neden seni seçmeliyiz?").setStyle(TextInputStyle.Paragraph).setMaxLength(700).setRequired(true))
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_customer").setLabel("Kural ihlali veya krizde ilk tepkiniz?").setStyle(TextInputStyle.Paragraph).setMaxLength(400).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_scam").setLabel("Dolandırıcılık / şüpheli durumda ilk adımınız?").setStyle(TextInputStyle.Paragraph).setMaxLength(400).setRequired(true)),
+      new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId("int_team").setLabel("Ekip içi veya üye ile anlaşmazlıkta tavrınız?").setStyle(TextInputStyle.Paragraph).setMaxLength(400).setRequired(true))
     );
     await interaction.showModal(modal);
     return true;
@@ -1034,16 +1107,18 @@ async function handleRobloxDevsInteraction(interaction) {
     const targetUserId = customId.replace("robloxland_interview_modal_", "");
     if (interaction.user.id !== targetUserId) return interaction.reply({ content: "❌ Bu mülakat sana ait değil.", ephemeral: true });
     const answers = [
-      ["Öfkeli müşteri", interaction.fields.getTextInputValue("int_customer")],
-      ["Dolandırıcılık şüphesi", interaction.fields.getTextInputValue("int_scam")],
-      ["Özel işlem / güvenlik", interaction.fields.getTextInputValue("int_security")],
-      ["Ekip içi anlaşmazlık", interaction.fields.getTextInputValue("int_team")],
-      ["Neden seni seçmeliyiz?", interaction.fields.getTextInputValue("int_reason")]
+      ["Kural İhlali / Kriz Yönetimi", interaction.fields.getTextInputValue("int_customer")],
+      ["Dolandırıcılık / Şüpheli Durum", interaction.fields.getTextInputValue("int_scam")],
+      ["Ekip İçi Anlaşmazlık / İletişim", interaction.fields.getTextInputValue("int_team")]
     ];
-    await interaction.reply({ content: "✅ Mülakat cevapların alım ekibine iletildi. Sonuç yalnızca karar verildiğinde DM'den gönderilecek. Bol şans! 🍀", ephemeral: true });
+    await interaction.reply({ content: "✅ Mülakat cevapların alım ekibine iletildi. Sonuç DM kutuna gönderilecek. Bol şans! 🍀", ephemeral: true });
 
     const guildRef = interaction.client.guilds.cache.get(GUILD_ID) || await interaction.client.guilds.fetch(GUILD_ID).catch(() => null);
-    const logChan = guildRef?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || await guildRef?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
+    const logChan = guildRef?.channels.cache.get(STAFF_RECRUITMENT_MGMT_CHANNEL_ID) || 
+                    await guildRef?.channels.fetch(STAFF_RECRUITMENT_MGMT_CHANNEL_ID).catch(() => null) ||
+                    guildRef?.channels.cache.get(STAFF_LOG_CHANNEL_ID) || 
+                    await guildRef?.channels.fetch(STAFF_LOG_CHANNEL_ID).catch(() => null);
+
     if (logChan?.isTextBased()) {
       await logChan.send({
         ...ComponentsV2Factory.buildPayload([
