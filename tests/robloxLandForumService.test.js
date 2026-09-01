@@ -186,3 +186,97 @@ test('unauthorized users cannot edit forum thread settings', async () => {
   assert.ok(replyMsg.includes('yalnızca gönderi sahibi veya RobloxLand yetkilileri'));
   assert.equal(replyEphemeral, true);
 });
+
+test('handleForumInteraction allows status badge selection and updates thread title', async () => {
+  let replyMsg = '';
+  let updatedTitle = '';
+
+  const mockThread = {
+    id: 'thread-stat-1',
+    name: '[💡 Fikir] Yeni Karakter Tasarımları',
+    ownerId: 'user-author-1',
+    isThread: true,
+    setName: async (t) => { updatedTitle = t; }
+  };
+
+  const mockInteraction = {
+    customId: 'robloxland_forum_status_thread-stat-1',
+    values: ['status_cozuldu'],
+    member: { id: 'user-author-1' },
+    channel: mockThread,
+    deferReply: async () => {},
+    editReply: async (opts) => { replyMsg = opts.content; }
+  };
+
+  const handled = await handleForumInteraction(mockInteraction);
+  assert.equal(handled, true);
+  assert.match(replyMsg, /Çözüldü/);
+  assert.equal(updatedTitle, '[💡 Fikir] Yeni Karakter Tasarımları ✅ [Çözüldü]');
+});
+
+test('handleForumInteraction allows slowmode setting', async () => {
+  let replyMsg = '';
+  let updatedSeconds = -1;
+
+  const mockThread = {
+    id: 'thread-slow-1',
+    ownerId: 'user-author-1',
+    isThread: true,
+    setRateLimitPerUser: async (s) => { updatedSeconds = s; }
+  };
+
+  const mockInteraction = {
+    customId: 'robloxland_forum_slowmode_thread-slow-1',
+    values: ['slow_15'],
+    member: { id: 'user-author-1' },
+    channel: mockThread,
+    deferReply: async () => {},
+    editReply: async (opts) => { replyMsg = opts.content; }
+  };
+
+  const handled = await handleForumInteraction(mockInteraction);
+  assert.equal(handled, true);
+  assert.equal(updatedSeconds, 15);
+  assert.match(replyMsg, /15 Saniye/);
+});
+
+test('handleForumInteraction allows thread owner to kick a disruptive user from the thread', async () => {
+  let replyMsg = '';
+  let removedUserId = '';
+  let threadNotice = '';
+
+  const mockThread = {
+    id: 'thread-kick-1',
+    name: '[🚀 Proje] Mega Oyun',
+    ownerId: 'user-author-1',
+    isThread: true,
+    members: {
+      remove: async (uid) => { removedUserId = uid; }
+    },
+    send: async (opts) => { threadNotice = opts.content; }
+  };
+
+  const mockKickModalInteraction = {
+    customId: 'robloxland_forum_modal_kick_thread-kick-1',
+    member: { id: 'user-author-1' },
+    channel: mockThread,
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'target_user') return '<@123456789012345678>';
+        if (f === 'kick_reason') return 'Spam ve reklam yapmak';
+        return '';
+      }
+    },
+    client: {
+      users: { fetch: async () => ({ send: async () => {} }) }
+    },
+    deferReply: async () => {},
+    editReply: async (opts) => { replyMsg = opts.content; }
+  };
+
+  const handled = await handleForumInteraction(mockKickModalInteraction);
+  assert.equal(handled, true);
+  assert.equal(removedUserId, '123456789012345678');
+  assert.match(threadNotice, /uzaklaştırıldı/);
+  assert.match(replyMsg, /başarıyla forum konusundan uzaklaştırıldı/);
+});

@@ -72,6 +72,26 @@ const FORUM_CATEGORIES = [
   }
 ];
 
+// Durum Rozetleri
+const FORUM_STATUS_BADGES = [
+  { label: "🟢 [Aktif / Açık]", value: "status_aktif", badge: "🟢 [Aktif]", description: "Konu aktif ve tartışmaya/etkileşime açık" },
+  { label: "✅ [Çözüldü]", value: "status_cozuldu", badge: "✅ [Çözüldü]", description: "Soru cevaplandı veya sorun giderildi" },
+  { label: "🏷️ [Satılık]", value: "status_satilik", badge: "🏷️ [Satılık]", description: "Ürün veya hizmet satışta" },
+  { label: "🤝 [Alındı / Tamamlandı]", value: "status_tamamlandi", badge: "🤝 [Tamamlandı]", description: "İşlem veya ticaret başarıyla sonuçlandı" },
+  { label: "👥 [Ekip Bulundu]", value: "status_ekip", badge: "👥 [Ekip Bulundu]", description: "Aranan ekip/arkadaş bulundu" },
+  { label: "⛔ [Kapatıldı]", value: "status_kapatildi", badge: "⛔ [Kapatıldı]", description: "Konu kapandı ve işlem sonlandırıldı" }
+];
+
+// Yavaş Mod (Slowmode) Seçenekleri
+const FORUM_SLOWMODE_OPTIONS = [
+  { label: "⚡ Yavaş Mod Kapalı (0s)", value: "slow_0", seconds: 0, description: "Normal mesajlaşma hızı" },
+  { label: "⏱️ 5 Saniye Yavaş Mod", value: "slow_5", seconds: 5, description: "Üye başına 5 saniye bekleme" },
+  { label: "⏱️ 15 Saniye Yavaş Mod", value: "slow_15", seconds: 15, description: "Üye başına 15 saniye bekleme" },
+  { label: "⏱️ 30 Saniye Yavaş Mod", value: "slow_30", seconds: 30, description: "Üye başına 30 saniye bekleme" },
+  { label: "⏳ 1 Dakika Yavaş Mod", value: "slow_60", seconds: 60, description: "Üye başına 1 dakika bekleme" },
+  { label: "⏳ 5 Dakika Yavaş Mod", value: "slow_300", seconds: 300, description: "Üye başına 5 dakika bekleme" }
+];
+
 // Tepki Paketleri
 const REACTION_PACKS = [
   {
@@ -140,18 +160,22 @@ function buildForumSetupPayload(thread, authorId) {
     ComponentsV2Factory.text(
       `# 📑 MERHABA! ROBLOXLND FORUMUNA HOŞ GELDİNİZ!\n\n` +
       `👋 Merhaba <@${authorId}>! Forum konunuz başarıyla oluşturuldu.\n\n` +
-      `Gönderinizi daha görünür kılmak, doğru kitleye ulaştırmak ve etkileşimleri artırmak için aşağıdaki menülerden konunuzun **kategorisini**, **alt başlığını** ve **otomatik tepkilerini** düzenleyebilirsiniz.\n\n` +
-      `-# 💡 *Düzenleme tamamlandığında aşağıdaki "✅ Tamamla & Paneli Kapat" butonuna basabilirsiniz; mesaj otomatik olarak temizlenecektir.*`
+      `Konunuzu yönetmek, doğru kitleye ulaştırmak ve alt başlık ayarlarını özelleştirmek için aşağıdaki kontrol araçlarını kullanabilirsiniz:\n\n` +
+      `• 🏷️ **Kategori & Durum:** Konunuzun konusunu ve durumunu ([Çözüldü], [Satılık] vb.) belirleyin.\n` +
+      `• ⏱️ **Yavaş Mod (Slowmode):** Mesaj akış hızını kontrol altına alın.\n` +
+      `• 🚪 **Üye Uzaklaştır:** Rahatsızlık veren kullanıcıları konunuzdan çıkarın.\n` +
+      `• 📝 **Başlık & Alt Başlık:** Detaylı başlık ve slogan ekleyin.\n\n` +
+      `-# 💡 *Düzenleme tamamlandığında "✅ Tamamla & Paneli Kapat" butonuna basabilirsiniz.*`
     ),
     ComponentsV2Factory.separator(true),
-    // Kategori Seçim Menüsü
+    // 1. Kategori Seçim Menüsü
     {
       type: 1,
       components: [
         {
           type: 3,
           custom_id: `robloxland_forum_category_${thread.id}`,
-          placeholder: "🏷️ Konunuzun kategorisini seçin...",
+          placeholder: "🏷️ 1. Konunuzun kategorisini seçin...",
           options: FORUM_CATEGORIES.map(cat => ({
             label: cat.label,
             value: cat.value,
@@ -161,14 +185,46 @@ function buildForumSetupPayload(thread, authorId) {
         }
       ]
     },
-    // Tepki Seçim Menüsü
+    // 2. Durum Rozeti Seçim Menüsü
+    {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: `robloxland_forum_status_${thread.id}`,
+          placeholder: "📌 2. Durum rozeti belirleyin ([Çözüldü], [Satılık] vb.)...",
+          options: FORUM_STATUS_BADGES.map(sb => ({
+            label: sb.label,
+            value: sb.value,
+            description: sb.description
+          }))
+        }
+      ]
+    },
+    // 3. Yavaş Mod (Slowmode) Seçim Menüsü
+    {
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: `robloxland_forum_slowmode_${thread.id}`,
+          placeholder: "⏱️ 3. Yavaş mod (slowmode) hızını belirleyin...",
+          options: FORUM_SLOWMODE_OPTIONS.map(sm => ({
+            label: sm.label,
+            value: sm.value,
+            description: sm.description
+          }))
+        }
+      ]
+    },
+    // 4. Tepki Seçim Menüsü
     {
       type: 1,
       components: [
         {
           type: 3,
           custom_id: `robloxland_forum_reaction_${thread.id}`,
-          placeholder: "⚡ Foruma eklenecek otomatik tepkileri seçin...",
+          placeholder: "⚡ 4. Foruma eklenecek otomatik tepkileri seçin...",
           options: REACTION_PACKS.map(rp => ({
             label: rp.label,
             value: rp.value,
@@ -182,21 +238,27 @@ function buildForumSetupPayload(thread, authorId) {
     ComponentsV2Factory.actionRow([
       {
         style: ButtonStyle.Primary,
-        label: "📝 Başlık & Alt Başlık Düzenle",
+        label: "📝 Başlık & Alt Başlık",
         custom_id: `robloxland_forum_rename_${thread.id}`,
         emoji: { name: "✏️" }
       },
       {
-        style: ButtonStyle.Success,
-        label: "✅ Tamamla & Paneli Kapat",
-        custom_id: `robloxland_forum_finish_${thread.id}`,
-        emoji: { name: "✨" }
+        style: ButtonStyle.Danger,
+        label: "🚪 Üye Uzaklaştır",
+        custom_id: `robloxland_forum_kick_${thread.id}`,
+        emoji: { name: "🚪" }
       },
       {
         style: ButtonStyle.Secondary,
-        label: "🔒 Kilitle",
+        label: "🔒 Kilitle / Aç",
         custom_id: `robloxland_forum_lock_${thread.id}`,
         emoji: { name: "🔒" }
+      },
+      {
+        style: ButtonStyle.Success,
+        label: "✅ Tamamla & Kapat",
+        custom_id: `robloxland_forum_finish_${thread.id}`,
+        emoji: { name: "✨" }
       },
       {
         style: ButtonStyle.Danger,
@@ -289,7 +351,59 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 2. Tepki Paketi Seçimi (StringSelectMenu)
+  // 2. Durum Rozeti Seçimi (StringSelectMenu)
+  if (customId.startsWith('robloxland_forum_status_')) {
+    const selectedVal = interaction.values?.[0];
+    const statusInfo = FORUM_STATUS_BADGES.find(s => s.value === selectedVal);
+    if (!statusInfo) {
+      return await interaction.reply({ content: '❌ Geçersiz durum rozeti.', ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      let currentTitle = thread.name;
+      // Eski durum rozetlerini temizle
+      for (const sb of FORUM_STATUS_BADGES) {
+        currentTitle = currentTitle.replace(` [${sb.badge}]`, '').replace(sb.badge, '').trim();
+      }
+
+      const newTitle = `${currentTitle} ${statusInfo.badge}`.slice(0, 100);
+      await thread.setName(newTitle).catch(() => {});
+
+      await interaction.editReply({
+        content: `✅ Forum konunuzun durumu **${statusInfo.label}** olarak güncellendi!\n• **Yeni Başlık:** \`${newTitle}\``
+      });
+    } catch (err) {
+      await interaction.editReply({ content: `❌ Durum rozeti güncellenirken hata: ${err.message}` });
+    }
+    return true;
+  }
+
+  // 3. Yavaş Mod (Slowmode) Seçimi
+  if (customId.startsWith('robloxland_forum_slowmode_')) {
+    const selectedVal = interaction.values?.[0];
+    const slowmodeInfo = FORUM_SLOWMODE_OPTIONS.find(s => s.value === selectedVal);
+    if (!slowmodeInfo) {
+      return await interaction.reply({ content: '❌ Geçersiz yavaş mod seçeneği.', ephemeral: true });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      if (typeof thread.setRateLimitPerUser === 'function') {
+        await thread.setRateLimitPerUser(slowmodeInfo.seconds, 'Forum konu sahibi slowmode ayarı').catch(() => {});
+      }
+      await interaction.editReply({
+        content: `⏱️ Forum konunuzun yavaş modu **${slowmodeInfo.label}** olarak ayarlandı!`
+      });
+    } catch (err) {
+      await interaction.editReply({ content: `❌ Yavaş mod ayarlanırken hata: ${err.message}` });
+    }
+    return true;
+  }
+
+  // 4. Tepki Paketi Seçimi (StringSelectMenu)
   if (customId.startsWith('robloxland_forum_reaction_')) {
     const selectedVal = interaction.values?.[0];
     const reactionPack = REACTION_PACKS.find(r => r.value === selectedVal);
@@ -304,7 +418,7 @@ async function handleForumInteraction(interaction) {
         ? await thread.fetchStarterMessage().catch(() => null)
         : null;
 
-      const targetMsg = starterMessage || (await thread.messages.fetch({ limit: 5 }).catch(() => null))?.first();
+      const targetMsg = starterMessage || (await thread.messages?.fetch({ limit: 5 }).catch(() => null))?.first?.();
 
       if (targetMsg) {
         for (const emoji of reactionPack.emojis) {
@@ -321,7 +435,7 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 3. Başlık & Alt Başlık Düzenleme Modalı Aç
+  // 5. Başlık & Alt Başlık Düzenleme Modalı Aç
   if (customId.startsWith('robloxland_forum_rename_')) {
     const modal = new ModalBuilder()
       .setCustomId(`robloxland_forum_modal_rename_${thread.id}`)
@@ -330,6 +444,9 @@ async function handleForumInteraction(interaction) {
     let cleanName = thread.name || "";
     for (const cat of FORUM_CATEGORIES) {
       cleanName = cleanName.replace(cat.tagPrefix, '').trim();
+    }
+    for (const sb of FORUM_STATUS_BADGES) {
+      cleanName = cleanName.replace(` [${sb.badge}]`, '').replace(sb.badge, '').trim();
     }
 
     const mainTitleInput = new TextInputBuilder()
@@ -358,7 +475,7 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 4. Başlık & Alt Başlık Modal Gönderimi ve Otomatik Mesaj Temizleme
+  // 6. Başlık & Alt Başlık Modal Gönderimi ve Otomatik Mesaj Temizleme
   if (customId.startsWith('robloxland_forum_modal_rename_')) {
     const mainTitle = interaction.fields.getTextInputValue("main_title")?.trim();
     const subTitle = interaction.fields.getTextInputValue("sub_title")?.trim();
@@ -369,7 +486,7 @@ async function handleForumInteraction(interaction) {
 
     await interaction.deferReply({ ephemeral: true });
 
-    // Mevcut kategori ön ekini koru
+    // Mevcut kategori ön ekini ve durum rozetini koru
     let currentCategoryPrefix = "";
     for (const cat of FORUM_CATEGORIES) {
       if (thread.name.startsWith(cat.tagPrefix)) {
@@ -378,10 +495,19 @@ async function handleForumInteraction(interaction) {
       }
     }
 
+    let currentBadge = "";
+    for (const sb of FORUM_STATUS_BADGES) {
+      if (thread.name.includes(sb.badge)) {
+        currentBadge = ` ${sb.badge}`;
+        break;
+      }
+    }
+
     let finalTitle = `${currentCategoryPrefix}${mainTitle}`;
     if (subTitle) {
       finalTitle += ` — ${subTitle}`;
     }
+    finalTitle += currentBadge;
     finalTitle = finalTitle.slice(0, 100);
 
     await thread.setName(finalTitle).catch(() => {});
@@ -395,7 +521,7 @@ async function handleForumInteraction(interaction) {
       try {
         if (interaction.message && typeof interaction.message.delete === 'function') {
           await interaction.message.delete().catch(() => {});
-        } else {
+        } else if (thread.messages?.fetch) {
           const msgs = await thread.messages.fetch({ limit: 10 }).catch(() => null);
           const botSetupMsg = msgs?.find(m => m.author.id === interaction.client.user?.id && m.components?.length > 0);
           if (botSetupMsg) await botSetupMsg.delete().catch(() => {});
@@ -406,7 +532,95 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 5. "Tamamla & Paneli Kapat" Butonu (Mesajı Otomatik Siler)
+  // 7. "Üye Uzaklaştır" Modalı Aç
+  if (customId.startsWith('robloxland_forum_kick_')) {
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_forum_modal_kick_${thread.id}`)
+      .setTitle("🚪 Konudan Üye Uzaklaştır");
+
+    const targetInput = new TextInputBuilder()
+      .setCustomId("target_user")
+      .setLabel("Uzaklaştırılacak Üye ID veya @Kullanıcı")
+      .setPlaceholder("Örn: 123456789012345678 veya @kullanici")
+      .setStyle(TextInputStyle.Short)
+      .setMaxLength(50)
+      .setRequired(true);
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId("kick_reason")
+      .setLabel("Uzaklaştırma Gerekçesi (İsteğe Bağlı)")
+      .setPlaceholder("Örn: Konu dışı spam / rahatsız edici davranış")
+      .setStyle(TextInputStyle.Paragraph)
+      .setMaxLength(200)
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(targetInput),
+      new ActionRowBuilder().addComponents(reasonInput)
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // 8. "Üye Uzaklaştır" Modalı Gönderildiğinde
+  if (customId.startsWith('robloxland_forum_modal_kick_')) {
+    const rawTarget = interaction.fields.getTextInputValue("target_user")?.trim();
+    const reason = interaction.fields.getTextInputValue("kick_reason")?.trim() || "Belirtilmedi";
+    const cleanUserId = rawTarget?.replace(/[^0-9]/g, '');
+
+    if (!cleanUserId || cleanUserId.length < 16) {
+      return await interaction.reply({
+        content: '❌ Geçersiz kullanıcı ID/etiket belirttiniz. Lütfen geçerli bir Discord ID giriniz.',
+        ephemeral: true
+      });
+    }
+
+    if (cleanUserId === ownerId) {
+      return await interaction.reply({
+        content: '❌ Konu sahibi konudan uzaklaştırılamaz!',
+        ephemeral: true
+      });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      if (thread.members && typeof thread.members.remove === 'function') {
+        await thread.members.remove(cleanUserId, `Forum konusu sahibi tarafından uzaklaştırıldı: ${reason}`).catch(() => {});
+      }
+
+      // Konu içine bilgilendirme mesajı gönder
+      if (typeof thread.send === 'function') {
+        await thread.send({
+          content: `🚪 <@${cleanUserId}> adlı kullanıcı, konu sahibi <@${interaction.user?.id || ownerId}> tarafından bu forum konusundan uzaklaştırıldı.\n> **Gerekçe:** ${reason}`
+        }).catch(() => {});
+      }
+
+      // Uzaklaştırılan üyeye DM gönder
+      try {
+        if (interaction.client?.users?.fetch) {
+          const kickedUser = await interaction.client.users.fetch(cleanUserId).catch(() => null);
+          if (kickedUser) {
+            await kickedUser.send({
+              content: `ℹ️ **${thread.name}** adlı forum konusundan konu sahibi tarafından uzaklaştırıldınız.\n• **Gerekçe:** ${reason}`
+            }).catch(() => {});
+          }
+        }
+      } catch (_) {}
+
+      await interaction.editReply({
+        content: `✅ <@${cleanUserId}> adlı kullanıcı başarıyla forum konusundan uzaklaştırıldı!`
+      });
+    } catch (err) {
+      await interaction.editReply({
+        content: `❌ Üye uzaklaştırılırken hata oluştu: ${err.message}`
+      });
+    }
+    return true;
+  }
+
+  // 9. "Tamamla & Paneli Kapat" Butonu (Mesajı Otomatik Siler)
   if (customId.startsWith('robloxland_forum_finish_')) {
     await interaction.reply({
       content: '✨ **Forum düzenlemeniz tamamlandı!** Kurulum paneli 2 saniye içinde kaldırılacaktır.',
@@ -417,7 +631,7 @@ async function handleForumInteraction(interaction) {
       try {
         if (interaction.message && typeof interaction.message.delete === 'function') {
           await interaction.message.delete().catch(() => {});
-        } else {
+        } else if (thread.messages?.fetch) {
           const msgs = await thread.messages.fetch({ limit: 10 }).catch(() => null);
           const botSetupMsg = msgs?.find(m => m.author.id === interaction.client.user?.id && m.components?.length > 0);
           if (botSetupMsg) await botSetupMsg.delete().catch(() => {});
@@ -428,7 +642,7 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 6. Konuyu Kilitle Butonu
+  // 10. Konuyu Kilitle Butonu
   if (customId.startsWith('robloxland_forum_lock_')) {
     await interaction.deferReply({ ephemeral: true });
     const isLocked = thread.locked;
@@ -446,7 +660,7 @@ async function handleForumInteraction(interaction) {
     return true;
   }
 
-  // 7. Konuyu Sil Butonu
+  // 11. Konuyu Sil Butonu
   if (customId.startsWith('robloxland_forum_delete_')) {
     await interaction.reply({
       content: '🗑️ Forum konusu 3 saniye içinde silinecektir...',
@@ -479,6 +693,8 @@ module.exports = {
   GUILD_ID,
   FORUM_CATEGORY_ID,
   FORUM_CATEGORIES,
+  FORUM_STATUS_BADGES,
+  FORUM_SLOWMODE_OPTIONS,
   REACTION_PACKS,
   initForumService,
   buildForumSetupPayload,
