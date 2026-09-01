@@ -813,6 +813,14 @@ async function deployRobloxDevsSetup(client, force = false) {
     console.error("Age verify panel deploy error:", err.message);
   }
 
+  try {
+    const { ensureStaffManagementPanel } = require("./robloxLandStaffManagementService");
+    const staffRes = await ensureStaffManagementPanel(client);
+    if (staffRes) results.push("Yetkili Yönetim Merkezi Paneli (ok)");
+  } catch (err) {
+    console.error("Staff management panel deploy error:", err.message);
+  }
+
   saveSetupState({ deployed: true, lastUpdated: new Date().toISOString(), results });
   console.log(`[RobloxLandSetup] ✅ Başarıyla güncellenen paneller: ${results.join(", ")}`);
   return { success: true, results };
@@ -1909,6 +1917,13 @@ async function handleRobloxDevsInteraction(interaction) {
     const { handleDevVerificationInteraction } = require("./robloxLandDevVerificationService");
     const handledDev = await handleDevVerificationInteraction(interaction);
     if (handledDev) return true;
+  } catch (_) {}
+
+  // 24. RobloxLand Yetkili Yönetim Merkezi Paneli & Anonim DM Köprüsü
+  try {
+    const { handleStaffManagementInteraction } = require("./robloxLandStaffManagementService");
+    const handledStaffMgmt = await handleStaffManagementInteraction(interaction);
+    if (handledStaffMgmt) return true;
   } catch (_) {}
 
   return false;

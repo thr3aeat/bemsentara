@@ -1,0 +1,30 @@
+{
+  "staffMembers": {
+    "moderator-test-888": {
+      "userId": "moderator-test-888",
+      "username": "ProMod",
+      "joinedStaffAt": 1788283197510,
+      "lastWorkAt": 1788283197510,
+      "workCountTotal": 1,
+      "workCount30d": 1,
+      "streakDays": 1,
+      "status": "active",
+      "leaveUntil": null,
+      "leaveReason": null,
+      "performanceScore": 80,
+      "warningsCount": 0,
+      "historyLogs": [
+        {
+          "date": 1788283197510,
+          "text": "Sisteme katıldı ve ilk sistem/map paylaşımını yaptı (+5 Puan)"
+        }
+      ],
+      "assignedTasks": []
+    }
+  },
+  "panelMessageId": null,
+  "weeklyStats": {
+    "weekNumber": 36,
+    "totalWorksThisWeek": 1
+  }
+}
