@@ -142,7 +142,7 @@ test('handleStaffWorkMessage queues work for quality review', async () => {
       id: GUILD_ID,
       channels: {
         cache: new Map(),
-        fetch: async () => ({ isTextBased: () => true, send: async () => {} })
+        fetch: async () => ({ isTextBased: () => true, send: async () => { } })
       }
     },
     channelId: 'chan-work-1',
@@ -171,8 +171,8 @@ test('handleStaffManagementInteraction handles 5-star rating, promotions, demoti
     },
     channels: {
       cache: new Map([
-        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
-        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }]
       ])
     }
   };
@@ -225,7 +225,7 @@ test('handleStaffManagementInteraction handles 5-star rating, promotions, demoti
       }
     },
     guild: {
-      members: { cache: new Map(), fetch: async () => ({ roles: { add: async () => {} } }) }
+      members: { cache: new Map(), fetch: async () => ({ roles: { add: async () => { } } }) }
     },
     client: mockClient,
     reply: async (p) => { replyPayload = p; }
@@ -253,8 +253,8 @@ test('handleStaffManagementInteraction handles anonymous DM bridge', async () =>
     },
     channels: {
       cache: new Map([
-        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
-        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }]
       ])
     }
   };
@@ -385,8 +385,8 @@ test('handleStaffManagementInteraction handles oath sending, faith selection, sw
     },
     channels: {
       cache: new Map([
-        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
-        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => { } }]
       ])
     }
   };
@@ -458,7 +458,7 @@ test('handleStaffManagementInteraction handles oath sending, faith selection, sw
       getTextInputValue: () => 'Uzun süredir görevlerini yerine getirmedi.'
     },
     guild: {
-      members: { cache: new Map(), fetch: async () => ({ roles: { cache: new Map(), remove: async () => {} } }) }
+      members: { cache: new Map(), fetch: async () => ({ roles: { cache: new Map(), remove: async () => { } } }) }
     },
     client: mockClient,
     reply: async (p) => { replyPayload = p; }
@@ -470,4 +470,232 @@ test('handleStaffManagementInteraction handles oath sending, faith selection, sw
 
   const afterKickData = loadStaffData();
   assert.equal(afterKickData.staffMembers['staff-oath-1'], undefined);
+});
+
+test('generateOathCertificateBuffer creates valid PNG image and handleStaffManagementInteraction supports certificate viewing and rules customization', async () => {
+  const { generateOathCertificateBuffer, loadStaffData, handleStaffManagementInteraction } = require('../bot/services/robloxLandStaffManagementService');
+
+  // 1. Canvas Sertifika Üretimi Testi
+  const certBuf = generateOathCertificateBuffer({
+    username: 'egedev',
+    faithName: '☪️ İslam',
+    oathText: "Allah'ın huzurunda adaletle görev yapacağıma namusum üzerine yemin ederim.",
+    swornDate: '01.09.2026',
+    userId: '1497600770634289194'
+  });
+
+  if (certBuf) {
+    assert.ok(Buffer.isBuffer(certBuf));
+    // PNG Header kontrolü (89 50 4E 47)
+    assert.equal(certBuf[0], 0x89);
+    assert.equal(certBuf[1], 0x50);
+    assert.equal(certBuf[2], 0x4E);
+    assert.equal(certBuf[3], 0x47);
+  }
+
+  // 2. Yemin Belgesini İnceleme Buton Testi
+  const certData = loadStaffData();
+  certData.staffMembers['1497600770634289194'] = {
+    userId: '1497600770634289194',
+    username: 'uı9opıjopş ğşjioğşıojıı',
+    faith: '☪️ İslam',
+    oathStatus: 'sworn',
+    oathDate: Date.now(),
+    oathText: "Allah'ın huzurunda adaletle görev yapacağıma namusum üzerine yemin ederim."
+  };
+  const { saveStaffData } = require('../bot/services/robloxLandStaffManagementService');
+  saveStaffData(certData);
+
+  let replyPayload = null;
+  const mockViewCertInteraction = {
+    customId: 'robloxland_staffmgmt_act_view_oath_cert_1497600770634289194',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledView = await handleStaffManagementInteraction(mockViewCertInteraction);
+  assert.equal(handledView, true);
+  assert.match(replyPayload.content, /Görev & Sadakat Yemini Belgesi/);
+  if (certBuf) {
+    assert.ok(replyPayload.files && replyPayload.files.length > 0);
+  }
+
+  // 3. Otomasyon Kuralları Modal Submit Testi
+  const mockEditRulesInteraction = {
+    customId: 'robloxland_staffmgmt_modal_edit_rules',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'rule_days_10') return '8';
+        if (f === 'rule_days_13') return '11';
+        if (f === 'rule_days_20') return '18';
+        if (f === 'rule_score_star5') return '10';
+        if (f === 'rule_penalty_warn') return '20';
+        return '';
+      }
+    },
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledRules = await handleStaffManagementInteraction(mockEditRulesInteraction);
+  assert.equal(handledRules, true);
+  assert.match(replyPayload.content, /Otomasyon Kuralları & Puanlama Eşikleri Güncellendi/);
+
+  const updatedRulesData = loadStaffData();
+  assert.equal(updatedRulesData.settings.automationRules.days10Reminder, 8);
+  assert.equal(updatedRulesData.settings.automationRules.days13Warning, 11);
+  assert.equal(updatedRulesData.settings.automationRules.scoreStar5, 10);
+  assert.equal(updatedRulesData.settings.automationRules.penaltyWarning, 20);
+});
+
+test('buildStaffPersonalInfoPayload and handleStaffManagementInteraction support 20-item personality test and dossier viewing', async () => {
+  let replyPayload = null;
+  let sentDMs = [];
+
+  const mockClient = {
+    users: {
+      fetch: async (id) => ({
+        id,
+        username: 'EgeMod',
+        send: async (p) => { sentDMs.push(p); }
+      })
+    },
+    channels: {
+      cache: new Map([
+        [PANEL_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }],
+        [STAFF_LOG_CHANNEL_ID, { isTextBased: () => true, send: async () => {} }]
+      ])
+    }
+  };
+
+  const {
+    loadStaffData,
+    saveStaffData,
+    buildStaffPersonalInfoPayload,
+    handleStaffManagementInteraction
+  } = require('../bot/services/robloxLandStaffManagementService');
+
+  const data = loadStaffData();
+  data.staffMembers['staff-ptest-1'] = {
+    userId: 'staff-ptest-1',
+    username: 'EgeMod',
+    roleName: 'Yetkili Ofisi Müdürü',
+    performanceScore: 85,
+    personalInfo: {}
+  };
+  saveStaffData(data);
+
+  // 1. Yönetici Yetkiliye Kişilik Testi Gönderir
+  const mockSendPTestInteraction = {
+    customId: 'robloxland_staffmgmt_act_send_personality_test_staff-ptest-1',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+
+  const handledSend = await handleStaffManagementInteraction(mockSendPTestInteraction);
+  assert.equal(handledSend, true);
+  assert.match(replyPayload.content, /20 Soruluk Kişilik & Profil Envanter Testi/);
+  assert.equal(sentDMs.length, 1);
+
+  // 2. Yetkili Aşama 1'i Doldurur (1-5)
+  const mockStep1Modal = {
+    customId: 'robloxland_staffmgmt_modal_ptest_step1_staff-ptest-1',
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'p_name') return 'Ege';
+        if (f === 'p_age') return '19 (2007)';
+        if (f === 'p_gender') return 'Erkek';
+        if (f === 'p_religion') return '☪️ İslam';
+        if (f === 'p_city') return 'İzmir';
+        return '';
+      }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+  assert.equal(await handleStaffManagementInteraction(mockStep1Modal), true);
+
+  // 3. Yetkili Aşama 2'yi Doldurur (6-10)
+  const mockStep2Modal = {
+    customId: 'robloxland_staffmgmt_modal_ptest_step2_staff-ptest-1',
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'p_mbti') return 'INTJ';
+        if (f === 'p_temperament') return 'Analitik ve Çözüm Odaklı';
+        if (f === 'p_stress') return 'Soğukkanlı ve Kuralcı';
+        if (f === 'p_comm') return 'Resmi ve Net';
+        if (f === 'p_mic') return 'Aktif Konuşabilir';
+        return '';
+      }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+  assert.equal(await handleStaffManagementInteraction(mockStep2Modal), true);
+
+  // 4. Yetkili Aşama 3'ü Doldurur (11-15)
+  const mockStep3Modal = {
+    customId: 'robloxland_staffmgmt_modal_ptest_step3_staff-ptest-1',
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'p_specialty') return 'Scripter & Sistem Mimarı';
+        if (f === 'p_hours') return 'Günde 5 saat (Haftada 35 saat)';
+        if (f === 'p_crisis') return 'Kanıt toplar, sakinleştirir, amirlere raporlar';
+        if (f === 'p_teamwork') return 'Yüksek koordinasyon ve takım oyuncusu';
+        if (f === 'p_edu') return 'Yazılım Mühendisliği Öğrencisi';
+        return '';
+      }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+  assert.equal(await handleStaffManagementInteraction(mockStep3Modal), true);
+
+  // 5. Yetkili Aşama 4'ü Doldurur (16-20)
+  const mockStep4Modal = {
+    customId: 'robloxland_staffmgmt_modal_ptest_step4_staff-ptest-1',
+    fields: {
+      getTextInputValue: (f) => {
+        if (f === 'p_strong') return 'Hızlı hata ayıklama ve liderlik';
+        if (f === 'p_growth') return 'Zaman yönetimi';
+        if (f === 'p_goal') return 'Roblox Stüdyosu Kurup Baş Moderatör Olmak';
+        if (f === 'p_hobbies') return 'Lua Kodlama, 3D Modelleme, Müzik';
+        if (f === 'p_motto') return 'Adalet ve disiplin başarının anahtarıdır.';
+        return '';
+      }
+    },
+    client: mockClient,
+    reply: async (p) => { replyPayload = p; }
+  };
+  assert.equal(await handleStaffManagementInteraction(mockStep4Modal), true);
+
+  // 6. Kaydedilen 20 Bilgiyi ve Tamamlanma Durumunu Doğrula
+  const updatedStaff = loadStaffData().staffMembers['staff-ptest-1'];
+  assert.equal(updatedStaff.personalityTestCompleted, true);
+  assert.equal(updatedStaff.personalInfo.name, 'Ege');
+  assert.equal(updatedStaff.personalInfo.mbti, 'INTJ');
+  assert.equal(updatedStaff.personalInfo.religion, '☪️ İslam');
+  assert.equal(updatedStaff.personalInfo.robloxSpecialty, 'Scripter & Sistem Mimarı');
+  assert.equal(updatedStaff.personalInfo.lifeMotto, 'Adalet ve disiplin başarının anahtarıdır.');
+
+  // 7. Kişisel Bilgi Dosyasını Gösterme Testi (Dossier View)
+  const mockViewDossierInteraction = {
+    customId: 'robloxland_staffmgmt_act_view_personal_info_staff-ptest-1',
+    member: { id: DESIGNATED_STAFF_ID },
+    user: { id: DESIGNATED_STAFF_ID, tag: 'Baskan#0001' },
+    reply: async (p) => { replyPayload = p; }
+  };
+  assert.equal(await handleStaffManagementInteraction(mockViewDossierInteraction), true);
+
+  const dossierPayload = buildStaffPersonalInfoPayload(updatedStaff);
+  assert.ok(dossierPayload);
+  const dossierJson = JSON.stringify(dossierPayload.components[0]);
+  assert.match(dossierJson, /YETKİLİ KİŞİSEL BİLGİ & KİŞİLİK ENVANTERİ/);
+  assert.match(dossierJson, /INTJ/);
+  assert.match(dossierJson, /Scripter & Sistem Mimarı/);
+  assert.match(dossierJson, /Adalet ve disiplin/);
 });

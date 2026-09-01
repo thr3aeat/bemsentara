@@ -51,28 +51,71 @@
       "performanceScore": 82,
       "workCount30d": 1,
       "qualityWorksCount": 0,
-      "lastWorkAt": 1788284304635,
+      "lastWorkAt": 1788284624258,
       "warned10d": false,
       "warned13d": false,
       "acknowledgedActive": false,
       "workCountTotal": 1,
       "historyLogs": [
         {
-          "date": 1788284304640,
+          "date": 1788284624260,
           "text": "TERFİ ALDI: Yetkili Ofisi Staj ➔ Yetkili Ofisi Kıdemli Staj (Gerekçe: Yüksek performans ve kaliteli paylaşımlar) — Onaylayan: Baskan#0001"
         },
         {
-          "date": 1788284304635,
+          "date": 1788284624258,
           "text": "Sistem/Map onaylandı (5 ⭐) — +7 Performans Puanı (İnceleyen: Baskan#0001)"
         }
       ],
-      "lastPromotionAt": 1788284304640
+      "lastPromotionAt": 1788284624260
+    },
+    "1497600770634289194": {
+      "userId": "1497600770634289194",
+      "username": "uı9opıjopş ğşjioğşıojıı",
+      "faith": "☪️ İslam",
+      "oathStatus": "sworn",
+      "oathDate": 1788284624343,
+      "oathText": "Allah'ın huzurunda adaletle görev yapacağıma namusum üzerine yemin ederim."
+    },
+    "staff-ptest-1": {
+      "userId": "staff-ptest-1",
+      "username": "EgeMod",
+      "roleName": "Yetkili Ofisi Müdürü",
+      "performanceScore": 90,
+      "personalInfo": {
+        "name": "Ege",
+        "age": "19 (2007)",
+        "gender": "Erkek",
+        "religion": "☪️ İslam",
+        "city": "İzmir",
+        "mbti": "INTJ",
+        "temperament": "Analitik ve Çözüm Odaklı",
+        "stressHandling": "Soğukkanlı ve Kuralcı",
+        "communicationStyle": "Resmi ve Net",
+        "micStatus": "Aktif Konuşabilir",
+        "robloxSpecialty": "Scripter & Sistem Mimarı",
+        "weeklyHours": "Günde 5 saat (Haftada 35 saat)",
+        "crisisAction": "Kanıt toplar, sakinleştirir, amirlere raporlar",
+        "teamwork": "Yüksek koordinasyon ve takım oyuncusu",
+        "educationWork": "Yazılım Mühendisliği Öğrencisi",
+        "strongestTrait": "Hızlı hata ayıklama ve liderlik",
+        "growthArea": "Zaman yönetimi",
+        "futureGoal": "Roblox Stüdyosu Kurup Baş Moderatör Olmak",
+        "hobbies": "Lua Kodlama, 3D Modelleme, Müzik",
+        "lifeMotto": "Adalet ve disiplin başarının anahtarıdır."
+      },
+      "personalityTestCompleted": true,
+      "historyLogs": [
+        {
+          "date": 1788284624385,
+          "text": "KİŞİLİK & ENVANTER TESTİNİ TAMAMLADI (20/20 Bilgi) (+5 Bonus Puan)"
+        }
+      ]
     }
   },
   "panelMessageId": null,
   "weeklyStats": {
     "weekNumber": 36,
-    "totalWorksThisWeek": 11
+    "totalWorksThisWeek": 16
   },
   "pendingWorks": {
     "work-295853": {
@@ -191,6 +234,61 @@
       "status": "pending",
       "stars": 0,
       "reviewReason": ""
+    },
+    "work-444607": {
+      "id": "work-444607",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284444607,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-461202": {
+      "id": "work-461202",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284461202,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-478539": {
+      "id": "work-478539",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284478539,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-483561": {
+      "id": "work-483561",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284483561,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
+    },
+    "work-624252": {
+      "id": "work-624252",
+      "userId": "mod-cand-555",
+      "username": "KadirDev",
+      "channelId": "chan-work-1",
+      "content": "Yeni custom araç GUI sistemi: https://www.roblox.com/library/12345/CarGui",
+      "submittedAt": 1788284624252,
+      "status": "pending",
+      "stars": 0,
+      "reviewReason": ""
     }
   },
   "pendingAppeals": {},
@@ -242,6 +340,16 @@
       "workTime": "Özel çalışma vakti mesajı!",
       "meeting": "Özel toplantı mesajı!",
       "lowActivity": "Özel düşük aktivite uyarısı!"
+    },
+    "automationRules": {
+      "days10Reminder": 8,
+      "days13Warning": 11,
+      "days20DemotionReview": 18,
+      "scoreStar5": 10,
+      "scoreStar3": 4,
+      "scoreStar1": 1,
+      "penaltyWarning": 20,
+      "bonusOath": 5
     }
   }
 }

@@ -21,6 +21,13 @@ const WORK_CATEGORY_ID = '1538471137833394237'; // Sistem, Map & Paylaşım Kana
 const STAFF_LOG_CHANNEL_ID = '1543382733408174220';
 const DESIGNATED_STAFF_ID = '1497600770634289194';
 
+let createCanvas, loadImage;
+try {
+  const canvasPkg = require('@napi-rs/canvas');
+  createCanvas = canvasPkg.createCanvas;
+  loadImage = canvasPkg.loadImage;
+} catch (_) {}
+
 // ── Sunucu Yetkili Rol Hiyerarşisi (Varsayılanlar) ──────────────────────────
 const DEFAULT_STAFF_RANKS = [
   { rank: 1, name: "Yetkili Ofisi Başkanı", id: "1544392306101067878" },
@@ -38,6 +45,122 @@ const DEFAULT_TEMPLATES = {
   meeting: "📅 Yetkili toplantısı vardır. Lütfen en kısa sürede yetkili kanalını kontrol ediniz.",
   lowActivity: "⚠️ Son zamanlardaki aktivite durumunuz düşüktür. Lütfen durumunuzu kontrol ediniz."
 };
+
+const DEFAULT_AUTOMATION_RULES = {
+  days10Reminder: 10,
+  days13Warning: 13,
+  days20DemotionReview: 20,
+  scoreStar5: 7,
+  scoreStar3: 4,
+  scoreStar1: 1,
+  penaltyWarning: 15,
+  bonusOath: 5
+};
+
+/**
+ * Görev Yemini Resmi Sertifika & SS Görselini Üretir
+ */
+function generateOathCertificateBuffer({ username, faithName, oathText, swornDate, userId }) {
+  if (!createCanvas) return null;
+  const width = 1000;
+  const height = 540;
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+
+  // Arka Plan (Lüks Koyu Gradyan)
+  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+  bgGrad.addColorStop(0, '#0c1017');
+  bgGrad.addColorStop(0.5, '#131b26');
+  bgGrad.addColorStop(1, '#090d13');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Çerçeve (Altın & Neon Mavi Çift Çizgi)
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, width - 40, height - 40);
+
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(28, 28, width - 56, height - 56);
+
+  // Üst Başlık Banner
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 25px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🛡️ ROBLOXLND RESMİ GÖREV & SADAKAT YEMİNİ BELGESİ', width / 2, 70);
+
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.fillText('RESMİ YETKİLİ KADRO TAAHHÜTNAMESİ VE İMZALI PROTOKOL', width / 2, 98);
+
+  // Ayırıcı çizgi
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+  ctx.beginPath();
+  ctx.moveTo(80, 115);
+  ctx.lineTo(width - 80, 115);
+  ctx.stroke();
+
+  // Yetkili Bilgi Kartı
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillText(`YETKİLİ: ${username.toUpperCase()} (ID: ${userId})`, 70, 155);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '16px sans-serif';
+  ctx.fillText(`İNANÇ / AND TÜRÜ: ${faithName}`, 70, 185);
+  ctx.fillText(`YEMİN TARİHİ: ${swornDate}`, 70, 215);
+
+  // Yemin Metin Kutusu (Arka Plan)
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fillRect(60, 240, width - 120, 190);
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+  ctx.strokeRect(60, 240, width - 120, 190);
+
+  // Yemin Metni (Satır Satır Yazma)
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'italic 16px sans-serif';
+  ctx.textAlign = 'left';
+
+  const words = `"${oathText}"`.split(' ');
+  let line = '';
+  let y = 275;
+  const maxWidth = width - 160;
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line, 80, y);
+      line = words[n] + ' ';
+      y += 28;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, 80, y);
+
+  // İmzalandı Beyanı
+  ctx.fillStyle = '#22c55e';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.fillText('✍️ İMZA & ONAY: "Yemin Ederim."', 80, y + 40);
+
+  // Sağ Alt Mühür / Damga
+  ctx.fillStyle = '#ffd700';
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(width - 320, height - 85, 260, 45);
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('⭐ OFFICIAL SEAL • VERIFIED ⭐', width - 190, height - 64);
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('ROBLOXLND MANAGEMENT SYSTEM', width - 190, height - 48);
+
+  return canvas.toBuffer('image/png');
+}
 
 const STAFF_RANKS = DEFAULT_STAFF_RANKS;
 const ALL_STAFF_ROLE_IDS = Array.from(new Set(STAFF_RANKS.map(r => r.id)));
@@ -461,6 +584,12 @@ function buildStaffSettingsPayload(data = loadStaffData()) {
       },
       {
         style: ButtonStyle.Secondary,
+        label: "⚡ Otomasyon & Kural Ayarları",
+        custom_id: "robloxland_staffmgmt_btn_edit_rules",
+        emoji: { name: "⚡" }
+      },
+      {
+        style: ButtonStyle.Secondary,
         label: "🔙 Ana Kontrol Merkezi",
         custom_id: "robloxland_staffmgmt_back_hub",
         emoji: { name: "🔙" }
@@ -538,6 +667,10 @@ function buildStaffProfilePayload(staff) {
     ? `✅ Edildi (\`${staff.faith || 'Evrensel'}\` — <t:${Math.floor((staff.oathDate || Date.now()) / 1000)}:d>)`
     : `❌ Henüz Edilmedi (Bekleniyor)`;
 
+  const personalityTestText = staff.personalityTestCompleted
+    ? `✅ Tamamlandı (20/20 Bilgi Kayıtlı)`
+    : `❌ Henüz Yapılmadı (Bekleniyor)`;
+
   const logsText = (staff.historyLogs && staff.historyLogs.length > 0)
     ? staff.historyLogs.slice(0, 5).map(l => `• <t:${Math.floor(l.date / 1000)}:d> — ${l.text}`).join('\n')
     : '• Henüz işlem kaydı bulunmuyor.';
@@ -548,6 +681,7 @@ function buildStaffProfilePayload(staff) {
       `• 🏷️ **Rütbe:** \`${staff.roleName || 'Yetkili'}\`\n` +
       `• 🛡️ **Durum:** ${health.badge}\n` +
       `• 📜 **Görev Yemini:** ${oathStatusText}\n` +
+      `• 🧠 **Kişilik & Envanter Testi:** ${personalityTestText}\n` +
       `• ⭐ **Performans:** \`${staff.performanceScore || 80}/100\` [${perfBar}]\n\n` +
       `• 📦 **Bu Ayki Çalışmalar:** \`${staff.workCount30d || 0}\` adet | 🌟 **Kaliteli Çalışma:** \`${staff.qualityWorksCount || 0}\`\n` +
       `• 🔥 **Çalışma Serisi:** \`${staff.streakDays || 1}\` gün\n` +
@@ -587,11 +721,31 @@ function buildStaffProfilePayload(staff) {
     ]),
     ComponentsV2Factory.actionRow([
       {
+        style: ButtonStyle.Primary,
+        label: "📋 Kişisel Bilgiler (20 Bilgi)",
+        custom_id: `robloxland_staffmgmt_act_view_personal_info_${staff.userId}`,
+        emoji: { name: "📋" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🧠 Kişilik Testi Gönder",
+        custom_id: `robloxland_staffmgmt_act_send_personality_test_${staff.userId}`,
+        emoji: { name: "🧠" }
+      },
+      {
         style: ButtonStyle.Secondary,
         label: "🕵️ Anonim Mesaj",
         custom_id: `robloxland_staffmgmt_act_anonmsg_${staff.userId}`,
         emoji: { name: "🕵️" }
-      },
+      }
+    ]),
+    ComponentsV2Factory.actionRow([
+      ...(staff.oathStatus === 'sworn' ? [{
+        style: ButtonStyle.Primary,
+        label: "📜 Yemin Belgesi (SS)",
+        custom_id: `robloxland_staffmgmt_act_view_oath_cert_${staff.userId}`,
+        emoji: { name: "🖼️" }
+      }] : []),
       {
         style: ButtonStyle.Danger,
         label: "🚪 Kadrodan Çıkar",
@@ -603,6 +757,71 @@ function buildStaffProfilePayload(staff) {
         label: "🔙 Kadro Listesi",
         custom_id: "robloxland_staffmgmt_list",
         emoji: { name: "🔙" }
+      }
+    ])
+  ];
+
+  return ComponentsV2Factory.buildPayload(content);
+}
+
+/**
+ * 14. Yetkili Kişisel Bilgileri & Kişilik Envanteri (20 Kapsamlı Bilgi Kartı)
+ */
+function buildStaffPersonalInfoPayload(staff) {
+  const p = staff.personalInfo || {};
+  const statusBadge = staff.personalityTestCompleted
+    ? '🟢 **Tamamlandı** (20/20 Bilgi Kayıtlı)'
+    : '🟡 **Devam Ediyor / Eksik**';
+
+  const content = [
+    ComponentsV2Factory.text(
+      `# 📋 YETKİLİ KİŞİSEL BİLGİ & KİŞİLİK ENVANTERİ\n` +
+      `👤 **Yetkili:** <@${staff.userId}> (\`${staff.username || staff.userId}\`)\n` +
+      `🏷️ **Rütbe:** \`${staff.roleName || 'Yetkili'}\` | 📊 **Envanter Durumu:** ${statusBadge}\n\n` +
+      `### 👤 1. Temel & Kimlik Bilgileri\n` +
+      `• 👤 **İsim / Hitap:** \`${p.name || 'Girilmedi'}\`\n` +
+      `• 🎂 **Yaş / Doğum Yılı:** \`${p.age || 'Girilmedi'}\`\n` +
+      `• ⚧️ **Cinsiyet:** \`${p.gender || 'Girilmedi'}\`\n` +
+      `• ☪️ **İnanç / Din:** \`${p.religion || staff.faith || 'Girilmedi'}\`\n` +
+      `• 🌍 **Yaşadığı Şehir / Bölge:** \`${p.city || 'Girilmedi'}\`\n\n` +
+      `### 🧠 2. Karakter, MBTI & İletişim Mizaçları\n` +
+      `• 🧠 **MBTI Kişilik Tipi:** \`${p.mbti || 'Girilmedi'}\`\n` +
+      `• 🕊️ **Karakter & Mizaç:** \`${p.temperament || 'Girilmedi'}\`\n` +
+      `• 🎯 **Stres Altında Tutum:** \`${p.stressHandling || 'Girilmedi'}\`\n` +
+      `• 💬 **İletişim Tarzı:** \`${p.communicationStyle || 'Girilmedi'}\`\n` +
+      `• 🎧 **Mikrofon & Ses Durumu:** \`${p.micStatus || 'Girilmedi'}\`\n\n` +
+      `### 🛡️ 3. Roblox Uzmanlık & Ekip Becerileri\n` +
+      `• 🎮 **Roblox Uzmanlık Alanı:** \`${p.robloxSpecialty || 'Girilmedi'}\`\n` +
+      `• ⏳ **Haftalık Aktiflik Süresi:** \`${p.weeklyHours || 'Girilmedi'}\`\n` +
+      `• 🛡️ **Kriz Anı Davranışı:** \`${p.crisisAction || 'Girilmedi'}\`\n` +
+      `• 🤝 **Takım Çalışması Uyumu:** \`${p.teamwork || 'Girilmedi'}\`\n` +
+      `• 📚 **Öğrenim / Meslek Durumu:** \`${p.educationWork || 'Girilmedi'}\`\n\n` +
+      `### 🌟 4. Gelişim, Gelecek Hedefleri & Felsefe\n` +
+      `• ⭐ **En Güçlü Yönü:** \`${p.strongestTrait || 'Girilmedi'}\`\n` +
+      `• ⚠️ **Geliştirmek İstediği Yön:** \`${p.growthArea || 'Girilmedi'}\`\n` +
+      `• 🏆 **Gelecek Hedefi:** \`${p.futureGoal || 'Girilmedi'}\`\n` +
+      `• 🎨 **Hobiler & İlgi Alanları:** \`${p.hobbies || 'Girilmedi'}\`\n` +
+      `• 📜 **Kişisel Hayat Mottosu:** *"${p.lifeMotto || 'Belirtilmedi'}"*`
+    ),
+    ComponentsV2Factory.separator(true),
+    ComponentsV2Factory.actionRow([
+      {
+        style: ButtonStyle.Primary,
+        label: "🧠 Kişilik Testi Gönder / Yenile",
+        custom_id: `robloxland_staffmgmt_act_send_personality_test_${staff.userId}`,
+        emoji: { name: "🧠" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "🔙 Profil Kartına Dön",
+        custom_id: `robloxland_staffmgmt_view_profile_${staff.userId}`,
+        emoji: { name: "🔙" }
+      },
+      {
+        style: ButtonStyle.Secondary,
+        label: "📋 Kadro Listesi",
+        custom_id: "robloxland_staffmgmt_list",
+        emoji: { name: "📋" }
       }
     ])
   ];
@@ -841,12 +1060,226 @@ async function runDailyStaffAudit(client) {
  */
 async function handleStaffManagementInteraction(interaction) {
   const customId = interaction.customId;
-  if (!customId || (!customId.startsWith('robloxland_staffmgmt_') && !customId.startsWith('robloxland_staff_dm_') && !customId.startsWith('robloxland_staff_oath_'))) {
+  if (!customId || (
+    !customId.startsWith('robloxland_staffmgmt_') &&
+    !customId.startsWith('robloxland_staff_dm_') &&
+    !customId.startsWith('robloxland_staff_oath_') &&
+    !customId.startsWith('robloxland_staff_ptest_')
+  )) {
     return false;
   }
 
   const { guild, member, user } = interaction;
   const data = loadStaffData();
+
+  // ── 0. KİŞİLİK & ENVANTER TESTİ DM ETKİLEŞİMLERİ ──
+
+  // Aşama 1 Butonu: Temel & Kimlik Bilgileri
+  if (customId.startsWith('robloxland_staff_ptest_step1_')) {
+    const targetUserId = customId.replace('robloxland_staff_ptest_step1_', '');
+    const staff = data.staffMembers[targetUserId];
+    const p = staff?.personalInfo || {};
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_ptest_step1_${targetUserId}`)
+      .setTitle("🧠 Aşama 1: Temel & Kimlik Bilgileri");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_name").setLabel("1. İsim / Hitap").setValue(p.name || "").setPlaceholder("Örn: Ege / Alp").setStyle(TextInputStyle.Short).setMaxLength(40).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_age").setLabel("2. Yaş / Doğum Yılı").setValue(p.age || "").setPlaceholder("Örn: 18 (2008)").setStyle(TextInputStyle.Short).setMaxLength(20).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_gender").setLabel("3. Cinsiyet").setValue(p.gender || "").setPlaceholder("Örn: Erkek / Kadın / Belirtmek İstemiyor").setStyle(TextInputStyle.Short).setMaxLength(30).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_religion").setLabel("4. İnanç / Din").setValue(p.religion || staff?.faith || "").setPlaceholder("Örn: İslam / Hristiyanlık / Deizm / Agnostik vb.").setStyle(TextInputStyle.Short).setMaxLength(40).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_city").setLabel("5. Yaşadığı Şehir / Bölge").setValue(p.city || "").setPlaceholder("Örn: İstanbul / Ankara / İzmir vb.").setStyle(TextInputStyle.Short).setMaxLength(50).setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Aşama 2 Butonu: Karakter, MBTI & İletişim
+  if (customId.startsWith('robloxland_staff_ptest_step2_')) {
+    const targetUserId = customId.replace('robloxland_staff_ptest_step2_', '');
+    const staff = data.staffMembers[targetUserId];
+    const p = staff?.personalInfo || {};
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_ptest_step2_${targetUserId}`)
+      .setTitle("🧠 Aşama 2: Karakter & İletişim");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_mbti").setLabel("6. MBTI Kişilik Tipi").setValue(p.mbti || "").setPlaceholder("Örn: INTJ, ENFP, ISTP, Bilmiyorum").setStyle(TextInputStyle.Short).setMaxLength(20).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_temperament").setLabel("7. Karakter & Mizaç").setValue(p.temperament || "").setPlaceholder("Örn: Sakin, Çözüm Odaklı, Lider Ruhlu").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_stress").setLabel("8. Stres Altında Tutum").setValue(p.stressHandling || "").setPlaceholder("Örn: Soğukkanlı, Kuralcı, Uzlaşmacı").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_comm").setLabel("9. İletişim Tarzı").setValue(p.communicationStyle || "").setPlaceholder("Örn: Resmi, Samimi, Doğrudan/Net").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_mic").setLabel("10. Mikrofon & Ses Durumu").setValue(p.micStatus || "").setPlaceholder("Örn: Aktif Konuşabilir / Sadece Dinleyici").setStyle(TextInputStyle.Short).setMaxLength(50).setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Aşama 3 Butonu: Roblox Uzmanlık & Ekip
+  if (customId.startsWith('robloxland_staff_ptest_step3_')) {
+    const targetUserId = customId.replace('robloxland_staff_ptest_step3_', '');
+    const staff = data.staffMembers[targetUserId];
+    const p = staff?.personalInfo || {};
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_ptest_step3_${targetUserId}`)
+      .setTitle("🧠 Aşama 3: Roblox & Ekip Becerileri");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_specialty").setLabel("11. Roblox Uzmanlık Alanı").setValue(p.robloxSpecialty || "").setPlaceholder("Örn: Scripter, Builder, UI, Moderatör").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_hours").setLabel("12. Haftalık Aktiflik Süresi").setValue(p.weeklyHours || "").setPlaceholder("Örn: Günde 4 saat / Haftada 25 saat").setStyle(TextInputStyle.Short).setMaxLength(40).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_crisis").setLabel("13. Kriz Anı Davranışı").setValue(p.crisisAction || "").setPlaceholder("Örn: Önce kanıt toplar, amirlere danışır").setStyle(TextInputStyle.Short).setMaxLength(80).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_teamwork").setLabel("14. Takım Çalışması Uyumu").setValue(p.teamwork || "").setPlaceholder("Örn: Takım oyuncusu, uyumlu, koordine").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_edu").setLabel("15. Öğrenim / Meslek Durumu").setValue(p.educationWork || "").setPlaceholder("Örn: Üniversite Öğrencisi / Yazılımcı").setStyle(TextInputStyle.Short).setMaxLength(60).setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Aşama 4 Butonu: Güçlü Yönler, Hedefler & Hayat Mottosu
+  if (customId.startsWith('robloxland_staff_ptest_step4_')) {
+    const targetUserId = customId.replace('robloxland_staff_ptest_step4_', '');
+    const staff = data.staffMembers[targetUserId];
+    const p = staff?.personalInfo || {};
+
+    const modal = new ModalBuilder()
+      .setCustomId(`robloxland_staffmgmt_modal_ptest_step4_${targetUserId}`)
+      .setTitle("🧠 Aşama 4: Hedefler & Hayat Mottosu");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_strong").setLabel("16. En Güçlü Yönü").setValue(p.strongestTrait || "").setPlaceholder("Örn: Hızlı problem çözme, sabır, empati").setStyle(TextInputStyle.Short).setMaxLength(80).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_growth").setLabel("17. Geliştirmek İstediği Yön").setValue(p.growthArea || "").setPlaceholder("Örn: Zaman yönetimi, 3D modelleme").setStyle(TextInputStyle.Short).setMaxLength(80).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_goal").setLabel("18. Gelecek Hedefi").setValue(p.futureGoal || "").setPlaceholder("Örn: Baş Moderatör olmak, stüdyo kurmak").setStyle(TextInputStyle.Short).setMaxLength(80).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_hobbies").setLabel("19. Hobiler & İlgi Alanları").setValue(p.hobbies || "").setPlaceholder("Örn: Oyun geliştirme, müzik, tasarım").setStyle(TextInputStyle.Short).setMaxLength(80).setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder().setCustomId("p_motto").setLabel("20. Kişisel Hayat Mottosu").setValue(p.lifeMotto || "").setPlaceholder("Örn: Adalet mülkün temelidir").setStyle(TextInputStyle.Short).setMaxLength(100).setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Kişilik Testi Modalları Submit İşleyicileri
+  if (customId.startsWith('robloxland_staffmgmt_modal_ptest_step')) {
+    const parts = customId.split('_');
+    const stepNum = parts[4].replace('step', '');
+    const targetUserId = parts[5];
+    const staff = data.staffMembers[targetUserId];
+
+    if (staff) {
+      staff.personalInfo = staff.personalInfo || {};
+
+      if (stepNum === '1') {
+        staff.personalInfo.name = interaction.fields.getTextInputValue("p_name")?.trim();
+        staff.personalInfo.age = interaction.fields.getTextInputValue("p_age")?.trim();
+        staff.personalInfo.gender = interaction.fields.getTextInputValue("p_gender")?.trim();
+        staff.personalInfo.religion = interaction.fields.getTextInputValue("p_religion")?.trim();
+        staff.personalInfo.city = interaction.fields.getTextInputValue("p_city")?.trim();
+      } else if (stepNum === '2') {
+        staff.personalInfo.mbti = interaction.fields.getTextInputValue("p_mbti")?.trim();
+        staff.personalInfo.temperament = interaction.fields.getTextInputValue("p_temperament")?.trim();
+        staff.personalInfo.stressHandling = interaction.fields.getTextInputValue("p_stress")?.trim();
+        staff.personalInfo.communicationStyle = interaction.fields.getTextInputValue("p_comm")?.trim();
+        staff.personalInfo.micStatus = interaction.fields.getTextInputValue("p_mic")?.trim();
+      } else if (stepNum === '3') {
+        staff.personalInfo.robloxSpecialty = interaction.fields.getTextInputValue("p_specialty")?.trim();
+        staff.personalInfo.weeklyHours = interaction.fields.getTextInputValue("p_hours")?.trim();
+        staff.personalInfo.crisisAction = interaction.fields.getTextInputValue("p_crisis")?.trim();
+        staff.personalInfo.teamwork = interaction.fields.getTextInputValue("p_teamwork")?.trim();
+        staff.personalInfo.educationWork = interaction.fields.getTextInputValue("p_edu")?.trim();
+      } else if (stepNum === '4') {
+        staff.personalInfo.strongestTrait = interaction.fields.getTextInputValue("p_strong")?.trim();
+        staff.personalInfo.growthArea = interaction.fields.getTextInputValue("p_growth")?.trim();
+        staff.personalInfo.futureGoal = interaction.fields.getTextInputValue("p_goal")?.trim();
+        staff.personalInfo.hobbies = interaction.fields.getTextInputValue("p_hobbies")?.trim();
+        staff.personalInfo.lifeMotto = interaction.fields.getTextInputValue("p_motto")?.trim();
+      }
+
+      const p = staff.personalInfo;
+      const filledCount = Object.values(p).filter(v => Boolean(v && v !== 'Girilmedi')).length;
+
+      if (filledCount >= 18) {
+        staff.personalityTestCompleted = true;
+        staff.performanceScore = Math.min(100, (staff.performanceScore || 80) + 5);
+        staff.historyLogs = staff.historyLogs || [];
+        staff.historyLogs.unshift({
+          date: Date.now(),
+          text: `KİŞİLİK & ENVANTER TESTİNİ TAMAMLADI (20/20 Bilgi) (+5 Bonus Puan)`
+        });
+
+        // Yönetim Kanalına Bildir
+        try {
+          const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
+                           interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
+          if (mgmtChan && mgmtChan.isTextBased()) {
+            await mgmtChan.send({
+              ...ComponentsV2Factory.buildPayload([
+                ComponentsV2Factory.text(
+                  `# 🧠 YETKİLİ KİŞİLİK & PROFİL TESTİNİ TAMAMLADI!\n\n` +
+                  `👤 **Yetkili:** <@${targetUserId}>\n` +
+                  `📊 **Tamamlanan Bilgi:** \`20/20 Kapsamlı Profil\`\n` +
+                  `🧠 **MBTI & Mizaç:** \`${p.mbti || '-'}\` • \`${p.temperament || '-'}\`\n` +
+                  `🎮 **Roblox Alanı:** \`${p.robloxSpecialty || '-'}\`\n\n` +
+                  `✅ Yetkilinin tüm 20 kişisel ve karakter bilgisi profil sayfasına işlenmiştir.`
+                )
+              ])
+            });
+          }
+        } catch (_) {}
+      }
+
+      saveStaffData(data);
+
+      await interaction.reply({
+        content: `✅ **Aşama ${stepNum} Bilgileri Kaydedildi!** (Toplam: ${filledCount}/20 Bilgi Tamamlandı)\n${filledCount >= 18 ? '🎉 **Tebrikler! 20 soruluk kişilik testini başarıyla tamamladınız! Bilgiler profil sayfanıza eklendi.**' : 'Lütfen diğer aşama butonlarına tıklayarak kalan soruları tamamlayınız.'}`,
+        ephemeral: true
+      });
+      return true;
+    }
+  }
 
   // ── 1. DM Üzerinden Gelen Yetkili Butonları ──
   if (customId.startsWith('robloxland_staff_dm_')) {
@@ -1053,6 +1486,7 @@ async function handleStaffManagementInteraction(interaction) {
       staff.oathStatus = 'sworn';
       staff.oathDate = Date.now();
       staff.oathText = faith.oath;
+      staff.oathCertificateGenerated = true;
       staff.performanceScore = Math.min(100, (staff.performanceScore || 80) + 5); // Yemin bonusu
       staff.historyLogs = staff.historyLogs || [];
       staff.historyLogs.unshift({
@@ -1063,7 +1497,18 @@ async function handleStaffManagementInteraction(interaction) {
       saveStaffData(data);
     }
 
-    // Yönetim Kanalına Log Gönder
+    // Resmi Yemin Sertifikası (Canvas SS) Görseli Üret
+    const certBuffer = generateOathCertificateBuffer({
+      username: (user && user.username) ? user.username : (staff && staff.username ? staff.username : targetUserId),
+      faithName: faith.name,
+      oathText: faith.oath,
+      swornDate: new Date().toLocaleDateString('tr-TR'),
+      userId: targetUserId
+    });
+
+    const certFiles = certBuffer ? [{ attachment: certBuffer, name: `yemin-belgesi-${targetUserId}.png` }] : [];
+
+    // Yönetim Kanalına Log & Sertifika Gönder
     try {
       const mgmtChan = interaction.client.channels.cache.get(PANEL_CHANNEL_ID) ||
                        interaction.client.channels.cache.get(STAFF_LOG_CHANNEL_ID);
@@ -1076,15 +1521,17 @@ async function handleStaffManagementInteraction(interaction) {
               `🏷️ **İnanç / Tercih:** \`${faith.name}\`\n` +
               `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
               `> "*${faith.oath}*"\n\n` +
-              `✅ Yetkili resmi olarak "Yemin Ederim" beyanını sunmuş ve göreve başlamıştır.`
+              `✅ Yetkili resmi olarak "Yemin Ederim" beyanını sunmuş ve göreve başlamıştır. İmzalı yemin belgesi ektedir.`
             )
-          ])
+          ]),
+          files: certFiles
         });
       }
     } catch (_) {}
 
     await interaction.reply({
-      content: `🎉 **Tebrikler! Görev yemininiz (${faith.name}) başarıyla kaydedildi.**\nRobloxLand yetkili kadrosuna resmi olarak hoş geldiniz! Görevinizde başarılar ve kolaylıklar dileriz.`,
+      content: `🎉 **Tebrikler! Görev yemininiz (${faith.name}) başarıyla kaydedildi.**\nRobloxLand yetkili kadrosuna resmi olarak hoş geldiniz! İmzalı resmi yemin belgeniz ektedir:`,
+      files: certFiles,
       ephemeral: true
     });
     return true;
@@ -1096,6 +1543,218 @@ async function handleStaffManagementInteraction(interaction) {
       content: '❌ Bu yönetim panelini yalnızca RobloxLand yetkili amirleri ve yöneticileri kullanabilir.',
       ephemeral: true
     });
+  }
+
+  // 12. Yemin Belgesini İncele (SS / Sertifika Göster)
+  if (customId.startsWith('robloxland_staffmgmt_act_view_oath_cert_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_view_oath_cert_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) {
+      await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+      return true;
+    }
+
+    const certBuffer = generateOathCertificateBuffer({
+      username: staff.username || targetUserId,
+      faithName: staff.faith || 'Evrensel Yemin',
+      oathText: staff.oathText || 'Topluluk kurallarına ve adalete sadık kalacağıma yemin ederim.',
+      swornDate: staff.oathDate ? new Date(staff.oathDate).toLocaleDateString('tr-TR') : new Date().toLocaleDateString('tr-TR'),
+      userId: targetUserId
+    });
+
+    const certFiles = certBuffer ? [{ attachment: certBuffer, name: `yemin-belgesi-${targetUserId}.png` }] : [];
+
+    await interaction.reply({
+      content: `📜 <@${targetUserId}> adlı yetkilinin resmi imzalı **Görev & Sadakat Yemini Belgesi**:`,
+      files: certFiles,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 14. Kişilik & Envanter Testi Gönder (DM ile 4 Aşamalı Form)
+  if (customId.startsWith('robloxland_staffmgmt_act_send_personality_test_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_send_personality_test_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) {
+      await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+      return true;
+    }
+
+    const testPromptPayload = ComponentsV2Factory.buildPayload([
+      ComponentsV2Factory.text(
+        `# 🧠 ROBLOXLND YETKİLİ KİŞİLİK & PROFİL TESTİ (20 SORU)\n\n` +
+        `Değerli yetkilimiz <@${targetUserId}>,\n\n` +
+        `RobloxLand yönetim kadrosunda sizi daha yakından tanımak, ilgi ve uzmanlık alanlarınıza uygun görevlendirme yapmak adına 20 soruluk **Kişilik & Envanter Testini** doldurmanız gerekmektedir.\n\n` +
+        `Test 4 aşamadan oluşur (Her aşamada 5 soru):\n` +
+        `• 👤 **Aşama 1:** Temel & Kimlik Bilgileri *(İsim, Yaş, Cinsiyet, Din, Şehir)*\n` +
+        `• 🧠 **Aşama 2:** Karakter, MBTI & İletişim Mizaçları *(MBTI, Mizaç, Stres, İletişim, Mikrofon)*\n` +
+        `• 🛡️ **Aşama 3:** Roblox Uzmanlık & Ekip Çalışması *(Alan, Saat, Kriz, Takım, Öğrenim)*\n` +
+        `• 🌟 **Aşama 4:** Gelişim, Hedefler & Hayat Mottosu *(Güçlü yön, Gelişim, Hedef, Hobi, Motto)*\n\n` +
+        `-# Lütfen sırasıyla aşağıdaki butonlara tıklayarak formları doldurunuz:`
+      ),
+      ComponentsV2Factory.separator(true),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Primary,
+          label: "👤 Aşama 1: Temel Bilgiler (1-5)",
+          custom_id: `robloxland_staff_ptest_step1_${targetUserId}`,
+          emoji: { name: "👤" }
+        },
+        {
+          style: ButtonStyle.Primary,
+          label: "🧠 Aşama 2: Karakter & MBTI (6-10)",
+          custom_id: `robloxland_staff_ptest_step2_${targetUserId}`,
+          emoji: { name: "🧠" }
+        }
+      ]),
+      ComponentsV2Factory.actionRow([
+        {
+          style: ButtonStyle.Primary,
+          label: "🛡️ Aşama 3: Roblox & Ekip (11-15)",
+          custom_id: `robloxland_staff_ptest_step3_${targetUserId}`,
+          emoji: { name: "🛡️" }
+        },
+        {
+          style: ButtonStyle.Primary,
+          label: "🌟 Aşama 4: Hedefler & Motto (16-20)",
+          custom_id: `robloxland_staff_ptest_step4_${targetUserId}`,
+          emoji: { name: "🌟" }
+        }
+      ])
+    ]);
+
+    try {
+      const u = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (u) {
+        await u.send(testPromptPayload);
+      }
+    } catch (err) {
+      await interaction.reply({ content: `❌ Yetkilinin DM kutusu kapalı: ${err.message}`, ephemeral: true });
+      return true;
+    }
+
+    await interaction.reply({
+      content: `🧠 <@${targetUserId}> adlı yetkiliye DM üzerinden **20 Soruluk Kişilik & Profil Envanter Testi** başarıyla iletildi!`,
+      ephemeral: true
+    });
+    return true;
+  }
+
+  // 15. Yetkili Kişisel Bilgi Dosyasını Göster (20 Bilgi Kartı)
+  if (customId.startsWith('robloxland_staffmgmt_act_view_personal_info_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_act_view_personal_info_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) {
+      await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+      return true;
+    }
+
+    const dossierPayload = buildStaffPersonalInfoPayload(staff);
+    await interaction.reply({ ...dossierPayload, ephemeral: true });
+    return true;
+  }
+
+  // 16. Profil Kartına Geri Dön
+  if (customId.startsWith('robloxland_staffmgmt_view_profile_')) {
+    const targetUserId = customId.replace('robloxland_staffmgmt_view_profile_', '');
+    const staff = data.staffMembers[targetUserId];
+    if (!staff) {
+      await interaction.reply({ content: '❌ Yetkili bulunamadı.', ephemeral: true });
+      return true;
+    }
+
+    const profilePayload = buildStaffProfilePayload(staff);
+    await interaction.reply({ ...profilePayload, ephemeral: true });
+    return true;
+  }
+
+  // 13. Otomasyon & Kural Ayarları Butonu
+  if (customId === 'robloxland_staffmgmt_btn_edit_rules') {
+    const rules = data.settings?.automationRules || DEFAULT_AUTOMATION_RULES;
+    const modal = new ModalBuilder()
+      .setCustomId('robloxland_staffmgmt_modal_edit_rules')
+      .setTitle("⚡ Otomasyon & Kural Ayarları");
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("rule_days_10")
+          .setLabel("1. Hatırlatma DM Eşiği (Gün)")
+          .setValue(String(rules.days10Reminder || 10))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("rule_days_13")
+          .setLabel("2. Ciddi Uyarı DM Eşiği (Gün)")
+          .setValue(String(rules.days13Warning || 13))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("rule_days_20")
+          .setLabel("3. RD / İnceleme Eşiği (Gün)")
+          .setValue(String(rules.days20DemotionReview || 20))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("rule_score_star5")
+          .setLabel("5 Yıldızlı Çalışma Puanı (Örn: 7)")
+          .setValue(String(rules.scoreStar5 || 7))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId("rule_penalty_warn")
+          .setLabel("Uyarı Başına Puan Kesintisi (Örn: 15)")
+          .setValue(String(rules.penaltyWarning || 15))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(3)
+          .setRequired(true)
+      )
+    );
+
+    await interaction.showModal(modal);
+    return true;
+  }
+
+  // Otomasyon Kuralları Modal Submit
+  if (customId === 'robloxland_staffmgmt_modal_edit_rules') {
+    const d10 = parseInt(interaction.fields.getTextInputValue("rule_days_10"), 10) || 10;
+    const d13 = parseInt(interaction.fields.getTextInputValue("rule_days_13"), 10) || 13;
+    const d20 = parseInt(interaction.fields.getTextInputValue("rule_days_20"), 10) || 20;
+    const star5 = parseInt(interaction.fields.getTextInputValue("rule_score_star5"), 10) || 7;
+    const penWarn = parseInt(interaction.fields.getTextInputValue("rule_penalty_warn"), 10) || 15;
+
+    data.settings = data.settings || {};
+    data.settings.automationRules = {
+      days10Reminder: d10,
+      days13Warning: d13,
+      days20DemotionReview: d20,
+      scoreStar5: star5,
+      scoreStar3: 4,
+      scoreStar1: 1,
+      penaltyWarning: penWarn,
+      bonusOath: 5
+    };
+
+    saveStaffData(data);
+
+    await interaction.reply({
+      content: `⚡ **Otomasyon Kuralları & Puanlama Eşikleri Güncellendi!**\n• **Hatırlatma Eşiği:** \`${d10} Gün\` | **Uyarı:** \`${d13} Gün\` | **RD İnceleme:** \`${d20} Gün\`\n• **5 Yıldız Ödülü:** \`+${star5} Puan\` | **Uyarı Cezası:** \`-${penWarn} Puan\``,
+      ephemeral: true
+    });
+    return true;
   }
 
   // 6. Kalite Kontrolü Puanlama (5 Yıldız, 3 Yıldız, 1 Yıldız, Reddet)
@@ -2624,7 +3283,10 @@ module.exports = {
   renderProgressBar,
   buildStaffManagementPayload,
   buildStaffProfilePayload,
+  buildStaffPersonalInfoPayload,
   buildStaffSettingsPayload,
+  generateOathCertificateBuffer,
+  DEFAULT_AUTOMATION_RULES,
   isValidWorkMessage,
   handleStaffWorkMessage,
   runDailyStaffAudit,
