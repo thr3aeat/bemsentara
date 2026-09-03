@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "lastDailyReportSent": "2026-09-03",
+    "created": "2026-09-03T11:29:34.570Z"
+  },
+  "days": {
+    "2026-09-03": {
+      "1537407325290237973": {
+        "guildId": "1537407325290237973",
+        "joins": 2,
+        "leaves": 1,
+        "messages": 3,
+        "userMessages": {
+          "test_user_1": 2,
+          "test_user_2": 1
+        },
+        "channelMessages": {
+          "test_chan_1": 2,
+          "test_chan_2": 1
+        },
+        "hourlyMessages": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "joinedUsers": [
+          "test_user_1",
+          "test_user_2"
+        ],
+        "leftUsers": [
+          "test_user_3"
+        ],
+        "memberCountSnapshot": null
+      },
+      "1367646464804655104": {
+        "guildId": "1367646464804655104",
+        "joins": 1,
+        "leaves": 0,
+        "messages": 1,
+        "userMessages": {
+          "test_user_eko_1": 1
+        },
+        "channelMessages": {
+          "test_eko_chan": 1
+        },
+        "hourlyMessages": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "joinedUsers": [
+          "test_user_eko_1"
+        ],
+        "leftUsers": [],
+        "memberCountSnapshot": null
+      }
+    }
+  },
+  "historySummary": []
+}

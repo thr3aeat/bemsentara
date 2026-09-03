@@ -339,6 +339,14 @@ async function start() {
             ensureStaffManagementPanel(discordBot).catch(() => {});
           } catch (_) {}
 
+          // ── RobloxLand & EkoYıldız Günlük İstatistik & Gelecek Analiz Servisi ──
+          try {
+            const { startAnalyticsScheduler } = require("./bot/services/serverDailyAnalyticsService");
+            startAnalyticsScheduler(discordBot);
+          } catch (analyticsErr) {
+            logger.warn(`[AnalyticsScheduler] Başlatma uyarısı: ${analyticsErr && analyticsErr.message}`);
+          }
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;

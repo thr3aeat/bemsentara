@@ -26,6 +26,8 @@ const GENERAL_COMMANDS = new Set([
   "ping",
   "bakim",
   "stats",
+  "sunucuanaliz",
+  "gunlukrapor",
   "personeldurum",
   "seviye",
   "seviyetop",
@@ -2953,6 +2955,18 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
         )
         .setTimestamp();
       return interaction.editReply({ embeds: [statsEmbed] });
+    }
+
+    if (commandName === "sunucuanaliz" || commandName === "gunlukrapor") {
+      try {
+        const { buildMainDashboardEmbed, buildAnalyticsActionRow, getTodayKey } = require("../services/serverDailyAnalyticsService");
+        const embed = buildMainDashboardEmbed(interaction.client, getTodayKey());
+        const row = buildAnalyticsActionRow();
+        return interaction.editReply({ embeds: [embed], components: [row] });
+      } catch (analizErr) {
+        console.error("[sunucuanaliz] Hata:", analizErr);
+        return interaction.editReply({ content: `❌ Analiz raporu oluşturulurken hata: ${analizErr.message}` });
+      }
     }
 
     if (commandName === "ekobang") {

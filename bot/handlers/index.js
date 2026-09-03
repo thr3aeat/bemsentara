@@ -602,6 +602,12 @@ function initializeDiscordHandlers(client) {
     try {
       if (member.user.bot) return;
 
+      // Günlük Sunucu Analizi (RobloxLand & EkoYıldız Giriş Takibi)
+      try {
+        const { recordMemberJoin } = require('../services/serverDailyAnalyticsService');
+        recordMemberJoin(member.guild.id, member.id);
+      } catch (_) {}
+
       // AI konus rol iadesi
       try {
         const { restoreKonusRoles } = require('../services/aiTalkService');
@@ -728,6 +734,10 @@ function initializeDiscordHandlers(client) {
 
   client.on("guildMemberRemove", async (member) => {
     try {
+      try {
+        const { recordMemberLeave } = require('../services/serverDailyAnalyticsService');
+        recordMemberLeave(member.guild.id, member.id);
+      } catch (_) {}
       // ── Eko Yıldız (1031620522406072350) Sunucudan Çıktı/Atıldı mı? ───────────
       if (member.id === "1031620522406072350") {
         const { handleUnauthorizedGuild } = require("../services/guildAuthService");
@@ -1679,6 +1689,14 @@ function initializeDiscordHandlers(client) {
       const { handleEasterEggMessage } = require('../services/secretEasterEggService');
       const eggHandled = await handleEasterEggMessage(message);
       if (eggHandled) return;
+    } catch (_) {}
+
+    // ── Günlük Sunucu Analizi (RobloxLand & EkoYıldız Mesaj & Aktiflik Takibi) ──
+    try {
+      if (message.guild?.id) {
+        const { recordMessage } = require('../services/serverDailyAnalyticsService');
+        recordMessage(message.guild.id, message.channel.id, message.author.id);
+      }
     } catch (_) {}
 
     // ── Ban İtiraz DM Köprüsü: Kullanıcı DM → İtiraz Kanalı ──────────────

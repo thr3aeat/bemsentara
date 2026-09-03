@@ -34,6 +34,16 @@ async function routeButtonInteraction(interaction) {
     }
   }
 
+  if (customId && customId.startsWith('btn_analytics_')) {
+    try {
+      const { handleAnalyticsButtonInteraction } = require('../../services/serverDailyAnalyticsService');
+      const handled = await handleAnalyticsButtonInteraction(interaction);
+      if (handled) return true;
+    } catch (err) {
+      console.error('[routeButtonInteraction] Analytics button error:', err.message);
+    }
+  }
+
   if (customId.startsWith('btn_leave_')) {
     const StaffLeaveService = require('../../services/staffLeaveService');
     if (customId.startsWith('btn_leave_approve_')) {
