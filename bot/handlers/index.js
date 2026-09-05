@@ -243,6 +243,8 @@ function initializeDiscordHandlers(client) {
     startAuditLogPoller(client);
     const { startDiscordAbuseDetector } = require("../services/discordAbuseDetector");
     startDiscordAbuseDetector(client);
+    const { initRestrictedAdminGuard } = require("../services/restrictedAdminGuard");
+    initRestrictedAdminGuard(client);
     await initTMTInvites(client);
 
     startCleanupScheduler();
