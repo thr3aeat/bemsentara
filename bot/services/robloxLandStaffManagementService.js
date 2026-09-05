@@ -1091,7 +1091,7 @@ async function handleStaffManagementInteraction(interaction) {
 
     modal.addComponents(
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("p_name").setLabel("1. İsim / Hitap").setValue(p.name || "").setPlaceholder("Örn: Ege / Alp").setStyle(TextInputStyle.Short).setMaxLength(40).setRequired(true)
+        new TextInputBuilder().setCustomId("p_name").setLabel("1. İsim / Hitap").setValue(p.name || "").setPlaceholder("Örn: Ege / Mert").setStyle(TextInputStyle.Short).setMaxLength(40).setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
         new TextInputBuilder().setCustomId("p_age").setLabel("2. Yaş / Doğum Yılı").setValue(p.age || "").setPlaceholder("Örn: 18 (2008)").setStyle(TextInputStyle.Short).setMaxLength(20).setRequired(true)

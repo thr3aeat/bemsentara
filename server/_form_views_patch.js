@@ -11,7 +11,7 @@ function _esc(str) {
  * Gerçekçi RP bildirimleri gösterir: "4 kişi daha dolduruyor", "1 kişi gönderdi", "Toplam: X"
  */
 function _socialProofScript(formLabel = 'bu formu') {
-  const names = ['Alper_xz', 'Raven_TR', 'stormcloud', 'elora42', 'ByteKing', 'NovaStar', 'mirela.d', '0xGhost', 'SkyBreaker', 'kiral_', 'zephyr99', 'nocturn_', 'veilstrike', 'emre.sys', 'Phantom_K', 'LunaBot', 'IronMark', 'Serafino', 'd4rkv0id', 'QuantumNx'];
+  const names = ['Ege_xz', 'Raven_TR', 'stormcloud', 'elora42', 'ByteKing', 'NovaStar', 'mirela.d', '0xGhost', 'SkyBreaker', 'kiral_', 'zephyr99', 'nocturn_', 'veilstrike', 'emre.sys', 'Phantom_K', 'LunaBot', 'IronMark', 'Serafino', 'd4rkv0id', 'QuantumNx'];
   const submitMessages = [
     'formu doldurdu ve gönderdi.',
     'başvurusunu tamamlayıp gönderdi.',

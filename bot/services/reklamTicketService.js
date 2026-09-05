@@ -975,7 +975,7 @@ function buildTaxReliefGuaranteeEmbed() {
  * Canlı Satın Alma Akışı (Live Activity Feed)
  */
 function getLiveActivityFeedText() {
-  const buyers = ['@Berke***', '@Kaan***', '@Yigit***', '@Alp***', '@Emir***', '@Arda***', '@Mert***', '@Burak***'];
+  const buyers = ['@Berke***', '@Kaan***', '@Yigit***', '@Ege***', '@Emir***', '@Arda***', '@Mert***', '@Burak***'];
   const packages = [
     'Avantajlı Mid-Roll (100 TL)',
     'Shorts Hızlı Paket (30 TL)',

@@ -1658,7 +1658,7 @@ async function handleRobloxDevsInteraction(interaction) {
     const modal = new ModalBuilder().setCustomId("robloxland_scam_report_modal").setTitle("Dolandırıcı Şikayet Formu");
     modal.addComponents(
       new ActionRowBuilder().addComponents(
-        new TextInputBuilder().setCustomId("scam_user").setLabel("Şüpheli Discord ID / Kullanıcı Adı").setPlaceholder("Örn: 1031620522406072350 veya Alp#0001").setStyle(TextInputStyle.Short).setRequired(true)
+        new TextInputBuilder().setCustomId("scam_user").setLabel("Şüpheli Discord ID / Kullanıcı Adı").setPlaceholder("Örn: 1031620522406072350 veya Ege#0001").setStyle(TextInputStyle.Short).setRequired(true)
       ),
       new ActionRowBuilder().addComponents(
         new TextInputBuilder().setCustomId("scam_roblox_user").setLabel("Şüphelinin Roblox Kullanıcı Adı").setPlaceholder("Örn: RobloxTrader34").setStyle(TextInputStyle.Short).setRequired(false)

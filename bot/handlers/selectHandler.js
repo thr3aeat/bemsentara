@@ -687,7 +687,7 @@ async function handleSelectInteraction(interaction) {
     const chefInput = new TextInputBuilder()
       .setCustomId("branch_chef_input")
       .setLabel("Branş Şefi Discord Kullanıcı Adı veya ID")
-      .setPlaceholder("Örn: Alp 33 veya 1031620522406072350")
+      .setPlaceholder("Örn: Ege veya 1031620522406072350")
       .setValue(setupDoc?.branchChef || "")
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
