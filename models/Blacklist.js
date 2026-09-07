@@ -9,6 +9,7 @@ const blacklistSchema = new mongoose.Schema({
   status: { type: String, required: true, default: 'active', enum: ['active', 'removed'] },
   addedAt: { type: Date, default: Date.now },
   removedAt: { type: Date, default: null },
+  imageUrl: { type: String, default: null },
   isDefault: { type: Boolean, default: false }
 }, { timestamps: true });
 

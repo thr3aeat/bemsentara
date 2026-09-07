@@ -110,116 +110,179 @@ async function renderBlacklist(client) {
     const people = await Blacklist.find({ type: 'person' }).sort({ createdAt: 1 });
     const groups = await Blacklist.find({ type: 'group' }).sort({ createdAt: 1 });
 
-    const formatItem = (item) => {
+    const formatItemLine = (item) => {
       const isRemoved = item.status === 'removed';
       const cleanName = cleanBlacklistName(item.name);
       const cleanReason = cleanBlacklistReason(item.reason);
       const formattedName = isRemoved ? `~~**${cleanName}**~~` : `**${cleanName}**`;
       const reasonText = cleanReason ? ` (${cleanReason})` : '';
       const statusText = isRemoved ? ' - *[Kaldırıldı (15 gün sonra silinecek)]*' : '';
-      return `* ${formattedName}${reasonText}${statusText}`;
+      const photoBadge = item.imageUrl ? ' 📷' : '';
+      return `* ${formattedName}${reasonText}${photoBadge}${statusText}`;
     };
-
-    const splitListIntoChunks = (list, maxChars = 1500) => {
-      if (list.length === 0) return ['*(Temiz)*'];
-      const chunks = [];
-      let current = '';
-
-      for (const item of list) {
-        const line = formatItem(item);
-        if (current.length + line.length + 1 > maxChars) {
-          chunks.push(current.trim());
-          current = line;
-        } else {
-          current = current ? current + '\n' + line : line;
-        }
-      }
-      if (current) chunks.push(current.trim());
-      return chunks;
-    };
-
-    const peopleChunks = splitListIntoChunks(people, 1500);
-    const groupChunks = splitListIntoChunks(groups, 1500);
 
     const containers = [];
+    let currentContainer = new ContainerBuilder();
+    let currentComponentCount = 0;
 
-    // ─── 1️⃣ ANA BAŞLIK, GÖRSEL VE KİŞİLER (1. PARÇA) ─────────────────────
-    const headerContainer = new ContainerBuilder();
+    const pushCurrentContainer = () => {
+      if (currentComponentCount > 0) {
+        containers.push(currentContainer);
+        currentContainer = new ContainerBuilder();
+        currentComponentCount = 0;
+      }
+    };
 
-    // En başa belirtilen görseli koyuyoruz
-    headerContainer.addMediaGalleryComponents(
+    // ─── 1️⃣ ANA BAŞLIK VE GÖRSEL ─────────────────────────────────────────
+    currentContainer.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
         new MediaGalleryItemBuilder().setURL(HEADER_BANNER_URL)
       )
     );
+    currentComponentCount++;
 
-    headerContainer.addTextDisplayComponents(
+    currentContainer.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('# 🚫 KARALİSTE (BLACKLIST)'),
       new TextDisplayBuilder().setContent('\u200B'),
       new TextDisplayBuilder().setContent(
         `> Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.`
       )
     );
+    currentComponentCount += 3;
 
-    headerContainer.addSeparatorComponents(
+    currentContainer.addSeparatorComponents(
       new SeparatorBuilder()
         .setSpacing(SeparatorSpacingSize.Large)
         .setDivider(true)
     );
+    currentComponentCount++;
 
-    headerContainer.addTextDisplayComponents(
+    // ─── 2️⃣ ENGELLENEN KİŞİLER ──────────────────────────────────────────
+    currentContainer.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('### 👤 Engellenen Kişiler'),
-      new TextDisplayBuilder().setContent('\u200B'),
-      new TextDisplayBuilder().setContent(peopleChunks[0])
+      new TextDisplayBuilder().setContent('\u200B')
     );
+    currentComponentCount += 2;
 
-    containers.push(headerContainer);
+    let textBuffer = '';
 
-    // Eğer kişiler 1. parçaya sığmadıysa sonraki parçalar için container ekle
-    for (let i = 1; i < peopleChunks.length; i++) {
-      const pContainer = new ContainerBuilder();
-      pContainer.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`### 👤 Engellenen Kişiler (Kısım ${i + 1})`),
-        new TextDisplayBuilder().setContent('\u200B'),
-        new TextDisplayBuilder().setContent(peopleChunks[i])
-      );
-      containers.push(pContainer);
+    const flushTextBuffer = () => {
+      if (textBuffer.trim().length > 0) {
+        if (currentComponentCount >= 7) {
+          pushCurrentContainer();
+        }
+        currentContainer.addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(textBuffer.trim())
+        );
+        currentComponentCount++;
+        textBuffer = '';
+      }
+    };
+
+    if (people.length === 0) {
+      textBuffer = '*(Temiz)*\n';
+    } else {
+      for (const person of people) {
+        const line = formatItemLine(person);
+
+        if (person.imageUrl) {
+          // Önceki biriken metni yazdır
+          flushTextBuffer();
+
+          if (currentComponentCount >= 6) {
+            pushCurrentContainer();
+          }
+
+          // Bu kişinin başlık satırını ve hemen altına fotoğrafını ekle
+          currentContainer.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(line)
+          );
+          currentComponentCount++;
+
+          currentContainer.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder().setURL(person.imageUrl)
+            )
+          );
+          currentComponentCount++;
+        } else {
+          // Fotoğrafı yoksa buffer'a ekle
+          if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
+            flushTextBuffer();
+          }
+          textBuffer += (textBuffer ? '\n' : '') + line;
+        }
+      }
+    }
+    flushTextBuffer();
+
+    // ─── 3️⃣ İLGİLİ GRUPLAR / PLATFORMLAR ────────────────────────────────
+    if (currentComponentCount >= 5) {
+      pushCurrentContainer();
     }
 
-    // ─── 2️⃣ İLGİLİ GRUPLAR BÖLÜMÜ ───────────────────────────────────────
-    const firstGroupContainer = new ContainerBuilder();
-    firstGroupContainer.addSeparatorComponents(
+    currentContainer.addSeparatorComponents(
       new SeparatorBuilder()
         .setSpacing(SeparatorSpacingSize.Large)
         .setDivider(true)
     );
-    firstGroupContainer.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### 🛡️ İlgili Gruplar / Platformlar'),
-      new TextDisplayBuilder().setContent('\u200B'),
-      new TextDisplayBuilder().setContent(groupChunks[0])
-    );
-    containers.push(firstGroupContainer);
+    currentComponentCount++;
 
-    for (let i = 1; i < groupChunks.length; i++) {
-      const gContainer = new ContainerBuilder();
-      gContainer.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`### 🛡️ İlgili Gruplar / Platformlar (Kısım ${i + 1})`),
-        new TextDisplayBuilder().setContent('\u200B'),
-        new TextDisplayBuilder().setContent(groupChunks[i])
-      );
-      containers.push(gContainer);
+    currentContainer.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('### 🛡️ İlgili Gruplar / Platformlar'),
+      new TextDisplayBuilder().setContent('\u200B')
+    );
+    currentComponentCount += 2;
+
+    if (groups.length === 0) {
+      textBuffer = '*(Temiz)*\n';
+    } else {
+      for (const group of groups) {
+        const line = formatItemLine(group);
+
+        if (group.imageUrl) {
+          flushTextBuffer();
+
+          if (currentComponentCount >= 6) {
+            pushCurrentContainer();
+          }
+
+          currentContainer.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(line)
+          );
+          currentComponentCount++;
+
+          currentContainer.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder().setURL(group.imageUrl)
+            )
+          );
+          currentComponentCount++;
+        } else {
+          if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
+            flushTextBuffer();
+          }
+          textBuffer += (textBuffer ? '\n' : '') + line;
+        }
+      }
+    }
+    flushTextBuffer();
+
+    // ─── 4️⃣ FOOTER (SON CONTAINER'A EKLENİR) ───────────────────────────
+    if (currentComponentCount >= 7) {
+      pushCurrentContainer();
     }
 
-    // ─── 3️⃣ FOOTER (SON CONTAINER'A EKLENİR) ───────────────────────────
-    const lastContainer = containers[containers.length - 1];
-    lastContainer.addSeparatorComponents(
+    currentContainer.addSeparatorComponents(
       new SeparatorBuilder()
         .setSpacing(SeparatorSpacingSize.Small)
         .setDivider(true)
     );
-    lastContainer.addTextDisplayComponents(
+    currentContainer.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(`*Son Güncelleme: <t:${Math.floor(Date.now() / 1000)}:f>*`)
     );
+    currentComponentCount += 2;
+    pushCurrentContainer();
 
     // ─── MESAJLARI GÖNDER / GÜNCELLE ────────────────────────────────────
     const messagesCollection = await channel.messages.fetch({ limit: 100 }).catch(() => null);
@@ -287,18 +350,74 @@ async function handleBlacklistMessage(message, client) {
     }
   };
 
+  // Ek ve görsel kontrolü
+  let imageUrl = null;
+  if (message.attachments && message.attachments.size > 0) {
+    const imgAtt = message.attachments.find(a => 
+      (a.contentType && a.contentType.startsWith('image/')) ||
+      /\.(png|jpe?g|webp|gif)$/i.test(a.name || '')
+    ) || message.attachments.first();
+    if (imgAtt) {
+      imageUrl = imgAtt.url;
+    }
+  }
+
+  // Metin içinde görsel URL'si varsa yakala
+  if (!imageUrl) {
+    const urlMatch = content.match(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?/i);
+    if (urlMatch) {
+      imageUrl = urlMatch[0];
+    }
+  }
+
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   const additionPattern = /^\(?([^)]+?)\)?\s*\(([^)]+?)\)$/;
   const groupAdditionPattern = /^\(?([^)]+?)\)?\s*grubu\s*\(([^)]+?)\)$/i;
   const removalPattern = /^\(?([^)]+?)\)?\s*\(sorunçözüldü\)\s*Kaldırıldı$/i;
   const completeRemovalPattern = /^\(?([^)]+?)\)?\s*Tamamen\s*kaldırıldı$/i;
   const reopenPattern = /^\(?([^)]+?)\)?\s*\(sorun\s*çözülmemiş\)\s*Yeniden\s*Açıldı$/i;
+  const removePhotoPattern = /^\(?([^)]+?)\)?\s*\((?:foto|fotograf|fotoğraf|resim)\s*(?:sil|kaldır|kaldir)\)$/i;
+  const singleNamePattern = /^\(?([^\(\)\r\n]+?)\)?$/;
 
+  // 1. Fotoğraf Kaldırma
+  if (removePhotoPattern.test(content)) {
+    const match = content.match(removePhotoPattern);
+    const name = match[1].trim();
+
+    try {
+      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
+      if (!entry) {
+        return sendWarning(`❌ **${name}** karalistede bulunamadı!`);
+      }
+
+      entry.imageUrl = null;
+      await entry.save();
+
+      deleteMessage();
+      await renderBlacklist(client);
+
+      if (logChannel) {
+        const cleanName = entry.name.replace(/[<@!>]/g, "");
+        await logChannel.send({
+          content: `🗑️ **[KARALİSTE FOTOĞRAF SİLİNDİ]** <@${message.author.id}> tarafından **${cleanName}** kaydının fotoğrafı kaldırıldı.`,
+          allowedMentions: { users: [] }
+        }).catch(() => {});
+      }
+    } catch (dbErr) {
+      console.error('[blacklist] DB photo removal error:', dbErr.message);
+      return sendWarning(`❌ Bir veritabanı hatası oluştu: ${dbErr.message}`);
+    }
+    return;
+  }
+
+  // 2. Tamamen Kaldırıldı
   if (completeRemovalPattern.test(content)) {
     const match = content.match(completeRemovalPattern);
     const name = match[1].trim();
 
     try {
-      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
       if (!entry) {
         return sendWarning(`❌ **${name}** karalistede bulunamadı!`);
       }
@@ -321,12 +440,13 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
+  // 3. Kaldırıldı (Soft remove)
   if (removalPattern.test(content)) {
     const match = content.match(removalPattern);
     const name = match[1].trim();
 
     try {
-      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
       if (!entry) {
         return sendWarning(`❌ **${name}** karalistede bulunamadı!`);
       }
@@ -352,18 +472,22 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
+  // 4. Yeniden Açıldı
   if (reopenPattern.test(content)) {
     const match = content.match(reopenPattern);
     const name = match[1].trim();
 
     try {
-      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+      const entry = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
       if (!entry) {
         return sendWarning(`❌ **${name}** karalistede bulunamadı!`);
       }
 
       entry.status = 'active';
       entry.removedAt = null;
+      if (imageUrl) {
+        entry.imageUrl = imageUrl;
+      }
       await entry.save();
 
       deleteMessage();
@@ -383,25 +507,27 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
+  // 5. Grup Ekle / Güncelle
   if (groupAdditionPattern.test(content)) {
     const match = content.match(groupAdditionPattern);
     const groupName = match[1].trim();
     const reason = match[2].trim();
 
     try {
-      const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(groupName)}$`, 'i') }, type: 'group' });
       let isNew = false;
       if (existing) {
         existing.reason = reason;
         existing.status = 'active';
         existing.removedAt = null;
+        if (imageUrl) existing.imageUrl = imageUrl;
         await existing.save();
       } else {
         await Blacklist.create({
           name: groupName,
           type: 'group',
           reason: reason,
+          imageUrl: imageUrl || null,
           addedBy: message.author.id
         });
         isNew = true;
@@ -412,8 +538,9 @@ async function handleBlacklistMessage(message, client) {
 
       if (logChannel) {
         const cleanName = groupName.replace(/[<@!>]/g, "");
+        const photoInfo = imageUrl ? ' 📸 *(Fotoğraf eklendi)*' : '';
         await logChannel.send({
-          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})${isNew ? '' : ' *(Güncellendi)*'}`,
+          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})${photoInfo}${isNew ? '' : ' *(Güncellendi)*'}`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -424,25 +551,27 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
+  // 6. Kişi Ekle / Güncelle (Sebeple)
   if (additionPattern.test(content)) {
     const match = content.match(additionPattern);
     const name = match[1].trim();
     const reason = match[2].trim();
 
     try {
-      const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') }, type: 'person' });
       let isNew = false;
       if (existing) {
         existing.reason = reason;
         existing.status = 'active';
         existing.removedAt = null;
+        if (imageUrl) existing.imageUrl = imageUrl;
         await existing.save();
       } else {
         await Blacklist.create({
           name: name,
           type: 'person',
           reason: reason,
+          imageUrl: imageUrl || null,
           addedBy: message.author.id
         });
         isNew = true;
@@ -453,8 +582,9 @@ async function handleBlacklistMessage(message, client) {
 
       if (logChannel) {
         const cleanName = name.replace(/[<@!>]/g, "");
+        const photoInfo = imageUrl ? ' 📸 *(Fotoğraf eklendi)*' : '';
         await logChannel.send({
-          content: `➕ **[KARALİSTE KİŞİ EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** eklendi. (Sebep: ${reason})${isNew ? '' : ' *(Güncellendi)*'}`,
+          content: `➕ **[KARALİSTE KİŞİ EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** eklendi. (Sebep: ${reason})${photoInfo}${isNew ? '' : ' *(Güncellendi)*'}`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -465,7 +595,65 @@ async function handleBlacklistMessage(message, client) {
     return;
   }
 
-  sendWarning(`⚠️ **Geçersiz Karaliste Formatı!**\nFormat: \`KullanıcıAdı (Sebep)\` veya \`GrupAdı grubu (Sebep)\``);
+  // 7. Sade İsim Yazıldıysa (Örn: alionur738 veya (alionur738) + Fotoğraf)
+  if (singleNamePattern.test(content)) {
+    const match = content.match(singleNamePattern);
+    let name = match[1].trim();
+
+    // Eğer link içeriyorsa linki ayıkla
+    if (imageUrl && name.includes(imageUrl)) {
+      name = name.replace(imageUrl, '').trim();
+    }
+
+    if (!name && imageUrl) {
+      return sendWarning(`⚠️ **Fotoğraf kime ait?** Lütfen fotoğraf ile birlikte kişinin adını yazın (Örn: \`alionur738\`).`);
+    }
+
+    if (name) {
+      try {
+        let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
+        let isNew = false;
+
+        if (existing) {
+          if (imageUrl) {
+            existing.imageUrl = imageUrl;
+          }
+          existing.status = 'active';
+          existing.removedAt = null;
+          await existing.save();
+        } else {
+          await Blacklist.create({
+            name: name,
+            type: 'person',
+            reason: '',
+            imageUrl: imageUrl || null,
+            addedBy: message.author.id
+          });
+          isNew = true;
+        }
+
+        deleteMessage();
+        await renderBlacklist(client);
+
+        if (logChannel) {
+          const cleanName = name.replace(/[<@!>]/g, "");
+          const actionText = isNew
+            ? (imageUrl ? `➕ **[KARALİSTE KİŞİ VE FOTOĞRAF EKLENDİ]**` : `➕ **[KARALİSTE KİŞİ EKLENDİ]**`)
+            : (imageUrl ? `📸 **[KARALİSTE FOTOĞRAF GÜNCELLENDİ]**` : `🔄 **[KARALİSTE GÜNCELLENDİ]**`);
+
+          await logChannel.send({
+            content: `${actionText} <@${message.author.id}> tarafından **${cleanName}** kaydı işlendi.`,
+            allowedMentions: { users: [] }
+          }).catch(() => {});
+        }
+        return;
+      } catch (dbErr) {
+        console.error('[blacklist] DB single name addition/update error:', dbErr.message);
+        return sendWarning(`❌ Bir veritabanı hatası oluştu: ${dbErr.message}`);
+      }
+    }
+  }
+
 }
 
 /**
