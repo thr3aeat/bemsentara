@@ -16,6 +16,16 @@ const pendingModReplyTimers = new Map();
  * Handles support category select menu interception (Directly opens Form Modal)
  */
 async function handleEpostaSupportSelect(interaction, category) {
+  const targetGuild = interaction.guild || await interaction.client.guilds.fetch(GUILD2_ID).catch(() => null);
+  const { canUserOpenTicket, getActiveTicketWarningMessage } = require('./ticketLimiter');
+  const limitCheck = await canUserOpenTicket(interaction.user, targetGuild);
+  if (!limitCheck.allowed) {
+    return interaction.reply({
+      content: getActiveTicketWarningMessage(limitCheck.channel),
+      ephemeral: true
+    });
+  }
+
   const categoryNames = {
     kullanici_destek: "Kullanıcı Destek",
     diger_destek: "Diğer Destek"
@@ -60,6 +70,16 @@ async function triggerEpostaFormModal(interaction, category) {
  * Handles submit of the support modal (Creates ONE single channel for User + Staff)
  */
 async function handleEpostaModalSubmit(interaction, category) {
+  const targetGuild = await interaction.client.guilds.fetch(GUILD2_ID).catch(() => interaction.guild);
+  const { canUserOpenTicket, getActiveTicketWarningMessage } = require('./ticketLimiter');
+  const limitCheck = await canUserOpenTicket(interaction.user, targetGuild);
+  if (!limitCheck.allowed) {
+    return interaction.reply({
+      content: getActiveTicketWarningMessage(limitCheck.channel),
+      ephemeral: true
+    });
+  }
+
   const subject = interaction.fields.getTextInputValue("eposta_konu").trim();
   const description = interaction.fields.getTextInputValue("eposta_detay").trim();
 

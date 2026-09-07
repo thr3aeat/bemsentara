@@ -114,6 +114,10 @@ function getTicketModActionRows(ticketId) {
       .setLabel("📌 Öncelik Değiştir")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
+      .setCustomId(`ticket_change_category_${ticketId}`)
+      .setLabel("🔄 Tür Değiştir")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
       .setCustomId(`ticket_lock_chat_${ticketId}`)
       .setLabel("🔇 Yazma Kilidi")
       .setStyle(ButtonStyle.Secondary)
@@ -188,6 +192,7 @@ function buildTicketV2(ticket) {
     ComponentsV2Factory.actionRow([
       { custom_id: `ticket_add_user_prompt_${ticketId}`, label: "Kullanıcı Ekle", style: ButtonStyle.Secondary, emoji: { name: "👥" } },
       { custom_id: `ticket_change_priority_${ticketId}`, label: "Öncelik Değiştir", style: ButtonStyle.Secondary, emoji: { name: "📌" } },
+      { custom_id: `ticket_change_category_${ticketId}`, label: "Tür Değiştir", style: ButtonStyle.Secondary, emoji: { name: "🔄" } },
       { custom_id: `ticket_lock_chat_${ticketId}`, label: "Yazma Kilidi", style: ButtonStyle.Secondary, emoji: { name: "🔇" } }
     ]),
     ComponentsV2Factory.separator(false),

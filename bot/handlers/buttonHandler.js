@@ -295,6 +295,13 @@ async function handleButtonInteraction(interaction) {
 
     await interaction.deferReply({ ephemeral: true });
 
+    // ── MAKSİMUM 1 TİCKET KONTROLÜ ──
+    const { canUserOpenTicket, getActiveTicketWarningMessage } = require("../services/ticketLimiter");
+    const limitCheck = await canUserOpenTicket(interaction.user, guild);
+    if (!limitCheck.allowed) {
+      return interaction.editReply({ content: getActiveTicketWarningMessage(limitCheck.channel) });
+    }
+
     const { getTicketModeSelectionEmbed, getTicketModeButtons } = require("../services/ticketModeService");
     const { generateTicketId } = require("../../utils/ticketId");
     const Ticket = require("../../models/Ticket");
@@ -352,6 +359,31 @@ async function handleButtonInteraction(interaction) {
       console.error('[ticket_mode_selection] Error:', err.message);
       return interaction.editReply({ content: `❌ Hata: ${err.message}` });
     }
+  }
+
+  // ── Destek Talebi Tür / Kategori Değiştirme Butonu ──
+  if (customId.startsWith("ticket_change_category_")) {
+    const ticketId = customId.replace("ticket_change_category_", "");
+    const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require("discord.js");
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`ticket_category_select_${ticketId}`)
+      .setPlaceholder("Destek talebi için yeni kategori / tür seçin...")
+      .addOptions([
+        new StringSelectMenuOptionBuilder().setLabel("Kullanıcı Destek").setValue("kullanici_destek").setEmoji("👥").setDescription("Üye yardımlaşma ve genel talepler"),
+        new StringSelectMenuOptionBuilder().setLabel("Reklam Talebi").setValue("reklam_destek").setEmoji("📢").setDescription("Reklam ve iş birliği görüşmeleri"),
+        new StringSelectMenuOptionBuilder().setLabel("Şikayet Bildirimi").setValue("sikayet_destek").setEmoji("⚠️").setDescription("Kural ihlalleri ve şikayetler"),
+        new StringSelectMenuOptionBuilder().setLabel("Yönetim ile Görüşme").setValue("yonetim_destek").setEmoji("👑").setDescription("Sunucu yönetimi ile özel konu"),
+        new StringSelectMenuOptionBuilder().setLabel("Teknik Sorun").setValue("technical").setEmoji("🔧").setDescription("Bot, sunucu veya sistem arızaları"),
+        new StringSelectMenuOptionBuilder().setLabel("Ödeme / Bakiye").setValue("billing").setEmoji("💳").setDescription("Finansal ve bakiye işlemleri"),
+        new StringSelectMenuOptionBuilder().setLabel("Diğer Destek").setValue("diger_destek").setEmoji("📝").setDescription("Diğer tüm başlıklar")
+      ]);
+
+    return interaction.reply({
+      content: "🔄 **Destek Talebi Türünü Değiştirin**\nLütfen bu talep için yeni türü aşağıdaki menüden seçin:",
+      components: [new ActionRowBuilder().addComponents(selectMenu)],
+      ephemeral: true
+    });
   }
 
   // ── Moderatör Özel Ticket Butonları (DM Bildirimi, AI Kavga İnceleme, AI Hapis) ──

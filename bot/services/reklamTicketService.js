@@ -1314,6 +1314,13 @@ async function handleReklamModalSubmit(interaction) {
     return interaction.editReply({ content: "❌ Sunucu bağlantısı kurulamadı. Lütfen sunucu içinden tekrar deneyin." });
   }
 
+  // ── MAKSİMUM 1 TİCKET KONTROLÜ ──
+  const { canUserOpenTicket, getActiveTicketWarningMessage } = require('./ticketLimiter');
+  const limitCheck = await canUserOpenTicket(interaction.user, targetGuild);
+  if (!limitCheck.allowed) {
+    return interaction.editReply({ content: getActiveTicketWarningMessage(limitCheck.channel) });
+  }
+
   // Permissions
   const permissionOverwrites = [
     { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
@@ -1454,6 +1461,10 @@ async function handleReklamModalSubmit(interaction) {
     new ButtonBuilder()
       .setCustomId(`claim_ticket_${ticketId}`)
       .setLabel('🙋‍♂️ Yetkili Üstlen')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`ticket_change_category_${ticketId}`)
+      .setLabel('🔄 Tür Değiştir')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`reklam_close_${ticketId}`)

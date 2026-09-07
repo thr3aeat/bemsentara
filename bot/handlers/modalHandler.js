@@ -2583,6 +2583,16 @@ async function handleSupportModal(interaction) {
     // Kontrol başarısız olursa devam et (güvenlik basit tutal)
   }
 
+  // ── MAKSİMUM 1 TİCKET KONTROLÜ ──
+  const { canUserOpenTicket, getActiveTicketWarningMessage } = require("../services/ticketLimiter");
+  const limitCheck = await canUserOpenTicket(interaction.user, interaction.guild);
+  if (!limitCheck.allowed) {
+    return interaction.reply({
+      content: getActiveTicketWarningMessage(limitCheck.channel),
+      ephemeral: true
+    });
+  }
+
   // Kategori bazlı otomatik öncelik
   const autoPriority = {
     ban: 'high',

@@ -16,8 +16,53 @@ async function handleSelectInteraction(interaction) {
     return handleSelfRoleInteraction(interaction);
   }
 
+  // ── Ticket Tür / Kategori Değiştirme Menüsü ──
+  if (customId.startsWith("ticket_category_select_")) {
+    const ticketId = customId.replace("ticket_category_select_", "");
+    const newCategory = interaction.values[0];
+    const categoryLabels = {
+      kullanici_destek: "👥 Kullanıcı Destek",
+      reklam_destek: "📢 Reklam Destek",
+      sikayet_destek: "⚠️ Şikayet Bildirimi",
+      yonetim_destek: "👑 Yönetim ile Görüşme",
+      technical: "🔧 Teknik Sorun",
+      billing: "💳 Ödeme / Bakiye",
+      diger_destek: "📝 Diğer Destek",
+    };
+    const catLabel = categoryLabels[newCategory] || newCategory;
+
+    const Ticket = require("../../models/Ticket");
+    const ticket = await Ticket.findOne({ ticketId });
+    if (ticket) {
+      ticket.category = newCategory;
+      await ticket.save().catch(() => {});
+    }
+
+    if (interaction.channel) {
+      await interaction.channel.setTopic(`🎫 Destek Talebi: ${ticketId} — Kategori: ${catLabel}`).catch(() => {});
+      await interaction.channel.send({
+        content: `🔄 **Destek Talebi Türü Güncellendi!**\nBu talebin kategorisi ${interaction.user.toString()} tarafından **${catLabel}** olarak değiştirildi.`
+      }).catch(() => {});
+    }
+
+    return interaction.reply({
+      content: `✅ Destek talebi kategorisi başarıyla **${catLabel}** olarak güncellendi.`,
+      ephemeral: true
+    });
+  }
+
   // ── Destek Kategorisi Seçim Menüleri (EkoYıldız, TMT, Genel Destek) ──
   if (customId === "support_category" || customId === "tmt_support_category" || customId === "ekoyildiz_support_category") {
+    // ── MAKSİMUM 1 TİCKET KONTROLÜ ──
+    const { canUserOpenTicket, getActiveTicketWarningMessage } = require("../services/ticketLimiter");
+    const limitCheck = await canUserOpenTicket(interaction.user, interaction.guild);
+    if (!limitCheck.allowed) {
+      return interaction.reply({
+        content: getActiveTicketWarningMessage(limitCheck.channel),
+        ephemeral: true
+      });
+    }
+
     const category = interaction.values[0];
     const isTMT = customId === "tmt_support_category";
     const isEko = customId === "ekoyildiz_support_category";
