@@ -5,6 +5,7 @@ const {
   GUILD2_ID,
   GUILD2_VOICE_JOIN_ID,
   GUILD2_VOICE_CATEGORY_ID,
+  EKOYILDIZ_VIDEO_EKIBI_ROLE_ID,
 } = require("../../config");
 
 /** userId → channelId */
@@ -82,7 +83,7 @@ async function getManagedChannel(member, guild) {
 }
 
 function defaultOverwrites(guild, ownerId) {
-  return [
+  const overwrites = [
     { id: guild.id, deny: [PermissionFlagsBits.Connect] },
     {
       id: ownerId,
@@ -96,6 +97,21 @@ function defaultOverwrites(guild, ownerId) {
       ],
     },
   ];
+
+  if (guild.id === GUILD2_ID && EKOYILDIZ_VIDEO_EKIBI_ROLE_ID) {
+    overwrites.push({
+      id: EKOYILDIZ_VIDEO_EKIBI_ROLE_ID,
+      allow: [
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.Stream,
+        PermissionFlagsBits.UseVAD,
+      ],
+    });
+  }
+
+  return overwrites;
 }
 
 async function createPrivateChannel(guild, member) {

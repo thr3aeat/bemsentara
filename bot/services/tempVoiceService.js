@@ -36,31 +36,46 @@ async function createTempVoiceChannel(member, roomName, userLimit = 0) {
   const sanitizedLimit = Math.max(0, Math.min(99, userLimit));
   const finalRoomName = `[🔊] ${roomName ? roomName.trim() : `${member.displayName}'in Odası`}`;
 
-  try {
+    const { GUILD2_ID, EKOYILDIZ_VIDEO_EKIBI_ROLE_ID } = require('../../config');
+    const permissionOverwrites = [
+      {
+        id: guild.id, // @everyone
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+      },
+      {
+        id: member.id, // Room Creator
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.Connect,
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.ManageRoles,
+          PermissionFlagsBits.MoveMembers,
+          PermissionFlagsBits.MuteMembers,
+          PermissionFlagsBits.DeafenMembers,
+          PermissionFlagsBits.PrioritySpeaker
+        ],
+      }
+    ];
+
+    if (guild.id === GUILD2_ID && EKOYILDIZ_VIDEO_EKIBI_ROLE_ID) {
+      permissionOverwrites.push({
+        id: EKOYILDIZ_VIDEO_EKIBI_ROLE_ID,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.Connect,
+          PermissionFlagsBits.Speak,
+          PermissionFlagsBits.Stream,
+          PermissionFlagsBits.UseVAD,
+        ],
+      });
+    }
+
     const channel = await guild.channels.create({
       name: finalRoomName,
       type: ChannelType.GuildVoice,
       parent: parentId,
       userLimit: sanitizedLimit,
-      permissionOverwrites: [
-        {
-          id: guild.id, // @everyone
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
-        },
-        {
-          id: member.id, // Room Creator
-          allow: [
-            PermissionFlagsBits.ViewChannel,
-            PermissionFlagsBits.Connect,
-            PermissionFlagsBits.ManageChannels,
-            PermissionFlagsBits.ManageRoles,
-            PermissionFlagsBits.MoveMembers,
-            PermissionFlagsBits.MuteMembers,
-            PermissionFlagsBits.DeafenMembers,
-            PermissionFlagsBits.PrioritySpeaker
-          ],
-        }
-      ],
+      permissionOverwrites,
       reason: `Geçici Ses Odası: ${member.user?.tag || member.displayName} tarafından oluşturuldu.`,
     });
 
