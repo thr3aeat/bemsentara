@@ -991,7 +991,7 @@ class SocialHubService {
       const kickChatBox = document.getElementById('kickChatBox');
       if (kickChatBox) {
         const sampleMsgs = [
-          '<div class="kick-msg"><strong style="color:#53fc18;">Alp_33:</strong> Chat selamlar W stream</div>',
+          '<div class="kick-msg"><strong style="color:#53fc18;">ege33:</strong> Chat selamlar W stream</div>',
           '<div class="kick-msg"><strong style="color:#ec4899;">GamerGirl:</strong> Yayındayız koşun 🚀</div>',
           '<div class="kick-msg"><strong style="color:#38bdf8;">RobuxHunter:</strong> Çekiliş ne zaman başlıyor?</div>',
           '<div class="kick-msg"><strong style="color:#fbbf24;">EkoMod:</strong> Chat spam yapmayın link profilde!</div>'
