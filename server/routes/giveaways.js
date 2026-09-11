@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const giveawayService = require('../services/giveawayService');
 const sponsorAdService = require('../services/sponsorAdService');
+const socialHubService = require('../services/socialHubService');
 const { isSiteAdmin } = require('../../utils/adminCheck');
 const Store = require('../../models/Store');
 
@@ -266,6 +267,8 @@ router.get('/admin/giveaways', async (req, res) => {
     const participants = await Store.giveawayEntries.find({});
     const fraudFlags = await Store.giveawayFraudFlags.find({});
     const ads = await sponsorAdService.getAllAds();
+    const socialAds = socialHubService.getAllAds();
+    const socialAnalytics = socialHubService.getAnalytics();
     const auditLogs = await Store.giveawayAuditLogs.find({});
     auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -277,6 +280,8 @@ router.get('/admin/giveaways', async (req, res) => {
       participants,
       fraudFlags,
       ads,
+      socialAds,
+      socialAnalytics,
       auditLogs: auditLogs.slice(0, 30)
     });
     res.send(html);

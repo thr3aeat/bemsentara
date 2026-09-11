@@ -2,6 +2,7 @@
 
 const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
 const sponsorAdService = require("./services/sponsorAdService");
+const socialHubService = require("./services/socialHubService");
 
 // ─────────────────────────────────────────────
 // SHARED LAYOUT HELPER  (declared ONCE at top)
@@ -1105,7 +1106,7 @@ function renderMainPage(user = null) {
   </div>
 
   <div class="section-container" style="margin: 2rem auto;">
-    ${sponsorAdService.renderSponsorAdHtml()}
+    ${socialHubService.renderSocialHubHtml()}
   </div>
 
   <div class="section-container">

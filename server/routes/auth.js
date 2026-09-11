@@ -33,6 +33,7 @@ async function tryAutoSyncRoles(user) {
 
 const axios = require('axios');
 const discordLogger = require('../../bot/services/discordLogger');
+const logger = require('../../utils/logger');
 
 async function logWebLogin(user, req) {
   try {

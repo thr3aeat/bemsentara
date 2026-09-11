@@ -398,7 +398,12 @@ class GiveawayService {
     // Web sitesi ziyareti, hesap doğrulama veya Discord entegrasyonu anında VERIFIED sayılır;
     // Özel yorum veya dış linkler opsiyonel olarak doğrudan veya kontrole tabi tutulur.
     let status = 'VERIFIED';
-    if (task.actionType === 'comment' && !proof) {
+    if (['youtube', 'instagram', 'tiktok', 'kick', 'twitch'].includes(task.platform)) {
+      // Dış sosyal medya platformlarında doğrudan API doğrulaması olmadan kesin tamamlandı işaretlenmez
+      if (!proof) {
+        status = 'PENDING';
+      }
+    } else if (task.actionType === 'comment' && !proof) {
       status = 'PENDING';
     }
 

@@ -1,6 +1,16 @@
 // server/views/giveaways/giveawayAdminPage.js
 // Advanced administrative interface for Giveaways, Anti-Cheat, Participants, and Sponsor Ads
-function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], auditLogs = [] }) {
+function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], socialAds = [], socialAnalytics = {}, auditLogs = [] }) {
+  const pb = socialAnalytics.platformBreakdown || {};
+  let topPlatform = 'YouTube Ana Kanal';
+  let maxComp = -1;
+  Object.keys(pb).forEach(k => {
+    if ((pb[k].completed || 0) > maxComp) {
+      maxComp = pb[k].completed;
+      topPlatform = pb[k].accountName || pb[k].platform;
+    }
+  });
+
   return `
 <!DOCTYPE html>
 <html lang="tr">
@@ -29,48 +39,53 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      min-height: 100vh;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
+      min-height: 100vh;
     }
     /* Sidebar */
     .admin-sidebar {
-      width: 260px;
-      background: #0d121f;
+      width: 280px;
+      background: #0f172a;
       border-right: 1px solid var(--border);
-      padding: 1.5rem;
+      padding: 2rem 1.25rem;
       display: flex;
       flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
       flex-shrink: 0;
     }
     .admin-main {
       flex: 1;
+      padding: 2.5rem;
       overflow-y: auto;
-      padding: 2rem;
-      max-width: calc(100vw - 260px);
+      max-width: 1400px;
     }
     @media (max-width: 900px) {
       body { flex-direction: column; }
-      .admin-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .admin-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); height: auto; position: static; }
       .admin-main { max-width: 100%; padding: 1.25rem; }
     }
     .nav-item {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 1rem;
+      padding: 0.85rem 1rem;
       border-radius: 0.75rem;
       color: var(--text-muted);
       text-decoration: none;
-      font-weight: 700;
-      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      transition: all 0.2s ease;
       cursor: pointer;
-      transition: all 0.2s;
-      margin-bottom: 0.25rem;
       background: none;
       border: none;
       width: 100%;
       text-align: left;
+      font-family: inherit;
+      font-size: 0.95rem;
     }
     .nav-item:hover, .nav-item.active {
       background: rgba(168, 85, 247, 0.15);
@@ -78,33 +93,34 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     }
     .nav-item.active {
       color: var(--primary);
-      border-left: 3px solid var(--primary);
+      border-left: 4px solid var(--primary);
     }
     .stat-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 1rem;
-      padding: 1.25rem;
+      padding: 1.5rem;
     }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      padding: 0.6rem 1.25rem;
+      padding: 0.65rem 1.25rem;
       border-radius: 0.5rem;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
       border: none;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       text-decoration: none;
+      font-family: inherit;
     }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); }
-    .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--border); }
-    .btn-secondary:hover { background: rgba(255,255,255,0.15); }
-    .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-secondary { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--border); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
     .btn-danger:hover { background: var(--danger); color: #fff; }
     .btn-success { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
     .btn-success:hover { background: var(--success); color: #fff; }
@@ -113,38 +129,43 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 1rem;
-      overflow-x: auto;
-      margin-top: 1rem;
+      overflow: hidden;
+      margin-top: 1.5rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.9rem;
       text-align: left;
     }
     th {
       background: rgba(15, 23, 42, 0.8);
       color: var(--text-muted);
-      padding: 0.85rem 1rem;
+      padding: 1rem 1.25rem;
       font-weight: 700;
       border-bottom: 1px solid var(--border);
       text-transform: uppercase;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
     }
     td {
-      padding: 0.85rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.9rem;
       vertical-align: middle;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
     }
     .input-field {
       width: 100%;
-      background: #0f172a;
+      background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border);
       color: #fff;
-      padding: 0.65rem 0.85rem;
+      padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       font-size: 0.9rem;
       font-family: inherit;
+      margin-top: 0.4rem;
     }
     .input-field:focus {
       outline: none;
@@ -158,10 +179,16 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 0.35rem;
     }
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -196,6 +223,9 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       </button>
       <button class="nav-item" onclick="switchTab('ads', this)">
         <span>📢</span> Sponsor & Reklamlar (${ads.length})
+      </button>
+      <button class="nav-item" onclick="switchTab('social-ads', this)">
+        <span>🌟</span> Sosyal Medya Kampanyaları (${socialAds.length})
       </button>
       <button class="nav-item" onclick="switchTab('audit', this)">
         <span>📜</span> Audit Denetim Logları
@@ -603,6 +633,133 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       </div>
     </div>
 
+    <!-- TAB: SOCIAL ADS & INTERACTIVE CAMPAIGNS -->
+    <div id="tab-social-ads" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800;">🌟 Eko Yıldız Sosyal Medya Kampanyaları & Social Ads Hub</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">7 Resmi hesabın interaktif micro-ad deneyimlerini, anlık etkileşim metriklerini ve sezonluk kampanya modlarını yönetin.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <a href="/#social-hub" target="_blank" class="btn btn-secondary">
+            👁️ Sitede Önizle
+          </a>
+        </div>
+      </div>
+
+      <!-- Social Ads Metrics Row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Görüntülenme</div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: #fff; margin: 0.35rem 0;">${socialAnalytics.totalViews || 0}</div>
+          <div style="font-size: 0.75rem; color: var(--accent);">Tüm kartların toplam impression'ı</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Başlatılan Etkileşim</div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: #38bdf8; margin: 0.35rem 0;">
+            ${socialAds.reduce((s, a) => s + (Number(a.interactionsStarted) || 0), 0)}
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Oyuna / deneyime katılım</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tamamlanan Deneyim</div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: #22c55e; margin: 0.35rem 0;">${socialAnalytics.totalCompleted || 0}</div>
+          <div style="font-size: 0.75rem; color: #22c55e;">Başarıyla sonlandırılanlar</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Sosyal Medyaya Tıklama</div>
+          <div style="font-size: 1.6rem; font-weight: 900; color: #a855f7; margin: 0.35rem 0;">${socialAnalytics.totalClicks || 0}</div>
+          <div style="font-size: 0.75rem; color: #a855f7;">Resmi hesaba gidenler</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">En Popüler Platform</div>
+          <div style="font-size: 1.3rem; font-weight: 900; color: #fef08a; margin: 0.35rem 0;">${topPlatform}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">En yüksek tamamlanma sayısı</div>
+        </div>
+      </div>
+
+      <!-- Social Ads Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Platform & Hesap</th>
+              <th>İnteraktif Deneyim</th>
+              <th>Sezonluk Kampanya</th>
+              <th>Görüntülenme / Başlatma / Tamamlama</th>
+              <th>Tıklama / CTR</th>
+              <th>Öne Çıkarılmış</th>
+              <th>Durum</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${socialAds.map(s => {
+              const ctr = s.views ? ((s.clicks / s.views) * 100).toFixed(1) : 0;
+              const comp = s.interactionsStarted ? ((s.interactionsCompleted / s.interactionsStarted) * 100).toFixed(1) : 0;
+              return `
+                <tr>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span style="font-size: 1.25rem;">
+                        ${s.platform === 'youtube' ? '▶' : (s.platform === 'instagram' ? '📸' : (s.platform === 'tiktok' ? '🎵' : (s.platform === 'kick' ? '🟢' : '💜')))}
+                      </span>
+                      <div>
+                        <strong style="color: #fff;">${s.accountName || s.title}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${s.badgeText || s.platform}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 0.2rem 0.5rem; border-radius: 4px;">
+                      ${s.interactionType || 'standard'}
+                    </span>
+                  </td>
+                  <td>
+                    ${s.seasonalTag ? `
+                      <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(234, 179, 8, 0.2); color: #fef08a;">
+                        ${s.seasonalTag}
+                      </span>
+                    ` : '<span style="color: var(--text-muted); font-size: 0.8rem;">Standart</span>'}
+                  </td>
+                  <td>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">
+                      ${s.views || 0} / <span style="color:#38bdf8;">${s.interactionsStarted || 0}</span> / <span style="color:#22c55e;">${s.interactionsCompleted || 0}</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">Tamamlama: %${comp}</div>
+                  </td>
+                  <td>
+                    <div style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">
+                      ${s.clicks || 0} tık
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">CTR: %${ctr}</div>
+                  </td>
+                  <td>
+                    ${s.isFeatured ? '<span style="color:#fbbf24; font-weight:800;">⭐ EVET</span>' : '<span style="color:var(--text-muted);">Hayır</span>'}
+                  </td>
+                  <td>
+                    <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${s.isActive !== false ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
+                      ${s.isActive !== false ? 'AKTİF' : 'PASİF'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 0.35rem; align-items: center;">
+                      <button onclick="toggleSocialAd('${s.key}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                        ${s.isActive !== false ? 'Pasife Al' : 'Aktif Et'}
+                      </button>
+                      <button onclick='openEditSocialAdModal(${JSON.stringify(s).replace(/'/g, "&#39;")})' class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                        ✏️ Düzenle
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- TAB 7: AUDIT LOGS -->
     <div id="tab-audit" class="tab-content">
       <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">📜 Platform Denetim (Audit) Logları</h2>
@@ -833,17 +990,134 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       }
     }
 
-    async function deleteAd(adId) {
-      if (!confirm('Bu sponsor reklamını silmek istediğinize emin misiniz?')) return;
+    async function toggleSocialAd(key) {
       try {
-        const res = await fetch('/api/admin/ads/' + adId, { method: 'DELETE' });
+        const res = await fetch('/api/admin/social-ads/' + key + '/toggle', { method: 'POST' });
         const result = await res.json();
         if (result.success) window.location.reload();
+        else alert('Hata: ' + (result.message || 'İşlem başarısız'));
       } catch (err) {
         alert('Hata: ' + err.message);
       }
     }
+
+    function openEditSocialAdModal(ad) {
+      document.getElementById('editAdKey').value = ad.key || '';
+      document.getElementById('editAdTitle').value = ad.title || '';
+      document.getElementById('editAdSubtitle').value = ad.subtitle || '';
+      document.getElementById('editAdCta').value = ad.ctaText || '';
+      document.getElementById('editAdQuote').value = ad.wittyQuote || '';
+      document.getElementById('editAdUrl').value = ad.targetUrl || '';
+      document.getElementById('editAdBadge').value = ad.badgeText || '';
+      document.getElementById('editAdSeasonal').value = ad.seasonalTag || '';
+      document.getElementById('editAdOrder').value = ad.order || 1;
+      document.getElementById('editAdFeatured').checked = Boolean(ad.isFeatured);
+      document.getElementById('editSocialAdModal').style.display = 'flex';
+    }
+
+    async function handleUpdateSocialAd(e) {
+      e.preventDefault();
+      const form = e.target;
+      const key = document.getElementById('editAdKey').value;
+      const data = {
+        title: document.getElementById('editAdTitle').value,
+        subtitle: document.getElementById('editAdSubtitle').value,
+        ctaText: document.getElementById('editAdCta').value,
+        wittyQuote: document.getElementById('editAdQuote').value,
+        targetUrl: document.getElementById('editAdUrl').value,
+        badgeText: document.getElementById('editAdBadge').value,
+        seasonalTag: document.getElementById('editAdSeasonal').value,
+        order: parseInt(document.getElementById('editAdOrder').value, 10) || 1,
+        isFeatured: document.getElementById('editAdFeatured').checked
+      };
+
+      try {
+        const res = await fetch('/api/admin/social-ads/' + key + '/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('✅ Sosyal Reklam başarıyla güncellendi!');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (result.message || 'Güncellenemedi'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
   </script>
+
+  <!-- EDIT SOCIAL AD MODAL -->
+  <div id="editSocialAdModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div class="stat-card" style="width: 100%; max-width: 600px; padding: 2rem; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 900;">✏️ Sosyal Kampanya Kartını Düzenle</h2>
+        <button onclick="document.getElementById('editSocialAdModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">✕</button>
+      </div>
+      <form onsubmit="handleUpdateSocialAd(event)">
+        <input type="hidden" id="editAdKey">
+        <div class="form-group">
+          <label class="form-label">Başlık *</label>
+          <input type="text" id="editAdTitle" class="input-field" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Açıklama / Alt Başlık</label>
+          <input type="text" id="editAdSubtitle" class="input-field">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">CTA Buton Yazısı</label>
+            <input type="text" id="editAdCta" class="input-field" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rozet / Badge Metni</label>
+            <input type="text" id="editAdBadge" class="input-field">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mizahi Metin / İpucu</label>
+          <input type="text" id="editAdQuote" class="input-field">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hedef URL *</label>
+          <input type="url" id="editAdUrl" class="input-field" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Sezonluk Kampanya Modu</label>
+            <select id="editAdSeasonal" class="input-field">
+              <option value="">Standart (Normal)</option>
+              <option value="🔥 Yeni Video Düştü">🔥 Yeni Video Düştü</option>
+              <option value="🟢 Bu Akşam Canlı Yayın">🟢 Bu Akşam Canlı Yayın</option>
+              <option value="🎁 Çekiliş Görevi Aktif">🎁 Çekiliş Görevi Aktif</option>
+              <option value="✨ Özel Gün Kampanyası">✨ Özel Gün Kampanyası</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sıralama (Order)</label>
+            <input type="number" id="editAdOrder" class="input-field" min="1" max="50">
+          </div>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+          <input type="checkbox" id="editAdFeatured" style="width: 18px; height: 18px;">
+          <label for="editAdFeatured" style="font-size: 0.9rem; font-weight: 700; color: #fff; cursor: pointer;">
+            ⭐ Bu kartı öne çıkar (Featured / Highlight)
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" onclick="document.getElementById('editSocialAdModal').style.display='none'" class="btn btn-secondary">
+            İptal
+          </button>
+          <button type="submit" class="btn btn-primary">
+            💾 Değişiklikleri Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>
   `;

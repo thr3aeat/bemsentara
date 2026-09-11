@@ -165,6 +165,8 @@ const giveawayWinners = collections.giveawayWinners;
 const giveawayAuditLogs = collections.giveawayAuditLogs;
 const giveawayFraudFlags = collections.giveawayFraudFlags;
 const giveawayNotifications = collections.giveawayNotifications;
+const socialAds       = collections.socialAds;
+const socialAdMetrics = collections.socialAdMetrics;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -180,7 +182,7 @@ const ALL_COLLECTION_NAMES = [
   "modPerformances", "marketAuctions", "userTrustScores",
   "sponsorAds", "giveaways", "giveawayTasks", "giveawayEntries",
   "giveawayEntryTasks", "giveawayWinners", "giveawayAuditLogs",
-  "giveawayFraudFlags", "giveawayNotifications"
+  "giveawayFraudFlags", "giveawayNotifications", "socialAds", "socialAdMetrics"
 ];
 
 /**
@@ -317,6 +319,8 @@ module.exports = {
   giveawayAuditLogs,
   giveawayFraudFlags,
   giveawayNotifications,
+  socialAds,
+  socialAdMetrics,
   wikis,
   InMemoryCollection,
   initStore,
