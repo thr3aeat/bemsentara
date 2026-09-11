@@ -32,7 +32,7 @@ const { chatWithAI } = require('./aiService');
 // Config
 const INVESTIGATION_GUILD_ID = process.env.INVESTIGATION_GUILD_ID || '1504142287133737051';
 const INVESTIGATION_INVITE_LINK = process.env.INVESTIGATION_INVITE_LINK || 'https://discord.gg/mXd42hdns9';
-const EKONQTX_USER_ID = process.env.EKONQTX_USER_ID || '';
+const ekoyildiz__USER_ID = process.env.ekoyildiz__USER_ID || '';
 const EKONQT_USER_ID = process.env.EKONQT_USER_ID || '';
 
 const VERY_TOKEN = process.env.DISCORDTOKENVERY || '';
@@ -109,13 +109,13 @@ async function initVeryBot(mainClient) {
     const { customId, user } = interaction;
 
     if (customId === `ban_invest_yes_${user.id}`) {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       await handleUserYes(user.id, mainClient);
     } else if (customId === `ban_invest_no_${user.id}`) {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       await handleUserNo(user.id);
     } else if (customId === `ban_invest_joined_${user.id}`) {
-      await interaction.deferUpdate().catch(() => {});
+      await interaction.deferUpdate().catch(() => { });
       await handleUserJoined(user.id, mainClient);
     }
   });
@@ -145,7 +145,7 @@ async function handleVeryBotMessage(message, session, mainClient) {
 
   try {
     const dmChannel = message.channel;
-    await dmChannel.sendTyping().catch(() => {});
+    await dmChannel.sendTyping().catch(() => { });
 
     const aiReply = await chatWithAI(
       session.messages,
@@ -161,7 +161,7 @@ async function handleVeryBotMessage(message, session, mainClient) {
     const cleanReply = aiReply.replace(/KULLANICI_EVET|KULLANICI_HAYIR/g, '').trim();
 
     if (isYes) {
-      await dmChannel.send({ content: cleanReply }).catch(() => {});
+      await dmChannel.send({ content: cleanReply }).catch(() => { });
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -177,16 +177,16 @@ async function handleVeryBotMessage(message, session, mainClient) {
       await dmChannel.send({
         content: 'Kararini asagidaki butonlarla belirt:',
         components: [row],
-      }).catch(() => {});
+      }).catch(() => { });
     } else if (isNo) {
-      await dmChannel.send({ content: cleanReply }).catch(() => {});
+      await dmChannel.send({ content: cleanReply }).catch(() => { });
       session.closed = true;
     } else {
-      await dmChannel.send({ content: cleanReply }).catch(() => {});
+      await dmChannel.send({ content: cleanReply }).catch(() => { });
     }
   } catch (err) {
     console.error('[banInvestigationAI] AI yanit hatasi:', err.message);
-    await message.channel.send('Bir sorun oldu, lutfen biraz bekleyip tekrar yaz.').catch(() => {});
+    await message.channel.send('Bir sorun oldu, lutfen biraz bekleyip tekrar yaz.').catch(() => { });
   }
 }
 
@@ -225,7 +225,7 @@ async function handleUserYes(userId, mainClient) {
       .setStyle(ButtonStyle.Success),
   );
 
-  await dmChannel.send({ embeds: [inviteEmbed], components: [row] }).catch(() => {});
+  await dmChannel.send({ embeds: [inviteEmbed], components: [row] }).catch(() => { });
 }
 
 async function handleUserNo(userId) {
@@ -240,7 +240,7 @@ async function handleUserNo(userId) {
 
   await dmChannel.send(
     'Anladim. Fikrin degisirse, toplulugumuzun resmi destek kanallarindan bize ulasabilirsin. Iyi gunler.'
-  ).catch(() => {});
+  ).catch(() => { });
 }
 
 async function handleUserJoined(userId, mainClient) {
@@ -265,7 +265,7 @@ async function handleUserJoined(userId, mainClient) {
     if (dmChannel) {
       await dmChannel.send(
         `Henuz sunucuya katilmadiginizi goruyorum. Lutfen once su linke girin:\n${INVESTIGATION_INVITE_LINK}`
-      ).catch(() => {});
+      ).catch(() => { });
     }
   }
 }
@@ -284,9 +284,9 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
       r.name.toLowerCase().includes('defendant')
     );
     if (sanikRole) {
-      await member.roles.add(sanikRole, `Ban Sorusturmasi ${caseCode}`).catch(() => {});
+      await member.roles.add(sanikRole, `Ban Sorusturmasi ${caseCode}`).catch(() => { });
     }
-  } catch (_) {}
+  } catch (_) { }
 
   let investigationChannel = guild.channels.cache.find(
     c => c.name && (c.name.includes('sorusturmaniz') || c.name.includes('sorusturma') || c.name.includes('sorustumaniz'))
@@ -321,16 +321,16 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
       .setFooter({ text: 'Eko Yildiz Adalet Sistemi' })
       .setTimestamp();
 
-    await investigationChannel.send({ content: `<@${userId}>`, embeds: [caseEmbed] }).catch(() => {});
+    await investigationChannel.send({ content: `<@${userId}>`, embeds: [caseEmbed] }).catch(() => { });
 
-    // Ekonqtx'e kanal icinden bildir
-    if (EKONQTX_USER_ID) {
-      await investigationChannel.permissionOverwrites.edit(EKONQTX_USER_ID, {
+    // ekoyildiz_'e kanal icinden bildir
+    if (ekoyildiz__USER_ID) {
+      await investigationChannel.permissionOverwrites.edit(ekoyildiz__USER_ID, {
         ViewChannel: true,
         SendMessages: true,
         ReadMessageHistory: true,
-      }).catch(() => {});
-      await investigationChannel.send(`<@${EKONQTX_USER_ID}> Avukat olarak atandiniz. Lutfen sanigi savunun.`).catch(() => {});
+      }).catch(() => { });
+      await investigationChannel.send(`<@${ekoyildiz__USER_ID}> Avukat olarak atandiniz. Lutfen sanigi savunun.`).catch(() => { });
     }
   }
 
@@ -342,14 +342,14 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
           `Banladiginiz kullanici <@${userId}> sorusturma talebinde bulundu.\n` +
           `Dava Kodu: \`${caseCode}\`\n` +
           `Sorusturma Sunucusu: ${INVESTIGATION_INVITE_LINK}`
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
-    if (EKONQTX_USER_ID) {
-      const avukat = await mainClient.users.fetch(EKONQTX_USER_ID).catch(() => null);
+    if (ekoyildiz__USER_ID) {
+      const avukat = await mainClient.users.fetch(ekoyildiz__USER_ID).catch(() => null);
       if (avukat) {
         await avukat.send(
           `Yeni bir sorusturma davasi acildi ve avukat olarak atandiniz.\n` +
@@ -358,10 +358,10 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
           `Ban Sebebi: ${banInfo.reason || 'Belirtilmedi'}\n` +
           `Sorusturma Sunucusu: ${INVESTIGATION_INVITE_LINK}\n\n` +
           `Lutfen sunucuya katilarak sorusturmayi yonetin.`
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     if (EKONQT_USER_ID) {
@@ -372,10 +372,10 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
           `Sanik: <@${userId}>\n` +
           `Sebep: ${banInfo.reason || 'Belirtilmedi'}\n` +
           `Sunucu: ${INVESTIGATION_INVITE_LINK}`
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const veryUser = await veryBot?.users.fetch(userId).catch(() => null);
@@ -386,10 +386,10 @@ async function onInvestigationGuildJoin(member, session, mainClient) {
           `Sunucuya katildiginiz goruldu. Sorusturmaniz baslatildi.\n` +
           `Dava Kodunuz: \`${caseCode}\`\n\n` +
           `Sorusturma kanalinda avukat ve savci sizi bekliyor. Iyi sanslar.`
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   console.log(`[banInvestigationAI] Sorusturma baslatildi: ${caseCode} | Kullanici: ${userId}`);
 }
@@ -444,10 +444,10 @@ async function sendBanInvestigationDM(bannedUserId, banInfo, mainClient) {
     }
 
     await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-    await dmChannel.sendTyping().catch(() => {});
+    await dmChannel.sendTyping().catch(() => { });
     await new Promise(r => setTimeout(r, 1500 + Math.random() * 2000));
 
-    await dmChannel.send(firstMessage).catch(() => {});
+    await dmChannel.send(firstMessage).catch(() => { });
     console.log(`[banInvestigationAI] Aras DM gonderildi -> ${user.tag} (${bannedUserId})`);
 
   } catch (err) {

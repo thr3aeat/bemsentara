@@ -3,13 +3,13 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require("discord.js");
 const { chatWithAI } = require("./aiService");
 
-const EKONQTX_ID = "1031620522406072350";
+const ekoyildiz__ID = "1031620522406072350";
 
 // Active wizard sessions: `${userId}` → { errorDescription, context, aiAnalysis, ... }
 const activeWizardSessions = new Map();
 
 const ERROR_WIZARD_SYSTEM_PROMPT = `Sen Sentara botunun "Hata Sihirbazı" yapay zeka asistanısın.
-Görevin: Personellerin bildirdiği hataları analiz etmek ve geliştiriciye (ekonqtx) detaylı, düzenli bir rapor sunmak.
+Görevin: Personellerin bildirdiği hataları analiz etmek ve geliştiriciye (ekoyildiz_) detaylı, düzenli bir rapor sunmak.
 
 Kurallar:
 - Türkçe yaz, profesyonel ve teknik ol.
@@ -120,9 +120,9 @@ Lütfen bu hatayı analiz et ve rapor formatında sun.`;
     }
   }
 
-  // 3. Send DM to ekonqtx
+  // 3. Send DM to ekoyildiz_
   try {
-    const devUser = await interaction.client.users.fetch(EKONQTX_ID).catch(() => null);
+    const devUser = await interaction.client.users.fetch(ekoyildiz__ID).catch(() => null);
     if (devUser) {
       const dmEmbed = new EmbedBuilder()
         .setTitle("🧙 HATA SİHİRBAZI — Yeni Rapor")
@@ -159,7 +159,7 @@ Lütfen bu hatayı analiz et ve rapor formatında sun.`;
       );
 
       await devUser.send({ embeds: [dmEmbed], components: [dmRow] });
-      console.log(`[ErrorWizard] ✅ Hata raporu ekonqtx'e gönderildi: ${sessionId}`);
+      console.log(`[ErrorWizard] ✅ Hata raporu ekoyildiz_'e gönderildi: ${sessionId}`);
     }
   } catch (err) {
     console.error("[ErrorWizard] DM gönderme hatası:", err.message);
@@ -217,8 +217,8 @@ async function handleWizardButton(interaction) {
               .setDescription(`✅ Hata raporunuz (\`${sessionId}\`) geliştirici tarafından **onaylandı** ve incelemeye alındı!`)
               .setTimestamp()
           ]
-        }).catch(() => {});
-      } catch (_) {}
+        }).catch(() => { });
+      } catch (_) { }
     }
     return;
   }
@@ -254,8 +254,8 @@ async function handleWizardButton(interaction) {
               .setDescription(`✅ Hata raporunuz (\`${sessionId}\`) geliştirici tarafından **çözüldü** olarak işaretlendi!\n\nTeşekkür ederiz.`)
               .setTimestamp()
           ]
-        }).catch(() => {});
-      } catch (_) {}
+        }).catch(() => { });
+      } catch (_) { }
     }
     return;
   }
@@ -287,7 +287,7 @@ async function handleWizardButton(interaction) {
   if (customId.startsWith("wizard_ai_detail_")) {
     const sessionId = customId.replace("wizard_ai_detail_", "");
     const session = activeWizardSessions.get(sessionId);
-    
+
     if (!session) {
       return interaction.reply({ content: "❌ Bu rapor bulunamadı.", ephemeral: true });
     }
@@ -333,7 +333,7 @@ Detaylı ve teknik yaz, maksimum 800 karakter.`;
 async function handleWizardReplyModal(interaction) {
   const sessionId = interaction.customId.replace("wizard_reply_modal_", "");
   const session = activeWizardSessions.get(sessionId);
-  
+
   if (!session) {
     return interaction.reply({ content: "❌ Rapor bulunamadı.", ephemeral: true });
   }

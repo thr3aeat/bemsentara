@@ -790,7 +790,7 @@ function buildCustomBuilderComponents(selectedModuleIds = [], ticketId = 'genera
   const fakeRegularTl = Math.round(totalTl * 2.2);
   const fakeRegularRobux = Math.round(totalRobux * 1.9);
 
-  let desc = 
+  let desc =
     `🛠️ **REKLAM VE SPONSORLUK ÖZELLİK SEÇİM SİHİRBAZI**\n` +
     `Paketinizde yer almasını istediğiniz özellikleri aşağıdaki menüden seçerek **kendi bütçenize ve hedefinize özel reklam paketinizi** oluşturabilirsiniz!\n\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -804,7 +804,7 @@ function buildCustomBuilderComponents(selectedModuleIds = [], ticketId = 'genera
     }
   }
 
-  desc += 
+  desc +=
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `💰 **CANLI HESAPLANAN ÖZEL PAKET TUTARINIZ:**\n` +
     `> 🎯 **1x Tek Seferlik:** ~~${fakeRegularTl} TL~~ ➔ **${totalTl} TL** *(%55 Özel Paket İndirimi)* 🟢\n` +
@@ -861,7 +861,7 @@ function buildCustomBuilderComponents(selectedModuleIds = [], ticketId = 'genera
  * Tüm paketlerin karşılaştırmalı özet tablosunu oluşturur.
  */
 function buildAllPackagesSummaryEmbed() {
-  let desc = 
+  let desc =
     `🌟 **Eko Yıldız Sponsorluk ve Reklam Paketleri Özeti**\n` +
     `*Bütçenize ve hedefinize en uygun paketi seçerek doğrudan binlerce oyuncuya ulaşabilirsiniz.*\n\n` +
     `🔥 **GÜNCEL KAMPANYA:** Aşağıdaki tüm paketlerimizde **%50 ile %60 arasında indirim** uygulanmıştır!\n\n`;
@@ -874,7 +874,7 @@ function buildAllPackagesSummaryEmbed() {
     desc += `> 🔴 **Kalan Slot:** ${p.remainingSlots}/${p.maxSlots} • 📊 Erişim: **${p.reach}**\n\n`;
   }
 
-  desc += 
+  desc +=
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `🛡️ **ÖDEME GÜVENCESİ:** Tüm siparişlerin ödemesi **SADECE İTEMSATIŞ** üzerinden güvenle alınmaktadır.\n` +
     `⚠️ **Komisyon Uyarısı:** Robux ödemelerinde Roblox kesintisi ve transfer komisyonu alıcıya ait olduğundan Robux fiyatı normal TL'ye göre belirgin şekilde yüksektir. TL ile ödeme tavsiye edilir.`;
@@ -1218,7 +1218,7 @@ function buildPaymentInfoEmbed() {
  * Reklam Başvuru ve Satın Alma Modalı
  * İtemSatış hesabı durumu, TL/Robux seçimi, topluluk linki ve özel notları toplar.
  */
-const EKONQTX_ID = '1031620522406072350';
+const ekoyildiz__ID = '1031620522406072350';
 
 /**
  * Trigger modal for Reklam request
@@ -1276,10 +1276,10 @@ async function handleReklamModalSubmit(interaction) {
   let reklamDetay = "Genel Reklam Talebi";
   let orderNotes = "Özel not eklenmedi";
 
-  try { communityName = interaction.fields.getTextInputValue("reklam_topluluk_adi")?.trim() || "Topluluk"; } catch (_) {}
-  try { targetLink = interaction.fields.getTextInputValue("reklam_hedef_link")?.trim() || "Belirtilmedi"; } catch (_) {}
-  try { reklamDetay = interaction.fields.getTextInputValue("reklam_detay")?.trim() || interaction.fields.getTextInputValue("reklam_odeme_birimi")?.trim() || "Genel Reklam"; } catch (_) {}
-  try { orderNotes = interaction.fields.getTextInputValue("reklam_siparis_notu")?.trim() || "Özel not eklenmedi"; } catch (_) {}
+  try { communityName = interaction.fields.getTextInputValue("reklam_topluluk_adi")?.trim() || "Topluluk"; } catch (_) { }
+  try { targetLink = interaction.fields.getTextInputValue("reklam_hedef_link")?.trim() || "Belirtilmedi"; } catch (_) { }
+  try { reklamDetay = interaction.fields.getTextInputValue("reklam_detay")?.trim() || interaction.fields.getTextInputValue("reklam_odeme_birimi")?.trim() || "Genel Reklam"; } catch (_) { }
+  try { orderNotes = interaction.fields.getTextInputValue("reklam_siparis_notu")?.trim() || "Özel not eklenmedi"; } catch (_) { }
 
   // Check if user is ticket-banned
   const User = require('../../models/User');
@@ -1291,7 +1291,7 @@ async function handleReklamModalSubmit(interaction) {
     });
   }
 
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  await interaction.deferReply({ ephemeral: true }).catch(() => { });
 
   const ticketId = generateTicketId();
 
@@ -1335,7 +1335,7 @@ async function handleReklamModalSubmit(interaction) {
       ],
     },
     {
-      id: EKONQTX_ID,
+      id: ekoyildiz__ID,
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -1395,7 +1395,7 @@ async function handleReklamModalSubmit(interaction) {
     userName: interaction.user.username,
     category: 'reklam_destek',
     subject: `Reklam Talebi (${communityName})`,
-    description: 
+    description:
       `🏢 **Topluluk/Marka:** ${communityName}\n` +
       `🔗 **Tanıtım Linki:** ${targetLink}\n` +
       `📝 **Talep Türü / Detay:** ${reklamDetay}\n` +
@@ -1479,11 +1479,11 @@ async function handleReklamModalSubmit(interaction) {
   });
 
   // Start claim routing if configured
-  startTicketClaimRouting(ticket, targetGuild, interaction.client).catch(() => {});
+  startTicketClaimRouting(ticket, targetGuild, interaction.client).catch(() => { });
 
   await interaction.editReply({
     content: `✅ **Reklam talebiniz başarıyla alındı!**\n👉 Reklam masanız ve fiyat bilgilendirmeniz hazırlandı: <#${channel.id}>`
-  }).catch(() => {});
+  }).catch(() => { });
 }
 
 /**
@@ -1534,7 +1534,7 @@ async function handleReklamDiscountRequest(interaction, ticketId) {
 }
 
 /**
- * Handles price approval (normal or discounted) and tags ekonqtx
+ * Handles price approval (normal or discounted) and tags ekoyildiz_
  */
 async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = false) {
   const ticket = await Ticket.findOne({ ticketId });
@@ -1548,7 +1548,7 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
   await ticket.save();
 
   const approvedEmbed = new EmbedBuilder()
-    .setTitle('🎉 REKLAM FİYATI ONAYLANDI — EKONQTX BİLGİLENDİRİLDİ!')
+    .setTitle('🎉 REKLAM FİYATI ONAYLANDI — ekoyildiz_ BİLGİLENDİRİLDİ!')
     .setDescription(
       `👑 **Müşteri:** <@${ticket.userId}> (\`${ticket.userName}\`)\n` +
       `📋 **Talep Konusu:** ${ticket.subject}\n` +
@@ -1556,7 +1556,7 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
       `💳 **Ödeme Yolu:** SADECE İTEMSATIŞ\n` +
       `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `⚡ <@${EKONQTX_ID}> (**ekonqtx**) ve reklam departmanı yetkilileri etiketlendi!\n` +
+      `⚡ <@${ekoyildiz__ID}> (**ekoyildiz_**) ve reklam departmanı yetkilileri etiketlendi!\n` +
       `• En kısa sürede İtemSatış ödeme linki ve sipariş detayları bu kanala iletilecektir.\n` +
       `• Müşterimizle buradan doğrudan görüşmeye devam edebilirsiniz.`
     )
@@ -1581,14 +1581,14 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
   );
 
   await interaction.reply({
-    content: `🔔 <@${EKONQTX_ID}> **DİKKAT: Müşteri reklam fiyatını ONAYLADI!**`,
+    content: `🔔 <@${ekoyildiz__ID}> **DİKKAT: Müşteri reklam fiyatını ONAYLADI!**`,
     embeds: [approvedEmbed],
     components: [approvalRow]
   });
 
-  // Send direct DM to ekonqtx
+  // Send direct DM to ekoyildiz_
   try {
-    const devUser = await interaction.client.users.fetch(EKONQTX_ID).catch(() => null);
+    const devUser = await interaction.client.users.fetch(ekoyildiz__ID).catch(() => null);
     if (devUser) {
       const dmNotice = new EmbedBuilder()
         .setTitle('🔔 Yeni Reklam Fiyat Onayı Alındı!')
@@ -1608,9 +1608,9 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
           .setURL(`https://discord.com/channels/${ticket.guildId || GUILD2_ID}/${ticket.channelId}`)
       );
 
-      await devUser.send({ embeds: [dmNotice], components: [dmRow] }).catch(() => {});
+      await devUser.send({ embeds: [dmNotice], components: [dmRow] }).catch(() => { });
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /**
@@ -2122,15 +2122,15 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
   const userPermissionOverwrite = isDmMode
     ? { id: interaction.user.id, deny: [PermissionFlagsBits.ViewChannel] }
     : {
-        id: interaction.user.id,
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages,
-          PermissionFlagsBits.ReadMessageHistory,
-          PermissionFlagsBits.AttachFiles,
-          PermissionFlagsBits.EmbedLinks,
-        ],
-      };
+      id: interaction.user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks,
+      ],
+    };
 
   const permissionOverwrites = [
     { id: targetGuild.id, deny: [PermissionFlagsBits.ViewChannel] },
@@ -2212,7 +2212,7 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
         embeds: [step1Data.embed],
         components: step1Data.components
       });
-    } catch (_) {}
+    } catch (_) { }
 
   } else {
     // 2. Durum: Sunucu Üzerinden İletişim
@@ -2236,8 +2236,8 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
           const checkTicket = await Ticket.findOne({ ticketId });
           if (!checkTicket || checkTicket.status !== 'open') return;
           const step2Data = buildReklamWizardStep(2, ticketId);
-          await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => {});
-        } catch (_) {}
+          await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => { });
+        } catch (_) { }
       }, 5000);
     }
   }
@@ -2438,7 +2438,7 @@ async function forwardDMToReklamChannel(message, client, ticket) {
   if (!channel) return;
 
   if (ticket.paused) {
-    await message.author.send("⏸️ **Reklam talebiniz şu anda duraklatılmış durumdadır.** İletişim geçici olarak askıya alınmıştır.").catch(() => {});
+    await message.author.send("⏸️ **Reklam talebiniz şu anda duraklatılmış durumdadır.** İletişim geçici olarak askıya alınmıştır.").catch(() => { });
     return;
   }
 
@@ -2451,7 +2451,7 @@ async function forwardDMToReklamChannel(message, client, ticket) {
       .setTitle("🔌 Bağlantı Kuruldu")
       .setDescription("✅ **Bağlanıldı!** Satın alma ve İtemSatış işlemleriniz için üst düzey yönetici sohbete katıldı.")
       .setTimestamp();
-    await message.author.send({ embeds: [connEmbed] }).catch(() => {});
+    await message.author.send({ embeds: [connEmbed] }).catch(() => { });
   }
 
   let replyText = null;
@@ -2463,7 +2463,7 @@ async function forwardDMToReklamChannel(message, client, ticket) {
         const content = embed ? (embed.description || embed.title) : refMsg.content;
         replyText = content ? (content.length > 100 ? content.slice(0, 100) + '...' : content) : '*(ek dosya)*';
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const embed = new EmbedBuilder()
@@ -2478,8 +2478,8 @@ async function forwardDMToReklamChannel(message, client, ticket) {
     sendOpts.files = [...message.attachments.values()].map(a => a.url).slice(0, 5);
   }
 
-  await channel.send(sendOpts).catch(() => {});
-  await message.react('✅').catch(() => {});
+  await channel.send(sendOpts).catch(() => { });
+  await message.react('✅').catch(() => { });
 }
 
 /**
@@ -2511,7 +2511,7 @@ async function forwardReklamChannelToDM(message, client) {
       .setTitle("🔌 Bağlantı Kuruldu")
       .setDescription("✅ **Bağlanıldı!** Satın alma ve İtemSatış işlemleriniz için üst düzey yönetici sohbete katıldı.")
       .setTimestamp();
-    await user.send({ embeds: [connEmbed] }).catch(() => {});
+    await user.send({ embeds: [connEmbed] }).catch(() => { });
   }
 
   let replyText = null;
@@ -2523,7 +2523,7 @@ async function forwardReklamChannelToDM(message, client) {
         const content = embed ? (embed.description || embed.title) : refMsg.content;
         replyText = content ? (content.length > 100 ? (content.includes('Cevaplanan Mesaj:') ? content.split('\n\n').slice(1).join('\n\n') : content).slice(0, 100) + '...' : content) : '*(ek dosya)*';
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const embed = new EmbedBuilder()
@@ -2538,8 +2538,8 @@ async function forwardReklamChannelToDM(message, client) {
     sendOpts.files = [...message.attachments.values()].map(a => a.url).slice(0, 5);
   }
 
-  await user.send(sendOpts).catch(() => {});
-  await message.react('✅').catch(() => {});
+  await user.send(sendOpts).catch(() => { });
+  await message.react('✅').catch(() => { });
   return true;
 }
 
@@ -2558,7 +2558,7 @@ async function sendReklamPrices(interaction, ticketId) {
     if (ticket) {
       const user = await interaction.client.users.fetch(ticket.userId).catch(() => null);
       if (user) {
-        await user.send({ embeds: [embed], components }).catch(() => {});
+        await user.send({ embeds: [embed], components }).catch(() => { });
       }
     }
   } catch (err) {
@@ -2649,10 +2649,10 @@ async function sendPaymentDetails(interaction, ticketId) {
     if (ticket) {
       const user = await interaction.client.users.fetch(ticket.userId).catch(() => null);
       if (user) {
-        await user.send({ embeds: [embed] }).catch(() => {});
+        await user.send({ embeds: [embed] }).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /**
@@ -2678,10 +2678,10 @@ async function sendDealsCampaign(interaction, ticketId) {
     if (ticket) {
       const user = await interaction.client.users.fetch(ticket.userId).catch(() => null);
       if (user) {
-        await user.send({ embeds: [embed], components: [row] }).catch(() => {});
+        await user.send({ embeds: [embed], components: [row] }).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 /**
@@ -2701,12 +2701,12 @@ async function toggleReklamPause(interaction, ticketId) {
   if (ticket.paused) {
     await interaction.reply({ content: "⏸️ **Reklam talebi duraklatıldı.** DM mesaj iletimi geçici olarak kapatıldı." });
     if (user) {
-      await user.send("⏸️ **Reklam talebiniz duraklatıldı.** Yetkililer sohbete devam edene kadar mesaj iletimi askıya alınmıştır.").catch(() => {});
+      await user.send("⏸️ **Reklam talebiniz duraklatıldı.** Yetkililer sohbete devam edene kadar mesaj iletimi askıya alınmıştır.").catch(() => { });
     }
   } else {
     await interaction.reply({ content: "▶️ **Reklam talebi devam ettiriliyor.** DM mesaj iletimi tekrar açıldı." });
     if (user) {
-      await user.send("▶️ **Reklam talebiniz tekrar aktifleştirildi.** Mesajlarınızı buradan yazmaya devam edebilirsiniz.").catch(() => {});
+      await user.send("▶️ **Reklam talebiniz tekrar aktifleştirildi.** Mesajlarınızı buradan yazmaya devam edebilirsiniz.").catch(() => { });
     }
   }
 }
@@ -2761,7 +2761,7 @@ async function checkAbandonedReklamTickets(client) {
           .setStyle(ButtonStyle.Danger)
       );
 
-      await user.send({ embeds: [recoveryEmbed], components: [row] }).catch(() => {});
+      await user.send({ embeds: [recoveryEmbed], components: [row] }).catch(() => { });
       ticket.abandonedReminderSent = true;
       ticket.abandonedReminderAt = new Date();
       await ticket.save();
@@ -2831,7 +2831,7 @@ async function handleNoActiveStaffAvailable(ticketId, guildId, channelId, client
           .setStyle(ButtonStyle.Success)
       );
 
-      await channel.send({ embeds: [embed], components: [row] }).catch(() => {});
+      await channel.send({ embeds: [embed], components: [row] }).catch(() => { });
     }
   }
 }
@@ -2847,7 +2847,7 @@ async function deleteActiveClaimDmMessage(ticketId) {
       claimInfo.timeoutId = null;
     }
     if (claimInfo.lastDmMessage) {
-      await claimInfo.lastDmMessage.delete().catch(() => {});
+      await claimInfo.lastDmMessage.delete().catch(() => { });
       claimInfo.lastDmMessage = null;
     }
   }
@@ -2890,7 +2890,7 @@ async function routeNextClaimRequest(ticketId, client) {
     claimInfo.timeoutId = null;
   }
   if (claimInfo.lastDmMessage) {
-    await claimInfo.lastDmMessage.delete().catch(() => {});
+    await claimInfo.lastDmMessage.delete().catch(() => { });
     claimInfo.lastDmMessage = null;
   }
 
@@ -2941,7 +2941,7 @@ async function routeNextClaimRequest(ticketId, client) {
     // Set 5 minutes timeout to auto-ignore
     claimInfo.timeoutId = setTimeout(async () => {
       console.log(`[ClaimRouting] Staff member ${user.tag} ignored claim request for 5 minutes.`);
-      await sentMsg.delete().catch(() => {});
+      await sentMsg.delete().catch(() => { });
       claimInfo.timeoutId = null;
       claimInfo.lastDmMessage = null;
       await routeNextClaimRequest(ticketId, client);
@@ -2992,12 +2992,12 @@ async function cleanReklamSalesMessages(channel) {
       if (channel.bulkDelete) {
         await channel.bulkDelete(salesMessages, true).catch(async () => {
           for (const msg of salesMessages.values()) {
-            await msg.delete().catch(() => {});
+            await msg.delete().catch(() => { });
           }
         });
       } else {
         for (const msg of salesMessages.values()) {
-          await msg.delete().catch(() => {});
+          await msg.delete().catch(() => { });
         }
       }
     }

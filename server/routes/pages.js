@@ -111,13 +111,13 @@ router.get("/debug", (req, res) => {
 // ══════════════════════════════════════════════════════════════════════
 router.get("/account-transfer", async (req, res) => {
   if (!req.user) return res.redirect("/login");
-  
+
   try {
     // Moderatör / Yönetici yetkisi kontrolü
     const StaffProgress = require("../../models/StaffProgress");
     const staffProgress = await StaffProgress.findOne({ userId: req.user.discordId });
     const isAuthorized = req.user.isAdmin || req.user.isStaff || (process.env.DISCORD_OWNER_ID && req.user.discordId === process.env.DISCORD_OWNER_ID) || (staffProgress && (staffProgress.adminOverride || (staffProgress.level || 0) >= 2 || staffProgress.status === 'active'));
-    
+
     if (!isAuthorized) {
       return res.status(403).send(`
         <!DOCTYPE html>
@@ -616,7 +616,7 @@ router.get("/user-logs/:userId", async (req, res) => {
             }
           }
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // Fallback if ID is numeric 17-20 digit string
@@ -654,7 +654,7 @@ router.get("/user-logs/:userId", async (req, res) => {
     try {
       const StaffLeave = require("../../models/StaffLeave");
       userLeaves = await StaffLeave.find({ userId: resolvedId });
-    } catch (_) {}
+    } catch (_) { }
 
     const extraLogs = {
       tickets: Array.isArray(userTickets) ? userTickets : [],
@@ -672,9 +672,9 @@ router.get("/user-logs/:userId", async (req, res) => {
 
 router.get("/group-admin", async (req, res) => {
   if (!req.user) return res.redirect("/login");
-  
+
   const uName = (req.user.discordUsername || req.user.username || "").toLowerCase();
-  const isOwner = uName === "ekonqtx";
+  const isOwner = uName === "ekoyildiz_";
   const { groupAdmins } = require("../../models/Store");
   const isAdmin = isOwner ||
     req.user.isGroupAdmin ||
@@ -682,11 +682,11 @@ router.get("/group-admin", async (req, res) => {
     uName === "bugrupyonetimikullaniciadi" ||
     groupAdmins.findOne({ username: uName }) ||
     (req.user.discordUsername && groupAdmins.findOne({ username: req.user.discordUsername.toLowerCase() }));
-  
+
   if (!isAdmin) {
     return res.redirect("/");
   }
-  
+
   res.send(renderGroupAdminPage(req.user, isOwner || uName === "bugrupyönetimikullaniciadi" || uName === "bugrupyonetimikullaniciadi"));
 });
 
@@ -727,7 +727,7 @@ router.get("/forms", (req, res) => {
 router.get("/forms/event-staff", async (req, res) => {
   const { renderEventStaffFormPage } = require("../views");
   const FormSubmission = require("../../models/FormSubmission");
-  
+
   let existingSubmission = null;
   if (req.user) {
     existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "event_staff");
@@ -739,7 +739,7 @@ router.get("/forms/event-staff", async (req, res) => {
 router.get("/forms/community-ambassador", async (req, res) => {
   const { renderCommunityAmbassadorFormPage } = require("../views");
   const FormSubmission = require("../../models/FormSubmission");
-  
+
   let existingSubmission = null;
   if (req.user) {
     existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "community_ambassador");
@@ -755,7 +755,7 @@ router.get("/forms/topluluk-elcisi", (req, res) => {
 router.get("/forms/developer", async (req, res) => {
   const { renderDeveloperFormPage } = require("../views");
   const FormSubmission = require("../../models/FormSubmission");
-  
+
   let existingSubmission = null;
   if (req.user) {
     existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "developer");
@@ -771,7 +771,7 @@ router.get("/forms/gelistirici", (req, res) => {
 router.get("/forms/debug-office", async (req, res) => {
   const { renderDebugOfficeFormPage } = require("../views");
   const FormSubmission = require("../../models/FormSubmission");
-  
+
   let existingSubmission = null;
   if (req.user) {
     existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "debug_office");
@@ -787,14 +787,14 @@ router.get("/forms/hata-ayiklama", (req, res) => {
 // Briefing Onboarding
 router.get("/briefing-form", (req, res) => {
   if (!req.user) return res.redirect("/login");
-  
+
   const BriefingFormCompletion = require("../../models/BriefingFormCompletion");
   const isCompleted = BriefingFormCompletion.isCompleted(req.user.discordId);
-  
+
   if (isCompleted) {
     return res.redirect("/briefing");
   }
-  
+
   res.send(renderBriefingOnboardingModal(req.user));
 });
 

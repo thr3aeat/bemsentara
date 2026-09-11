@@ -40,7 +40,7 @@ async function canUserOpenTicket(user, guild) {
           t.status = 'closed';
           t.closedAt = new Date();
           t.closeReason = 'Kanal Discord üzerinden bulunamadığı için otomatik kapatıldı';
-          await t.save().catch(() => {});
+          await t.save().catch(() => { });
         }
       }
     }
@@ -58,12 +58,12 @@ async function canUserOpenTicket(user, guild) {
       if (chName === 'ticket-logs') continue;
 
       const isTicketChannel = (ch.parentId === GUILD2_TICKET_CATEGORY_ID) ||
-                              chName.startsWith('ticket-') ||
-                              chName.startsWith('reklam-');
+        chName.startsWith('ticket-') ||
+        chName.startsWith('reklam-');
 
       if (!isTicketChannel) continue;
 
-      // Kullanıcının reklam kanalı mı? örn: reklam-ekonqtx
+      // Kullanıcının reklam kanalı mı? örn: reklam-ekoyildiz_
       if (cleanUsername && chName === `reklam-${cleanUsername}`) {
         return {
           allowed: false,

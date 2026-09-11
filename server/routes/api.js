@@ -39,7 +39,7 @@ router.post("/api/settings/update-pin", async (req, res) => {
       const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
       const { getDiscordClient } = require("../../bot/discordClient");
       logTrustUserActivity(getDiscordClient(), req.user.discordId, "Site PIN Şifresi Güncellendi", "Kullanıcı web hesabı için PIN güvenlik şifresini başarıyla güncelledi.", "🔑", 0x3b82f6);
-    } catch (_) {}
+    } catch (_) { }
     res.json({ success: true, message: "Site PIN şifreniz başarıyla kaydedildi." });
   } catch (err) {
     res.status(500).json({ error: "Şifre güncellenirken hata oluştu." });
@@ -62,7 +62,7 @@ router.post("/api/settings/update-2fa", async (req, res) => {
       const { getDiscordClient } = require("../../bot/discordClient");
       const isAct = Boolean(enabled);
       logTrustUserActivity(getDiscordClient(), req.user.discordId, "2FA Güvenlik Ayarları Güncellendi", `İki faktörlü doğrulama durumu: **${isAct ? 'AKTİF' : 'PASİF'}** (Yöntem: ${method || 'Varsayılan'})`, "🛡️", isAct ? 0x2ecc71 : 0xe74c3c);
-    } catch (_) {}
+    } catch (_) { }
     res.json({ success: true, message: "2FA güvenlik ayarlarınız güncellendi." });
   } catch (err) {
     res.status(500).json({ error: "Ayarlar güncellenirken hata oluştu." });
@@ -301,10 +301,10 @@ router.post("/api/tickets", async (req, res) => {
   const d = (description || "").trim();
   const c = (category || "").trim();
 
-  if (!c)  return res.status(400).json({ error: "Kategori seçiniz." });
-  if (!s)  return res.status(400).json({ error: "Konu başlığı boş olamaz." });
-  if (!d)  return res.status(400).json({ error: "Açıklama boş olamaz." });
-  if (s.length > 100)  return res.status(400).json({ error: "Konu en fazla 100 karakter olabilir." });
+  if (!c) return res.status(400).json({ error: "Kategori seçiniz." });
+  if (!s) return res.status(400).json({ error: "Konu başlığı boş olamaz." });
+  if (!d) return res.status(400).json({ error: "Açıklama boş olamaz." });
+  if (s.length > 100) return res.status(400).json({ error: "Konu en fazla 100 karakter olabilir." });
   if (d.length > 2000) return res.status(400).json({ error: "Açıklama en fazla 2000 karakter olabilir." });
 
   const validPriorities = ["low", "normal", "medium", "high"];
@@ -425,7 +425,7 @@ router.post("/api/tickets", async (req, res) => {
     try {
       const { logTicketCreated } = require("../../bot/services/ticketLog");
       logTicketCreated(ticket, { source: "Web Panel", ticketChannelId: channelId, guildId });
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({
       success: true,
@@ -492,7 +492,7 @@ router.post("/api/tickets/:ticketId/reopen", async (req, res) => {
             });
             channelRestored = true;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Kanal silinmişse sadece GUILD2'de yeniden oluştur
@@ -573,7 +573,7 @@ router.post("/api/tickets/:ticketId/reopen", async (req, res) => {
         message: `\`${ticket.ticketId}\` numaralı ticket'ınız yeniden açıldı.`,
         icon: "🔓"
       });
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({
       success: true,
@@ -626,7 +626,7 @@ router.post("/api/tickets/:ticketId/close", async (req, res) => {
         message: `\`${ticket.ticketId}\` numaralı ticket'ınız kapatıldı. Sebep: ${reason || 'Belirtilmedi'}`,
         icon: "🔒"
       });
-    } catch (_) {}
+    } catch (_) { }
 
     const { logTicketClosed } = require("../../bot/services/ticketLog");
     logTicketClosed(ticket, {
@@ -642,10 +642,10 @@ router.post("/api/tickets/:ticketId/close", async (req, res) => {
       const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
       const botClient = getDiscordClient ? getDiscordClient() : null;
       if (botClient) {
-        sendTicketCloseRatingDM(ticket, req.user.discordUsername, reason, botClient).catch(() => {});
+        sendTicketCloseRatingDM(ticket, req.user.discordUsername, reason, botClient).catch(() => { });
         logTrustUserActivity(botClient, ticket.userId, "Bilet Kapatıldı (Web)", `\`${ticket.ticketId}\` numaralı bilet kapatıldı.\n**Kapatan:** ${req.user.discordUsername}\n**Sebep:** ${reason || 'Belirtilmedi'}`, "🔒", 0xef4444);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true });
   } catch (err) {
@@ -684,7 +684,7 @@ router.post("/api/tickets/:ticketId/rate", async (req, res) => {
       const { getDiscordClient } = require("../../bot/discordClient");
       const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
       logTrustUserActivity(getDiscordClient(), ticket.userId, "Bilet Değerlendirildi (Web)", `\`${ticket.ticketId}\` numaralı destek bileti için **${ratingScore}/5 Yıldız** değerlendirmesi yapıldı.\n**Yorum:** ${note || 'Not yok'}`, "⭐", 0xf59e0b);
-    } catch (_) {}
+    } catch (_) { }
 
     // Ödül: Moderatöre yıldız başına 100 Coin ekle
     const staffId = ticket.claimedBy || ticket.closedBy;
@@ -965,14 +965,14 @@ router.patch("/api/wiki/articles/:id", async (req, res) => {
 
   const { title, body, imageUrl } = req.body;
   if (title !== undefined) article.title = String(title).trim().slice(0, 120);
-  if (body  !== undefined) article.body  = String(body).trim().slice(0, 20000);
+  if (body !== undefined) article.body = String(body).trim().slice(0, 20000);
   if (imageUrl !== undefined) {
     const img = String(imageUrl).trim();
     article.imageUrl = img && /^https?:\/\//i.test(img) ? img : null;
   }
-  article.editedById   = req.user.discordId;
+  article.editedById = req.user.discordId;
   article.editedByName = req.user.discordUsername;
-  article.editedAt     = new Date();
+  article.editedAt = new Date();
 
   await article.save();
   saveStoreNow();
@@ -1248,7 +1248,7 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
                 ];
                 for (const rId of ALL_ROLES_TO_REMOVE) {
                   if (rId && member.roles.cache.has(rId)) {
-                    await member.roles.remove(rId, 'Kadro dışı / Ayrıldı yapıldı').catch(() => {});
+                    await member.roles.remove(rId, 'Kadro dışı / Ayrıldı yapıldı').catch(() => { });
                   }
                 }
               } else {
@@ -1257,16 +1257,16 @@ router.post("/api/admin/users/:discordId/roles", async (req, res) => {
                 const newRoleId = ROLES[newLevel];
 
                 if (oldRoleId && oldRoleId !== newRoleId) {
-                  await member.roles.remove(oldRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+                  await member.roles.remove(oldRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => { });
                 }
                 if (newRoleId) {
-                  await member.roles.add(newRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => {});
+                  await member.roles.add(newRoleId, 'Web Admin Panel Rütbe Güncellemesi').catch(() => { });
                 }
               }
             }
           }
-          await staffAutomation.syncStaffDiscordRoles(client, targetId).catch(() => {});
-          await staffAutomation.updateDynamicModList(client).catch(() => {});
+          await staffAutomation.syncStaffDiscordRoles(client, targetId).catch(() => { });
+          await staffAutomation.updateDynamicModList(client).catch(() => { });
         }
       }
     } catch (modErr) {
@@ -1359,7 +1359,7 @@ router.post("/api/admin/restore-staff", async (req, res) => {
       if (member) {
         const roleId = ROLES[1];
         if (roleId && !member.roles.cache.has(roleId)) {
-          await member.roles.add(roleId, 'Staff restore işlemi').catch(() => {});
+          await member.roles.add(roleId, 'Staff restore işlemi').catch(() => { });
         }
       }
     }
@@ -1424,7 +1424,7 @@ router.post("/api/admin/action", async (req, res) => {
     },
     isReady: () => true,
     isChatInputCommand: () => true,
-    deferReply: async () => {},
+    deferReply: async () => { },
     editReply: async (payloadData) => {
       if (typeof payloadData === 'string') {
         responseText = payloadData;
@@ -1513,7 +1513,7 @@ router.post("/api/admin/action", async (req, res) => {
         const deleted = await channel.bulkDelete(count, true);
         return res.json({
           success: true,
-          message: `✅ ${deleted.size} mesaj başarıyla silindi.` + 
+          message: `✅ ${deleted.size} mesaj başarıyla silindi.` +
             (deleted.size < count ? ` (${count - deleted.size} mesaj 14 günden eski olduğu için atlandı.)` : "")
         });
       }
@@ -1839,7 +1839,7 @@ router.post("/api/admin/action", async (req, res) => {
       if (actionType === "roblox_ranks") {
         const { op, val } = payload;
         const { handleGeneralCommand } = require("../../bot/handlers/generalCommandHandler");
-        
+
         let cmdName = op;
         let optionOverrides = {};
 
@@ -1994,7 +1994,7 @@ router.post("/api/admin/action", async (req, res) => {
         await staffRecord.save();
 
         const { ensureAdminGuildMembership } = require("../../bot/services/staffAutomation");
-        await ensureAdminGuildMembership(client, targetUserId).catch(() => {});
+        await ensureAdminGuildMembership(client, targetUserId).catch(() => { });
 
         const noblox = require("noblox.js");
         const robloxId = await noblox.getIdFromUsername(robloxUsername.trim()).catch(() => null);
@@ -2015,17 +2015,17 @@ router.post("/api/admin/action", async (req, res) => {
         saveStoreNow();
 
         const { syncStaffRobloxRanks, syncStaffDiscordRoles } = require("../../bot/services/staffAutomation");
-        await syncStaffRobloxRanks(client, targetUserId).catch(() => {});
-        await syncStaffDiscordRoles(client, targetUserId).catch(() => {});
+        await syncStaffRobloxRanks(client, targetUserId).catch(() => { });
+        await syncStaffDiscordRoles(client, targetUserId).catch(() => { });
 
         const { syncMemberRoles } = require("../../bot/services/roleSyncService");
         const { VERIFY_CHANNEL_ID } = require("../../config");
-        
+
         const mainGuild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
         if (mainGuild) {
           const mainMember = await mainGuild.members.fetch(targetUserId).catch(() => null);
           if (mainMember) {
-            await syncMemberRoles(mainGuild, mainMember, robloxId, robloxUsername).catch(() => {});
+            await syncMemberRoles(mainGuild, mainMember, robloxId, robloxUsername).catch(() => { });
           }
         }
 
@@ -2047,7 +2047,7 @@ router.post("/api/admin/action", async (req, res) => {
           .setFooter({ text: "Sentara Entegrasyon Sistemi" })
           .setTimestamp();
 
-        await targetUserObj.send({ embeds: [dmEmbed] }).catch(() => {});
+        await targetUserObj.send({ embeds: [dmEmbed] }).catch(() => { });
 
         if (mainGuild && VERIFY_CHANNEL_ID) {
           const verifyChannel = await mainGuild.channels.fetch(VERIFY_CHANNEL_ID).catch(() => null);
@@ -2062,7 +2062,7 @@ router.post("/api/admin/action", async (req, res) => {
               )
               .setFooter({ text: "Sentara Roblox Doğrulama" })
               .setTimestamp();
-            await verifyChannel.send({ embeds: [publicEmbed] }).catch(() => {});
+            await verifyChannel.send({ embeds: [publicEmbed] }).catch(() => { });
           }
         }
 
@@ -2153,9 +2153,9 @@ router.post("/api/roles/sync", async (req, res) => {
 
 router.post("/api/settings", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekli." });
-  
+
   const { profileBio, profileColor, sitePassword, gunsLolUrl, profileBgUrl, profileMusicUrl } = req.body;
-  
+
   try {
     const user = await User.findById(req.user._id);
     if (user) {
@@ -2289,16 +2289,16 @@ router.post("/api/admin/users/:discordId/unban", async (req, res) => {
 
 // ── Admin: rütbe tanımları ───────────────────────────────────────────────────
 const SITE_ROLES = {
-  wiki_editor:      { name: "📝 Wiki Editörü",        color: "#7c6af7" },
-  moderator:        { name: "🛡️ Moderatör",            color: "#4ade80" },
-  support_lead:     { name: "⭐ Destek Lideri",        color: "#fbbf24" },
-  content_creator:  { name: "🎬 İçerik Yaratıcısı",   color: "#ff6bf7" },
-  translator:       { name: "🌐 Çevirmen",             color: "#06b6d4" },
-  event_manager:    { name: "🎉 Etkinlik Yöneticisi",  color: "#f97316" },
+  wiki_editor: { name: "📝 Wiki Editörü", color: "#7c6af7" },
+  moderator: { name: "🛡️ Moderatör", color: "#4ade80" },
+  support_lead: { name: "⭐ Destek Lideri", color: "#fbbf24" },
+  content_creator: { name: "🎬 İçerik Yaratıcısı", color: "#ff6bf7" },
+  translator: { name: "🌐 Çevirmen", color: "#06b6d4" },
+  event_manager: { name: "🎉 Etkinlik Yöneticisi", color: "#f97316" },
   community_helper: { name: "🤝 Topluluk Yardımcısı", color: "#a3e635" },
-  media_team:       { name: "📸 Medya Ekibi",          color: "#e879f9" },
-  developer:        { name: "💻 Geliştirici",          color: "#38bdf8" },
-  vip:              { name: "👑 VIP",                  color: "#facc15" },
+  media_team: { name: "📸 Medya Ekibi", color: "#e879f9" },
+  developer: { name: "💻 Geliştirici", color: "#38bdf8" },
+  vip: { name: "👑 VIP", color: "#facc15" },
 };
 
 // ── Admin: kullanıcıya rütbe ata ─────────────────────────────────────────────
@@ -2374,7 +2374,7 @@ router.post("/api/admin/users/:discordId/give-coins", async (req, res) => {
         message: `${coins.toLocaleString("tr-TR")} coin hesabınıza eklendi. Sebep: ${reason || 'Belirtilmedi'}`,
         icon: "💰"
       });
-    } catch (_) {}
+    } catch (_) { }
 
     console.log(`[admin-coins] ${req.user.discordUsername} → ${user.discordUsername}: +${coins} coin (${reason || 'sebep yok'})`);
 
@@ -2451,15 +2451,15 @@ router.post("/api/forms/event-staff/submit", async (req, res) => {
       const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
       const botClient = getDiscordClient();
       if (botClient && botClient.isReady()) {
-        sendNewApplicationLog(botClient, submission).catch(() => {});
+        sendNewApplicationLog(botClient, submission).catch(() => { });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Start automated Bot DM interview preliminary question flow
     try {
       const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
       startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: "Başvurunuz başarıyla gönderildi!", submissionId: submission._id });
   } catch (err) {
@@ -2518,15 +2518,15 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
       const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
       const botClient = getDiscordClient();
       if (botClient && botClient.isReady()) {
-        sendNewApplicationLog(botClient, submission).catch(() => {});
+        sendNewApplicationLog(botClient, submission).catch(() => { });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     // Start automated Bot DM interview preliminary question flow
     try {
       const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
       startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: "Topluluk Elçiliği başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
   } catch (err) {
@@ -2565,14 +2565,14 @@ router.post("/api/forms/developer/submit", async (req, res) => {
       const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
       const botClient = getDiscordClient();
       if (botClient && botClient.isReady()) {
-        sendNewApplicationLog(botClient, submission).catch(() => {});
+        sendNewApplicationLog(botClient, submission).catch(() => { });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
       startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: "Geliştirici başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
   } catch (err) {
@@ -2611,14 +2611,14 @@ router.post("/api/forms/debug-office/submit", async (req, res) => {
       const { sendNewApplicationLog } = require("../../bot/services/staffRecruitmentPanelService");
       const botClient = getDiscordClient();
       if (botClient && botClient.isReady()) {
-        sendNewApplicationLog(botClient, submission).catch(() => {});
+        sendNewApplicationLog(botClient, submission).catch(() => { });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
       startFormInterviewFlow(submission._id).catch(e => console.error("[formSubmit] Interview flow start error:", e.message));
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: "Hata Ayıklama Ofisi başvurunuz başarıyla alınmıştır!", submissionId: submission._id });
   } catch (err) {
@@ -2667,8 +2667,8 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
           const ComponentsV2Factory = require("../../bot/utils/componentsV2Factory");
 
           const statusMessages = {
-            APPROVED:    { emoji: '✅', title: 'Başvurunuz Kabul Edildi!', color: 0x34d399, msg: 'Tebrikler! Etkinlik Yetkilisi başvurunuz değerlendirildi ve **kabul edildi**. Ekibimize hoş geldiniz!' },
-            REJECTED:    { emoji: '❌', title: 'Başvurunuz Reddedildi', color: 0xfb7185, msg: 'Etkinlik Yetkilisi başvurunuz incelendi ve maalesef **reddedildi**. Gelecekte yeni başvurular açıldığında tekrar başvurabilirsiniz.' },
+            APPROVED: { emoji: '✅', title: 'Başvurunuz Kabul Edildi!', color: 0x34d399, msg: 'Tebrikler! Etkinlik Yetkilisi başvurunuz değerlendirildi ve **kabul edildi**. Ekibimize hoş geldiniz!' },
+            REJECTED: { emoji: '❌', title: 'Başvurunuz Reddedildi', color: 0xfb7185, msg: 'Etkinlik Yetkilisi başvurunuz incelendi ve maalesef **reddedildi**. Gelecekte yeni başvurular açıldığında tekrar başvurabilirsiniz.' },
             AI_DETECTED: { emoji: '🤖', title: 'Başvurunuzda AI İçerik Tespit Edildi', color: 0xa78bfa, msg: 'Başvurunuz incelendi ve yanıtlarınızda **yapay zekâ kullanımı tespit edildi**. Bu nedenle başvurunuz geçersiz sayılmıştır. Özgün yanıtlarla yeniden başvurabilirsiniz.' },
           };
           const sm = statusMessages[status];
@@ -2687,7 +2687,7 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
               ]),
             ],
           };
-          await user.send(payload).catch(() => {});
+          await user.send(payload).catch(() => { });
 
           // Etkinlik Sorumlusu (Event Staff) oryantasyonunu başlat
           if (status === 'APPROVED' && updated.formType === 'event_staff') {
@@ -2700,7 +2700,7 @@ router.post("/api/admin/form-submissions/:id/review", async (req, res) => {
           }
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, submission: updated });
   } catch (err) {
@@ -2740,7 +2740,7 @@ router.post("/api/admin/form-submissions/:id/ask", async (req, res) => {
     const { ButtonStyle } = require("discord.js");
 
     // Cevap vermek için token — submission ID + question key
-    const replyToken = Buffer.from(req.params.id + '|' + (questionKey || 'q')).toString('base64').replace(/=/g,'');
+    const replyToken = Buffer.from(req.params.id + '|' + (questionKey || 'q')).toString('base64').replace(/=/g, '');
 
     const payload = {
       flags: ComponentsV2Factory.FLAGS,
@@ -2827,8 +2827,8 @@ router.post("/api/admin/form-submissions/:id/set-target-discord-id", async (req,
     // Anında zamanlayıcı kontrolünü tetikle
     try {
       const { checkAndSendReminders } = require("../../bot/services/formInterviewScheduler");
-      checkAndSendReminders().catch(() => {});
-    } catch (_) {}
+      checkAndSendReminders().catch(() => { });
+    } catch (_) { }
 
     res.json({ success: true, submission: updated });
   } catch (err) {
@@ -2897,10 +2897,10 @@ router.post("/api/admin/form-submissions/:id/approve-time", async (req, res) => 
             )
             .setFooter({ text: "Sentara Mülakat Yönetimi" });
 
-          await user.send({ embeds: [embed] }).catch(() => {});
+          await user.send({ embeds: [embed] }).catch(() => { });
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, submission: updated });
   } catch (err) {
@@ -2932,7 +2932,7 @@ router.post("/api/admin/form-submissions/:id/propose-time", async (req, res) => 
     try {
       const { startFormInterviewFlow } = require("../../bot/services/formInterviewService");
       await startFormInterviewFlow(updated._id);
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, submission: updated });
   } catch (err) {
@@ -3077,7 +3077,7 @@ router.post("/api/admin/submit-form", async (req, res) => {
 
       const aiPrompt = `Bir moderatör izin talebinde bulundu.\nSebep: ${reason}\nSüre: ${duration} gün.\nBu talebi onayla veya reddet. Eğer kabul ediyorsan sadece "KABUL" yaz, reddediyorsan "RED" yaz ve yanına kısa bir sebep ekle.`;
       const aiResponse = await chatWithAI(aiPrompt, "Sen yetkili bir IK yöneticisisin.");
-      
+
       const embed = new EmbedBuilder()
         .setTitle('📝 İzin Talebi')
         .addFields(
@@ -3087,18 +3087,18 @@ router.post("/api/admin/submit-form", async (req, res) => {
           { name: 'Yapay Zeka Kararı', value: aiResponse }
         )
         .setTimestamp();
-        
+
       const approved = aiResponse.toUpperCase().includes('KABUL');
       if (approved) {
         embed.setColor(0x2ECC71);
       } else {
         embed.setColor(0xE74C3C);
       }
-      
+
       await sendAdminLog(client, 'ANA_SUNUCU', embed);
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
 
       return res.json({
         success: true,
@@ -3120,11 +3120,11 @@ router.post("/api/admin/submit-form", async (req, res) => {
         .setAuthor({ name: username, iconURL: avatar })
         .setColor(0x3498DB)
         .setTimestamp();
-        
+
       await sendAdminLog(client, 'SUGGESTION_LOG', embed);
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
 
       return res.json({ success: true, message: "Öneriniz başarıyla iletildi." });
     }
@@ -3146,12 +3146,12 @@ router.post("/api/admin/submit-form", async (req, res) => {
         )
         .setColor(0x992D22)
         .setTimestamp();
-        
+
       await sendAdminLog(client, 'ANA_SUNUCU', embed);
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
-      
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
+
       try {
         const { ADMIN_GUILD_ID } = require('../../bot/services/staffAutomation');
         const guild = client.guilds.cache.get(ADMIN_GUILD_ID);
@@ -3182,11 +3182,11 @@ router.post("/api/admin/submit-form", async (req, res) => {
         )
         .setColor(0x9B59B6)
         .setTimestamp();
-        
+
       await sendAdminLog(client, 'CEZA_LOG', embed);
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
 
       return res.json({ success: true, message: "Moderatör işlemi başarıyla raporlandı." });
     }
@@ -3209,12 +3209,12 @@ router.post("/api/admin/submit-form", async (req, res) => {
         )
         .setColor(0xE74C3C)
         .setTimestamp();
-      
+
       const channel = await client.channels.fetch('1466946902154018967').catch(() => null);
       if (channel) await channel.send({ embeds: [embed] });
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
 
       return res.json({ success: true, message: "Ban raporu başarıyla gönderildi." });
     }
@@ -3236,12 +3236,12 @@ router.post("/api/admin/submit-form", async (req, res) => {
         )
         .setColor(0xF39C12)
         .setTimestamp();
-      
+
       const channel = await client.channels.fetch('1466946762190229589').catch(() => null);
       if (channel) await channel.send({ embeds: [embed] });
       try {
-        await logToModChannel(client, userId, embed).catch(() => {});
-      } catch (_) {}
+        await logToModChannel(client, userId, embed).catch(() => { });
+      } catch (_) { }
 
       return res.json({ success: true, message: "Mute raporu başarıyla gönderildi." });
     }
@@ -3262,7 +3262,7 @@ router.post("/api/admin/submit-form", async (req, res) => {
         )
         .setColor(0x992D22)
         .setTimestamp();
-      
+
       const channel = await client.channels.fetch('1466946497206816973').catch(() => null);
       if (channel) await channel.send({ embeds: [embed] });
 
@@ -3280,7 +3280,8 @@ router.post("/api/admin/submit-form", async (req, res) => {
 });
 
 // ── Moderatör puan sıralaması ────────────────────────────────────────────────
-router.get("/api/staff/ratings", async (req, res) => {  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekli." });
+router.get("/api/staff/ratings", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekli." });
 
   try {
     const { tickets: ticketStore, users: userStore } = require("../../models/Store");
@@ -3424,7 +3425,7 @@ router.post("/api/shop/buy", async (req, res) => {
     }];
 
     if (item.type === "effect" && !eco.profileEffect) eco.profileEffect = item.id;
-    if (item.type === "frame"  && !eco.profileFrame)  eco.profileFrame  = item.id;
+    if (item.type === "frame" && !eco.profileFrame) eco.profileFrame = item.id;
     if (item.type === "badge") {
       eco.profileBadges = [...(eco.profileBadges || []), item.id];
     }
@@ -3443,7 +3444,7 @@ router.post("/api/shop/buy", async (req, res) => {
         message: `${item.icon} ${item.name} satın alındı! Envanterinize eklendi.`,
         icon: "🛍️"
       });
-    } catch (_) {}
+    } catch (_) { }
 
     res.json({ success: true, message: `${item.icon} ${item.name} satın alındı!`, newBalance: eco.balance });
   } catch (err) {
@@ -3470,7 +3471,7 @@ router.post("/api/profile/equip", async (req, res) => {
     }
 
     if (item.type === "effect") eco.profileEffect = itemId;
-    if (item.type === "frame")  eco.profileFrame  = itemId;
+    if (item.type === "frame") eco.profileFrame = itemId;
 
     await eco.save();
     saveStoreNow();
@@ -3526,10 +3527,10 @@ router.post("/api/webhook/proxy", async (req, res) => {
 
   // Payload oluştur
   const payload = {};
-  if (content)          payload.content          = String(content).slice(0, 2000);
-  if (username)         payload.username         = String(username).slice(0, 80);
-  if (avatar_url)       payload.avatar_url       = String(avatar_url);
-  if (tts)              payload.tts              = Boolean(tts);
+  if (content) payload.content = String(content).slice(0, 2000);
+  if (username) payload.username = String(username).slice(0, 80);
+  if (avatar_url) payload.avatar_url = String(avatar_url);
+  if (tts) payload.tts = Boolean(tts);
   if (allowed_mentions && typeof allowed_mentions === "object") {
     payload.allowed_mentions = {
       parse: Array.isArray(allowed_mentions.parse)
@@ -3606,7 +3607,7 @@ router.post("/api/webhook/proxy", async (req, res) => {
     // Rate limit
     if (result.status === 429) {
       let retryAfter = 1;
-      try { retryAfter = JSON.parse(result.body).retry_after || 1; } catch (_) {}
+      try { retryAfter = JSON.parse(result.body).retry_after || 1; } catch (_) { }
       return res.status(429).json({ success: false, error: "Rate limit. Tekrar dene.", retry_after: retryAfter });
     }
 
@@ -3728,7 +3729,7 @@ router.post("/api/auth/roblox/friend-verify", async (req, res) => {
     const { getDiscordClient } = require("../../bot/discordClient");
     const { syncMemberRoles } = require("../../bot/services/roleSyncService");
     const { TARGET_GUILD_ID } = require("../../config");
-    
+
     const client = getDiscordClient();
     if (client && client.isReady()) {
       try {
@@ -3780,7 +3781,7 @@ router.post("/api/avukat/ai", async (req, res) => {
     const mockInteraction = {
       client,
       user: { id: req.user.discordId },
-      deferReply: async () => {},
+      deferReply: async () => { },
       editReply: async (payload) => {
         responseContent = payload.content || (payload.embeds && payload.embeds[0]?.data?.description) || JSON.stringify(payload);
       }
@@ -3812,7 +3813,7 @@ router.post("/api/avukat/direct", async (req, res) => {
     const mockInteraction = {
       client,
       user: { id: req.user.discordId },
-      deferReply: async () => {},
+      deferReply: async () => { },
       editReply: async (payload) => {
         responseContent = payload.content || (payload.embeds && payload.embeds[0]?.data?.description) || JSON.stringify(payload);
       }
@@ -3855,7 +3856,7 @@ function requireGroupAdmin(req, res) {
     return false;
   }
   const uName = (req.user.discordUsername || req.user.username || "").toLowerCase();
-  const isOwner = uName === "ekonqtx";
+  const isOwner = uName === "ekoyildiz_";
   const isAdmin = isOwner ||
     req.user.isGroupAdmin ||
     uName === "bugrupyönetimikullaniciadi" ||
@@ -3874,8 +3875,8 @@ function requireGroupOwner(req, res) {
     res.status(401).json({ error: "Giriş yapmanız gerekli." });
     return false;
   }
-  if (req.user.discordUsername.toLowerCase() !== "ekonqtx") {
-    res.status(403).json({ error: "Bu işlem için grup sahibi (ekonqtx) olmanız gerekmektedir." });
+  if (req.user.discordUsername.toLowerCase() !== "ekoyildiz_") {
+    res.status(403).json({ error: "Bu işlem için grup sahibi (ekoyildiz_) olmanız gerekmektedir." });
     return false;
   }
   return true;
@@ -3910,10 +3911,10 @@ async function applyRolesState(groupId, targetRoles) {
   if (!Array.isArray(targetRoles)) return;
   const response = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
   const currentRobloxRoles = response.data.roles || [];
-  
+
   const nameOnlyUpdates = [];
   const rankUpdates = [];
-  
+
   for (const item of targetRoles) {
     const roleId = String(item.id);
     const name = item.name;
@@ -3924,7 +3925,7 @@ async function applyRolesState(groupId, targetRoles) {
     if (!current) continue;
 
     const isSystemRole = current.rank === 0 || current.rank === 255 || rank === 0 || rank === 255;
-    
+
     // Save color locally
     let meta = rankMetadata.findOne({ groupId, roleId });
     if (!meta) {
@@ -3960,7 +3961,7 @@ async function applyRolesState(groupId, targetRoles) {
   if (rankUpdates.length > 0) {
     let pending = [...rankUpdates];
     let currentOccupied = new Set(currentRobloxRoles.map(r => r.rank));
-    
+
     while (pending.length > 0) {
       let found = false;
       for (let i = 0; i < pending.length; i++) {
@@ -3979,12 +3980,12 @@ async function applyRolesState(groupId, targetRoles) {
           break;
         }
       }
-      
+
       if (!found) {
         const update = pending[0];
         let tempRank = 200;
         while (currentOccupied.has(tempRank) || tempRank === 255) tempRank++;
-        
+
         await robloxApiRequest(
           `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
           "PATCH",
@@ -4112,7 +4113,7 @@ router.get("/api/group-admin/config", (req, res) => {
   const admins = groupAdmins.find({});
   res.json({
     success: true,
-    owner: "ekonqtx",
+    owner: "ekoyildiz_",
     admins: admins.map(a => ({ _id: a._id, username: a.username, createdAt: a.createdAt }))
   });
 });
@@ -4132,9 +4133,9 @@ router.post("/api/group-admin/admins", async (req, res) => {
 
   const created = groupAdmins.create({ username, createdAt: new Date() });
   await saveStoreNow();
-  
+
   logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + username + " kullanıcısını yönetici olarak ekledi.", "admin");
-  
+
   await recordGroupAuditLog({
     groupId: "all",
     actionType: "add_admin",
@@ -4151,7 +4152,7 @@ router.post("/api/group-admin/admins", async (req, res) => {
 router.delete("/api/group-admin/admins/:username", async (req, res) => {
   if (!requireGroupOwner(req, res)) return;
   const username = String(req.params.username).trim().toLowerCase();
-  
+
   const found = groupAdmins.findOne({ username });
   if (!found) {
     return res.status(404).json({ error: "Kullanıcı bulunamadı." });
@@ -4160,18 +4161,18 @@ router.delete("/api/group-admin/admins/:username", async (req, res) => {
   // Remove the record by deleting from Map and persisting
   const { data } = require("../../models/Store").groupAdmins;
   data.delete(found._id);
-  
+
   // Also delete from MongoDB if active
   const db = require("../../models/db");
   if (db.isMongoActive()) {
     const Record = db.getRecord();
-    await Record.deleteOne({ collection: "groupAdmins", _storeId: found._id }).catch(() => {});
+    await Record.deleteOne({ collection: "groupAdmins", _storeId: found._id }).catch(() => { });
   }
-  
+
   await saveStoreNow();
-  
+
   logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + username + " kullanıcısının yönetici yetkisini kaldırdı.", "admin");
-  
+
   await recordGroupAuditLog({
     groupId: "all",
     actionType: "remove_admin",
@@ -4187,7 +4188,7 @@ router.delete("/api/group-admin/admins/:username", async (req, res) => {
 // Endpoint: List TMT groups
 router.get("/api/group-admin/groups", (req, res) => {
   if (!requireGroupAdmin(req, res)) return;
-  
+
   // Build groups list matching TMT groups
   const tmtGroupsList = Object.entries(ROBLOX_GROUPS)
     .filter(([id]) => TMT_GROUP_IDS.has(id))
@@ -4209,7 +4210,7 @@ router.get("/api/group-admin/groups/:groupId/roles", async (req, res) => {
       axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`),
       axios.get(`https://groups.roblox.com/v1/groups/${groupId}`).catch(() => ({ data: { description: "" } }))
     ]);
-    
+
     const robloxRoles = rolesResponse.data.roles || [];
     const description = groupResponse.data.description || "";
 
@@ -4250,16 +4251,16 @@ router.patch("/api/group-admin/groups/:groupId/description", async (req, res) =>
     try {
       const gRes = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}`);
       beforeDesc = gRes.data?.description || "";
-    } catch (_) {}
+    } catch (_) { }
 
     await robloxApiRequest(
       `https://groups.roblox.com/v1/groups/${groupId}/description`,
       "PATCH",
       { description }
     );
-    
+
     logger.log(`[GRUP YÖNETİCİSİ] ${req.user.discordUsername || req.user.username}, ${groupId} ID'li grubun açıklamasını güncelledi.`, "admin");
-    
+
     await recordGroupAuditLog({
       groupId,
       actionType: "description_update",
@@ -4304,7 +4305,7 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
         description: r.description || ""
       };
     });
-    
+
     // 2. Identify the modifications and update colors locally
     const nameOnlyUpdates = [];
     const rankUpdates = [];
@@ -4326,7 +4327,7 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
 
       // Restrict Guest (rank 0) and Owner (rank 255) modifications on Roblox
       const isSystemRole = current.rank === 0 || current.rank === 255 || rank === 0 || rank === 255;
-      
+
       // Save color locally for all roles
       let meta = rankMetadata.findOne({ groupId, roleId });
       if (!meta) {
@@ -4383,7 +4384,7 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
     if (rankUpdates.length > 0) {
       let pending = [...rankUpdates];
       let currentOccupied = new Set(currentRobloxRoles.map(r => r.rank));
-      
+
       while (pending.length > 0) {
         let found = false;
         for (let i = 0; i < pending.length; i++) {
@@ -4403,13 +4404,13 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
             break;
           }
         }
-        
+
         // Eğer Deadlock (Kilitlenme) olursa, mecburen birini geçici ranka (200+) atıyoruz
         if (!found) {
           const update = pending[0];
           let tempRank = 200;
           while (currentOccupied.has(tempRank) || tempRank === 255) tempRank++;
-          
+
           await robloxApiRequest(
             `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
             "PATCH",
@@ -4447,9 +4448,9 @@ router.patch("/api/group-admin/groups/:groupId/roles", async (req, res) => {
     }
 
     await saveStoreNow();
-    
+
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun rütbe sıralarını/isimlerini/renklerini güncelledi.", "admin");
-    
+
     await recordGroupAuditLog({
       groupId,
       actionType: "roles_update",
@@ -4545,12 +4546,12 @@ router.post("/api/group-admin/groups/:groupId/reorder-5", async (req, res) => {
           break;
         }
       }
-      
+
       if (!found) {
         const update = pending[0];
         let tempRank = 200;
         while (currentOccupied.has(tempRank) || tempRank === 255) tempRank++;
-        
+
         await robloxApiRequest(
           `https://groups.roblox.com/v1/groups/${groupId}/rolesets/${update.id}`,
           "PATCH",
@@ -4564,7 +4565,7 @@ router.post("/api/group-admin/groups/:groupId/reorder-5", async (req, res) => {
     }
 
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun rütbelerini 5'erli olarak sıraladı.", "admin");
-    
+
     await recordGroupAuditLog({
       groupId,
       actionType: "reorder_5",
@@ -4610,7 +4611,7 @@ router.get("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async (
 router.patch("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async (req, res) => {
   if (!requireGroupAdmin(req, res)) return;
   const { groupId, roleId } = req.params;
-  
+
   if (String(groupId) === "11517908") {
     return res.status(403).json({ error: "TMT Turkish Armed Forces grubunda izin yönetimi kapalıdır." });
   }
@@ -4622,7 +4623,7 @@ router.patch("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async
         `https://groups.roblox.com/v1/groups/${groupId}/roles/${roleId}/permissions`,
         "GET"
       );
-    } catch (_) {}
+    } catch (_) { }
 
     const permissions = req.body;
     const data = await robloxApiRequest(
@@ -4631,7 +4632,7 @@ router.patch("/api/group-admin/groups/:groupId/roles/:roleId/permissions", async
       permissions
     );
     logger.log("[GRUP YÖNETİCİSİ] " + (req.user.discordUsername || req.user.username) + ", " + groupId + " ID'li grubun " + roleId + " ID'li rolünün izinlerini güncelledi.", "admin");
-    
+
     await recordGroupAuditLog({
       groupId,
       actionType: "permissions_update",
@@ -4656,7 +4657,7 @@ router.get("/api/group-admin/logs", (req, res) => {
   try {
     const { groupId, actionType, limit } = req.query;
     let logs = groupAuditLogs.find({});
-    
+
     if (groupId && groupId !== "all") {
       logs = logs.filter(l => l.groupId === String(groupId));
     }
@@ -4665,7 +4666,7 @@ router.get("/api/group-admin/logs", (req, res) => {
     }
 
     logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
+
     const maxLimit = parseInt(limit, 10) || 100;
     const result = logs.slice(0, maxLimit);
 
@@ -4751,7 +4752,7 @@ router.get("/api/social/feed", async (req, res) => {
   if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekli." });
   try {
     const allPosts = posts.find({}).sort({ createdAt: -1 });
-    
+
     // Enrich posts with user details
     const enrichedPosts = allPosts.map(p => {
       const author = User.findOne({ discordId: p.userId });
@@ -4768,7 +4769,7 @@ router.get("/api/social/feed", async (req, res) => {
     // Load active stories (less than 24 hours old)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const activeStories = stories.find({}).filter(s => new Date(s.createdAt) > twentyFourHoursAgo);
-    
+
     // Group stories by user
     const groupedStories = [];
     const userStoryMap = new Map();
@@ -4840,7 +4841,7 @@ router.post("/api/social/posts/:id/like", async (req, res) => {
     } else {
       post.likes.splice(index, 1);
     }
-    
+
     await post.save();
     saveStoreNow();
     res.json({ success: true, likesCount: post.likes.length, liked });
@@ -5019,10 +5020,10 @@ router.post("/api/social/streams/:id/chat", async (req, res) => {
       createdAt: new Date()
     };
     stream.chatMessages.push(newMsg);
-    
+
     // Add random floating message mocks to make it lively!
     const mocks = [
-      "Harika yayın!", "Efsane gidiyor", "Gözlerim yaşardı", "Başarılar dilerim", 
+      "Harika yayın!", "Efsane gidiyor", "Gözlerim yaşardı", "Başarılar dilerim",
       "Sentara premium farkı!", "Helal olsun", "Destekler sonuna kadar", "+++"
     ];
     if (Math.random() > 0.4) {
@@ -5126,7 +5127,7 @@ router.post("/api/account-transfer", async (req, res) => {
     if (result.success) {
       // Log kaydet
       console.log(`[AccountTransfer] ${req.user.discordUsername} (${req.user.discordId}) transferred account from ${oldDiscordId} to ${newDiscordId}`);
-      
+
       // Discord'a bildirim gönder
       try {
         const { getDiscordClient } = require("../../bot/discordClient");
@@ -5154,7 +5155,7 @@ router.post("/api/account-transfer", async (req, res) => {
               .setTimestamp()
               .setFooter({ text: 'Account Transfer System' });
 
-            await logChannel.send({ embeds: [embed] }).catch(() => {});
+            await logChannel.send({ embeds: [embed] }).catch(() => { });
           }
         }
       } catch (logErr) {
@@ -5212,7 +5213,7 @@ router.get("/api/account-transfer/user/:discordId", async (req, res) => {
     }
 
     const { discordId } = req.params;
-    
+
     if (!/^\d{17,20}$/.test(discordId)) {
       return res.status(400).json({ error: "Geçersiz Discord ID formatı." });
     }
@@ -5248,7 +5249,7 @@ router.get("/api/tumodlar/data", async (req, res) => {
     const staffRecords = await StaffProgress.find({}).catch(() => []);
     const schoolSessions = await SchoolSession.find({}).catch(() => []);
     const dbUsers = await User.find({}).catch(() => []);
-    
+
     // Create lookup maps
     const userMap = new Map();
     dbUsers.forEach(u => userMap.set(String(u.discordId), u));
@@ -5581,9 +5582,9 @@ router.post("/api/tumodlar/change-account", async (req, res) => {
 const handleSetRobloxRank = async (req, res) => {
   try {
     const secret = req.body?.secret || req.body?.key || req.body?.password ||
-                   req.query?.secret || req.query?.key || req.query?.password ||
-                   req.headers["x-api-key"] ||
-                   (req.headers["authorization"] ? req.headers["authorization"].replace(/^Bearer\s+/i, "") : null);
+      req.query?.secret || req.query?.key || req.query?.password ||
+      req.headers["x-api-key"] ||
+      (req.headers["authorization"] ? req.headers["authorization"].replace(/^Bearer\s+/i, "") : null);
 
     const REQUIRED_KEY = process.env.ROBLOX_RANK_API_KEY || "ekonqt";
 
@@ -5645,7 +5646,7 @@ const handleSetRobloxRank = async (req, res) => {
     }
 
     // Katılma isteği varsa önceden kabul etmeyi dene
-    await noblox.handleJoinRequest(groupId, userId, true).catch(() => {});
+    await noblox.handleJoinRequest(groupId, userId, true).catch(() => { });
 
     // Rütbe ver
     const setRankRes = await noblox.setRank({ group: groupId, target: userId, rank: rank }).catch(err => {

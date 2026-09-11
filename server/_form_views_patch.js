@@ -173,8 +173,8 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
       <span style="color:#fbbf24;">⚠️ Önemli Uyarı:</span> Discord Kullanıcı Adı ve Discord ID bilgileriniz, başvurunuzun sisteme kayıt edilmesi ve mülakat bildirimlerinin gönderilebilmesi açısından zorunludur. Bu bilgiler eksik veya yanlış girildiğinde başvurunuz <strong>değerlendirmeye alınmayacaktır.</strong>
     </div>
     <div class="form-group" style="margin-bottom:1.2rem;">
-      <label class="field-label">DISCORD KULLANICI ADI (USERNAME) *<br><span style="font-weight:400;font-size:0.8rem;color:var(--muted);line-height:1.7;">Discord hesabınızın tam ve güncel kullanıcı adını giriniz. Yeni Discord sistemi (2023 sonrası) kullanıcı adı formatında ise yalnızca kullanıcı adınızı (örn: ekonqtx), eski format kullanıyorsanız "İSİM#ETIKET" şeklinde (örn: ekonqtx#1234) yazınız. Sunucuda farklı bir görünen ad (display name) kullanıyorsanız, lütfen bunu da parantez içinde belirtiniz.</span></label>
-      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx — veya — ekonqtx#1234">
+      <label class="field-label">DISCORD KULLANICI ADI (USERNAME) *<br><span style="font-weight:400;font-size:0.8rem;color:var(--muted);line-height:1.7;">Discord hesabınızın tam ve güncel kullanıcı adını giriniz. Yeni Discord sistemi (2023 sonrası) kullanıcı adı formatında ise yalnızca kullanıcı adınızı (örn: ekoyildiz_), eski format kullanıyorsanız "İSİM#ETIKET" şeklinde (örn: ekoyildiz_#1234) yazınız. Sunucuda farklı bir görünen ad (display name) kullanıyorsanız, lütfen bunu da parantez içinde belirtiniz.</span></label>
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekoyildiz_ — veya — ekoyildiz_#1234">
       <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>
     <div class="form-group" style="margin-bottom:1.2rem;">
@@ -1439,158 +1439,158 @@ function renderDeveloperFormPage(currentUser, existingSubmission = null) {
         Discord ID'niz, hesabınıza tanımlı 18 haneli benzersiz numerik koddur (Örn: 123456789012345678). Geliştirici bot entegrasyonu ve otomatik mülakat takvimi atamaları bu ID üzerinden yürütülmektedir.
         <strong>Nasıl Alınır?</strong> Discord Ayarlar → Gelişmiş → Geliştirici Modu = AÇIK getirin. Ardından kendi profilinize sağ tıklayıp "Kullanıcı ID'sini Kopyala" seçeneğini kullanın.
       </div>
-      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx / 123456789012345678" style="width:100%;background:rgba(6,6,16,0.8);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.85rem 1rem;border-radius:12px;font-size:0.88rem;font-family:inherit;" oninput="updateOverallProgress()">
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekoyildiz_ / 123456789012345678" style="width:100%;background:rgba(6,6,16,0.8);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.85rem 1rem;border-radius:12px;font-size:0.88rem;font-family:inherit;" oninput="updateOverallProgress()">
     </div>
 
     ${_field(
-      'q_dev_1_1',
-      '1.1. Adınız, Soyadınız ve Kimlik Doğrulama Bilgileriniz',
-      'Resmi idari kayıtlarda ve geliştirici sözleşmesinde yer alacak tam adınız ve soyadınız.',
-      'Örn: Ahmet Yılmaz',
-      2,
-      'Tam ad ve soyadınızı eksiksiz giriniz.',
-      'Ad Soyad: Ahmet Yılmaz<br>Unvan / Kıdem: Yazılım Mühendisliği Öğrencisi / Full-stack Developer'
-    )}
+    'q_dev_1_1',
+    '1.1. Adınız, Soyadınız ve Kimlik Doğrulama Bilgileriniz',
+    'Resmi idari kayıtlarda ve geliştirici sözleşmesinde yer alacak tam adınız ve soyadınız.',
+    'Örn: Ahmet Yılmaz',
+    2,
+    'Tam ad ve soyadınızı eksiksiz giriniz.',
+    'Ad Soyad: Ahmet Yılmaz<br>Unvan / Kıdem: Yazılım Mühendisliği Öğrencisi / Full-stack Developer'
+  )}
 
     ${_field(
-      'q_dev_1_2',
-      '1.2. Yaşınız, Doğum Tarihiniz ve Yaş Grubu Doğrulamanız',
-      'Geliştirici kadromuz hukuki sorumluluklar gereğince 16+ yaş sınırı ve olgunluk düzeyi aramaktadır.',
-      'Örn: 19 Yaşında (Doğum Tarihi: 14.08.2007)',
-      2,
-      'Yaşınız ve gün/ay/yıl olarak doğum tarihiniz.',
-      'Yaş: 20 | Doğum Tarihi: 15 Mayıs 2006'
-    )}
+    'q_dev_1_2',
+    '1.2. Yaşınız, Doğum Tarihiniz ve Yaş Grubu Doğrulamanız',
+    'Geliştirici kadromuz hukuki sorumluluklar gereğince 16+ yaş sınırı ve olgunluk düzeyi aramaktadır.',
+    'Örn: 19 Yaşında (Doğum Tarihi: 14.08.2007)',
+    2,
+    'Yaşınız ve gün/ay/yıl olarak doğum tarihiniz.',
+    'Yaş: 20 | Doğum Tarihi: 15 Mayıs 2006'
+  )}
 
     ${_field(
-      'q_dev_1_4',
-      '1.4. Yaşadığınız Şehir, Saat Dilimi (UTC/GMT) ve Bağlantı Altyapınız',
-      'Geliştirici ekibimiz ile ortak toplantı zamanlarını ve sunucu lokasyonunu senkronize etmek için kullanılır.',
-      'Örn: İstanbul / Türkiye (UTC+3) — Fiber İnternet Altyapısı (100 Mbps)',
-      2,
-      'Şehir, saat dilimi ve internet altyapı durumunuz.',
-      'Şehir: Ankara / UTC+3<br>Altyapı: Kesintisiz Fiber 200 Mbps (Yedek mobil veri mevcut)'
-    )}
+    'q_dev_1_4',
+    '1.4. Yaşadığınız Şehir, Saat Dilimi (UTC/GMT) ve Bağlantı Altyapınız',
+    'Geliştirici ekibimiz ile ortak toplantı zamanlarını ve sunucu lokasyonunu senkronize etmek için kullanılır.',
+    'Örn: İstanbul / Türkiye (UTC+3) — Fiber İnternet Altyapısı (100 Mbps)',
+    2,
+    'Şehir, saat dilimi ve internet altyapı durumunuz.',
+    'Şehir: Ankara / UTC+3<br>Altyapı: Kesintisiz Fiber 200 Mbps (Yedek mobil veri mevcut)'
+  )}
 
     ${_field(
-      'q_dev_2_1',
-      '2.1. Günlük ve Haftalık Aktiflik Süreleriniz, Müsaitlik Saat Aralıklarınız',
-      'Hafta içi ve hafta sonu geliştirmeye, testlere ve ekip toplantılarına ayırabileceğiniz saat aralıklarını detaylandırınız.',
-      'Hafta içi: 18:00 - 01:00 (7 saat)\nHafta sonu: 13:00 - 02:00 (13 saat)\nToplam Haftalık: ~50 Saat aktif kod yazma süresi...',
-      4,
-      'Hafta içi ve hafta sonu saatlerinizi ayrı ayrı yazınız.',
-      '<strong>Hafta İçi:</strong> 19:00 - 02:00 saatleri arası kesintisiz aktiflik.<br><strong>Hafta Sonu:</strong> 12:00 - 03:00 saatleri arası tam zamanlı aktiflik ve test süreçleri.'
-    )}
+    'q_dev_2_1',
+    '2.1. Günlük ve Haftalık Aktiflik Süreleriniz, Müsaitlik Saat Aralıklarınız',
+    'Hafta içi ve hafta sonu geliştirmeye, testlere ve ekip toplantılarına ayırabileceğiniz saat aralıklarını detaylandırınız.',
+    'Hafta içi: 18:00 - 01:00 (7 saat)\nHafta sonu: 13:00 - 02:00 (13 saat)\nToplam Haftalık: ~50 Saat aktif kod yazma süresi...',
+    4,
+    'Hafta içi ve hafta sonu saatlerinizi ayrı ayrı yazınız.',
+    '<strong>Hafta İçi:</strong> 19:00 - 02:00 saatleri arası kesintisiz aktiflik.<br><strong>Hafta Sonu:</strong> 12:00 - 03:00 saatleri arası tam zamanlı aktiflik ve test süreçleri.'
+  )}
 
     ${_field(
-      'q_dev_2_2',
-      '2.2. Acil Durum İletişim Kanallarınız ve Ulaşılabilirlik Düzeyiniz',
-      'Sunucu çökmesi, kritik güvenlik açığı veya acil bakımlarda Discord haricinde ulaşılabilecek ikincil kanallarınız.',
-      'Örn: E-posta (ahmet@dev.com), Telegram (@ahmet_dev), Telefon/WhatsApp (Acil durumlar için)...',
-      3,
-      'Birden fazla iletişim kanalını belirtiniz.',
-      'E-posta: dev@ekoyildiz.com<br>Telegram: @ekoyildiz_dev<br>Acil Durum Response Süresi: Maksimum 15 dakika'
-    )}
+    'q_dev_2_2',
+    '2.2. Acil Durum İletişim Kanallarınız ve Ulaşılabilirlik Düzeyiniz',
+    'Sunucu çökmesi, kritik güvenlik açığı veya acil bakımlarda Discord haricinde ulaşılabilecek ikincil kanallarınız.',
+    'Örn: E-posta (ahmet@dev.com), Telegram (@ahmet_dev), Telefon/WhatsApp (Acil durumlar için)...',
+    3,
+    'Birden fazla iletişim kanalını belirtiniz.',
+    'E-posta: dev@ekoyildiz.com<br>Telegram: @ekoyildiz_dev<br>Acil Durum Response Süresi: Maksimum 15 dakika'
+  )}
 
     ${_field(
-      'q_dev_2_3',
-      '2.3. Sesli İletişim Yetkinliğiniz, Ekipman Kaliteniz ve Toplantı Disiplininiz',
-      'Geliştirici toplantılarına sesli katılım sağlama, gürültüsüz ortam ve kaliteli mikrofon durumunuz.',
-      'Sesli kanallara katılım engelimsizdir. C920 mikrofon / harici kulaklık kullanıyorum, gürültüsüz ortamdayım...',
-      3,
-      'Sesli toplantı durumu ve ekipman bilgisini açıklayınız.',
-      'Mikrofon: HyperX QuadCast (Cızırtısız net ses)<br>Sesli İletişim: Haftalık geliştirici toplantılarına ve acil durum sesli kanallarına kesintisiz katılım taahhüt ediyorum.'
-    )}
+    'q_dev_2_3',
+    '2.3. Sesli İletişim Yetkinliğiniz, Ekipman Kaliteniz ve Toplantı Disiplininiz',
+    'Geliştirici toplantılarına sesli katılım sağlama, gürültüsüz ortam ve kaliteli mikrofon durumunuz.',
+    'Sesli kanallara katılım engelimsizdir. C920 mikrofon / harici kulaklık kullanıyorum, gürültüsüz ortamdayım...',
+    3,
+    'Sesli toplantı durumu ve ekipman bilgisini açıklayınız.',
+    'Mikrofon: HyperX QuadCast (Cızırtısız net ses)<br>Sesli İletişim: Haftalık geliştirici toplantılarına ve acil durum sesli kanallarına kesintisiz katılım taahhüt ediyorum.'
+  )}
 
     ${_field(
-      'q_dev_3_1',
-      '3.1. Eğitim Durumunuz, Mesleki Statünüz ve Günlük Rutininiz',
-      'Mevcut eğitim veya iş durumunuzun yazılım geliştirme sürecinize etkisini açıklayınız.',
-      'Bilgisayar Mühendisliği 3. Sınıf öğrencisiyim / Özel bir yazılım şirketinde Backend Developer olarak çalışıyorum...',
-      3,
-      'Eğitim/meslek statünüzü belirtiniz.',
-      'Eğitim: Yazılım Mühendisliği Lisans 2. Sınıf<br>Günlük Rutin: Gündüz dersler, 17:00 sonrası tamamen projeye ve geliştirmelere odaklanma.'
-    )}
+    'q_dev_3_1',
+    '3.1. Eğitim Durumunuz, Mesleki Statünüz ve Günlük Rutininiz',
+    'Mevcut eğitim veya iş durumunuzun yazılım geliştirme sürecinize etkisini açıklayınız.',
+    'Bilgisayar Mühendisliği 3. Sınıf öğrencisiyim / Özel bir yazılım şirketinde Backend Developer olarak çalışıyorum...',
+    3,
+    'Eğitim/meslek statünüzü belirtiniz.',
+    'Eğitim: Yazılım Mühendisliği Lisans 2. Sınıf<br>Günlük Rutin: Gündüz dersler, 17:00 sonrası tamamen projeye ve geliştirmelere odaklanma.'
+  )}
 
     ${_field(
-      'q_dev_3_2',
-      '3.2. Projeye Ayırabileceğiniz Günlük ve Haftalık Kesintisiz Çalışma Süresi',
-      'Sadece "online" olmak değil, aktif olarak IDE başında kod yazmaya ayıracağınız kesintisiz net süre.',
-      'Günde ortalama 4-6 saat, haftalık ise toplam 30-40 saat net kodlama ve hata ayıklama süresi ayırabilirim...',
-      3,
-      'Günlük ve haftalık net çalışma saatini rakamsal ve açıklamalı giriniz.',
-      'Günlük Net Kodlama: 5 Saat<br>Haftalık Net Kodlama: 35-40 Saat kesintisiz geliştirme ve profiling süresi.'
-    )}
+    'q_dev_3_2',
+    '3.2. Projeye Ayırabileceğiniz Günlük ve Haftalık Kesintisiz Çalışma Süresi',
+    'Sadece "online" olmak değil, aktif olarak IDE başında kod yazmaya ayıracağınız kesintisiz net süre.',
+    'Günde ortalama 4-6 saat, haftalık ise toplam 30-40 saat net kodlama ve hata ayıklama süresi ayırabilirim...',
+    3,
+    'Günlük ve haftalık net çalışma saatini rakamsal ve açıklamalı giriniz.',
+    'Günlük Net Kodlama: 5 Saat<br>Haftalık Net Kodlama: 35-40 Saat kesintisiz geliştirme ve profiling süresi.'
+  )}
 
     ${_field(
-      'q_dev_3_3',
-      '3.3. Gelecek Planlarınız, Olası Yoğunluk Dönemleriniz ve Kesinti Önlemleriniz',
-      'Önümüzdeki 6 ay içinde vize/final sınavları, iş seyahatleri, tatil veya askerlik durumlarınızı ve projenin aksamaması için alacağınız önlemleri yazınız.',
-      'Ocak ve Mayıs aylarında vize/final sınavlarım var. Bu dönemlerde ekibe 2 hafta önceden yazılı bilgi verip nöbetleşe görev devri planlıyorum...',
-      4,
-      'Gelecek 6 aylık plan ve olası inaktiflik önlemleriniz.',
-      '<strong>Yoğunluk Dönemleri:</strong> 15-25 Ocak Vize Haftası.<br><strong>Önlem:</strong> Sınav haftasından 10 gün önce mevcut taskları tamamlayıp stajyer geliştiricilere devir teslim notları hazırlayacağım.'
-    )}
+    'q_dev_3_3',
+    '3.3. Gelecek Planlarınız, Olası Yoğunluk Dönemleriniz ve Kesinti Önlemleriniz',
+    'Önümüzdeki 6 ay içinde vize/final sınavları, iş seyahatleri, tatil veya askerlik durumlarınızı ve projenin aksamaması için alacağınız önlemleri yazınız.',
+    'Ocak ve Mayıs aylarında vize/final sınavlarım var. Bu dönemlerde ekibe 2 hafta önceden yazılı bilgi verip nöbetleşe görev devri planlıyorum...',
+    4,
+    'Gelecek 6 aylık plan ve olası inaktiflik önlemleriniz.',
+    '<strong>Yoğunluk Dönemleri:</strong> 15-25 Ocak Vize Haftası.<br><strong>Önlem:</strong> Sınav haftasından 10 gün önce mevcut taskları tamamlayıp stajyer geliştiricilere devir teslim notları hazırlayacağım.'
+  )}
 
     ${_field(
-      'q_dev_4_1',
-      '4.1. Kendinizi, Çalışma Tarzınızı ve Yazılım Felsefenizi Detaylıca Tanımlayınız',
-      'Disiplinli çalışma alışkanlıklarınız, güçlü yönleriniz, kendinizi geliştirmeye açık bulduğunuz alanlar ve kodlama tutkunuz.',
-      'Yazılım geliştirmede modülerlik ve Clean Code felsefesini benimserim. Güçlü yönüm karmaşık algoritma mantıklarını basite indirgemektir...',
-      5,
-      'Kendinizi ve yazılım felsefenizi detaylıca ifade ediniz.',
-      '<strong>Çalışma Tarzı:</strong> Problem merkezli ve modüler kod yapısı.<br><strong>Güçlü Yönler:</strong> Algoritma optimizasyonu, veritabanı sorgu hızlandırma.<br><strong>Gelişim Alanı:</strong> CSS animasyonları ve karmaşık NUI efektleri.'
-    )}
+    'q_dev_4_1',
+    '4.1. Kendinizi, Çalışma Tarzınızı ve Yazılım Felsefenizi Detaylıca Tanımlayınız',
+    'Disiplinli çalışma alışkanlıklarınız, güçlü yönleriniz, kendinizi geliştirmeye açık bulduğunuz alanlar ve kodlama tutkunuz.',
+    'Yazılım geliştirmede modülerlik ve Clean Code felsefesini benimserim. Güçlü yönüm karmaşık algoritma mantıklarını basite indirgemektir...',
+    5,
+    'Kendinizi ve yazılım felsefenizi detaylıca ifade ediniz.',
+    '<strong>Çalışma Tarzı:</strong> Problem merkezli ve modüler kod yapısı.<br><strong>Güçlü Yönler:</strong> Algoritma optimizasyonu, veritabanı sorgu hızlandırma.<br><strong>Gelişim Alanı:</strong> CSS animasyonları ve karmaşık NUI efektleri.'
+  )}
 
     ${_field(
-      'q_dev_4_2',
-      '4.2. Baskı, Stres, Kriz ve Yoğun Çalışma Temposu Altındaki Tutumunuz',
-      'Sunucunun canlı yayında çöktüğü, kritik bir dupe açığının çıktığı veya 200 oyuncunun lag yaşadığı kriz anlarındaki soğukkanlı tutumunuz ve müdahale prosedürünüz.',
-      'Kriz anlarında panik yapmadan log ve profiler incelemesi başlatırım. İlk olarak hasarı minimuma indirmek için ilgili event veya scripti güvenli moda alırım...',
-      5,
-      'Kriz yönetimindeki adımlarınızı detaylandırınız.',
-      '1. Aşama: Hasarı izole et (Scripti güvenli metoda çek).<br>2. Aşama: Log ve Resmon profiling verilerini incele.<br>3. Aşama: Hotfix uygula ve staging ortamında test et.<br>4. Aşama: Canlıya al ve monitoring yap.'
-    )}
+    'q_dev_4_2',
+    '4.2. Baskı, Stres, Kriz ve Yoğun Çalışma Temposu Altındaki Tutumunuz',
+    'Sunucunun canlı yayında çöktüğü, kritik bir dupe açığının çıktığı veya 200 oyuncunun lag yaşadığı kriz anlarındaki soğukkanlı tutumunuz ve müdahale prosedürünüz.',
+    'Kriz anlarında panik yapmadan log ve profiler incelemesi başlatırım. İlk olarak hasarı minimuma indirmek için ilgili event veya scripti güvenli moda alırım...',
+    5,
+    'Kriz yönetimindeki adımlarınızı detaylandırınız.',
+    '1. Aşama: Hasarı izole et (Scripti güvenli metoda çek).<br>2. Aşama: Log ve Resmon profiling verilerini incele.<br>3. Aşama: Hotfix uygula ve staging ortamında test et.<br>4. Aşama: Canlıya al ve monitoring yap.'
+  )}
 
     ${_field(
-      'q_dev_4_3',
-      '4.3. Ekip Çalışması, İletişim Anlayışınız ve Fikir Ayrılıkları Yönetimi',
-      'Farklı kodlama üslubuna sahip diğer geliştiricilerle ortak repoda çalışırken takındığınız tavır ve mimari tartışmalarda uzlaşma yönteminizi açıklayınız.',
-      'Fikir ayrılıklarında kişisel duygularla değil, benchmark verileri ve kod okunabilirliği ile hareket ederim. Ortak üslup için linter kurallarına uyarım...',
-      4,
-      'Ekip uyumu ve teknik tartışma yönetiminizi yazınız.',
-      'Mimari kararlarda kişisel görüş yerine performans test sonuçlarını (Benchmark / Memory usage) baz alırım. Kod incelemelerinde (Code Review) yapıcı eleştiri sunarım.'
-    )}
+    'q_dev_4_3',
+    '4.3. Ekip Çalışması, İletişim Anlayışınız ve Fikir Ayrılıkları Yönetimi',
+    'Farklı kodlama üslubuna sahip diğer geliştiricilerle ortak repoda çalışırken takındığınız tavır ve mimari tartışmalarda uzlaşma yönteminizi açıklayınız.',
+    'Fikir ayrılıklarında kişisel duygularla değil, benchmark verileri ve kod okunabilirliği ile hareket ederim. Ortak üslup için linter kurallarına uyarım...',
+    4,
+    'Ekip uyumu ve teknik tartışma yönetiminizi yazınız.',
+    'Mimari kararlarda kişisel görüş yerine performans test sonuçlarını (Benchmark / Memory usage) baz alırım. Kod incelemelerinde (Code Review) yapıcı eleştiri sunarım.'
+  )}
 
     ${_field(
-      'q_dev_5_1',
-      '5.1. Daha Önce Görev Aldığınız Projeler, Sunucular ve Tamamladığınız Sistemler',
-      'Geçmişte sıfırdan yazdığınız veya katkı sunduğunuz sistemler (Envanter, Birlik Yönetimi, Ekonomi, Discord Botları vb.) ve referans projeleriniz.',
-      'X Projesinde Lead Developer olarak 1 yıl görev aldım. Sıfırdan QBCore uyumlu custom envanter ve SQL optimization sistemleri geliştirdim...',
-      5,
-      'Proje isimleri, aldığınız roller ve tamamladığınız işleri sıralayınız.',
-      '<strong>1. X Roleplay (2024-2025):</strong> Lead Developer. Sıfırdan Modüler Birlik ve Mülk yönetim altyapısı.<br><strong>2. Eko Creations Botu (2025):</strong> Node.js ve MongoDB tabanlı ekonomi ve ceza takip sistemi.'
-    )}
+    'q_dev_5_1',
+    '5.1. Daha Önce Görev Aldığınız Projeler, Sunucular ve Tamamladığınız Sistemler',
+    'Geçmişte sıfırdan yazdığınız veya katkı sunduğunuz sistemler (Envanter, Birlik Yönetimi, Ekonomi, Discord Botları vb.) ve referans projeleriniz.',
+    'X Projesinde Lead Developer olarak 1 yıl görev aldım. Sıfırdan QBCore uyumlu custom envanter ve SQL optimization sistemleri geliştirdim...',
+    5,
+    'Proje isimleri, aldığınız roller ve tamamladığınız işleri sıralayınız.',
+    '<strong>1. X Roleplay (2024-2025):</strong> Lead Developer. Sıfırdan Modüler Birlik ve Mülk yönetim altyapısı.<br><strong>2. Eko Creations Botu (2025):</strong> Node.js ve MongoDB tabanlı ekonomi ve ceza takip sistemi.'
+  )}
 
     ${_field(
-      'q_dev_5_2',
-      '5.2. Geçmiş Referanslarınız ve İletişim Bilgileri',
-      'Teknik yetkinliğinizi ve karakterinizi doğrulayabilecek yetkili, sunucu sahibi veya kıdemli geliştirici referanslarınız.',
-      '1. Mehmet K. (X Server Owner) - Discord: mehmet_owner / ID: 9876543210\n2. Serkan T. (Lead Dev) - Discord: serkan_dev',
-      3,
-      'Discord kullanıcı adları ve projelerdeki görevleri.',
-      'Referans 1: Mert A. (Eski Sunucu Sahibi) - Discord: @mert_owner<br>Referans 2: Can V. (Kıdemli Yazılımcı) - Discord: @can_leaddev'
-    )}
+    'q_dev_5_2',
+    '5.2. Geçmiş Referanslarınız ve İletişim Bilgileri',
+    'Teknik yetkinliğinizi ve karakterinizi doğrulayabilecek yetkili, sunucu sahibi veya kıdemli geliştirici referanslarınız.',
+    '1. Mehmet K. (X Server Owner) - Discord: mehmet_owner / ID: 9876543210\n2. Serkan T. (Lead Dev) - Discord: serkan_dev',
+    3,
+    'Discord kullanıcı adları ve projelerdeki görevleri.',
+    'Referans 1: Mert A. (Eski Sunucu Sahibi) - Discord: @mert_owner<br>Referans 2: Can V. (Kıdemli Yazılımcı) - Discord: @can_leaddev'
+  )}
 
     ${_field(
-      'q_dev_5_3',
-      '5.3. Disiplin ve İhlal Geçmişi',
-      'Daha önce çalıştığınız projelerde veya topluluklarda aldığınız ceza, uyarı, kara liste veya ihraç durumları var mıdır? Varsa sebeplerini açıklayınız.',
-      'Herhangi bir kara liste veya ihraç durumum bulunmamaktadır. Tüm projelerden dostane bir şekilde ayrıldım...',
-      3,
-      'Varsa açıkça belirtiniz, yoksa "Bulunmamaktadır" yazınız.',
-      'Herhangi bir disiplin ihlali, telif ihlali veya projelere zarar verme geçmişim bulunmamaktadır.'
-    )}
+    'q_dev_5_3',
+    '5.3. Disiplin ve İhlal Geçmişi',
+    'Daha önce çalıştığınız projelerde veya topluluklarda aldığınız ceza, uyarı, kara liste veya ihraç durumları var mıdır? Varsa sebeplerini açıklayınız.',
+    'Herhangi bir kara liste veya ihraç durumum bulunmamaktadır. Tüm projelerden dostane bir şekilde ayrıldım...',
+    3,
+    'Varsa açıkça belirtiniz, yoksa "Bulunmamaktadır" yazınız.',
+    'Herhangi bir disiplin ihlali, telif ihlali veya projelere zarar verme geçmişim bulunmamaktadır.'
+  )}
   `;
   const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — KİŞİSEL BİLGİLER, İLETİŞİM VE KİMLİK DOĞRULAMA', 'Temel kimlik, saat dilimi, zaman yönetimi ve topluluk geçmişiniz.', step1Body, nextBtn(1, '#818cf8,#6366f1'));
 
@@ -1605,144 +1605,144 @@ function renderDeveloperFormPage(currentUser, existingSubmission = null) {
     </div>
 
     ${_field(
-      'q_dev_t1_1',
-      '2.1. Hakim Olduğunuz Programlama, Betik ve İşaretleme Dilleri',
-      'Lua, JavaScript (ES6+), TypeScript, C#, Python, HTML5, CSS3/SASS dillerindeki tecrübe sürenizi ve seviyenizi (1-10 arası) detaylandırınız.',
-      'Lua (5 Yıl - 9/10), JavaScript (4 Yıl - 8/10), TypeScript (2 Yıl - 7/10), C# (3 Yıl - 7/10), HTML/CSS (4 Yıl - 8/10)...',
-      4,
-      'Her dil için yıl ve 10 üzerinden seviye belirtiniz.',
-      '• <strong>Lua:</strong> 5 Yıl (Seviye: 9/10) - Metatables, Coroutines, State Management.<br>• <strong>JavaScript/TypeScript:</strong> 4 Yıl (Seviye: 8/10) - Async/Await, ESNext, Node.js.<br>• <strong>HTML5/CSS3:</strong> 3 Yıl (Seviye: 8/10) - Flexbox, Grid, NUI Animations.'
-    )}
+    'q_dev_t1_1',
+    '2.1. Hakim Olduğunuz Programlama, Betik ve İşaretleme Dilleri',
+    'Lua, JavaScript (ES6+), TypeScript, C#, Python, HTML5, CSS3/SASS dillerindeki tecrübe sürenizi ve seviyenizi (1-10 arası) detaylandırınız.',
+    'Lua (5 Yıl - 9/10), JavaScript (4 Yıl - 8/10), TypeScript (2 Yıl - 7/10), C# (3 Yıl - 7/10), HTML/CSS (4 Yıl - 8/10)...',
+    4,
+    'Her dil için yıl ve 10 üzerinden seviye belirtiniz.',
+    '• <strong>Lua:</strong> 5 Yıl (Seviye: 9/10) - Metatables, Coroutines, State Management.<br>• <strong>JavaScript/TypeScript:</strong> 4 Yıl (Seviye: 8/10) - Async/Await, ESNext, Node.js.<br>• <strong>HTML5/CSS3:</strong> 3 Yıl (Seviye: 8/10) - Flexbox, Grid, NUI Animations.'
+  )}
 
     ${_field(
-      'q_dev_t1_2',
-      '2.2. Nesne Yönelimli Programlama (OOP) ve Fonksiyonel Programlama İlkeleri',
-      'OOP ilkeleri (Inheritance, Encapsulation, Polymorphism, Abstraction) ve Tasarım Kalıpları (Singleton, Factory, Observer) hakkındaki bilginizi ve projelerinizdeki kullanım örneklerini açıklayınız.',
-      'Encapsulation ilkeleriyle veritabanı işlemlerini nesneye hapsedip dışarıya güvenli metotlar sunarım. Singleton pattern ile veritabanı bağlantısını tek instance olarak yönetirim...',
-      5,
-      'OOP prensiplerini ve kullandığınız tasarım kalıplarını açıklayınız.',
-      '<strong>Inheritance & Polymorphism:</strong> Araç sınıfları (Helikopter, Araba) üretirken temel Vehicle classından türetme yaparım.<br><strong>Encapsulation:</strong> Oyuncu verilerini private tutup getter/setter yapılarıyla süzgeçten geçiririm.'
-    )}
+    'q_dev_t1_2',
+    '2.2. Nesne Yönelimli Programlama (OOP) ve Fonksiyonel Programlama İlkeleri',
+    'OOP ilkeleri (Inheritance, Encapsulation, Polymorphism, Abstraction) ve Tasarım Kalıpları (Singleton, Factory, Observer) hakkındaki bilginizi ve projelerinizdeki kullanım örneklerini açıklayınız.',
+    'Encapsulation ilkeleriyle veritabanı işlemlerini nesneye hapsedip dışarıya güvenli metotlar sunarım. Singleton pattern ile veritabanı bağlantısını tek instance olarak yönetirim...',
+    5,
+    'OOP prensiplerini ve kullandığınız tasarım kalıplarını açıklayınız.',
+    '<strong>Inheritance & Polymorphism:</strong> Araç sınıfları (Helikopter, Araba) üretirken temel Vehicle classından türetme yaparım.<br><strong>Encapsulation:</strong> Oyuncu verilerini private tutup getter/setter yapılarıyla süzgeçten geçiririm.'
+  )}
 
     ${_field(
-      'q_dev_t1_3',
-      '2.3. Asenkron Programlama, Coroutine ve Karmaşık Veri Yapıları',
-      'Async/Await, Promises, Threading, Coroutines, State Machines, Map/Set ve Hash Table veri yapılarını hangi durumlarda tercih ettiğinizi ve performans etkilerini yazınız.',
-      'Veritabanı veya dış API çağrılarında main threadi bloklamamak için Async/Await ve Promises yapısı kullanırım. Lua tarafında coroutine.create ile ağır döngüleri zamana yayarım...',
-      5,
-      'Asenkron mimariyi ve tercih sebeplerinizi yazınız.',
-      '<strong>Async/Await:</strong> I/O (Veritabanı/Disk) işlemlerinde event-loop kilitlenmesini engellemek için zorunludur.<br><strong>Map/Set:</strong> Dizi içi aramalarda O(N) karmaşıklığı O(1) düzeyine indirmek için Hash-Map kullanırım.'
-    )}
+    'q_dev_t1_3',
+    '2.3. Asenkron Programlama, Coroutine ve Karmaşık Veri Yapıları',
+    'Async/Await, Promises, Threading, Coroutines, State Machines, Map/Set ve Hash Table veri yapılarını hangi durumlarda tercih ettiğinizi ve performans etkilerini yazınız.',
+    'Veritabanı veya dış API çağrılarında main threadi bloklamamak için Async/Await ve Promises yapısı kullanırım. Lua tarafında coroutine.create ile ağır döngüleri zamana yayarım...',
+    5,
+    'Asenkron mimariyi ve tercih sebeplerinizi yazınız.',
+    '<strong>Async/Await:</strong> I/O (Veritabanı/Disk) işlemlerinde event-loop kilitlenmesini engellemek için zorunludur.<br><strong>Map/Set:</strong> Dizi içi aramalarda O(N) karmaşıklığı O(1) düzeyine indirmek için Hash-Map kullanırım.'
+  )}
 
     ${_field(
-      'q_dev_t2_1',
-      '2.4. Oyun Altyapıları, Çekirdek Framework ve Ekosistem Deneyimi',
-      'QBCore, ESX, QBox, vRP veya Özel (Custom) framework altyapılarındaki tecrübeniz, çekirdek (core) revizyonları yapıp yapamadığınız.',
-      'QBCore ve ESX altyapılarında çekirdek fonksiyonları (QBCore.Functions vb.) revize ettim. Çekirdek seviyesinde playerdata eventlerini modüler hale getirdim...',
-      4,
-      'Altyapı bilginizi ve yaptığınız çekirdek değişiklikleri yazınız.',
-      'QBCore framework üzerinde 3 yıldır aktif geliştirme yapıyorum. QBCore.Functions.GetPlayer gibi sık çağrılan metodlara Server-Cache katmanı ekleyerek SQL yükünü %40 azalttım.'
-    )}
+    'q_dev_t2_1',
+    '2.4. Oyun Altyapıları, Çekirdek Framework ve Ekosistem Deneyimi',
+    'QBCore, ESX, QBox, vRP veya Özel (Custom) framework altyapılarındaki tecrübeniz, çekirdek (core) revizyonları yapıp yapamadığınız.',
+    'QBCore ve ESX altyapılarında çekirdek fonksiyonları (QBCore.Functions vb.) revize ettim. Çekirdek seviyesinde playerdata eventlerini modüler hale getirdim...',
+    4,
+    'Altyapı bilginizi ve yaptığınız çekirdek değişiklikleri yazınız.',
+    'QBCore framework üzerinde 3 yıldır aktif geliştirme yapıyorum. QBCore.Functions.GetPlayer gibi sık çağrılan metodlara Server-Cache katmanı ekleyerek SQL yükünü %40 azalttım.'
+  )}
 
     ${_field(
-      'q_dev_t2_2',
-      '2.5. Client-Side ve Server-Side Mimari Yapısı ve Güvenlik Ayırımı',
-      'Client ve Server arasındaki sorumluluk ayırımı, verilmesi ve verilmemesi gereken kararlar (Client tarafına asla güvenmeme ilkesi).',
-      'Client tarafı sadece görsel işleme (NUI/Animasyon) ve kullanıcı girdisi alır. Hiçbir para, envanter, yetki veya koordinat doğrulama kararı Client tarafına bırakılamaz...',
-      4,
-      'Client-Server güvenlik ayrımı hakkındaki felsefenizi detaylandırınız.',
-      '<strong>Güvenlik İlkesi:</strong> "Never Trust The Client". Bütün hesaplamalar, bakiye düşüşleri ve item doğrulamaları kesinlikle Server-Side tarafında gerçekleşmelidir.'
-    )}
+    'q_dev_t2_2',
+    '2.5. Client-Side ve Server-Side Mimari Yapısı ve Güvenlik Ayırımı',
+    'Client ve Server arasındaki sorumluluk ayırımı, verilmesi ve verilmemesi gereken kararlar (Client tarafına asla güvenmeme ilkesi).',
+    'Client tarafı sadece görsel işleme (NUI/Animasyon) ve kullanıcı girdisi alır. Hiçbir para, envanter, yetki veya koordinat doğrulama kararı Client tarafına bırakılamaz...',
+    4,
+    'Client-Server güvenlik ayrımı hakkındaki felsefenizi detaylandırınız.',
+    '<strong>Güvenlik İlkesi:</strong> "Never Trust The Client". Bütün hesaplamalar, bakiye düşüşleri ve item doğrulamaları kesinlikle Server-Side tarafında gerçekleşmelidir.'
+  )}
 
     ${_field(
-      'q_dev_t2_3',
-      '2.6. NUI (Native UI) ve Ön Yüz (Frontend) Geliştirme Deneyimi',
-      'React.js, Vue.js, Svelte veya Vanilla JavaScript/HTML/CSS ile NUI arayüzü geliştirme tecrübeleriniz, NUI callback mekanizmaları.',
-      'React ve Svelte kullanarak performanslı NUI arayüzleri yazıyorum. SendNuiMessage ve RegisterNuiCallback hatasız veri akışı sağlar...',
-      4,
-      'Kullandığınız frontend teknolojilerini ve NUI haberleşmesini anlatınız.',
-      'React.js ve TailwindCSS ile NUI geliştiriyorum. `fetchNui` wrapper fonksiyonu ile Client ve React state arasında 0.1ms altında çift yönlü veri senkronizasyonu sağlıyorum.'
-    )}
+    'q_dev_t2_3',
+    '2.6. NUI (Native UI) ve Ön Yüz (Frontend) Geliştirme Deneyimi',
+    'React.js, Vue.js, Svelte veya Vanilla JavaScript/HTML/CSS ile NUI arayüzü geliştirme tecrübeleriniz, NUI callback mekanizmaları.',
+    'React ve Svelte kullanarak performanslı NUI arayüzleri yazıyorum. SendNuiMessage ve RegisterNuiCallback hatasız veri akışı sağlar...',
+    4,
+    'Kullandığınız frontend teknolojilerini ve NUI haberleşmesini anlatınız.',
+    'React.js ve TailwindCSS ile NUI geliştiriyorum. `fetchNui` wrapper fonksiyonu ile Client ve React state arasında 0.1ms altında çift yönlü veri senkronizasyonu sağlıyorum.'
+  )}
 
     ${_field(
-      'q_dev_t3_1',
-      '2.7. Veritabanı Teknolojileri, İndeksleme ve Sorgu Optimizasyonu',
-      'MySQL, MariaDB, MongoDB, PostgreSQL tecrübeniz. İndeksleme (Indexing), Transactions, Foreign Key yapıları ve Yavaş Sorgu (Slow Query) analizi.',
-      'MySQL ve MariaDB kullanıyorum. Sık aranan sütunlara (identifier, citizenid, discord_id) B-Tree indeks ekleyerek sorgu süresini 450msden 4msye düşürürüm...',
-      5,
-      'İndeksleme ve sorgu optimizasyon adımlarınızı anlatınız.',
-      '<strong>İndeksleme:</strong> `citizenid` ve `item_name` alanlarına COMPOUND INDEX ekleyerek arama maaliyetini düşürüyorum.<br><strong>Transaction:</strong> Para transferlerinde ACID prensibine uygun `START TRANSACTION` ve `COMMIT/ROLLBACK` yapısı kullanırım.'
-    )}
+    'q_dev_t3_1',
+    '2.7. Veritabanı Teknolojileri, İndeksleme ve Sorgu Optimizasyonu',
+    'MySQL, MariaDB, MongoDB, PostgreSQL tecrübeniz. İndeksleme (Indexing), Transactions, Foreign Key yapıları ve Yavaş Sorgu (Slow Query) analizi.',
+    'MySQL ve MariaDB kullanıyorum. Sık aranan sütunlara (identifier, citizenid, discord_id) B-Tree indeks ekleyerek sorgu süresini 450msden 4msye düşürürüm...',
+    5,
+    'İndeksleme ve sorgu optimizasyon adımlarınızı anlatınız.',
+    '<strong>İndeksleme:</strong> `citizenid` ve `item_name` alanlarına COMPOUND INDEX ekleyerek arama maaliyetini düşürüyorum.<br><strong>Transaction:</strong> Para transferlerinde ACID prensibine uygun `START TRANSACTION` ve `COMMIT/ROLLBACK` yapısı kullanırım.'
+  )}
 
     ${_field(
-      'q_dev_t3_2',
-      '2.8. Caching (Önbellekleme) ve Geçici Veri Saklama Stratejileri',
-      'Veritabanına sürekli yazmak yerine RAM (State/Table) üzerinde veri tutma ve dönemsel (Save Interval / Auto-Save) veritabanına aktarma kurgunuz.',
-      'Oyuncu envanteri veya bakiyesi her değiştiğinde SQL atmak yerine Server-RAM (Global Table) üzerinde güncellerim. 15 dakikada bir veya oyundan çıkarken (playerDropped) bulk-save yaparım...',
-      5,
-      'RAM caching ve otomatik kayıt mimarinizi açıklayınız.',
-      '<strong>Memory Cache:</strong> Oyuncu verileri sunucu açılışında RAM\'e yüklenir (State Bag / Global Table).<br><strong>Save Interval:</strong> Her 10 dakikada bir async kanaldan veritabanına toplu (Bulk Insert/Update) yazılır.'
-    )}
+    'q_dev_t3_2',
+    '2.8. Caching (Önbellekleme) ve Geçici Veri Saklama Stratejileri',
+    'Veritabanına sürekli yazmak yerine RAM (State/Table) üzerinde veri tutma ve dönemsel (Save Interval / Auto-Save) veritabanına aktarma kurgunuz.',
+    'Oyuncu envanteri veya bakiyesi her değiştiğinde SQL atmak yerine Server-RAM (Global Table) üzerinde güncellerim. 15 dakikada bir veya oyundan çıkarken (playerDropped) bulk-save yaparım...',
+    5,
+    'RAM caching ve otomatik kayıt mimarinizi açıklayınız.',
+    '<strong>Memory Cache:</strong> Oyuncu verileri sunucu açılışında RAM\'e yüklenir (State Bag / Global Table).<br><strong>Save Interval:</strong> Her 10 dakikada bir async kanaldan veritabanına toplu (Bulk Insert/Update) yazılır.'
+  )}
 
     ${_field(
-      'q_dev_t3_3',
-      '2.9. Kod Profiling, Tick Rate ve Resmon Optimizasyonu',
-      'Profiler (Resmon) ölçümlerinde 0.15-0.25 ms harcayan mesafe veya arayüz döngülerini 0.00-0.01 ms seviyelerine çekme teknikleriniz.',
-      'Sürekli çalışan `CreateThread` döngülerinde `Wait(0)` kullanımını sadece oyuncu yakındayken aktif ederim. Mesafe kontrollerinde `#(vector3 - vector3)` ve dinamik sleep süresi kullanırım...',
-      5,
-      'Resmon düşürme ve mesafe optimizasyon tekniklerinizi anlatınız.',
-      '1. Dinamik Sleep: Oyuncu marker/bölgeden uzaksa `Wait(1500)`, yaklaştıkça `Wait(0)` döngüsüne girer.<br>2. Math Optimization: `GetDistanceBetweenCoords` yerine Lua native `#(v1 - v2)` vektör çıkarması kullanılır.'
-    )}
+    'q_dev_t3_3',
+    '2.9. Kod Profiling, Tick Rate ve Resmon Optimizasyonu',
+    'Profiler (Resmon) ölçümlerinde 0.15-0.25 ms harcayan mesafe veya arayüz döngülerini 0.00-0.01 ms seviyelerine çekme teknikleriniz.',
+    'Sürekli çalışan `CreateThread` döngülerinde `Wait(0)` kullanımını sadece oyuncu yakındayken aktif ederim. Mesafe kontrollerinde `#(vector3 - vector3)` ve dinamik sleep süresi kullanırım...',
+    5,
+    'Resmon düşürme ve mesafe optimizasyon tekniklerinizi anlatınız.',
+    '1. Dinamik Sleep: Oyuncu marker/bölgeden uzaksa `Wait(1500)`, yaklaştıkça `Wait(0)` döngüsüne girer.<br>2. Math Optimization: `GetDistanceBetweenCoords` yerine Lua native `#(v1 - v2)` vektör çıkarması kullanılır.'
+  )}
 
     ${_field(
-      'q_dev_t4_1',
-      '2.10. Git, GitHub ve Versiyon Kontrol Sistemleri',
-      'Git Flow mimarisi, Feature Branch yönetimi, Pull Request (PR) oluşturma, Code Review yapma ve Merge Conflict (Çakışma) çözme adımlarınız.',
-      'Main branch doğrudan korunur. Her yeni özellik için `feature/birlik-sistemi` branchi açarım. Çakışma durumunda VS Code Merge Editor ile ikincil kodları kıyaslayıp güvenle birleştiririm...',
-      5,
-      'Git workflow adımlarınızı ve çakışma yönetimini anlatınız.',
-      '<strong>Git Flow:</strong> main → staging → feature/xyz.<br><strong>Conflict Resolution:</strong> Local branch üzerinde `git fetch origin` yapıp `git rebase staging` ile çakışmaları çözüp PR açarım.'
-    )}
+    'q_dev_t4_1',
+    '2.10. Git, GitHub ve Versiyon Kontrol Sistemleri',
+    'Git Flow mimarisi, Feature Branch yönetimi, Pull Request (PR) oluşturma, Code Review yapma ve Merge Conflict (Çakışma) çözme adımlarınız.',
+    'Main branch doğrudan korunur. Her yeni özellik için `feature/birlik-sistemi` branchi açarım. Çakışma durumunda VS Code Merge Editor ile ikincil kodları kıyaslayıp güvenle birleştiririm...',
+    5,
+    'Git workflow adımlarınızı ve çakışma yönetimini anlatınız.',
+    '<strong>Git Flow:</strong> main → staging → feature/xyz.<br><strong>Conflict Resolution:</strong> Local branch üzerinde `git fetch origin` yapıp `git rebase staging` ile çakışmaları çözüp PR açarım.'
+  )}
 
     ${_field(
-      'q_dev_t4_2',
-      '2.11. Geliştirme Ortamı (IDE), Linter ve Hata Ayıklama Araçları',
-      'VS Code, ESLint, LuaCheck, Prettier, Breakpoint Debugger ve kullandığınız eklentiler.',
-      'VS Code üzerinde LuaLS ve ESLint kullanıyorum. Otomatik tip kontrolü (Sumneko Lua Annotations) yazarak kod içi tip hatalarını henüz yazarken engellerim...',
-      3,
-      'IDE eklentilerinizi ve linter kurulumlarınızı yazınız.',
-      'IDE: VS Code.<br>Eklentiler: LuaLS (Sumneko), ESLint, Prettier, GitLens.<br>Tip Kontrolü: `@param` ve `@return` annotasyonları ile sıkı tip denetimi.'
-    )}
+    'q_dev_t4_2',
+    '2.11. Geliştirme Ortamı (IDE), Linter ve Hata Ayıklama Araçları',
+    'VS Code, ESLint, LuaCheck, Prettier, Breakpoint Debugger ve kullandığınız eklentiler.',
+    'VS Code üzerinde LuaLS ve ESLint kullanıyorum. Otomatik tip kontrolü (Sumneko Lua Annotations) yazarak kod içi tip hatalarını henüz yazarken engellerim...',
+    3,
+    'IDE eklentilerinizi ve linter kurulumlarınızı yazınız.',
+    'IDE: VS Code.<br>Eklentiler: LuaLS (Sumneko), ESLint, Prettier, GitLens.<br>Tip Kontrolü: `@param` ve `@return` annotasyonları ile sıkı tip denetimi.'
+  )}
 
     ${_field(
-      'q_dev_t4_3',
-      '2.12. API Tasarımı, Webhook ve Dış Servis Entegrasyonları',
-      'REST API end-point kurgusu, Discord Webhook loglama, Axios/Fetch kullanımı ve WebSockets deneyimi.',
-      'Express.js ile RESTful API yazarım. Discord Webhooklarında Rate-Limit yememek için kuyruk (Queue System) mimarisi kullanırım...',
-      4,
-      'Dış servis entegrasyon tecrübenizi ve rate-limit önlemlerinizi yazınız.',
-      'Discord Webhook gönderimlerinde 5 saniyelik buffer queue tutarak HTTP 429 (Too Many Requests) hatasını engelliyorum. JSON schema ile payload doğrulaması yapıyorum.'
-    )}
+    'q_dev_t4_3',
+    '2.12. API Tasarımı, Webhook ve Dış Servis Entegrasyonları',
+    'REST API end-point kurgusu, Discord Webhook loglama, Axios/Fetch kullanımı ve WebSockets deneyimi.',
+    'Express.js ile RESTful API yazarım. Discord Webhooklarında Rate-Limit yememek için kuyruk (Queue System) mimarisi kullanırım...',
+    4,
+    'Dış servis entegrasyon tecrübenizi ve rate-limit önlemlerinizi yazınız.',
+    'Discord Webhook gönderimlerinde 5 saniyelik buffer queue tutarak HTTP 429 (Too Many Requests) hatasını engelliyorum. JSON schema ile payload doğrulaması yapıyorum.'
+  )}
 
     ${_field(
-      'q_dev_t5_1',
-      '2.13. Server-Side Güvenliği, Anti-Exploit ve Net Event Doğrulamaları',
-      'Enjekte edilmiş (injected) yetkisiz `TriggerServerEvent` çağrılarını engelleme, kaynak doğrulama (source check), mesafe doğrulama ve yetki kontrolü.',
-      'Her server event başında `source` kontrolü, oyuncu mesafe doğrulaması (`#(playerCoords - targetCoords) < 5.0`) ve yetki süzgeci koyarım. Geçersiz çağrıda kullanıcıyı otomatik banlarım...',
-      5,
-      'Net event güvenlik kontrollerinizi kod mantığıyla anlatınız.',
-      '<strong>Event Güvenlik Süzgeci:</strong><br>1. Source & Cooldown Check<br>2. Distance Validation (Oyuncu hedef noktadan uzaktaysa event reddedilir)<br>3. Security Token / Signature Check'
-    )}
+    'q_dev_t5_1',
+    '2.13. Server-Side Güvenliği, Anti-Exploit ve Net Event Doğrulamaları',
+    'Enjekte edilmiş (injected) yetkisiz `TriggerServerEvent` çağrılarını engelleme, kaynak doğrulama (source check), mesafe doğrulama ve yetki kontrolü.',
+    'Her server event başında `source` kontrolü, oyuncu mesafe doğrulaması (`#(playerCoords - targetCoords) < 5.0`) ve yetki süzgeci koyarım. Geçersiz çağrıda kullanıcıyı otomatik banlarım...',
+    5,
+    'Net event güvenlik kontrollerinizi kod mantığıyla anlatınız.',
+    '<strong>Event Güvenlik Süzgeci:</strong><br>1. Source & Cooldown Check<br>2. Distance Validation (Oyuncu hedef noktadan uzaktaysa event reddedilir)<br>3. Security Token / Signature Check'
+  )}
 
     ${_field(
-      'q_dev_t5_2',
-      '2.14. Veri Doğrulama, Temizleme (Sanitization) ve Hata Yakalama',
-      'Client tarafından gönderilen parametrelerin (Item miktarı, Para tutarı, String girdileri) tip denetimi (Type checking), NaN/nil süzgeci ve Injection koruması.',
-      'Clienttan gelen veri `tonumber(amount)` ile sayıya çevrilir. `if not amount or amount <= 0 or amount ~= amount (NaN check)` kontrolü yapılarak negatif ve NaN injectionlar engellenir...',
-      5,
-      'Sanitization ve NaN/Nil koruma kod yapınızı anlatınız.',
-      '```lua\nlocal amount = tonumber(rawAmount)\nif not amount or amount <= 0 or amount ~= amount then\n    -- Hileli paket: Ban/Log işlemi\n    return\nend\n```'
-    )}
+    'q_dev_t5_2',
+    '2.14. Veri Doğrulama, Temizleme (Sanitization) ve Hata Yakalama',
+    'Client tarafından gönderilen parametrelerin (Item miktarı, Para tutarı, String girdileri) tip denetimi (Type checking), NaN/nil süzgeci ve Injection koruması.',
+    'Clienttan gelen veri `tonumber(amount)` ile sayıya çevrilir. `if not amount or amount <= 0 or amount ~= amount (NaN check)` kontrolü yapılarak negatif ve NaN injectionlar engellenir...',
+    5,
+    'Sanitization ve NaN/Nil koruma kod yapınızı anlatınız.',
+    '```lua\nlocal amount = tonumber(rawAmount)\nif not amount or amount <= 0 or amount ~= amount then\n    -- Hileli paket: Ban/Log işlemi\n    return\nend\n```'
+  )}
   `;
   const step2 = _step(2, '#a78bfa', 'BÖLÜM 2 — TEKNİK BECERİLER, YAZILIM DENEYİMİ VE KODLAMA STANDARTLARI', 'Diller, OOP, asenkron yapılar, veritabanı, profiling ve güvenlik.', step2Body, prevBtn(2) + nextBtn(2, '#a78bfa,#8b5cf6'));
 
@@ -1757,104 +1757,104 @@ function renderDeveloperFormPage(currentUser, existingSubmission = null) {
     </div>
 
     ${_field(
-      'q_dev_s1_1',
-      '3.1. Senaryo 1: Yüksek Resmon (Tick Rate / CPU Spike) Optimizasyonu',
-      'Sunucuda 0.25 ms yük oluşturan bir 3D Text / Marker çizim döngüsünü 0.00-0.01 ms seviyesine indirmek için kodu nasıl refactor edersiniz?',
-      'Kök Neden: Her tickte (Wait(0)) tüm koordinatların çizdirilmesi.\nÇözüm: Oyuncunun konumunu 1 saniyelik aralıklarla kontrol eden pasif döngü kurgularım. Oyuncu 5 metre yakına geldiğinde aktif Wait(0) çizim döngüsüne sokarım...',
-      6,
-      'Adım adım refactoring metodunuzu yazınız.',
-      '<strong>1. Kök Neden:</strong> Gereksiz Wait(0) içinde 1000 adet koordinat kontrolü.<br><strong>2. Revizyon:</strong> Grid-based veya Spatial Partitioning mantığı ile sadece bulunulan bölgedeki 1 marker çizdirilir.<br><strong>3. Sonuç:</strong> Resmon 0.25 ms → 0.01 ms.'
-    )}
+    'q_dev_s1_1',
+    '3.1. Senaryo 1: Yüksek Resmon (Tick Rate / CPU Spike) Optimizasyonu',
+    'Sunucuda 0.25 ms yük oluşturan bir 3D Text / Marker çizim döngüsünü 0.00-0.01 ms seviyesine indirmek için kodu nasıl refactor edersiniz?',
+    'Kök Neden: Her tickte (Wait(0)) tüm koordinatların çizdirilmesi.\nÇözüm: Oyuncunun konumunu 1 saniyelik aralıklarla kontrol eden pasif döngü kurgularım. Oyuncu 5 metre yakına geldiğinde aktif Wait(0) çizim döngüsüne sokarım...',
+    6,
+    'Adım adım refactoring metodunuzu yazınız.',
+    '<strong>1. Kök Neden:</strong> Gereksiz Wait(0) içinde 1000 adet koordinat kontrolü.<br><strong>2. Revizyon:</strong> Grid-based veya Spatial Partitioning mantığı ile sadece bulunulan bölgedeki 1 marker çizdirilir.<br><strong>3. Sonuç:</strong> Resmon 0.25 ms → 0.01 ms.'
+  )}
 
     ${_field(
-      'q_dev_s1_2',
-      '3.2. Senaryo 2: Bellek Sızıntısı (Memory Leak) ve RAM Yükselişi Analizi',
-      'Sunucu açıldıktan 6 saat sonra RAM kullanımı 4 GB seviyesinden 18 GB seviyesine çıkıp sunucu çöküyor. Bu bellek sızıntısını tespit etme ve giderme adımlarınız nelerdir?',
-      'Profiler yardımıyla temizlenmeyen event listenerları, kapatılmayan veritabanı bağlantılarını ve sürekli büyüyen global tabloları (Unbounded Tables) tararım. Eventlerde biriken nil yapılmayarak tutulan objeleri silerim...',
-      6,
-      'Memory leak bulma araçlarınızı ve kod içi temizlik adımlarınızı yazınız.',
-      '<strong>1. Profiling:</strong> `collectgarbage("count")` ile Lua bellek artışını anlık izlerim.<br><strong>2. Kök Neden:</strong> Tabloya eklenen ama `table.remove` veya `nil` yapılmayan oyuncu verileri.<br><strong>3. Giderme:</strong> `playerDropped` eventinde tablo temizliği.'
-    )}
+    'q_dev_s1_2',
+    '3.2. Senaryo 2: Bellek Sızıntısı (Memory Leak) ve RAM Yükselişi Analizi',
+    'Sunucu açıldıktan 6 saat sonra RAM kullanımı 4 GB seviyesinden 18 GB seviyesine çıkıp sunucu çöküyor. Bu bellek sızıntısını tespit etme ve giderme adımlarınız nelerdir?',
+    'Profiler yardımıyla temizlenmeyen event listenerları, kapatılmayan veritabanı bağlantılarını ve sürekli büyüyen global tabloları (Unbounded Tables) tararım. Eventlerde biriken nil yapılmayarak tutulan objeleri silerim...',
+    6,
+    'Memory leak bulma araçlarınızı ve kod içi temizlik adımlarınızı yazınız.',
+    '<strong>1. Profiling:</strong> `collectgarbage("count")` ile Lua bellek artışını anlık izlerim.<br><strong>2. Kök Neden:</strong> Tabloya eklenen ama `table.remove` veya `nil` yapılmayan oyuncu verileri.<br><strong>3. Giderme:</strong> `playerDropped` eventinde tablo temizliği.'
+  )}
 
     ${_field(
-      'q_dev_s1_3',
-      '3.3. Senaryo 3: Veritabanı Kilitlenmesi (Deadlock & Save Lag Spikes)',
-      '100 oyuncu aynı anda sunucudan çıktığında veya saat başı otomatik kayıtta veritabanı kilitleniyor (Deadlock) ve oyuncular 10 saniyelik lag yaşıyor. Bu mimariyi nasıl çözersiniz?',
-      'Eşzamanlı (Sync) sorgular yerine MySQL Async / Prepared Statements kurgularım. Tüm kayıtları tek tek değil, Bulk Insert / Transaction paketleri halinde 500ms aralıklarla kuyruktan (Queue Batching) işlerim...',
-      6,
-      'Deadlock ve lag spike çözme mimarinizi anlatınız.',
-      '<strong>Queue Batching Mimari:</strong> Kayıt talepleri `SaveQueue` dizisine atılır. Worker thread her 2 saniyede bir 10 kaydı `UPDATE ... WHERE id IN (...)` şeklinde işleyerek veritabanı kilidini engeller.'
-    )}
+    'q_dev_s1_3',
+    '3.3. Senaryo 3: Veritabanı Kilitlenmesi (Deadlock & Save Lag Spikes)',
+    '100 oyuncu aynı anda sunucudan çıktığında veya saat başı otomatik kayıtta veritabanı kilitleniyor (Deadlock) ve oyuncular 10 saniyelik lag yaşıyor. Bu mimariyi nasıl çözersiniz?',
+    'Eşzamanlı (Sync) sorgular yerine MySQL Async / Prepared Statements kurgularım. Tüm kayıtları tek tek değil, Bulk Insert / Transaction paketleri halinde 500ms aralıklarla kuyruktan (Queue Batching) işlerim...',
+    6,
+    'Deadlock ve lag spike çözme mimarinizi anlatınız.',
+    '<strong>Queue Batching Mimari:</strong> Kayıt talepleri `SaveQueue` dizisine atılır. Worker thread her 2 saniyede bir 10 kaydı `UPDATE ... WHERE id IN (...)` şeklinde işleyerek veritabanı kilidini engeller.'
+  )}
 
     ${_field(
-      'q_dev_s2_1',
-      '3.4. Senaryo 4: Yetkisiz Event Tetikleme (Unprotected Net Event Exploits)',
-      'Kötü niyetli bir kullanıcı inject yazılım ile `esx_bank:deposit` veya `qb-banking:server:deposit` eventini dışarıdan çağırıp hesabına sınırsız para ekliyor. Bu olaya acil müdahaleniz ve kalıcı çözümünüz ne olur?',
-      'Acil Müdahale: Eventi sunucuyu kapatmadan devre dışı bırakıp hotfix hazırlarım. Kalıcı Çözüm: Server-side tarafta oyuncunun bankamatik/banka yakınında olup olmadığını (`#(playerCoords - bankCoords) < 3.0`) ve paranın envanterde varlığını doğrularım...',
-      6,
-      'Acil kriz yönetimi ve event doğrulama kod adımlarınızı anlatınız.',
-      '<strong>1. Hotfix:</strong> Event içerisine yetki ve koordinat kontrolü ekle.<br><strong>2. Sanitize:</strong> `if amount <= 0 then exports["anticheat"]:Ban(source) end`<br><strong>3. Validation:</strong> Server-side bakiye kontrolü yapmadan bakiyeyi arttırma.'
-    )}
+    'q_dev_s2_1',
+    '3.4. Senaryo 4: Yetkisiz Event Tetikleme (Unprotected Net Event Exploits)',
+    'Kötü niyetli bir kullanıcı inject yazılım ile `esx_bank:deposit` veya `qb-banking:server:deposit` eventini dışarıdan çağırıp hesabına sınırsız para ekliyor. Bu olaya acil müdahaleniz ve kalıcı çözümünüz ne olur?',
+    'Acil Müdahale: Eventi sunucuyu kapatmadan devre dışı bırakıp hotfix hazırlarım. Kalıcı Çözüm: Server-side tarafta oyuncunun bankamatik/banka yakınında olup olmadığını (`#(playerCoords - bankCoords) < 3.0`) ve paranın envanterde varlığını doğrularım...',
+    6,
+    'Acil kriz yönetimi ve event doğrulama kod adımlarınızı anlatınız.',
+    '<strong>1. Hotfix:</strong> Event içerisine yetki ve koordinat kontrolü ekle.<br><strong>2. Sanitize:</strong> `if amount <= 0 then exports["anticheat"]:Ban(source) end`<br><strong>3. Validation:</strong> Server-side bakiye kontrolü yapmadan bakiyeyi arttırma.'
+  )}
 
     ${_field(
-      'q_dev_s2_2',
-      '3.5. Senaryo 5: Envanter ve Eşya Çoğaltma (Dupe Exploit & Race Condition) Analizi',
-      'İki oyuncu bir araca veya depoya aynı milisaniyede tıklayarak aynı eşyayı 2 katına çıkarıyor (Race Condition). Bu açığı mimari olarak nasıl engellersiniz?',
-      'Depo/Envanter slotlarına Mutex / Lock mekanizması koyarım. Bir oyuncu depoyu açtığı anda `inventory:isBusy[depoId] = true` setlenir. İkinci oyuncunun erişimi reddedilir...',
-      6,
-      'Mutex/Lock yapısı ile race condition engelleme mantığını açıklayınız.',
-      '<strong>State Locking:</strong> Envanter açıldığı an Server-Side `BusyLocks[containerId] = source` atanır. İşlem bitmeden veya envanter kapanmadan ikinci bir `GetItem` veya `MoveItem` çağrısı kesinlikle işlenmez.'
-    )}
+    'q_dev_s2_2',
+    '3.5. Senaryo 5: Envanter ve Eşya Çoğaltma (Dupe Exploit & Race Condition) Analizi',
+    'İki oyuncu bir araca veya depoya aynı milisaniyede tıklayarak aynı eşyayı 2 katına çıkarıyor (Race Condition). Bu açığı mimari olarak nasıl engellersiniz?',
+    'Depo/Envanter slotlarına Mutex / Lock mekanizması koyarım. Bir oyuncu depoyu açtığı anda `inventory:isBusy[depoId] = true` setlenir. İkinci oyuncunun erişimi reddedilir...',
+    6,
+    'Mutex/Lock yapısı ile race condition engelleme mantığını açıklayınız.',
+    '<strong>State Locking:</strong> Envanter açıldığı an Server-Side `BusyLocks[containerId] = source` atanır. İşlem bitmeden veya envanter kapanmadan ikinci bir `GetItem` veya `MoveItem` çağrısı kesinlikle işlenmez.'
+  )}
 
     ${_field(
-      'q_dev_s2_3',
-      '3.6. Senaryo 6: Hileli Veri Paketleri ve Sanitize İşlemleri',
-      'Bir hileci `TriggerServerEvent("buyItem", "weapon_pistol", -999999)` veya `NaN` miktar göndererek para hesabı mantığını bozuyor. Kod seviyesinde bu veri paketini nasıl süzersiniz?',
-      'Gelen parametreler `type(item) == "string"` ve `type(count) == "number"` kontrollerinden geçirilir. Sayı pozitif tam sayı (`count > 0 and math.floor(count) == count`) ve `count ~= count` (NaN check) süzgecine tabi tutulur...',
-      6,
-      'Kod bloğu örneğiyle veri süzme işlemlerini gösteriniz.',
-      '```lua\nif type(count) ~= "number" or count <= 0 or count ~= count or count > 100 then\n    exports["anticheat"]:FlagUser(source, "Zararlı Miktar Enjeksiyonu")\n    return\nend\n```'
-    )}
+    'q_dev_s2_3',
+    '3.6. Senaryo 6: Hileli Veri Paketleri ve Sanitize İşlemleri',
+    'Bir hileci `TriggerServerEvent("buyItem", "weapon_pistol", -999999)` veya `NaN` miktar göndererek para hesabı mantığını bozuyor. Kod seviyesinde bu veri paketini nasıl süzersiniz?',
+    'Gelen parametreler `type(item) == "string"` ve `type(count) == "number"` kontrollerinden geçirilir. Sayı pozitif tam sayı (`count > 0 and math.floor(count) == count`) ve `count ~= count` (NaN check) süzgecine tabi tutulur...',
+    6,
+    'Kod bloğu örneğiyle veri süzme işlemlerini gösteriniz.',
+    '```lua\nif type(count) ~= "number" or count <= 0 or count ~= count or count > 100 then\n    exports["anticheat"]:FlagUser(source, "Zararlı Miktar Enjeksiyonu")\n    return\nend\n```'
+  )}
 
     ${_field(
-      'q_dev_s3_1',
-      '3.7. Senaryo 7: Sıfırdan Modüler ve Ölçeklenebilir Sistem Tasarımı',
-      'Sizden sunucu için sıfırdan "Modüler Birlik ve Bölge Kontrol Sistemi" yazmanız istendi. Bu sistemin dosya mimarisini, veri yapısını ve client-server haberleşmesini nasıl tasarlarsınız?',
-      'Dosya Yapısı: `client/`, `server/`, `shared/`, `nui/`. Shared tarafında konfigürasyon ve bölge koordinatları tutulur. Server tarafında bölge sahiplikleri RAM tablosunda işlenir...',
-      6,
-      'Sistem mimari şemasını ve dosya hiyerarşisini yazınız.',
-      '📁 config.lua (Bölge koordinatları)<br>📁 server/main.lua (Zone Manager & SQL Sync)<br>📁 client/main.lua (PolyZone & NUI UI Manager)<br>📁 html/ (React tabanlı harita arayüzü)'
-    )}
+    'q_dev_s3_1',
+    '3.7. Senaryo 7: Sıfırdan Modüler ve Ölçeklenebilir Sistem Tasarımı',
+    'Sizden sunucu için sıfırdan "Modüler Birlik ve Bölge Kontrol Sistemi" yazmanız istendi. Bu sistemin dosya mimarisini, veri yapısını ve client-server haberleşmesini nasıl tasarlarsınız?',
+    'Dosya Yapısı: `client/`, `server/`, `shared/`, `nui/`. Shared tarafında konfigürasyon ve bölge koordinatları tutulur. Server tarafında bölge sahiplikleri RAM tablosunda işlenir...',
+    6,
+    'Sistem mimari şemasını ve dosya hiyerarşisini yazınız.',
+    '📁 config.lua (Bölge koordinatları)<br>📁 server/main.lua (Zone Manager & SQL Sync)<br>📁 client/main.lua (PolyZone & NUI UI Manager)<br>📁 html/ (React tabanlı harita arayüzü)'
+  )}
 
     ${_field(
-      'q_dev_s3_2',
-      '3.8. Senaryo 8: Çakışan Kütüphaneleri ve Script\'leri Entegre Etme (Merge Conflict & Dependency)',
-      'Sunucuda bulunan 2 farklı hedef belirleme kütüphanesi (Örn: `qb-target` ve `ox_target`) çakışıyor ve bazı scriptler çalışmıyor. Bu uyumsuzluğu çözmek için nasıl bir wrapper / adapter yazarsınız?',
-      'Ortak bir `TargetAdapter` wrapper kütüphanesi yazarım. `AddTargetModel` veya `AddBoxZone` çağrılarını hangi kütüphane aktifse ona dinamik olarak yönlendiririm...',
-      5,
-      'Adapter Pattern kullanımınızı ve kütüphane birleştirme adımlarınızı anlatınız.',
-      '```lua\nTargetAdapter = {}\nfunction TargetAdapter.AddBoxZone(name, coords, ...)\n    if GetResourceState("ox_target") == "started" then\n        exports.ox_target:addBoxZone(...)\n    else\n        exports["qb-target"]:AddBoxZone(...)\n    end\nend\n```'
-    )}
+    'q_dev_s3_2',
+    '3.8. Senaryo 8: Çakışan Kütüphaneleri ve Script\'leri Entegre Etme (Merge Conflict & Dependency)',
+    'Sunucuda bulunan 2 farklı hedef belirleme kütüphanesi (Örn: `qb-target` ve `ox_target`) çakışıyor ve bazı scriptler çalışmıyor. Bu uyumsuzluğu çözmek için nasıl bir wrapper / adapter yazarsınız?',
+    'Ortak bir `TargetAdapter` wrapper kütüphanesi yazarım. `AddTargetModel` veya `AddBoxZone` çağrılarını hangi kütüphane aktifse ona dinamik olarak yönlendiririm...',
+    5,
+    'Adapter Pattern kullanımınızı ve kütüphane birleştirme adımlarınızı anlatınız.',
+    '```lua\nTargetAdapter = {}\nfunction TargetAdapter.AddBoxZone(name, coords, ...)\n    if GetResourceState("ox_target") == "started" then\n        exports.ox_target:addBoxZone(...)\n    else\n        exports["qb-target"]:AddBoxZone(...)\n    end\nend\n```'
+  )}
 
     ${_field(
-      'q_dev_s4_1',
-      '3.9. Senaryo 9: Mantıksal Hata Analizi (Logical Bugs & Edge Cases)',
-      'Konsolda hiçbir error/warning hatası vermeyen ancak araçların benzin seviyesinin sunucu yeniden başladığında sıfırlandığı bir bugı nasıl debug edip çözersiniz?',
-      'Veritabanı kayıt kodlarına `print/console.log` veya Logger ekleyerek `playerDropped` ve `vehicleSave` eventlerinin tetiklenme sırasını incelerim. State-bag veri yazma sırasını kontrol ederim...',
-      5,
-      'Hata ayıklama (debug) adımlarınızı sırasıyla açıklayınız.',
-      '1. Aşama: SQL kayıt sorgularına Debug-Logger ekle.<br>2. Aşama: Araç silinirken (DeleteVehicle) benzin verisinin DB\'ye yazılıp yazılmadığını kontrol et.<br>3. Aşama: State-Bag senkronizasyonunu düzelt.'
-    )}
+    'q_dev_s4_1',
+    '3.9. Senaryo 9: Mantıksal Hata Analizi (Logical Bugs & Edge Cases)',
+    'Konsolda hiçbir error/warning hatası vermeyen ancak araçların benzin seviyesinin sunucu yeniden başladığında sıfırlandığı bir bugı nasıl debug edip çözersiniz?',
+    'Veritabanı kayıt kodlarına `print/console.log` veya Logger ekleyerek `playerDropped` ve `vehicleSave` eventlerinin tetiklenme sırasını incelerim. State-bag veri yazma sırasını kontrol ederim...',
+    5,
+    'Hata ayıklama (debug) adımlarınızı sırasıyla açıklayınız.',
+    '1. Aşama: SQL kayıt sorgularına Debug-Logger ekle.<br>2. Aşama: Araç silinirken (DeleteVehicle) benzin verisinin DB\'ye yazılıp yazılmadığını kontrol et.<br>3. Aşama: State-Bag senkronizasyonunu düzelt.'
+  )}
 
     ${_field(
-      'q_dev_s4_2',
-      '3.10. Senaryo 10: Dış Servis Kesintileri (Discord API / Webhook Outage & Rate-Limit)',
-      'Discord API sunucuları çöktüğünde veya Webhooklar yavaşladığında sunucudaki bazı scriptlerin kilitlenmesini engellemek için kod seviyesinde nasıl bir Fallback / Try-Catch mimarisi kurgularsınız?',
-      'Discord loglama fonksiyonlarını pcall / try-catch içine alırım. HTTP taleplerini zaman aşımı (Timeout: 2000ms) ile sınırlandırırım. Discord çökse dahi oyun sunucusu kilitlenmez...',
-      5,
-      'Dış servis çökmesine karşı koruma kodunuzu yazınız.',
-      '```lua\nCreateThread(function()\n    local success, err = pcall(function()\n        PerformHttpRequest(webhookUrl, function(status) end, "POST", payload, headers)\n    end)\n    if not success then\n        print("[WARN] Discord Webhook erişilemiyor, oyun akışı etkilenmedi.")\n    end\nend)\n```'
-    )}
+    'q_dev_s4_2',
+    '3.10. Senaryo 10: Dış Servis Kesintileri (Discord API / Webhook Outage & Rate-Limit)',
+    'Discord API sunucuları çöktüğünde veya Webhooklar yavaşladığında sunucudaki bazı scriptlerin kilitlenmesini engellemek için kod seviyesinde nasıl bir Fallback / Try-Catch mimarisi kurgularsınız?',
+    'Discord loglama fonksiyonlarını pcall / try-catch içine alırım. HTTP taleplerini zaman aşımı (Timeout: 2000ms) ile sınırlandırırım. Discord çökse dahi oyun sunucusu kilitlenmez...',
+    5,
+    'Dış servis çökmesine karşı koruma kodunuzu yazınız.',
+    '```lua\nCreateThread(function()\n    local success, err = pcall(function()\n        PerformHttpRequest(webhookUrl, function(status) end, "POST", payload, headers)\n    end)\n    if not success then\n        print("[WARN] Discord Webhook erişilemiyor, oyun akışı etkilenmedi.")\n    end\nend)\n```'
+  )}
   `;
   const step3 = _step(3, '#34d399', 'BÖLÜM 3 — PRATİK KODLAMA, PROBLEM ÇÖZME VE GERÇEK SAHA SENARYOLARI', 'Resmon optimizasyonu, bellek sızıntıları, dupe önleme ve kriz yönetimi.', step3Body, prevBtn(3) + nextBtn(3, '#34d399,#059669'));
 
@@ -1868,124 +1868,124 @@ function renderDeveloperFormPage(currentUser, existingSubmission = null) {
     </div>
 
     ${_field(
-      'q_dev_v1_1',
-      '4.1. Eko Yıldız Bünyesine Katılma Motivasyonunuz ve Katkı Vizyonunuz',
-      'Eko Yıldız projesini tercih etme sebebiniz ve projenin teknik kalitesine katacağınız özgün değerler.',
-      'Eko Yıldız topluluğunun profesyonel yapısı ve inovatif bakış açısı cezbedici. Ekibe katılarak kesintisiz ve yüksek performanslı sistemler kazandırmayı hedefliyorum...',
-      4,
-      'Katılma motivasyonunuzu ve teknik vizyonunuzu ifade ediniz.',
-      'Eko Yıldız ekosisteminde kod standartlarını yükseltmek, sıfır hatalı oyuncu deneyimi sunmak ve yenilikçi oyun sistemleri geliştirmek birincil hedefimdir.'
-    )}
+    'q_dev_v1_1',
+    '4.1. Eko Yıldız Bünyesine Katılma Motivasyonunuz ve Katkı Vizyonunuz',
+    'Eko Yıldız projesini tercih etme sebebiniz ve projenin teknik kalitesine katacağınız özgün değerler.',
+    'Eko Yıldız topluluğunun profesyonel yapısı ve inovatif bakış açısı cezbedici. Ekibe katılarak kesintisiz ve yüksek performanslı sistemler kazandırmayı hedefliyorum...',
+    4,
+    'Katılma motivasyonunuzu ve teknik vizyonunuzu ifade ediniz.',
+    'Eko Yıldız ekosisteminde kod standartlarını yükseltmek, sıfır hatalı oyuncu deneyimi sunmak ve yenilikçi oyun sistemleri geliştirmek birincil hedefimdir.'
+  )}
 
     ${_field(
-      'q_dev_v1_2',
-      '4.2. Kısa ve Uzun Vadeli Geliştirici Hedefleriniz',
-      'İlk 1 ay içindeki kısa vadeli hedefleriniz ve 6+ ay içindeki uzun vadeli teknik hedefleriniz.',
-      'İlk 1 ayda mevcut kod tabanını inceleyip resmon optimizasyonları yapacağım. 6. ayda ise tamamen özgün modüler altyapıyı yayına almayı hedefliyorum...',
-      4,
-      'Kısa ve uzun vadeli planlarınızı ayrı ayrı detaylandırınız.',
-      '<strong>İlk 1 Ay:</strong> Mevcut sunucu paketinin profiling taraması ve acil optimizasyonlar.<br><strong>6+ Ay:</strong> Özgün ve yüksek ölçeklenebilir 2. nesil sistem altyapısının inşası.'
-    )}
+    'q_dev_v1_2',
+    '4.2. Kısa ve Uzun Vadeli Geliştirici Hedefleriniz',
+    'İlk 1 ay içindeki kısa vadeli hedefleriniz ve 6+ ay içindeki uzun vadeli teknik hedefleriniz.',
+    'İlk 1 ayda mevcut kod tabanını inceleyip resmon optimizasyonları yapacağım. 6. ayda ise tamamen özgün modüler altyapıyı yayına almayı hedefliyorum...',
+    4,
+    'Kısa ve uzun vadeli planlarınızı ayrı ayrı detaylandırınız.',
+    '<strong>İlk 1 Ay:</strong> Mevcut sunucu paketinin profiling taraması ve acil optimizasyonlar.<br><strong>6+ Ay:</strong> Özgün ve yüksek ölçeklenebilir 2. nesil sistem altyapısının inşası.'
+  )}
 
     ${_field(
-      'q_dev_v1_3',
-      '4.3. Proje Mimarisine Bakış Açınız ve İnovasyon Teklifleriniz',
-      'Mevcut FiveM / Discord ekosistemlerindeki teknik eksiklikler ve Eko Yıldız projesine getirmek istediğiniz yenilikçi çözümler.',
-      'Geleneksel script yapıları yerine event-driven ve mikro-servis mantığına yakın modüler paketler kurgulamak projeye büyük ivme kazandıracaktır...',
-      4,
-      'Yenilikçi teknik fikirlerinizi paylaşınız.',
-      'Discord Botu ile Oyun Sunucusu veritabanı arasında anlık WebSocket köprüsü kurarak tüm istatistikleri ve cezaları 0 delay ile senkronize etmeyi öneriyorum.'
-    )}
+    'q_dev_v1_3',
+    '4.3. Proje Mimarisine Bakış Açınız ve İnovasyon Teklifleriniz',
+    'Mevcut FiveM / Discord ekosistemlerindeki teknik eksiklikler ve Eko Yıldız projesine getirmek istediğiniz yenilikçi çözümler.',
+    'Geleneksel script yapıları yerine event-driven ve mikro-servis mantığına yakın modüler paketler kurgulamak projeye büyük ivme kazandıracaktır...',
+    4,
+    'Yenilikçi teknik fikirlerinizi paylaşınız.',
+    'Discord Botu ile Oyun Sunucusu veritabanı arasında anlık WebSocket köprüsü kurarak tüm istatistikleri ve cezaları 0 delay ile senkronize etmeyi öneriyorum.'
+  )}
 
     ${_field(
-      'q_dev_v2_1',
-      '4.4. Temiz Kod (Clean Code) ve Okunabilirlik İlkeleri',
-      'Değişken isimlendirme standartlarınız (camelCase, snake_case), DRY (Don\'t Repeat Yourself) prensibi ve modüler kod yazma alışkanlığınız.',
-      'Lua tarafında snake_case, JS tarafında camelCase standartlarını uygularım. Kendini tekrar eden kodları (DRY) helper fonksiyonlara toplarım...',
-      4,
-      'Kod okunabilirliği standartlarınızı açıklayınız.',
-      'DRY (Don\'t Repeat Yourself) ve KISS (Keep It Simple, Stupid) prensiplerini uygularım. Karmaşık metodları maksimum 30 satırlık küçük fonksiyonlara bölerim.'
-    )}
+    'q_dev_v2_1',
+    '4.4. Temiz Kod (Clean Code) ve Okunabilirlik İlkeleri',
+    'Değişken isimlendirme standartlarınız (camelCase, snake_case), DRY (Don\'t Repeat Yourself) prensibi ve modüler kod yazma alışkanlığınız.',
+    'Lua tarafında snake_case, JS tarafında camelCase standartlarını uygularım. Kendini tekrar eden kodları (DRY) helper fonksiyonlara toplarım...',
+    4,
+    'Kod okunabilirliği standartlarınızı açıklayınız.',
+    'DRY (Don\'t Repeat Yourself) ve KISS (Keep It Simple, Stupid) prensiplerini uygularım. Karmaşık metodları maksimum 30 satırlık küçük fonksiyonlara bölerim.'
+  )}
 
     ${_field(
-      'q_dev_v2_2',
-      '4.5. Dokümantasyon Standartları ve Bilgi Paylaşımı Kültürünüz',
-      'Yazdığınız kütüphanelere API / Export dokümantasyonu çıkarma, README dosyası hazırlama ve ekip arkadaşlarınızı bilgilendirme tarzınız.',
-      'Geliştirdiğim her script için `docs/API.md` dosyası oluşturur ve export fonksiyonlarının aldığı parametreleri (@param, @return) eksiksiz yazarım...',
-      4,
-      'Dokümantasyon çıkarma alışkanlığınızı detaylandırınız.',
-      'Her PR öncesinde `README.md` güncellemesi yapar, eklenen yeni exportların kullanım örneklerini (Code Snippets) ekip kanallarına eklerim.'
-    )}
+    'q_dev_v2_2',
+    '4.5. Dokümantasyon Standartları ve Bilgi Paylaşımı Kültürünüz',
+    'Yazdığınız kütüphanelere API / Export dokümantasyonu çıkarma, README dosyası hazırlama ve ekip arkadaşlarınızı bilgilendirme tarzınız.',
+    'Geliştirdiğim her script için `docs/API.md` dosyası oluşturur ve export fonksiyonlarının aldığı parametreleri (@param, @return) eksiksiz yazarım...',
+    4,
+    'Dokümantasyon çıkarma alışkanlığınızı detaylandırınız.',
+    'Her PR öncesinde `README.md` güncellemesi yapar, eklenen yeni exportların kullanım örneklerini (Code Snippets) ekip kanallarına eklerim.'
+  )}
 
     ${_field(
-      'q_dev_v2_3',
-      '4.6. Eski / Verimsiz Kodları Yenileme (Refactoring) Yaklaşımınız',
-      'Geçmişten kalan veya başkası tarafından yazılmış spagetti koda müdahale etme ve güvenli yenileme adımlarınız.',
-      'Spagetti koda hemen dalmak yerine önce kodun mevcut girdilerini ve çıktılarını analiz eder, birim testler yazarak aşamalı şekilde refactor ederim...',
-      4,
-      'Refactoring adımlarınızı anlatınız.',
-      'Eski kodu tek seferde silmek yerine geriye dönük uyumluluğu (Backward Compatibility) koruyarak adım adım yeni modüllere aktarırım.'
-    )}
+    'q_dev_v2_3',
+    '4.6. Eski / Verimsiz Kodları Yenileme (Refactoring) Yaklaşımınız',
+    'Geçmişten kalan veya başkası tarafından yazılmış spagetti koda müdahale etme ve güvenli yenileme adımlarınız.',
+    'Spagetti koda hemen dalmak yerine önce kodun mevcut girdilerini ve çıktılarını analiz eder, birim testler yazarak aşamalı şekilde refactor ederim...',
+    4,
+    'Refactoring adımlarınızı anlatınız.',
+    'Eski kodu tek seferde silmek yerine geriye dönük uyumluluğu (Backward Compatibility) koruyarak adım adım yeni modüllere aktarırım.'
+  )}
 
     ${_field(
-      'q_dev_v3_1',
-      '4.7. Yönetim Kurulu ve Üst Merci Talimatlarına Uyum Disiplininiz',
-      'Yönetim Kurulu tarafından verilen acil geliştirme taleplerini önceliklendirme, takvime uyma ve düzenli durum raporu (Status Report) sunma tarzınız.',
-      'Yönetimden gelen acil talepleri JIRA/Trello üzerinde "Hotfix / Critical" etiketiyle ilk sıraya alırım. Her gün sonunda kısa durum özeti geçerim...',
-      4,
-      'İdari talimatlara uyum ve raporlama üslubunuzu yazınız.',
-      'Acil taleplerde derhal zaman tahmini (ETA) sunar ve geliştirme sürecini 6 saatlik aralıklarla Yönetim Kurulu\'na raporlarım.'
-    )}
+    'q_dev_v3_1',
+    '4.7. Yönetim Kurulu ve Üst Merci Talimatlarına Uyum Disiplininiz',
+    'Yönetim Kurulu tarafından verilen acil geliştirme taleplerini önceliklendirme, takvime uyma ve düzenli durum raporu (Status Report) sunma tarzınız.',
+    'Yönetimden gelen acil talepleri JIRA/Trello üzerinde "Hotfix / Critical" etiketiyle ilk sıraya alırım. Her gün sonunda kısa durum özeti geçerim...',
+    4,
+    'İdari talimatlara uyum ve raporlama üslubunuzu yazınız.',
+    'Acil taleplerde derhal zaman tahmini (ETA) sunar ve geliştirme sürecini 6 saatlik aralıklarla Yönetim Kurulu\'na raporlarım.'
+  )}
 
     ${_field(
-      'q_dev_v3_2',
-      '4.8. Eleştiriye Açıklık ve Kod İncelemesi (Code Review) Tutumunuz',
-      'Kıdemli geliştiricilerin veya Ofis Amirinin kodunuza yaptığı düzeltme ve eleştirilere karşı tutumunuz.',
-      'Kod incelemelerini kişisel bir saldırı olarak değil, gelişim fırsatı olarak görürüm. Daha performanslı bir öneri geldiğinde memnuniyetle uygularım...',
-      4,
-      'Code review tutumunuzu ifade ediniz.',
-      'Code Review sürecinde yapıcı eleştirileri başımızın üstünde tutarız. Daha iyi bir algoritma sunulduğunda öğrenmekten gurur duyarım.'
-    )}
+    'q_dev_v3_2',
+    '4.8. Eleştiriye Açıklık ve Kod İncelemesi (Code Review) Tutumunuz',
+    'Kıdemli geliştiricilerin veya Ofis Amirinin kodunuza yaptığı düzeltme ve eleştirilere karşı tutumunuz.',
+    'Kod incelemelerini kişisel bir saldırı olarak değil, gelişim fırsatı olarak görürüm. Daha performanslı bir öneri geldiğinde memnuniyetle uygularım...',
+    4,
+    'Code review tutumunuzu ifade ediniz.',
+    'Code Review sürecinde yapıcı eleştirileri başımızın üstünde tutarız. Daha iyi bir algoritma sunulduğunda öğrenmekten gurur duyarım.'
+  )}
 
     ${_field(
-      'q_dev_v3_3',
-      '4.9. Fikir Ayrılıkları ve Ekip İçi Çatışma Yönetimi',
-      'Ekip arkadaşlarınızla teknik bir konuda düştüğünüz fikir ayrılıklarını çözme üslubunuz.',
-      'Teknik tartışmaları duyguyla değil, performans test verileri (Benchmark) ve okunabilirlik kriterleri ile nesnel biçimde sonuçlandırırım...',
-      4,
-      'Çatışma çözme metodunuzu anlatınız.',
-      'Duygusal tartışmalardan kaçınır, 2 farklı yaklaşımı da test ortamında çalıştırıp Resmon ve RAM çıktılarına göre objektif karar veririm.'
-    )}
+    'q_dev_v3_3',
+    '4.9. Fikir Ayrılıkları ve Ekip İçi Çatışma Yönetimi',
+    'Ekip arkadaşlarınızla teknik bir konuda düştüğünüz fikir ayrılıklarını çözme üslubunuz.',
+    'Teknik tartışmaları duyguyla değil, performans test verileri (Benchmark) ve okunabilirlik kriterleri ile nesnel biçimde sonuçlandırırım...',
+    4,
+    'Çatışma çözme metodunuzu anlatınız.',
+    'Duygusal tartışmalardan kaçınır, 2 farklı yaklaşımı da test ortamında çalıştırıp Resmon ve RAM çıktılarına göre objektif karar veririm.'
+  )}
 
     ${_field(
-      'q_dev_v4_1',
-      '4.10. Gizlilik Sözleşmesi ve Fikri Mülkiyet (NDA & IP Security) Bilinciniz',
-      'Eko Yıldız projesine ait kodların, veritabanı yapısının ve idari bilgilerin üçüncü şahıslarla paylaşılmaması konusundaki hassasiyetiniz.',
-      'Fikri mülkiyet haklarına ve Gizlilik Sözleşmesine (%100 NDA) koşulsuz uyarım. Kodların ve verilerin sızdırılması idari ve hukuki sorumluluk getirir...',
-      4,
-      'NDA ve kod gizliliği bilincinizi açıklayınız.',
-      'Projeye ait hiçbir script, kod parçası veya veritabanı dökümü üçüncü kişilere aktarılamaz, satılamaz veya kişisel depolarda açık tutulamaz.'
-    )}
+    'q_dev_v4_1',
+    '4.10. Gizlilik Sözleşmesi ve Fikri Mülkiyet (NDA & IP Security) Bilinciniz',
+    'Eko Yıldız projesine ait kodların, veritabanı yapısının ve idari bilgilerin üçüncü şahıslarla paylaşılmaması konusundaki hassasiyetiniz.',
+    'Fikri mülkiyet haklarına ve Gizlilik Sözleşmesine (%100 NDA) koşulsuz uyarım. Kodların ve verilerin sızdırılması idari ve hukuki sorumluluk getirir...',
+    4,
+    'NDA ve kod gizliliği bilincinizi açıklayınız.',
+    'Projeye ait hiçbir script, kod parçası veya veritabanı dökümü üçüncü kişilere aktarılamaz, satılamaz veya kişisel depolarda açık tutulamaz.'
+  )}
 
     ${_field(
-      'q_dev_v4_2',
-      '4.11. Sorumluluk Bilinci, Teslim Tarihleri (Deadlines) ve Zaman Yönetimi',
-      'Belirlenen teslim tarihlerine (Deadline) uyum gösterme ve olası aksamalarda önceden bilgilendirme disiplininiz.',
-      'Teslim tarihine uymak birinci önceliğimdir. Beklenmeyen bir teknik engel çıktığında bunu son dakika değil, en az 24 saat önceden yönetime bildiririm...',
-      4,
-      'Zaman yönetimi ve teslim tarihi disiplininizi yazınız.',
-      'Teslim tarihlerine sadakat esastır. Olası bir gecikme riskinde derhal durum analizi ve yeni ETA bilgisi yönetime sunulur.'
-    )}
+    'q_dev_v4_2',
+    '4.11. Sorumluluk Bilinci, Teslim Tarihleri (Deadlines) ve Zaman Yönetimi',
+    'Belirlenen teslim tarihlerine (Deadline) uyum gösterme ve olası aksamalarda önceden bilgilendirme disiplininiz.',
+    'Teslim tarihine uymak birinci önceliğimdir. Beklenmeyen bir teknik engel çıktığında bunu son dakika değil, en az 24 saat önceden yönetime bildiririm...',
+    4,
+    'Zaman yönetimi ve teslim tarihi disiplininizi yazınız.',
+    'Teslim tarihlerine sadakat esastır. Olası bir gecikme riskinde derhal durum analizi ve yeni ETA bilgisi yönetime sunulur.'
+  )}
 
     ${_field(
-      'q_dev_v4_3',
-      '4.12. Topluluk Önündeki Duruş ve Temsil Yeteneği',
-      'Bir Eko Yıldız Geliştiricisi olarak sunucu içi ve dışı mecralarda (Discord, Forum vb.) sergileyeceğiniz ağırbaşlı ve kurumsal duruş.',
-      'Geliştirici unvanı taşıdığımın bilincinde olarak tüm üyelere karşı saygılı, kurumsal ve yardımsever bir dil kullanırım. Tartışmalardan uzak dururum...',
-      4,
-      'Topluluk önündeki temsil anlayışınızı yazınız.',
-      'Geliştiriciler projenin vitrinidir. Üyelere karşı her zaman sabırlı, üslup sahibi ve çözüm odaklı kurumsal bir temsil sergilerim.'
-    )}
+    'q_dev_v4_3',
+    '4.12. Topluluk Önündeki Duruş ve Temsil Yeteneği',
+    'Bir Eko Yıldız Geliştiricisi olarak sunucu içi ve dışı mecralarda (Discord, Forum vb.) sergileyeceğiniz ağırbaşlı ve kurumsal duruş.',
+    'Geliştirici unvanı taşıdığımın bilincinde olarak tüm üyelere karşı saygılı, kurumsal ve yardımsever bir dil kullanırım. Tartışmalardan uzak dururum...',
+    4,
+    'Topluluk önündeki temsil anlayışınızı yazınız.',
+    'Geliştiriciler projenin vitrinidir. Üyelere karşı her zaman sabırlı, üslup sahibi ve çözüm odaklı kurumsal bir temsil sergilerim.'
+  )}
   `;
   const step4 = _step(4, '#f59e0b', 'BÖLÜM 4 — PROJE UYUM STANDARTLARI, VİZYON VE EKİP ÇALIŞMASI', 'Vizyon, okunabilirlik, Clean Code, dokümantasyon ve gizlilik.', step4Body, prevBtn(4) + nextBtn(4, '#f59e0b,#d97706'));
 
@@ -2033,7 +2033,7 @@ function renderDeveloperFormPage(currentUser, existingSubmission = null) {
     </div>
 
     ${_field('q_dev_sign_name', '4.1. Başvuru Sahibinin Adı Soyadı (Resmi İsim Beyanı)', 'Örn: Ahmet Yılmaz', 1, 'Resmi kimlik adınızı giriniz.')}
-    ${_field('q_dev_sign_signature', '4.3. Dijital Onay İmzası (Discord ID / Kullanıcı Adı)', 'Örn: ekonqtx / 123456789012345678', 1, 'Discord kullanıcı adınızı veya ID nizi onay olarak yazınız.')}
+    ${_field('q_dev_sign_signature', '4.3. Dijital Onay İmzası (Discord ID / Kullanıcı Adı)', 'Örn: ekoyildiz_ / 123456789012345678', 1, 'Discord kullanıcı adınızı veya ID nizi onay olarak yazınız.')}
   `;
   const step5 = _step(5, '#ef4444', 'BÖLÜM 5 — TAAHHÜTNAME, YÖNETMELİK ONAYI VE NİHAİ BAŞVURU İMZASI', 'Hukuki, disipliner, NDA taahhütleri ve dijital onay.', step5Body, prevBtn(5) + `
     <div style="display:flex;align-items:center;gap:0.8rem;">
@@ -2542,7 +2542,7 @@ function renderDebugOfficeFormPage(currentUser, existingSubmission = null) {
 
     <div class="form-group" style="margin-bottom:1.2rem;">
       <label class="field-label" style="display:block;font-size:0.88rem;font-weight:700;color:#e2e8f0;margin-bottom:0.4rem;">1.5. DISCORD KULLANICI ADINIZ VE USER ID *</label>
-      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx / 123456789012345678" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;">
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekoyildiz_ / 123456789012345678" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:0.7rem 0.9rem;border-radius:10px;font-size:0.88rem;">
     </div>
 
     ${_field('q_dbg_2_1', '2.1. Yaşadığınız Şehir ve Çalıştığınız Saat Dilimi (Timezone)', 'Örn: İstanbul / UTC+3 — Ekip içi koordinasyon ve toplantı planlaması için önemlidir...', 2)}

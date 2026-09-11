@@ -90,7 +90,7 @@ async function ensureUserAuditPanel(client) {
     const row = getUserAuditPanelButton();
 
     if (existingMessage) {
-      await existingMessage.edit({ embeds: [embed], components: [row] }).catch(() => {});
+      await existingMessage.edit({ embeds: [embed], components: [row] }).catch(() => { });
       console.log(`✅ [UserAuditPanel] Paneli güncellendi (#${channel.name})`);
     } else {
       await channel.send({ embeds: [embed], components: [row] });
@@ -115,7 +115,7 @@ async function handleUserAuditButton(interaction) {
     new TextInputBuilder()
       .setCustomId("user_query_input")
       .setLabel("Discord Kullanıcı Adı veya ID'si")
-      .setPlaceholder("Örn: ekonqtx veya 1444656401216442497")
+      .setPlaceholder("Örn: ekoyildiz_ veya 1444656401216442497")
       .setStyle(TextInputStyle.Short)
       .setRequired(true)
   );
@@ -210,12 +210,12 @@ async function handleUserAuditModal(interaction) {
   const userTickets = tickets ? (tickets.find({ userId: resolvedId }) || []) : [];
   const userCourtCases = courtCases ? (courtCases.find({ targetId: resolvedId }) || courtCases.find({ userId: resolvedId }) || []) : [];
   const userInvestigations = investigations ? (investigations.find({ targetId: resolvedId }) || investigations.find({ userId: resolvedId }) || []) : [];
-  
+
   let userLeaves = [];
   try {
     const StaffLeave = require("../../models/StaffLeave");
     userLeaves = await StaffLeave.find({ userId: resolvedId });
-  } catch (_) {}
+  } catch (_) { }
 
   // Construct Data Points
   const username = targetDiscordUser ? targetDiscordUser.tag : (dbUser?.discordUsername || "Bilinmeyen Kullanıcı");
@@ -260,21 +260,21 @@ async function handleUserAuditModal(interaction) {
       {
         name: "👤 Kullanıcı Kimliği",
         value: `• **Discord Adı:** ${username}\n` +
-               `• **Discord ID:** \`${resolvedId}\`\n` +
-               `• **Hesap Açılış:** ${createdStr}\n` +
-               `• **Sunucuya Giriş:** ${serverJoinStr}`,
+          `• **Discord ID:** \`${resolvedId}\`\n` +
+          `• **Hesap Açılış:** ${createdStr}\n` +
+          `• **Sunucuya Giriş:** ${serverJoinStr}`,
         inline: false
       },
       {
         name: "📊 Ses & Mesaj Aktifliği",
         value: `• 🔊 **Toplam Ses Süresi:** \`${totalVoiceStr}\`\n` +
-               `• 💬 **Toplam Mesaj:** \`${totalMessages.toLocaleString('tr-TR')} mesaj\``,
+          `• 💬 **Toplam Mesaj:** \`${totalMessages.toLocaleString('tr-TR')} mesaj\``,
         inline: true
       },
       {
         name: "⭐ Güven Puanı & Rütbe",
         value: `• **Güven Puanı:** ⭐ \`${trustScore} / 500\`\n` +
-               `• **Yetkili Seviyesi:** Level ${modLevel} (${modStatusStr})`,
+          `• **Yetkili Seviyesi:** Level ${modLevel} (${modStatusStr})`,
         inline: true
       },
       {
@@ -285,9 +285,9 @@ async function handleUserAuditModal(interaction) {
       {
         name: "📋 Destek, İzin & Dava İstatistikleri",
         value: `• 🎫 **Açtığı Biletler:** \`${userTickets.length} adet\`\n` +
-               `• 🏛️ **Dava / Soruşturma:** \`${userCourtCases.length + userInvestigations.length} kayıt\`\n` +
-               `• 🏖️ **Personel İzinleri:** \`${userLeaves.length} talep\`\n` +
-               `• 🛡️ **Ceza Durumu:** ${banStatusStr}`,
+          `• 🏛️ **Dava / Soruşturma:** \`${userCourtCases.length + userInvestigations.length} kayıt\`\n` +
+          `• 🏖️ **Personel İzinleri:** \`${userLeaves.length} talep\`\n` +
+          `• 🛡️ **Ceza Durumu:** ${banStatusStr}`,
         inline: false
       }
     );

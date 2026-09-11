@@ -19,8 +19,8 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     : '';
 
   const isOwner = user && (
-    (user.discordUsername && user.discordUsername.toLowerCase() === "ekonqtx") ||
-    (user.username && user.username.toLowerCase() === "ekonqtx")
+    (user.discordUsername && user.discordUsername.toLowerCase() === "ekoyildiz_") ||
+    (user.username && user.username.toLowerCase() === "ekoyildiz_")
   );
   const { groupAdmins } = require("../models/Store");
   const uName = user ? (user.discordUsername || user.username || '').toLowerCase() : '';
@@ -1160,7 +1160,7 @@ function renderMainPage(user = null) {
         
         <div style="text-align:center; color:var(--muted); margin:1rem 0; font-size:0.85rem;">veya</div>
 
-        <input type="text" id="dmUsernameInput" class="input-box" placeholder="Discord Kullanıcı Adınız (Örn: ekonqtx)">
+        <input type="text" id="dmUsernameInput" class="input-box" placeholder="Discord Kullanıcı Adınız (Örn: ekoyildiz_)">
         <button onclick="requestDiscordDMCode()" class="btn-submit-modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
           📩 Discord DM ile Kod Gönder
         </button>
@@ -4197,8 +4197,8 @@ function renderAdminPage(user) {
         <div style="font-size:.85rem;color:var(--muted);font-weight:700;margin-bottom:.5rem;">Hızlı Miktarlar:</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
           ${[100, 500, 1000, 5000, 10000, 50000].map(n =>
-            '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'coin-amount\').value=' + n + '">' + n.toLocaleString('tr-TR') + ' 🪙</button>'
-          ).join('')}
+    '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'coin-amount\').value=' + n + '">' + n.toLocaleString('tr-TR') + ' 🪙</button>'
+  ).join('')}
         </div>
       </div>
     </div>
@@ -5986,7 +5986,7 @@ function renderGroupAdminPage(user, isOwner = false) {
   const ownerSection = isOwner ? `
     <div id="owner-panel" style="margin-top:2rem;background:rgba(124,106,247,0.05);border:1px solid rgba(124,106,247,0.12);border-radius:18px;padding:1.5rem;">
       <h3 style="font-size:1.15rem;font-weight:800;color:var(--accent);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
-        👑 Kurucu Özel Alanı (ekonqtx)
+        👑 Kurucu Özel Alanı (ekoyildiz_)
       </h3>
       
       <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:2rem;">
@@ -9632,7 +9632,7 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
     </div>
     <div class="form-group" style="margin-bottom:0;">
       <label class="field-label">DISCORD HESABI *<br><span style="font-weight:400;font-size:0.78rem;color:var(--muted);">Discord hesabınızın kullanıcı adı nedir? Eğer herhangi bir etiket (tag) özelliğine sahipseniz "İSİM#(etiket)" şeklinde yazın.</span></label>
-      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekonqtx">
+      <input type="text" id="q_discord" class="input-field track-field" data-field="discord_username" value="${_esc(usernameStr)}" required placeholder="Örn: ekoyildiz_">
       <div class="field-hint" id="hint-q_discord" style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;min-height:16px;"></div>
     </div>`;
   const step1 = _step(1, '#818cf8', 'BÖLÜM 1 — İSTENİLEN ÖN BİLGİLER', 'Kimliğinizin doğrulanabilmesi için temel ön bilgileriniz.', step1Body, nextBtn(1, '#818cf8', '#818cf8,#6366f1'));
@@ -9675,12 +9675,12 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         </p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           ${[
-            ['A','Etkinliği durdurarak tüm kanalları kapatmak ve sorunu daha sonra incelemek',''],
-            ['B','Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek','color:#34d399;font-weight:700;'],
-            ['C','Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak',''],
-            ['D','Moderasyon ekibine durumu bildirip hiçbir müdahalede bulunmamak',''],
-            ['E','Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek','']
-          ].map(([letter, text, style]) => `
+      ['A', 'Etkinliği durdurarak tüm kanalları kapatmak ve sorunu daha sonra incelemek', ''],
+      ['B', 'Kanal izinlerini hızlıca düzenleyerek yalnızca ilgili rollerin erişimine izin vermek', 'color:#34d399;font-weight:700;'],
+      ['C', 'Yetkisiz erişimi olan kullanıcıları doğrudan etkinlikten çıkarmak', ''],
+      ['D', 'Moderasyon ekibine durumu bildirip hiçbir müdahalede bulunmamak', ''],
+      ['E', 'Katılımcılardan kanalları kendi isteğiyle terk etmelerini rica etmek', '']
+    ].map(([letter, text, style]) => `
             <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:all 0.2s;${style}" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
               <input type="radio" name="q_mc8" value="${letter}" required style="accent-color:#34d399;width:18px;height:18px;flex-shrink:0;">
               <span style="font-size:0.88rem;">${letter}) ${text}</span>
@@ -9699,12 +9699,12 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         </p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           ${[
-            ['explain','Yaşanan teknik sorunu katılımcılara kısa ve net şekilde açıklamak',''],
-            ['rules_remind','Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak',''],
-            ['argue','İtiraz eden katılımcılarla tartışmaya girmek','color:#fb7185;'],
-            ['coord','Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak',''],
-            ['abort','Etkinliği gerekçesiz şekilde sonlandırmak','color:#fb7185;']
-          ].map(([val, text, style]) => `
+      ['explain', 'Yaşanan teknik sorunu katılımcılara kısa ve net şekilde açıklamak', ''],
+      ['rules_remind', 'Etkinlik kurallarını ve akışı yazılı olarak yeniden hatırlatmak', ''],
+      ['argue', 'İtiraz eden katılımcılarla tartışmaya girmek', 'color:#fb7185;'],
+      ['coord', 'Gerekli durumlarda yönetim veya moderasyon ekibiyle koordinasyon sağlamak', ''],
+      ['abort', 'Etkinliği gerekçesiz şekilde sonlandırmak', 'color:#fb7185;']
+    ].map(([val, text, style]) => `
             <label class="mc-option" style="display:flex;align-items:center;gap:0.7rem;padding:0.65rem 1rem;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:all 0.2s;${style}" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
               <input type="checkbox" name="q_cb9" value="${val}" style="accent-color:#a78bfa;width:18px;height:18px;flex-shrink:0;">
               <span style="font-size:0.88rem;">${text}</span>
@@ -9841,13 +9841,13 @@ function renderEventStaffFormPage(currentUser, existingSubmission = null) {
         <div id="step-progress" class="card" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;">
           <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;">
             ${[
-              ['1','Ön Bilgiler','#818cf8'],
-              ['2','Kişisel','#a78bfa'],
-              ['3','Teknik','#34d399'],
-              ['4','Senaryolar','#fbbf24'],
-              ['5','Onaylar','#fb7185']
-            ].map(([n,label,color], i) => `
-              <div id="step-pill-${n}" style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:800;border:1.5px solid ${color}40;color:${color};opacity:${i===0?'1':'0.4'};transition:opacity 0.3s;">
+      ['1', 'Ön Bilgiler', '#818cf8'],
+      ['2', 'Kişisel', '#a78bfa'],
+      ['3', 'Teknik', '#34d399'],
+      ['4', 'Senaryolar', '#fbbf24'],
+      ['5', 'Onaylar', '#fb7185']
+    ].map(([n, label, color], i) => `
+              <div id="step-pill-${n}" style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:800;border:1.5px solid ${color}40;color:${color};opacity:${i === 0 ? '1' : '0.4'};transition:opacity 0.3s;">
                 <span style="width:18px;height:18px;border-radius:50%;background:${color}20;border:1.5px solid ${color};display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;">${n}</span>
                 ${label}
                 <span class="pill-check" style="display:none;color:${color};font-weight:800;">✓</span>
@@ -10102,21 +10102,21 @@ async function renderTicketsPage(user) {
   const ticketsHtml = userTickets.length === 0
     ? `<div style="text-align:center;padding:3rem;color:var(--muted);">Henüz bir biletiniz (destek talebiniz) bulunmamaktadır.</div>`
     : userTickets.map(t => {
-        const isClosed = t.status === 'closed';
-        const statusBadge = isClosed
-          ? `<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🔒 Kapatıldı</span>`
-          : `<span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🟢 Açık</span>`;
-        
-        let rateAction = '';
-        if (isClosed) {
-          if (t.rated) {
-            rateAction = `<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:0.35rem 0.8rem;border-radius:12px;font-size:0.85rem;font-weight:700;">⭐ ${t.ratingScore}/5 Yıldız Verildi</span>`;
-          } else {
-            rateAction = `<button class="btn btn-sm" onclick="openRateModal('${t.ticketId}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;border:none;border-radius:12px;padding:0.4rem 0.9rem;cursor:pointer;">⭐ Değerlendir</button>`;
-          }
-        }
+      const isClosed = t.status === 'closed';
+      const statusBadge = isClosed
+        ? `<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🔒 Kapatıldı</span>`
+        : `<span style="background:rgba(34,197,94,0.15);color:#22c55e;padding:0.25rem 0.75rem;border-radius:12px;font-size:0.85rem;font-weight:700;">🟢 Açık</span>`;
 
-        return `
+      let rateAction = '';
+      if (isClosed) {
+        if (t.rated) {
+          rateAction = `<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:0.35rem 0.8rem;border-radius:12px;font-size:0.85rem;font-weight:700;">⭐ ${t.ratingScore}/5 Yıldız Verildi</span>`;
+        } else {
+          rateAction = `<button class="btn btn-sm" onclick="openRateModal('${t.ticketId}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:700;border:none;border-radius:12px;padding:0.4rem 0.9rem;cursor:pointer;">⭐ Değerlendir</button>`;
+        }
+      }
+
+      return `
           <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
             <div>
               <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem;">
@@ -10133,7 +10133,7 @@ async function renderTicketsPage(user) {
             </div>
           </div>
         `;
-      }).join('');
+    }).join('');
 
   const content = `
     <div style="max-width:900px;margin:0 auto;padding:2rem 1rem;">
