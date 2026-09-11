@@ -1,0 +1,24 @@
+{
+  "kbkE3Czmhla_hIJjyfw-in8Q9Bz1fXlU": {
+    "cookie": {
+      "originalMaxAge": 604800000,
+      "expires": "2026-09-18T15:22:25.396Z",
+      "secure": false,
+      "httpOnly": true,
+      "path": "/",
+      "sameSite": "lax"
+    },
+    "referralCode": "TEST1234"
+  },
+  "0GJm5_hOe04F7K7itnRBuHz-RpXEf4jc": {
+    "cookie": {
+      "originalMaxAge": 604800000,
+      "expires": "2026-09-18T15:22:47.306Z",
+      "secure": false,
+      "httpOnly": true,
+      "path": "/",
+      "sameSite": "lax"
+    },
+    "referralCode": "TEST1234"
+  }
+}

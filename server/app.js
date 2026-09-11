@@ -8,6 +8,8 @@ const { SESSION_SECRET, BASE_URL } = require("../config");
 const authRoutes = require("./routes/auth");
 const apiRoutes = require("./routes/api");
 const pagesRoutes = require("./routes/pages");
+const giveawayRoutes = require("./routes/giveaways");
+const adRoutes = require("./routes/ads");
 
 const logger = require("../utils/logger");
 
@@ -185,6 +187,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Subdomain Routing: cekilisler.ekoyildiz (or cekilisler.localhost) ───────
+app.use((req, res, next) => {
+  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  if (host.startsWith('cekilisler.')) {
+    if (req.url === '/' || req.url === '') {
+      req.url = '/cekilisler';
+    } else if (!req.url.startsWith('/cekilisler') && !req.url.startsWith('/api') && !req.url.startsWith('/r/') && !req.url.startsWith('/public')) {
+      req.url = '/cekilisler' + req.url;
+    }
+  }
+  next();
+});
+
+app.use(adRoutes);
+app.use(giveawayRoutes);
 app.use(authRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);

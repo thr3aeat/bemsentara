@@ -156,6 +156,15 @@ const stories        = collections.stories;
 const liveStreams    = collections.liveStreams;
 const appMeta        = collections.appMeta;
 const formSubmissions = collections.formSubmissions;
+const sponsorAds      = collections.sponsorAds;
+const giveaways       = collections.giveaways;
+const giveawayTasks   = collections.giveawayTasks;
+const giveawayEntries = collections.giveawayEntries;
+const giveawayEntryTasks = collections.giveawayEntryTasks;
+const giveawayWinners = collections.giveawayWinners;
+const giveawayAuditLogs = collections.giveawayAuditLogs;
+const giveawayFraudFlags = collections.giveawayFraudFlags;
+const giveawayNotifications = collections.giveawayNotifications;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -168,7 +177,10 @@ const ALL_COLLECTION_NAMES = [
   "wikiArticles", "errorReports", "groupAdmins", "rankMetadata",
   "groupAuditLogs", "posts", "stories", "liveStreams", "appMeta",
   "formSubmissions", "modInterviews", "staffLeaves", "staffShifts",
-  "modPerformances", "marketAuctions", "userTrustScores"
+  "modPerformances", "marketAuctions", "userTrustScores",
+  "sponsorAds", "giveaways", "giveawayTasks", "giveawayEntries",
+  "giveawayEntryTasks", "giveawayWinners", "giveawayAuditLogs",
+  "giveawayFraudFlags", "giveawayNotifications"
 ];
 
 /**
@@ -296,6 +308,15 @@ module.exports = {
   liveStreams,
   appMeta,
   formSubmissions,
+  sponsorAds,
+  giveaways,
+  giveawayTasks,
+  giveawayEntries,
+  giveawayEntryTasks,
+  giveawayWinners,
+  giveawayAuditLogs,
+  giveawayFraudFlags,
+  giveawayNotifications,
   wikis,
   InMemoryCollection,
   initStore,

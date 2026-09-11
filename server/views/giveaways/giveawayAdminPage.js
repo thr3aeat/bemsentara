@@ -1,0 +1,852 @@
+// server/views/giveaways/giveawayAdminPage.js
+// Advanced administrative interface for Giveaways, Anti-Cheat, Participants, and Sponsor Ads
+function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], auditLogs = [] }) {
+  return `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin & Yönetim — Eko Yıldız Çekilişler & Sponsorlar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #131b2e;
+      --border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #a855f7;
+      --primary-hover: #9333ea;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+    }
+    /* Sidebar */
+    .admin-sidebar {
+      width: 260px;
+      background: #0d121f;
+      border-right: 1px solid var(--border);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .admin-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      max-width: calc(100vw - 260px);
+    }
+    @media (max-width: 900px) {
+      body { flex-direction: column; }
+      .admin-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .admin-main { max-width: 100%; padding: 1.25rem; }
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 0.25rem;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(168, 85, 247, 0.15);
+      color: #fff;
+    }
+    .nav-item.active {
+      color: var(--primary);
+      border-left: 3px solid var(--primary);
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--border); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-success { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
+    .btn-success:hover { background: var(--success); color: #fff; }
+    
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+    th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      vertical-align: middle;
+    }
+    .input-field {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+      <div style="width: 40px; height: 40px; border-radius: 0.75rem; background: linear-gradient(135deg, #a855f7, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        ⚡
+      </div>
+      <div>
+        <div style="font-weight: 900; font-size: 1.05rem; color: #fff;">EKO YILDIZ</div>
+        <div style="font-size: 0.75rem; color: var(--primary); font-weight: 800;">ADMIN PANELİ</div>
+      </div>
+    </div>
+
+    <nav style="flex: 1;">
+      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+        <span>📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="switchTab('giveaways', this)">
+        <span>🎁</span> Çekilişler
+      </button>
+      <button class="nav-item" onclick="switchTab('wizard', this)">
+        <span>✨</span> Yeni Çekiliş Sihirbazı
+      </button>
+      <button class="nav-item" onclick="switchTab('participants', this)">
+        <span>👥</span> Katılımcı Yönetimi
+      </button>
+      <button class="nav-item" onclick="switchTab('fraud', this)">
+        <span>🛡️</span> Şüpheli / Anti-Cheat (${fraudFlags.length})
+      </button>
+      <button class="nav-item" onclick="switchTab('ads', this)">
+        <span>📢</span> Sponsor & Reklamlar (${ads.length})
+      </button>
+      <button class="nav-item" onclick="switchTab('audit', this)">
+        <span>📜</span> Audit Denetim Logları
+      </button>
+    </nav>
+
+    <div style="padding-top: 1.5rem; border-top: 1px solid var(--border);">
+      <a href="/cekilisler" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
+        🌐 Platforma Git
+      </a>
+      <a href="/admin" class="btn btn-secondary" style="width: 100%;">
+        ⚙️ Ana Site Admin
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    
+    <!-- Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 id="pageTitle" style="font-size: 1.75rem; font-weight: 900;">Çekiliş & Sponsor Yönetim Paneli</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Platform durumunu takip et, yeni çekilişler başlat ve kazananları belirle.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button onclick="switchTab('wizard', document.querySelectorAll('.nav-item')[2])" class="btn btn-primary">
+          ➕ Yeni Çekiliş Başlat
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active">
+      <!-- Stats Overview -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Aktif Çekilişler</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #22c55e;">${stats.activeGiveaways || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Katılımcılar</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #fff;">${(stats.totalParticipants || 0).toLocaleString('tr-TR')}</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Bilet (Hak)</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #a855f7;">${(stats.totalTickets || 0).toLocaleString('tr-TR')}</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tamamlanan Görevler</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #38bdf8;">${(stats.completedTasks || 0).toLocaleString('tr-TR')}</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Şüpheli Girişler</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #ef4444;">${stats.fraudCount || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Aktif Sponsor Reklamları</div>
+          <div style="font-size: 2rem; font-weight: 900; color: #fbbf24;">${ads.filter(a => a.isActive).length}</div>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        <div class="stat-card">
+          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">🎁 Aktif Çekiliş Durumları</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${giveaways.filter(g => g.status === 'ACTIVE').map(g => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 0.5rem; border: 1px solid var(--border);">
+                <div>
+                  <div style="font-weight: 800;">${g.title}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">👥 ${g.totalEntries || 0} katılımcı &bull; 🎟️ ${g.totalTickets || 0} bilet</div>
+                </div>
+                <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                  🎲 Kazananı Seç
+                </button>
+              </div>
+            `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem;">Şu anda aktif çekiliş yok.</div>'}
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">📢 Sponsor Reklam Performansları</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            ${ads.map(ad => `
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 0.5rem; border: 1px solid var(--border);">
+                <div>
+                  <div style="font-weight: 800; color: #fff;">${ad.title}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">👁️ ${ad.impressions || 0} gösterim &bull; 🖱️ ${ad.clicks || 0} tık &bull; CTR: %${ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : 0}</div>
+                </div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: ${ad.isActive ? '#22c55e' : '#94a3b8'};">
+                  ${ad.isActive ? 'AKTİF' : 'PASİF'}
+                </span>
+              </div>
+            `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem;">Kayıtlı reklam bulunmuyor.</div>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: GIVEAWAYS LIST -->
+    <div id="tab-giveaways" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 800;">Tüm Çekilişler</h2>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Çekiliş Adı</th>
+              <th>Ödül</th>
+              <th>Durum</th>
+              <th>Katılımcı / Bilet</th>
+              <th>Bitiş Tarihi</th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${giveaways.map(g => `
+              <tr>
+                <td>
+                  <strong style="color: #fff;">${g.title}</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Sponsor: ${g.sponsor || 'Eko Yıldız'}</div>
+                </td>
+                <td style="color: #38bdf8; font-weight: 700;">${g.prize}</td>
+                <td>
+                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${g.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : (g.status === 'SCHEDULED' ? 'rgba(234, 179, 8, 0.2); color: #eab308' : 'rgba(148, 163, 184, 0.2); color: #94a3b8')};">
+                    ${g.status}
+                  </span>
+                </td>
+                <td>👥 ${g.totalEntries || 0} / 🎟️ ${g.totalTickets || 0}</td>
+                <td style="color: var(--text-muted);">${new Date(g.endDate).toLocaleDateString('tr-TR')}</td>
+                <td>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <a href="/cekilisler/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görüntüle</a>
+                    ${g.status === 'ACTIVE' ? `
+                      <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Bitir & Çekiliş Yap</button>
+                    ` : (g.status === 'COMPLETED' ? `
+                      <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}', true)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Yeniden Çekiliş</button>
+                      <a href="/cekilisler/canli/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #fbbf24;">Canlı Ekran</a>
+                    ` : '')}
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: MULTI-STEP GIVEAWAY CREATION WIZARD -->
+    <div id="tab-wizard" class="tab-content">
+      <div class="stat-card" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem;">✨ Yeni Çekiliş Oluşturma Sihirbazı</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">
+          Adım adım bilgileri doldur, görevleri tanımla ve çekilişi yayınla veya taslak olarak sakla.
+        </p>
+
+        <form id="wizardForm" onsubmit="handleCreateGiveaway(event)">
+          <!-- STEP 1: General Info -->
+          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
+              ADIM 1 — Genel Bilgiler
+            </h3>
+            <div class="form-group">
+              <label class="form-label">Çekiliş Başlığı *</label>
+              <input type="text" name="title" class="input-field" placeholder="Örn: 10.000 Robux Büyük Topluluk Çekilişi" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ödül Tanımı *</label>
+              <input type="text" name="prize" class="input-field" placeholder="Örn: 10.000 Robux veya Discord Nitro" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sponsor Adı</label>
+              <input type="text" name="sponsor" class="input-field" placeholder="Örn: Eko Yıldız veya Sponsor Marka">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Açıklama</label>
+              <textarea name="description" class="input-field" rows="3" placeholder="Çekiliş hakkında detaylar, katılım şartları..."></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Başlangıç Tarihi</label>
+                <input type="datetime-local" name="startDate" class="input-field">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bitiş Tarihi *</label>
+                <input type="datetime-local" name="endDate" class="input-field" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kapak Görseli URL</label>
+              <input type="url" name="coverImage" class="input-field" placeholder="https://images.unsplash.com/...">
+            </div>
+          </div>
+
+          <!-- STEP 2: Tasks Setup -->
+          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
+              ADIM 2 — Çekiliş Görevleri
+            </h3>
+            <div id="tasksContainer" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+              <!-- Default task 1 -->
+              <div style="background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1fr 80px; gap: 0.5rem;">
+                <input type="text" placeholder="Görev Adı (Örn: YouTube Kanalına Abone Ol)" class="input-field task-title" value="Eko Yıldız YouTube Kanalına Abone Ol" required>
+                <select class="input-field task-platform">
+                  <option value="youtube">YouTube</option>
+                  <option value="discord">Discord</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="site">Web Sitesi</option>
+                </select>
+                <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1">
+                <select class="input-field task-mandatory">
+                  <option value="true">Zorunlu</option>
+                  <option value="false">Opsiyonel</option>
+                </select>
+              </div>
+            </div>
+            <button type="button" onclick="addTaskRow()" class="btn btn-secondary" style="font-size: 0.85rem;">
+              ➕ Ekstra Görev Ekle
+            </button>
+          </div>
+
+          <!-- STEP 3: Status & Visibility -->
+          <div style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
+              ADIM 3 — Yayın Durumu
+            </h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Yayınlama Durumu</label>
+                <select name="status" class="input-field">
+                  <option value="ACTIVE">🟢 Hemen Aktif Et</option>
+                  <option value="SCHEDULED">⏳ Planlanmış (Scheduled)</option>
+                  <option value="DRAFT">📝 Taslak (Draft Olarak Sakla)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Öne Çıkarılsın mı?</label>
+                <select name="isFeatured" class="input-field">
+                  <option value="true">Evet, Ana Sayfa Hero'da Göster</option>
+                  <option value="false">Hayır, Standart Liste</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="button" onclick="switchTab('giveaways', document.querySelectorAll('.nav-item')[1])" class="btn btn-secondary">
+              İptal
+            </button>
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+              🚀 Çekilişi Kaydet & Yayınla
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 4: PARTICIPANTS & VERIFICATION -->
+    <div id="tab-participants" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 800;">Katılımcı & Bilet İnceleme</h2>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Kullanıcı Adı</th>
+              <th>Çekiliş</th>
+              <th>Bilet Sayısı</th>
+              <th>IP Adresi</th>
+              <th>Referral Kodu</th>
+              <th>Durum</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${participants.map(p => `
+              <tr>
+                <td><strong style="color: #fff;">@${p.username}</strong></td>
+                <td>${p.giveawayTitle || p.giveawayId}</td>
+                <td style="color: #a855f7; font-weight: 800;">🎟️ ${p.ticketCount || 1}</td>
+                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${p.ip || '127.0.0.1'}</td>
+                <td style="font-family: monospace; font-size: 0.8rem;">${p.referralCode || '-'}</td>
+                <td>
+                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${p.status === 'VALID' ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
+                    ${p.status || 'VALID'}
+                  </span>
+                </td>
+                <td>
+                  ${p.status === 'VALID' ? `
+                    <button onclick="disqualifyParticipant('${p._id}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">İptal Et</button>
+                  ` : `
+                    <button onclick="restoreParticipant('${p._id}')" class="btn btn-success" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Onayla</button>
+                  `}
+                </td>
+              </tr>
+            `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Kayıtlı katılımcı bulunmuyor.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 5: FRAUD & ANTI-CHEAT -->
+    <div id="tab-fraud" class="tab-content">
+      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">🛡️ Anti-Cheat & Şüpheli Katılımlar</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Sistem aynı IP'den çoklu hesap, kendi referansıyla kaydolma veya anormal hızda görev tamamlama durumlarını otomatik olarak şüpheli olarak işaretler. Admin kararıyla engellenir veya serbest bırakılır.
+      </p>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Kullanıcı / Çekiliş</th>
+              <th>İhlal Nedeni</th>
+              <th>IP / Sinyal</th>
+              <th>Tarih</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${fraudFlags.map(f => `
+              <tr>
+                <td>
+                  <strong>@${f.username}</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">${f.giveawayTitle || f.giveawayId}</div>
+                </td>
+                <td style="color: #ef4444; font-weight: 700;">${f.reason}</td>
+                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${f.ip || '-'}</td>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(f.timestamp).toLocaleString('tr-TR')}</td>
+                <td>
+                  <button onclick="resolveFraud('${f._id}', 'BAN')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Diskalifiye Et</button>
+                  <button onclick="resolveFraud('${f._id}', 'IGNORE')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görmezden Gel</button>
+                </td>
+              </tr>
+            `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Harika! Şu anda herhangi bir şüpheli katılım bulunmuyor.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 6: SPONSOR ADS MANAGEMENT -->
+    <div id="tab-ads" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800;">Sponsorlu Bağlantılar & Reklamlar</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Sitede gösterilen sponsor kartlarını yönet, gösterim/tıklama oranlarını izle.</p>
+        </div>
+        <button onclick="document.getElementById('newAdModal').style.display='flex'" class="btn btn-primary">
+          ➕ Yeni Sponsor Reklamı Ekle
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Reklam & Sponsor</th>
+              <th>Hedef URL</th>
+              <th>Öncelik</th>
+              <th>Gösterim</th>
+              <th>Tıklama</th>
+              <th>CTR (%)</th>
+              <th>Durum</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ads.map(ad => `
+              <tr>
+                <td>
+                  <strong style="color: #fff;">${ad.title}</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Sponsor: ${ad.sponsorName}</div>
+                </td>
+                <td style="font-size: 0.8rem; color: var(--accent); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <a href="${ad.targetUrl}" target="_blank" style="color: var(--accent);">${ad.targetUrl}</a>
+                </td>
+                <td style="font-weight: 800;">${ad.priority || 1}</td>
+                <td>${ad.impressions || 0}</td>
+                <td style="color: #38bdf8; font-weight: 700;">${ad.clicks || 0}</td>
+                <td style="color: #a855f7; font-weight: 700;">
+                  %${ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : 0}
+                </td>
+                <td>
+                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${ad.isActive ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
+                    ${ad.isActive ? 'AKTİF' : 'PASİF'}
+                  </span>
+                </td>
+                <td>
+                  <button onclick="toggleAdStatus('${ad._id}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
+                    ${ad.isActive ? 'Pasife Al' : 'Aktif Et'}
+                  </button>
+                  <button onclick="deleteAd('${ad._id}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
+                    Sil
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 7: AUDIT LOGS -->
+    <div id="tab-audit" class="tab-content">
+      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">📜 Platform Denetim (Audit) Logları</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>İşlem (Action)</th>
+              <th>Yapan Yetkili</th>
+              <th>Detaylar</th>
+              <th>Tarih</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${auditLogs.map(log => `
+              <tr>
+                <td style="color: #a855f7; font-weight: 800;">[${log.action}]</td>
+                <td><strong>@${log.adminUsername || 'Sistem'}</strong></td>
+                <td style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">${JSON.stringify(log.details || {})}</td>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString('tr-TR')}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;">Henüz kayıt bulunmuyor.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- DRAW WINNER MODAL -->
+  <div id="drawWinnerModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div class="stat-card" style="width: 100%; max-width: 500px; padding: 2rem; text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎲</div>
+      <h2 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 0.5rem;">Kriptografik Kazanan Çekilişi</h2>
+      <p id="modalGiveawayTitle" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Çekiliş Başlığı</p>
+      
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">
+        ℹ️ Çekiliş, katılımcıların toplam geçerli bilet sayısı üzerinden <strong>Node.js Crypto CSPRNG</strong> algoritmasıyla gerçekleştirilir. Kazanan kaydedildikten sonra geri alınamaz, ancak gerekirse yedek veya yeniden çekiliş yapılabilir.
+      </div>
+
+      <input type="hidden" id="modalGiveawayId">
+      <input type="hidden" id="modalIsRedraw">
+
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button onclick="document.getElementById('drawWinnerModal').style.display='none'" class="btn btn-secondary">
+          Vazgeç
+        </button>
+        <button onclick="executeDrawWinner()" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+          🎲 Çekilişi Gerçekleştir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW SPONSOR AD MODAL -->
+  <div id="newAdModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div class="stat-card" style="width: 100%; max-width: 550px; padding: 2rem;">
+      <h2 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 1rem;">➕ Yeni Sponsor Reklamı Ekle</h2>
+      <form onsubmit="handleCreateAd(event)">
+        <div class="form-group">
+          <label class="form-label">Başlık *</label>
+          <input type="text" name="title" class="input-field" placeholder="Örn: Eko Yıldız Resmi Discord Sunucusu" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sponsor Marka / Adı *</label>
+          <input type="text" name="sponsorName" class="input-field" placeholder="Örn: Eko Yıldız" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kısa Açıklama</label>
+          <input type="text" name="description" class="input-field" placeholder="Topluluğumuza katıl, sohbet et ve ödüller kazan!">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hedef URL (Bağlantı) *</label>
+          <input type="url" name="targetUrl" class="input-field" placeholder="https://discord.gg/..." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Görsel URL</label>
+          <input type="url" name="imageUrl" class="input-field" placeholder="https://...">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">CTA Buton Yazısı</label>
+            <input type="text" name="ctaText" class="input-field" value="Hemen Katıl">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Öncelik (1-10)</label>
+            <input type="number" name="priority" class="input-field" value="5" min="1" max="10">
+          </div>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+          <button type="button" onclick="document.getElementById('newAdModal').style.display='none'" class="btn btn-secondary">
+            İptal
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Kaydet & Yayınla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      if (el) el.classList.add('active');
+    }
+
+    function addTaskRow() {
+      const container = document.getElementById('tasksContainer');
+      const div = document.createElement('div');
+      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1fr 80px; gap: 0.5rem;";
+      div.innerHTML = \`
+        <input type="text" placeholder="Görev Adı" class="input-field task-title" required>
+        <select class="input-field task-platform">
+          <option value="youtube">YouTube</option>
+          <option value="discord">Discord</option>
+          <option value="instagram">Instagram</option>
+          <option value="site">Web Sitesi</option>
+        </select>
+        <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1">
+        <select class="input-field task-mandatory">
+          <option value="false">Opsiyonel</option>
+          <option value="true">Zorunlu</option>
+        </select>
+      \`;
+      container.appendChild(div);
+    }
+
+    async function handleCreateGiveaway(e) {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      // Collect tasks
+      const taskRows = document.querySelectorAll('#tasksContainer > div');
+      const tasks = [];
+      taskRows.forEach(row => {
+        const title = row.querySelector('.task-title').value.trim();
+        const platform = row.querySelector('.task-platform').value;
+        const reward = parseInt(row.querySelector('.task-reward').value, 10) || 1;
+        const isMandatory = row.querySelector('.task-mandatory').value === 'true';
+        if (title) {
+          tasks.push({ title, platform, ticketReward: reward, isMandatory });
+        }
+      });
+      data.tasks = tasks;
+
+      try {
+        const res = await fetch('/api/admin/giveaways', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('✅ Çekiliş başarıyla oluşturuldu!');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (result.message || 'Oluşturulamadı'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    function openDrawWinnerModal(giveawayId, title, isRedraw = false) {
+      document.getElementById('modalGiveawayId').value = giveawayId;
+      document.getElementById('modalGiveawayTitle').innerText = title + (isRedraw ? ' (Yeniden Çekiliş)' : '');
+      document.getElementById('modalIsRedraw').value = isRedraw ? '1' : '0';
+      document.getElementById('drawWinnerModal').style.display = 'flex';
+    }
+
+    async function executeDrawWinner() {
+      const giveawayId = document.getElementById('modalGiveawayId').value;
+      const isRedraw = document.getElementById('modalIsRedraw').value === '1';
+
+      try {
+        const res = await fetch('/api/admin/giveaways/' + giveawayId + '/draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isRedraw })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('🎉 Kazanan başarıyla seçildi: @' + data.winner.username + ' (' + data.winner.ticketCount + ' bilet)');
+          // Redirect to live reveal mode
+          window.location.href = '/cekilisler/canli/' + giveawayId;
+        } else {
+          alert('Hata: ' + (data.message || 'Kazanan seçilemedi.'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function handleCreateAd(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form).entries());
+      try {
+        const res = await fetch('/api/admin/ads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert('✅ Reklam başarıyla kaydedildi!');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (result.message || 'Eklenemedi'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function toggleAdStatus(adId) {
+      try {
+        const res = await fetch('/api/admin/ads/' + adId + '/toggle', { method: 'POST' });
+        const result = await res.json();
+        if (result.success) window.location.reload();
+      } catch (err) {
+        alert('Hata: ' + err.message);
+      }
+    }
+
+    async function deleteAd(adId) {
+      if (!confirm('Bu sponsor reklamını silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch('/api/admin/ads/' + adId, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) window.location.reload();
+      } catch (err) {
+        alert('Hata: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
+  `;
+}
+
+module.exports = { renderGiveawayAdminPage };

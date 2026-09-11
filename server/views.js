@@ -1,6 +1,7 @@
 'use strict';
 
 const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
+const sponsorAdService = require("./services/sponsorAdService");
 
 // ─────────────────────────────────────────────
 // SHARED LAYOUT HELPER  (declared ONCE at top)
@@ -472,6 +473,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     <nav class="nav-links" id="nav-links">
       ${navLink('/', 'Ana Sayfa')}
       ${navLink('/status', '📊 Sistem Durumu')}
+      ${navLink('/cekilisler', '🎁 Çekilişler')}
       ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
       ${groupAdminLink}
       ${staffLinks}
@@ -484,19 +486,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
   <main>
     ${content}
-    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
-      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
-      <!-- eko123 -->
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-8395596912297122"
-           data-ad-slot="2087413721"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-    </div>
+    ${sponsorAdService.renderSponsorAdHtml()}
   </main>
 
   <script>
@@ -684,6 +674,42 @@ function _esc(str) {
 // MAIN PAGE
 // ─────────────────────────────────────────────
 function renderMainPage(user = null) {
+  const { giveaways } = require("../models/Store");
+  const activeGws = giveaways.find({ status: 'ACTIVE' });
+  const activeGw = activeGws.find(g => g.isFeatured) || activeGws[0];
+
+  let giveawayPromoCard = '';
+  if (activeGw) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(activeGw.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    giveawayPromoCard = `
+  <div class="section-container" style="margin: 2.5rem auto 1rem;">
+    <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(244, 63, 94, 0.15) 100%); border: 2px solid rgba(168, 85, 247, 0.4); border-radius: 20px; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);">
+      <div style="display: flex; align-items: center; gap: 1.5rem; flex: 1; min-width: 280px;">
+        <div style="width: 80px; height: 80px; border-radius: 16px; overflow: hidden; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0;">
+          <img src="${activeGw.coverImage || 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=400'}" alt="${activeGw.title}" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #22c55e; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; margin-bottom: 0.4rem;">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow: 0 0 6px #22c55e;"></span>
+            ŞU ANDA AKTİF ÇEKİLİŞ VAR!
+          </div>
+          <h3 style="font-size: 1.35rem; font-weight: 900; color: #fff; margin: 0 0 0.35rem;">${activeGw.title}</h3>
+          <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: var(--muted); flex-wrap: wrap;">
+            <span>🎁 Ödül: <strong style="color: #38bdf8;">${activeGw.prize}</strong></span>
+            <span>&bull;</span>
+            <span>👥 Katılımcı: <strong style="color: #fff;">${(activeGw.totalEntries || 0).toLocaleString('tr-TR')}</strong></span>
+            <span>&bull;</span>
+            <span>⏱️ Kalan: <strong style="color: #fbbf24;">${daysLeft} Gün</strong></span>
+          </div>
+        </div>
+      </div>
+      <a href="/cekilisler/${activeGw.slug || activeGw._id}" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; text-decoration: none; font-weight: 800; font-size: 1rem; padding: 0.85rem 2rem; border-radius: 14px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); white-space: nowrap;">
+        🎯 Çekilişe Katıl
+      </a>
+    </div>
+  </div>`;
+  }
+
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -997,6 +1023,7 @@ function renderMainPage(user = null) {
     </a>
     <nav>
       <a href="/">Ana Sayfa</a>
+      <a href="/cekilisler" style="display:inline-flex; align-items:center; gap:0.35rem; color:#f43f5e; font-weight:700;">🎁 Çekilişler</a>
       ${user ? `
         <a href="/dashboard" class="nav-btn-login" style="background:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); text-decoration:none;">🚀 Panelim</a>
         <a href="/settings" class="nav-btn-login" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); text-decoration:none;">⚙️ Ayarlar</a>
@@ -1034,6 +1061,8 @@ function renderMainPage(user = null) {
       <img src="https://i.imgur.com/NzyMqMK.png" alt="EkoYıldız Maskot" class="hero-mascot-img">
     </div>
   </div>
+
+  ${giveawayPromoCard}
 
   <div class="section-container">
     <div class="section-header">
@@ -1076,19 +1105,7 @@ function renderMainPage(user = null) {
   </div>
 
   <div class="section-container" style="margin: 2rem auto;">
-    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
-      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
-      <!-- eko123 -->
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-8395596912297122"
-           data-ad-slot="2087413721"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-    </div>
+    ${sponsorAdService.renderSponsorAdHtml()}
   </div>
 
   <div class="section-container">
@@ -1108,19 +1125,7 @@ function renderMainPage(user = null) {
   </div>
 
   <div class="section-container" style="margin: 3rem auto 1rem;">
-    <div class="site-ad-wrapper" aria-label="Sponsorlu Alan">
-      <div class="site-ad-label">Sponsorlu Bağlantı / Reklam</div>
-      <!-- eko123 -->
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-8395596912297122"
-           data-ad-slot="2087413721"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
-    </div>
+    ${sponsorAdService.renderSponsorAdHtml()}
   </div>
 
   <div class="modal-overlay" id="loginModal">

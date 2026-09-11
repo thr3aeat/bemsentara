@@ -1,0 +1,199 @@
+'use strict';
+
+const { sponsorAds } = require('../../models/Store');
+
+class SponsorAdService {
+  constructor() {
+    this._ensureSeeded();
+  }
+
+  _ensureSeeded() {
+    try {
+      const existing = sponsorAds.find({});
+      if (!existing || existing.length === 0) {
+        sponsorAds.create({
+          title: "EkoYıldız Resmî Roblox Pazar Yeri & Mağazası",
+          description: "En güvenilir Roblox eşyaları, sınırlı üretim kozmetikler ve topluluk ayrıcalıkları avantajlı fiyatlarla sizleri bekliyor!",
+          imageUrl: "https://i.imgur.com/PFcAc6q.png",
+          sponsorName: "EkoYıldız Store",
+          targetUrl: "https://discord.gg/1367646464804655104",
+          ctaText: "Hemen İncele 🚀",
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2027-12-31'),
+          isActive: true,
+          priority: 20,
+          impressions: 0,
+          clicks: 0
+        });
+
+        sponsorAds.create({
+          title: "Sentara Yüksek Hızlı Destek Masası",
+          description: "RobloxLand & EkoYıldız geliştirici ekosisteminde 7/24 kesintisiz moderasyon ve teknik bilet güvencesi.",
+          imageUrl: "https://i.imgur.com/HT7bvru.png",
+          sponsorName: "Sentara Ecosystem",
+          targetUrl: "/tickets",
+          ctaText: "Destek Al 💬",
+          startDate: new Date('2026-01-01'),
+          endDate: new Date('2027-12-31'),
+          isActive: true,
+          priority: 15,
+          impressions: 0,
+          clicks: 0
+        });
+      }
+    } catch (err) {
+      console.error('[SponsorAdService] Seed hatası:', err.message);
+    }
+  }
+
+  seedDefaultAds() {
+    return this._ensureSeeded();
+  }
+
+  /**
+   * Aktif ve tarih kriterlerine uyan tüm reklamları getirir
+   */
+  getActiveAds() {
+    const now = new Date();
+    const all = sponsorAds.find({});
+    return all.filter(ad => {
+      if (!ad.isActive) return false;
+      if (ad.startDate && new Date(ad.startDate) > now) return false;
+      if (ad.endDate && new Date(ad.endDate) < now) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Öncelik ağırlıklı rastgele aktif bir reklam seçer
+   */
+  getRandomActiveAd() {
+    const activeAds = this.getActiveAds();
+    if (!activeAds || activeAds.length === 0) return null;
+    if (activeAds.length === 1) return activeAds[0];
+
+    const totalWeight = activeAds.reduce((sum, ad) => sum + Math.max(1, Number(ad.priority) || 10), 0);
+    let randomNum = Math.random() * totalWeight;
+
+    for (const ad of activeAds) {
+      const weight = Math.max(1, Number(ad.priority) || 10);
+      if (randomNum < weight) {
+        return ad;
+      }
+      randomNum -= weight;
+    }
+
+    return activeAds[0];
+  }
+
+  /**
+   * Gösterim (impression) kaydeder
+   */
+  recordImpression(id) {
+    const ad = sponsorAds.findById(id);
+    if (!ad) return false;
+    ad.impressions = (Number(ad.impressions) || 0) + 1;
+    ad.save();
+    return true;
+  }
+
+  /**
+   * Tıklama (click) kaydeder ve yönlendirme linkini döner
+   */
+  recordClick(id) {
+    const ad = sponsorAds.findById(id);
+    if (!ad) return null;
+    ad.clicks = (Number(ad.clicks) || 0) + 1;
+    ad.save();
+    return ad.targetUrl || '/';
+  }
+
+  /**
+   * Reklam istatistiklerini hesaplar (CTR vb.)
+   */
+  getAdWithStats(ad) {
+    const impressions = Number(ad.impressions) || 0;
+    const clicks = Number(ad.clicks) || 0;
+    const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : "0.00";
+    return {
+      ...ad,
+      impressions,
+      clicks,
+      ctr: `${ctr}%`
+    };
+  }
+
+  /**
+   * Tüm reklamları performans metrikleriyle listeler
+   */
+  getAllAdsWithStats() {
+    const all = sponsorAds.find({});
+    return all.map(ad => this.getAdWithStats(ad)).sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  }
+
+  getAllAds() {
+    return this.getAllAdsWithStats();
+  }
+
+  /**
+   * Sayfalarda render edilmek üzere modern HTML bileşeni üretir.
+   * Aktif reklam yoksa KESİNLİKLE boşluk veya kırık kutu bırakmaz (boş string döner).
+   */
+  renderSponsorAdHtml(customAd = null) {
+    const ad = customAd || this.getRandomActiveAd();
+    if (!ad) {
+      return ''; // Hiçbir aktif reklam yoksa sıfır görsel artık, boşluk yok!
+    }
+
+    const adId = ad._id;
+    const title = ad.title || 'Sponsorlu İçerik';
+    const description = ad.description || '';
+    const sponsor = ad.sponsorName || 'EkoYıldız Partner';
+    const cta = ad.ctaText || 'Hemen İncele ➔';
+    const image = ad.imageUrl || 'https://i.imgur.com/PFcAc6q.png';
+
+    return `
+      <div class="sponsor-ad-card-wrapper" id="sponsor-ad-${adId}" data-ad-id="${adId}" role="complementary" aria-label="Sponsorlu Alan">
+        <div class="sponsor-ad-header">
+          <span class="sponsor-ad-tag">
+            <span class="sponsor-ad-dot"></span> SPONSORLU BAĞLANTI
+          </span>
+          <span class="sponsor-ad-by">${sponsor}</span>
+        </div>
+        <div class="sponsor-ad-body">
+          <div class="sponsor-ad-image-box">
+            <img src="${image}" alt="${title}" loading="lazy" class="sponsor-ad-img" onerror="this.style.display='none'">
+          </div>
+          <div class="sponsor-ad-content">
+            <h4 class="sponsor-ad-title">${title}</h4>
+            <p class="sponsor-ad-desc">${description}</p>
+          </div>
+          <div class="sponsor-ad-action">
+            <a href="/api/ads/${adId}/click" target="_blank" rel="noopener noreferrer sponsored" class="sponsor-ad-cta-btn">
+              ${cta}
+            </a>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function() {
+          try {
+            if (!window.__trackedAds) window.__trackedAds = {};
+            if (!window.__trackedAds['${adId}']) {
+              window.__trackedAds['${adId}'] = true;
+              if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/ads/${adId}/impression');
+              } else {
+                fetch('/api/ads/${adId}/impression', { method: 'POST', keepalive: true }).catch(function(){});
+              }
+            }
+          } catch(e) {}
+        })();
+      </script>
+    `;
+  }
+}
+
+const sponsorAdService = new SponsorAdService();
+
+module.exports = sponsorAdService;

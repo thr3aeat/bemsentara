@@ -67,22 +67,21 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       await webhook.edit({ name: WEBHOOK_NAME, avatar: WEBHOOK_AVATAR }).catch(() => {});
     }
 
-    // ─── CONTAINER 1: GİRİŞ + KISIM I (İLKELER) + KISIM II (GÜVENLİK/KVKK) + KISIM III (AHLAK) ───────────
+    // ─── CONTAINER 1: ÖNSÖZ + KISIM I (ESASLAR) + KISIM II (HAKLAR) + KISIM III (YÜKÜMLÜLÜKLER) ───────────
     const container1 = new ContainerBuilder();
 
-    // Banner görseli
     container1.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
         new MediaGalleryItemBuilder().setURL(BANNER_URL)
       )
     );
 
-    // Karşılama ve Resmî Başlık
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('# 📜 EkoYıldız Topluluğu Resmî Anayasası ve Disiplin Mevzuatı'),
+      new TextDisplayBuilder().setContent('# 📜 EkoYıldız Topluluğu Resmî Anayasası'),
       new TextDisplayBuilder().setContent(
-        `> **Mevzuat No: 2026/01** | **Yürürlük:** 07 Temmuz 2026\n` +
-        `> İşbu normlar bütünü, EkoYıldız Dijital Topluluk Federasyonu'nun en üst amir ve bağlayıcı hukuki mevzuatıdır. Sunucuya katılan, doğrulama protokolünü tamamlayan veya topluluk mecralarında etkileşimde bulunan her birey bu Anayasa'nın tüm hükümlerini okumuş, idrak etmiş ve gayrikabili rücu kabul etmiş sayılır. **Kuralları ve mevzuatı bilmemek hiçbir surette mazeret teşkil etmez.**`
+        `### 📜 Başlangıç / Önsöz\n` +
+        `> **Resmî Mevzuat No: 2026/01** | **Yürürlük:** 07 Temmuz 2026\n` +
+        `> EkoYıldız Topluluğu; dijital evrende bilginin, adaletin, yapıcı müzakere kültürünün ve ortak üretimin ön planda tutulduğu güvenli bir sosyal alan inşa etmek; bireysel hürriyetler ile kamu düzeni arasındaki sarsılmaz dengeyi kurmak amacıyla işbu Anayasa'yı en üstün bağlayıcı normlar bütünü olarak kabul ve ilan eder. Sunucuda bulunan her fert bu kurallara kayıtsız şartsız tabidir.`
       )
     );
 
@@ -90,15 +89,25 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
     );
 
-    // Kısım 1: Temel Normlar ve İlkeler
+    // Kısım I: Temel Esaslar
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM I: Genel Hükümler, Devlet Değerleri ve Temel İlkeler 🏛️'),
+      new TextDisplayBuilder().setContent('### | KISIM I: Temel Esaslar (Madde 1 – 5) 🏛️'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 1 (Anayasanın Üstünlüğü ve Şümul):** EkoYıldız Anayasası tüm alt yönergelerin, kanal kurallarının ve sözlü talimatların fevkindedir. Kurucular, idareciler, personeller ve tüm üyeler bu normlara istisnasız tabidir.\n` +
-        `* **MADDE 2 (Milli Değerler ve Atatürk İlkeleri):** Gazi Mustafa Kemal Atatürk'e, Türkiye Cumhuriyeti'nin kurucu ilkelerine, bayrağımıza ve şehitlerimizin aziz hatırasına yönelik her türlü tahkir, saygısızlık ve aşağılama **ihtarsız süresiz ihraç (kalıcı ban)** sebebidir.\n` +
-        `* **MADDE 3 (Siyasetsizlik ve Tarafsızlık Güvencesi):** Topluluk hiçbir siyasi partiye, fraksiyona, ideolojiye veya dini cemaate tabi değildir. Sunucu kanallarında partizan propaganda yürütmek, ayrıştırıcı siyasi münakaşalara girişmek mutlak surette yasaktır.\n` +
-        `* **MADDE 4 (Eşitlik ve İnsan Onuru):** Bireylerin dili, ırkı, rengi, cinsiyeti, dini, mezhebi veya inancı sebebiyle hor görülmesi, alaya alınması yahut hedef gösterilmesi yasaktır. Nefret suçlarına sıfır tolerans gösterilir.\n` +
-        `* **MADDE 5 (Yaş Sınırı ve Emniyet):** Discord Hizmet Şartları (ToS) uyarınca 13 yaşından küçük kullanıcıların tespiti halinde güvenlik politikaları gereğince derhal sunucuyla ilişiği kesilir.`
+        `**MADDE 1 — Sunucunun Adı ve Hukuki Statüsü**\n` +
+        `(1) Topluluğun resmî adı "EkoYıldız" olup; tüm sesli, yazılı ve web platformlarını kapsar.\n` +
+        `(2) Sunucuya katılan her fert sunucunun bağımsız tüzel kurumsal kimliğine saygıyla mükelleftir.\n\n` +
+        `**MADDE 2 — Yönetim Biçimi ve Temsil Erki**\n` +
+        `(1) Topluluk liyakat, istişare ve hukukun üstünlüğü ilkelerine dayalı kurumsal yapıyla idare edilir.\n` +
+        `(2) Temsil yetkisi münhasıran Kurucular Kurulu ile yetkilendirilmiş Yönetim Kurulu'na aittir.\n\n` +
+        `**MADDE 3 — Resmî Dil**\n` +
+        `(1) Topluluğun resmî iletişim ve yazışma dili Türkçedir.\n` +
+        `(2) Kanallarda Türk dilinin zarafetine ve nezaket kaidelerine uygun muhabere esastır.\n\n` +
+        `**MADDE 4 — Temel İlkeler ve Kurucu Değerler (MUTLAK DOKUNULMAZ)**\n` +
+        `(1) Gazi Mustafa Kemal Atatürk'ün çağdaş idealleri ve cumhuriyet değerleri temel rehberdir.\n` +
+        `(2) **Siyasetsizlik İlkesi:** Topluluk siyaset üstüdür; partizan propaganda yürütmek kesinlikle yasaktır.\n\n` +
+        `**MADDE 5 — Anayasanın Üstünlüğü**\n` +
+        `(1) Anayasa hükümleri tüm alt talimat ve teamüllerin üstündedir; aykırı emirler hükümsüzdür.\n` +
+        `(2) Kanunlar geriye yürümez; sonradan ihdas edilen cezai hükümler geçmişe tatbik edilemez.`
       )
     );
 
@@ -106,15 +115,24 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
-    // Kısım 2: Siber Emniyet ve KVKK
+    // Kısım II: Üyelerin Temel Hak ve Teminatları
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM II: Siber Emniyet, Kişisel Veriler (KVKK) ve Mahremiyet 🛡️'),
+      new TextDisplayBuilder().setContent('### | KISIM II: Üyelerin Temel Hak ve Teminatları (Madde 6 – 9) 👥'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 6 (Doxxing ve Şahsi Veri İfşası Yasağı):** Üyelerin ad, soyad, T.C. kimlik, telefon, ikametgah, fotoğraf, ailevi kayıtlar veya özel hayat kayıtlarının izinsiz neşri ve ifşa şantajı **doğrudan kalıcı ihraç ve adli suç duyurusu** ile neticelenir.\n` +
-        `* **MADDE 7 (Bilişim Suçları ve Zararlı Kodlar):** Virüs, truva atı, token grabber, keylogger veya sahte hediye linkleri (phishing) paylaşmak mutlak surette yasaktır.\n` +
-        `* **MADDE 8 (Gizli Ses Kaydı Yasağı):** Sesli odalarda bulunan kişilerin sarih rızası bulunmaksızın gizlice ses kaydı almak ve bunu şantaj veya alay malzemesi yapmak ağır suç teşkil eder.\n` +
-        `* **MADDE 9 (Hesap Güvenliği ve Yan Hesap Yasağı):** Her fert hesabının güvenliğinden mesuldür. \"Kardeşim yazdı\" gibi mazeretler kabul edilmez. Cezadan kaçmak için açılan yan hesaplar (alt-account) re'sen süresiz yasaklanır.\n` +
-        `* **MADDE 10 (Destek Bilet Sistemi İntizamı):** Bilet (ticket) kanalları münhasıran meşru talep, şikayet ve adli itirazlar içindir. Sistemi meşgul etmek, trolleme veya sahte ihbar disiplin suçudur.`
+        `**MADDE 6 — Eşit Muamele ve Hukuk Önünde Eşitlik**\n` +
+        `(1) Üyeler rol, seviye veya kıdem tefriki olmaksızın kurallar önünde eşittir.\n` +
+        `(2) Hiçbir yönetici şahsi yakınlık veya husumet saikiyle ayrıcalıklı işlem tesis edemez.\n\n` +
+        `**MADDE 7 — Savunma Hakkı ve Adil Yargılanma**\n` +
+        `(1) Hakkında disiplin işlemi yapılan her üyeye savunma hakkı tanınır.\n` +
+        `(2) Disiplin işlemleri şüpheye değil, somut delillere (ekran görüntüsü, bot kütüğü) dayanır.\n` +
+        `a) İspatsız yaptırımlar iptal edilir.\n` +
+        `b) Suçluluğu kanıtlanana kadar her üye masumdur (Masumiyet Karinesi).\n\n` +
+        `**MADDE 8 — Şikâyet ve Hak Arama Hürriyeti**\n` +
+        `(1) Haksızlığa uğradığını iddia eden üye, Destek Bilet Sistemi üzerinden müracaat hakkına maliktir.\n` +
+        `(2) Şikâyet hakkını kullanan üyeye hiçbir surette idari misilleme yapılamaz.\n\n` +
+        `**MADDE 9 — Özel Hayatın Mahremiyeti ve DM Gizliliği (MUTLAK DOKUNULMAZ)**\n` +
+        `(1) Üyelerin şahsi verilerinin izinsiz neşri (Doxxing) ve ifşa şantajı **doğrudan kalıcı ihraçtır**.\n` +
+        `(2) İzinsiz ses kaydı almak ve üyeleri DM kutularından rahatsız etmek yasaktır.`
       )
     );
 
@@ -122,30 +140,37 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
-    // Kısım 3: Kamu Ahlakı ve Hassasiyetler
+    // Kısım III: Üyelerin Yükümlülükleri
     container1.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM III: Kamu Ahlakı, Müstehcenlik ve E-Date Yasağı 🔞'),
+      new TextDisplayBuilder().setContent('### | KISIM III: Üyelerin Temel Yükümlülükleri (Madde 10 – 13) 🛡️'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 11 (Müstehcenlik ve NSFW Yasağı):** Pornografik, cinsel çağrışımlı, teşhir içeren görsel, video veya linklerin paylaşımı derhal süresiz uzaklaştırma ile cezalandırılır.\n` +
-        `* **MADDE 12 (Vahşet, Kan ve NSFL Yasağı):** Kan, ceset, cinayet, intihar, kendine zarar verme veya ağır şiddet içerikli materyallerin neşri mutlak olarak memnudur.\n` +
-        `* **MADDE 13 (Sanal Flört ve E-Date Memnuiyeti):** Sunucu mecraları veya üyelerin DM kutuları flört, çöpçatanlık ve sanal ilişki gayesiyle kullanılamaz; üyeleri ısrarla rahatsız edenler men edilir.\n` +
-        `* **MADDE 14 (Muhabere Âdabı ve Ağır Küfür):** Şahısların namus, haysiyet ve ailevi mukaddesatına yönelik ağır küfürler, galiz hakaretler ve taşkınlıklar kademeli ceza cetveli uyarınca cezalandırılır.\n` +
-        `* **MADDE 15 (Dini ve Manevi Değerler):** Semavi dinlere, peygamberlere, kutsal kitaplara veya inançlara hakaret etmek toplumsal barışı dinamitlediği için en ağır müeyyideye tabidir.`
+        `**MADDE 10 — Anayasa ve Mevzuata Riayet Mükellefiyeti**\n` +
+        `(1) Üyeler bu Anayasa hükümlerine tam uyumla yükümlüdür; kuralları bilmemek mazeret değildir.\n\n` +
+        `**MADDE 11 — Karşılıklı Hürmet ve Nezaket Âdabı**\n` +
+        `(1) Şahsa, ailevi değerlere ve kutsallara yönelik ağır küfür, hakaret ve tahkir yasaktır.\n\n` +
+        `**MADDE 12 — Kamu Düzeninin Korunması**\n` +
+        `(1) Sunucu içerisinde görev ve yetki kullanan personele yönelik tehdit, ağır hakaret, görev engelleme veya yetkinin icrasını kasıtlı şekilde aksatmaya yönelik davranışlar disiplin yaptırımına tabidir.\n` +
+        `(2) Asayişi temine yönelik meşru idari talimatlara riayet zorunludur.\n\n` +
+        `**MADDE 13 — Düzeni Bozucu Eylemlerin Men'i**\n` +
+        `(1) Spam, flood, capslock, off-topic, izinsiz reklam, virüs ve dolandırıcılık bağlantıları yasaktır.`
       )
     );
 
-    // ─── CONTAINER 2: İLETİŞİM + YÖNETİM + YARGI / AYM + DOKUNULMAZLIK + BUTONLAR ───────────
+    // ─── CONTAINER 2: KISIM IV - X (YASAMA, YÜRÜTME, YARGI, OHAL, DEĞİŞİKLİK, İCRA) ───────────
     const container2 = new ContainerBuilder();
 
-    // Kısım 4: İletişim ve Muhabere Düzeni
+    // Kısım IV & V: Yasama ve Yürütme
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM IV: İletişim Standartları, Ses Kanalları ve Reklam Yasağı 💬'),
+      new TextDisplayBuilder().setContent('### | KISIM IV & V: Yasama, Yürütme ve İdari Yapı (Madde 14 – 18) 👑'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 16 (Spam, Flood ve Capslock):** Metin kanallarında peş peşe anlamsız mesaj göndermek, harf uzatmak, kanalı emojilerle kilitlemek ve sürekli büyük harfle yazmak men edilmiştir.\n` +
-        `* **MADDE 17 (Kanal Amacına Uygunluk - Off-Topic):** Her oda tahsis amacına göre kullanılır. Komut kanalları dışında bot komutu yazmak veya kod odalarında geyik muhabbeti yapmak ikaz gerektirir.\n` +
-        `* **MADDE 18 (İzinsiz Reklam ve DM Tanıtımı):** Kurucular Kurulu'ndan yazılı izin alınmaksızın harici sunucu daveti, yayıncı linki veya ticari bağlantı paylaşmak yasaktır. DM'den reklam doğrudan kalıcı ihraçtır.\n` +
-        `* **MADDE 19 (Sesli Kanal İntizamı):** Mikrofon basarak çığlık atmak, baslı müzik açmak, soundboard veya ses değiştirici programlarla başkalarını taciz etmek yasaktır.\n` +
-        `* **MADDE 20 (Rol ve Ayrıcalık Satışı Yasağı):** Sunucu içi makamlar, moderasyon rütbeleri ve unvanlar hiçbir surette nakit para veya maddi menfaat karşılığında satılamaz ve devredilemez.`
+        `**MADDE 14 — Kural Koyma ve Yasama Salahiyeti**\n` +
+        `(1) Toplulukta kural ihdası Kurucular Kurulu ve Yönetim Kurulu Meclisi salahiyetindedir.\n\n` +
+        `**MADDE 15 — Topluluk İstişaresi**\n` +
+        `(1) Hayati yapısal kararlarda istişari üye anketleri düzenlenebilir.\n\n` +
+        `**MADDE 16 & 17 — Yürütme Erki ve Günlük İdare**\n` +
+        `(1) Günlük idari işleyiş ve asayiş Kurucular, Yöneticiler (Admins) ve Moderatörlerce sevk olunur.\n\n` +
+        `**MADDE 18 — Rol ve Ayrıcalıkların Satılamazlığı**\n` +
+        `(1) Sunucu rolleri ve unvanları nakdi menfaat mukabilinde satılamaz, devredilemez.`
       )
     );
 
@@ -153,15 +178,20 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
-    // Kısım 5: Yönetim ve Denetim
+    // Kısım VI & VII: Yetki Sınırı ve Yargı Hukuku
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM V: Yönetim Teşkilatı, Moderasyon ve İdari Sorumluluk 👑'),
+      new TextDisplayBuilder().setContent('### | KISIM VI & VII: Yetki Sınırları, Yargı ve İtiraz (Madde 19 – 26) ⚖️'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 21 (Tarafsızlık ve Liyakat):** Moderasyon kadrosu cezai işlemlerde ahbap-çavuş ilişkisi gözetmeksizin mutlak tarafsızlıkla hareket etmek mecburiyetindedir.\n` +
-        `* **MADDE 22 (İspat ve Delil Mecburiyeti):** Tatbik edilen her disiplin yaptırımı (Mute, Jail, Kick, Ban) ekran görüntüsü, bot kaydı veya delil ile arşivlenir. Delilsiz keyfi cezalar yok hükmündedir.\n` +
-        `* **MADDE 23 (Yetki Kötüye Kullanımı ve Azil):** Görevini kötüye kullanan, üyelere kaba davranan veya idari gizliliği ihlal eden yetkililer hakkında re'sen azil ve ihraç işlemi uygulanır.\n` +
-        `* **MADDE 24 (Yetkiliyi ve Botu Taklit Etme):** EkoYıldız kurucularını, moderatörlerini veya resmi sistem botlarını taklit ederek üyelere talimat vermeye yeltenmek kalıcı ban sebebidir.\n` +
-        `* **MADDE 25 (Hak Arama Hürriyeti):** Her üye hakkında verilen karara 72 saat içinde Destek Bilet Sistemi veya Üst Mahkeme yoluyla gerekçeli itiraz hakkını haizdir.`
+        `**MADDE 19 — Yetkinin Sınırları ve Keyfilik Yasağı**\n` +
+        `(1) Hiçbir yetkili keyfi ceza tayin edemez; husumetle hareket eden personelin yetkisi alınır.\n\n` +
+        `**MADDE 20 — İspat ve Kayıt Altına Alma Mecburiyeti**\n` +
+        `(1) Uygulanan her ceza log/kanıt ile arşivlenir. Delilsiz cezalar talep halinde hükümsüzdür.\n\n` +
+        `**MADDE 22 & 23 — Suçta Kanunilik ve Ceza Kademeleri**\n` +
+        `(1) Mevzuatta yazmayan eyleme ceza verilemez. Cezalar şahsidir.\n` +
+        `(2) Skala: **Uyarı (Warn) ➔ Susturma (Mute) ➔ Karantina (Jail) ➔ Atılma (Kick) ➔ İhraç (Ban)**\n\n` +
+        `**MADDE 25 — İtiraz Mekanizması, İstinaf ve AYM Başvurusu**\n` +
+        `(1) Ceza alan üye 72 saatte Bilet üzerinden İstinaf (Üst Mahkeme) incelemesi isteyebilir.\n` +
+        `(2) Anayasal hak ihlallerinde Kurucular riyasetindeki **Anayasa Mahkemesi'ne (AYM)** başvurulabilir; AYM kararı nihaidir.`
       )
     );
 
@@ -169,39 +199,19 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
     );
 
-    // Kısım 6: Yargı, Mahkeme, İstinaf ve AYM
+    // Kısım VIII, IX, X: OHAL, Değişiklik ve Son Hükümler
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM VI: Yargı Usulü, İtiraz Mekanizması ve Ceza Cetveli ⚖️'),
+      new TextDisplayBuilder().setContent('### | KISIM VIII, IX & X: Olağanüstü Hâl, Değişiklik ve Yürürlük 🚨'),
       new TextDisplayBuilder().setContent(
-        `* **MADDE 26 (Suçta ve Cezada Kanunilik):** Anayasa'da açıkça suç sayılmayan bir eylemden dolayı kimseye ceza verilemez. Cezalar şahsidir, kolektif ceza tatbik edilemez.\n` +
-        `* **MADDE 27 (İstinaf ve Anayasa Mahkemesi AYM Başvurusu):** Mahkeme kararlarına karşı önce İstinaf (Üst Mahkeme), temel anayasal hak ihlallerinde ise **Anayasa Mahkemesi'ne (AYM) Bireysel Başvuru** yolu açıktır. AYM kararları nihaidir.\n` +
-        `* **MADDE 28 (Standart Yaptırım Skalası):**\n` +
-        `  └ ⚠️ **İhtar (Warn):** Hafif kusurlarda resmi kayıtlı ikaz.\n` +
-        `  └ 🔇 **Susturma (Mute / Timeout):** 10 dk ile 7 gün arası geçici kısıtlama.\n` +
-        `  └ 🚨 **Karantina (Jail):** Tahkikat sürecinde tecrit odasına alma.\n` +
-        `  └ 🚪 **Sunucudan Çıkarma (Kick):** Tekrar katılım hakkıyla ihraç.\n` +
-        `  └ ⏳ **Süreli İhraç (Temp-Ban):** 1 gün - 30 gün arası uzaklaştırma.\n` +
-        `  └ 🚫 **Kalıcı İhraç (Perm-Ban):** Ağır cürümlerde süresiz üyelik iptali.\n` +
-        `* **MADDE 29 (Sicil Affı):** 6 ay boyunca disiplin suçu işlemeyen üyelerin hafif sicil kayıtları arşive kaldırılır (Doxxing ve sabotaj failleri aftan muaftır).`
-      )
-    );
-
-    container2.addSeparatorComponents(
-      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-    );
-
-    // Kısım 7: Değiştirilemez Hükümler ve Yürürlük
-    container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### | KISIM VII: Dokunulmaz Hükümler (Kırmızı Çizgiler) ve Mer\'iyet 🚨'),
-      new TextDisplayBuilder().setContent(
-        `* **MADDE 30 (Kırmızı Çizgiler / Mutlak Dokunulmazlık):** Anayasa'nın;\n` +
-        `  └ **Madde 2:** Atatürk İlkeleri, Devlet Değerleri ve Siyasetsizlik,\n` +
-        `  └ **Madde 4:** Temel İnsan Hakları ve Ayrımcılık Yasağı,\n` +
-        `  └ **Madde 6:** Doxxing ve Kişisel Veri Güvenliği (KVKK),\n` +
-        `  └ **Madde 11:** Kamu Ahlakı ve Müstehcenlik Men'i,\n` +
-        `  └ **Madde 30:** Dokunulmazlık Maddesi,\n` +
-        `  hükümleri **hiçbir surette değiştirilemez, ilga edilemez ve bunların değiştirilmesi teklif dahi edilemez.**\n` +
-        `* **MADDE 31 (Yürürlük ve İcra):** İşbu Anayasa metni 07.07.2026 tarihinde ilan edilerek yürürlüğe girmiştir. İcrasına Kurucular Kurulu ve Yüksek İdare Heyeti yetkilidir.`
+        `**MADDE 27 & 28 — Olağanüstü Hâl (OHAL) ve Özel Tedbirler**\n` +
+        `(1) Baskın (raid), bot saldırısı veya kritik güvenlik krizlerinde Kurucular re'sen OHAL ilan edebilir.\n` +
+        `(2) OHAL'de davetleri askıya alma, kanalları kilitleme (lockdown) ve şüpheli hesapları topluca tecrit yetkisi caridir.\n\n` +
+        `**MADDE 29 — Anayasa Değişiklik Usulü**\n` +
+        `(1) Değişiklik teklifleri; **Kurucu onayı ve Üst Yönetimin 2/3 çoğunluk oyuyla** kabul edilebilir.\n\n` +
+        `**MADDE 30 — Değiştirilemez Hükümler (Kırmızı Çizgiler)**\n` +
+        `(1) Madde 1 (Ad/Statü), Madde 3 (Resmî Dil), Madde 4 (Atatürk/Siyasetsizlik), Madde 9 (KVKK/Doxxing) ve Madde 30 hükümleri **değiştirilemez ve teklif dahi edilemez**.\n\n` +
+        `**MADDE 31 & 32 — Yürürlük ve İcra**\n` +
+        `(1) İşbu Anayasa 07.07.2026 tarihinde yürürlüğe girmiş olup, icrasına Kurucular Kurulu yetkilidir.`
       )
     );
 
@@ -226,7 +236,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
     );
 
     container2.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`-# ⚖️ EkoYıldız Topluluğu Resmî Anayasası ve Disiplin Yönetmeliği • 07.07.2026 Resmî Gazete Neşriyatı`)
+      new TextDisplayBuilder().setContent(`-# ⚖️ EkoYıldız Resmî Anayasası ve Disiplin Yönetmeliği • Madde 1–32 • Yürürlük: 07.07.2026`)
     );
 
     // ─── MESAJ GÖNDERİMİ VE DÜZENLEME ─────────────────────────────────────
@@ -309,7 +319,7 @@ async function sendEkoYildizRules(client, targetChannelId = RULES_CHANNEL_ID, op
       saveStoreNow();
     }
 
-    console.log('[RulesService] ✅ EkoYıldız kuralları başarıyla gönderildi/güncellendi.');
+    console.log('[RulesService] ✅ EkoYıldız anayasası başarıyla gönderildi/güncellendi.');
     return true;
   } catch (error) {
     console.error('[RulesService] ❌ Gönderim/Güncelleme hatası:', error);

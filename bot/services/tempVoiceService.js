@@ -27,9 +27,10 @@ const tempChannels = new Map();
  * Creates a temporary voice channel for a member
  */
 async function createTempVoiceChannel(member, roomName, userLimit = 0) {
-  if (!member.voice.channel) {
-    return { success: false, message: '❌ Geçici oda oluşturmak için önce bir ses kanalına katılmalısınız.' };
-  }
+  try {
+    if (!member.voice.channel) {
+      return { success: false, message: '❌ Geçici oda oluşturmak için önce bir ses kanalına katılmalısınız.' };
+    }
 
   const guild = member.guild;
   const parentId = member.voice.channel.parentId;

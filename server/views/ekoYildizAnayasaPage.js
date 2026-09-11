@@ -97,21 +97,21 @@ function renderEkoYildizAnayasaPage(user) {
         border: 1px solid rgba(167, 139, 250, 0.25);
         border-left: 5px solid #a78bfa;
         border-radius: 0 16px 16px 0;
-        padding: 1.75rem 2rem;
+        padding: 1.85rem 2.2rem;
         margin-bottom: 2.25rem;
         font-style: italic;
-        line-height: 1.9;
+        line-height: 1.95;
         color: #cbd5e1;
-        font-size: 1.02rem;
+        font-size: 1.03rem;
         box-shadow: 0 6px 25px rgba(0,0,0,0.25);
         position: relative;
       }
       .preamble-title {
         font-style: normal;
         font-weight: 800;
-        font-size: 1.15rem;
+        font-size: 1.18rem;
         color: #c4b5fd;
-        margin-bottom: 0.65rem;
+        margin-bottom: 0.75rem;
         letter-spacing: 0.06em;
         text-transform: uppercase;
         display: flex;
@@ -398,7 +398,7 @@ function renderEkoYildizAnayasaPage(user) {
         font-size: 0.88rem;
       }
       .bent-list {
-        margin: 0.75rem 0 1rem 1.5rem;
+        margin: 0.75rem 0 1rem 1.75rem;
         padding: 0;
         list-style-type: none;
       }
@@ -408,14 +408,11 @@ function renderEkoYildizAnayasaPage(user) {
         padding-left: 1.6rem;
         line-height: 1.7;
       }
-      .bent-list li::before {
-        content: '•';
-        position: absolute;
-        left: 0;
-        color: #a78bfa;
-        font-weight: 800;
-        font-size: 1.1rem;
-      }
+      .bent-list li.bent-a::before { content: 'a)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
+      .bent-list li.bent-b::before { content: 'b)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
+      .bent-list li.bent-c::before { content: 'c)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
+      .bent-list li.bent-d::before { content: 'd)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
+      .bent-list li.bent-e::before { content: 'e)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
 
       /* Kırmızı Çizgi / Dokunulmazlık Damgası */
       .dokunulmaz-madde {
@@ -795,17 +792,18 @@ function renderEkoYildizAnayasaPage(user) {
         </div>
       </header>
 
-      <!-- BAŞLANGIÇ (PREAMBLE) -->
-      <div class="preamble-card">
-        <div class="preamble-title">📜 Başlangıç ve İlan Hükümleri</div>
-        EkoYıldız Topluluğu; dijital evrende ilmin, medeniyetin, yapıcı müzakere kültürünün ve ortak üretimin ön planda tutulduğu emniyetli ve saygın bir sosyal mecra tesis etmek; bireysel hürriyetler ile kamu emniyeti arasındaki sarsılmaz dengeyi tahkim eylemek; adaleti, liyakati, şeffaflığı ve insan onurunu güvence altına almak amacıyla işbu Anayasa'yı en üstün, amir ve bağlayıcı normlar hiyerarşisinin zirvesi olarak kabul, ilan ve tescil eder.
+      <!-- BAŞLANGIÇ / ÖNSÖZ -->
+      <div class="preamble-card" id="onsoz">
+        <div class="preamble-title">📜 Başlangıç / Önsöz</div>
+        <p>EkoYıldız Topluluğu; dijital evrende bilginin, adaletin, yapıcı tartışma kültürünün ve kolektif üretimin ön planda tutulduğu saygın ve güvenli bir sosyal alan inşa etmek; bireysel hürriyetler ile kamu düzeni arasındaki sarsılmaz dengeyi kurmak, liyakat ve insan onurunu güvence altına almak amacıyla işbu Anayasa'yı en üstün bağlayıcı normlar bütünü olarak kabul ve ilan eder.</p>
+        <p style="margin-top: 0.75rem;">Topluluk çatısı altında bulunan her fert, düzenin tesisi ve hakkaniyetin idamesi için ortak ahlaki ve hukuki zemin olan bu metne sadakatle bağlı kalmayı taahhüt eder.</p>
       </div>
 
-      <!-- NAVİGASYON VE ARAMA (FIXED & RESPONSIVE) -->
+      <!-- NAVİGASYON VE ARAMA -->
       <div class="mevzuat-nav">
         <div class="search-container">
           <span class="search-icon-fixed">🔍</span>
-          <input type="text" id="mevzuat-ara" placeholder="Madde no, fıkra veya terim ara (örn: Madde 4, Doxxing, Mute, Telif, KVKK, AYM)..." oninput="mevzuatAra()">
+          <input type="text" id="mevzuat-ara" placeholder="Madde no, fıkra veya terim ara (örn: Madde 8, Savunma, Olağanüstü Hâl, AYM, Delil)..." oninput="mevzuatAra()">
           <button id="search-clear" class="search-clear-btn" onclick="aramaTemizle()" title="Aramayı Temizle">✕</button>
         </div>
         
@@ -813,18 +811,18 @@ function renderEkoYildizAnayasaPage(user) {
           <div class="jump-select">
             <select id="mevzuat-bolum-sec" onchange="bolumeGit(this.value)">
               <option value="">⚡ Resmî Fihrist (Bölüme Git)...</option>
-              <option value="#on-esaslar">📌 Başlangıç ve Ön Esaslar</option>
-              <option value="#bolum-1">🏛️ KISIM I: Genel Hükümler ve İlkeler (Md. 1-5)</option>
-              <option value="#bolum-2">👑 KISIM II: Yönetim Teşkilatı ve Hiyerarşi (Md. 6-10)</option>
-              <option value="#bolum-3">👥 KISIM III: Üyelik Statüsü ve Haklar (Md. 11-15)</option>
-              <option value="#bolum-4">💬 KISIM IV: İletişim ve Muhabere Düzeni (Md. 16-19)</option>
-              <option value="#bolum-5">🛡️ KISIM V: Güvenlik, KVKK ve Yasaklar (Md. 20-24)</option>
-              <option value="#bolum-6">⚖️ KISIM VI: Ceza ve Disiplin Hukuku (Md. 25-28)</option>
-              <option value="#ceza-cetveli">⚖️ KISIM VI Cetvel: Resmî Yaptırım Matrisi</option>
-              <option value="#bolum-7">🎨 KISIM VII: Etkinlikler ve Fikri Mülkiyet (Md. 29-32)</option>
-              <option value="#bolum-8">🤝 KISIM VIII: Dış Münasebetler ve Temsil (Md. 33-36)</option>
-              <option value="#bolum-9">🗳️ KISIM IX: Değişiklik Usulü ve Kırmızı Çizgiler (Md. 37-41)</option>
-              <option value="#bolum-10">📜 KISIM X: Yürürlük ve İcra Hükümleri (Md. 42-44)</option>
+              <option value="#onsoz">📜 Başlangıç / Önsöz</option>
+              <option value="#bolum-1">🏛️ KISIM I: Temel Esaslar (Md. 1-5)</option>
+              <option value="#bolum-2">👥 KISIM II: Üyelerin Temel Hak ve Teminatları (Md. 6-9)</option>
+              <option value="#bolum-3">🛡️ KISIM III: Üyelerin Yükümlülükleri ve Sadakat (Md. 10-13)</option>
+              <option value="#bolum-4">📜 KISIM IV: Yasama ve Kural Koyma Erki (Md. 14-15)</option>
+              <option value="#bolum-5">👑 KISIM V: Yürütme Organı ve Günlük İdare (Md. 16-18)</option>
+              <option value="#bolum-6">🔒 KISIM VI: Yetki Sınırları ve İdari Denetim (Md. 19-21)</option>
+              <option value="#bolum-7">⚖️ KISIM VII: Yargı, Disiplin Hukuku ve Yaptırımlar (Md. 22-26)</option>
+              <option value="#ceza-cetveli">⚖️ KISIM VII Cetvel: Resmî Yaptırım Matrisi</option>
+              <option value="#bolum-8">🚨 KISIM VIII: Olağanüstü Hâl ve Güvenlik Tedbirleri (Md. 27-28)</option>
+              <option value="#bolum-9">🗳️ KISIM IX: Anayasa Değişikliği ve Dokunulmazlık (Md. 29-30)</option>
+              <option value="#bolum-10">📜 KISIM X: Son Hükümler ve Yürürlük (Md. 31-32)</option>
               <option value="#resmi-imzalar">✍️ Resmî Mühür ve İmzalar</option>
             </select>
           </div>
@@ -837,16 +835,16 @@ function renderEkoYildizAnayasaPage(user) {
       <!-- HIZLI KISAYOLLAR -->
       <div class="quick-chips-wrapper">
         <div class="quick-chips">
-          <a href="#on-esaslar" class="quick-chip">📌 Ön Esaslar</a>
-          <a href="#bolum-1" class="quick-chip">Kısım I: İlkeler</a>
-          <a href="#bolum-2" class="quick-chip">Kısım II: Yönetim</a>
-          <a href="#bolum-3" class="quick-chip">Kısım III: Haklar</a>
-          <a href="#bolum-4" class="quick-chip">Kısım IV: İletişim</a>
-          <a href="#bolum-5" class="quick-chip">Kısım V: Güvenlik</a>
-          <a href="#ceza-cetveli" class="quick-chip" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">⚖️ Ceza Cetveli</a>
-          <a href="#bolum-7" class="quick-chip">Kısım VII: Projeler</a>
-          <a href="#bolum-8" class="quick-chip">Kısım VIII: Dış İlişkiler</a>
-          <a href="#madde-40" class="quick-chip" style="border-color: rgba(245, 158, 11, 0.4); color: #fcd34d;">🚨 Dokunulmaz Hükümler</a>
+          <a href="#onsoz" class="quick-chip">📜 Önsöz</a>
+          <a href="#bolum-1" class="quick-chip">Kısım I: Esaslar</a>
+          <a href="#bolum-2" class="quick-chip">Kısım II: Haklar</a>
+          <a href="#bolum-3" class="quick-chip">Kısım III: Yükümlülükler</a>
+          <a href="#bolum-4" class="quick-chip">Kısım IV: Yasama</a>
+          <a href="#bolum-5" class="quick-chip">Kısım V: Yürütme</a>
+          <a href="#bolum-6" class="quick-chip">Kısım VI: Yetki Sınırı</a>
+          <a href="#ceza-cetveli" class="quick-chip" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">⚖️ Yargı & Ceza Cetveli</a>
+          <a href="#bolum-8" class="quick-chip" style="border-color: rgba(245, 158, 11, 0.4); color: #fcd34d;">🚨 Olağanüstü Hâl</a>
+          <a href="#madde-30" class="quick-chip" style="border-color: rgba(239, 68, 68, 0.5); color: #fca5a5;">🔒 Kırmızı Çizgiler</a>
           <a href="#bolum-10" class="quick-chip">Kısım X: Yürürlük</a>
           <a href="#resmi-imzalar" class="quick-chip">✍️ Resmî Tasdik</a>
         </div>
@@ -860,404 +858,351 @@ function renderEkoYildizAnayasaPage(user) {
         <button class="empty-search-btn" onclick="aramaTemizle()">Aramayı Temizle</button>
       </div>
 
-      <!-- ÖN ESASLAR -->
-      <section id="on-esaslar" class="kanun-bolum">
-        <div class="bolum-head">
-          <div class="bolum-no">BAŞLANGIÇ DÜZENLEMELERİ</div>
-          <h2 class="bolum-baslik">📌 Ön Bilgilendirme ve Hukuki Bağlam</h2>
-        </div>
-
-        <div class="kanun-madde" id="madde-on-1">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">I. Metnin Niteliği, Hiyerarşik Konumu ve Bağlayıcılığı</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-on-1')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> İşbu mevzuat belgesi, EkoYıldız Discord Topluluğu ("Topluluk") içerisindeki asayişi, iç barışı, etik standartları, hak arama hürriyetini ve operasyonel işleyiş hiyerarşisini tayin eden en üst düzey dijital anayasa metnidir.</p>
-            <p><span class="fıkra-no">(2)</span> Metin içerisinde geçen "Anayasa" tabiri, topluluğun iç bağlayıcı normlar hiyerarşisinin en tepe noktasını temsil eden kurucu normlar kümesini ifade eder.</p>
-            <p><span class="fıkra-no">(3)</span> Sunucuya iltihak eden, bot doğrulama sistemini tamamlayan veya sunucuya ait herhangi bir yazılı/sesli mecrada etkileşim kuran her gerçek kişi, bu Anayasa'nın tüm amir hükümlerini peşinen okumuş, anlamış ve kabul etmiş addolunur. Kurallardan ve anayasa hükümlerinden haberdar olmamak hiçbir surette mazeret olarak ileri sürülemez.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-on-2">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">II. Resmî Lisan, İntizam Şartı ve Yargı Güvencesi</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-on-2')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> <strong>Resmî Lisan:</strong> EkoYıldız Topluluğu'nun ana ve resmî muhabere dili Türkçedir. Uluslararası diplomatik misafirler ve yabancı ortaklık müzakereleri haricinde sunucu genelinde Türk dilinin kurallarına ve zarafetine uygun iletişim esastır.</p>
-            <p><span class="fıkra-no">(2)</span> <strong>Adil Yargılanma ve İtiraz Güvencesi:</strong> Disiplin veya idari bir tasarrufa muhatap olan her ferd, adil yargılanma ve gerekçeli karar hakkına maliktir. Haksızlığa uğradığını iddia eden her üye, Resmî Destek Bilet Sistemi yahut Anayasa Mahkemesi (AYM) Bireysel Başvuru yolu ile itiraz hakkını kullanabilir.</p>
-            <p><span class="fıkra-no">(3)</span> <strong>İntizam Şartı:</strong> Topluluğun salahiyeti ve kamu düzeni namına yetkili moderatörlerin meşru talimatlarına riayet kuraldır. Yetkisiz güç kullanımı ise şikayete tabidir.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- KISIM I -->
+      <!-- KISIM I: TEMEL ESASLAR -->
       <section id="bolum-1" class="kanun-bolum">
         <div class="bolum-head">
           <div class="bolum-no">KISIM I</div>
-          <h2 class="bolum-baslik">🏛️ Genel Hükümler, Kurucu Değerler ve Temel İlkeler (Md. 1-5)</h2>
+          <h2 class="bolum-baslik">🏛️ Temel Esaslar (Madde 1 – 5)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-1">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 1 – Tanımlamalar, Şümul (Kapsam) ve Topluluk Hudutları</div>
+            <div class="madde-baslik-etiketi">MADDE 1 — Sunucunun Adı ve Hukuki Statüsü</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-1')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> İşbu Anayasa metninde zikredilen "Topluluk", "Sunucu" veya "EkoYıldız" kavramları; EkoYıldız Discord ana sunucusu, alt komisyon odaları, entegre bot servisleri, resmi web portalları ve EkoYıldız tasarrufunda bulunan tüm dijital alanları kapsar.</p>
-            <p><span class="fıkra-no">(2)</span> Bu Anayasa hükümleri; Kurucular Kurulu, İdare Heyeti, Divan Kurulu, Moderasyon Kadrosu, Teknik Personel, tüm onaylı üyeler ve geçici ziyaretçileri istisnasız bağlar.</p>
-            <p><span class="fıkra-no">(3)</span> Topluluk namına düzenlenen resmî etkinlikler, harici sunuculardaki ortak faaliyetler ve EkoYıldız adına icra edilen tüm diplomatik münasebetlerde işbu Anayasa'nın ruhu ve lafzı amirdir.</p>
+            <p><span class="fıkra-no">(1)</span> Topluluğun resmî adı "EkoYıldız" olup; işbu Anayasa metninde "Topluluk", "Sunucu" veya "Federasyon" olarak anılır.</p>
+            <p><span class="fıkra-no">(2)</span> Topluluğun egemenlik alanı; EkoYıldız Discord ana sunucusu, alt komisyon ve departman kanalları, resmi bot servisleri ve entegre web platformlarının bütününden oluşur.</p>
+            <p><span class="fıkra-no">(3)</span> Sunucuya intisap eden her şahıs, sunucunun bağımsız tüzel dijital varlığına ve kurumsal kimliğine saygı göstermekle mükelleftir.</p>
           </div>
         </div>
 
-        <div class="kanun-madde dokunulmaz-madde" id="madde-2">
+        <div class="kanun-madde" id="madde-2">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 2 – Topluluğun Gayesi, Ahlaki Çerçevesi ve Siyasetsizlik İlkesi
-              <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
-            </div>
+            <div class="madde-baslik-etiketi">MADDE 2 — Yönetim Biçimi ve Temsil Erki</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-2')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız Topluluğu; üyelerinin bilgi, görgü ve kabiliyetlerini artırmayı, fikir teatisinde bulunabileceği medeni bir müzakere iklimi oluşturmayı, ortak yazılım ve içerik projeleri üretmeyi gaye edinir.</p>
-            <p><span class="fıkra-no">(2)</span> <strong>Siyasetsizlik ve Tarafsızlık Güvencesi:</strong> EkoYıldız Topluluğu hiçbir siyasi partiye, fırkaya, ideolojik hizbe, ticari holdinge veya dini cemaate tabi değildir. Sunucu mecralarında siyasi propaganda yapmak, hizipçilik gütmek veya topluluğu siyasi menfaatlere alet etmek kesinlikle memnudur (yasaktır).</p>
-            <p><span class="fıkra-no">(3)</span> Topluluk, cumhuriyetimizin kurucusu Gazi Mustafa Kemal Atatürk'ün çağdaş medeniyet idealleri, ilim sevgisi ve vatanperverlik şuuru ile milli manevi müştereklere saygıyı en temel ahlaki zemin olarak benimser.</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Topluluğu; liyakat, istişare, kuvvetler ayrılığı dengesi ve hukukun üstünlüğü ilkelerine dayalı kurumsal bir yönetim biçimiyle idare olunur.</p>
+            <p><span class="fıkra-no">(2)</span> Temsil yetkisi ve nihai karar iradesi münhasıran Kurucular Kurulu ile bu kurulun yetkilendirdiği Yüksek Yönetim Heyeti'ne aittir.</p>
+            <p><span class="fıkra-no">(3)</span> Hiçbir zümre veya şahıs, meşruiyetini işbu Anayasa'dan almayan bir temsil yetkisini veya yaptırım gücünü kullanamaz.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-3">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 3 – Anayasanın Üstünlüğü, Normlar Hiyerarşisi ve Kanunilik</div>
+            <div class="madde-baslik-etiketi">MADDE 3 — Resmî Dil ve İletişim Standartları</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-3')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız Anayasası hükümleri; sunucu içerisindeki tüm alt talimatnamelerin, kanal yönergelerinin, moderasyon teamüllerinin ve yetkili emirlerinin fevkindedir (üstündedir).</p>
-            <p><span class="fıkra-no">(2)</span> Anayasa'nın lafzına veya ruhuna aykırı hiçbir idari emir ittihaz olunamaz; aykırı düzenlemeler re'sen yok hükmündedir (butlanla maluldür).</p>
-            <p><span class="fıkra-no">(3)</span> <strong>Kanunların Geriye Yürümezliği:</strong> Yeni kabul edilen kural ve cezai normlar ilan edildikleri andan itibaren geçerli olup; geriye yürütülerek geçmiş eylemlere ceza tayin edilemez.</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Topluluğu'nun resmî iletişim, yazışma ve duyuru dili Türkçedir.</p>
+            <p><span class="fıkra-no">(2)</span> Sunucu kanallarında Türk dilinin zenginliğine, imla kurallarına ve nezaket icaplarına uygun muhabere esastır.</p>
+            <p><span class="fıkra-no">(3)</span> Özel diplomatik misafirler, yabancı partnerlik temasları veya özel yabancı dil odaları haricinde genel kanallarda yabancı dil kullanımı sınırlandırılabilir.</p>
           </div>
         </div>
 
         <div class="kanun-madde dokunulmaz-madde" id="madde-4">
           <div class="madde-head-row">
             <div class="madde-baslik-etiketi">
-              MADDE 4 – Temel İnsan Hakları, Eşitlik ve Ayrımcılık Yasağı
+              MADDE 4 — Temel İlkeler ve Kurucu Değerler
               <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
             </div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-4')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Her üye; dil, ırk, renk, cinsiyet, felsefi inanç, din, mezhep ve sosyoekonomik durum tefriki yapılmaksızın hukuk ve intizam önünde mutlak surette eşittir.</p>
-            <p><span class="fıkra-no">(2)</span> İnsan onur ve haysiyetini ayaklar altına alan her türlü aşağılama, tahkir, nefret söylemi, ırkçılık, siber zorbalık, linç teşebbüsü ve hedef gösterme fiilleri <strong>ihtarsız süresiz ihraç (kalıcı ban)</strong> müeyyidesine tabidir.</p>
-            <p><span class="fıkra-no">(3)</span> İfade hürriyeti; başkalarının hürriyet alanını tahrip etme, kamu sükununu bozma veya nefret ekme cüretini ve selahiyetini bahşetmez.</p>
+            <p><span class="fıkra-no">(1)</span> Topluluk; cumhuriyetimizin kurucusu Gazi Mustafa Kemal Atatürk'ün çağdaş uygarlık ideallerini, milli birlik bilincini ve vatanperverlik şuurunu temel rehber kabul eder.</p>
+            <p><span class="fıkra-no">(2)</span> <strong>Siyasetsizlik İlkesi:</strong> EkoYıldız hiçbir siyasi partiye, ideolojik fraksiyona, derneğe veya dini cemaate bağlı değildir. Topluluk mecralarında partizan propaganda yürütmek kesinlikle yasaktır.</p>
+            <p><span class="fıkra-no">(3)</span> İnsan haklarına saygı, çevre ve doğa sevgisi, bilimsel düşünce ve akılcılık topluluğun vazgeçilmez temel harcıdır.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-5">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 5 – Topluluk Kimliği, Doğa ve Ekolojik Denge Felsefesi</div>
+            <div class="madde-baslik-etiketi">MADDE 5 — Anayasanın Üstünlüğü ve Normlar Hiyerarşisi</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-5')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> "EkoYıldız" unvanı; tabiatın ahengi ile dijital teknolojinin yaratıcı gücünün sentezini remzeder. Topluluk mensupları bu saygın kimliğe yaraşır vakar ve nezaket içerisinde hareket etmekle mükelleftir.</p>
-            <p><span class="fıkra-no">(2)</span> Paylaşımlarda yapıcı tenkit, bilimsel yaklaşım ve ekolojik duyarlılık teşvik edilir; çevreye, canlı hayatına ve toplumsal sağduyuya hakaret içeren yaklaşımlar men olunur.</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Anayasası, topluluğun tüm alt yönergelerinin, oda kurallarının, sözlü talimatlarının ve idari teamüllerinin üstündedir.</p>
+            <p><span class="fıkra-no">(2)</span> Anayasa hükümlerine aykırı hiçbir kural ihdas edilemez, idari emir verilemez; aykırı işlemler re'sen hükümsüzdür.</p>
+            <p><span class="fıkra-no">(3)</span> <strong>Kanunların Geriye Yürümezliği:</strong> Yeni kabul edilen hiçbir kural veya ceza artırımı geçmişe şamil kılınamaz; fiilin işlendiği tarihteki lehe hükümler caridir.</p>
           </div>
         </div>
       </section>
 
-      <!-- KISIM II -->
+      <!-- KISIM II: ÜYELERİN TEMEL HAK VE TEMİNATLARI -->
       <section id="bolum-2" class="kanun-bolum">
         <div class="bolum-head">
           <div class="bolum-no">KISIM II</div>
-          <h2 class="bolum-baslik">👑 Yönetim Teşkilatı, Moderasyon Hiyerarşisi ve Yetki Taksimi (Md. 6-10)</h2>
+          <h2 class="bolum-baslik">👥 Üyelerin Temel Hak ve Teminatları (Madde 6 – 9)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-6">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 6 – Yönetim Erkinin Menşei, Şeffaflık ve Hesap Verebilirlik</div>
+            <div class="madde-baslik-etiketi">MADDE 6 — Eşit Muamele ve Hukuk Önünde Eşitlik</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-6')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Yönetim mercileri salahiyetlerini münhasıran Anayasa'dan ve kamu nizamını muhafaza mükellefiyetinden alır. Hiçbir şahıs veya kurul, kaynağını Anayasa'dan almayan bir idari ve cezai yetkiyi kullanamaz.</p>
-            <p><span class="fıkra-no">(2)</span> İdarenin her türlü tasarrufu hukuka ve mantık kaidelerine uygun olmak zorundadır. Keyfi muamele, kin ve husumetle hareket etmek en ağır idari cürümlerden sayılır.</p>
+            <p><span class="fıkra-no">(1)</span> Sunucu üyeleri sahip oldukları rol, kıdem, sunucu seviyesi veya sosyal statüleri ne olursa olsun kurallar ve yaptırımlar önünde mutlak surette eşittir.</p>
+            <p><span class="fıkra-no">(2)</span> Hiçbir yönetici veya moderatör şahsi yakınlık, dostluk veya husumet sebebiyle ayrıcalıklı muamele tesis edemez.</p>
+            <ul class="bent-list">
+              <li class="bent-a">Ayrıcalık tanınması veya keyfi bağışıklık sağlanması idari görevi kötüye kullanma suçudur.</li>
+              <li class="bent-b">Her üye kuralların tarafsız ve adil şekilde tatbik edilmesini talep etme hakkına maliktir.</li>
+            </ul>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-7">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 7 – İdari Teşkilat Yapısı ve Hiyerarşik Kademeler</div>
+            <div class="madde-baslik-etiketi">MADDE 7 — Savunma Hakkı ve Adil Yargılanma Güvencesi</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-7')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız İdari Hiyerarşisi aşağıda sıralanan yetkili organ ve kadrolardan teşekkül eder:</p>
+            <p><span class="fıkra-no">(1)</span> Hakkında disiplin tahkikatı başlatılan veya ceza uygulanan her üyeye, usulüne uygun şekilde savunma yapma hakkı tanınır.</p>
+            <p><span class="fıkra-no">(2)</span> Savunma hakkı kısıtlanamaz; üye iddialara karşı kendi delillerini ve beyanlarını sunma hakkını haizdir.</p>
             <ul class="bent-list">
-              <li><strong>Kurucular Kurulu (Founders):</strong> Topluluğun nihai temsil, anayasal denetim, stratejik karar ve mutlak veto yetkisine haiz en yüksek meclisidir.</li>
-              <li><strong>Üst Yönetim ve İdare Heyeti (High Council & Admins):</strong> Sunucunun genel idari, teşkilat ve komisyon sevkini yürüten yüksek icra organıdır.</li>
-              <li><strong>Moderatörler Heyeti (Moderators):</strong> Sahada kamu asayişini temin eden, kanalları denetleyen ve ilk tahkikatı yürüten icra kadrosudur.</li>
-              <li><strong>Teknik ve Bot Heyeti (Systems & Developers):</strong> Sunucu siber altyapısını, bot algoritmalarını ve veritabanı emniyetini yöneten teknik kuruldur.</li>
-              <li><strong>Stajyer Kadro (Trial Staff):</strong> İdare Heyeti gözetiminde tecrübe kazanan ve sınırlı yetkiyle vazife ifa eden aday heyettir.</li>
+              <li class="bent-a">Disiplin işlemleri şüpheye değil, somut delillere istinat ettirilir.</li>
+              <li class="bent-b">Suçluluğu ispat edilene kadar her üyenin masumiyeti esastır (Masumiyet Karinesi).</li>
             </ul>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-8">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 8 – Tarafsızlık İlkesi, Şahsi Çıkar Yasağı ve Delil Mecburiyeti</div>
+            <div class="madde-baslik-etiketi">MADDE 8 — Şikâyet ve Hak Arama Hürriyeti</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-8')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Moderasyon kadrosu üyeler arasında cereyan eden hadiselerde tarafsız bir hakem mesabesindedir. Ahbap-çavuş ilişkisiyle ceza indirimi veya kayırmacılık yapılamaz.</p>
-            <p><span class="fıkra-no">(2)</span> <strong>Delil Mecburiyeti:</strong> Tatbik edilen her türlü susturma (mute), karantina, atma (kick) veya ihraç (ban) muamelesi; ekran görüntüsü, ses kaydı, bot kütüğü (log) veya tanık beyanı ile kayıt altına alınmak mecburiyetindedir. Delilsiz cezalar talep halinde hükümsüz kılınır.</p>
+            <p><span class="fıkra-no">(1)</span> Haksız muameleye, yetki istismarına veya kural ihlaline maruz kalan her üye, Resmî Destek Bilet Sistemi üzerinden yetkili mercilere başvurma hakkına sahiptir.</p>
+            <p><span class="fıkra-no">(2)</span> Şikâyet hakkını kullanan üyeye karşı hiçbir idari veya şahsi misillemede bulunulamaz.</p>
+            <ul class="bent-list">
+              <li class="bent-a">Başvurular en geç 48 saat zarfında gerekçeli olarak karara bağlanır.</li>
+              <li class="bent-b">Kararın bir örneği talep sahibine bilet sistemi üzerinden tebliğ edilir.</li>
+            </ul>
           </div>
         </div>
 
-        <div class="kanun-madde" id="madde-9">
+        <div class="kanun-madde dokunulmaz-madde" id="madde-9">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 9 – İdari Denetim, Yetki Gaspı ve Görevden El Çektirme (Azil)</div>
+            <div class="madde-baslik-etiketi">
+              MADDE 9 — Özel Hayatın Mahremiyeti ve DM Gizliliği
+              <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
+            </div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-9')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Salahiyetini suiistimal eden, üyelere kaba ve küçümseyici muamelede bulunan yahut idari mahremiyeti haiz gizli kayıtları harice sızdıran yetkililer hakkında derhal idari tahkikat açılır.</p>
-            <p><span class="fıkra-no">(2)</span> Kusurlu bulunan yetkiliye fiilin vehametine göre; Kınama, Yetki Tenzili (Rütbe Düşürme), Geçici Yetki Askısı veya Daimi Azil (İhraç) müeyyideleri tatbik edilir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-10">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 10 – Hak Arama Hürriyeti ve İdari İşlemlere İtiraz Hakkı</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-10')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Aleyhine idari veya disiplin işlemi tesis edilen her üye, işlemin tebliğinden itibaren 72 saat zarfında Resmî Bilet Hattı (Ticket) üzerinden üst kurula yazılı itiraz hakkını haizdir.</p>
-            <p><span class="fıkra-no">(2)</span> İtirazlar en geç 48 saat içerisinde incelenir; haksız veya usulsüz olduğu tespit edilen tasarruflar iptal edilerek mağdurun itibarı iade olunur.</p>
+            <p><span class="fıkra-no">(1)</span> Üyelerin kişisel verileri (ad, soyad, T.C. kimlik, telefon, adres, şahsi fotoğraf, ailevi bilgiler vb.) mutlak koruma altındadır.</p>
+            <p><span class="fıkra-no">(2)</span> Bu verilerin izinsiz neşri (Doxxing), ifşa tehdidi, gizli ses kaydı alma yahut DM üzerinden taciz ve reklam yapılması <strong>ihtarsız doğrudan kalıcı ihraç</strong> sebebidir.</p>
+            <ul class="bent-list">
+              <li class="bent-a">Kişisel verilerin ihlali halinde deliller adli makamlara resmi suç duyurusu olarak intikal ettirilir.</li>
+              <li class="bent-b">Doxxing eylemini övmek veya ifşaya aracılık etmek de asli fail derecesinde cezalandırılır.</li>
+            </ul>
           </div>
         </div>
       </section>
 
-      <!-- KISIM III -->
+      <!-- KISIM III: ÜYELERİN YÜKÜMLÜLÜKLERİ VE SADAKAT -->
       <section id="bolum-3" class="kanun-bolum">
         <div class="bolum-head">
           <div class="bolum-no">KISIM III</div>
-          <h2 class="bolum-baslik">👥 Üyelik Statüsü, Temel Haklar, Vecibeler ve Rol Düzeni (Md. 11-15)</h2>
+          <h2 class="bolum-baslik">🛡️ Üyelerin Yükümlülükleri ve Sadakat (Madde 10 – 13)</h2>
+        </div>
+
+        <div class="kanun-madde" id="madde-10">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE 10 — Anayasa ve Mevzuata Riayet Mükellefiyeti</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-10')">🔗 Paylaş</button>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Sunucuya dahil olan her birey, bu Anayasa'nın ve buna bağlı olarak neşredilen tüm yönergelerin hükümlerine eksiksiz uymakla mükelleftir.</p>
+            <p><span class="fıkra-no">(2)</span> Kuralları okumamış olmak, unutmak veya bilmediğini iddia etmek hiçbir cezai ve idari süreçte meşru mazeret teşkil etmez.</p>
+          </div>
         </div>
 
         <div class="kanun-madde" id="madde-11">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 11 – Üyelik Sıfatının Kazanılması, Doğrulama ve Şahsi Mesuliyet</div>
+            <div class="madde-baslik-etiketi">MADDE 11 — Karşılıklı Hürmet ve Nezaket Âdabı</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-11')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Sunucuya intisap eden ve resmî kayıt/doğrulama protokollerini başarıyla tamamlayan her şahıs "EkoYıldız Topluluk Üyesi" hukuki sıfatını iktisap eder.</p>
-            <p><span class="fıkra-no">(2)</span> Her kullanıcı kendi Discord hesabının emniyetinden ve hesabından gerçekleştirilen tüm yazılı, sesli ve görsel eylemlerden şahsen ve hukuken münhasıran mesuldür.</p>
-            <p><span class="fıkra-no">(3)</span> "Hesabım çalındı", "kardeşim yazdı" veya "arkadaşım yaptı" şeklindeki beyanlar disiplin hukuku karşısında mesuliyeti ortadan kaldıran meşru bir mazeret kabul edilmez.</p>
+            <p><span class="fıkra-no">(1)</span> Üyeler birbirleriyle olan muhaberelerinde terbiye, vakar ve nezaket hudutları dahilinde kalmak zorundadır.</p>
+            <p><span class="fıkra-no">(2)</span> Şahsa, ailevi değerlere veya mukaddesata yönelik ağır küfür, hakaret, aşağılayıcı lakap takma ve kışkırtma fiilleri disiplin suçudur.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-12">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 12 – Üyelerin Temel Hak ve Teminatları</div>
+            <div class="madde-baslik-etiketi">MADDE 12 — Kamu Düzeninin Korunması ve Görevlilere Saygı</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-12')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Topluluk üyeleri; emniyetli, nezih ve sükun dolu bir dijital muhitte bulunma, düşüncelerini medeni çerçevede serbestçe ifade etme ve bilgiye adil koşullarda erişme hakkına sahiptir.</p>
-            <p><span class="fıkra-no">(2)</span> Hiçbir üye Anayasa'da açıkça men edilmemiş bir eylem sebebiyle kınanamaz, küçük düşürülemez veya sunucu kanallarından sebepsiz yere tecrit edilemez.</p>
+            <p><span class="fıkra-no">(1)</span> Sunucu içerisinde görev ve yetki kullanan personele yönelik tehdit, ağır hakaret, görev engelleme veya yetkinin icrasını kasıtlı şekilde aksatmaya yönelik davranışlar disiplin yaptırımına tabidir.</p>
+            <p><span class="fıkra-no">(2)</span> Yetkili personelin kamu asayişini sağlamaya yönelik meşru ve makul talimatlarına uymak zorunludur.</p>
+            <ul class="bent-list">
+              <li class="bent-a">Yetkilileri sebepsiz yere etiketleyerek (spam-ping) taciz etmek ikaz ve susturma sebebidir.</li>
+              <li class="bent-b">Yetkilinin kararına itiraz, genel sohbette tartışma çıkararak değil; resmî destek hattı üzerinden yapılır.</li>
+            </ul>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-13">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 13 – Üyelerin Temel Vecibeleri ve Topluluk Sadakati</div>
+            <div class="madde-baslik-etiketi">MADDE 13 — Düzeni Bozucu Eylemlerin Men'i</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-13')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Üyeler; topluluğun huzurunu muhafaza etmek, diğer üyelerin hak ve hukukuna saygı göstermek, sunucu içi intizam kurallarına uymak ve yıkıcı tutumlardan kaçınmakla mükelleftir.</p>
-            <p><span class="fıkra-no">(2)</span> Sunucu aleyhine gizli kumpas kurmak, üyeleri kışkırtarak toplu isyan ve ayrılık tertiplemek yahut harici mecralarda sunucuyu karalama kampanyası başlatmak ağır sadakatsizlik cürmü sayılır.</p>
+            <p><span class="fıkra-no">(1)</span> Kanallarda spam, flood, gereksiz büyük harf kullanımı, kanal tahsis amacına aykırı paylaşım (off-topic) ve izinsiz reklam yapılması yasaktır.</p>
+            <p><span class="fıkra-no">(2)</span> Sunucu içi huzuru dinamitleyen fitne, tefrika, üyeleri ayaklanmaya kışkırtma, zararlı yazılım ve korsan içerik paylaşımı kesinlikle men edilmiştir.</p>
           </div>
+        </div>
+      </section>
+
+      <!-- KISIM IV: YASAMA VE KURAL KOYMA ERKİ -->
+      <section id="bolum-4" class="kanun-bolum">
+        <div class="bolum-head">
+          <div class="bolum-no">KISIM IV</div>
+          <h2 class="bolum-baslik">📜 Yasama ve Kural Koyma Erki (Madde 14 – 15)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-14">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 14 – Rol Hiyerarşisi, Yetkilendirme Esasları ve Rol Gaspı Yasağı</div>
+            <div class="madde-baslik-etiketi">MADDE 14 — Kural Koyma ve Yasama Salahiyeti</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-14')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Sunucu içi roller liyakat, aktif katılım, güvenilirlik ve idari takdir prensipleri dairesinde Kurucular ve İdare Heyeti marifetiyle tevdi edilir.</p>
-            <p><span class="fıkra-no">(2)</span> Sahip olunmayan bir rolü taklit etmek, bot yetkilerini suistimal ederek rol hiyerarşisini delmeye yeltenmek veya yetkili sıfatını haksız yere takınmak kesinlikle yasaktır.</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Topluluğu'nda kural koyma, yönetmelik çıkarma ve anayasa teklifinde bulunma yetkisi münhasıran Kurucular Kurulu ile Yönetim Kurulu Meclisi'ne aittir.</p>
+            <p><span class="fıkra-no">(2)</span> Yeni ihdas edilecek yönergeler Anayasa'nın amir hükümlerine aykırı olamaz; aykırılık halinde Anayasa hükümleri üstün tutulur.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-15">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 15 – Rol ve Ayrıcalıkların Ticarete Konu Edilememesi (Satış Yasağı)</div>
+            <div class="madde-baslik-etiketi">MADDE 15 — Topluluk İstişaresi ve Referandum Usulü</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-15')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız bünyesindeki idari makamlar, moderasyon kadroları, VIP unvanları ve teknik roller hiçbir surette nakdi para, oyun içi eşya veya harici menfaat mukabilinde satılamaz, kiralanamaz ve devredilemez.</p>
-            <p><span class="fıkra-no">(2)</span> Rol rüşveti teklif eden veya alan tarafların unvanları re'sen iptal edilir ve şahıslar süresiz olarak topluluktan ihraç olunur.</p>
+            <p><span class="fıkra-no">(1)</span> Topluluğun genel işleyişini doğrudan alakadar eden köklü yapısal kararlarda üyelerin görüşlerine başvurulabilir (İstişare Anketi).</p>
+            <p><span class="fıkra-no">(2)</span> Yapılan anket ve oylamalar bağlayıcı veya tavsiye niteliğinde olup; nihai tasdik Kurucular Kurulu'nun onayına bağlıdır.</p>
           </div>
         </div>
       </section>
 
-      <!-- KISIM IV -->
-      <section id="bolum-4" class="kanun-bolum">
+      <!-- KISIM V: YÜRÜTME ORGANI VE GÜNLÜK İDARE -->
+      <section id="bolum-5" class="kanun-bolum">
         <div class="bolum-head">
-          <div class="bolum-no">KISIM IV</div>
-          <h2 class="bolum-baslik">💬 İletişim Standartları, Sesli/Yazılı Muhabere ve Topluluk Huzuru (Md. 16-19)</h2>
+          <div class="bolum-no">KISIM V</div>
+          <h2 class="bolum-baslik">👑 Yürütme Organı ve Günlük İdare (Madde 16 – 18)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-16">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 16 – Muhabere Âdabı, Dil Nezaketi ve Genel Chat İntizamı</div>
+            <div class="madde-baslik-etiketi">MADDE 16 — Yürütme Erki ve İdari Teşkilat</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-16')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Genel sohbet kanallarında karşılıklı saygı, nezaket ve edep kuralları caridir. Şahısların ailevi, mukaddes ve şahsi değerlerine yönelik küfür, argo ve alaycı sataşmalar yasaktır.</p>
-            <p><span class="fıkra-no">(2)</span> Fikir ayrılıklarında seviyeli münazara kültürü korunur; şahsiyata inen kaba üslup susturma müeyyidesiyle cezalandırılır.</p>
+            <p><span class="fıkra-no">(1)</span> Yürütme organı; Kurucular Kurulu, Yöneticiler (Administrators) ve Moderatörlerden teşekkül eder.</p>
+            <ul class="bent-list">
+              <li class="bent-a"><strong>Kurucular Kurulu:</strong> En üst idari, stratejik ve veto salahiyetine malik makamdır.</li>
+              <li class="bent-b"><strong>Sunucu Yöneticileri:</strong> Günlük idari işleyişi, teknik sistemleri ve komisyon koordinasyonunu sağlar.</li>
+              <li class="bent-c"><strong>Moderatörler:</strong> Sahada kamu asayişini temin eder, anlık kural ihlallerine müdahale eder.</li>
+            </ul>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-17">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 17 – Spam, Flood, Büyük Harf (Capslock) ve Kanal Dışı Yazım</div>
+            <div class="madde-baslik-etiketi">MADDE 17 — Günlük İdare ve Asayişin Sevk ve İdaresi</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-17')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Kanalların akışını tahrif eden peş peşe anlamsız mesaj gönderme (spam), uzun metin kopyalama (flood), emojilerle kanal doldurma ve bağırış hissi uyandıran sürekli büyük harf (capslock) kullanımı men edilmiştir.</p>
-            <p><span class="fıkra-no">(2)</span> Her kanal münhasıran tahsis edildiği konuya uygun olarak kullanılır. Kod kanallarında geyik sohbeti, genel sohbette komut istismarı gibi konu dışı (off-topic) taşkınlıklar yetkili personelin ikazıyla derhal sonlandırılır.</p>
+            <p><span class="fıkra-no">(1)</span> Yürütme organı, sunucunun 7 gün 24 saat kesintisiz, huzurlu ve güvenli biçimde işlemesini sağlamakla vazifelidir.</p>
+            <p><span class="fıkra-no">(2)</span> İdare personeli görevi esnasında adil, sabırlı ve olgun bir tutum sergilemekle mükelleftir.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-18">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 18 – Reklam, İzinsiz Tanıtım ve DM Tacizi Memnuiyeti</div>
+            <div class="madde-baslik-etiketi">MADDE 18 — Rol ve Ayrıcalıkların Satılamazlığı İlkesi</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-18')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Kurucular Kurulu'nun resmî yazılı onayı olmaksızın sunucu kanallarında harici Discord sunucu daveti, YouTube/Twitch yayın linki, ticari ürün reklamı veya referanslı gelir bağlantısı paylaşmak mutlak surette yasaktır.</p>
-            <p><span class="fıkra-no">(2)</span> Sunucu üyelerinin özel mesaj kutularına (DM) topluluk kanalı vasıtasıyla ulaşıp izinsiz reklam, sahte hediye linki veya rahatsız edici mesaj gönderenler <strong>ihtarsız süresiz ihraç</strong> edilir.</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız bünyesindeki hiçbir idari makam, moderatörlük rolü veya özel unvan para, menfaat veya takas mukabilinde satılamaz ve devredilemez.</p>
+            <p><span class="fıkra-no">(2)</span> Rol rüşveti veya ticaretine tevessül edenlerin tüm yetkileri feshedilir ve sunucuyla ilişiği derhal kesilir.</p>
           </div>
+        </div>
+      </section>
+
+      <!-- KISIM VI: YETKİ SINIRLARI VE İDARİ DENETİM -->
+      <section id="bolum-6" class="kanun-bolum">
+        <div class="bolum-head">
+          <div class="bolum-no">KISIM VI</div>
+          <h2 class="bolum-baslik">🔒 Yetki Sınırları ve İdari Denetim (Madde 19 – 21)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-19">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 19 – Sesli Kanalların Kullanımı, Ses Kayıt Yasağı ve Profil Standartları</div>
+            <div class="madde-baslik-etiketi">MADDE 19 — Yetkinin Sınırları ve Keyfilik Yasağı</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-19')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Sesli odalarda mikrofon basarak çığlık atmak, kulak tırmalayıcı gürültü yapmak, ses değiştirici programları suiistimal etmek ve soundboard araçlarıyla başkalarının konuşma hakkını gasp etmek yasaktır.</p>
-            <p><span class="fıkra-no">(2)</span> <strong>İzinsiz Ses Kaydı Yasağı:</strong> Sesli odada bulunan üyelerin açık rızası hilafına gizlice ses ve görüntü kaydı almak, bunu şantaj veya alay malzemesi yapmak ağır suçtur.</p>
-            <p><span class="fıkra-no">(3)</span> Kullanıcıların sunucu içi profil resimleri, kullanıcı adları, durum mesajları ve biyografileri kamu ahlakına, milli değerlere ve sunucu intizamına uygun olmak mecburiyetindedir.</p>
+            <p><span class="fıkra-no">(1)</span> Hiçbir yönetici veya moderatör, Anayasa ve mevzuatın çizdiği hudutların haricinde keyfi ceza tayin edemez.</p>
+            <p><span class="fıkra-no">(2)</span> "Ben istedim oldu", "tavrını beğenmedim" yahut kişisel husumet saikiyle uygulanan cezalar mutlak surette hükümsüzdür.</p>
           </div>
         </div>
-      </section>
 
-      <!-- KISIM V -->
-      <section id="bolum-5" class="kanun-bolum">
-        <div class="bolum-head">
-          <div class="bolum-no">KISIM V</div>
-          <h2 class="bolum-baslik">🛡️ Siber Güvenlik, Kişisel Veriler (KVKK), Mahremiyet ve Ağır Yasaklar (Md. 20-24)</h2>
-        </div>
-
-        <div class="kanun-madde dokunulmaz-madde" id="madde-20">
+        <div class="kanun-madde" id="madde-20">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 20 – Kişisel Verilerin Korunması ve Doxxing / İfşa Yasağı
-              <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
-            </div>
+            <div class="madde-baslik-etiketi">MADDE 20 — İspat ve Kayıt Altına Alma Mecburiyeti</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-20')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Gerçek kişilerin adı, soyadı, T.C. kimlik numarası, telefon numarası, ikametgah adresi, ailevi bilgileri, şahsi fotoğrafları, okul/işyeri kayıtları veya özel hayatın gizliliğini ihlal eden herhangi bir verinin izinsiz neşredilmesi (Doxxing) mutlak surette yasaktır.</p>
-            <p><span class="fıkra-no">(2)</span> Doxxing fiilini işleyen yahut üyeleri ifşa ile tehdit ve şantaj eden fail, <strong>ihtarsız olarak süresiz ihraç (Perm-Ban)</strong> edilir; deliller adli makamlara resmi suç duyurusu olarak intikal ettirilir.</p>
+            <p><span class="fıkra-no">(1)</span> Tatbik edilen her disiplin işlemi (uyarı, susturma, karantina, kick, ban) yetkili personelce derhal kayıt altına alınır.</p>
+            <p><span class="fıkra-no">(2)</span> Her yaptırım; ekran görüntüsü, bot kütüğü (log) veya ses kaydı gibi somut delillerle tevsik edilmek zorundadır. Delilsiz işlemler iptal edilir.</p>
           </div>
         </div>
 
-        <div class="kanun-madde dokunulmaz-madde" id="madde-21">
+        <div class="kanun-madde" id="madde-21">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 21 – Siber Güvenlik, Zararlı Yazılım, Token Grabber ve Phishing Yasağı
-              <span class="dokunulmaz-badge">AĞIR SİBER SUÇ</span>
-            </div>
+            <div class="madde-baslik-etiketi">MADDE 21 — İdari Sorumluluk ve Görevden El Çektirme (Azil)</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-21')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Virüs, truva atı (trojan), keylogger, Discord token hırsızı (token grabber), sahte Nitro/hediye dolandırıcılığı (phishing) ve şifre çalmaya matuf zararlı kod barındıran hiçbir dosya veya bağlantı paylaşılamaz.</p>
-            <p><span class="fıkra-no">(2)</span> Sunucuya yönelik DDoS, spam-bot akını, webhook suistimali veya altyapıyı çökertmeye dönük sabotaj girişimleri doğrudan kalıcı ihraç ve global kara liste yaptırımı ile neticelenir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde dokunulmaz-madde" id="madde-22">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 22 – Kamu Ahlakı, Müstehcenlik (NSFW) ve Cinsel Teşhir Yasağı
-              <span class="dokunulmaz-badge">AĞIR SUÇ</span>
-            </div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-22')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Pornografik, cinsel çağrışım uyandıran, aşırı teşhir içeren yahut kamu ahlakını zedeleyen resim, video, çizim ve metinlerin sunucunun hiçbir kanalında (özel NSFW kanalları da dahil olmak üzere) paylaşılmasına müsaade edilmez.</p>
-            <p><span class="fıkra-no">(2)</span> Reşit olmayan bireylerin istismarına matuf en ufak bir emare dahi tespit edildiğinde derhal adli mercilere ve siber suçlarla mücadele şubelerine bildirimde bulunulur.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde dokunulmaz-madde" id="madde-23">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 23 – Vahşet, Kan (NSFL), İntihar ve Şiddet Tasvirlerinin Men'i
-              <span class="dokunulmaz-badge">AĞIR SUÇ</span>
-            </div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-23')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> İnsan yahut hayvan cesetleri, ağır yaralanma, vahşet, kan, infaz, terör eylemleri tasviri (gore/NSFL) ile intihar ve kendine zarar verme temalı tüm içerikler mutlak olarak yasaklanmıştır.</p>
-            <p><span class="fıkra-no">(2)</span> Terör örgütlerini övücü, şiddeti kutsayıcı veya insanlık dışı muameleleri meşrulaştırıcı paylaşımlarda bulunanlar süresiz olarak men edilir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-24">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 24 – Sanal Flört, E-Date ve Bireyleri Rahatsız Edici Yaklaşımların Yasağı</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-24')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız; kültür, yazılım, oyun ve bilgi paylaşım platformudur. Sunucu mecraları çöpçatanlık, sanal sevgililik (e-dating) veya flörtleşme gayesiyle suiistimal edilemez.</p>
-            <p><span class="fıkra-no">(2)</span> Kadın veya erkek üyeleri ısrarla özel mesajlardan rahatsız etmek, flört teklifleriyle taciz boyutuna varan darlık yaşatmak ve huzursuzluk yaratmak süresiz uzaklaştırma sebebidir.</p>
+            <p><span class="fıkra-no">(1)</span> Yetkisini kötüye kullanan, üyelere hakaret eden yahut idari gizliliği sızdıran personel hakkında derhal idari soruşturma başlatılır.</p>
+            <p><span class="fıkra-no">(2)</span> Kusuru tespit edilen personele Kınama, Rütbe İndirimi, Geçici Yetki Askısı veya Daimi Azil cezaları tatbik edilir.</p>
           </div>
         </div>
       </section>
 
-      <!-- KISIM VI: RESMÎ CEZA CETVELİ -->
-      <section id="bolum-6" class="kanun-bolum">
+      <!-- KISIM VII: YARGI, DİSİPLİN HUKUKU VE YAPTIRIMLAR -->
+      <section id="bolum-7" class="kanun-bolum">
         <div class="bolum-head">
-          <div class="bolum-no">KISIM VI</div>
-          <h2 class="bolum-baslik">⚖️ Ceza ve Disiplin Hukuku, Yargı Usulü ve Yaptırım Cetveli (Md. 25-28)</h2>
+          <div class="bolum-no">KISIM VII</div>
+          <h2 class="bolum-baslik">⚖️ Yargı, Disiplin Hukuku ve Yaptırımlar (Madde 22 – 26)</h2>
         </div>
 
-        <div class="kanun-madde" id="madde-25">
+        <div class="kanun-madde" id="madde-22">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 25 – Suçta ve Cezada Kanunilik Prensibi ve Cezaların Şahsiliği</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-25')">🔗 Paylaş</button>
+            <div class="madde-baslik-etiketi">MADDE 22 — Suçta ve Cezada Kanunilik İlkesi</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-22')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Anayasa'da ve bağlı tüzüklerde açıkça suç sayılmayan hiçbir fiilden dolayı kimseye disiplin cezası uygulanamaz.</p>
-            <p><span class="fıkra-no">(2)</span> <strong>Cezaların Şahsiliği:</strong> Disiplin cezaları münhasıran kabahati ika eden şahsa tatbik edilir; failin arkadaşlarına veya aynı gruptaki masum üyelere kolektif ceza verilemez.</p>
+            <p><span class="fıkra-no">(1)</span> Bu Anayasa'da ve bağlı tüzüklerde açıkça suç sayılmayan hiçbir fiilden dolayı kimseye disiplin cezası verilemez.</p>
+            <p><span class="fıkra-no">(2)</span> <strong>Cezaların Şahsiliği:</strong> Ceza yalnızca kabahati işleyen şahsa tatbik edilir; arkadaşlarına veya topluluktaki masum yakınlarına teşmil edilemez.</p>
           </div>
         </div>
 
-        <div class="kanun-madde" id="madde-26">
+        <div class="kanun-madde" id="madde-23">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 26 – Disiplin Yaptırımlarının Nevileri ve Kademeli Ceza Sistemi</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-26')">🔗 Paylaş</button>
+            <div class="madde-baslik-etiketi">MADDE 23 — Disiplin Yaptırımlarının Kademeleri</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-23')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız Hukukunda tatbik olunacak resmî disiplin cezaları hafiften ağıra doğru şunlardır:</p>
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Hukukunda tatbik edilecek resmî yaptırımlar hafiften ağıra doğru şunlardır:</p>
             <ul class="bent-list">
-              <li><strong>Sözlü ve Yazılı İhtar (Warn):</strong> İhlalin hafif olduğu durumlarda failin kaydına işlenen resmî ikazdır.</li>
-              <li><strong>Süreli Susturma (Timeout / Mute):</strong> 5 dakikadan 7 güne kadar üyenin yazma ve konuşma salahiyetinin askıya alınmasıdır.</li>
-              <li><strong>İntizam Karantinası (Jail):</strong> Tahkikat neticelenene kadar üyenin yalnızca tecrit kanalında bulunması tedbiridir.</li>
-              <li><strong>Sunucudan Çıkarma (Kick):</strong> Tekrar katılım hakkı saklı kalmak üzere sunucudan çıkarılmadır.</li>
-              <li><strong>Süreli İhraç (Temp-Ban):</strong> 1 günden 30 güne kadar sunucuya erişimin engellenmesidir.</li>
-              <li><strong>Kalıcı İhraç (Perm-Ban):</strong> Ağır cürümlerde sunucuyla ilişiğin süresiz olarak kesilmesidir.</li>
+              <li class="bent-a"><strong>Sözlü ve Yazılı Uyarı (Warn):</strong> Hafif kabahatlerde sicile işlenen resmî ikazdır.</li>
+              <li class="bent-b"><strong>Süreli Susturma (Mute / Timeout):</strong> 10 dakikadan 7 güne kadar mesaj ve ses hakkının askıya alınmasıdır.</li>
+              <li class="bent-c"><strong>İntizam Karantinası (Jail):</strong> Tahkikat sonuçlanana dek üyenin tecrit kanalında tutulması tedbiridir.</li>
+              <li class="bent-d"><strong>Sunucudan Çıkarma (Kick):</strong> Tekrar katılım imkanı saklı kalmak üzere atılmadır.</li>
+              <li class="bent-e"><strong>Süreli İhraç (Temp-Ban) & Kalıcı İhraç (Perm-Ban):</strong> Sunucuyla ilişiğin süreli veya süresiz olarak kesilmesidir.</li>
             </ul>
           </div>
         </div>
@@ -1265,7 +1210,7 @@ function renderEkoYildizAnayasaPage(user) {
         <!-- CETVEL TABLOSU -->
         <div class="kanun-madde" id="ceza-cetveli">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 27 – Resmî İntizam ve Yaptırım Cetveli (Ceza Matrisi Tablosu)</div>
+            <div class="madde-baslik-etiketi">MADDE 24 — Resmî İntizam ve Ceza Cetveli (Yaptırım Matrisi)</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('ceza-cetveli')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
@@ -1319,12 +1264,6 @@ function renderEkoYildizAnayasaPage(user) {
                     <td><span class="yaptirim-ihrac">Kalıcı İhraç (Perm-Ban)</span></td>
                   </tr>
                   <tr>
-                    <td><strong>Fikri Mülkiyet ve Korsan Paylaşımı</strong></td>
-                    <td>İçerik İptali + İhtar</td>
-                    <td><span class="yaptirim-uzaklasma">1 Gün Süreli İhraç</span></td>
-                    <td><span class="yaptirim-uzaklasma">7 Gün Süreli İhraç</span></td>
-                  </tr>
-                  <tr>
                     <td><strong>Doxxing / Kişisel Veri İfşası (KVKK)</strong></td>
                     <td colspan="3"><span class="yaptirim-ihrac">🚨 Doğrudan ve İhtarsız Kalıcı İhraç (Perm-Ban)</span></td>
                   </tr>
@@ -1341,242 +1280,135 @@ function renderEkoYildizAnayasaPage(user) {
                     <td><span class="yaptirim-uzaklasma">7 Gün Süreli İhraç</span></td>
                     <td colspan="2"><span class="yaptirim-ihrac">Kalıcı İhraç (Perm-Ban)</span></td>
                   </tr>
-                  <tr>
-                    <td><strong>Yan Hesapla (Alt-Acc) Cezadan Kaçış</strong></td>
-                    <td><span class="yaptirim-uzaklasma">Asıl ve Yan Hesap 7 Gün Ban</span></td>
-                    <td colspan="2"><span class="yaptirim-ihrac">Tüm Hesaplar İçin Kalıcı İhraç</span></td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <div class="kanun-madde" id="madde-28">
+        <div class="kanun-madde" id="madde-25">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 28 – Sicil Affı, Zamanaşımı ve İnfaz İndirimi Hükümleri</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-28')">🔗 Paylaş</button>
+            <div class="madde-baslik-etiketi">MADDE 25 — İtiraz Mekanizması, İstinaf ve Anayasa Mahkemesi (AYM)</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-25')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Son ceza tarihinden itibaren aralıksız 6 ay müddetle hiçbir disiplin suçu işlemeyen üyelerin hafif disiplin kayıtları arşive kaldırılarak sicilleri temizlenir.</p>
-            <p><span class="fıkra-no">(2)</span> Doxxing, terör propagandası, dolandırıcılık ve çocuk istismarı fiillerinden mahkum olanlar hiçbir sicil affından veya cezai indirimden yararlanamaz.</p>
+            <p><span class="fıkra-no">(1)</span> Aleyhine disiplin yaptırımı uygulanan her üye, 72 saat zarfında Resmî Bilet Hattı üzerinden İstinaf (Üst Mahkeme) yoluna başvurabilir.</p>
+            <p><span class="fıkra-no">(2)</span> Temel hakların ihlal edildiği iddiasıyla Kurucular Kurulu riyasetindeki <strong>Anayasa Mahkemesi'ne (AYM) Bireysel Başvuru</strong> yapılabilir. AYM'nin vereceği kararlar nihaidir.</p>
+          </div>
+        </div>
+
+        <div class="kanun-madde" id="madde-26">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE 26 — Sicil Affı ve İnfaz İndirimi</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-26')">🔗 Paylaş</button>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Son ceza tarihinden itibaren aralıksız 6 ay süreyle yeni bir disiplin cezası almayan üyelerin hafif sicil kayıtları arşive kaldırılır.</p>
+            <p><span class="fıkra-no">(2)</span> Doxxing, sabotaj, çocuk istismarı ve ağır nefret suçları hiçbir af ve infaz indiriminden faydalanamaz.</p>
           </div>
         </div>
       </section>
 
-      <!-- KISIM VII -->
-      <section id="bolum-7" class="kanun-bolum">
+      <!-- KISIM VIII: OLAĞANÜSTÜ HÂL VE GÜVENLİK TEDBİRLERİ -->
+      <section id="bolum-8" class="kanun-bolum">
         <div class="bolum-head">
-          <div class="bolum-no">KISIM VII</div>
-          <h2 class="bolum-baslik">🎨 Etkinlikler, Projeler, Fikri Mülkiyet ve Ortak Eserler (Md. 29-32)</h2>
+          <div class="bolum-no">KISIM VIII</div>
+          <h2 class="bolum-baslik">🚨 Olağanüstü Hâl ve Güvenlik Tedbirleri (Madde 27 – 28)</h2>
+        </div>
+
+        <div class="kanun-madde" id="madde-27">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE 27 — Olağanüstü Hâl (OHAL) İlanı ve Şartları</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-27')">🔗 Paylaş</button>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Sunucuya yönelik kitlesel baskın (raid), bot saldırısı, kritik güvenlik açığı, sabotaj veya asayişi tamamen felç eden durumlarda Kurucular Kurulu re'sen Olağanüstü Hâl (OHAL) ilan edebilir.</p>
+            <p><span class="fıkra-no">(2)</span> OHAL durumu krizin ortadan kalkmasıyla birlikte derhal kaldırılır ve kamuoyuna bilgilendirme yapılır.</p>
+          </div>
+        </div>
+
+        <div class="kanun-madde" id="madde-28">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE 28 — Olağanüstü Hâl Kapsamında Geçici Özel Yetkiler</div>
+            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-28')">🔗 Paylaş</button>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> OHAL süresince yönetim şu geçici tedbirleri uygulamaya salahiyetlidir:</p>
+            <ul class="bent-list">
+              <li class="bent-a">Sunucuya yeni üye girişlerini ve davet bağlantılarını geçici olarak askıya almak.</li>
+              <li class="bent-b">Yazılı ve sesli kanalları kısmen veya tamamen tecrit ve kilit altına almak (Lockdown).</li>
+              <li class="bent-c">Saldırıya iştirak eden şüpheli hesapları savunma almaksızın tedbiren topluca ihraç etmek.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- KISIM IX: ANAYASA DEĞİŞİKLİĞİ VE DOKUNULMAZLIK -->
+      <section id="bolum-9" class="kanun-bolum">
+        <div class="bolum-head">
+          <div class="bolum-no">KISIM IX</div>
+          <h2 class="bolum-baslik">🗳️ Anayasa Değişikliği ve Dokunulmazlık (Madde 29 – 30)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-29">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 29 – Resmî Topluluk Etkinlikleri ve Katılım Esasları</div>
+            <div class="madde-baslik-etiketi">MADDE 29 — Anayasa Değişikliği Teklifi ve Usulü</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-29')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız adına düzenlenen turnuva, seminer, bilgi yarışması ve çalıştaylar Etkinlik Komisyonu marifetiyle yürütülür.</p>
-            <p><span class="fıkra-no">(2)</span> Etkinliklerde hile yapan, trolleme girişiminde bulunan veya diğer yarışmacıları sabote edenlerin tüm ödül hakları iptal edilir ve disiplin işlemi başlatılır.</p>
+            <p><span class="fıkra-no">(1)</span> Anayasa'nın değiştirilmesi; Kuruculardan birinin veya Yönetim Kurulu üyelerinin salt çoğunluğunun yazılı teklifiyle gündeme alınabilir.</p>
+            <p><span class="fıkra-no">(2)</span> Değişikliğin kabulü için <strong>Kurucu onayı ve Üst Yönetim Kurulu'nun en az üçte iki (2/3) oy çokluğu</strong> şarttır. Bu nisap sağlanmadan hiçbir madde değiştirilemez.</p>
           </div>
         </div>
 
-        <div class="kanun-madde" id="madde-30">
+        <div class="kanun-madde dokunulmaz-madde" id="madde-30">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 30 – Fikri Mülkiyet, Telif Hakları ve Korsan Paylaşım Yasağı</div>
+            <div class="madde-baslik-etiketi">
+              MADDE 30 — Değiştirilemez Hükümler (Kırmızı Çizgiler / Mutlak Dokunulmazlık)
+              <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
+            </div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-30')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Başkalarına ait yazılımların, kod bloklarının, grafik tasarımların veya telifli eserlerin izinsiz neşredilmesi (korsan paylaşım, warez, crack) yasaktır.</p>
-            <p><span class="fıkra-no">(2)</span> Eser sahibinin haklı telif ihtarı üzerine ilgili içerik derhal kaldırılır ve ihlali ika eden üye uyarılır.</p>
+            <p><span class="fıkra-no">(1)</span> Anayasa'nın temel omurgasını ve varlık sebebini teşkil eden;</p>
+            <ul class="bent-list">
+              <li class="bent-a"><strong>Madde 1:</strong> Sunucunun Adı ve Hukuki Statüsü,</li>
+              <li class="bent-b"><strong>Madde 3:</strong> Resmî Dilin Türkçe Oluşu,</li>
+              <li class="bent-c"><strong>Madde 4:</strong> Atatürk İlkeleri, Bağımsızlık ve Siyasetsizlik İlkesi,</li>
+              <li class="bent-d"><strong>Madde 9:</strong> Kişisel Verilerin Korunması ve Doxxing Yasağı,</li>
+              <li class="bent-e"><strong>Madde 30:</strong> Dokunulmazlık Hükmünün Kendisi,</li>
+            </ul>
+            <p>hükümleri <strong>hiçbir surette değiştirilemez, ilga edilemez ve bunların değiştirilmesi teklif dahi edilemez.</strong></p>
           </div>
+        </div>
+      </section>
+
+      <!-- KISIM X: SON HÜKÜMLER VE YÜRÜRLÜK -->
+      <section id="bolum-10" class="kanun-bolum">
+        <div class="bolum-head">
+          <div class="bolum-no">KISIM X</div>
+          <h2 class="bolum-baslik">📜 Son Hükümler ve Yürürlük (Madde 31 – 32)</h2>
         </div>
 
         <div class="kanun-madde" id="madde-31">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 31 – Kolektif Eserler, Geliştirici Projeleri ve EkoYıldız Lisansı</div>
+            <div class="madde-baslik-etiketi">MADDE 31 — Eski Kuralların Durumu ve Geçiş Hükümleri</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-31')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız laboratuvarlarında topluluk desteğiyle üretilen açık kaynaklı yazılım ve projeler, aksi kararlaştırılmadıkça topluluğun manevi himayesindedir.</p>
-            <p><span class="fıkra-no">(2)</span> Geliştiricilerin emeği kutsaldır; topluluk projelerinden izinsiz kod kopyalayıp harici platformlarda kendi eseri gibi pazarlayanlar ihraç olunur.</p>
+            <p><span class="fıkra-no">(1)</span> Bu Anayasa'nın yürürlüğe girmesiyle birlikte, daha önce ilan edilmiş tüm eski kural metinleri yürürlükten kalkmıştır.</p>
+            <p><span class="fıkra-no">(2)</span> Eski kurallar döneminde kesinleşmiş disiplin kayıtları geçerliliğini korur; ancak süregelen cezalarda lehe olan hükümler uygulanır.</p>
           </div>
         </div>
 
         <div class="kanun-madde" id="madde-32">
           <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 32 – Topluluk İçi Bağış, Çekiliş ve Ödül Dağıtım Kuralları</div>
+            <div class="madde-baslik-etiketi">MADDE 32 — Yürürlük Tarihi ve İcra Salahiyeti</div>
             <button class="madde-paylas-btn" onclick="maddeKopyala('madde-32')">🔗 Paylaş</button>
           </div>
           <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Sunucu bünyesinde icra edilecek tüm hediye çekilişleri ve ödüllü müsabakalar İdare Heyeti'nin onay ve nezaretine tabidir.</p>
-            <p><span class="fıkra-no">(2)</span> Çekiliş sonuçlarında sahtecilik yapmak, kazananı kayırmak veya vaat edilen ödülü teslim etmemek dolandırıcılık suçu olarak değerlendirilir.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- KISIM VIII -->
-      <section id="bolum-8" class="kanun-bolum">
-        <div class="bolum-head">
-          <div class="bolum-no">KISIM VIII</div>
-          <h2 class="bolum-baslik">🤝 Dış Münasebetler, Diplomatik Temsil ve Partnerlik Hukuku (Md. 33-36)</h2>
-        </div>
-
-        <div class="kanun-madde" id="madde-33">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 33 – Temsil Salahiyeti ve Resmî Beyanat Yetkisi</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-33')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız Topluluğu'nu harici sunucularda, kamuoyunda, basında ve sosyal medyada temsil etme salahiyeti münhasıran Kurucular Kurulu ve yetkilendirilmiş Baş Temsilcilere aittir.</p>
-            <p><span class="fıkra-no">(2)</span> Yetkisi olmadığı halde topluluk namına harici mecralarda beyanat veren, vaatte bulunan yahut kurum adına bağlayıcı taahhütlerde bulunan şahıslar hakkında cezai tahkikat yapılır.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-34">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 34 – Harici Topluluklarla Partnerlik, İttifak ve Ortak Protokoller</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-34')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Başka Discord sunucuları veya platformlarla akdedilecek partnerlik (ortaklık) muahedeleri karşılıklı saygı, üye emniyeti ve menfaat dengesi esasına göre tanzim edilir.</p>
-            <p><span class="fıkra-no">(2)</span> EkoYıldız Anayasası'nın temel ilkelerine ve ahlaki duruşuna aykırı yayın yapan topluluklarla hiçbir şart altında ortaklık kurulamaz.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-35">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 35 – Topluluk Menfaatlerinin Korunması ve Dış Tehditlere Mukavemet</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-35')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Harici sunuculardan EkoYıldız'a yönelen baskın (raid), karalama, spam saldırısı veya sabotaj girişimlerine karşı İdare Heyeti olağanüstü emniyet tedbirleri almaya yetkilidir.</p>
-            <p><span class="fıkra-no">(2)</span> Saldırıyı organize eden yahut içeriden işbirliği sağlayan hain unsurlar derhal tespit edilerek kalıcı şekilde aforoz edilir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-36">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 36 – Temsilcilerin Hesap Verebilirliği ve Diplomatik İntizam</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-36')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Dış temsilciler yürüttükleri müzakereler ve temaslar hakkında Kurucular Kurulu'na muntazaman rapor vermekle mükelleftir.</p>
-            <p><span class="fıkra-no">(2)</span> Diplomatik nezakete riayet etmeyen ve topluluğun prestijini sarsan temsilciler derhal görevden alınır.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- KISIM IX -->
-      <section id="bolum-9" class="kanun-bolum">
-        <div class="bolum-head">
-          <div class="bolum-no">KISIM IX</div>
-          <h2 class="bolum-baslik">🗳️ Anayasa Değişikliği, Yasama Usulü ve Değiştirilemez Hükümler (Md. 37-41)</h2>
-        </div>
-
-        <div class="kanun-madde" id="madde-37">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 37 – Anayasa Değişikliği Teklifi ve Gerekçe Şartı</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-37')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Anayasa'nın dokunulmaz maddeleri haricindeki hükümleri için değişiklik teklifi; Kuruculardan biri veya İdare Heyeti üyelerinin en az salt çoğunluğu tarafından yazılı gerekçesiyle birlikte sunulabilir.</p>
-            <p><span class="fıkra-no">(2)</span> Gerekçesiz ve kamu yararı taşımayan değişiklik teklifleri Divan marifetiyle doğrudan reddedilir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-38">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 38 – Değişiklik Tekliflerinin Müzakeresi ve Komisyon İncelemesi</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-38')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Usulüne uygun sunulan değişiklik teklifleri Hukuk Komisyonu tarafından 7 gün süreyle incelenir ve etki analiz raporu tanzim edilir.</p>
-            <p><span class="fıkra-no">(2)</span> İnceleme sürecinde topluluk üyelerinin görüş ve temennileri anketler marifetiyle istişare edilebilir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-39">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 39 – Kabul Yeter Sayısı ve Kurucular Kurulu Onayı</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-39')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Anayasa değişiklik metninin yürürlüğe girebilmesi için İdare Heyeti'nin en az üçte iki (2/3) ekseriyet oyu ve Kurucular Kurulu'nun müşterek tasdiki şarttır.</p>
-            <p><span class="fıkra-no">(2)</span> Kurucular Kurulu'nun onaylamadığı hiçbir teklif yasalaşamaz.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde dokunulmaz-madde" id="madde-40">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">
-              MADDE 40 – Değiştirilemez Hükümler (Kırmızı Çizgiler / Mutlak Dokunulmazlık)
-              <span class="dokunulmaz-badge">MUTLAK DOKUNULMAZ</span>
-            </div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-40')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> EkoYıldız Anayasası'nın temel omurgasını ve varlık sebebini teşkil eden;</p>
-            <ul class="bent-list">
-              <li><strong>Madde 2:</strong> Topluluğun Gayesi, Ahlaki Çerçevesi ve Siyasetsizlik İlkesi,</li>
-              <li><strong>Madde 4:</strong> Temel İnsan Hakları, Eşitlik ve Ayrımcılık Yasağı,</li>
-              <li><strong>Madde 20:</strong> Kişisel Verilerin Korunması ve Doxxing / İfşa Yasağı,</li>
-              <li><strong>Madde 21:</strong> Siber Güvenlik, Zararlı Yazılım ve Sabotaj Yasağı,</li>
-              <li><strong>Madde 22:</strong> Kamu Ahlakı ve Müstehcenlik (NSFW) Yasağı,</li>
-              <li><strong>Madde 40:</strong> Değiştirilemez Hükümler Güvencesi,</li>
-            </ul>
-            <p>hükümleri <strong>hiçbir surette değiştirilemez, ilga edilemez ve bunların değiştirilmesi teklif dahi edilemez.</strong> Bu yöndeki teklifler yok hükmünde olup oylamaya sunulamaz.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-41">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 41 – Değişikliklerin Neşri, İlanı ve Yürürlüğe Girişi</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-41')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Kabul edilen değişiklikler Resmî Duyuru kanalında ve Resmî Mevzuat Portalında neşrolunur ve ilan edilen tarihte yürürlüğe girer.</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- KISIM X -->
-      <section id="bolum-10" class="kanun-bolum">
-        <div class="bolum-head">
-          <div class="bolum-no">KISIM X</div>
-          <h2 class="bolum-baslik">📜 Geçici Maddeler, Yürürlük ve İcra Salahiyeti (Md. 42-44)</h2>
-        </div>
-
-        <div class="kanun-madde" id="madde-42">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 42 – Geçici İntibak Hükümleri ve Müktesep Hakların Korunması</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-42')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> İşbu Anayasa'nın yürürlüğe girmesinden önce ihdas edilmiş alt yönergeler ve kanal kuralları, Anayasa'ya aykırı olmayan hükümleri nispetinde mer'iyetini muhafaza eder; çelişen kurallar re'sen mülga olur.</p>
-            <p><span class="fıkra-no">(2)</span> Eski kurallar uyarınca tesis edilmiş nihai disiplin cezaları müktesep hak gereğince muhafaza edilir; ancak devam eden infazlarda lehe olan Anayasa hükümleri tatbik olunur.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-43">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 43 – Anayasanın Yürürlük Tarihi ve Resmî Neşri</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-43')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> Toplam 10 Kısım ve 44 Maddeden müteşekkil işbu EkoYıldız Topluluğu Anayasası, Kurucular Kurulu tarafından kabul edilerek Resmî Gazete / Portal üzerinde neşredildiği <strong>07 Temmuz 2026</strong> tarihi itibarıyla tam olarak mer'iyete (yürürlüğe) girmiştir.</p>
-          </div>
-        </div>
-
-        <div class="kanun-madde" id="madde-44">
-          <div class="madde-head-row">
-            <div class="madde-baslik-etiketi">MADDE 44 – Anayasa Hükümlerini İcra ve Yürütme Salahiyeti</div>
-            <button class="madde-paylas-btn" onclick="maddeKopyala('madde-44')">🔗 Paylaş</button>
-          </div>
-          <div class="madde-metin">
-            <p><span class="fıkra-no">(1)</span> İşbu Anayasa hükümlerini icra, teftiş ve tatbik etmeye Kurucular Kurulu ve Yüksek İdare Heyeti yetkilidir.</p>
-            <p><span class="fıkra-no">(2)</span> Topluluğun tüm organları, heyetleri ve personeli bu Anayasa'nın uygulanmasını temin etmekle mükelleftir.</p>
+            <p><span class="fıkra-no">(1)</span> Başlangıç / Önsöz ve 32 Maddeden müteşekkil işbu EkoYıldız Topluluğu Anayasası, Kurucular Kurulu ve Yönetim Heyeti tarafından tasdik edildiği <strong>07 Temmuz 2026</strong> tarihi itibarıyla mer'iyete (yürürlüğe) girmiştir.</p>
+            <p><span class="fıkra-no">(2)</span> Bu Anayasa hükümlerini yürütmeye ve icra etmeye Kurucular Kurulu ve Yüksek İdare Heyeti yetkilidir.</p>
           </div>
         </div>
       </section>
