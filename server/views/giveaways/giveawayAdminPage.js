@@ -357,16 +357,17 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
                     ${g.status}
                   </span>
                 </td>
-                <td>👥 ${g.totalEntries || 0} / 🎟️ ${g.totalTickets || 0}</td>
+                <td>👥 ${g.totalParticipants || g.totalEntries || 0} / 🎟️ ${g.totalTickets || 0}</td>
                 <td style="color: var(--text-muted);">${new Date(g.endDate).toLocaleDateString('tr-TR')}</td>
                 <td>
-                  <div style="display: flex; gap: 0.5rem;">
-                    <a href="/cekilisler/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görüntüle</a>
+                  <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                    <a href="/cekilisler/${g.slug || g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görüntüle</a>
+                    <button onclick="recalculateGiveawayStats('${g._id}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;" title="Sayaçları yeniden hesapla">🔄 Sayaçlar</button>
                     ${g.status === 'ACTIVE' ? `
-                      <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Bitir & Çekiliş Yap</button>
+                      <button onclick="openDrawWinnerModal('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">🎲 Kazanan Seç</button>
                     ` : (g.status === 'COMPLETED' ? `
-                      <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}', true)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Yeniden Çekiliş</button>
-                      <a href="/cekilisler/canli/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #fbbf24;">Canlı Ekran</a>
+                      <button onclick="openDrawWinnerModal('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}', true)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #fbbf24;">🔁 Yeniden Çek</button>
+                      <a href="/cekilisler/canli/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #38bdf8;">📺 Canlı Ekran</a>
                     ` : '')}
                   </div>
                 </td>
@@ -872,14 +873,24 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     function addTaskRow() {
       const container = document.getElementById('tasksContainer');
       const div = document.createElement('div');
-      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1fr 80px; gap: 0.5rem;";
+      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1.2fr 1fr 80px; gap: 0.5rem;";
       div.innerHTML = \`
         <input type="text" placeholder="Görev Adı" class="input-field task-title" required>
         <select class="input-field task-platform">
           <option value="youtube">YouTube</option>
           <option value="discord">Discord</option>
           <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+          <option value="kick">Kick</option>
+          <option value="twitch">Twitch</option>
           <option value="site">Web Sitesi</option>
+        </select>
+        <select class="input-field task-strategy" title="Doğrulama Yöntemi">
+          <option value="VISIT_ONLY">VISIT_ONLY (Ziyaret)</option>
+          <option value="AUTO">AUTO (Otomatik Onay)</option>
+          <option value="API">API (Entegrasyon)</option>
+          <option value="PROOF_REQUIRED">PROOF_REQUIRED (Kanıt)</option>
+          <option value="MANUAL">MANUAL (Admin Onayı)</option>
         </select>
         <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1">
         <select class="input-field task-mandatory">
@@ -902,10 +913,11 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       taskRows.forEach(row => {
         const title = row.querySelector('.task-title').value.trim();
         const platform = row.querySelector('.task-platform').value;
+        const strategy = row.querySelector('.task-strategy')?.value || 'VISIT_ONLY';
         const reward = parseInt(row.querySelector('.task-reward').value, 10) || 1;
         const isMandatory = row.querySelector('.task-mandatory').value === 'true';
         if (title) {
-          tasks.push({ title, platform, ticketReward: reward, isMandatory });
+          tasks.push({ title, platform, strategy, ticketReward: reward, isMandatory });
         }
       });
       data.tasks = tasks;
@@ -930,31 +942,129 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
 
     function openDrawWinnerModal(giveawayId, title, isRedraw = false) {
       document.getElementById('modalGiveawayId').value = giveawayId;
-      document.getElementById('modalGiveawayTitle').innerText = title + (isRedraw ? ' (Yeniden Çekiliş)' : '');
+      document.getElementById('modalGiveawayTitle').innerText = title + (isRedraw ? ' (Yeniden Çekiliş — Redraw)' : '');
       document.getElementById('modalIsRedraw').value = isRedraw ? '1' : '0';
+      
+      const reasonGroup = document.getElementById('modalRedrawReasonGroup');
+      if (reasonGroup) {
+        reasonGroup.style.display = isRedraw ? 'block' : 'none';
+        document.getElementById('modalRedrawReason').value = isRedraw ? '24 saat içinde dönüş yapmadı' : '';
+      }
       document.getElementById('drawWinnerModal').style.display = 'flex';
     }
 
     async function executeDrawWinner() {
       const giveawayId = document.getElementById('modalGiveawayId').value;
       const isRedraw = document.getElementById('modalIsRedraw').value === '1';
+      const reason = document.getElementById('modalRedrawReason')?.value?.trim() || '';
+
+      if (isRedraw && (!reason || reason.length < 5)) {
+        alert('Yeniden çekiliş için zorunlu bir sebep belirtmelisiniz (min 5 karakter).');
+        return;
+      }
+
+      if (!confirm(isRedraw ? 'Yeniden çekiliş yapılarak eski kazanan arşivlenecek ve yeni kazanan seçilecek. Onaylıyor musunuz?' : 'Kriptografik ağırlıklı rastgele çekiliş başlatılacak ve kazanan kalıcı olarak kaydedilecektir. Onaylıyor musunuz?')) {
+        return;
+      }
 
       try {
-        const res = await fetch('/api/admin/giveaways/' + giveawayId + '/draw', {
+        const endpoint = isRedraw ? ('/api/admin/giveaways/' + giveawayId + '/redraw') : ('/api/admin/giveaways/' + giveawayId + '/draw');
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isRedraw })
+          body: JSON.stringify({ isRedraw, reason })
         });
         const data = await res.json();
         if (data.success) {
-          alert('🎉 Kazanan başarıyla seçildi: @' + data.winner.username + ' (' + data.winner.ticketCount + ' bilet)');
-          // Redirect to live reveal mode
+          const winnerName = data.mainWinner?.username || data.winner?.username || 'Kazanan';
+          alert('🎉 Kazanan başarıyla seçildi: @' + winnerName);
           window.location.href = '/cekilisler/canli/' + giveawayId;
         } else {
           alert('Hata: ' + (data.message || 'Kazanan seçilemedi.'));
         }
       } catch (err) {
         alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function recalculateGiveawayStats(giveawayId) {
+      if (!confirm('Bu çekilişin sayaçlarını gerçek entry verileri üzerinden yeniden hesaplamak istiyor musunuz?')) return;
+      try {
+        const res = await fetch('/api/admin/giveaways/' + giveawayId + '/recalculate-stats', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Sayaçlar güncellendi!\nKatılımcı: ' + data.totalParticipants + '\nBilet: ' + data.totalTickets);
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (data.message || 'Hesaplanamadı'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function disqualifyParticipant(id) {
+      const reason = prompt('Katılımcıyı diskalifiye etme gerekçesini giriniz:', 'Şüpheli katılım / Çift hesap');
+      if (!reason || reason.trim().length < 4) {
+        alert('İşlem iptal edildi. Geçerli bir gerekçe girmelisiniz.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin/participants/' + id + '/disqualify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Katılımcı diskalifiye edildi.');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (data.message || 'İşlem başarısız'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function restoreParticipant(id) {
+      if (!confirm('Katılımcının engelini kaldırmak ve biletlerini geri iade etmek istiyor musunuz?')) return;
+      try {
+        const res = await fetch('/api/admin/participants/' + id + '/restore', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Katılımcı hakları iade edildi.');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (data.message || 'İşlem başarısız'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function resolveFraud(id, action) {
+      let reason = '';
+      if (action === 'BAN' || action === 'DISQUALIFY') {
+        reason = prompt('Diskalifiye gerekçesi:', 'Referral ve çoklu hesap suistimali');
+        if (!reason) return;
+        action = 'DISQUALIFY';
+      }
+      try {
+        const res = await fetch('/api/admin/fraud/' + id + '/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ İşlem uygulandı.');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (data.message || 'İşlem başarısız'));
+        }
+      } catch (err) {
+        alert('Hata: ' + err.message);
       }
     }
 
@@ -1116,6 +1226,39 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- DRAW WINNER MODAL -->
+  <div id="drawWinnerModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div class="stat-card" style="width: 100%; max-width: 540px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 900; color: #fef08a;">🎲 Kazanan Seçimi & Onay</h2>
+        <button onclick="document.getElementById('drawWinnerModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">✕</button>
+      </div>
+      <input type="hidden" id="modalGiveawayId">
+      <input type="hidden" id="modalIsRedraw" value="0">
+      
+      <p id="modalGiveawayTitle" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;"></p>
+      
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+        ⚖️ <strong>Kriptografik Ağırlıklı Rastgele Seçim:</strong> Katılımcıların geçerli bilet sayılarına göre orantılı şans hesaplanır. İşlem transactional kilide alınır ve sonuç audit log'a kaydedilir.
+      </div>
+
+      <div id="modalRedrawReasonGroup" style="display: none; margin-bottom: 1.25rem;">
+        <label class="form-label" style="color: #fef08a; font-weight: 700;">Yeniden Çekiliş Gerekçesi (Zorunlu) *</label>
+        <input type="text" id="modalRedrawReason" class="input-field" placeholder="Örn: Asil kazanan 24 saat içinde dönüş yapmadı">
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Eski kazanan kaydı silinmez, 'INVALIDATED' durumuyla şeffaflık loglarında arşivlenir.</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+        <button type="button" onclick="document.getElementById('drawWinnerModal').style.display='none'" class="btn btn-secondary">
+          Vazgeç
+        </button>
+        <button type="button" onclick="executeDrawWinner()" class="btn btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
+          🎰 Seçimi Başlat
+        </button>
+      </div>
     </div>
   </div>
 </body>

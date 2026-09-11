@@ -82,7 +82,9 @@ class InMemoryCollection {
       if (value === undefined) continue;
       const a = record[key];
       const b = value;
-      if (key === "discordId" || key === "robloxId" || key === "_id") {
+      if (b && typeof b === "object" && "$ne" in b) {
+        if (a === b.$ne) return false;
+      } else if (key === "discordId" || key === "robloxId" || key === "_id") {
         if (String(a) !== String(b)) return false;
       } else if (key === "caseCode" || key === "caseId") {
         const normA = String(a || "").trim().toUpperCase().replace(/^DAVA-?/, "");
@@ -93,6 +95,64 @@ class InMemoryCollection {
       }
     }
     return true;
+  }
+
+  deleteById(id) {
+    const existed = this.data.has(id);
+    if (existed) {
+      this.data.delete(id);
+      this._persist();
+      if (db.isMongoActive()) {
+        db.deleteRecord(this.name, id).catch(() => {});
+      }
+    }
+    return existed;
+  }
+
+  deleteOne(query) {
+    for (const [id, record] of this.data.entries()) {
+      if (this._matches(record, query)) {
+        this.data.delete(id);
+        this._persist();
+        if (db.isMongoActive()) {
+          db.deleteRecord(this.name, id).catch(() => {});
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  remove(query) {
+    let count = 0;
+    for (const [id, record] of this.data.entries()) {
+      if (this._matches(record, query)) {
+        this.data.delete(id);
+        if (db.isMongoActive()) {
+          db.deleteRecord(this.name, id).catch(() => {});
+        }
+        count++;
+      }
+    }
+    if (count > 0) this._persist();
+    return count;
+  }
+
+  update(query, updateData) {
+    let count = 0;
+    const setFields = updateData.$set || updateData;
+    for (const [id, record] of this.data.entries()) {
+      if (this._matches(record, query)) {
+        const updated = { ...record, ...setFields, updatedAt: new Date() };
+        this.data.set(id, updated);
+        if (db.isMongoActive()) {
+          db.upsertRecord(this.name, id, updated).catch(() => {});
+        }
+        count++;
+      }
+    }
+    if (count > 0) this._persist();
+    return count;
   }
 
   _wrap(record) {
@@ -167,6 +227,7 @@ const giveawayFraudFlags = collections.giveawayFraudFlags;
 const giveawayNotifications = collections.giveawayNotifications;
 const socialAds       = collections.socialAds;
 const socialAdMetrics = collections.socialAdMetrics;
+const homepageConfig  = collections.homepageConfig;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -182,7 +243,8 @@ const ALL_COLLECTION_NAMES = [
   "modPerformances", "marketAuctions", "userTrustScores",
   "sponsorAds", "giveaways", "giveawayTasks", "giveawayEntries",
   "giveawayEntryTasks", "giveawayWinners", "giveawayAuditLogs",
-  "giveawayFraudFlags", "giveawayNotifications", "socialAds", "socialAdMetrics"
+  "giveawayFraudFlags", "giveawayNotifications", "socialAds", "socialAdMetrics",
+  "homepageConfig"
 ];
 
 /**
@@ -321,6 +383,7 @@ module.exports = {
   giveawayNotifications,
   socialAds,
   socialAdMetrics,
+  homepageConfig,
   wikis,
   InMemoryCollection,
   initStore,

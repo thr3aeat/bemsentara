@@ -675,6 +675,15 @@ function _esc(str) {
 // MAIN PAGE
 // ─────────────────────────────────────────────
 function renderMainPage(user = null) {
+  try {
+    const { renderMainHomePage } = require("./views/home/mainHomePage");
+    if (typeof renderMainHomePage === 'function') {
+      return renderMainHomePage({ user });
+    }
+  } catch (err) {
+    console.error("[renderMainPage] mainHomePage delegasyonu hatası, fallback uygulanıyor:", err.message);
+  }
+
   const { giveaways } = require("../models/Store");
   const activeGws = giveaways.find({ status: 'ACTIVE' });
   const activeGw = activeGws.find(g => g.isFeatured) || activeGws[0];
