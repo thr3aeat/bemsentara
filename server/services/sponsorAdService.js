@@ -219,7 +219,7 @@ class SponsorAdService {
         </div>
         <div class="sponsor-ad-body">
           <div class="sponsor-ad-image-box">
-            <img src="${image}" alt="${title}" loading="lazy" class="sponsor-ad-img" onerror="this.style.display='none'">
+            <img src="${image}" alt="${title}" loading="lazy" class="sponsor-ad-img" onerror="this.onerror=null;this.src='https://i.imgur.com/PFcAc6q.png'">
           </div>
           <div class="sponsor-ad-content">
             <h4 class="sponsor-ad-title">${title}</h4>

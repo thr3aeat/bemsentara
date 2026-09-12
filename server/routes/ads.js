@@ -86,9 +86,9 @@ router.post('/api/social-ads/event', express.text({ type: 'text/plain' }), async
       try { body = JSON.parse(body); } catch (e) { }
     }
     const { adKey, eventType } = body || {};
-    if (!adKey || !eventType) {
-      return res.status(400).json({ success: false, message: 'adKey ve eventType zorunludur.' });
-    }
+    // Tracking is best-effort. Empty/malformed beacons must never create noisy
+    // browser-console 400 errors or affect the page itself.
+    if (!adKey || !eventType) return res.status(204).end();
 
     const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '';
     const userAgent = req.headers['user-agent'] || '';

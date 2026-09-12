@@ -448,11 +448,32 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       min-height: 50px;
     }
 
+    /* ── Sponsorlu bağlantı ── */
+    .sponsor-ad-card-wrapper {
+      max-width: 1000px; margin: 2.25rem auto 0; padding: 1rem 1.15rem;
+      background: #101014; border: 1px solid rgba(255,255,255,.11); border-radius: 14px;
+    }
+    .sponsor-ad-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-bottom:.8rem; border-bottom:1px solid rgba(255,255,255,.09); }
+    .sponsor-ad-tag { display:flex; align-items:center; gap:.45rem; color:#b7b7c1; font-size:.68rem; letter-spacing:.09em; font-weight:800; }
+    .sponsor-ad-dot { width:7px; height:7px; border-radius:50%; background:#fda4af; }
+    .sponsor-ad-by { color:var(--muted); font-size:.75rem; }
+    .sponsor-ad-body { display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:13px; padding-top:1rem; }
+    .sponsor-ad-image-box { width:50px; height:50px; border-radius:10px; overflow:hidden; background:#25252d; }
+    .sponsor-ad-img { display:block; width:100%; height:100%; object-fit:cover; }
+    .sponsor-ad-title { margin:0; color:#fff; font-size:.95rem; letter-spacing:-.02em; }
+    .sponsor-ad-desc { margin:.25rem 0 0; color:var(--muted); font-size:.8rem; line-height:1.4; }
+    .sponsor-ad-cta-btn { display:inline-flex; align-items:center; justify-content:center; min-height:37px; padding:0 .85rem; border-radius:8px; background:#fff; color:#17171b; font-size:.78rem; font-weight:800; text-decoration:none; white-space:nowrap; }
+    .sponsor-ad-cta-btn:hover { background:#fda4af; }
+
     /* ── Responsive ── */
     @media (max-width:768px) {
       header { flex-wrap:wrap; gap:0.75rem; }
       .nav-links { width:100%; flex-wrap:wrap; gap:0.75rem; }
       main { padding: 2rem 1rem; }
+      .sponsor-ad-body { grid-template-columns:42px 1fr; }
+      .sponsor-ad-image-box { width:42px; height:42px; }
+      .sponsor-ad-action { grid-column:1 / -1; }
+      .sponsor-ad-cta-btn { width:100%; }
     }
   </style>
 </head>
