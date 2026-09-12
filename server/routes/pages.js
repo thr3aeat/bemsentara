@@ -26,6 +26,7 @@ const {
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
 const { renderHelpHubPage } = require("../views/helpHubPage");
+const { renderPhibiSupportPage } = require("../views/phibiSupportPage");
 
 const router = express.Router();
 
@@ -48,6 +49,18 @@ router.get("/yardim", (req, res) => {
 
 router.get("/faq", (req, res) => res.redirect("/yardim"));
 router.get("/blog", (req, res) => res.redirect("/yardim"));
+
+router.get("/help/:topic?", (req, res) => {
+  res.send(renderPhibiSupportPage({ topic: req.params.topic || 'moderation', query: req.query, user: req.user }));
+});
+router.get("/rules", (req, res) => res.redirect("/anayasasi"));
+router.get("/cases", (req, res) => res.send(renderPhibiSupportPage({ topic: 'appeals', query: req.query, user: req.user })));
+router.get("/appeals", (req, res) => res.send(renderPhibiSupportPage({ topic: 'appeals', query: req.query, user: req.user })));
+router.get("/updates", (req, res) => res.redirect("/yardim"));
+router.get("/staff/docs", (req, res) => {
+  if (!req.user || !isSiteAdmin(req.user) && !req.user.isStaff) return res.redirect("/login?error=unauthorized");
+  res.send(renderPhibiSupportPage({ topic: 'moderation', query: req.query, user: req.user }));
+});
 
 router.get("/settings", (req, res) => {
   if (!req.user) return res.redirect("/login");

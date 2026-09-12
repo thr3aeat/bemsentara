@@ -1575,12 +1575,24 @@ function renderLoginPage(errorMsg = null) {
           <a href="#" onclick="goDiscordAuth(); return false;" class="btn btn-discord oauth-btn" style="background:#5865F2;"><span class="oauth-icon">◉</span><span class="oauth-copy">Discord ile devam et<small>Hızlı ve güvenli OAuth bağlantısı</small></span><span class="oauth-arrow">→</span></a>
           <a href="/auth/roblox" class="btn oauth-btn" style="background:#111827; border:1px solid rgba(255,255,255,0.18); color:#fff;"><span class="oauth-icon">◆</span><span class="oauth-copy">Roblox ile devam et<small>Roblox hesabını doğrudan bağla</small></span><span class="oauth-arrow">→</span></a>
         </div>
+        <button onclick="showView('view-roblox-options')" class="btn" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);margin-top:.2rem;">🎮 Roblox hesabını doğrula</button>
         <p class="fun-hint" id="portal-hint">💡 İpucu: Discord kodun bir sırdır. Eko bile öğrenemez.</p>
         <div class="divider">veya</div>
         <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod Gönder (DM)</button>
+        <button onclick="showView('view-discord-pin')" class="btn" style="background:rgba(88,101,242,.16);border:1px solid rgba(88,101,242,.42);">⌨️ Discord Komut PIN’i ile doğrula</button>
         <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Şifresi ile Giriş</button>
         <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">✨ Aramıza katıl — Kayıt ol</button>
         <div class="trust-row"><span>🔒 Şifre korunur</span><span>⚡ OAuth destekli</span><span>🛟 Destek burada</span></div>
+      </div>
+
+      <div id="view-roblox-options" style="display:none; text-align:left;">
+        <h2 style="font-size:1.12rem;text-align:center;margin-bottom:.35rem;">Roblox doğrulaması</h2>
+        <p style="font-size:.82rem;color:var(--muted);text-align:center;margin-bottom:1rem;">Şifre istemeyiz. Hesabını oluşturduktan sonra aşağıdaki yöntemlerden birini kullanabilirsin.</p>
+        <a href="/auth/roblox" class="btn" style="background:#111827;border:1px solid rgba(255,255,255,.18);">◆ Roblox OAuth ile bağla</a>
+        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(167,139,250,.16);border:1px solid rgba(167,139,250,.4);">👥 Arkadaş isteği ile doğrula</button>
+        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.35);">📝 Profil açıklamasına kod ekle</button>
+        <p class="fun-hint">🐸 Roblox şifreni istemiyoruz; Phibi de istemez. Kurbağalar güvenlidir.</p>
+        <button onclick="showView('view-main')" class="link-btn" style="display:block;margin:1rem auto;">← Giriş yöntemlerine dön</button>
       </div>
 
       <!-- OTP VIEW -->
@@ -1615,6 +1627,15 @@ function renderLoginPage(errorMsg = null) {
         <button id="btn-pwd-login" onclick="passwordLogin()" class="btn btn-success">Giriş Yap</button>
         <button onclick="forgotPassword()" class="link-btn" style="display:block; margin: 1rem auto 0.5rem;">Şifremi Unuttum</button>
         <button onclick="showView('view-main')" class="link-btn" style="display:block; margin:0 auto;">← Geri dön</button>
+      </div>
+
+      <div id="view-discord-pin" style="display:none;">
+        <h2 style="font-size:1.1rem; margin-bottom:.5rem;">Discord Komut PIN’i</h2>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">Discord’daki Phibi/EkoYıldız komutundan aldığın PIN’i gir.</p>
+        <input type="text" id="discord-pin-username" class="input-field" placeholder="Discord kullanıcı adı veya ID">
+        <input type="password" id="discord-pin-value" class="input-field" inputmode="numeric" placeholder="PIN kodu">
+        <button onclick="discordPinLogin()" class="btn btn-discord">PIN’i doğrula</button>
+        <button onclick="showView('view-main')" class="link-btn" style="display:block;margin:0 auto;">← Geri dön</button>
       </div>
 
       <!-- INTERACTIVE REGISTER WIZARD VIEW -->
@@ -1684,6 +1705,10 @@ function renderLoginPage(errorMsg = null) {
           document.getElementById('view-main').style.display = 'none';
           document.getElementById('view-otp').style.display = 'none';
           document.getElementById('view-password').style.display = 'none';
+          const pinView = document.getElementById('view-discord-pin');
+          if (pinView) pinView.style.display = 'none';
+          const robloxOptions = document.getElementById('view-roblox-options');
+          if (robloxOptions) robloxOptions.style.display = 'none';
           const regWiz = document.getElementById('view-register-wizard');
           if (regWiz) regWiz.style.display = 'none';
           document.getElementById(id).style.display = 'block';
@@ -1896,6 +1921,18 @@ function renderLoginPage(errorMsg = null) {
           } catch(e) { showError("Bağlantı hatası."); }
 
           btn.disabled = false; btn.innerText = "Giriş Yap";
+        }
+
+        async function discordPinLogin() {
+          const username = document.getElementById('discord-pin-username').value.trim();
+          const pin = document.getElementById('discord-pin-value').value.trim();
+          if (!username || !pin) return showError('Discord kullanıcı adı ve PIN gerekli.');
+          try {
+            const res = await fetch('/auth/login-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ username, pin }) });
+            const data = await res.json();
+            if (data.success) window.location.href = data.redirectUrl || '/dashboard';
+            else showError(data.error || 'PIN doğrulanamadı.');
+          } catch (_) { showError('PIN doğrulaması sırasında bağlantı hatası oluştu.'); }
         }
 
         async function forgotPassword() {

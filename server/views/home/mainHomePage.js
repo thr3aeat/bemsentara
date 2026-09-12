@@ -1261,9 +1261,9 @@ function renderMainHomePage(userOrOptions = null) {
             Çıkış
           </a>
         ` : `
-          <button onclick="openLoginModal()" class="btn-portal-primary">
+          <a href="/login" class="btn-portal-primary" style="text-decoration:none;">
             Giriş Yap
-          </button>
+          </a>
         `}
       </div>
     </div>
@@ -1648,10 +1648,10 @@ function renderMainHomePage(userOrOptions = null) {
             <span style="font-size:0.75rem; color:#38bdf8;">Hesabım</span>
           </a>
         ` : `
-          <div class="cmd-item" onclick="closeCommandPalette(); openLoginModal();">
+          <a href="/login" class="cmd-item" onclick="closeCommandPalette();">
             <div class="cmd-item-left"><span>🔑</span> Giriş Yap</div>
             <span style="font-size:0.75rem; color:#f43f5e;">Oturum Aç</span>
-          </div>
+          </a>
         `}
       </div>
     </div>
@@ -1707,10 +1707,10 @@ function renderMainHomePage(userOrOptions = null) {
   <footer class="portal-footer">
     <div class="footer-logo">
       <img src="https://i.imgur.com/PFcAc6q.png" alt="EkoYıldız" style="width:32px; height:32px; border-radius:8px;">
-      <span>EKOYILDIZ PORTALI</span>
+      <span>EKOYILDIZ · PHIBI PORTALI</span>
     </div>
     <p style="color:var(--text-muted); font-size:0.9rem; max-width:500px; margin:0 auto;">
-      Roblox içerikleri, topluluk etkinlikleri ve güvenli çekiliş platformu. Tüm hakları saklıdır.
+      Roblox içerikleri, topluluk etkinlikleri ve Phibi destek akışı tek yerde. Tüm hakları saklıdır.
     </p>
     <ul class="footer-links">
       <li><a href="/">Ana Sayfa</a></li>
