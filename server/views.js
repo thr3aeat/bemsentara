@@ -3256,6 +3256,8 @@ function renderDebugPage(user, stats = {}, logs = []) {
 function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) {
   // profileUser = profilini gösterdiğimiz kişi, user = oturum sahibi
   if (!profileUser) profileUser = user;
+  if (!profileUser) return _layout('Profil bulunamadı', user, '<div class="card"><h1>Profil bulunamadı.</h1><p>Bu kullanıcı artık mevcut değil veya profil bilgileri yüklenemedi.</p></div>');
+  const displayName = _esc(profileUser.discordUsername || profileUser.username || 'EkoYıldız üyesi');
   const accent = _esc(profileUser.profileColor || '#7c6af7');
   const bannerBg = profileUser.discordBanner
     ? `url(${_esc(profileUser.discordBanner)}) center/cover no-repeat`
@@ -3377,7 +3379,7 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
       <div class="card p-card p-body" style="border-radius:0 0 20px 20px;border-top:none;margin-top:0;">
         <div class="p-name-row">
           <div>
-            <div class="p-name">${_esc(profileUser.discordUsername)}</div>
+            <div class="p-name">${displayName}</div>
             <div class="p-sub">${profileUser.robloxUsername ? `🎮 <span style="color:var(--success);">${_esc(profileUser.robloxUsername)}</span>` : `<span style="color:var(--muted);">Roblox bağlı değil</span>`}</div>
             ${groupRoleHtml}
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
@@ -3514,7 +3516,7 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
     loadProfile();
   <\/script>`;
 
-  const pageTitle = isOwn ? 'Profil' : _esc(profileUser.discordUsername) + ' — Profil';
+  const pageTitle = isOwn ? 'Profil' : displayName + ' — Profil';
   const content = css + html + script;
   return _layout(pageTitle, user, content);
 }
@@ -9112,6 +9114,7 @@ function renderSettingsPage(user, query = {}) {
   const pinLength = user.pinLength || 6;
   const is2FA = Boolean(user.twoFactorEnabled);
   const twoFactorMethod = user.twoFactorMethod || 'discord_dm';
+  const preferences = user.portalPreferences || {};
 
   const content = `
     <div style="max-width:900px; margin:2rem auto; animation:fadeUp 0.5s ease;">
@@ -9232,6 +9235,20 @@ function renderSettingsPage(user, query = {}) {
           </div>
         </div>
 
+        <!-- CARD 4: PORTAL PREFERENCES -->
+        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
+          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;"><div style="width:48px;height:48px;border-radius:16px;background:rgba(167,139,250,.15);display:grid;place-items:center;font-size:1.4rem;">✨</div><div><h3 style="font-size:1.3rem;font-weight:700;">Portal tercihlerin</h3><p style="font-size:.88rem;color:var(--muted);">Görünümünü ve hangi bildirimleri görmek istediğini kendin belirle.</p></div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;">
+            <label style="display:grid;gap:.45rem;font-size:.88rem;font-weight:700;">Görünüm<select id="prefTheme" class="input-field" style="margin:0"><option value="system" ${preferences.theme !== 'dark' && preferences.theme !== 'light' ? 'selected' : ''}>Sistem ayarı</option><option value="dark" ${preferences.theme === 'dark' ? 'selected' : ''}>Koyu</option><option value="light" ${preferences.theme === 'light' ? 'selected' : ''}>Açık</option></select></label>
+            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefMotion" type="checkbox" ${preferences.reduceMotion ? 'checked' : ''}> Hareketleri azalt</label>
+            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefCompact" type="checkbox" ${preferences.compactMode ? 'checked' : ''}> Daha kompakt panel</label>
+            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefWelcome" type="checkbox" ${preferences.dashboardWelcome !== false ? 'checked' : ''}> Panel karşılama kartı</label>
+            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefDiscord" type="checkbox" ${preferences.discordUpdates !== false ? 'checked' : ''}> Discord duyuruları</label>
+            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefGiveaway" type="checkbox" ${preferences.giveawayUpdates !== false ? 'checked' : ''}> Çekiliş bildirimleri</label>
+          </div>
+          <button onclick="savePortalPreferences()" class="btn btn-primary" style="margin-top:1.5rem;background:linear-gradient(135deg,#8b5cf6,#ec4899);">Tercihleri kaydet</button>
+        </div>
+
       </div>
     </div>
 
@@ -9279,6 +9296,10 @@ function renderSettingsPage(user, query = {}) {
         } catch (e) {
           alert('Sunucu hatası.');
         }
+      }
+      async function savePortalPreferences() {
+        const payload={theme:document.getElementById('prefTheme').value,reduceMotion:document.getElementById('prefMotion').checked,compactMode:document.getElementById('prefCompact').checked,dashboardWelcome:document.getElementById('prefWelcome').checked,discordUpdates:document.getElementById('prefDiscord').checked,giveawayUpdates:document.getElementById('prefGiveaway').checked,emailUpdates:false};
+        try { const res=await fetch('/api/settings/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!data.success) throw new Error(data.error); alert(data.message||'Tercihler kaydedildi.'); } catch(e) { alert('Tercihler kaydedilemedi: '+(e.message||'Sunucu hatası.')); }
       }
     </script>
   `;

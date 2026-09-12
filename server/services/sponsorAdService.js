@@ -50,6 +50,35 @@ class SponsorAdService {
           clicks: 0
         });
       }
+
+      // Resmî topluluk bağlantıları sabit tutulur; eski sponsor kayıtları
+      // varsa da yanlış/eskimiş Discord davetleri göstermesin.
+      const officialAds = [
+        {
+          match: 'EkoYıldız Store',
+          title: 'EkoYıldız Resmî Discord Sunucusu',
+          description: 'EkoYıldız topluluğuna katıl, duyuruları ve etkinlikleri tek yerden takip et.',
+          sponsorName: 'EkoYıldız', targetUrl: 'https://discord.gg/rEu5gvRBdM', ctaText: 'Sunucuya katıl', priority: 30
+        },
+        {
+          match: 'Sentara Ecosystem',
+          title: 'RobloxLand Resmî Discord Sunucusu',
+          description: 'RobloxLand topluluğu, destek kanalları ve güncel duyurular için resmî sunucu.',
+          sponsorName: 'RobloxLand', targetUrl: 'https://discord.gg/tfykdvvdPT', ctaText: 'RobloxLand’e git', priority: 25
+        }
+      ];
+      for (const official of officialAds) {
+        const ad = existing.find(item => item.sponsorName === official.match || item.targetUrl === official.targetUrl);
+        if (ad) {
+          Object.assign(ad, official);
+          delete ad.match;
+          ad.isActive = true;
+          ad.save();
+        } else {
+          const { match, ...data } = official;
+          sponsorAds.create({ ...data, imageUrl: 'https://i.imgur.com/PFcAc6q.png', startDate: new Date('2026-01-01'), endDate: new Date('2027-12-31'), isActive: true, impressions: 0, clicks: 0 });
+        }
+      }
     } catch (err) {
       console.error('[SponsorAdService] Seed hatası:', err.message);
     }

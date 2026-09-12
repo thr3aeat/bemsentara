@@ -68,6 +68,31 @@ router.post("/api/settings/update-2fa", async (req, res) => {
     res.status(500).json({ error: "Ayarlar güncellenirken hata oluştu." });
   }
 });
+
+router.post("/api/settings/preferences", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Oturum açmalısınız." });
+  const allowedThemes = ['system', 'dark', 'light'];
+  const raw = req.body || {};
+  const preferences = {
+    theme: allowedThemes.includes(raw.theme) ? raw.theme : 'system',
+    reduceMotion: Boolean(raw.reduceMotion),
+    compactMode: Boolean(raw.compactMode),
+    dashboardWelcome: Boolean(raw.dashboardWelcome),
+    emailUpdates: Boolean(raw.emailUpdates),
+    discordUpdates: Boolean(raw.discordUpdates),
+    giveawayUpdates: Boolean(raw.giveawayUpdates)
+  };
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    user.portalPreferences = preferences;
+    await user.save();
+    saveStoreNow();
+    res.json({ success: true, message: "Tercihlerin kaydedildi.", preferences });
+  } catch (err) {
+    res.status(500).json({ error: "Tercihler kaydedilirken hata oluştu." });
+  }
+});
 const crypto = require("crypto");
 const axios = require("axios");
 const Ticket = require("../../models/Ticket");
