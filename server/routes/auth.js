@@ -19,6 +19,26 @@ async function syncLinkedRoleMetadata(user, session = null) {
 
 const router = express.Router();
 
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findPortalUser(username) {
+  const value = String(username || '').trim();
+  if (!value) return null;
+  const exact = new RegExp(`^${escapeRegex(value)}$`, 'i');
+  return User.findOne({ $or: [
+    { username: exact },
+    { discordUsername: exact },
+    { discordId: value }
+  ] });
+}
+
+function isStrongPassword(password) {
+  const value = String(password || '');
+  return value.length >= 10 && /[a-z]/i.test(value) && /\d/.test(value);
+}
+
 async function tryAutoSyncRoles(user) {
   if (!user?.robloxId || !user?.discordId) return;
   const { getDiscordClient } = require("../../bot/discordClient");
@@ -32,6 +52,7 @@ async function tryAutoSyncRoles(user) {
 }
 
 const axios = require('axios');
+const crypto = require('crypto');
 const discordLogger = require('../../bot/services/discordLogger');
 const logger = require('../../utils/logger');
 
@@ -528,51 +549,34 @@ router.post("/api/auth/request-code", async (req, res) => {
  */
 router.post("/api/auth/register-interactive", async (req, res) => {
   try {
-    const { username, robloxMethod, robloxUsername, password, enable2FA } = req.body;
+    const { username, password, enable2FA, consentVersion } = req.body;
     let targetUsername = String(username || req.session.tempRegUsername || '').trim();
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: "Şifreniz en az 6 karakter olmalıdır." });
+    if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(targetUsername)) {
+      return res.status(400).json({ error: "Kullanıcı adı 3-32 karakter olmalı; yalnızca harf, rakam, _, . ve - içerebilir." });
+    }
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ error: "Şifreniz en az 10 karakter olmalı ve en az bir harf ile rakam içermelidir." });
+    }
+    if (consentVersion !== 'portal-data-v1') {
+      return res.status(400).json({ error: "Devam etmek için veri işleme bilgilendirmesini onaylamalısınız." });
+    }
+    if (await findPortalUser(targetUsername)) {
+      return res.status(409).json({ error: "Bu kullanıcı adı zaten kullanımda. Giriş yapmayı deneyin." });
     }
 
-    let discordUser = null;
-    if (targetUsername) {
-      discordUser = await resolveDiscordUser(targetUsername).catch(() => null);
-    }
-
-    const discordId = discordUser ? discordUser.id : (req.session.linkDiscordId || `user_${Date.now()}`);
-    const finalUsername = discordUser ? (discordUser.username || discordUser.tag) : (targetUsername || "Yeni Kullanıcı");
-
-    let user = await User.findOne({
-      $or: [
-        { discordId: discordId },
-        { discordUsername: new RegExp(`^${finalUsername}$`, 'i') },
-        { username: new RegExp(`^${finalUsername}$`, 'i') }
-      ]
+    const user = new User({
+      username: targetUsername,
+      // Portal hesaplarını üçüncü taraf hesabı doğrulanmış gibi göstermeyiz.
+      discordId: `portal_${crypto.randomBytes(12).toString('hex')}`,
+      sitePassword: await bcrypt.hash(password, 12),
+      passwordCreatedAt: new Date(),
+      twoFactorEnabled: !!enable2FA,
+      twoFactorMethod: enable2FA ? "discord" : "none",
+      registrationConsent: { version: consentVersion, acceptedAt: new Date() },
+      isAuthorized: false,
+      botVerified: false
     });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    if (!user) {
-      user = new User({
-        discordId: discordId,
-        discordUsername: finalUsername,
-        username: finalUsername,
-        isAuthorized: true,
-        botVerified: true
-      });
-    }
-
-    user.sitePassword = hashedPassword;
-    user.sitePinPassword = password;
-    user.loginPassword = password;
-    user.twoFactorEnabled = !!enable2FA;
-    user.twoFactorMethod = enable2FA ? "discord" : "none";
-    user.robloxAuthMethod = robloxMethod || "friend_request";
-
-    if (robloxUsername) {
-      user.robloxUsername = robloxUsername;
-    }
 
     await user.save();
     saveStoreNow();
@@ -693,10 +697,7 @@ router.post("/api/auth/site-login", async (req, res) => {
   if (!username || !password) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
 
   try {
-    const discordUser = await resolveDiscordUser(username);
-    if (!discordUser) return res.status(404).json({ error: "Kullanıcı bulunamadı. Bota erişiminiz olduğundan emin olun." });
-
-    const user = await User.findOne({ discordId: discordUser.id });
+    const user = await findPortalUser(username);
     if (!user || !user.sitePassword) return res.status(401).json({ error: "Bu hesaba ait site şifresi bulunmuyor." });
 
     if (user.isBanned) return res.status(403).json({ error: "Hesabınız yasaklandı." });
@@ -799,6 +800,102 @@ router.post("/api/auth/set-site-password", async (req, res) => {
     res.json({ success: true, message: "Site şifreniz başarıyla ayarlandı!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+async function resolveRobloxAccount(username) {
+  const clean = String(username || '').trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(clean)) throw new Error('Geçerli bir Roblox kullanıcı adı girin.');
+  const response = await axios.post('https://users.roblox.com/v1/usernames/users', {
+    usernames: [clean], excludeBannedUsers: false
+  }, { timeout: 8000 });
+  const account = response.data?.data?.[0];
+  if (!account?.id) throw new Error('Roblox hesabı bulunamadı.');
+  return { id: String(account.id), username: account.name || clean };
+}
+
+function requirePortalLogin(req, res) {
+  if (!req.user) {
+    res.status(401).json({ error: 'Roblox doğrulaması için önce portalda giriş yapın.' });
+    return false;
+  }
+  return true;
+}
+
+// Public profile code verification avoids collecting Roblox credentials. The user
+// proves control by placing the one-time code in their public profile bio.
+router.post('/api/auth/roblox/profile-code/start', async (req, res) => {
+  if (!requirePortalLogin(req, res)) return;
+  try {
+    const account = await resolveRobloxAccount(req.body.username);
+    req.session.robloxProfileVerification = {
+      ...account,
+      code: `EKO-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+      expiresAt: Date.now() + 15 * 60 * 1000
+    };
+    res.json({ success: true, code: req.session.robloxProfileVerification.code, expiresInMinutes: 15 });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Roblox hesabı doğrulanamadı.' });
+  }
+});
+
+router.post('/api/auth/roblox/profile-code/verify', async (req, res) => {
+  if (!requirePortalLogin(req, res)) return;
+  const pending = req.session.robloxProfileVerification;
+  if (!pending || pending.expiresAt < Date.now()) return res.status(400).json({ error: 'Doğrulama kodunun süresi doldu. Yeni kod oluşturun.' });
+  try {
+    const profile = await axios.get(`https://users.roblox.com/v1/users/${encodeURIComponent(pending.id)}`, { timeout: 8000 });
+    if (!String(profile.data?.description || '').includes(pending.code)) {
+      return res.status(400).json({ error: 'Kod profil açıklamasında bulunamadı. Kaydedip birkaç saniye sonra tekrar deneyin.' });
+    }
+    const user = await User.findById(req.user._id);
+    user.robloxId = pending.id;
+    user.robloxUsername = pending.username;
+    user.robloxVerifiedAt = new Date();
+    user.robloxVerificationMethod = 'profile_code';
+    await user.save();
+    delete req.session.robloxProfileVerification;
+    res.json({ success: true, message: 'Roblox hesabın doğrulandı.' });
+  } catch (err) {
+    res.status(502).json({ error: 'Roblox profili şu an kontrol edilemedi. Lütfen tekrar deneyin.' });
+  }
+});
+
+// Friend verification is deliberately enabled only when a dedicated verification
+// bot account is configured. Without it the site never claims a fake verification.
+router.post('/api/auth/roblox/friend-request', async (req, res) => {
+  if (!requirePortalLogin(req, res)) return;
+  const botId = String(process.env.ROBLOX_VERIFICATION_BOT_USER_ID || '').trim();
+  if (!/^\d+$/.test(botId)) return res.status(503).json({ error: 'Arkadaş isteği doğrulaması henüz yapılandırılmadı. Profil kodu veya Roblox ile giriş yöntemini kullanın.' });
+  try {
+    const account = await resolveRobloxAccount(req.body.username);
+    req.session.robloxFriendVerification = { ...account, botId, expiresAt: Date.now() + 15 * 60 * 1000 };
+    res.json({ success: true, robloxId: account.id, botProfileUrl: `https://www.roblox.com/users/${botId}/profile` });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Roblox hesabı doğrulanamadı.' });
+  }
+});
+
+router.post('/api/auth/roblox/friend-verify', async (req, res) => {
+  if (!requirePortalLogin(req, res)) return;
+  const pending = req.session.robloxFriendVerification;
+  if (!pending || pending.expiresAt < Date.now()) return res.status(400).json({ error: 'Arkadaş isteği doğrulamasının süresi doldu.' });
+  try {
+    const noblox = require('noblox.js');
+    const friends = await noblox.getFriends(Number(pending.id));
+    if (!friends.some((friend) => String(friend.id) === pending.botId)) {
+      return res.status(400).json({ error: 'Arkadaşlık henüz doğrulanmadı. Bot profilinden isteği kabul edin ve tekrar deneyin.' });
+    }
+    const user = await User.findById(req.user._id);
+    user.robloxId = pending.id;
+    user.robloxUsername = pending.username;
+    user.robloxVerifiedAt = new Date();
+    user.robloxVerificationMethod = 'friend_request';
+    await user.save();
+    delete req.session.robloxFriendVerification;
+    res.json({ success: true, message: 'Roblox arkadaşlık doğrulaması tamamlandı.' });
+  } catch (_) {
+    res.status(502).json({ error: 'Arkadaşlık durumu şu an kontrol edilemedi. Lütfen tekrar deneyin.' });
   }
 });
 

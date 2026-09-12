@@ -25,6 +25,7 @@ const {
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
+const { renderHelpHubPage } = require("../views/helpHubPage");
 
 const router = express.Router();
 
@@ -40,6 +41,13 @@ router.get("/", (req, res) => {
 router.get("/status", (req, res) => {
   res.send(renderStatusPage(req.user));
 });
+
+router.get("/yardim", (req, res) => {
+  res.send(renderHelpHubPage(req.user));
+});
+
+router.get("/faq", (req, res) => res.redirect("/yardim"));
+router.get("/blog", (req, res) => res.redirect("/yardim"));
 
 router.get("/settings", (req, res) => {
   if (!req.user) return res.redirect("/login");

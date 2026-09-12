@@ -80,9 +80,22 @@ class InMemoryCollection {
   _matches(record, query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined) continue;
+      // Mongo-style compound filters are used throughout the web routes.  The
+      // file-backed store used to treat "$or" as a literal field name, which
+      // made every username/login lookup using $or fail.
+      if (key === "$or" && Array.isArray(value)) {
+        if (!value.some((condition) => this._matches(record, condition))) return false;
+        continue;
+      }
+      if (key === "$and" && Array.isArray(value)) {
+        if (!value.every((condition) => this._matches(record, condition))) return false;
+        continue;
+      }
       const a = record[key];
       const b = value;
-      if (b && typeof b === "object" && "$ne" in b) {
+      if (b instanceof RegExp) {
+        if (!b.test(String(a || ""))) return false;
+      } else if (b && typeof b === "object" && "$ne" in b) {
         if (a === b.$ne) return false;
       } else if (key === "discordId" || key === "robloxId" || key === "_id") {
         if (String(a) !== String(b)) return false;

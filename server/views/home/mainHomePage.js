@@ -604,7 +604,9 @@ function renderMainHomePage(userOrOptions = null) {
       position: relative;
       z-index: 3;
       filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.7));
-      transition: transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1);
+      /* Keep the mascot stable; pointer parallax used to make it jitter. */
+      transform: translate3d(0, 0, 0);
+      transition: filter 0.2s ease;
       user-select: none;
     }
     .mascot-floating-badge {
@@ -1238,6 +1240,7 @@ function renderMainHomePage(userOrOptions = null) {
           <li><a href="/" class="nav-item-link">Ana Sayfa</a></li>
           <li><a href="#latest-video" class="nav-item-link">🎬 Videolar</a></li>
           <li><a href="/cekilisler" class="nav-item-link highlight">🎁 Çekilişler</a></li>
+          <li><a href="/yardim" class="nav-item-link">❔ Yardım & Blog</a></li>
           <li><a href="#social-hub" class="nav-item-link">📱 Sosyal Hub</a></li>
           <li><a href="#series-section" class="nav-item-link">📚 Seriler</a></li>
           <li><a href="#community-section" class="nav-item-link">👥 Topluluk</a></li>
@@ -1713,6 +1716,7 @@ function renderMainHomePage(userOrOptions = null) {
       <li><a href="/">Ana Sayfa</a></li>
       <li><a href="/cekilisler">Çekilişler</a></li>
       <li><a href="/status">Sistem Durumu</a></li>
+      <li><a href="/yardim">SSS & Blog</a></li>
       <li><a href="https://discord.gg/1367646464804655104" target="_blank">Discord Destek</a></li>
     </ul>
     <div style="font-size:0.8rem; color:#64748b;">
@@ -1811,22 +1815,7 @@ function renderMainHomePage(userOrOptions = null) {
       }
     });
 
-    // 4. Parallax effect on mascot (lightweight)
-    const mascotScene = document.getElementById('mascotScene');
-    const mascotImg = document.getElementById('mascotImg');
-    if (mascotScene && mascotImg && window.matchMedia('(pointer: fine)').matches) {
-      mascotScene.addEventListener('mousemove', function(e) {
-        const rect = mascotScene.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width - 0.5;
-        const y = (e.clientY - rect.top) / rect.height - 0.5;
-        mascotImg.style.transform = 'translate(' + (x * 15) + 'px, ' + (y * 15) + 'px) rotate(' + (x * 4) + 'deg)';
-      });
-      mascotScene.addEventListener('mouseleave', function() {
-        mascotImg.style.transform = 'translate(0px, 0px) rotate(0deg)';
-      });
-    }
-
-    // 5. Custom Desktop Cursor
+    // 4. Custom Desktop Cursor
     const cursor = document.getElementById('customCursor');
     if (cursor && window.matchMedia('(pointer: fine)').matches) {
       document.addEventListener('mousemove', function(e) {

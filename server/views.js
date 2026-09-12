@@ -1444,7 +1444,7 @@ function renderLoginPage(errorMsg = null) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Giriş Yap — Sentara Premium</title>
+  <title>Giriş Yap — EkoYıldız Portalı</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -1591,7 +1591,7 @@ function renderLoginPage(errorMsg = null) {
           <input type="checkbox" id="remember-pwd">
           <label for="remember-pwd">Beni Hatırla</label>
         </div>
-        <input type="text" id="pwd-username" class="input-field" placeholder="Discord Kullanıcı Adı">
+        <input type="text" id="pwd-username" class="input-field" placeholder="Kullanıcı adı">
         <input type="password" id="pwd-password" class="input-field" placeholder="Site Şifresi">
         <button id="btn-pwd-login" onclick="passwordLogin()" class="btn btn-success">Giriş Yap</button>
         <button onclick="forgotPassword()" class="link-btn" style="display:block; margin: 1rem auto 0.5rem;">Şifremi Unuttum</button>
@@ -1603,21 +1603,11 @@ function renderLoginPage(errorMsg = null) {
         <h2 style="font-size:1.15rem; margin-bottom:0.3rem; color:#fff; text-align:center;">✨ Yeni Hesap Oluşturma</h2>
         <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-bottom:1.2rem;">Adım Adım İnteraktif Kurulum <span id="reg-username-display" style="color:var(--accent); font-weight:600;"></span></p>
 
-        <!-- STEP 1: ROBLOX METHOD -->
+        <!-- STEP 1: ACCOUNT IDENTITY -->
         <div id="wiz-step-1">
-          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🎮 Adım 1/3: Roblox Hesabını Bağla</h3>
-          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.4;">Şimdi Roblox hesabını EkoYıldız portalına bağlayalım. Roblox hesabını hangi yöntemle doğrulamak istersin?</p>
-
-          <div class="wiz-card" id="opt-rbx-friend" onclick="selectRobloxMethod('friend_request')" style="padding:0.9rem; border:1px solid rgba(167,139,250,0.4); border-radius:14px; background:rgba(167,139,250,0.1); margin-bottom:0.7rem; cursor:pointer;">
-            <div style="font-weight:600; font-size:0.9rem; color:#fff;">👥 Arkadaş İsteği İle (RoWifi / Bot)</div>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">RoWifi Botumuza arkadaşlık isteği göndererek otomatik doğrulayın.</div>
-          </div>
-
-          <div class="wiz-card" id="opt-rbx-profile" onclick="selectRobloxMethod('profile_code')" style="padding:0.9rem; border:1px solid rgba(255,255,255,0.08); border-radius:14px; background:rgba(0,0,0,0.25); margin-bottom:1.2rem; cursor:pointer;">
-            <div style="font-weight:600; font-size:0.9rem; color:#fff;">🔐 Roblox Profil Açıklaması / 2FA Kodu İle</div>
-            <div style="font-size:0.78rem; color:var(--muted); margin-top:3px;">Roblox profil açıklamanıza özel kodu ekleyerek veya Roblox 2FA ile doğrulayın.</div>
-          </div>
-
+          <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">👤 Adım 1/3: Kullanıcı adını seç</h3>
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem; line-height:1.4;">Roblox ve Discord bağlantılarını hesabını oluşturduktan sonra güvenle doğrulayabilirsin.</p>
+          <input type="text" id="reg-username" class="input-field" maxlength="32" autocomplete="username" placeholder="Kullanıcı adı (3-32 karakter)">
           <button onclick="nextWizardStep(1)" class="btn btn-primary" style="background:linear-gradient(135deg,#a78bfa,#818cf8);">Devam Et (Adım 2) →</button>
         </div>
 
@@ -1626,7 +1616,7 @@ function renderLoginPage(errorMsg = null) {
           <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🔐 Adım 2/3: Güvenli Web Şifresi Belirle</h3>
           <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">Portalınıza tek tıkla güvenle giriş yapabilmek için kendi web şifrenizi belirleyin:</p>
 
-          <input type="password" id="reg-pwd-1" class="input-field" placeholder="Web Şifresi (En az 6 karakter)" oninput="checkPasswordStrength(this.value)">
+          <input type="password" id="reg-pwd-1" class="input-field" placeholder="Web Şifresi (en az 10 karakter)" autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
           <div id="pwd-strength" style="font-size:0.75rem; color:var(--muted); margin:-0.5rem 0 0.8rem; text-align:right;"></div>
 
           <input type="password" id="reg-pwd-2" class="input-field" placeholder="Web Şifresini Tekrarla">
@@ -1639,6 +1629,7 @@ function renderLoginPage(errorMsg = null) {
         <div id="wiz-step-3" style="display:none;">
           <h3 style="font-size:0.92rem; font-weight:600; margin-bottom:0.5rem; color:#fff;">🛡️ Adım 3/3: 2 Aşamalı Doğrulama (2FA)</h3>
           <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1.2rem;">Hesabınızı izinsiz girişlere karşı korumak için 2 Aşamalı Doğrulamayı aktif etmek ister misiniz?</p>
+          <label class="remember-me" style="justify-content:flex-start; text-align:left; line-height:1.4;"><input type="checkbox" id="reg-consent"> <span><a href="/legal/privacy" target="_blank" style="color:#c4b5fd;">Veri işleme bilgilendirmesini</a> okudum ve gerekli hesap verilerimin işlenmesini kabul ediyorum.</span></label>
 
           <button id="btn-finish-reg" onclick="finishRegisterWizard(true)" class="btn btn-success" style="background:linear-gradient(135deg,#10b981,#059669); margin-bottom:0.8rem;">🛡️ Evet, 2 Aşamalı Doğrulamayı Aktif Et (Önerilir)</button>
           <button onclick="finishRegisterWizard(false)" class="btn" style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.1);">⚡ Hayır, Şimdilik Atla</button>
@@ -1681,13 +1672,14 @@ function renderLoginPage(errorMsg = null) {
         // --- INTERACTIVE REGISTER WIZARD STATE ---
         let regState = {
           username: '',
-          robloxMethod: 'friend_request',
           password: '',
-          enable2FA: false
+          enable2FA: false,
+          consentVersion: 'portal-data-v1'
         };
 
         function startRegisterWizard(username = '') {
           regState.username = username || document.getElementById('otp-username')?.value || document.getElementById('pwd-username')?.value || '';
+          document.getElementById('reg-username').value = regState.username;
           document.getElementById('reg-username-display').innerText = regState.username ? '(@' + regState.username + ')' : '';
           showView('view-register-wizard');
           showWizardStep(1);
@@ -1711,40 +1703,27 @@ function renderLoginPage(errorMsg = null) {
           document.getElementById('wiz-step-' + stepNum).style.display = 'block';
         }
 
-        function selectRobloxMethod(method) {
-          regState.robloxMethod = method;
-          const optFriend = document.getElementById('opt-rbx-friend');
-          const optProfile = document.getElementById('opt-rbx-profile');
-          if (method === 'friend_request') {
-            optFriend.style.borderColor = 'rgba(167,139,250,0.6)';
-            optFriend.style.background = 'rgba(167,139,250,0.15)';
-            optProfile.style.borderColor = 'rgba(255,255,255,0.08)';
-            optProfile.style.background = 'rgba(0,0,0,0.25)';
-          } else {
-            optProfile.style.borderColor = 'rgba(167,139,250,0.6)';
-            optProfile.style.background = 'rgba(167,139,250,0.15)';
-            optFriend.style.borderColor = 'rgba(255,255,255,0.08)';
-            optFriend.style.background = 'rgba(0,0,0,0.25)';
-          }
-        }
-
         function checkPasswordStrength(val) {
           const indicator = document.getElementById('pwd-strength');
           if (!indicator) return;
           if (!val) { indicator.innerText = ''; return; }
-          if (val.length < 6) { indicator.innerText = '🔴 Şifre çok kısa (en az 6 karakter)'; indicator.style.color = '#fb7185'; }
-          else if (val.length < 9) { indicator.innerText = '🟡 Şifre gücü: Orta'; indicator.style.color = '#fbbf24'; }
+          if (val.length < 10 || !/[a-z]/i.test(val) || !/\d/.test(val)) { indicator.innerText = '🔴 En az 10 karakter, harf ve rakam gerekli'; indicator.style.color = '#fb7185'; }
+          else if (val.length < 14) { indicator.innerText = '🟡 Şifre gücü: Orta'; indicator.style.color = '#fbbf24'; }
           else { indicator.innerText = '🟢 Şifre gücü: Güçlü'; indicator.style.color = '#34d399'; }
         }
 
         function nextWizardStep(fromStep) {
           hideError();
           if (fromStep === 1) {
+            const username = document.getElementById('reg-username').value.trim();
+            if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username)) return showError('Kullanıcı adı 3-32 karakter olmalı; yalnızca harf, rakam, _, . ve - kullanın.');
+            regState.username = username;
+            document.getElementById('reg-username-display').innerText = '(@' + username + ')';
             showWizardStep(2);
           } else if (fromStep === 2) {
             const p1 = document.getElementById('reg-pwd-1').value;
             const p2 = document.getElementById('reg-pwd-2').value;
-            if (!p1 || p1.length < 6) return showError("Lütfen en az 6 karakterli bir şifre girin.");
+            if (!p1 || p1.length < 10 || !/[a-z]/i.test(p1) || !/\d/.test(p1)) return showError("Şifreniz en az 10 karakter olmalı, harf ve rakam içermelidir.");
             if (p1 !== p2) return showError("Girilen şifreler eşleşmiyor!");
             regState.password = p1;
             showWizardStep(3);
@@ -1752,6 +1731,7 @@ function renderLoginPage(errorMsg = null) {
         }
 
         async function finishRegisterWizard(enable2FA) {
+          if (!document.getElementById('reg-consent').checked) return showError('Kayıt için veri işleme bilgilendirmesini onaylamanız gerekir.');
           regState.enable2FA = enable2FA;
           const btn = document.getElementById('btn-finish-reg');
           if (btn) { btn.disabled = true; btn.innerText = "Hesap Oluşturuluyor..."; }
