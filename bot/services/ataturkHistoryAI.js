@@ -4,6 +4,8 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
+const { hasPostedDate, recordPostedDate } = require("./historyTracker");
+
 const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
 let lastPostedDateTR = null;
@@ -22,32 +24,85 @@ function getTurkeyTimeInfo() {
   return { now, trDateStr, trHour, day, month };
 }
 
+async function hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr) {
+  try {
+    if (!channel || !channel.isTextBased()) return false;
+    const messages = await channel.messages.fetch({ limit: 25 }).catch(() => null);
+    if (!messages || messages.size === 0) return false;
+
+    const todayEmbed = messages.find(m => {
+      if (!m.embeds || m.embeds.length === 0) return false;
+      const embed = m.embeds[0];
+      const title = embed.title || "";
+      const footer = embed.footer?.text || "";
+
+      if (title.includes(dateHeaderStr)) return true;
+      if (footer.includes("Tarih")) {
+        const msgDateStr = m.createdAt ? m.createdAt.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }) : "";
+        if (msgDateStr === trDateStr) return true;
+      }
+      return false;
+    });
+
+    return !!todayEmbed;
+  } catch (err) {
+    console.warn("⚠️ [AtaturkHistoryAI] Mesaj geçmişi kontrol hatası:", err.message);
+    return false;
+  }
+}
+
 async function checkAndCatchUpAtaturkHistory(client) {
   if (isPostingInProgress) return;
 
-  const { trDateStr, trHour } = getTurkeyTimeInfo();
-  if (lastPostedDateTR === trDateStr) return;
+  const { trDateStr, trHour, day, month } = getTurkeyTimeInfo();
+  if (lastPostedDateTR === trDateStr || hasPostedDate('ataturk', trDateStr)) {
+    lastPostedDateTR = trDateStr;
+    return;
+  }
 
-  if (trHour >= 9) {
-    try {
-      isPostingInProgress = true;
-      const success = await postAtaturkHistory(client);
-      if (success) {
-        lastPostedDateTR = trDateStr;
+  if (trHour < 9) return;
+
+  isPostingInProgress = true;
+  try {
+    const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const dateHeaderStr = `${day} ${months[month]}`;
+
+    // Kanalda zaten mevcut mu kontrol et
+    let anyAlreadyPosted = false;
+    for (const channelId of TARGET_CHANNEL_IDS) {
+      const channel = await client.channels.fetch(channelId).catch(() => null);
+      if (channel && await hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr)) {
+        anyAlreadyPosted = true;
+        break;
       }
-    } catch (err) {
-      console.error("❌ [AtaturkHistoryAI] Catch-up hatası:", err.message);
-    } finally {
-      isPostingInProgress = false;
     }
+
+    if (anyAlreadyPosted) {
+      lastPostedDateTR = trDateStr;
+      recordPostedDate('ataturk', trDateStr);
+      console.log(`ℹ️ [AtaturkHistoryAI] ${dateHeaderStr} mesajı kanalda zaten mevcut, tekrar atılmadı.`);
+      return;
+    }
+
+    const success = await postAtaturkHistory(client);
+    if (success) {
+      lastPostedDateTR = trDateStr;
+      recordPostedDate('ataturk', trDateStr);
+    }
+  } catch (err) {
+    console.error("❌ [AtaturkHistoryAI] Catch-up hatası:", err.message);
+  } finally {
+    isPostingInProgress = false;
   }
 }
 
 /**
  * Her gün sabah 09:00'da (TR Saati) Atatürk ve Türk tarihi özel gün paylaşımı yapar.
+ * 09:00 çakışmasını engellemek için telafi cron'u :23, :43 dakikalarında çalışır (asla :00'da tetiklenmez).
  * @param {import('discord.js').Client} client
  */
 function startAtaturkHistoryScheduler(client) {
+  // 1. Ana Cron: Her gün 09:00 Europe/Istanbul
   cron.schedule("0 9 * * *", async () => {
     try {
       console.log("🕒 [AtaturkHistoryAI] 09:00 TR Zamanlanmış görevi tetiklendi...");
@@ -59,7 +114,8 @@ function startAtaturkHistoryScheduler(client) {
     timezone: "Europe/Istanbul"
   });
 
-  cron.schedule("*/20 * * * *", async () => {
+  // 2. Periyodik Telafi Kontrolü: 09:00 ile çakışmaması için dakikalar :23, :43 olarak ayarlandı
+  cron.schedule("23,43 * * * *", async () => {
     try {
       await checkAndCatchUpAtaturkHistory(client);
     } catch (err) {
@@ -69,6 +125,7 @@ function startAtaturkHistoryScheduler(client) {
     timezone: "Europe/Istanbul"
   });
 
+  // 3. Bot hazır olduğunda 10 sn sonra tek seferlik telafi kontrolü yap
   setTimeout(() => {
     checkAndCatchUpAtaturkHistory(client).catch(() => {});
   }, 10000);

@@ -4,6 +4,8 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
+const { hasPostedDate, recordPostedDate } = require("./historyTracker");
+
 const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1518692463177498674";
 
 // Günlük paylaşım takip durumu (YYYY-MM-DD)
@@ -28,18 +30,30 @@ function getTurkeyTimeInfo() {
 }
 
 /**
- * Kanalda bugüne ait bir "Tarihte Bugün" mesajı zaten atılmış mı kontrol eder.
+ * Kanalda bugüne ait bir "Tarihte Bugün" veya özel gün mesajı zaten atılmış mı kontrol eder.
  */
-async function hasAlreadyPostedToday(channel, dateHeaderStr) {
+async function hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr) {
   try {
     if (!channel || !channel.isTextBased()) return false;
-    const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
-    if (!messages) return false;
+    const messages = await channel.messages.fetch({ limit: 25 }).catch(() => null);
+    if (!messages || messages.size === 0) return false;
 
     const todayEmbed = messages.find(m => {
       if (!m.embeds || m.embeds.length === 0) return false;
-      const title = m.embeds[0]?.title || "";
-      return title.includes("Tarihte Bugün") && title.includes(dateHeaderStr);
+      const embed = m.embeds[0];
+      const title = embed.title || "";
+      const footer = embed.footer?.text || "";
+
+      // 1. Başlıkta bugünün tarih dizgisi (örn: "13 Eylül") varsa
+      if (title.includes(dateHeaderStr)) return true;
+
+      // 2. Footer'ında Tarih sistemi ifadesi olup bugün gönderildiyse
+      if (footer.includes("Tarih")) {
+        const msgDateStr = m.createdAt ? m.createdAt.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }) : "";
+        if (msgDateStr === trDateStr) return true;
+      }
+
+      return false;
     });
 
     return !!todayEmbed;
@@ -51,48 +65,61 @@ async function hasAlreadyPostedToday(channel, dateHeaderStr) {
 
 /**
  * Günlük kontrolü yapar ve gerekiyorsa otomatik paylaşır.
+ * Eşzamanlı yarış durumlarını (Race Condition) önlemek için senkron kilit kullanılır.
  */
 async function checkAndCatchUpEkoYildizHistory(client) {
   if (isPostingInProgress) return;
 
   const { trDateStr, trHour, day, month } = getTurkeyTimeInfo();
-  const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-  const dateHeaderStr = `${day} ${months[month]}`;
 
-  if (lastPostedDateTR === trDateStr) {
+  // 1. Hafızada veya kalıcı disk takibinde bugün zaten paylaşıldıysa derhal çık
+  if (lastPostedDateTR === trDateStr || hasPostedDate('ekoYildiz', trDateStr)) {
+    lastPostedDateTR = trDateStr;
     return;
   }
 
-  if (trHour >= 9) {
-    try {
-      const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
-      if (channel && channel.isTextBased()) {
-        const alreadySent = await hasAlreadyPostedToday(channel, dateHeaderStr);
-        if (alreadySent) {
-          lastPostedDateTR = trDateStr;
-          console.log(`ℹ️ [EkoYildizHistoryAI] ${dateHeaderStr} Tarihte Bugün mesajı kanalda zaten mevcut, tekrar atılmadı.`);
-          return;
-        }
+  // Sabah 09:00'dan önce paylaşım yapılmaz
+  if (trHour < 9) {
+    return;
+  }
 
-        console.log(`🕒 [EkoYildizHistoryAI] ${dateHeaderStr} için Tarihte Bugün paylaşımı başlatılıyor...`);
-        isPostingInProgress = true;
-        const success = await postEkoYildizHistory(client);
-        if (success) {
-          lastPostedDateTR = trDateStr;
-        }
+  // Senkron kilidi herhangi bir async/await çağrısından ÖNCE edin
+  isPostingInProgress = true;
+
+  try {
+    const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
+    if (channel && channel.isTextBased()) {
+      const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      const dateHeaderStr = `${day} ${months[month]}`;
+
+      const alreadySent = await hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr);
+      if (alreadySent) {
+        lastPostedDateTR = trDateStr;
+        recordPostedDate('ekoYildiz', trDateStr);
+        console.log(`ℹ️ [EkoYildizHistoryAI] ${dateHeaderStr} Tarihte Bugün mesajı kanalda zaten mevcut, tekrar atılmadı.`);
+        return;
       }
-    } catch (err) {
-      console.error("❌ [EkoYildizHistoryAI] Catch-up kontrol hatası:", err);
-    } finally {
-      isPostingInProgress = false;
+
+      console.log(`🕒 [EkoYildizHistoryAI] ${dateHeaderStr} için Tarihte Bugün paylaşımı başlatılıyor...`);
+      const success = await postEkoYildizHistory(client);
+      if (success) {
+        lastPostedDateTR = trDateStr;
+        recordPostedDate('ekoYildiz', trDateStr);
+      }
     }
+  } catch (err) {
+    console.error("❌ [EkoYildizHistoryAI] Catch-up kontrol hatası:", err);
+  } finally {
+    isPostingInProgress = false;
   }
 }
 
 /**
  * Her gün sabah 09:00'da (TR Saati) tarih ve özel gün paylaşımı yapar.
+ * 09:00'da çift çalışmayı engellemek için telafi cron'u :17, :32, :47 dakikalarında çalışır (asla :00'da tetiklenmez).
  */
 function startEkoYildizHistoryScheduler(client) {
+  // 1. Ana Cron: Her gün 09:00 Europe/Istanbul
   cron.schedule("0 9 * * *", async () => {
     try {
       console.log("🕒 [EkoYildizHistoryAI] 09:00 TR Zamanlanmış görevi tetiklendi...");
@@ -104,21 +131,23 @@ function startEkoYildizHistoryScheduler(client) {
     timezone: "Europe/Istanbul"
   });
 
-  cron.schedule("*/15 * * * *", async () => {
+  // 2. Periyodik Telafi Kontrolü: 09:00 ile çakışmaması için dakikalar :17, :32, :47 olarak ayarlandı
+  cron.schedule("17,32,47 * * * *", async () => {
     try {
       await checkAndCatchUpEkoYildizHistory(client);
     } catch (err) {
-      console.error("❌ [EkoYildizHistoryAI] 15dk telafi kontrol hatası:", err.message);
+      console.error("❌ [EkoYildizHistoryAI] Telafi kontrol hatası:", err.message);
     }
   }, {
     timezone: "Europe/Istanbul"
   });
 
+  // 3. Bot hazır olduğunda 8 sn sonra tek seferlik telafi kontrolü yap
   setTimeout(() => {
     checkAndCatchUpEkoYildizHistory(client).catch(err => {
       console.error("❌ [EkoYildizHistoryAI] Başlangıç kontrol hatası:", err.message);
     });
-  }, 5000);
+  }, 8000);
 
   console.log("✅ [EkoYildizHistoryAI] 7/24 Kesintisiz Tarihte Bugün Zamanlayıcısı (Europe/Istanbul) Aktif.");
 }
