@@ -6,8 +6,32 @@ const homepageService = require('../../services/homepageService');
 const socialHubService = require('../../services/socialHubService');
 const { giveaways, giveawayEntries, users } = require('../../../models/Store');
 
-function renderMainHomePage(user = null) {
-  const config = homepageService.getConfig();
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function safeUrl(value, fallback = '/') {
+  const url = String(value || '').trim();
+  if (url.startsWith('/')) return url;
+  try {
+    const parsed = new URL(url);
+    return ['https:', 'http:'].includes(parsed.protocol) ? parsed.href : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function renderMainHomePage(userOrOptions = null) {
+  const user = (userOrOptions && typeof userOrOptions === 'object' && 'user' in userOrOptions)
+    ? userOrOptions.user
+    : userOrOptions;
+
+  const config = homepageService.getConfig() || {};
   const greeting = homepageService.getDynamicGreeting();
   
   // Get active giveaways
@@ -15,24 +39,27 @@ function renderMainHomePage(user = null) {
   const featuredGw = activeGws.find(g => g.isFeatured) || activeGws[0] || null;
 
   // "Şimdi Ne Var?" dynamic priority widget
-  const nowWidget = homepageService.getNowPriorityWidget(config, activeGws);
+  const nowWidget = homepageService.getNowPriorityWidget(config, activeGws) || {
+    badge: 'EKOYILDIZ', title: 'Topluluk Portalı', desc: 'Yeni içerikleri ve çekilişleri keşfet.', btnLink: '/cekilisler', btnText: 'Çekilişleri Gör'
+  };
 
   // Community Pulse
-  const pulseStats = homepageService.getCommunityPulse();
+  const communityPulse = homepageService.getCommunityPulse();
+  const pulseStats = Array.isArray(communityPulse) ? communityPulse : [];
 
-  // User personalization
+  // User personalization (only for verified logged-in user)
   let userStatsHtml = '';
-  if (user) {
+  if (user && (user.discordId || user._id || user.username)) {
     const userDiscordId = user.discordId || String(user._id);
     const userEntries = giveawayEntries.find({ userId: userDiscordId }) || [];
     const totalTickets = userEntries.reduce((sum, e) => sum + (Number(e.tickets) || 1), 0);
     userStatsHtml = `
       <div class="user-welcome-banner">
         <div class="user-welcome-avatar">
-          <img src="${user.avatar || 'https://i.imgur.com/PFcAc6q.png'}" alt="${user.username}" onerror="this.src='https://i.imgur.com/PFcAc6q.png'">
+          <img src="${safeUrl(user.avatar, 'https://i.imgur.com/PFcAc6q.png')}" alt="${escapeHtml(user.username || 'Kullanıcı')}" onerror="this.src='https://i.imgur.com/PFcAc6q.png'">
         </div>
         <div class="user-welcome-text">
-          <div class="user-welcome-title">Tekrar hoş geldin, <span>${user.username || user.discordUsername || 'Ekocan'}</span> 👋</div>
+          <div class="user-welcome-title">Tekrar hoş geldin, <span>${escapeHtml(user.username || user.discordUsername || 'Ekocan')}</span> 👋</div>
           <div class="user-welcome-sub">Katıldığın Çekilişler: <strong>${userEntries.length}</strong> &bull; Toplam Çekiliş Biletin: <strong>${totalTickets} bilet</strong></div>
         </div>
         <div class="user-welcome-actions">
@@ -45,7 +72,20 @@ function renderMainHomePage(user = null) {
 
   // Announcement Bar
   const announcement = config.announcement || {};
-  const isAnnouncementActive = announcement.isActive !== false && Boolean(announcement.text);
+  let announcementText = announcement.text || '';
+  let announcementLink = announcement.link || '/cekilisler';
+  let announcementBtnText = announcement.buttonText || 'Hemen İncele ➔';
+
+  if (activeGws.length === 0 && (announcementText.includes('10.000 Robux') || announcementText.includes('Discord Nitro'))) {
+    announcementText = '🎉 EkoYıldız Resmi Topluluk Portalı yayında! Yeni videoları ve topluluğu hemen keşfet.';
+    announcementLink = '#latest-video';
+    announcementBtnText = 'Videolara Göz At ➔';
+  }
+
+  const isAnnouncementActive = announcement.isActive !== false && Boolean(announcementText);
+  const featuredEndIso = featuredGw?.endDate && !Number.isNaN(new Date(featuredGw.endDate).getTime())
+    ? new Date(featuredGw.endDate).toISOString()
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -1166,17 +1206,19 @@ function renderMainHomePage(user = null) {
   <!-- Custom Cursor Element (Desktop Only) -->
   <div class="custom-cursor" id="customCursor"></div>
 
+  ${isAnnouncementActive ? `
   <!-- Announcement Bar -->
   <aside class="announcement-bar" id="announcementBar" role="region" aria-label="Duyuru">
     <div class="announcement-content">
-      <span class="announcement-badge">${announcement.badge || 'DUYURU'}</span>
-      <span>${announcement.text || ''}</span>
-      <a href="${announcement.link || '/cekilisler'}" class="announcement-link">
-        ${announcement.buttonText || 'Hemen İncele ➔'}
+      <span class="announcement-badge">${escapeHtml(announcement.badge || 'DUYURU')}</span>
+      <span>${escapeHtml(announcementText)}</span>
+      <a href="${safeUrl(announcementLink, '/cekilisler')}" class="announcement-link">
+        ${escapeHtml(announcementBtnText)}
       </a>
     </div>
     <button class="announcement-close" onclick="dismissAnnouncement()" aria-label="Duyuruyu Kapat">✕</button>
   </aside>
+  ` : ''}
 
   <!-- Sticky Navbar -->
   <header class="portal-nav">
@@ -1285,12 +1327,12 @@ function renderMainHomePage(user = null) {
   <section class="portal-section" style="margin-top: 1rem; margin-bottom: 3.5rem;">
     <div class="now-widget-box">
       <div class="now-widget-info">
-        <span class="now-badge">${nowWidget.badge}</span>
-        <h3 class="now-title">${nowWidget.title}</h3>
-        <p class="now-desc">${nowWidget.desc}</p>
+        <span class="now-badge">${escapeHtml(nowWidget.badge)}</span>
+        <h3 class="now-title">${escapeHtml(nowWidget.title)}</h3>
+        <p class="now-desc">${escapeHtml(nowWidget.desc)}</p>
       </div>
-      <a href="${nowWidget.btnLink}" class="btn-portal-primary" data-cursor="GO">
-        ${nowWidget.btnText}
+      <a href="${safeUrl(nowWidget.btnLink, '/')}" class="btn-portal-primary" data-cursor="GO">
+        ${escapeHtml(nowWidget.btnText)}
       </a>
     </div>
   </section>
@@ -1374,13 +1416,13 @@ function renderMainHomePage(user = null) {
           <span style="font-size:0.75rem; font-weight:800; color:#22c55e; background:rgba(34,197,94,0.15); padding:0.25rem 0.75rem; border-radius:9999px; border:1px solid rgba(34,197,94,0.3);">
             🟢 ŞU ANDA AKTİF ÇEKİLİŞ
           </span>
-          <h3 style="font-size:1.85rem; font-weight:900; color:#fff; margin:0.75rem 0 0.5rem;">${featuredGw.title}</h3>
+          <h3 style="font-size:1.85rem; font-weight:900; color:#fff; margin:0.75rem 0 0.5rem;">${escapeHtml(featuredGw.title)}</h3>
           <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom:1.25rem;">
-            Ödül: <strong style="color:#fbbf24;">${featuredGw.prize || '10.000 Robux'}</strong> &bull; Katılımcı: <strong style="color:#fff;">${(featuredGw.totalEntries || 1240).toLocaleString('tr-TR')}</strong>
+            Ödül: <strong style="color:#fbbf24;">${escapeHtml(featuredGw.prize || 'Belirtilmedi')}</strong> &bull; Katılımcı: <strong style="color:#fff;">${Number(featuredGw.totalParticipants || 0).toLocaleString('tr-TR')}</strong>
           </p>
 
           <!-- Live Countdown Timer -->
-          <div class="countdown-grid" id="gwCountdown" data-end="${featuredGw.endDate ? new Date(featuredGw.endDate).toISOString() : ''}">
+          <div class="countdown-grid" id="gwCountdown" data-end="${escapeHtml(featuredEndIso)}">
             <div class="countdown-box">
               <div class="countdown-val" id="cdDays">00</div>
               <div class="countdown-label">GÜN</div>
@@ -1400,7 +1442,7 @@ function renderMainHomePage(user = null) {
           </div>
 
           <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1.5rem;">
-            <a href="/cekilisler/${featuredGw.slug || featuredGw._id}" class="btn-portal-primary" style="background:linear-gradient(135deg, #a855f7, #ec4899);">
+            <a href="/cekilisler/${encodeURIComponent(featuredGw.slug || featuredGw._id)}" class="btn-portal-primary" style="background:linear-gradient(135deg, #a855f7, #ec4899);">
               🎯 Şansını Dene & Katıl ➔
             </a>
             <a href="/cekilisler" class="btn-portal-outline">
@@ -1410,7 +1452,7 @@ function renderMainHomePage(user = null) {
         </div>
 
         <div style="text-align:center;">
-          <img src="${featuredGw.coverImage || 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=600'}" alt="${featuredGw.title}" style="width:100%; max-width:420px; border-radius:var(--radius-md); box-shadow:0 15px 35px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15);">
+          <img src="${safeUrl(featuredGw.coverImage, 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=600')}" alt="${escapeHtml(featuredGw.title)}" style="width:100%; max-width:420px; border-radius:var(--radius-md); box-shadow:0 15px 35px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15);">
         </div>
       </div>
     ` : `
@@ -1471,10 +1513,10 @@ function renderMainHomePage(user = null) {
     <div class="pulse-grid" style="margin-bottom: 2.5rem;">
       ${pulseStats.map(p => `
         <div class="pulse-card">
-          <div class="pulse-icon">${p.icon}</div>
-          <div class="pulse-stat">${p.stat}</div>
-          <div class="pulse-label">${p.label}</div>
-          <div class="pulse-note">${p.note}</div>
+          <div class="pulse-icon">${escapeHtml(p.icon)}</div>
+          <div class="pulse-stat">${escapeHtml(p.stat)}</div>
+          <div class="pulse-label">${escapeHtml(p.label)}</div>
+          <div class="pulse-note">${escapeHtml(p.note)}</div>
         </div>
       `).join('')}
     </div>

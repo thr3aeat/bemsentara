@@ -94,10 +94,14 @@ function flushSave(collections) {
         "wikiArticles", "errorReports", "groupAdmins", "rankMetadata",
         "posts", "stories", "liveStreams", "appMeta", "formSubmissions",
         "modInterviews", "staffLeaves", "staffShifts", "modPerformances",
-        "marketAuctions", "userTrustScores"
+        "marketAuctions", "userTrustScores", "sponsorAds", "giveaways",
+        "giveawayTasks", "giveawayEntries", "giveawayEntryTasks",
+        "giveawayWinners", "giveawayAuditLogs", "giveawayFraudFlags",
+        "giveawayNotifications", "socialAds", "socialAdMetrics",
+        "homepageConfig"
       ];
       for (const key of knownKeys) {
-        if (collections[key]?.data) {
+        if (collections && collections[key]?.data) {
           payload[key] = serializeMap(collections[key].data);
         }
       }

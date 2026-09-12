@@ -2,6 +2,15 @@
 
 const { sponsorAds } = require('../../models/Store');
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 class SponsorAdService {
   constructor() {
     this._ensureSeeded();
@@ -135,6 +144,54 @@ class SponsorAdService {
     return this.getAllAdsWithStats();
   }
 
+  _isSafeTargetUrl(value) {
+    const url = String(value || '').trim();
+    if (url.startsWith('/')) return true;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+      return false;
+    }
+  }
+
+  createAd(data = {}) {
+    const title = String(data.title || '').trim();
+    const targetUrl = String(data.targetUrl || '').trim();
+    if (title.length < 3) throw new Error('Reklam başlığı en az 3 karakter olmalıdır.');
+    if (!this._isSafeTargetUrl(targetUrl)) throw new Error('Geçerli bir hedef bağlantı giriniz.');
+
+    return sponsorAds.create({
+      title,
+      description: String(data.description || '').trim(),
+      imageUrl: this._isSafeTargetUrl(data.imageUrl) ? String(data.imageUrl).trim() : '',
+      sponsorName: String(data.sponsorName || 'EkoYıldız Partner').trim(),
+      targetUrl,
+      ctaText: String(data.ctaText || 'Hemen İncele').trim(),
+      startDate: data.startDate ? new Date(data.startDate) : new Date(),
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      isActive: data.isActive !== false && data.isActive !== 'false',
+      priority: Math.max(1, Number(data.priority) || 1),
+      impressions: 0,
+      clicks: 0
+    });
+  }
+
+  toggleAdActive(id) {
+    const ad = sponsorAds.findById(id);
+    if (!ad) throw new Error('Reklam bulunamadı.');
+    ad.isActive = !ad.isActive;
+    ad.save();
+    return ad;
+  }
+
+  deleteAd(id) {
+    const ad = sponsorAds.findById(id);
+    if (!ad) throw new Error('Reklam bulunamadı.');
+    sponsorAds.deleteById(ad._id);
+    return true;
+  }
+
   /**
    * Sayfalarda render edilmek üzere modern HTML bileşeni üretir.
    * Aktif reklam yoksa KESİNLİKLE boşluk veya kırık kutu bırakmaz (boş string döner).
@@ -145,12 +202,12 @@ class SponsorAdService {
       return ''; // Hiçbir aktif reklam yoksa sıfır görsel artık, boşluk yok!
     }
 
-    const adId = ad._id;
-    const title = ad.title || 'Sponsorlu İçerik';
-    const description = ad.description || '';
-    const sponsor = ad.sponsorName || 'EkoYıldız Partner';
-    const cta = ad.ctaText || 'Hemen İncele ➔';
-    const image = ad.imageUrl || 'https://i.imgur.com/PFcAc6q.png';
+    const adId = escapeHtml(ad._id);
+    const title = escapeHtml(ad.title || 'Sponsorlu İçerik');
+    const description = escapeHtml(ad.description || '');
+    const sponsor = escapeHtml(ad.sponsorName || 'EkoYıldız Partner');
+    const cta = escapeHtml(ad.ctaText || 'Hemen İncele ➔');
+    const image = escapeHtml(this._isSafeTargetUrl(ad.imageUrl) ? ad.imageUrl : 'https://i.imgur.com/PFcAc6q.png');
 
     return `
       <div class="sponsor-ad-card-wrapper" id="sponsor-ad-${adId}" data-ad-id="${adId}" role="complementary" aria-label="Sponsorlu Alan">

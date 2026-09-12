@@ -68,20 +68,24 @@ class GiveawayService {
     // Background State Transition Scheduler (Cron benzeri)
     this._initBackgroundScheduler();
 
-    // Seed data (Sadece development ortamında veya explicit env bayrağında)
+    // Başlangıçta taslak çekilişlerin olmaması için cleanup (Kullanıcı isteği: taslak çekilişler olmasın)
+    this.cleanupDefaultSeededGiveaways();
+
+    // Seed data (Sadece explicit SEED_GIVEAWAYS === 'true' ise)
     this._ensureSeeded();
   }
 
   // ─── BACKGROUND SCHEDULER (CRON) ──────────────────────────────────────────
   _initBackgroundScheduler() {
     // Her 30 saniyede bir çekiliş sürelerini kontrol et ve durumları güncelle
-    setInterval(() => {
+    const timer = setInterval(() => {
       try {
         this._autoUpdateGiveawayStatuses();
       } catch (err) {
         logger.error?.('[GiveawayService] Scheduler error:', err.message);
       }
     }, 30000);
+    if (timer && timer.unref) timer.unref();
   }
 
   _autoUpdateGiveawayStatuses() {
@@ -166,15 +170,42 @@ class GiveawayService {
   }
 
   /**
-   * Seed Verisi: Production ortamında otomatik mock çekilişler oluşmaz!
+   * Başlangıçta taslak / mock çekilişlerin bulunmamasını sağlar (Kullanıcı isteği).
+   */
+  cleanupDefaultSeededGiveaways() {
+    try {
+      if (process.env.SEED_GIVEAWAYS === 'true') return;
+      const seedSlugs = ['10000-robux-buyuk-ekoyildiz-cekilisi', 'discord-nitro-1000-robux-paketi'];
+      const all = giveaways.find({});
+      let modified = false;
+      for (const g of all) {
+        if (seedSlugs.includes(g.slug) && (Number(g.totalParticipants) || 0) === 0 && (Number(g.totalTickets) || 0) === 0) {
+          giveawayTasks.remove({ giveawayId: g._id });
+          giveaways.deleteById(g._id);
+          modified = true;
+        }
+      }
+      if (modified) {
+        try {
+          const { flushSave } = require('../../models/persistence');
+          const { collections } = require('../../models/Store');
+          flushSave(collections);
+        } catch (_) {}
+      }
+    } catch (err) {
+      logger.error?.('[GiveawayService] Cleanup seed hatası:', err.message);
+    }
+  }
+
+  /**
+   * Seed Verisi: Sadece SEED_GIVEAWAYS=true açıkça verilirse çalışır.
    */
   _ensureSeeded() {
     try {
-      const isProduction = process.env.NODE_ENV === 'production';
       const allowSeed = process.env.SEED_GIVEAWAYS === 'true';
 
-      if (isProduction && !allowSeed) {
-        // Production ortamında seed çalıştırma
+      if (!allowSeed) {
+        // Kullanıcı isteği: Başlangıçta otomatik mock çekilişler oluşmasın!
         return;
       }
 
@@ -1296,12 +1327,25 @@ class GiveawayService {
     const existing = giveaways.findOne({ slug });
     const finalSlug = existing ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
 
-    const startDate = data.startDate ? new Date(data.startDate) : new Date();
-    const endDate = data.endDate ? new Date(data.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    let startDate = data.startDate ? new Date(data.startDate) : new Date();
+    if (isNaN(startDate.getTime())) startDate = new Date();
+
+    let endDate = data.endDate ? new Date(data.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    if (isNaN(endDate.getTime())) endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     if (endDate <= startDate) {
-      throw new Error("Bitiş tarihi başlangıç tarihinden sonra olmalıdır.");
+      endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
     }
+
+    const toBoolean = (value, fallback = false) => {
+      if (value === undefined || value === null || value === '') return fallback;
+      if (typeof value === 'string') return value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'on';
+      return Boolean(value);
+    };
+    const requestedStatus = String(data.status || GIVEAWAY_STATUSES.ACTIVE).toUpperCase();
+    const status = Object.values(GIVEAWAY_STATUSES).includes(requestedStatus)
+      ? requestedStatus
+      : GIVEAWAY_STATUSES.DRAFT;
 
     const g = giveaways.create({
       title: data.title.trim(),
@@ -1309,23 +1353,78 @@ class GiveawayService {
       description: (data.description || '').trim(),
       prize: data.prize.trim(),
       sponsor: (data.sponsor || 'EkoYıldız').trim(),
-      coverImage: data.coverImage || 'https://i.imgur.com/PFcAc6q.png',
+      coverImage: data.coverImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
       bannerImage: data.bannerImage || 'https://i.imgur.com/j3pnVTu.png',
       accentColor: data.accentColor || '#8b5cf6',
-      status: data.status || GIVEAWAY_STATUSES.ACTIVE,
-      isFeatured: Boolean(data.isFeatured),
+      status,
+      isFeatured: toBoolean(data.isFeatured),
       startDate,
       endDate,
       minAccountAgeDays: Math.max(0, Number(data.minAccountAgeDays) || 0),
       maxEntriesPerUser: Math.max(1, Number(data.maxEntriesPerUser) || 50),
       winnerCount: Math.max(1, Number(data.winnerCount) || 1),
       backupWinnerCount: Math.max(0, Number(data.backupWinnerCount) || 1),
-      referralEnabled: data.referralEnabled !== false,
+      referralEnabled: toBoolean(data.referralEnabled, true),
       referralTickets: Math.max(1, Number(data.referralTickets) || 2),
       totalParticipants: 0,
       totalTickets: 0,
       createdBy: adminUser?.username || 'Admin'
     });
+
+    // Yönetim panelinden gelen görevleri çekilişle birlikte kalıcı olarak oluştur.
+    const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+    tasks.forEach((rawTask, index) => {
+      const title = String(rawTask?.title || '').trim();
+      if (title.length < 3) return;
+
+      const strategy = Object.values(VERIFICATION_STRATEGIES).includes(rawTask.strategy)
+        ? rawTask.strategy
+        : VERIFICATION_STRATEGIES.VISIT_ONLY;
+
+      let link = String(rawTask.link || '').trim();
+      if (link && !link.startsWith('http://') && !link.startsWith('https://') && !link.startsWith('/') && !link.startsWith('#')) {
+        link = 'https://' + link;
+      }
+
+      const platform = String(rawTask.platform || 'website').trim().toLowerCase();
+      let icon = String(rawTask.icon || '').trim();
+      if (!icon) {
+        const platformIcons = {
+          youtube: '📺',
+          discord: '💬',
+          instagram: '📸',
+          tiktok: '🎵',
+          kick: '🟢',
+          twitch: '💜',
+          site: '🌐',
+          website: '🌐'
+        };
+        icon = platformIcons[platform] || '🎯';
+      }
+
+      giveawayTasks.create({
+        giveawayId: g._id,
+        title,
+        description: String(rawTask.description || '').trim(),
+        platform,
+        icon,
+        link: this.validateUrl(link) ? link : (link ? link : ''),
+        actionType: String(rawTask.actionType || 'visit_page').trim(),
+        strategy,
+        tickets: Math.max(1, Number(rawTask.tickets ?? rawTask.ticketReward) || 1),
+        isRequired: toBoolean(rawTask.isRequired ?? rawTask.isMandatory),
+        order: index + 1
+      });
+    });
+
+    // Kalıcı depolamaya anında yaz (disk sync)
+    try {
+      const { flushSave } = require('../../models/persistence');
+      const { collections } = require('../../models/Store');
+      flushSave(collections);
+    } catch (saveErr) {
+      logger.error?.('[GiveawayService] Instant flushSave error:', saveErr.message);
+    }
 
     this.logAudit({
       action: 'GIVEAWAY_CREATE',
@@ -1336,6 +1435,32 @@ class GiveawayService {
     });
 
     return g;
+  }
+
+  deleteGiveaway(giveawayId, adminUser) {
+    const giveaway = giveaways.findById(giveawayId);
+    if (!giveaway) throw new Error("Çekiliş bulunamadı.");
+
+    giveawayTasks.remove({ giveawayId });
+    giveawayEntries.remove({ giveawayId });
+    giveawayEntryTasks.remove({ giveawayId });
+    giveawayWinners.remove({ giveawayId });
+    giveaways.deleteById(giveawayId);
+
+    try {
+      const { flushSave } = require('../../models/persistence');
+      const { collections } = require('../../models/Store');
+      flushSave(collections);
+    } catch (_) {}
+
+    this.logAudit({
+      action: 'GIVEAWAY_DELETE',
+      giveawayId,
+      performedBy: adminUser?.username || 'Admin',
+      details: { title: giveaway.title }
+    });
+
+    return true;
   }
 }
 

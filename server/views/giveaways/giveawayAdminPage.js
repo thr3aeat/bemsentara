@@ -206,28 +206,28 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     </div>
 
     <nav style="flex: 1;">
-      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+      <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard', this)">
         <span>📊</span> Dashboard
       </button>
-      <button class="nav-item" onclick="switchTab('giveaways', this)">
+      <button class="nav-item" data-tab="giveaways" onclick="switchTab('giveaways', this)">
         <span>🎁</span> Çekilişler
       </button>
-      <button class="nav-item" onclick="switchTab('wizard', this)">
+      <button class="nav-item" data-tab="wizard" onclick="switchTab('wizard', this)">
         <span>✨</span> Yeni Çekiliş Sihirbazı
       </button>
-      <button class="nav-item" onclick="switchTab('participants', this)">
+      <button class="nav-item" data-tab="participants" onclick="switchTab('participants', this)">
         <span>👥</span> Katılımcı Yönetimi
       </button>
-      <button class="nav-item" onclick="switchTab('fraud', this)">
+      <button class="nav-item" data-tab="fraud" onclick="switchTab('fraud', this)">
         <span>🛡️</span> Şüpheli / Anti-Cheat (${fraudFlags.length})
       </button>
-      <button class="nav-item" onclick="switchTab('ads', this)">
+      <button class="nav-item" data-tab="ads" onclick="switchTab('ads', this)">
         <span>📢</span> Sponsor & Reklamlar (${ads.length})
       </button>
-      <button class="nav-item" onclick="switchTab('social-ads', this)">
+      <button class="nav-item" data-tab="social-ads" onclick="switchTab('social-ads', this)">
         <span>🌟</span> Sosyal Medya Kampanyaları (${socialAds.length})
       </button>
-      <button class="nav-item" onclick="switchTab('audit', this)">
+      <button class="nav-item" data-tab="audit" onclick="switchTab('audit', this)">
         <span>📜</span> Audit Denetim Logları
       </button>
     </nav>
@@ -252,7 +252,7 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
         <p style="color: var(--text-muted); font-size: 0.85rem;">Platform durumunu takip et, yeni çekilişler başlat ve kazananları belirle.</p>
       </div>
       <div style="display: flex; gap: 0.75rem;">
-        <button onclick="switchTab('wizard', document.querySelectorAll('.nav-item')[2])" class="btn btn-primary">
+        <button onclick="switchTab('wizard')" class="btn btn-primary">
           ➕ Yeni Çekiliş Başlat
         </button>
       </div>
@@ -328,8 +328,14 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
 
     <!-- TAB 2: GIVEAWAYS LIST -->
     <div id="tab-giveaways" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 800;">Tüm Çekilişler</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800;">Tüm Çekilişler</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Platformdaki tüm aktif, planlanmış ve tamamlanmış çekilişler.</p>
+        </div>
+        <button onclick="switchTab('wizard')" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">
+          ➕ Yeni Çekiliş Başlat
+        </button>
       </div>
 
       <div class="table-container">
@@ -345,7 +351,7 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
             </tr>
           </thead>
           <tbody>
-            ${giveaways.map(g => `
+            ${giveaways && giveaways.length > 0 ? giveaways.map(g => `
               <tr>
                 <td>
                   <strong style="color: #fff;">${g.title}</strong>
@@ -358,7 +364,7 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
                   </span>
                 </td>
                 <td>👥 ${g.totalParticipants || g.totalEntries || 0} / 🎟️ ${g.totalTickets || 0}</td>
-                <td style="color: var(--text-muted);">${new Date(g.endDate).toLocaleDateString('tr-TR')}</td>
+                <td style="color: var(--text-muted);">${g.endDate ? new Date(g.endDate).toLocaleDateString('tr-TR') : '-'}</td>
                 <td>
                   <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                     <a href="/cekilisler/${g.slug || g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görüntüle</a>
@@ -369,10 +375,22 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
                       <button onclick="openDrawWinnerModal('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}', true)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #fbbf24;">🔁 Yeniden Çek</button>
                       <a href="/cekilisler/canli/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #38bdf8;">📺 Canlı Ekran</a>
                     ` : '')}
+                    <button onclick="deleteGiveaway('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;" title="Çekilişi ve Bağlı Görevleri Sil">🗑️ Sil</button>
                   </div>
                 </td>
               </tr>
-            `).join('')}
+            `).join('') : `
+              <tr>
+                <td colspan="6" style="text-align:center; padding:3.5rem 1rem; color:var(--text-muted);">
+                  <div style="font-size: 3rem; margin-bottom: 0.75rem;">🎁</div>
+                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">Kayıtlı Çekiliş Bulunmuyor</h3>
+                  <p style="font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.5rem;">Şu anda sistemde herhangi bir çekiliş yok. Yeni bir çekiliş oluşturup hemen yayınlayabilirsiniz.</p>
+                  <button onclick="switchTab('wizard')" class="btn btn-primary" style="padding: 0.7rem 1.75rem;">
+                    ➕ Yeni Çekiliş Oluştur
+                  </button>
+                </td>
+              </tr>
+            `}
           </tbody>
         </table>
       </div>
@@ -380,33 +398,35 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
 
     <!-- TAB 3: MULTI-STEP GIVEAWAY CREATION WIZARD -->
     <div id="tab-wizard" class="tab-content">
-      <div class="stat-card" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+      <div class="stat-card" style="max-width: 860px; margin: 0 auto; padding: 2.25rem;">
         <h2 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem;">✨ Yeni Çekiliş Oluşturma Sihirbazı</h2>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">
-          Adım adım bilgileri doldur, görevleri tanımla ve çekilişi yayınla veya taslak olarak sakla.
+          Tüm alanları doldurarak çekilişinizi oluşturun. Oluşturduğunuz çekiliş anında kalıcı olarak kaydedilecek ve sitede aktifleşecektir.
         </p>
 
         <form id="wizardForm" onsubmit="handleCreateGiveaway(event)">
           <!-- STEP 1: General Info -->
           <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
             <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 1 — Genel Bilgiler
+              ADIM 1 — Genel Bilgiler & Ödül
             </h3>
             <div class="form-group">
               <label class="form-label">Çekiliş Başlığı *</label>
-              <input type="text" name="title" class="input-field" placeholder="Örn: 10.000 Robux Büyük Topluluk Çekilişi" required>
+              <input type="text" name="title" class="input-field" placeholder="Örn: 10.000 Robux Büyük Topluluk Çekilişi" required minlength="3">
             </div>
-            <div class="form-group">
-              <label class="form-label">Ödül Tanımı *</label>
-              <input type="text" name="prize" class="input-field" placeholder="Örn: 10.000 Robux veya Discord Nitro" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Sponsor Adı</label>
-              <input type="text" name="sponsor" class="input-field" placeholder="Örn: Eko Yıldız veya Sponsor Marka">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Ödül Tanımı *</label>
+                <input type="text" name="prize" class="input-field" placeholder="Örn: 10.000 Robux veya Discord Nitro" required minlength="2">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sponsor Marka / Adı</label>
+                <input type="text" name="sponsor" class="input-field" placeholder="Örn: Eko Yıldız" value="Eko Yıldız">
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label">Açıklama</label>
-              <textarea name="description" class="input-field" rows="3" placeholder="Çekiliş hakkında detaylar, katılım şartları..."></textarea>
+              <textarea name="description" class="input-field" rows="3" placeholder="Çekiliş kuralları, ödül teslim detayları ve katılım şartları..."></textarea>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="form-group">
@@ -418,68 +438,125 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
                 <input type="datetime-local" name="endDate" class="input-field" required>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Kapak Görseli URL</label>
-              <input type="url" name="coverImage" class="input-field" placeholder="https://images.unsplash.com/...">
-            </div>
-          </div>
-
-          <!-- STEP 2: Tasks Setup -->
-          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 2 — Çekiliş Görevleri
-            </h3>
-            <div id="tasksContainer" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
-              <!-- Default task 1 -->
-              <div style="background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1fr 80px; gap: 0.5rem;">
-                <input type="text" placeholder="Görev Adı (Örn: YouTube Kanalına Abone Ol)" class="input-field task-title" value="Eko Yıldız YouTube Kanalına Abone Ol" required>
-                <select class="input-field task-platform">
-                  <option value="youtube">YouTube</option>
-                  <option value="discord">Discord</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="site">Web Sitesi</option>
-                </select>
-                <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1">
-                <select class="input-field task-mandatory">
-                  <option value="true">Zorunlu</option>
-                  <option value="false">Opsiyonel</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Kapak Görseli URL</label>
+                <input type="url" name="coverImage" class="input-field" placeholder="https://images.unsplash.com/... veya resim bağlantısı">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Vurgu Rengi</label>
+                <input type="color" name="accentColor" class="input-field" value="#8b5cf6" style="height: 42px; padding: 2px 6px; cursor: pointer;">
               </div>
             </div>
-            <button type="button" onclick="addTaskRow()" class="btn btn-secondary" style="font-size: 0.85rem;">
-              ➕ Ekstra Görev Ekle
-            </button>
           </div>
 
-          <!-- STEP 3: Status & Visibility -->
+          <!-- STEP 2: Parameters -->
+          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
+              ADIM 2 — Kurallar & Kazanan Ayarları
+            </h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Asil Kazanan Sayısı</label>
+                <input type="number" name="winnerCount" class="input-field" value="1" min="1" max="50">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Yedek Kazanan Sayısı</label>
+                <input type="number" name="backupWinnerCount" class="input-field" value="1" min="0" max="20">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kişi Başı Max Bilet</label>
+                <input type="number" name="maxEntriesPerUser" class="input-field" value="50" min="1" max="500">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label">Arkadaş Daveti (Referral) Aktif mi?</label>
+                <select name="referralEnabled" class="input-field">
+                  <option value="true">Evet, Davet Linki Verilsin</option>
+                  <option value="false">Hayır, Sadece Görevler</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Davet Başına Bilet Ödülü</label>
+                <input type="number" name="referralTickets" class="input-field" value="2" min="1" max="20">
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Tasks Setup -->
+          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 0;">
+                ADIM 3 — Çekiliş Görevleri (Opsiyonel / Özelleştirilebilir)
+              </h3>
+              <button type="button" onclick="addTaskRow()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+                ➕ Görev Ekle
+              </button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">
+              Katılımcıların bilet kazanmak için tamamlaması gereken görevleri ekleyin. Link girdiğinizde görev doğrudan ilgili sayfayı açar.
+            </p>
+            <div id="tasksContainer" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+              <!-- Default task 1 -->
+              <div class="task-row" style="background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 2fr 1.2fr 80px 100px 36px; gap: 0.5rem; align-items: center;">
+                <input type="text" placeholder="Görev Başlığı *" class="input-field task-title" value="Eko Yıldız YouTube Kanalına Abone Ol" required style="margin-top:0;">
+                <select class="input-field task-platform" style="margin-top:0;">
+                  <option value="youtube" selected>YouTube</option>
+                  <option value="discord">Discord</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="kick">Kick</option>
+                  <option value="twitch">Twitch</option>
+                  <option value="website">Web Sitesi</option>
+                </select>
+                <input type="text" placeholder="Bağlantı URL (https://...)" class="input-field task-link" value="https://www.youtube.com/@eko8yildiz" style="margin-top:0;">
+                <select class="input-field task-strategy" title="Doğrulama Yöntemi" style="margin-top:0;">
+                  <option value="VISIT_ONLY" selected>Ziyaret (Hızlı)</option>
+                  <option value="AUTO">Otomatik Onay</option>
+                  <option value="API">API Entegrasyon</option>
+                  <option value="PROOF_REQUIRED">Kanıt İste</option>
+                  <option value="MANUAL">Admin Onayı</option>
+                </select>
+                <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1" style="margin-top:0;" title="Bilet Ödülü">
+                <select class="input-field task-mandatory" style="margin-top:0;">
+                  <option value="true" selected>Zorunlu</option>
+                  <option value="false">Opsiyonel</option>
+                </select>
+                <button type="button" onclick="this.closest('.task-row').remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; padding:4px;" title="Görevi Kaldır">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: Status & Visibility -->
           <div style="margin-bottom: 2rem;">
             <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 3 — Yayın Durumu
+              ADIM 4 — Yayın Durumu
             </h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
               <div class="form-group">
                 <label class="form-label">Yayınlama Durumu</label>
                 <select name="status" class="input-field">
-                  <option value="ACTIVE">🟢 Hemen Aktif Et</option>
-                  <option value="SCHEDULED">⏳ Planlanmış (Scheduled)</option>
-                  <option value="DRAFT">📝 Taslak (Draft Olarak Sakla)</option>
+                  <option value="ACTIVE" selected>🟢 Hemen Aktif Et (Yayına Al)</option>
+                  <option value="SCHEDULED">⏳ Planlanmış (Tarihi Gelince Başlat)</option>
+                  <option value="DRAFT">📝 Taslak Olarak Sakla</option>
                 </select>
               </div>
               <div class="form-group">
                 <label class="form-label">Öne Çıkarılsın mı?</label>
                 <select name="isFeatured" class="input-field">
-                  <option value="true">Evet, Ana Sayfa Hero'da Göster</option>
+                  <option value="true" selected>Evet, Ana Sayfada Öne Çıkar</option>
                   <option value="false">Hayır, Standart Liste</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-            <button type="button" onclick="switchTab('giveaways', document.querySelectorAll('.nav-item')[1])" class="btn btn-secondary">
+          <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+            <button type="button" onclick="switchTab('giveaways')" class="btn btn-secondary">
               İptal
             </button>
-            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+            <button type="submit" id="btnSubmitGiveaway" class="btn btn-primary" style="padding: 0.85rem 2.5rem; font-size: 1rem; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
               🚀 Çekilişi Kaydet & Yayınla
             </button>
           </div>
@@ -748,7 +825,7 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
                       <button onclick="toggleSocialAd('${s.key}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                         ${s.isActive !== false ? 'Pasife Al' : 'Aktif Et'}
                       </button>
-                      <button onclick='openEditSocialAdModal(${JSON.stringify(s).replace(/'/g, "&#39;")})' class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                      <button onclick="openEditSocialAdModal('${s.key}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                         ✏️ Düzenle
                       </button>
                     </div>
@@ -789,31 +866,6 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     </div>
 
   </main>
-
-  <!-- DRAW WINNER MODAL -->
-  <div id="drawWinnerModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div class="stat-card" style="width: 100%; max-width: 500px; padding: 2rem; text-align: center;">
-      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎲</div>
-      <h2 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 0.5rem;">Kriptografik Kazanan Çekilişi</h2>
-      <p id="modalGiveawayTitle" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Çekiliş Başlığı</p>
-      
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">
-        ℹ️ Çekiliş, katılımcıların toplam geçerli bilet sayısı üzerinden <strong>Node.js Crypto CSPRNG</strong> algoritmasıyla gerçekleştirilir. Kazanan kaydedildikten sonra geri alınamaz, ancak gerekirse yedek veya yeniden çekiliş yapılabilir.
-      </div>
-
-      <input type="hidden" id="modalGiveawayId">
-      <input type="hidden" id="modalIsRedraw">
-
-      <div style="display: flex; gap: 1rem; justify-content: center;">
-        <button onclick="document.getElementById('drawWinnerModal').style.display='none'" class="btn btn-secondary">
-          Vazgeç
-        </button>
-        <button onclick="executeDrawWinner()" class="btn btn-primary" style="padding: 0.75rem 2rem;">
-          🎲 Çekilişi Gerçekleştir
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- NEW SPONSOR AD MODAL -->
   <div id="newAdModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
@@ -863,40 +915,62 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
   </div>
 
   <script>
+    const _socialAdsList = ${JSON.stringify(socialAds)};
+
     function switchTab(tabId, el) {
+      if (!tabId) return;
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
-      if (el) el.classList.add('active');
+      const targetTab = document.getElementById('tab-' + tabId);
+      if (targetTab) {
+        targetTab.classList.add('active');
+      }
+      const targetNav = el || document.querySelector('.nav-item[data-tab="' + tabId + '"]');
+      if (targetNav) {
+        targetNav.classList.add('active');
+      }
+      try {
+        history.replaceState(null, '', '#' + tabId);
+      } catch (e) {}
     }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      const hash = (window.location.hash || '').replace('#', '').replace('tab-', '');
+      if (hash && document.getElementById('tab-' + hash)) {
+        switchTab(hash);
+      }
+    });
 
     function addTaskRow() {
       const container = document.getElementById('tasksContainer');
       const div = document.createElement('div');
-      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 1.2fr 1fr 80px; gap: 0.5rem;";
+      div.className = 'task-row';
+      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 2fr 1.2fr 80px 100px 36px; gap: 0.5rem; align-items: center;";
       div.innerHTML = \`
-        <input type="text" placeholder="Görev Adı" class="input-field task-title" required>
-        <select class="input-field task-platform">
+        <input type="text" placeholder="Görev Başlığı *" class="input-field task-title" required style="margin-top:0;">
+        <select class="input-field task-platform" style="margin-top:0;">
           <option value="youtube">YouTube</option>
           <option value="discord">Discord</option>
           <option value="instagram">Instagram</option>
           <option value="tiktok">TikTok</option>
           <option value="kick">Kick</option>
           <option value="twitch">Twitch</option>
-          <option value="site">Web Sitesi</option>
+          <option value="website">Web Sitesi</option>
         </select>
-        <select class="input-field task-strategy" title="Doğrulama Yöntemi">
-          <option value="VISIT_ONLY">VISIT_ONLY (Ziyaret)</option>
-          <option value="AUTO">AUTO (Otomatik Onay)</option>
-          <option value="API">API (Entegrasyon)</option>
-          <option value="PROOF_REQUIRED">PROOF_REQUIRED (Kanıt)</option>
-          <option value="MANUAL">MANUAL (Admin Onayı)</option>
+        <input type="text" placeholder="Bağlantı URL (https://...)" class="input-field task-link" style="margin-top:0;">
+        <select class="input-field task-strategy" title="Doğrulama Yöntemi" style="margin-top:0;">
+          <option value="VISIT_ONLY">Ziyaret (Hızlı)</option>
+          <option value="AUTO">Otomatik Onay</option>
+          <option value="API">API Entegrasyon</option>
+          <option value="PROOF_REQUIRED">Kanıt İste</option>
+          <option value="MANUAL">Admin Onayı</option>
         </select>
-        <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1">
-        <select class="input-field task-mandatory">
-          <option value="false">Opsiyonel</option>
+        <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1" style="margin-top:0;">
+        <select class="input-field task-mandatory" style="margin-top:0;">
           <option value="true">Zorunlu</option>
+          <option value="false" selected>Opsiyonel</option>
         </select>
+        <button type="button" onclick="this.closest('.task-row').remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; padding:4px;" title="Görevi Kaldır">✕</button>
       \`;
       container.appendChild(div);
     }
@@ -904,20 +978,27 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
     async function handleCreateGiveaway(e) {
       e.preventDefault();
       const form = e.target;
+      const submitBtn = document.getElementById('btnSubmitGiveaway') || form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '⏳ Kaydediliyor...';
+      }
+
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
 
       // Collect tasks
-      const taskRows = document.querySelectorAll('#tasksContainer > div');
+      const taskRows = document.querySelectorAll('#tasksContainer .task-row');
       const tasks = [];
       taskRows.forEach(row => {
-        const title = row.querySelector('.task-title').value.trim();
-        const platform = row.querySelector('.task-platform').value;
+        const title = row.querySelector('.task-title')?.value?.trim();
+        const platform = row.querySelector('.task-platform')?.value || 'website';
+        const link = row.querySelector('.task-link')?.value?.trim() || '';
         const strategy = row.querySelector('.task-strategy')?.value || 'VISIT_ONLY';
-        const reward = parseInt(row.querySelector('.task-reward').value, 10) || 1;
-        const isMandatory = row.querySelector('.task-mandatory').value === 'true';
+        const reward = parseInt(row.querySelector('.task-reward')?.value, 10) || 1;
+        const isMandatory = row.querySelector('.task-mandatory')?.value === 'true';
         if (title) {
-          tasks.push({ title, platform, strategy, ticketReward: reward, isMandatory });
+          tasks.push({ title, platform, link, strategy, tickets: reward, isRequired: isMandatory });
         }
       });
       data.tasks = tasks;
@@ -930,13 +1011,22 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
         });
         const result = await res.json();
         if (result.success) {
-          alert('✅ Çekiliş başarıyla oluşturuldu!');
+          alert('✅ Çekiliş başarıyla oluşturuldu ve kaydedildi!');
+          window.location.hash = 'giveaways';
           window.location.reload();
         } else {
           alert('Hata: ' + (result.message || 'Oluşturulamadı'));
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = '🚀 Çekilişi Kaydet & Yayınla';
+          }
         }
       } catch (err) {
         alert('Sunucu hatası: ' + err.message);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerText = '🚀 Çekilişi Kaydet & Yayınla';
+        }
       }
     }
 
@@ -993,10 +1083,31 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
         const res = await fetch('/api/admin/giveaways/' + giveawayId + '/recalculate-stats', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          alert('✅ Sayaçlar güncellendi!\nKatılımcı: ' + data.totalParticipants + '\nBilet: ' + data.totalTickets);
+          alert('✅ Sayaçlar güncellendi!\\nKatılımcı: ' + data.totalParticipants + '\\nBilet: ' + data.totalTickets);
           window.location.reload();
         } else {
           alert('Hata: ' + (data.message || 'Hesaplanamadı'));
+        }
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
+    async function deleteGiveaway(giveawayId, title) {
+      if (!confirm('"' + (title || 'Bu çekilişi') + '" silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve çekilişe ait görevleri de temizler.')) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin/giveaways/' + giveawayId, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Çekiliş başarıyla silindi.');
+          window.location.reload();
+        } else {
+          alert('Hata: ' + (data.message || 'Çekiliş silinemedi.'));
         }
       } catch (err) {
         alert('Sunucu hatası: ' + err.message);
@@ -1100,6 +1211,18 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       }
     }
 
+    async function deleteAd(adId) {
+      if (!confirm('Bu sponsor reklamını kalıcı olarak silmek istediğinize emin misiniz?')) return;
+      try {
+        const res = await fetch('/api/admin/ads/' + adId, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.success) window.location.reload();
+        else alert('Hata: ' + (result.message || 'Reklam silinemedi.'));
+      } catch (err) {
+        alert('Sunucu hatası: ' + err.message);
+      }
+    }
+
     async function toggleSocialAd(key) {
       try {
         const res = await fetch('/api/admin/social-ads/' + key + '/toggle', { method: 'POST' });
@@ -1111,7 +1234,8 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
       }
     }
 
-    function openEditSocialAdModal(ad) {
+    function openEditSocialAdModal(adOrKey) {
+      const ad = (typeof adOrKey === 'object' && adOrKey) ? adOrKey : ((window._socialAdsList || []).find(a => a.key === adOrKey) || {});
       document.getElementById('editAdKey').value = ad.key || '';
       document.getElementById('editAdTitle').value = ad.title || '';
       document.getElementById('editAdSubtitle').value = ad.subtitle || '';

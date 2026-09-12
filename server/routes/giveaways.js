@@ -528,7 +528,17 @@ router.post('/api/admin/giveaways/:id/status', requireRole(ROLES.GIVEAWAY_ADMIN)
     const g = giveawayService.transitionStatus(req.params.id, status, reason, req.user);
     res.json({ success: true, status: g.status });
   } catch (err) {
-    res.status(400).json({ success: false, code: 'STATE_TRANSITION_FAILED', message: err.message });
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Admin: Çekiliş Sil (Delete Giveaway)
+router.delete('/api/admin/giveaways/:id', requireRole(ROLES.GIVEAWAY_ADMIN), async (req, res) => {
+  try {
+    giveawayService.deleteGiveaway(req.params.id, req.user);
+    res.json({ success: true, message: 'Çekiliş başarıyla silindi.' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
   }
 });
 
