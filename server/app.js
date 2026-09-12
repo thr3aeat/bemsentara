@@ -111,6 +111,8 @@ app.use((req, res, next) => {
 });
 
 const FileSessionStore = require("./sessionStore");
+const User = require("../models/User");
+const { COOKIE_NAME, createRecoveryToken, verifyRecoveryToken, readCookie, cookieOptions } = require('./services/sessionRecovery');
 
 app.use(
   session({
@@ -130,6 +132,44 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Dosya tabanlı session, deploy yeniden başlatmasında kaybolabilir. Bu imzalı
+// cookie yalnızca kullanıcı kimliği ve son kullanma süresi taşır; geçerli ise
+// session güvenli biçimde yeniden oluşturulur.
+app.use(async (req, res, next) => {
+  const originalLogin = req.login.bind(req);
+  req.login = (user, options, callback) => {
+    const done = typeof options === 'function' ? options : callback;
+    const loginOptions = typeof options === 'function' ? undefined : options;
+    originalLogin(user, loginOptions, (err) => {
+      if (!err && (user?._id || user?.discordId)) {
+        const token = createRecoveryToken(user, SESSION_SECRET);
+        if (token) res.cookie(COOKIE_NAME, token, cookieOptions);
+      }
+      if (typeof done === 'function') done(err);
+    });
+  };
+
+  if (req.user) {
+    const token = createRecoveryToken(req.user, SESSION_SECRET);
+    if (token) res.cookie(COOKIE_NAME, token, cookieOptions);
+    return next();
+  }
+  const recovery = verifyRecoveryToken(readCookie(req.headers.cookie, COOKIE_NAME), SESSION_SECRET);
+  if (!recovery) return next();
+
+  try {
+    const user = (recovery.uid ? await User.findById(recovery.uid) : null)
+      || (recovery.did ? await User.findOne({ discordId: recovery.did }) : null);
+    if (!user || user.isBanned) {
+      res.clearCookie(COOKIE_NAME, { path: '/' });
+      return next();
+    }
+    req.login(user, (err) => err ? next(err) : next());
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── 🛡️ KATİ ADMİN VE YETKİLİ SAYFA ERİŞİM GÜVENLİĞİ ──────────────────────────
 app.use(strictRoleGuardMiddleware);

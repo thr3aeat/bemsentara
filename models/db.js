@@ -129,6 +129,17 @@ async function upsertRecord(collectionName, storeId, data) {
   }
 }
 
+// ── Tek kayıt sil ───────────────────────────────────────────────────────────
+
+async function deleteRecord(collectionName, storeId) {
+  if (!isMongoActive()) return;
+  try {
+    await Record.deleteOne({ collection: collectionName, _storeId: String(storeId) });
+  } catch (err) {
+    console.error(`[db] Kayıt silinemedi (${collectionName}/${storeId}):`, err.message);
+  }
+}
+
 // ── Tüm koleksiyonu toplu kaydet ─────────────────────────────────────────────
 
 async function saveCollectionToMongo(collectionName, map) {
@@ -160,5 +171,6 @@ module.exports = {
   getRecord,
   loadCollectionFromMongo,
   upsertRecord,
+  deleteRecord,
   saveCollectionToMongo,
 };

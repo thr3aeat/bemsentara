@@ -28,6 +28,7 @@ const { isSiteAdmin } = require("../../utils/adminCheck");
 const { renderHelpHubPage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
 const { renderPhibiSupportPage } = require("../views/phibiSupportPage");
 const { renderCareersPage } = require("../views/careersPage");
+const { renderVideoBlogPage } = require("../views/videoBlogPage");
 
 const router = express.Router();
 
@@ -51,6 +52,7 @@ router.get("/yardim", (req, res) => {
 router.get("/faq", (req, res) => res.redirect("/yardim"));
 router.get("/safety", (req, res) => res.redirect("/yardim"));
 router.get("/blog", (req, res) => res.send(renderBlogPage()));
+router.get("/video-blog", (req, res) => res.send(renderVideoBlogPage()));
 router.get("/blog/:slug", (req, res) => res.send(renderBlogPostPage(req.params.slug)));
 router.get("/yazar/:slug", (req, res) => res.send(renderAuthorPage(req.params.slug)));
 

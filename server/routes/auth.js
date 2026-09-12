@@ -126,7 +126,7 @@ const bcrypt = require("bcrypt");
 
 async function resolveDiscordUser(username) {
   const { getDiscordClient } = require("../../bot/discordClient");
-  const { TARGET_GUILD_ID } = require("../../config");
+  const { TARGET_GUILD_ID, GUILD2_ID } = require("../../config");
   const client = getDiscordClient();
   if (!client || !client.isReady()) throw new Error("Discord botu aktif değil.");
 
@@ -134,11 +134,17 @@ async function resolveDiscordUser(username) {
     return await client.users.fetch(username).catch(() => null);
   }
 
-  const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
-  if (!guild) return null;
-  const members = await guild.members.fetch();
-  const member = members.find(m => m.user.username.toLowerCase() === username.toLowerCase());
-  return member ? member.user : null;
+  const wanted = String(username).replace(/^@/, '').toLocaleLowerCase('tr');
+  for (const guildId of [...new Set([TARGET_GUILD_ID, GUILD2_ID].filter(Boolean))]) {
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
+    if (!guild) continue;
+    const members = await guild.members.fetch().catch(() => null);
+    const member = members?.find((m) => [m.user.username, m.user.globalName, m.nickname]
+      .filter(Boolean)
+      .some((name) => String(name).toLocaleLowerCase('tr') === wanted));
+    if (member) return member.user;
+  }
+  return null;
 }
 
 // --- Discord Auth Routes ---
@@ -363,27 +369,7 @@ router.post("/auth/send-discord-dm-code", async (req, res) => {
   try {
     const username = String(req.body.username || '').trim();
     if (!username) return res.status(400).json({ error: "Discord kullanıcı adı veya ID gerekli." });
-
-    const { getDiscordClient } = require("../../bot/discordClient");
-    const client = getDiscordClient();
-    if (!client || !client.isReady()) {
-      return res.status(500).json({ error: "Discord botu aktif değil." });
-    }
-
-    let discordUser = null;
-    if (/^\d{17,20}$/.test(username)) {
-      discordUser = await client.users.fetch(username).catch(() => null);
-    }
-
-    if (!discordUser) {
-      const { TARGET_GUILD_ID } = require("../../config");
-      const guild = await client.guilds.fetch(TARGET_GUILD_ID).catch(() => null);
-      if (guild) {
-        const members = await guild.members.fetch();
-        const m = members.find(mem => mem.user.username.toLowerCase() === username.toLowerCase());
-        if (m) discordUser = m.user;
-      }
-    }
+    const discordUser = await resolveDiscordUser(username);
 
     if (!discordUser) {
       return res.json({ success: false, isNewUser: true, username: username, error: "Discord kullanıcısı bulunamadı." });
@@ -407,7 +393,18 @@ router.post("/auth/send-discord-dm-code", async (req, res) => {
 
     res.json({ success: true, message: "Doğrulama kodu Discord DM ile gönderildi!", targetId: discordUser.id });
   } catch (err) {
-    res.status(400).json({ error: err.message || "DM gönderilemedi." });
+    // A closed Discord DM is an expected, recoverable user-side condition.
+    // Returning a normal JSON response lets the portal show the explanation
+    // without the browser treating the action as a failed network request.
+    const message = err.message || "DM gönderilemedi.";
+    const isDeliveryProblem = /DM gönderilemedi|Discord botu aktif değil/i.test(message);
+    if (isDeliveryProblem) {
+      return res.json({
+        success: false,
+        error: `${message} Discord OAuth ile giriş yapmayı da deneyebilirsin.`
+      });
+    }
+    res.status(500).json({ error: "Kod gönderilirken beklenmeyen bir hata oluştu." });
   }
 });
 
@@ -967,6 +964,7 @@ router.get(
 router.get("/logout", (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).send(err);
+    res.clearCookie("__ekoyildiz_recovery", { path: "/" });
     res.redirect("/");
   });
 });
