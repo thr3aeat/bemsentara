@@ -881,7 +881,7 @@ class SocialHubService {
             if (k) {
               var payload = JSON.stringify({ adKey: k, eventType: 'card_view' });
               if (navigator.sendBeacon) {
-                navigator.sendBeacon('/api/social-ads/event', payload);
+                navigator.sendBeacon('/api/social-ads/event', new Blob([payload], { type: 'application/json' }));
               } else {
                 fetch('/api/social-ads/event', {
                   method: 'POST',
@@ -897,7 +897,7 @@ class SocialHubService {
       function trackSocialClick(adKey) {
         try {
           if (navigator.sendBeacon) {
-            navigator.sendBeacon('/api/social-ads/event', JSON.stringify({ adKey: adKey, eventType: 'social_link_clicked' }));
+            navigator.sendBeacon('/api/social-ads/event', new Blob([JSON.stringify({ adKey: adKey, eventType: 'social_link_clicked' })], { type: 'application/json' }));
           }
         } catch(e) {}
       }

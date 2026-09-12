@@ -82,6 +82,11 @@ app.get("/ads.txt", (req, res) => {
   res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
 });
 
+// Keep browser consoles clean even when the deployment has no separate .ico.
+app.get("/favicon.ico", (req, res) => {
+  res.redirect(302, "/public/assets/mascot.png");
+});
+
 app.use("/public", express.static(path.join(__dirname, "public"), {
   dotfiles: "ignore",
   index: false,

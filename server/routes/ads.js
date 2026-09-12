@@ -79,7 +79,7 @@ router.delete('/api/admin/ads/:id', async (req, res) => {
 // ==========================================
 
 // Public: Track interactive social ad event (beacon or POST)
-router.post('/api/social-ads/event', async (req, res) => {
+router.post('/api/social-ads/event', express.text({ type: 'text/plain' }), async (req, res) => {
   try {
     let body = req.body;
     if (typeof body === 'string') {

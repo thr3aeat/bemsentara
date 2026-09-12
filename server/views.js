@@ -1476,13 +1476,13 @@ function renderLoginPage(errorMsg = null) {
       0%   { transform:scale(1); opacity:0.04; }
       100% { transform:scale(1.15); opacity:0.08; }
     }
-    .container { position:relative; z-index:10; width:100%; max-width:420px; padding:1.5rem; }
+    .container { position:relative; z-index:10; width:100%; max-width:480px; padding:1.5rem; }
     .card {
-      background:rgba(255,255,255,0.035);
+      background:linear-gradient(145deg,rgba(30,32,56,0.94),rgba(12,13,26,0.9));
       backdrop-filter:blur(28px) saturate(1.2);
       -webkit-backdrop-filter:blur(28px) saturate(1.2);
       border:1px solid rgba(255,255,255,0.07);
-      border-radius:24px; padding:3rem 2.5rem;
+      border-radius:28px; padding:2.35rem;
       text-align:center;
       box-shadow:0 24px 48px -12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
       animation:popIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
@@ -1537,6 +1537,19 @@ function renderLoginPage(errorMsg = null) {
     
     .link-btn { background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;text-decoration:underline; font-family:'Outfit',sans-serif; }
     .link-btn:hover { color:var(--text); }
+    .portal-topline { display:flex;justify-content:space-between;align-items:center;margin-bottom:1.7rem;font-size:.78rem;color:#aeb5d7; }
+    .portal-topline a { color:#d9b9ff;text-decoration:none; }
+    .brand-orbit { width:64px;height:64px;margin:0 auto 1rem;border-radius:22px;display:grid;place-items:center;font-size:1.85rem;background:linear-gradient(135deg,rgba(244,63,94,.24),rgba(139,92,246,.28));border:1px solid rgba(255,255,255,.15);box-shadow:0 12px 34px rgba(244,63,94,.18);transform:rotate(-5deg);transition:transform .25s ease; }
+    .brand-orbit:hover { transform:rotate(6deg) scale(1.08); }
+    .oauth-stack { display:grid;gap:.7rem;margin:1.25rem 0; }
+    .oauth-btn { position:relative;margin:0!important;justify-content:flex-start!important;padding:1rem 1.1rem!important; }
+    .oauth-icon { width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:rgba(255,255,255,.15);font-size:1rem; }
+    .oauth-copy { display:flex;flex-direction:column;align-items:flex-start;line-height:1.2; }.oauth-copy small{opacity:.7;font-size:.7rem;font-weight:400;margin-top:3px}.oauth-arrow{margin-left:auto;opacity:.72}
+    .trust-row { display:flex;justify-content:center;gap:13px;flex-wrap:wrap;color:#aeb5d7;font-size:.72rem;margin:1.25rem 0 .2rem; }.trust-row span{display:flex;gap:4px;align-items:center}
+    .fun-hint { min-height:20px;color:#aeb5d7;font-size:.75rem;margin:0 0 1rem;cursor:default; }.fun-hint:hover{color:#f9a8d4}
+    .stepper { display:flex;gap:6px;justify-content:center;margin:0 0 1.1rem; }.stepper i{display:block;width:25px;height:4px;border-radius:5px;background:rgba(255,255,255,.12)}.stepper i.active{background:linear-gradient(90deg,#fb7185,#a78bfa)}
+    .input-field:focus { outline:none;border-color:#a78bfa;box-shadow:0 0 0 4px rgba(167,139,250,.13); }
+    @media (max-width:480px){ body{overflow:auto}.container{padding:.8rem}.card{padding:1.8rem 1.2rem;border-radius:22px}.portal-topline{margin-bottom:1.1rem} }
   </style>
 </head>
 <body>
@@ -1544,9 +1557,11 @@ function renderLoginPage(errorMsg = null) {
   <div class="glow glow-2"></div>
   <div class="container">
     <div class="card">
+      <div class="portal-topline"><span>✦ RESMİ GİRİŞ PORTALI</span><a href="/yardim">Yardıma mı ihtiyacın var?</a></div>
+      <div class="brand-orbit" title="Panik yok, yıldızlar yolu bilir.">✦</div>
       <span class="logo" style="background: linear-gradient(135deg, #f43f5e, #fda4af); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight:800; font-size:2.2rem;">EkoYıldız</span>
       <h1>EkoYıldız Portalı</h1>
-      <p class="subtitle">Sisteme giriş yapmak için bir yöntem seçin</p>
+      <p class="subtitle">Topluluğuna güvenle bağlan. Şifreni değil, enerjini getir.</p>
 
       <div class="error-box" id="error-box">${errorMsg ? errorMsg : ''}</div>
 
@@ -1556,12 +1571,16 @@ function renderLoginPage(errorMsg = null) {
           <input type="checkbox" id="remember-discord">
           <label for="remember-discord">Beni Hatırla</label>
         </div>
-        <a href="#" onclick="goDiscordAuth()" class="btn btn-discord" style="background:#5865F2;">Discord ile Giriş Yap</a>
-        <a href="/auth/roblox" class="btn" style="background:#000; border:1px solid rgba(255,255,255,0.2); color:#fff;">Roblox ile Giriş Yap</a>
+        <div class="oauth-stack">
+          <a href="#" onclick="goDiscordAuth(); return false;" class="btn btn-discord oauth-btn" style="background:#5865F2;"><span class="oauth-icon">◉</span><span class="oauth-copy">Discord ile devam et<small>Hızlı ve güvenli OAuth bağlantısı</small></span><span class="oauth-arrow">→</span></a>
+          <a href="/auth/roblox" class="btn oauth-btn" style="background:#111827; border:1px solid rgba(255,255,255,0.18); color:#fff;"><span class="oauth-icon">◆</span><span class="oauth-copy">Roblox ile devam et<small>Roblox hesabını doğrudan bağla</small></span><span class="oauth-arrow">→</span></a>
+        </div>
+        <p class="fun-hint" id="portal-hint">💡 İpucu: Discord kodun bir sırdır. Eko bile öğrenemez.</p>
         <div class="divider">veya</div>
         <button onclick="showView('view-otp')" class="btn btn-primary" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">Discord Kod Gönder (DM)</button>
         <button onclick="showView('view-password')" class="btn btn-primary" style="background:rgba(255,255,255,0.1); color:#fff; box-shadow:none;">Site Şifresi ile Giriş</button>
-        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">✨ Yeni Hesap Oluştur (Kayıt Ol)</button>
+        <button onclick="startRegisterWizard()" class="btn" style="background:rgba(52,211,153,0.15); color:#6ee7b7; border:1px solid rgba(52,211,153,0.3); margin-top:0.4rem;">✨ Aramıza katıl — Kayıt ol</button>
+        <div class="trust-row"><span>🔒 Şifre korunur</span><span>⚡ OAuth destekli</span><span>🛟 Destek burada</span></div>
       </div>
 
       <!-- OTP VIEW -->
@@ -1600,6 +1619,7 @@ function renderLoginPage(errorMsg = null) {
 
       <!-- INTERACTIVE REGISTER WIZARD VIEW -->
       <div id="view-register-wizard" style="display:none; text-align:left;">
+        <div class="stepper"><i class="active"></i><i></i><i></i></div>
         <h2 style="font-size:1.15rem; margin-bottom:0.3rem; color:#fff; text-align:center;">✨ Yeni Hesap Oluşturma</h2>
         <p style="font-size:0.82rem; color:var(--muted); text-align:center; margin-bottom:1.2rem;">Adım Adım İnteraktif Kurulum <span id="reg-username-display" style="color:var(--accent); font-weight:600;"></span></p>
 
@@ -1701,7 +1721,21 @@ function renderLoginPage(errorMsg = null) {
           document.getElementById('wiz-step-3').style.display = 'none';
           document.getElementById('wiz-step-4').style.display = 'none';
           document.getElementById('wiz-step-' + stepNum).style.display = 'block';
+          document.querySelectorAll('.stepper i').forEach(function(dot, index) {
+            dot.classList.toggle('active', index < Math.min(stepNum, 3));
+          });
         }
+
+        const portalHints = [
+          '💡 İpucu: Discord kodun bir sırdır. Eko bile öğrenemez.',
+          '🧃 Güvenlik molası: Şifreni kopyala-yapıştır yapma, hatırlaması zor olsun.',
+          '🎮 Roblox parolanı burada soran biri varsa, o kesinlikle biz değiliz.',
+          '✨ Küçük yıldız, büyük güvenlik: OAuth bağlantısı hazır.'
+        ];
+        const hint = document.getElementById('portal-hint');
+        if (hint) hint.addEventListener('mouseenter', function() {
+          hint.textContent = portalHints[Math.floor(Math.random() * portalHints.length)];
+        });
 
         function checkPasswordStrength(val) {
           const indicator = document.getElementById('pwd-strength');

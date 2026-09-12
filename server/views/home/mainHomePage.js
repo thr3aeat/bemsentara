@@ -1758,7 +1758,8 @@ function renderMainHomePage(userOrOptions = null) {
       if (e.target.id === 'cmdPalette') closeCommandPalette();
     }
     document.addEventListener('keydown', function(e) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      const key = String(e.key || '').toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && key === 'k') {
         e.preventDefault();
         openCommandPalette();
       }
@@ -1804,7 +1805,8 @@ function renderMainHomePage(userOrOptions = null) {
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     let konamiIndex = 0;
     document.addEventListener('keydown', function(e) {
-      if (e.key === konamiCode[konamiIndex] || e.key.toLowerCase() === konamiCode[konamiIndex]) {
+      const key = String(e.key || '');
+      if (key === konamiCode[konamiIndex] || key.toLowerCase() === konamiCode[konamiIndex]) {
         konamiIndex++;
         if (konamiIndex === konamiCode.length) {
           alert("🎮 GİZLİ EKOCAN KONAMİ KODU AÇILDI! Burayı bulduysan gerçekten siteyi kurcalıyorsun 😎");
