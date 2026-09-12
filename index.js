@@ -20,6 +20,11 @@ const { PORT, BASE_URL, TOKEN } = require("./config");
 const cron = require("node-cron");
 const axios = require("axios");
 const logger = require("./utils/logger");
+const { installPhibiDmFallback } = require("./bot/services/phibiDmFallback");
+
+// Sentara always owns normal bot activity. This patch affects DM channels only:
+// Sentara attempts delivery first, then Phibi uses its own token only on failure.
+installPhibiDmFallback();
 
 // ── 7/24 Kendini İyileştirme & Çökme Önleyici (Self-Healing Crash Guard) ───
 process.on("unhandledRejection", (reason, promise) => {

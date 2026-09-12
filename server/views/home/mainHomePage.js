@@ -26,10 +26,65 @@ function safeUrl(value, fallback = '/') {
   }
 }
 
+function renderFocusedHomePage(user) {
+  const name = escapeHtml(user?.username || user?.discordUsername || 'misafir');
+  const accountAction = user
+    ? '<a class="home-button home-button-dark" href="/dashboard">Panele git</a>'
+    : '<a class="home-button home-button-dark" href="/login">Giriş yap</a>';
+
+  return `<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111114">
+  <meta name="description" content="EkoYıldız içerik, topluluk ve destek merkezi.">
+  <title>EkoYıldız</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#171719; --muted:#69696f; --line:#e9e9ec; --paper:#fff; --soft:#f6f6f7; --pink:#ed5b7b; }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:var(--paper); font-family:Inter,Arial,sans-serif; }
+    a { color:inherit; text-decoration:none; } .home-wrap { width:min(1160px,calc(100% - 40px)); margin:auto; }
+    .home-nav { height:76px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+    .home-brand { font-weight:800; letter-spacing:-.06em; font-size:1.25rem; } .home-brand i { color:var(--pink); font-style:normal; }
+    .home-links { display:flex; align-items:center; gap:25px; color:#4d4d53; font-size:.9rem; font-weight:600; }
+    .home-links a:hover { color:var(--ink); } .home-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 18px; border-radius:9px; font-weight:700; font-size:.9rem; }
+    .home-button-dark { color:#fff; background:#19191b; } .home-button-light { color:#19191b; background:#fff; border:1px solid #d9d9de; }
+    .home-hero { display:grid; grid-template-columns:1.15fr .85fr; gap:56px; min-height:550px; align-items:center; padding:75px 0; }
+    .home-eyebrow { color:var(--pink); font-size:.76rem; letter-spacing:.12em; font-weight:800; text-transform:uppercase; }
+    h1 { max-width:680px; margin:16px 0 20px; font-size:clamp(3rem,6vw,5.45rem); line-height:.98; letter-spacing:-.075em; }
+    .home-intro { max-width:540px; color:var(--muted); font-size:1.1rem; line-height:1.65; } .home-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
+    .home-note { margin-top:20px; color:#888890; font-size:.82rem; } .home-art { align-self:stretch; min-height:370px; border-radius:20px; background:#f0edf0; display:flex; flex-direction:column; justify-content:flex-end; padding:32px; overflow:hidden; position:relative; }
+    .home-art::before { content:''; position:absolute; width:240px; height:240px; border-radius:50%; background:var(--pink); top:45px; right:-65px; } .home-art::after { content:'✦'; position:absolute; color:#fff; font-size:9rem; top:65px; right:27px; }
+    .home-art span,.home-art strong { position:relative; z-index:1; } .home-art span { color:#6e5961; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.11em; } .home-art strong { margin-top:10px; font-size:1.65rem; letter-spacing:-.05em; max-width:250px; }
+    .home-section { border-top:1px solid var(--line); padding:30px 0 72px; } .home-section-head { display:flex; justify-content:space-between; gap:24px; align-items:end; padding:30px 0; } .home-section-head h2 { margin:0; letter-spacing:-.055em; font-size:2rem; } .home-section-head p { max-width:430px; color:var(--muted); line-height:1.55; margin:0; }
+    .home-grid { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); border-radius:14px; overflow:hidden; } .home-card { padding:28px; min-height:208px; border-right:1px solid var(--line); } .home-card:last-child { border:0; } .home-card small { display:block; color:var(--pink); font-weight:800; letter-spacing:.1em; } .home-card h3 { font-size:1.15rem; letter-spacing:-.035em; margin:17px 0 10px; } .home-card p { color:var(--muted); line-height:1.55; font-size:.9rem; } .home-card a { font-size:.86rem; font-weight:700; text-decoration:underline; text-underline-offset:4px; }
+    .home-join { padding:38px; background:#19191b; color:#fff; border-radius:16px; display:flex; justify-content:space-between; align-items:center; gap:24px; } .home-join h2 { margin:0; letter-spacing:-.05em; font-size:1.9rem; } .home-join p { color:#bbb; margin:8px 0 0; }
+    footer { padding:30px 0 42px; color:#86868e; font-size:.8rem; display:flex; justify-content:space-between; }
+    @media(max-width:760px) { .home-wrap{width:min(100% - 28px,1160px)} .home-links a:not(:last-child){display:none} .home-hero{grid-template-columns:1fr;gap:22px;padding:55px 0} .home-art{min-height:235px} .home-grid{grid-template-columns:1fr}.home-card{border-right:0;border-bottom:1px solid var(--line)}.home-card:last-child{border-bottom:0}.home-section-head,.home-join,footer{align-items:flex-start;flex-direction:column}.home-section-head{gap:12px} }
+  </style>
+</head>
+<body>
+  <div class="home-wrap">
+    <header class="home-nav"><a class="home-brand" href="/">eko<i>yıldız</i></a><nav class="home-links"><a href="/yardim">Yardım merkezi</a><a href="/ekoyildizda-calis">Ekip</a><a href="/cekilisler">Çekilişler</a>${accountAction}</nav></header>
+    <main>
+      <section class="home-hero"><div><div class="home-eyebrow">EkoYıldız topluluğu</div><h1>İyi oyunlar, iyi insanlar.</h1><p class="home-intro">İçerikleri takip et, toplulukla buluş ve ihtiyacın olduğunda doğru yere tek adımda ulaş. Gereksiz karmaşa yok.</p><div class="home-actions"><a class="home-button home-button-dark" href="https://discord.gg/1367646464804655104" target="_blank" rel="noreferrer">Discord’a katıl</a><a class="home-button home-button-light" href="/yardim">Yardım al</a></div><div class="home-note">${user ? `Tekrar hoş geldin, ${name}.` : 'Hesabın varsa panelden devam edebilirsin.'}</div></div><aside class="home-art"><span>Topluluk, içerik, destek</span><strong>Herkes için daha düzenli bir EkoYıldız.</strong></aside></section>
+      <section class="home-section"><div class="home-section-head"><h2>Neye ihtiyacın var?</h2><p>Sayfaları yalnızca işe yarayan şeyler etrafında topladık.</p></div><div class="home-grid"><article class="home-card"><small>01 / İÇERİK</small><h3>Yeni şeyleri keşfet</h3><p>Çekilişler, duyurular ve toplulukta olan bitenler tek yerde.</p><a href="/cekilisler">Çekilişlere git</a></article><article class="home-card"><small>02 / DESTEK</small><h3>Doğru kişiye ulaş</h3><p>Hesap, doğrulama veya sunucu sorunları için net yardım yolları.</p><a href="/yardim">Safety Center’ı aç</a></article><article class="home-card"><small>03 / EKİP</small><h3>EkoYıldız’da çalış</h3><p>Ekibe nasıl katkı sunabileceğini, süreci ve beklentileri incele.</p><a href="/ekoyildizda-calis">Ekip sayfasını aç</a></article></div></section>
+      <section class="home-section"><div class="home-section-head"><h2>Haberler ve notlar</h2><p>Ne değiştiğini, nasıl çalıştığını ve toplulukta neler olduğunu şeffaf biçimde paylaşıyoruz.</p></div><div class="home-grid"><article class="home-card"><small>SAFETY · 12 EYLÜL</small><h3>Daha güvenli bir topluluk için yeni moderasyon araçları</h3><p>Yeni raporlama, vaka merkezi ve spam koruması hakkında.</p><a href="/blog/yeni-moderasyon-araclari">Yazıyı oku</a></article><article class="home-card"><small>GÜNCELLEME</small><h3>Report sistemi yenilendi</h3><p>Bir kullanıcıyı bildirirken doğru bilgiyi vermek artık daha kolay.</p><a href="/blog/report-sistemi-yenilendi">Yazıyı oku</a></article><article class="home-card"><small>BEHIND THE SCENES</small><h3>Moderasyon sistemimizi nasıl tasarladık?</h3><p>Hızdan önce adalet, araçlardan önce ilkeler.</p><a href="/blog/moderasyon-sistemini-nasil-tasarladik">Yazıyı oku</a></article></div><div class="home-actions" style="margin-top:20px"><a class="home-button home-button-light" href="/blog">Tüm blog yazılarını aç</a></div></section>
+      <section class="home-join"><div><h2>Toplulukta yerini al.</h2><p>Discord sunucusunda sohbet et, yardım al ve gelişmeleri kaçırma.</p></div><a class="home-button home-button-light" href="https://discord.gg/1367646464804655104" target="_blank" rel="noreferrer">Discord’u aç</a></section>
+    </main><footer><span>© ${new Date().getFullYear()} EkoYıldız</span><span>Phibi destek sistemiyle birlikte</span></footer>
+  </div>
+</body></html>`;
+}
+
 function renderMainHomePage(userOrOptions = null) {
   const user = (userOrOptions && typeof userOrOptions === 'object' && 'user' in userOrOptions)
     ? userOrOptions.user
     : userOrOptions;
+
+  return renderFocusedHomePage(user);
 
   const config = homepageService.getConfig() || {};
   const greeting = homepageService.getDynamicGreeting();
@@ -1241,6 +1296,7 @@ function renderMainHomePage(userOrOptions = null) {
           <li><a href="#latest-video" class="nav-item-link">🎬 Videolar</a></li>
           <li><a href="/cekilisler" class="nav-item-link highlight">🎁 Çekilişler</a></li>
           <li><a href="/yardim" class="nav-item-link">❔ Yardım & Blog</a></li>
+          <li><a href="/ekoyildizda-calis" class="nav-item-link">EkoYıldız'da Çalış</a></li>
           <li><a href="#social-hub" class="nav-item-link">📱 Sosyal Hub</a></li>
           <li><a href="#series-section" class="nav-item-link">📚 Seriler</a></li>
           <li><a href="#community-section" class="nav-item-link">👥 Topluluk</a></li>

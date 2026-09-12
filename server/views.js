@@ -47,19 +47,19 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${_esc(title)} — RobloxLand & Sentara</title>
+  <title>${_esc(title)} — EkoYıldız</title>
 
   <!-- Discord & OpenGraph Modern Rich Embed Meta Tags -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="RobloxLand & Sentara Ecosystem">
-  <meta property="og:title" content="${_esc(title)} — RobloxLand & Sentara">
-  <meta property="og:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi. 7/24 kesintisiz hizmet, 65 seviye hiyerarşisi ve güvenli ticaret.">
+  <meta property="og:site_name" content="EkoYıldız">
+  <meta property="og:title" content="${_esc(title)} — EkoYıldız">
+  <meta property="og:description" content="EkoYıldız topluluk, destek ve içerik merkezi.">
   <meta property="og:image" content="https://i.imgur.com/PFcAc6q.png">
   <meta name="theme-color" content="#7C3AED">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${_esc(title)} — RobloxLand & Sentara">
-  <meta name="twitter:description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
-  <meta name="description" content="Türkiye'nin 1 numaralı Roblox geliştirici, harita dağıtımı, pazar yeri ve topluluk yönetim merkezi.">
+  <meta name="twitter:title" content="${_esc(title)} — EkoYıldız">
+  <meta name="twitter:description" content="EkoYıldız topluluk, destek ve içerik merkezi.">
+  <meta name="description" content="EkoYıldız topluluk, destek ve içerik merkezi.">
 
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <meta name="google-adsense-account" content="ca-pub-8395596912297122">
@@ -85,10 +85,6 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     html { scroll-behavior:smooth; }
     body {
       background: var(--bg);
-      background-image:
-        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 90% 100%, rgba(139,92,246,0.06) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,0.03) 0%, transparent 50%);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
@@ -98,7 +94,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       content:'';
       position:fixed; inset:0; z-index:0; pointer-events:none;
       background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
-      opacity:0.4;
+      display:none;
     }
 
     /* ── Ambient Glow ── */
@@ -107,7 +103,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       position:fixed; top:-30%; left:-10%; width:50vw; height:50vw;
       background: radial-gradient(circle, rgba(167,139,250,0.04) 0%, transparent 70%);
       pointer-events:none; z-index:0;
-      animation: ambientDrift 20s ease-in-out infinite alternate;
+      display:none;
     }
     @keyframes ambientDrift {
       0%   { transform: translate(0, 0) scale(1); }
@@ -116,22 +112,20 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
     /* ── Header ── */
     header {
-      background: rgba(6,6,14,0.45);
-      backdrop-filter: blur(28px) saturate(1.2);
-      -webkit-backdrop-filter: blur(28px) saturate(1.2);
+      background: #101014;
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 50px;
-      padding: 0.6rem 2rem;
+      border-radius: 14px;
+      padding: 0.7rem 1.25rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
-      top: 1.5rem;
+      top: 1rem;
       z-index: 200;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5), var(--glass-glow);
-      max-width: 1200px;
-      margin: 1.5rem auto 0;
-      width: calc(100% - 3rem);
+      box-shadow: none;
+      max-width: 1120px;
+      margin: 1rem auto 0;
+      width: calc(100% - 2rem);
     }
     .logo {
       display: flex;
@@ -465,7 +459,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 <body>
   <header>
     <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
-      <img src="https://i.imgur.com/PFcAc6q.png" alt="Sentara Logo" style="width:36px; height:36px; border-radius:10px; filter: drop-shadow(0 0 10px rgba(244,63,94,0.6)); flex-shrink:0;">
+      <img src="https://i.imgur.com/PFcAc6q.png" alt="EkoYıldız logosu" style="width:36px; height:36px; border-radius:10px; flex-shrink:0;">
       <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYıldız</span>
     </a>
     <button class="hamburger" id="hamburger" aria-label="Menü" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
@@ -473,13 +467,14 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     </button>
     <nav class="nav-links" id="nav-links">
       ${navLink('/', 'Ana Sayfa')}
-      ${navLink('/status', '📊 Sistem Durumu')}
-      ${navLink('/cekilisler', '🎁 Çekilişler')}
+      ${navLink('/yardim', 'Yardım')}
+      ${navLink('/cekilisler', 'Çekilişler')}
+      ${navLink('/ekoyildizda-calis', 'Ekip')}
       ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
       ${groupAdminLink}
       ${staffLinks}
       ${adminLink}
-      ${user ? `<a href="/dashboard" class="nav-link">Dashboard</a><a href="/settings" class="nav-link">⚙️ Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<button onclick="openLoginModal()" style="padding:0.5rem 1.3rem; border-radius:30px; background:linear-gradient(135deg, #f43f5e, #e11d48); color:#fff; border:none; font-weight:700; cursor:pointer; font-family:inherit; box-shadow: 0 4px 15px rgba(244,63,94,0.4);">Giriş Yap</button>`}
+      ${user ? `<a href="/dashboard" class="nav-link">Panel</a><a href="/settings" class="nav-link">Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<a href="/login" class="nav-link nav-active">Giriş yap</a>`}
     </nav>
   </header>
 
@@ -2052,6 +2047,29 @@ function renderDashboard(user, staffProgress) {
   // Use isAuthorized flag instead of checking username, since username might be a fallback value
   const isRobloxLinked = user.isAuthorized && user.robloxId;
   const hasDiscordOAuth = Boolean(user.discordId);
+  const displayName = _esc(user.username || user.discordUsername || 'EkoYıldız üyesi');
+  const role = isSiteAdmin(user) ? 'Yönetici' : (user.isStaff ? 'Ekip üyesi' : 'Topluluk üyesi');
+  const connectionSummary = [
+    hasDiscordOAuth ? 'Discord bağlı' : 'Discord bağlantısı bekliyor',
+    isRobloxLinked ? `Roblox: ${_esc(user.robloxUsername || 'bağlı')}` : 'Roblox bağlantısı bekliyor',
+  ];
+  const staffDestination = (user.isStaff || isSiteAdmin(user))
+    ? '<a class="focus-card" href="/staff"><span>EKİP</span><h2>Çalışma alanı</h2><p>Yetkili araçlarına ve ekip akışına eriş.</p><b>Alanı aç →</b></a>'
+    : '<a class="focus-card" href="/ekoyildizda-calis"><span>EKİP</span><h2>EkoYıldız’da çalış</h2><p>Ekibe katılım, çalışma biçimi ve açık roller hakkında bilgi al.</p><b>Bilgi edin →</b></a>';
+  const focusedContent = `
+    <section class="focused-dashboard">
+      <div class="focused-heading"><div><p class="focused-label">HESABIN</p><h1>Merhaba, ${displayName}.</h1><p class="focused-copy">Burada yalnızca hesabın, bağlantıların ve ihtiyacın olan yollar var.</p></div><div class="focused-account"><strong>${role}</strong><span>${connectionSummary.join(' · ')}</span><a href="/settings">Hesap ayarları</a></div></div>
+      <div class="focus-grid">
+        <a class="focus-card focus-card-featured" href="/tickets/new"><span>DESTEK</span><h2>Bir konu mu var?</h2><p>Teknik sorun, hesap ve topluluk taleplerini doğru ekibe ilet.</p><b>Destek talebi oluştur →</b></a>
+        <a class="focus-card" href="/yardim"><span>YARDIM MERKEZİ</span><h2>Önce hızlıca bak</h2><p>Sık sorulan sorular, doğrulama ve sunucu rehberleri burada.</p><b>Yardım merkezini aç →</b></a>
+        <a class="focus-card" href="/auth/roblox"><span>ROBLOX</span><h2>${isRobloxLinked ? 'Hesabın bağlı' : 'Hesabını bağla'}</h2><p>${isRobloxLinked ? 'Bağlantını ve rol durumunu ayarlardan yönetebilirsin.' : 'Doğrulama seçenekleriyle Roblox hesabını EkoYıldız’a bağla.'}</p><b>${isRobloxLinked ? 'Ayarları aç →' : 'Doğrulamaya git →'}</b></a>
+        ${staffDestination}
+      </div>
+    </section>`;
+  const focusedCss = `<style>
+    .focused-dashboard{max-width:1040px;margin:28px auto 48px}.focused-heading{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;padding:42px 0;border-bottom:1px solid rgba(255,255,255,.12)}.focused-label,.focus-card span{font-size:.72rem;letter-spacing:.12em;font-weight:800;color:#fda4af;margin:0 0 12px}.focused-heading h1{font-size:clamp(2.25rem,5vw,4.3rem);letter-spacing:-.065em;line-height:1;margin:0}.focused-copy{color:var(--muted);margin:15px 0 0;max-width:530px;line-height:1.55}.focused-account{min-width:220px;border-left:1px solid rgba(255,255,255,.12);padding-left:22px;display:flex;flex-direction:column;gap:7px}.focused-account strong{font-size:.94rem}.focused-account span{color:var(--muted);font-size:.82rem;line-height:1.45}.focused-account a,.focus-card b{font-size:.84rem;color:#fff;text-decoration:underline;text-underline-offset:4px;margin-top:7px}.focus-grid{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;margin-top:28px}.focus-card{min-height:235px;padding:30px;display:flex;flex-direction:column;align-items:flex-start;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);color:inherit;text-decoration:none;background:#101014;transition:background .18s}.focus-card:nth-child(2n){border-right:0}.focus-card:nth-last-child(-n+2){border-bottom:0}.focus-card:hover{background:#18181d}.focus-card h2{font-size:1.45rem;letter-spacing:-.045em;margin:0}.focus-card p{font-size:.92rem;line-height:1.55;color:var(--muted);max-width:330px;margin:12px 0}.focus-card b{margin-top:auto}.focus-card-featured{background:#ee6a88;color:#1a1114}.focus-card-featured span,.focus-card-featured p,.focus-card-featured b{color:#1a1114}@media(max-width:720px){.focused-dashboard{margin-top:8px}.focused-heading{align-items:flex-start;flex-direction:column;padding:30px 0}.focused-account{border-left:0;border-top:1px solid rgba(255,255,255,.12);padding:16px 0 0;width:100%}.focus-grid{grid-template-columns:1fr}.focus-card,.focus-card:nth-child(2n){border-right:0;border-bottom:1px solid rgba(255,255,255,.12)}.focus-card:last-child{border-bottom:0}}</style>`;
+  return _layout('Panel', user, focusedContent, focusedCss, '/dashboard');
+
   const usernameIsEkonqt = String(user.robloxUsername || '').toLowerCase() === 'damndoggii';
   const hasModeratorTeamMembership = Boolean(user.verificationStatus?.moderatorTeamMember || user.verificationStatus?.moderatorTeamGroupMember);
   const { SUPPORT_CATEGORIES } = require("../config");

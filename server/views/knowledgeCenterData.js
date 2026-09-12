@@ -1,0 +1,24 @@
+'use strict';
+
+const authors = {
+  'eko-safety': { slug: 'eko-safety', name: 'EkoYıldız Safety', role: 'Güvenlik ve topluluk ekibi', initials: 'ES', bio: 'Topluluğun güvenli kalması için rehberler, uyarılar ve şeffaflık raporları hazırlayan ekip.' },
+  'deniz-kaya': { slug: 'deniz-kaya', name: 'Deniz Kaya', role: 'Topluluk Operasyonları', initials: 'DK', bio: 'Moderasyon süreçleri, üyelik deneyimi ve topluluk iletişimi üzerine çalışıyor.' },
+  'arda-yilmaz': { slug: 'arda-yilmaz', name: 'Arda Yılmaz', role: 'Ürün ve Bot Ekibi', initials: 'AY', bio: 'EkoYıldız’ın botları, doğrulama akışları ve yeni ürün deneyimlerini geliştiriyor.' },
+};
+
+const posts = [
+  { slug: 'yeni-moderasyon-araclari', category: 'Safety', date: '12 Eylül 2026', title: 'Daha güvenli bir topluluk için yeni moderasyon araçlarımız', excerpt: 'Yeni raporlama sistemi, vaka merkezi ve geliştirilmiş spam koruması yayında.', author: 'eko-safety', featured: true, body: ['Son aylarda moderasyon araçlarımızı daha anlaşılır ve daha hızlı hâle getirmek için çalışıyorduk. Bugün yeni raporlama sistemi, vaka merkezi ve geliştirilmiş spam korumasını kullanıma sunuyoruz.', 'Neler değişti? Daha hızlı raporlama, daha anlaşılır ceza nedenleri, yeni itiraz sistemi ve geliştirilmiş raid tespiti. Bu araçlar, kararların daha tutarlı alınmasına ve üyelerin süreci daha net izlemesine yardımcı olur.'] },
+  { slug: 'report-sistemi-yenilendi', category: 'Güncellemeler', date: '04 Eylül 2026', title: 'Report sistemi yenilendi', excerpt: 'Bir kullanıcıyı bildirirken doğru bilgiyi vermek artık daha kolay.', author: 'deniz-kaya', body: ['Yeni bildirim akışı, olayın türünü seçmeyi ve açıklamayı ayırıyor. Böylece ekip doğru vakayı daha hızlı inceleyebiliyor.', 'Acil tehlike veya hesap güvenliği durumlarında önce Safety Center rehberlerini takip etmeni öneriyoruz.'] },
+  { slug: 'moderasyon-sistemini-nasil-tasarladik', category: 'Behind the Scenes', date: '28 Ağustos 2026', title: 'Moderasyon sistemimizi nasıl tasarladık?', excerpt: 'Araçlardan önce ilkeleri, hızdan önce adaleti düşündük.', author: 'deniz-kaya', body: ['İyi bir moderasyon sistemi yalnızca ceza vermek için kurulmaz. Bağlamı görmek, üyeyi dinlemek ve kararın nedenini açıklamak için kurulur.', 'Bu nedenle işlem geçmişi, itiraz ve geri bildirim kanallarını aynı vaka akışında buluşturduk.'] },
+  { slug: 'bot-v42-yayinlandi', category: 'Geliştirici', date: '20 Ağustos 2026', title: 'Bot v4.2 yayınlandı', excerpt: 'Daha hızlı olay işleme, net komut yanıtları ve yenilenmiş doğrulama akışı.', author: 'arda-yilmaz', body: ['v4.2 ile doğrulama, destek ve güvenlik akışlarını sadeleştirdik. Bot, üyeyi sadece doğru sayfaya yönlendirmekle kalmıyor; durumuna uygun bir sonraki adımı da gösteriyor.', 'Her yeni sürümde güvenlik ve veri minimizasyonu ilkelerini gözden geçiriyoruz.'] },
+  { slug: 'bu-ay-toplulukta-neler-oldu', category: 'Topluluk', date: '15 Ağustos 2026', title: 'Bu ay toplulukta neler oldu?', excerpt: 'Etkinlikler, yeni partnerler ve üyelerden öne çıkan çalışmalar.', author: 'deniz-kaya', body: ['Bu ay etkinlik kanallarında yeni projeler, oyun geceleri ve topluluk tarafından hazırlanan çalışmalar öne çıktı.', 'Paylaşım yapan, yardım eden ve topluluğu iyi tutan herkese teşekkürler.'] },
+];
+
+const topics = [
+  ['Hesabımı nasıl korurum?', 'Güvenlik temelleri'], ['2FA neden önemli?', 'Güvenlik temelleri'], ['Şüpheli bağlantıya tıkladım', 'Hesap güvenliği'], ['Hesabım ele geçirildi', 'Hesap güvenliği'], ['Sahte botları nasıl anlarım?', 'Dolandırıcılık'], ['Sahte Nitro bağlantıları', 'Dolandırıcılık'], ['QR kod dolandırıcılığı', 'Dolandırıcılık'], ['Token hırsızlığı', 'Dolandırıcılık'], ['Sahte moderatörler', 'Dolandırıcılık'], ['Bedava Robux dolandırıcılıkları', 'Dolandırıcılık'], ['Bir kullanıcıyı nasıl raporlarım?', 'Topluluk'], ['Taciz durumunda ne yapmalıyım?', 'Topluluk'], ['DM reklamlarını nasıl bildiririm?', 'Topluluk'], ['Raid nedir?', 'Moderasyon'], ['Şüpheli kullanıcıları nasıl bildiririm?', 'Moderasyon'], ['Moderasyon sistemimiz nasıl çalışıyor?', 'Moderasyon'], ['Neden ceza aldım?', 'Cezalar'], ['İtiraz nasıl yapılır?', 'Cezalar'], ['Ceza türleri nelerdir?', 'Cezalar'], ['Reportlar nasıl inceleniyor?', 'Cezalar'],
+];
+
+const activeAlert = { date: '12 Eylül', title: 'Sahte Nitro bağlantılarında artış görüyoruz', text: 'Bilmediğiniz kişilerden gelen bağlantılara giriş yapmayın; resmî sayfa dışındaki QR kodları taramayın.' };
+const pastAlerts = ['3 Eylül — QR giriş dolandırıcılığı', '27 Ağustos — Sahte moderatör hesapları'];
+
+module.exports = { authors, posts, topics, activeAlert, pastAlerts };

@@ -159,6 +159,19 @@ class ComponentsV2Factory {
     };
   }
 
+  /** EkoYıldız yetkili alım duyurusunda kullanılacak sade Components V2 paneli. */
+  static buildCareersPanel(portalUrl = process.env.BASE_URL || 'https://ekoyildiz.duckdns.org') {
+    const url = `${String(portalUrl).replace(/\/$/, '')}/ekoyildizda-calis`;
+    return this.buildPayload([
+      ...this.headerBlock("EkoYıldız'da Çalışmak", '✦'),
+      this.text('Topluluğun deneyimini birlikte iyileştirmek ister misin? Açık roller, ekip kültürü ve başvuru süreci hakkında bilgi edin.'),
+      this.separator(true),
+      this.text('**Esnek katkı ritmi** · **Gelişim alanı** · **İnsan odaklı ekip kültürü**'),
+      this.separator(false),
+      this.actionRow([{ label: 'EkoYıldız’da Çalışmak Hakkında Bilgi Edinin', style: ButtonStyle.Link, url }])
+    ]);
+  }
+
   /**
    * Dynamic Canvas (Attachment) görsellerini V2 Container MediaGallery içinde yayınlamak için yanıt üretir
    * @param {string} attachmentName - Örn: "attachment://levelup.png"
