@@ -9298,6 +9298,8 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
         dateStr: new Date(lev.createdAt || Date.now()).toLocaleString("tr-TR")
       });
     });
+  }
+
   // 6. Yönetici Notları
   if (extraLogs.adminNotes && Array.isArray(extraLogs.adminNotes)) {
     extraLogs.adminNotes.forEach(n => {
