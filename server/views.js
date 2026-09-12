@@ -9298,6 +9298,36 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
         dateStr: new Date(lev.createdAt || Date.now()).toLocaleString("tr-TR")
       });
     });
+  // 6. Yönetici Notları
+  if (extraLogs.adminNotes && Array.isArray(extraLogs.adminNotes)) {
+    extraLogs.adminNotes.forEach(n => {
+      combinedLogs.push({
+        type: "NOTE",
+        icon: "📝",
+        title: `📝 Yönetici Notu [${_esc(n.category || 'Genel')}]`,
+        description: `${_esc(n.note || '')} (Yazan: ${_esc(n.modTag || n.modId || 'Yetkili')})`,
+        amount: 0,
+        operator: n.modTag || n.modId || 'ADMIN',
+        timestamp: new Date(n.createdAt || Date.now()).getTime(),
+        dateStr: new Date(n.createdAt || Date.now()).toLocaleString("tr-TR")
+      });
+    });
+  }
+
+  // 7. Sabıka / Ceza Hükümleri
+  if (extraLogs.criminalRecord && Array.isArray(extraLogs.criminalRecord)) {
+    extraLogs.criminalRecord.forEach(cr => {
+      combinedLogs.push({
+        type: "CRIME",
+        icon: "⚖️",
+        title: `⚖️ Sabıka / Hüküm Dosyası (#${_esc(cr.caseCode || 'CEZA')})`,
+        description: `Madde: ${_esc(cr.lawArticle || 'İhlal')} | Karar: **${_esc(cr.verdict || 'Suçlu')}** ${_esc(cr.reason ? '— ' + cr.reason : '')}`,
+        amount: 0,
+        operator: cr.modId ? `YETKİLİ: ${cr.modId}` : 'YARGI_KURULU',
+        timestamp: new Date(cr.date || cr.createdAt || Date.now()).getTime(),
+        dateStr: new Date(cr.date || cr.createdAt || Date.now()).toLocaleString("tr-TR")
+      });
+    });
   }
 
   combinedLogs.sort((a, b) => b.timestamp - a.timestamp);

@@ -69,6 +69,12 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── Gelişmiş Kullanıcı İnceleme & Denetim Modalları ───────────────────────
+  if (interaction.customId.startsWith('incele_modal_')) {
+    const { handleInceleModal } = require('../services/userManagementService');
+    return handleInceleModal(interaction);
+  }
+
   // ── Moderatör DM Kontrolü Açma Modalı ──────────────────────────────────
   if (interaction.customId === 'modal_modcheck_open') {
     const { handleModCheckOpenSubmit } = require('../services/modCheckService');

@@ -244,7 +244,7 @@ const ALL_COLLECTION_NAMES = [
   "sponsorAds", "giveaways", "giveawayTasks", "giveawayEntries",
   "giveawayEntryTasks", "giveawayWinners", "giveawayAuditLogs",
   "giveawayFraudFlags", "giveawayNotifications", "socialAds", "socialAdMetrics",
-  "homepageConfig"
+  "homepageConfig", "userActivityLogs"
 ];
 
 /**

@@ -8,7 +8,14 @@ const ACTIVITY_TYPES = {
   MOD_ACTION: "mod_action",
   PROFILE_UPDATE: "profile_update",
   LOGOUT: "logout",
-  ERROR: "error"
+  ERROR: "error",
+  ADMIN_NOTE: "admin_note",
+  TRUST_SCORE: "trust_score",
+  WARN: "warn",
+  TIMEOUT: "timeout",
+  BAN: "ban",
+  UNBAN: "unban",
+  INSPECTION: "inspection"
 };
 
 class UserActivityLog {
@@ -24,20 +31,63 @@ class UserActivityLog {
   log(discordId, activityType, details = {}) {
     const entry = {
       id: uuidv4(),
-      discordId,
+      discordId: String(discordId),
       activityType,
       details,
       timestamp: new Date(),
       iso: new Date().toISOString()
     };
     this.logs.push(entry);
+
+    // Kalıcı Store kaydı
+    try {
+      const { collections } = require("./Store");
+      if (collections && collections.userActivityLogs) {
+        collections.userActivityLogs.create({
+          id: entry.id,
+          discordId: String(discordId),
+          activityType,
+          details,
+          timestamp: entry.timestamp,
+          iso: entry.iso
+        });
+      }
+    } catch (_) {}
+
     return entry;
   }
 
   // Belirli kullanıcının aktivitelerini getir
   getByUser(discordId, limit = 50) {
-    return this.logs
-      .filter(log => log.discordId === discordId)
+    const targetId = String(discordId);
+    let storeLogs = [];
+    try {
+      const { collections } = require("./Store");
+      if (collections && collections.userActivityLogs) {
+        storeLogs = collections.userActivityLogs.find({ discordId: targetId }) || [];
+      }
+    } catch (_) {}
+
+    // Bellekteki ve Store'daki logları birleştirip tekilleştir
+    const seenIds = new Set();
+    const merged = [];
+
+    for (const l of [...this.logs.filter(log => String(log.discordId) === targetId), ...storeLogs]) {
+      const logId = l.id || l._id;
+      if (logId && !seenIds.has(String(logId))) {
+        seenIds.add(String(logId));
+        merged.push({
+          id: logId,
+          discordId: String(l.discordId),
+          activityType: l.activityType,
+          details: l.details || {},
+          timestamp: new Date(l.timestamp || l.createdAt || Date.now()),
+          iso: l.iso || new Date(l.timestamp || l.createdAt || Date.now()).toISOString()
+        });
+      }
+    }
+
+    return merged
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
   }

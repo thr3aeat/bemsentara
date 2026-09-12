@@ -11,6 +11,12 @@ const {
 async function handleSelectInteraction(interaction) {
   const customId = interaction.customId;
 
+  // ── Gelişmiş Kullanıcı İnceleme & Denetim Sekme Menüsü ──
+  if (customId.startsWith("incele_tab_")) {
+    const { handleInceleSelectMenu } = require("../services/userManagementService");
+    return handleInceleSelectMenu(interaction);
+  }
+
   if (customId.startsWith('rl_selfrole_')) {
     const { handleSelfRoleInteraction } = require('../services/robloxLandSelfRolePanelService');
     return handleSelfRoleInteraction(interaction);

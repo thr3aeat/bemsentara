@@ -150,7 +150,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
 
     // Check Eko Yıldız sunucu katılım süresi kıdem
     const activeGuild = await client.guilds.fetch(ACTIVE_GUILD_ID).catch(() => null);
-    if (activeGuild) {
+    if (activeGuild && activeGuild.members && typeof activeGuild.members.fetch === "function") {
       const member = await activeGuild.members.fetch(userId).catch(() => null);
       if (member && member.joinedTimestamp) {
         const joinMonths = (Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24 * 30.44);

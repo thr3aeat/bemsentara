@@ -101,9 +101,12 @@ const generalCommands = [
 
   new SlashCommandBuilder()
     .setName("incele")
-    .setDescription("Bir Discord kullanıcısının Discord ve Roblox bilgilerini inceler")
+    .setDescription("Kullanıcı yönetim ve derin denetim merkezi (Güven puanı, tüm loglar, Roblox & ceza geçmişi)")
     .addUserOption((o) =>
-      o.setName("kullanici").setDescription("İncelenecek Discord kullanıcısı").setRequired(true)
+      o.setName("kullanici").setDescription("İncelenecek ve yönetilecek Discord kullanıcısı").setRequired(false)
+    )
+    .addStringOption((o) =>
+      o.setName("kullanici_id").setDescription("Discord ID, Kullanıcı Adı veya Roblox Adı (Opsiyonel)").setRequired(false)
     )
     .setDMPermission(true),
 

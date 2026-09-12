@@ -660,7 +660,9 @@ router.get("/user-logs/:userId", async (req, res) => {
       tickets: Array.isArray(userTickets) ? userTickets : [],
       courtCases: Array.isArray(userCourtCases) ? userCourtCases : [],
       investigations: Array.isArray(userInvestigations) ? userInvestigations : [],
-      leaves: Array.isArray(userLeaves) ? userLeaves : []
+      leaves: Array.isArray(userLeaves) ? userLeaves : [],
+      adminNotes: Array.isArray(targetUser?.adminNotes) ? targetUser.adminNotes : [],
+      criminalRecord: Array.isArray(targetUser?.criminalRecord) ? targetUser.criminalRecord : []
     };
 
     res.send(renderUserLogsPage(req.user, targetUser, trustRecord, webLogs, extraLogs));
