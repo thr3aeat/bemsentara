@@ -1,6 +1,6 @@
 // server/views/giveaways/giveawayAdminPage.js
 // Advanced administrative interface for Giveaways, Anti-Cheat, Participants, and Sponsor Ads
-function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], socialAds = [], socialAnalytics = {}, auditLogs = [] }) {
+function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], socialAds = [], socialAnalytics = {}, auditLogs = [], liveUsers = [] }) {
   const pb = socialAnalytics.platformBreakdown || {};
   let topPlatform = 'YouTube Ana Kanal';
   let maxComp = -1;
@@ -256,6 +256,8 @@ function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [],
           ➕ Yeni Çekiliş Başlat
         </button>
       </div>
+
+      <div style="margin:1.5rem 0;padding:1.25rem;border:1px solid rgba(56,189,248,.25);border-radius:16px;background:rgba(14,165,233,.06)"><div style="display:flex;justify-content:space-between;gap:1rem;align-items:center"><div><b style="color:#fff">Canlı kullanıcı görünümü</b><div style="color:var(--text-muted);font-size:.8rem">Son 24 saat içindeki son etkinlikler · yönetici görünümü</div></div><span style="color:#38bdf8;font-weight:800">${liveUsers.length} etkin kullanıcı</span></div><div style="display:grid;gap:.5rem;margin-top:1rem">${liveUsers.slice(0,8).map(u=>`<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:.6rem .75rem;background:rgba(0,0,0,.18);border-radius:9px;font-size:.8rem"><span>🟢 ${u.username}</span><code style="color:#94a3b8">${u.ip}</code><span style="color:var(--text-muted)">${new Date(u.time).toLocaleString('tr-TR')}</span></div>`).join('') || '<span style="color:var(--text-muted);font-size:.85rem">Son 24 saatte kayıtlı etkinlik yok.</span>'}</div></div>
     </div>
 
     <!-- TAB 1: DASHBOARD -->

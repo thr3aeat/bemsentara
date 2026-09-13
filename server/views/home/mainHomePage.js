@@ -87,7 +87,9 @@ function renderMainHomePage(userOrOptions = null) {
     ? userOrOptions.user
     : userOrOptions;
 
-  return renderFocusedHomePage(user);
+  const page = renderFocusedHomePage(user);
+  const liveStatsScript = `<script>(async()=>{try{const r=await fetch('/api/social-stats');const d=await r.json();const s=d.stats||{};const fmt=n=>Number(n||0).toLocaleString('tr-TR');const links=[...document.querySelectorAll('.social-link')];links.forEach(a=>{const text=a.innerText||'';let stat='';if(text.includes('YouTube Ana'))stat=fmt(s.youtube1)+' abone';else if(text.includes('YouTube Yan'))stat=fmt(s.youtube2)+' abone';else if(text.includes('TikTok'))stat=fmt(s.tiktok)+' takipçi';else if(text.includes('Kick'))stat=fmt(s.kick)+' takipçi';else if(text.includes('Twitch'))stat=fmt(s.twitch)+' takipçi';else if(text.includes('Eko'))stat=fmt(s.instagram1)+' takipçi';else if(text.includes('Ege'))stat=fmt(s.instagram2)+' takipçi';if(stat){const b=document.createElement('b');b.style.cssText='margin-left:auto;color:#171719;font-size:.78rem';b.textContent=stat;a.appendChild(b)}})}catch(e){}})()</script>`;
+  return page.replace('</body>', `${liveStatsScript}</body>`);
 
   const config = homepageService.getConfig() || {};
   const greeting = homepageService.getDynamicGreeting();

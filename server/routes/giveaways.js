@@ -437,6 +437,20 @@ router.get('/admin/giveaways', requireRole(ROLES.GIVEAWAY_MODERATOR), async (req
     const socialAnalytics = socialHubService.getAnalytics();
     const auditLogs = await Store.giveawayAuditLogs.find({});
     auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const activityLogs = await Store.userActivityLogs.find({});
+    const recentByUser = new Map();
+    for (const log of activityLogs) {
+      const time = new Date(log.timestamp || log.createdAt || 0).getTime();
+      if (time < dayAgo) continue;
+      const id = String(log.discordId || '');
+      if (!id || (recentByUser.get(id)?.time || 0) >= time) continue;
+      recentByUser.set(id, { time, ip: log.details?.ip || '-', location: log.details?.location || '-', type: log.activityType });
+    }
+    const liveUsers = [...recentByUser.entries()].sort((a,b) => b[1].time-a[1].time).slice(0, 40).map(([discordId, activity]) => {
+      const member = Store.users.findOne({ discordId });
+      return { discordId, username: member?.discordUsername || member?.username || 'Kullanıcı', ...activity };
+    });
 
     const html = renderGiveawayAdminPage({
       user: req.user,
@@ -449,6 +463,7 @@ router.get('/admin/giveaways', requireRole(ROLES.GIVEAWAY_MODERATOR), async (req
       socialAds,
       socialAnalytics,
       auditLogs: auditLogs.slice(0, 30),
+      liveUsers,
       userRole: req.userRole
     });
     res.send(html);
