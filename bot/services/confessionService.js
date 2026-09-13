@@ -418,6 +418,9 @@ async function handleConfessionModalSubmit(interaction) {
       newConfession.messageId = postedMsg.id;
       newConfession.channelId = postedMsg.channelId;
       await newConfession.save().catch(() => { });
+
+      // 🌟 Gerçek kullanıcı itirafı için organik sahte tepkiler ve gerçekçi anonim yorumları başlat
+      scheduleOrganicEngagement(interaction.client, newConfession.confessionId);
     }
 
     return interaction.reply({
@@ -1334,76 +1337,410 @@ async function handleDirectMessageRelay(message) {
  * ── 12. Sahte / Seed Aktivite Motoru (Inactivity Seed Engine) ───
  */
 const SEED_CONFESSIONS = [
+  // ── GRUP 1: Yazım kurallarına uymayan, küçük harfli, doğal Discord / oyun jargonu ──
   {
     category: 'Komik Anı',
-    content: 'Geçen gün seste mikrofonu kapattım sanıp 5 dakika boyunca kendi kendime şarkı söyledim, meğer bütün oda beni dinliyormuş...',
-    poll: { question: 'Mikrofonu açık unuttuğunuz oldu mu?', optA: 'Evet defalarca', optB: 'Hayır hiç olmadı' }
+    content: 'olm dun gece seste uyuyakalmisim horlama sesim herkese gitmis rezil oldum ya kimse de uyandirmamis niye boylesiniz',
+    poll: { question: 'Seste uyuyakalan arkadaşınızı uyarır mısınız?', optA: 'Hemen uyarırım', optB: 'Dalga geçip kaydederim' }
   },
   {
-    category: 'Aşk / Platonik',
-    content: 'Sunucuda uzun süredir konuştuğum birine karşı hislerim var ama sadece arkadaş gözüyle baktığı için bir türlü açılamıyorum. Ne yapmalıyım?',
-    poll: { question: 'Sizce hislerini açıkça söylemeli mi?', optA: 'Açılmalı', optB: 'Arkadaş kalmalı' }
+    category: 'Komik Anı',
+    content: 'ya beyler bi sey dicem sesli odadayken kulakligi cikarinca ses kesilmiyo mu ablam odaya girdi dinlediklerimi duydu bittim ben',
+    poll: null
   },
   {
     category: 'Sunucu İtirafı',
-    content: 'Yetkili ekibindeki birinin ses tonu ve diksiyonu o kadar havalı ki her ses odasına girdiğinde istemsizce susup onu dinliyorum...',
+    content: 'valla kafayi yicem artik geceleri uyuyamiyom surekli overthinking yapmaktan beynim eridi cidden',
+    poll: null
+  },
+  {
+    category: 'Aşk / Platonik',
+    content: 'sunucudaki birinden fena hoslaniyorum ama yazmaya cesaretim yok storysine alev atsam cok mu belli olur acil taktik lazim',
+    poll: { question: 'Storysine alev atmalı mı?', optA: 'At gitsin taktik falan yok', optB: 'Sakın atma çok belli olur' }
+  },
+  {
+    category: 'Komik Anı',
+    content: 'olm roblox oynarken arkadasim beni trolleyip asagi atti aglicaktim sinirden klavyeyi kirdim az kalsin',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'ya su oyunda niye herkes bu kadar tryhard takiliyor chill oynayalim dedik 10 yasinda cocuk bana noob yaziyo sinir krizi geciricem',
     poll: null
   },
   {
     category: 'Komik Anı',
-    content: 'Biriyle Roblox oynarken yanlışlıkla kendi takım arkadaşımı haritadan aşağı attım, sonra da "oyun kastı lag oldu" dedim ahahaha.',
+    content: 'gece 3 te mutfaga su icmeye diye inip dolaptaki butun cikolatalari yedim sabah annem sordu kediye attim sucu kedi bile yuzume ters bakiyo',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'itiraf ediyorum genel sohbette kavga baslayinca cipsimi alip sadece izliyorum asiri sariyo hic bitmesin lutfen devam edin',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'kardesimle kavga ettik gitti roblox hesabimin sifresini degistirdi 2 gundur aglayarak yalvariyorum hesabi geri versin diye vermiyo ya',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'gecen gun yanlislikla sinif hocasina komik caps attim gruptan cikip telefonu kapattim 1 gun acamadim korkudan',
+    poll: null
+  },
+  {
+    category: 'Genel',
+    content: 'dc de biriyle konusurken arkada baska sekmede video izleyip "hıhı evet cok haklisin" diyen tek kisi ben olamam di mi',
+    poll: { question: 'Bunu siz de yapıyor musunuz?', optA: 'Evet her gün :D', optB: 'Asla dinlerim' }
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'herkes sevgilisiyle roblox oynarken ben tek basima parkur yapmaya calisiyorum yalnizligin gozu kor olsun be',
+    poll: null
+  },
+  {
+    category: 'Genel',
+    content: 'bi arkadasla 2 yildir konusuyoruz ama adini hic sormadim simdi sorarsam ayip olur diye nickiyle hitap ediyom hala adami da taniyamiyom',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'annem arkadan bagirirken mik acik kalmis "oglum donunu topla" dedigi ses odadaki herkese gitti 3 gundur sese giremiyorum utanctan',
+    poll: null
+  },
+
+  // ── GRUP 2: Çocukça, Eko Abi hayranı, Roblox & sevimli içerikler ──
+  {
+    category: 'Sunucu İtirafı',
+    content: 'eko abi seni cokkk seviyorum her videonu bastan sona izliyorum bildirimleri de actim ne zaman yeni roblox videosu gelicek lutfen kanala kalp at eko abimm ❤️❤️❤️',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'abi valla sen olmasan canim cok sıkılıyordu okuldan gelince hemen senin yayinlarini izliyorum cansın eko abii beni yetkili yapar misin nolur soz cok iyi bakarim',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'eko abi bana 50 robux verir misin nolur avatarim cok cirkin oyunda dalga geciyolar seni cok seviyorum eko abi nolur yardim et',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'arkadaslar bugun eko abiyle ayni oyuna denk geldim elim titredi heyecandan ekran goruntusu alip masaustu yaptim cok mutluyummm',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'eko abi beni yayina veya videoya cikarir misin lutfen discorddan sana mesaj attim gormedin herhalde seni dunyalar kadar cok seviyorum kralsin abi',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'abiler lutfen dalga gecmeyin bu sunucuda nasil moderator olunuyor yasim 12 ama cok olgunum ve eko abiyi dunyalar kadar seviyorum',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'eko abi bugun benim dogum gunum yayinda bir kere ismimi soyleyip kutlar misin lutfen en buyuk hayranınım seni cok seviyorum',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'eko abinin yayininda chatte adimi okudu diye sevincten odada takla attim kafami kapiya carptim ama degdi ahahaha eko abim canimsin',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'eko abi roblox blade ball da seninle vs atmak en buyuk hayalim beni oyuna cagirir misin lutfen tek dilegim bu',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'okulda herkese eko abinin sunucusunu anlattim butun sinif arkadaslarimi buraya getirdim eko abi beni gorur insallah kral adam',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'abi roblox cekilisini ben kazanamadim diye agladim ama olsun seni hala cok seviyorum eko abi canin sagolsun ❤️',
+    poll: null
+  },
+
+  // ── GRUP 3: Aşırı kurallara uyan, edebi, ciddi, özenli ve duygusal Türkçe ──
+  {
+    category: 'Dertleşme / Tavsiye',
+    content: 'Uzun zamandır içimde taşıdığım bu hissi artık bir yerlere dökmem gerekiyordu. İnsan bazen en kalabalık ortamlarda bile kendini yapayalnız hissedebiliyor. Yine de bu sunucudaki samimi sohbetler bana her zaman umut veriyor.',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'Topluluk içerisinde gösterilen nezaket ve saygı ortamı gerçekten takdire şayan. İnternet dünyasının bu denli toksikleştiği bir dönemde böylesine kaliteli bir ortam sağlayan yetkili ekibine teşekkür ederim.',
     poll: null
   },
   {
     category: 'Dertleşme / Tavsiye',
-    content: 'Son zamanlarda her şey üst üste geliyor gibi hissediyorum, geceleri uyumakta zorlanıyorum. Biraz motivasyona ve tavsiyeye ihtiyacım var.',
+    content: 'Gelecek kaygısı ve sınav maratonu son zamanlarda üzerimde çok ciddi bir baskı oluşturuyor. Bazen derin bir nefes alıp her şeyin yoluna gireceğine inanmak istiyorum. Benimle aynı durumda olan herkese sabır ve güç diliyorum.',
+    poll: { question: 'Gelecek kaygısı sizde de yoğun mu?', optA: 'Evet aşırı fazla', optB: 'Hayır akışına bıraktım' }
+  },
+  {
+    category: 'Dertleşme / Tavsiye',
+    content: 'Bir insana koşulsuz değer vermek neden günümüzde bir zayıflık olarak algılanıyor, anlamakta güçlük çekiyorum. İncinsen dahi dürüst ve samimi kalabilmek bence en büyük erdemdir.',
     poll: null
   },
   {
-    category: 'Komik Anı',
-    content: 'Gece saat 3\'te açlıktan buzdolabındaki bütün çikolataları bitirdim, sabah evdekiler kim yedi diye sorunca kedinin üstüne attım...',
+    category: 'Dertleşme / Tavsiye',
+    content: 'Eski dostlukların zamanla unutulup yerini soğuk bir mesafeye bırakması canımı çok yakıyor. Büyümek sanırım biraz da geride bıraktıklarımızın hüznünü taşımakmış.',
     poll: null
   },
   {
     category: 'Sunucu İtirafı',
-    content: 'Sunucuda bir süredir aktif olmayan bir arkadaşımın geri gelmesini dört gözle bekliyorum. Umarım en kısa zamanda dönersin.',
+    content: 'Bazen sadece ses odasında oturup insanların birbirine kahkahalarla anlattığı anıları dinlemek bile günün tüm yorgunluğunu üzerimden alıyor. İyi ki varsınız.',
+    poll: null
+  },
+  {
+    category: 'Genel',
+    content: 'Hak etmediğim bir ithamla karşılaştığımda susmayı tercih ettim; fakat bu suskunluk kabulleniş değil, sadece seviyemi koruma çabasıydı.',
+    poll: null
+  },
+
+  // ── GRUP 4: Troll, eğlenceli, sahte telif ve şaka içerikli itiraflar ──
+  {
+    category: 'Komik Anı',
+    content: 'itiraf ediyorum seste oyun oynarken "lag oldu öldüm" diyorum ama aslında oynamayı beceremiyorum ahahaha',
     poll: null
   },
   {
     category: 'Komik Anı',
-    content: 'Önemli bir toplantıdayken arkadan gelen dizi sesini kapatmaya çalışırken kamerayı açtım ve pijamalarımla yakalandım...',
+    content: 'gecen gun seste mute tusuna bastim sanip anneme "anneee patates kizartmasi yap bana" diye bagirdim 10 kisi gulme krizine girdi hala utaniyorum',
     poll: null
   },
   {
-    category: 'Aşk / Platonik',
-    content: 'Bazen sadece senin yazdığın mesajları tekrar tekrar okuyup gülümsüyorum, umarım bir gün bu itirafın sana yazıldığını anlarsın.',
+    category: 'Troll / Mizah',
+    content: 'sunucudaki birinin profil fotografini o kadar cok begeniyorum ki gizlice calip baska platformda profilim yaptim hakkini helal et kankam',
+    poll: null
+  },
+  {
+    category: 'Troll / Mizah',
+    content: 'bu itirafı okuyan kişi: evet tam olarak senden bahsediyorum, yarın ilk derste arkana bakma sakın 👀',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'itiraf ediyorum roblox oynarken arkadasim bana esya versin diye kiz taklidi yaptim ve ise yaradi... vicdan azabi cekiyorum su an',
     poll: null
   },
   {
     category: 'Komik Anı',
-    content: 'Yanlışlıkla sunucudaki bir yetkiliye DM\'den yemek siparişimin ekran görüntüsünü attım ve "acil getir" yazdım, adam şok oldu.',
+    content: 'matematik sınavında arkadasımdan kopya cekerken yanlıs sorunun cevabını yanlıs yere yazmısım ikimiz de 10 aldık hoca bizi disipline verdi cok dramatikti',
     poll: null
   }
 ];
 
-const SEED_COMMENTS = [
-  'Yok artık bunu kim yaptı ya hahaha 😂',
-  'Bence kesin tanıdık biri, kendini ele vermesin...',
-  'Gece gece ne okudum ben böyle ahahaha 💀',
-  'Yalnız hisler paylaşıldıkça güzeldir, bence cesaretini topla söyle!',
-  'Kesinlikle katılıyorum, aynı durum geçen ay benim de başıma gelmişti.',
-  'Kim bu gizemli kişi ya meraktan çatlayacağım!',
-  'Aramızda kalsın ama çok iyi anıymış tebrikler.',
-  'Bunu yazan kişi şu an bu thread\'i okuyor adım gibi eminim 👀',
-  'Hahaha ciddili olamaz bu olay, çok iyiydi.',
-  'Umarım bahsettiğin o kişi bunu okuyordur.',
-  'Senin adına çok sevindim/üzüldüm, yanındayız dostum! 💖',
-  'Harika bir itiraf olmuş, günümü neşelendirdi.'
-];
+// Gerçekçi Anonim Yorum Havuzları (Doğal Türkçe, sokak/discord dili, Eko abi hayranlığı, sahte telif şakaları)
+const REALISTIC_COMMENTS = {
+  // Eko abi ve çocukça itiraflara gelen yorumlar
+  eko: [
+    'eko abi bunu gorsun kesin videoya cikarir ahahaha',
+    'eko abiii bak hayranın ne yazmıs yerim ya @eko',
+    'oyyy cok tatli yaa, eko abi gör şunu ❤️',
+    'valla helal olsun kucuk kardesimiz cok icten yazmis sevindim',
+    'eko abiyi sevmeyen mi var zaten ya kral adam valla',
+    'harbiden cok masum ve samimi olmus helal olsun kardesim',
+    'eko abi yayinda bunu kesin okur bence :D',
+    'kral yaa eko abi duysun sesini insallah',
+    'cok samimi geldi valla yalan yok helal olsun kardesime',
+    'bu cocuk harbi eko abi sevdalısı helal valla ahaha'
+  ],
+  // Komik, rezillik ve troll anılara gelen yorumlar
+  humor: [
+    'GŞKLASDGJKASŞLGK yarıldım olm bu ne',
+    'kanka rezil olmussun gecmis olsun KSJDFHGKSDF',
+    'gece gece sesli guldum evdekiler uyandi yapma boyle seyler ahahaha 💀',
+    'puhaha kanka nasil becerdin onu yaa cildirdim',
+    'hahaha olm ya gecmis olsun buyuk talihsizlik valla',
+    'bu ne olm koptum resmen ASDKJŞLGAFSJK',
+    'kim bu cabuk itiraf etsin meraktan uyuyamam simdi ben 👀',
+    'bunu yazanin nickini tahmin etmeye calisiyorum su an kafamda 3 kisi var',
+    'aşırı rezillik ahahahah geçmiş olsun kral',
+    'patladım olm bu nasıl anı dskjghsdkfg',
+    'yok artık bunu ciddili yaşayan var mıymış ya ahaha',
+    'sesli kahkaha attım odadakiler bana bakıyor'
+  ],
+  // Sahte telif ve troll takılma yorumları ("sahte telifler atsın")
+  telif_troll: [
+    'aga bu hikaye benden çalıntı yalnız sahte telif atıcam hahahah 😂',
+    'bu anının telif hakları bana aittir avukatımla görüşürsün şaka maka çok iyi anıymış djkfhgds',
+    'hocam metnin telif hakları saklıdır lütfen telif hakkı sahibini etiketleyiniz hahahaha patladım',
+    'bu olay direkt benim hayatımdan alıntı telif davası açmaya gidiyorum resmen ben ahaha',
+    'bunu ben yaşamıştım telif davası loading... şaka bi yana geçmiş olsun kanks'
+  ],
+  // Dertleşme, duygusal ve tavsiye yorumları
+  support: [
+    'Cidden çok anlamlı ve güzel yazmışsın, yalnız değilsin dostum.',
+    'Reis aynı yollardan ben de geçtim, hiç kafana takma zamanla her şey rayına oturuyor.',
+    'Çok haklı bir sitem bu arada. İnsanlar samimiyeti unutmuş maalesef.',
+    'Bence kesinlikle git konuş kanka, içinde kalacağına söyle gitsin ne kaybedersin ki.',
+    'Sonuna kadar arkandayım, umarım gönlündeki her şey gerçek olur.',
+    'Kendine çok yüklenme dostum, hepimizin böyle zor dönemleri oluyor. Geçecek emin ol.',
+    'Okurken içim burkuldu resmen, her zaman dertleşebilirsin buradayız.',
+    'Çok güzel ve içten ifade etmişsin hislerini, eline sağlık.',
+    'Zaman her şeyin ilacı derler ya, harbiden öyle. Sabırlı ol dostum.'
+  ],
+  // Aşk / Platonik yorumları
+  romance: [
+    'bence kesinlikle git acil kanka icinde kalacagina disinda kalsin ne kaybedersin ki',
+    'kim bu cabuk itiraf etsin meraktan uyuyamam simdi ben 👀',
+    'bunu yazan kisi su an burayi okuyor adim gibi eminim...',
+    'bence hislerini saklama, hayat ertelemek icin cok kisa',
+    'umarim bahsettigin o kisi bu itirafi okuyordur da anlar',
+    'hissediyorsan pesini birakma kral arkandayiz'
+  ],
+  // Genel / Doğal Discord konuşmaları
+  casual: [
+    'harbiden ben de oyleyim ya yalnız degilmisim sevindim',
+    'aşırı relatable bu arada',
+    'valla buyuk cesaret tebrik ederim',
+    'bu itirafın sahibi kimse bilsin ki harbi haklı...',
+    'aynen oyle katılıyorum valla',
+    'nasi ya cidden mi dksljgs',
+    'bunu yasayan tek ben degilmisim oh be',
+    'hahaha kral adamsin valla',
+    'bence de boyle olmaliydi sonuna kadar katiliyorum'
+  ]
+};
+
+/**
+ * İtirafın içeriğine ve kategorisine göre en gerçekçi anonim yorumu seçer
+ */
+function pickRealisticComment(content, category) {
+  const text = (content || '').toLowerCase();
+  const cat = (category || '').toLowerCase();
+
+  let pool = [];
+
+  // Eko abi ve çocukça içerikler
+  if (text.includes('eko') || text.includes('abi') || text.includes('robux') || text.includes('yayın') || text.includes('yayin') || text.includes('roblox') || text.includes('videoya')) {
+    pool = [...REALISTIC_COMMENTS.eko];
+  } 
+  // Dertleşme / Hüzün / Tavsiye
+  else if (cat.includes('dert') || cat.includes('tavsiye') || text.includes('yalnız') || text.includes('hissediyorum') || text.includes('kaygı') || text.includes('üzgün') || text.includes('sıkıldım')) {
+    pool = [...REALISTIC_COMMENTS.support];
+  }
+  // Aşk / Platonik
+  else if (cat.includes('aşk') || cat.includes('ask') || cat.includes('platonik') || text.includes('hoşlan') || text.includes('seviyorum') || text.includes('açıl')) {
+    pool = [...REALISTIC_COMMENTS.romance, ...REALISTIC_COMMENTS.casual];
+  }
+  // Komik Anı / Mizah / Troll
+  else if (cat.includes('komik') || text.includes('rezil') || text.includes('güldüm') || text.includes('koptum') || text.includes('lag') || text.includes('haha') || text.includes('olm') || text.includes('troll')) {
+    // %35 şansla sahte telif troll yorumu, %65 mizah
+    if (Math.random() < 0.35) {
+      pool = [...REALISTIC_COMMENTS.telif_troll];
+    } else {
+      pool = [...REALISTIC_COMMENTS.humor];
+    }
+  } else {
+    // Genel havuz: mizah, telif şakası ve casual karışık
+    pool = [...REALISTIC_COMMENTS.casual, ...REALISTIC_COMMENTS.humor, ...REALISTIC_COMMENTS.telif_troll];
+  }
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * Gerçek ve seed itiraflar için organik tepkiler (reaksiyonlar) ve thread anonim yorumları planlar
+ */
+function scheduleOrganicEngagement(client, confessionId) {
+  try {
+    // ⏳ 1. Adım: 45 - 120 saniye sonra organik sahte tepkiler (reaksiyonlar)
+    const reactionDelayMs = Math.floor(Math.random() * 75000) + 45000; // 45 sn - 2 dk
+    setTimeout(async () => {
+      try {
+        const conf = await Confession.findOne({ confessionId });
+        if (!conf || conf.isExpired) return;
+
+        const text = (conf.content || '').toLowerCase();
+        const cat = (conf.category || '').toLowerCase();
+
+        if (!conf.reactions) {
+          conf.reactions = { shock: 0, laugh: 0, redflag: 0, support: 0 };
+        }
+
+        if (cat.includes('komik') || text.includes('haha') || text.includes('rezil') || text.includes('troll')) {
+          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 5) + 3; // +3..7
+          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 3) + 1; // +1..3
+          if (Math.random() > 0.6) conf.reactions.redflag = (conf.reactions.redflag || 0) + 1;
+        } else if (cat.includes('dert') || cat.includes('tavsiye') || text.includes('yalnız') || text.includes('hissediyorum')) {
+          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 5) + 4; // +4..8
+          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 2) + 1;
+        } else if (text.includes('eko') || text.includes('robux') || text.includes('abi')) {
+          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 4) + 4; // +4..7
+          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 3) + 2; // +2..4
+        } else {
+          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 3) + 2;
+          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 3) + 1;
+          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 2) + 1;
+        }
+
+        await conf.save();
+        await refreshConfessionMessage(client, conf);
+        logger.info(`[ConfessionOrganic] #${confessionId} itirafına organik sahte tepkiler uygulandı.`);
+      } catch (err) {
+        logger.warn('[ConfessionOrganic] Tepki ekleme hatası:', err.message);
+      }
+    }, reactionDelayMs);
+
+    // ⏳ 2. Adım: 90 - 240 saniye sonra thread altına 1. gerçekçi anonim yorum
+    const firstCommentDelayMs = Math.floor(Math.random() * 150000) + 90000; // 1.5 - 4 dk
+    setTimeout(async () => {
+      try {
+        const conf = await Confession.findOne({ confessionId });
+        if (!conf || !conf.threadId || conf.isExpired) return;
+
+        const thread = await client.channels.fetch(conf.threadId).catch(() => null);
+        if (!thread || !thread.isTextBased()) return;
+
+        const commentText = pickRealisticComment(conf.content, conf.category);
+        const commentAlias = generateAnonymousName();
+
+        await thread.send({ content: `🕵️ **${commentAlias}:**\n> ${commentText}` });
+        logger.info(`[ConfessionOrganic] #${confessionId} thread'ine 1. anonim yorum gönderildi.`);
+
+        // ⏳ 3. Adım: %70 ihtimalle 3 - 7 dakika sonra 2. farklı anonim yorum
+        if (Math.random() < 0.70) {
+          const secondCommentDelayMs = Math.floor(Math.random() * 240000) + 180000; // 3 - 7 dk
+          setTimeout(async () => {
+            try {
+              const conf2 = await Confession.findOne({ confessionId });
+              if (!conf2 || !conf2.threadId || conf2.isExpired) return;
+
+              const thread2 = await client.channels.fetch(conf2.threadId).catch(() => null);
+              if (!thread2 || !thread2.isTextBased()) return;
+
+              let secondCommentText = pickRealisticComment(conf2.content, conf2.category);
+              if (secondCommentText === commentText) {
+                secondCommentText = REALISTIC_COMMENTS.casual[Math.floor(Math.random() * REALISTIC_COMMENTS.casual.length)];
+              }
+              const secondAlias = generateAnonymousName();
+
+              await thread2.send({ content: `🕵️ **${secondAlias}:**\n> ${secondCommentText}` });
+              logger.info(`[ConfessionOrganic] #${confessionId} thread'ine 2. anonim yorum gönderildi.`);
+            } catch (e2) {
+              logger.warn('[ConfessionOrganic] 2. yorum hatası:', e2.message);
+            }
+          }, secondCommentDelayMs);
+        }
+      } catch (err) {
+        logger.warn('[ConfessionOrganic] 1. yorum hatası:', err.message);
+      }
+    }, firstCommentDelayMs);
+
+  } catch (outerErr) {
+    logger.error('[ConfessionOrganic] scheduleOrganicEngagement Hatası:', outerErr.message);
+  }
+}
 
 // Tekrarlanan seedleri önleme kümesi
 const usedSeedIndices = new Set();
-const usedCommentIndices = new Set();
 
 async function triggerSeedActivity(client) {
   try {
@@ -1473,53 +1810,8 @@ async function triggerSeedActivity(client) {
       ]
     });
 
-    // ⏳ Adım 2: 2-5 dakika sonra rastgele organik tepki artışı
-    const reactionDelayMs = Math.floor(Math.random() * 180000) + 120000; // 2 - 5 dakika
-    setTimeout(async () => {
-      try {
-        const conf = await Confession.findOne({ confessionId: nextId });
-        if (conf) {
-          conf.reactions.laugh = Math.floor(Math.random() * 4) + 2; // 2-5
-          conf.reactions.shock = Math.floor(Math.random() * 3) + 1; // 1-3
-          conf.reactions.support = Math.floor(Math.random() * 3) + 1; // 1-3
-          if (Math.random() > 0.6) conf.reactions.redflag = 1;
-          await conf.save();
-          await refreshConfessionMessage(client, conf);
-        }
-      } catch (e) {
-        logger.warn('[ConfessionSeed] Tepki ekleme hatası:', e.message);
-      }
-    }, reactionDelayMs);
-
-    // ⏳ Adım 3: 5-10 dakika sonra thread altına 1-2 farklı anonim sahte yorum
-    const commentDelayMs = Math.floor(Math.random() * 300000) + 300000; // 5 - 10 dakika
-    setTimeout(async () => {
-      try {
-        const conf = await Confession.findOne({ confessionId: nextId });
-        if (!conf || !conf.threadId) return;
-
-        const thread = await client.channels.fetch(conf.threadId).catch(() => null);
-        if (!thread || !thread.isTextBased()) return;
-
-        const commentCount = Math.floor(Math.random() * 2) + 1; // 1 veya 2 yorum
-        for (let i = 0; i < commentCount; i++) {
-          const availComments = SEED_COMMENTS.map((_, idx) => idx).filter(idx => !usedCommentIndices.has(idx));
-          if (availComments.length === 0) usedCommentIndices.clear();
-
-          const cIdx = availComments.length > 0
-            ? availComments[Math.floor(Math.random() * availComments.length)]
-            : Math.floor(Math.random() * SEED_COMMENTS.length);
-
-          usedCommentIndices.add(cIdx);
-          const chosenComment = SEED_COMMENTS[cIdx];
-          const commentAlias = generateAnonymousName();
-
-          await thread.send({ content: `🕵️ **${commentAlias}:**\n> ${chosenComment}` });
-        }
-      } catch (e) {
-        logger.warn('[ConfessionSeed] Yorum ekleme hatası:', e.message);
-      }
-    }, commentDelayMs);
+    // ⏳ Organik tepkileri ve thread anonim yorumlarını başlat
+    scheduleOrganicEngagement(client, nextId);
 
     logger.info(`[ConfessionSeed] #${nextId} numaralı aktivite simülasyon itirafı başarıyla tetiklendi.`);
     return nextId;
@@ -1740,6 +2032,9 @@ async function handleModQueueAction(interaction, action, confessionIdOrUserId) {
         confession.messageId = posted.id;
         confession.channelId = posted.channelId;
         await confession.save();
+
+        // 🌟 Moderatör onayından geçen itiraflar için organik sahte tepkiler ve gerçekçi anonim yorumlar
+        scheduleOrganicEngagement(interaction.client, confession.confessionId);
       }
 
       await interaction.update({
@@ -1906,5 +2201,6 @@ module.exports = {
   initConfessionSchedulers,
   selectTopConfessions,
   triggerSeedActivity,
-  checkInactivityAndTriggerSeed
+  checkInactivityAndTriggerSeed,
+  scheduleOrganicEngagement
 };
