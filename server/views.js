@@ -10407,11 +10407,13 @@ function renderCreateTicketPage(user, categories = []) {
         const category = document.getElementById('ticket-cat').value;
         const message = document.getElementById('ticket-msg').value;
         if (!message) return showToast('Lütfen bir mesaj girin.', 'error');
+        const guide = message.toLocaleLowerCase('tr').includes('roblox') ? '/blog/roblox-hesabi-nasil-dogrulanir' : message.toLocaleLowerCase('tr').includes('discord') ? '/blog/discord-ile-giris-nasil-calisir' : '/yardim';
+        if (!confirm('EkoMaskot: Hâlâ ticket açmak istediğine emin misin? Konunla ilgili bir rehber bulduk: ' + guide + '\n\nTamam dersen biletin ekibe iletilecek.')) return;
         try {
           const res = await fetch('/api/tickets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category, message })
+            body: JSON.stringify({ category, subject: 'Web destek talebi · ' + category, description: message })
           });
           const d = await res.json();
           if (res.ok) {

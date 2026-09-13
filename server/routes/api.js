@@ -321,9 +321,9 @@ router.get("/api/tickets", async (req, res) => {
 router.post("/api/tickets", async (req, res) => {
   if (!requireLogin(req, res)) return;
 
-  const { category, subject, description, priority } = req.body;
-  const s = (subject || "").trim();
-  const d = (description || "").trim();
+  const { category, subject, description, message, priority } = req.body;
+  const s = (subject || `Web destek talebi · ${category || 'Genel'}`).trim();
+  const d = (description || message || "").trim();
   const c = (category || "").trim();
 
   if (!c) return res.status(400).json({ error: "Kategori seçiniz." });
@@ -450,6 +450,13 @@ router.post("/api/tickets", async (req, res) => {
     try {
       const { logTicketCreated } = require("../../bot/services/ticketLog");
       logTicketCreated(ticket, { source: "Web Panel", ticketChannelId: channelId, guildId });
+    } catch (_) { }
+
+    // Sentara önce gönderir; DM kanalı kullanıldığı için yapılandırılmış Phibi
+    // yalnızca gönderim başarısız olduğunda otomatik devreye girer.
+    try {
+      const member = await client?.users.fetch(req.user.discordId).catch(() => null);
+      await member?.send(`📬 **Biletin alındı!**\n\n**#${ticketId}** numaralı destek talebin ekibe iletildi. Bir yetkili cevap verdiğinde seninle iletişime geçilecek.\n\nKonu: **${s}**`);
     } catch (_) { }
 
     res.json({

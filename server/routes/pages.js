@@ -91,9 +91,14 @@ router.get("/dashboard", async (req, res) => {
   res.send(renderDashboard(req.user, staffProgress));
 });
 
-router.get("/tickets", (req, res) => {
+router.get("/tickets", async (req, res) => {
   if (!req.user) return res.redirect("/login");
-  res.send(renderTicketsPage(req.user));
+  try {
+    res.send(await renderTicketsPage(req.user));
+  } catch (err) {
+    console.error('[Pages] Ticket page render error:', err.message);
+    res.status(500).send(renderLegalPage('Destek merkezi yüklenemedi', '<p>Destek biletlerin yüklenirken bir sorun oluştu. Lütfen kısa süre sonra tekrar dene.</p>'));
+  }
 });
 
 router.get("/tickets/new", (req, res) => {
