@@ -268,6 +268,9 @@ router.get('/cekilisler/profil', async (req, res) => {
 
 // 6. Live Draw Screen (/cekilisler/canli/:id)
 router.get('/cekilisler/canli/:id', async (req, res) => {
+  // Canlı çekiliş ekranı kaldırıldı; sonuçlar artık modern çekiliş detayında yayınlanır.
+  return res.redirect(302, `/cekilisler/${encodeURIComponent(req.params.id)}`);
+  /*
   try {
     const giveaway = await giveawayService.getGiveawayById(req.params.id);
     if (!giveaway) {
@@ -296,6 +299,7 @@ router.get('/cekilisler/canli/:id', async (req, res) => {
   } catch (err) {
     res.status(500).send('Hata: ' + err.message);
   }
+  */
 });
 
 // 7. Giveaway Detail Page (/cekilisler/:idOrSlug)

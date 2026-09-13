@@ -129,11 +129,7 @@ function renderGiveawayDetailPage({ user, giveaway, tasks = [], userEntry = null
             `}
           </div>
 
-          <div style="margin-top: 1.25rem; text-align: right;">
-            <a href="/cekilisler/canli/${giveaway._id}" class="gw-btn gw-btn-secondary" style="font-size: 0.85rem; border-color: #eab308; color: #fef08a;">
-              📺 Canlı Çekiliş Ekranını Aç
-            </a>
-          </div>
+          <div style="margin-top: 1.25rem; color:#fef08a; font-size:.85rem;">Sonuçlar bu resmi sayfada yayınlanır ve şeffaflık kaydıyla korunur.</div>
         </div>
       ` : ''}
 
