@@ -112,8 +112,10 @@ async function fetchRobloxProfile(discordId, guildId) {
           headers: { Authorization: `Bot ${ROWIFI_TOKEN}` },
           timeout: 2500
         });
-        if (res.status === 200 && res.data && res.data.roblox_id) {
-          robloxId = String(res.data.roblox_id);
+        const resolvedId = res.data?.roblox_id || res.data?.robloxId || res.data?.roblox?.id || res.data?.user?.roblox_id;
+        if (res.status === 200 && resolvedId) {
+          robloxId = String(resolvedId);
+          robloxUsername = res.data?.roblox_username || res.data?.robloxUsername || res.data?.roblox?.username || null;
           linkSource = gId === guildId ? "RoWifi API (Bu Sunucu)" : "RoWifi API (Merkez)";
           break;
         }
@@ -124,11 +126,20 @@ async function fetchRobloxProfile(discordId, guildId) {
   // 3. Bloxlink API Kontrolü
   if (!robloxId) {
     try {
-      const url = `https://v3.api.blox.link/developer/discord/${discordId}`;
-      const res = await axios.get(url, { timeout: 3000 });
-      if (res.status === 200 && res.data && res.data.robloxId) {
-        robloxId = String(res.data.robloxId);
-        linkSource = "Bloxlink API (Global)";
+      const headers = process.env.BLOXLINK_API_KEY ? { Authorization: `Bearer ${process.env.BLOXLINK_API_KEY}` } : {};
+      const urls = [
+        `https://v3.api.blox.link/developer/discord/${discordId}`,
+        guildId ? `https://api.blox.link/v4/public/guilds/${guildId}/discord-to-roblox/${discordId}` : null
+      ].filter(Boolean);
+      for (const url of urls) {
+        const res = await axios.get(url, { headers, timeout: 3500, validateStatus: status => status < 500 });
+        const resolvedId = res.data?.robloxId || res.data?.roblox_id || res.data?.primaryAccount || res.data?.roblox?.id;
+        if (res.status === 200 && resolvedId) {
+          robloxId = String(resolvedId);
+          robloxUsername = res.data?.robloxUsername || res.data?.roblox_username || res.data?.roblox?.username || null;
+          linkSource = "Bloxlink API";
+          break;
+        }
       }
     } catch (_) {}
   }

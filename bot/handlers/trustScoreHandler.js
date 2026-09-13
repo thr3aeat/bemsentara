@@ -1,5 +1,5 @@
 const { AuditLogEvent } = require("discord.js");
-const { updateTrustScore, ensureUserTrustScore, incrementAfProgress } = require("../services/security/trustScoreService");
+const { updateTrustScore, ensureUserTrustScore, incrementAfProgress, logTrustUserActivity, addModPoints } = require("../services/security/trustScoreService");
 const { processMessageAutomod } = require("../services/profanityAutomodService");
 const UserTrustScore = require("../../models/UserTrustScore");
 
@@ -12,6 +12,7 @@ const userTimestamps = new Map(); // userId -> Array of message timestamps (for 
 const recentMessages = new Map(); // messageId -> { authorId, createdTimestamp, hasMentions }
 const userLastMessages = new Map(); // userId -> [{ content, timestamp }]
 const awardedReactionMessages = new Set(); // messageId -> Boolean (to prevent double reaction points)
+const recentStaffAudits = new Map(); // executor/action -> timestamp, avoids duplicate audit credits
 
 const LINK_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
 const SUSPICIOUS_LINK_REGEX = /(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/[a-zA-Z0-9]+/gi;
@@ -32,6 +33,38 @@ function normalizeTextForSwearCheck(str) {
   s = s.replace(/[\._\-*+~#=|\/]/g, "");
   s = s.replace(/\b([a-zğüşıöç])\s+(?=[a-zğüşıöç]\b)/gi, "$1");
   return s;
+}
+
+async function findRecentAuditExecutor(guild, eventType, targetId, client) {
+  const logs = await guild.fetchAuditLogs({ type: eventType, limit: 6 }).catch(() => null);
+  const entry = logs?.entries?.find(item =>
+    item.target?.id === targetId &&
+    item.executor &&
+    !item.executor.bot &&
+    item.executor.id !== client.user?.id &&
+    Date.now() - item.createdTimestamp < 15000
+  );
+  return entry?.executor || null;
+}
+
+async function creditRoleManagement(client, guild, auditEvent, role, actionLabel, amount) {
+  const executor = await findRecentAuditExecutor(guild, auditEvent, role.id, client);
+  if (!executor) return;
+
+  const key = `${executor.id}:${auditEvent}:${role.id}`;
+  if (Date.now() - (recentStaffAudits.get(key) || 0) < 30000) return;
+  recentStaffAudits.set(key, Date.now());
+
+  const reason = `Rol Yönetimi: ${actionLabel} (${role.name || role.id})`;
+  await addModPoints(executor.id, amount, reason, client);
+  await logTrustUserActivity(
+    client,
+    executor.id,
+    "Rol Yönetimi Kaydedildi",
+    `**İşlem:** ${actionLabel}\n**Rol:** ${role.name ? `@${role.name}` : role.id}\n**Sunucu:** ${guild.name}`,
+    "🧩",
+    0x5865f2
+  );
 }
 
 // ⚡ 2. Memory Leak Cleanup interval (every 5 minutes)
@@ -511,9 +544,33 @@ function initializeTrustScoreHandlers(client) {
       else if (boostedBefore && !boostedNow) {
         await updateTrustScore(userId, -10.0, "Sunucu Takviyesi Kaldırıldı", "SYSTEM", client);
       }
+
+      const oldRoles = new Set(oldMember.roles.cache.keys());
+      const newRoles = new Set(newMember.roles.cache.keys());
+      const changedRoleId = [...newRoles].find(id => !oldRoles.has(id)) || [...oldRoles].find(id => !newRoles.has(id));
+      if (changedRoleId) {
+        const executor = await findRecentAuditExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id, client);
+        if (executor) {
+          const action = newRoles.has(changedRoleId) ? "Üyeye rol verildi" : "Üyeden rol kaldırıldı";
+          const role = newMember.guild.roles.cache.get(changedRoleId);
+          await addModPoints(executor.id, 0.5, `Rol Yönetimi: ${action} (${role?.name || changedRoleId})`, client);
+          await logTrustUserActivity(client, executor.id, "Üye Rolü Düzenlendi", `**İşlem:** ${action}\n**Üye:** <@${newMember.id}>\n**Rol:** ${role?.name ? `@${role.name}` : changedRoleId}`, "🛡️", 0x5865f2);
+        }
+      }
     } catch (err) {
       console.error("[TrustScoreHandler] guildMemberUpdate error:", err);
     }
+  });
+
+  // Discord audit logs identify the staff member; bot-originated changes are ignored.
+  client.on("roleCreate", role => {
+    if (role.guild?.id === ACTIVE_GUILD_ID) creditRoleManagement(client, role.guild, AuditLogEvent.RoleCreate, role, "Rol oluşturuldu", 1.0).catch(() => {});
+  });
+  client.on("roleUpdate", (_oldRole, newRole) => {
+    if (newRole.guild?.id === ACTIVE_GUILD_ID) creditRoleManagement(client, newRole.guild, AuditLogEvent.RoleUpdate, newRole, "Rol düzenlendi", 0.75).catch(() => {});
+  });
+  client.on("roleDelete", role => {
+    if (role.guild?.id === ACTIVE_GUILD_ID) creditRoleManagement(client, role.guild, AuditLogEvent.RoleDelete, role, "Rol silindi", 0.5).catch(() => {});
   });
 
   // Populate active voice sessions on bot startup

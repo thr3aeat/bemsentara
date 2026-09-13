@@ -405,6 +405,7 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
     if (record.lastPointsResetDate !== todayStr) {
       record.dailyChatPoints = 0.0;
       record.dailyVoicePoints = 0.0;
+      record.dailyStaffPoints = 0.0;
       record.lastPointsResetDate = todayStr;
     }
 
@@ -416,6 +417,9 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       } else if (reason.includes("Sesli")) {
         if (record.dailyVoicePoints >= 5.0) return; // Daily cap reached
         record.dailyVoicePoints = Math.min(record.dailyVoicePoints + amount, 5.0);
+      } else if (reason.includes("Personel Etkinliği") || reason.includes("Rol Yönetimi")) {
+        if ((record.dailyStaffPoints || 0) >= 4.0) return; // Staff actions must not be farmable
+        record.dailyStaffPoints = Math.min((record.dailyStaffPoints || 0) + amount, 4.0);
       }
     }
 
@@ -579,7 +583,7 @@ async function incrementAfProgress(userId, client) {
 /**
  * Awards points to a moderator.
  */
-async function addModPoints(moderatorId, amount, reason) {
+async function addModPoints(moderatorId, amount, reason, client = null) {
   try {
     let modPerf = await ModPerformance.findOne({ moderatorId });
     if (!modPerf) {
@@ -603,6 +607,21 @@ async function addModPoints(moderatorId, amount, reason) {
     });
 
     await modPerf.save();
+    // Moderation performance and trust are related, but intentionally not 1:1.
+    // A daily cap in updateTrustScore prevents farming with low-value actions.
+    const discordClient = client || require("../../discordClient").getDiscordClient?.();
+    const trustAmount = reason.includes("Bilet") || reason.includes("Ticket")
+      ? 0.15
+      : Math.min(Math.max(Number(amount || 0) * 0.2, 0.25), 0.75);
+    if (discordClient && trustAmount > 0) {
+      await updateTrustScore(
+        moderatorId,
+        trustAmount,
+        `Personel Etkinliği: ${reason}`,
+        "SYSTEM",
+        discordClient
+      );
+    }
     console.log(`[ModPerformance] Moderator ${moderatorId} earned +${amount} points (${reason}). Total: ${modPerf.points}`);
   } catch (err) {
     console.error("[TrustScore] addModPoints error:", err);
@@ -669,7 +688,7 @@ async function buildProfileEmbed(record, client) {
       { name: "📊 Güven Skoru", value: `\`${record.trustScore.toFixed(1)} / 500.0\``, inline: true },
       { name: "⚖️ Güvenlik Kademesi", value: `**${status.name}**`, inline: true },
       { name: "💬 Sohbet İlerlemesi", value: `\`${record.messageCount} / 50\` mesaj`, inline: true },
-      { name: "📅 Günlük Limitler", value: `💬 Chat: \`${record.dailyChatPoints.toFixed(1)}/5.0\`\n🎤 Voice: \`${record.dailyVoicePoints.toFixed(1)}/5.0\``, inline: true },
+      { name: "📅 Günlük Limitler", value: `💬 Chat: \`${record.dailyChatPoints.toFixed(1)}/5.0\`\n🎤 Voice: \`${record.dailyVoicePoints.toFixed(1)}/5.0\`\n🛡️ Personel: \`${(record.dailyStaffPoints || 0).toFixed(1)}/4.0\``, inline: true },
       { name: "🔥 Günlük Streak", value: `\`${record.dailyStreak || 0}\` gün`, inline: true }
     )
     .addFields(

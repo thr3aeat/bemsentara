@@ -113,6 +113,7 @@ function initializeDiscordHandlers(client) {
 
   // Çift Yönlü Güven ve Performans Puanı Sistemi
   const { initializeTrustScoreHandlers } = require("./trustScoreHandler");
+  initializeTrustScoreHandlers(client);
   // Yeni Kategori Oluşturulduğunda Otomatik Büyük Harf + Arrow Biçimlendirme
   client.on("channelCreate", async (channel) => {
     try {
