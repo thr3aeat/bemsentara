@@ -38,8 +38,14 @@ test('handleGruptanCekCommand warns when no target user is provided', async () =
 });
 
 test('handleGruptanCekCommand handles missing TMTCOOKIE env variable gracefully', async () => {
-  const originalCookie = process.env.TMTCOOKIE;
+  const originalCookies = {
+    TMTCOOKIE: process.env.TMTCOOKIE,
+    TOKENFRIEND: process.env.TOKENFRIEND,
+    tokenfriend: process.env.tokenfriend
+  };
   delete process.env.TMTCOOKIE;
+  delete process.env.TOKENFRIEND;
+  delete process.env.tokenfriend;
 
   let editedEmbeds = [];
   const mockMessage = {
@@ -57,6 +63,9 @@ test('handleGruptanCekCommand handles missing TMTCOOKIE env variable gracefully'
     assert.equal(editedEmbeds.length, 1);
     assert.ok(editedEmbeds[0].data.description.includes('TMTCOOKIE'));
   } finally {
-    if (originalCookie) process.env.TMTCOOKIE = originalCookie;
+    for (const [key, value] of Object.entries(originalCookies)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });

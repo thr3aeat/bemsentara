@@ -7538,7 +7538,57 @@ async function handleModeratorDashboard(interaction) {
 
 // Inject into main handler
 const originalHandler = handleButtonInteraction;
+
+async function handleTicketUserPanelAction(interaction, dependencies = {}) {
+  const customId = interaction?.customId || '';
+  if (!/^ticket_(user_close|staff_call|user_info)_/.test(customId)) return false;
+
+  const ticketId = customId.replace(/^ticket_(?:user_close|staff_call|user_info)_/, '');
+  const findTicket = dependencies.findTicket || ((query) => Ticket.findOne(query));
+  const ticket = await findTicket({ ticketId });
+  if (!ticket) {
+    await interaction.reply({ content: '❌ Ticket bulunamadı.', ephemeral: true });
+    return true;
+  }
+
+  const isOwner = ticket.userId === interaction.user.id;
+  const isStaff = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
+  if (!isOwner && !isStaff) {
+    await interaction.reply({ content: '❌ Bu ticket işlemi için yetkiniz yok.', ephemeral: true });
+    return true;
+  }
+
+  if (customId.startsWith('ticket_user_close_')) return interaction.showModal(buildCloseReasonModal(ticketId));
+
+  if (customId.startsWith('ticket_user_info_')) {
+    const openedAt = Math.floor(new Date(ticket.createdAt || Date.now()).getTime() / 1000);
+    await interaction.reply({ content: `ℹ️ **${ticket.ticketId}**\nDurum: **${ticket.status || 'open'}**\nKategori: **${ticket.category || 'genel'}**\nAçılış: <t:${openedAt}:F>\nİlgilenen: ${ticket.claimedBy ? `<@${ticket.claimedBy}>` : 'Henüz atanmadı'}`, ephemeral: true });
+    return true;
+  }
+
+  if (!isOwner) {
+    await interaction.reply({ content: 'ℹ️ Personel çağrısı yalnızca ticket sahibi tarafından yapılabilir.', ephemeral: true });
+    return true;
+  }
+
+  const now = dependencies.now ? dependencies.now() : new Date();
+  const lastCall = ticket.staffCallRequestedAt ? new Date(ticket.staffCallRequestedAt).getTime() : 0;
+  if (lastCall && now.getTime() - lastCall < 120000) {
+    await interaction.reply({ content: '⏳ Personel çağrısı zaten iletildi. Lütfen kısa süre bekleyin.', ephemeral: true });
+    return true;
+  }
+
+  ticket.staffCallRequestedAt = now;
+  ticket.staffCallCount = Number(ticket.staffCallCount || 0) + 1;
+  await ticket.save();
+  await interaction.channel.send({ content: `🔔 <@${ticket.userId}> bu ticket için **personel çağrısı** gönderdi. Müsait bir yetkili talebi inceleyebilir mi?` });
+  await interaction.reply({ content: '✅ Personel çağrın iletildi. Bir yetkili en kısa sürede ilgilenecek.', ephemeral: true });
+  return true;
+}
+
 async function enhancedButtonInteraction(interaction) {
+  const ticketPanelHandled = await handleTicketUserPanelAction(interaction);
+  if (ticketPanelHandled) return true;
   const { customId } = interaction;
 
   // Grafik & İstatistik Butonları
@@ -7560,6 +7610,7 @@ async function enhancedButtonInteraction(interaction) {
 
 module.exports = {
   handleButtonInteraction: enhancedButtonInteraction,
+  handleTicketUserPanelAction,
   renderChannelSelectionPanel,
   renderChefsSelectionPanel,
   renderRoleCustomizationPanel

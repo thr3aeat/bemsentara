@@ -2774,27 +2774,15 @@ async function handleSupportModal(interaction) {
 
     await ticket.save();
 
-    const { buildTicketV2, getTicketModActionRows } = require("../embeds");
-    let sent = false;
+    const { sendTicketPanels, formatPanelError } = require("../services/ticketLifecycleService");
     try {
-      const v2Payload = buildTicketV2(ticket);
-      await ticketChannel.send({
-        content: `👋 Hoş geldiniz <@${interaction.user.id}>! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
-        ...v2Payload
-      });
-      sent = true;
-    } catch (v2Err) {
-      console.warn("[modalHandler] V2 Payload error, sending standard fallback:", v2Err.message);
-    }
-
-    if (!sent) {
-      const ticketEmbed = buildTicketEmbed(ticket);
-      const modRows = getTicketModActionRows(ticketId);
-      await ticketChannel.send({
-        content: `👋 Hoş geldiniz <@${interaction.user.id}>! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
-        embeds: [ticketEmbed],
-        components: modRows
-      });
+      await sendTicketPanels(ticket, ticketChannel);
+    } catch (panelError) {
+      ticket.deliveryState = 'pending_retry';
+      ticket.deliveryError = panelError.message;
+      ticket.deliveryErrorAt = new Date();
+      await ticket.save();
+      console.error(formatPanelError(ticket, panelError));
     }
 
     if (isGuild2) {

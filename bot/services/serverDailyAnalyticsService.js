@@ -33,7 +33,9 @@ const TRACKED_GUILDS = {
   }
 };
 
-const DATA_FILE = path.join(__dirname, '../../data/server_daily_analytics.json');
+const DATA_FILE = process.env.SERVER_DAILY_ANALYTICS_DATA_FILE
+  ? path.resolve(process.env.SERVER_DAILY_ANALYTICS_DATA_FILE)
+  : path.join(__dirname, '../../data/server_daily_analytics.json');
 
 // ─── VERİ DEPOSU YÖNETİMİ ────────────────────────────────────────────────────
 function ensureDataDir() {

@@ -2846,6 +2846,10 @@ function renderDashboard(user, staffProgress) {
 // ─────────────────────────────────────────────
 function renderStaffPanel(user) {
   const content = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:1.5rem;">
+      <a href="/staff/academy" style="text-decoration:none;border:1px solid rgba(167,139,250,.3);background:linear-gradient(135deg,rgba(99,86,232,.18),rgba(20,20,35,.8));border-radius:16px;padding:1.1rem;color:var(--text);"><span style="font-size:1.4rem;">ⓘ</span><strong style="display:block;margin-top:.55rem;">Nasıl daha iyi bir personel olabilirim?</strong><small style="display:block;color:var(--muted);margin-top:.35rem;">EkoYıldız Personel Akademisi →</small></a>
+      <a href="/staff/academy/algorithm" style="text-decoration:none;border:1px solid rgba(52,211,153,.25);background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(20,20,35,.8));border-radius:16px;padding:1.1rem;color:var(--text);"><span style="font-size:1.4rem;">ⓘ</span><strong style="display:block;margin-top:.55rem;">Personel Algoritmasını Anla</strong><small style="display:block;color:var(--muted);margin-top:.35rem;">Sistem seni nasıl değerlendiriyor? →</small></a>
+    </div>
     <!-- Sekme başlıkları -->
     <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;">
       <button class="sf-tab sf-tab-active" onclick="switchTab('tickets',this)" style="padding:0.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">🎫 Ticketlar</button>
@@ -9576,7 +9580,9 @@ function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], 
 // ─────────────────────────────────────────────
 
 function renderFormsHubPage(currentUser) {
+  const modernForms = `<section style="margin:0 auto 1.5rem;max-width:900px;padding:28px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:linear-gradient(145deg,#171722,#101017);"><div style="color:#a99cff;font-size:.72rem;font-weight:800;letter-spacing:.14em;">EKOYILDIZ APPLICATIONS</div><h2 style="font-size:clamp(1.8rem,4vw,3rem);margin:.65rem 0;">Kendine uygun ekibi seç.</h2><p style="color:var(--muted);max-width:650px;line-height:1.6;">Başvurunu adım adım tamamla, cevaplarını göndermeden önce kontrol et. Her form aynı sade ve güvenli başvuru deneyimini kullanır.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:20px;"><a href="/forms/event-staff" style="text-decoration:none;color:#fff;border:1px solid rgba(52,211,153,.35);border-radius:14px;padding:17px;background:rgba(52,211,153,.08);"><b>🎪 Etkinlik Ekibi</b><small style="display:block;color:#bfc2d1;margin-top:7px;">Başvurular açık · Forma başla →</small></a><a href="/forms/developer" style="text-decoration:none;color:#fff;border:1px solid rgba(129,140,248,.35);border-radius:14px;padding:17px;background:rgba(129,140,248,.08);"><b>🛠️ Geliştirici Ekibi</b><small style="display:block;color:#bfc2d1;margin-top:7px;">Başvurular açık · Forma başla →</small></a><a href="/forms/community-ambassador" style="text-decoration:none;color:#fff;border:1px solid rgba(245,158,11,.35);border-radius:14px;padding:17px;background:rgba(245,158,11,.08);"><b>🤝 Community Ekibi</b><small style="display:block;color:#bfc2d1;margin-top:7px;">Başvurular açık · Forma başla →</small></a><a href="/forms/game-moderation" style="text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:17px;background:rgba(255,255,255,.04);"><b>🎮 Oyun Moderasyon Ekibi</b><small style="display:block;color:#f4c76b;margin-top:7px;">Bakımda · Yakında tekrar açılacak</small></a></div></section>`;
   const content = `
+    ${modernForms}
     <div style="max-width:900px; margin:2rem auto; animation:fadeUp 0.5s ease;">
       
       <!-- HERO HEADER CARD -->
@@ -10398,17 +10404,23 @@ function renderCreateTicketPage(user, categories = []) {
         </div>
         <div style="display:flex;gap:1rem;justify-content:flex-end;">
           <a href="/tickets" class="btn btn-ghost" style="border-radius:12px;padding:0.75rem 1.5rem;">İptal</a>
-          <button onclick="createTicket()" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;border-radius:12px;padding:0.75rem 1.8rem;">Bileti Gönder</button>
+          <button id="ticket-submit" onclick="createTicket()" class="btn" style="background:linear-gradient(135deg,#818cf8,#6366f1);color:#fff;font-weight:700;border-radius:12px;padding:0.75rem 1.8rem;">Bileti Gönder</button>
         </div>
+        <div id="ticket-result" aria-live="polite" style="display:none;margin-top:1rem;padding:1rem;border-radius:12px;line-height:1.55;"></div>
       </div>
     </div>
     <script>
       async function createTicket() {
         const category = document.getElementById('ticket-cat').value;
         const message = document.getElementById('ticket-msg').value;
+        const submit = document.getElementById('ticket-submit');
+        const result = document.getElementById('ticket-result');
         if (!message) return showToast('Lütfen bir mesaj girin.', 'error');
         const guide = message.toLocaleLowerCase('tr').includes('roblox') ? '/blog/roblox-hesabi-nasil-dogrulanir' : message.toLocaleLowerCase('tr').includes('discord') ? '/blog/discord-ile-giris-nasil-calisir' : '/yardim';
         if (!confirm('EkoMaskot: Hâlâ ticket açmak istediğine emin misin? Konunla ilgili bir rehber bulduk: ' + guide + '\n\nTamam dersen biletin ekibe iletilecek.')) return;
+        submit.disabled = true;
+        submit.textContent = 'Bilet gönderiliyor…';
+        result.style.display = 'none';
         try {
           const res = await fetch('/api/tickets', {
             method: 'POST',
@@ -10417,13 +10429,23 @@ function renderCreateTicketPage(user, categories = []) {
           });
           const d = await res.json();
           if (res.ok) {
-            showToast('Biletiniz başarıyla oluşturuldu!', 'success');
-            setTimeout(() => location.href = '/tickets', 800);
+            const queued = d.deliveryStatus === 'queued';
+            result.style.display = 'block';
+            result.style.background = queued ? 'rgba(251,191,36,.12)' : 'rgba(52,211,153,.12)';
+            result.style.border = queued ? '1px solid rgba(251,191,36,.35)' : '1px solid rgba(52,211,153,.35)';
+            result.style.color = queued ? '#fcd34d' : '#6ee7b7';
+            result.innerHTML = '<strong>#' + d.ticket.ticketId + '</strong><br>' + (d.deliveryMessage || 'Biletin kaydedildi.');
+            showToast(d.deliveryMessage || 'Biletiniz başarıyla oluşturuldu!', queued ? 'warning' : 'success');
+            setTimeout(() => location.href = '/tickets', 1800);
           } else {
             showToast(d.error || 'Hata oluştu', 'error');
+            submit.disabled = false;
+            submit.textContent = 'Bileti Gönder';
           }
         } catch (err) {
           showToast('Bağlantı hatası', 'error');
+          submit.disabled = false;
+          submit.textContent = 'Bileti Gönder';
         }
       }
     </script>

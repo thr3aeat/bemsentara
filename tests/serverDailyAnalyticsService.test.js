@@ -1,6 +1,13 @@
 'use strict';
 
 const assert = require('assert');
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
+
+const analyticsTestFile = path.join(os.tmpdir(), `ekoyildiz-server-analytics-${process.pid}.json`);
+process.env.SERVER_DAILY_ANALYTICS_DATA_FILE = analyticsTestFile;
+
 const {
   TARGET_REPORT_CHANNEL_ID,
   TRACKED_GUILDS,
@@ -19,6 +26,11 @@ const {
   saveAnalyticsData,
   getTodayKey
 } = require('../bot/services/serverDailyAnalyticsService');
+
+function cleanupTestAnalytics() {
+  if (fs.existsSync(analyticsTestFile)) fs.unlinkSync(analyticsTestFile);
+  delete process.env.SERVER_DAILY_ANALYTICS_DATA_FILE;
+}
 
 async function runTests() {
   console.log('🧪 [Test] serverDailyAnalyticsService testleri başlatılıyor...');
@@ -148,10 +160,12 @@ async function runTests() {
   console.log('✅ 5. Buton etkileşimleri ve günlük rapor gönderimi başarıyla doğrulandı.');
 
   console.log('\n🎉 Tüm testler başarıyla geçti!');
+  cleanupTestAnalytics();
   process.exit(0);
 }
 
 runTests().catch((err) => {
   console.error('❌ Test başarısız:', err);
+  cleanupTestAnalytics();
   process.exit(1);
 });

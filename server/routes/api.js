@@ -103,6 +103,11 @@ const { isSiteAdmin, isSiteStaff } = require("../../utils/adminCheck");
 const { SHOP_ITEMS, findItem } = require("../../bot/config/shopItems");
 const { BASE_URL, WEBHOOK_SECRET, MAKE_WEBHOOK_URL } = require("../../config");
 const logger = require("../../utils/logger");
+const {
+  buildTicketDeliveryResult,
+  sortTicketsNewestFirst,
+  normaliseComponentRows
+} = require("../services/ticketDelivery");
 
 function escapeHtml(text) {
   if (typeof text !== 'string') return '';
@@ -309,7 +314,7 @@ router.get("/api/tickets", async (req, res) => {
   try {
     const discordId = req.user.discordId;
     const ticketsArray = await Ticket.find({ userId: discordId });
-    const tickets = ticketsArray.sort({ createdAt: -1 });
+    const tickets = sortTicketsNewestFirst(ticketsArray);
     res.json({ success: true, tickets });
   } catch (err) {
     console.error("Ticket fetch error:", err);
@@ -344,15 +349,28 @@ router.post("/api/tickets", async (req, res) => {
       GUILD2_ID, GUILD2_TICKET_CATEGORY_ID,
     } = require("../../config");
     const { ChannelType, PermissionFlagsBits } = require("discord.js");
-    const { buildTicketEmbed, buildCloseButton } = require("../../bot/embeds");
     const { getDiscordClient } = require("../../bot/discordClient");
-
+    const { sendTicketPanels, formatPanelError } = require("../../bot/services/ticketLifecycleService");
     const ticketId = generateTicketId();
+    const ticket = new Ticket({
+      ticketId,
+      userId: req.user.discordId,
+      userName: req.user.discordUsername,
+      category: c,
+      subject: s,
+      description: d,
+      priority: prio,
+      source: "web",
+      deliveryState: "pending_delivery",
+    });
+    await ticket.save();
+    saveStoreNow();
 
     // ── Discord kanalı aç ──────────────────────────────────────────────────
     let channelId = null;
     let guildId = null;
     let discordChannelMention = null;
+    let discordTicketChannel = null;
 
     const client = getDiscordClient();
     if (client?.isReady()) {
@@ -405,25 +423,12 @@ router.post("/api/tickets", async (req, res) => {
             permissionOverwrites,
           });
 
-          // İlk mesaj: embed + kapat butonu + kullanıcı etiketi
-          const fakeTicket = {
-            ticketId, userId: req.user.discordId, userName: req.user.discordUsername,
-            category: c, subject: s, description: d, priority: prio,
-            createdAt: new Date(),
-          };
-          const embed = buildTicketEmbed(fakeTicket);
-          const closeBtn = buildCloseButton(ticketId);
-          await ticketChannel.send({
-            content: `<@${req.user.discordId}> ticket'ın oluşturuldu! 🌐 Web üzerinden açıldı.`,
-            embeds: [embed],
-            components: [closeBtn],
-          });
-
           // İlk sunucunun kanalını kaydet
           if (!channelId) {
             channelId = ticketChannel.id;
             guildId = guild.id;
             discordChannelMention = `<#${ticketChannel.id}>`;
+            discordTicketChannel = ticketChannel;
           }
         } catch (chErr) {
           console.warn(`[webTicket] ${target.id} kanalı açılamadı:`, chErr.message);
@@ -431,21 +436,27 @@ router.post("/api/tickets", async (req, res) => {
       }
     }
 
-    const ticket = new Ticket({
-      ticketId,
-      userId: req.user.discordId,
-      userName: req.user.discordUsername,
-      category: c,
-      subject: s,
-      description: d,
-      priority: prio,
-      channelId,
-      guildId,
-      source: "web",
-    });
-
+    ticket.channelId = channelId;
+    ticket.guildId = guildId;
     await ticket.save();
     saveStoreNow();
+    if (discordTicketChannel) {
+      try {
+        await sendTicketPanels(ticket, discordTicketChannel);
+      } catch (panelError) {
+        ticket.deliveryState = "pending_retry";
+        ticket.deliveryError = panelError.message;
+        ticket.deliveryErrorAt = new Date();
+        await ticket.save();
+        console.error(formatPanelError(ticket, panelError));
+      }
+    } else {
+      ticket.deliveryState = "pending_retry";
+      ticket.deliveryError = "Discord ticket channel could not be created.";
+      ticket.deliveryErrorAt = new Date();
+      await ticket.save();
+    }
+    const delivery = buildTicketDeliveryResult(ticket);
 
     try {
       const { logTicketCreated } = require("../../bot/services/ticketLog");
@@ -462,6 +473,7 @@ router.post("/api/tickets", async (req, res) => {
     res.json({
       success: true,
       ticket: { ticketId: ticket.ticketId, _id: ticket._id },
+      ...delivery,
       discordChannel: channelId ? `Discord kanalı oluşturuldu: ${discordChannelMention}` : null,
     });
   } catch (err) {

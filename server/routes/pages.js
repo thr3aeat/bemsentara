@@ -25,10 +25,11 @@ const {
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
-const { renderHelpHubPage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
+const { renderHelpHubPage, renderSafetyGuidePage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
 const { renderPhibiSupportPage } = require("../views/phibiSupportPage");
 const { renderCareersPage } = require("../views/careersPage");
 const { renderVideoBlogPage } = require("../views/videoBlogPage");
+const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
 
 const router = express.Router();
 
@@ -47,6 +48,10 @@ router.get("/status", (req, res) => {
 
 router.get("/yardim", (req, res) => {
   res.send(renderHelpHubPage(req.user));
+});
+
+router.get("/yardim/:slug", (req, res) => {
+  res.send(renderSafetyGuidePage(req.params.slug));
 });
 
 router.get("/faq", (req, res) => res.redirect("/yardim"));
@@ -112,6 +117,18 @@ router.get("/staff", (req, res) => {
   const { isSiteStaff } = require("../../utils/adminCheck");
   if (!req.user || !isSiteStaff(req.user)) return res.redirect("/");
   res.send(renderStaffPanel(req.user));
+});
+
+router.get("/staff/academy", (req, res) => {
+  const { isSiteStaff } = require("../../utils/adminCheck");
+  if (!req.user || !isSiteStaff(req.user)) return res.redirect("/login?error=unauthorized");
+  res.send(renderStaffAcademyPage(req.user));
+});
+
+router.get("/staff/academy/algorithm", (req, res) => {
+  const { isSiteStaff } = require("../../utils/adminCheck");
+  if (!req.user || !isSiteStaff(req.user)) return res.redirect("/login?error=unauthorized");
+  res.send(renderStaffAcademyPage(req.user, true));
 });
 
 router.get("/tumodlar", (req, res) => {
@@ -758,6 +775,11 @@ router.get("/webhook", (req, res) => {
 router.get("/forms", (req, res) => {
   const { renderFormsHubPage } = require("../views");
   res.send(renderFormsHubPage(req.user));
+});
+
+router.get("/forms/game-moderation", (req, res) => {
+  const { renderClosedFormPage } = require("../views");
+  res.send(renderClosedFormPage(req.user, "Oyun Moderasyon Ekibi", ""));
 });
 
 router.get("/forms/event-staff", async (req, res) => {

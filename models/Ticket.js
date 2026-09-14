@@ -35,6 +35,14 @@ function TicketConstructor(data) {
     channelDeleted: false,
     channelDeletedAt: null,
     guildId: null,
+    deliveryState: "delivered",
+    deliveryError: null,
+    deliveryErrorAt: null,
+    panelMessageId: null,
+    staffPanelMessageId: null,
+    panelDeliveredAt: null,
+    staffCallRequestedAt: null,
+    staffCallCount: 0,
     source: "discord",  // "discord" | "web"
   };
   const merged = { ...defaults, ...data };

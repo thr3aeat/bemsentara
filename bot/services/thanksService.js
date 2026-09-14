@@ -26,7 +26,10 @@ const SUPPORTERS_LIST = [
   'never92lion_man_iso',
   'YTTBRARDA',
   'adamgeldi_adam4',
-  'askasaf ve TSK ordusu'
+  'askasaf ve TSK ordusu',
+  'swoxy',
+  'lejyon',
+  'funter'
 ];
 
 /**

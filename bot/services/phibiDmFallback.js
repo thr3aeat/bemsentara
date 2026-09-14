@@ -14,12 +14,38 @@ function serialisePayload(payload) {
   return out;
 }
 
+function resolvePublicSiteUrl(pathname) {
+  const configuredBase = String(process.env.BASE_URL || '').trim();
+  const publicBase = !configuredBase || /localhost|127\.0\.0\.1/i.test(configuredBase)
+    ? 'https://ekoyildiz.duckdns.org'
+    : configuredBase.replace(/\/+$/, '');
+  const safePath = String(pathname || '/').startsWith('/') ? pathname : `/${pathname}`;
+  return `${publicBase}${safePath}`;
+}
+
+function preparePhibiPayload(payload) {
+  const out = serialisePayload(payload);
+  out.components = (out.components || []).map((row) => ({
+    ...row,
+    components: (row.components || []).map((button) => {
+      if (button.custom_id !== 'app_open_home') return button;
+      const { custom_id, ...linkButton } = button;
+      return {
+        ...linkButton,
+        style: 5,
+        url: resolvePublicSiteUrl('/staff'),
+      };
+    }),
+  }));
+  return out;
+}
+
 async function sendWithPhibi(recipientId, payload) {
   const token = String(process.env.PHIBI_TOKEN || '').trim();
   if (!token || !recipientId) throw new Error('Phibi DM fallback yapılandırılmamış.');
   const headers = { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' };
   const dm = await axios.post('https://discord.com/api/v10/users/@me/channels', { recipient_id: String(recipientId) }, { headers, timeout: 12000 });
-  return axios.post(`https://discord.com/api/v10/channels/${dm.data.id}/messages`, serialisePayload(payload), { headers, timeout: 12000 });
+  return axios.post(`https://discord.com/api/v10/channels/${dm.data.id}/messages`, preparePhibiPayload(payload), { headers, timeout: 12000 });
 }
 
 /**
@@ -47,4 +73,4 @@ function installPhibiDmFallback() {
   };
 }
 
-module.exports = { installPhibiDmFallback, sendWithPhibi };
+module.exports = { installPhibiDmFallback, sendWithPhibi, resolvePublicSiteUrl, preparePhibiPayload };
