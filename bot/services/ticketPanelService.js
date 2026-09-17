@@ -33,8 +33,8 @@ function buildTicketUserPanel(ticket) {
 }
 
 function buildTicketStaffPanel(ticket) {
-  const { buildTicketEmbed, getTicketModActionRows } = require('../embeds');
-  return { embeds: [buildTicketEmbed(ticket)], components: getTicketModActionRows(ticket.ticketId) };
+  const { buildTicketV2 } = require('../embeds');
+  return buildTicketV2(ticket);
 }
 
 module.exports = { buildTicketUserPanel, buildTicketStaffPanel };
