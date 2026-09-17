@@ -2,6 +2,7 @@
 
 const { posts, topics, safetyGuides } = require('../views/knowledgeCenterData');
 const { helpCategories } = require('../views/productHelpCenterPage');
+const { videoEntries } = require('../views/videoBlogPage');
 
 function normalize(value) {
   return String(value ?? '')
@@ -55,7 +56,16 @@ function buildPublicSearchIndex() {
     kind: 'blog',
   }));
 
-  return [...help, ...safety, ...topicAliases, ...blog];
+  const videos = videoEntries.map((video) => ({
+    title: video.title,
+    description: `${video.views} · ${video.date} · ${video.duration}`,
+    category: 'YouTube',
+    breadcrumb: `Video Blog → ${video.category}`,
+    url: '/video-blog',
+    kind: 'video',
+  }));
+
+  return [...help, ...safety, ...topicAliases, ...blog, ...videos];
 }
 
 function searchPublicContent(query, { limit = 12 } = {}) {
