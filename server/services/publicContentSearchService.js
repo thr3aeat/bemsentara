@@ -15,17 +15,13 @@ function normalize(value) {
     .trim();
 }
 
-function slugify(value) {
-  return normalize(value).replace(/\s+/g, '-');
-}
-
 function buildPublicSearchIndex() {
   const help = helpCategories.map((category) => ({
     title: category.title,
     description: category.description,
     category: 'Help Center',
     breadcrumb: `Help Center → ${category.title}`,
-    url: `/help#${slugify(category.title)}`,
+    url: `/help#${category.slug}`,
     kind: 'help',
   }));
 

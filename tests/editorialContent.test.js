@@ -12,6 +12,8 @@ test('blog exposes editorial category, author, reading time and Video Blog cross
   assert.match(listing, /Video Blog/);
   assert.match(listing, /Yazar/);
   assert.match(article, /dk okuma/);
+  assert.match(listing, /data-global-search-trigger/);
+  assert.match(article, /data-global-search-dialog/);
 });
 
 test('video blog exports safe metadata and links back to Blog', () => {
