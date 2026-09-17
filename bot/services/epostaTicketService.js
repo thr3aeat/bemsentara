@@ -12,6 +12,11 @@ const { ROLES } = require('./staffSystem');
 const pendingUserReplyTimers = new Map();
 const pendingModReplyTimers = new Map();
 
+async function sendEkoTicketOpeningPanels(ticket, channel) {
+  const { sendTicketPanels } = require('./ticketLifecycleService');
+  return sendTicketPanels(ticket, channel);
+}
+
 /**
  * Handles support category select menu interception (Directly opens Form Modal)
  */
@@ -170,27 +175,14 @@ async function handleEpostaModalSubmit(interaction, category) {
       ephemeral: true
     });
 
-    const { buildTicketV2, buildTicketEmbed, getTicketModActionRows } = require("../embeds");
-    let sent = false;
     try {
-      const v2Payload = buildTicketV2(ticket);
-      await ticketChannel.send({
-        content: `👋 Merhaba <@${interaction.user.id}>, hoş geldiniz! Yetkililerimiz en kısa sürede sizinle ilgilenecektir.`,
-        ...v2Payload
-      });
-      sent = true;
-    } catch (v2Err) {
-      console.warn("[epostaTicketService] V2 Payload error, sending fallback embed:", v2Err.message);
-    }
-
-    if (!sent) {
-      const ticketEmbed = buildTicketEmbed(ticket);
-      const modRows = getTicketModActionRows(ticketId);
-      await ticketChannel.send({
-        content: `👋 Merhaba <@${interaction.user.id}>, hoş geldiniz!`,
-        embeds: [ticketEmbed],
-        components: modRows
-      });
+      await sendEkoTicketOpeningPanels(ticket, ticketChannel);
+    } catch (panelError) {
+      ticket.deliveryState = 'pending_retry';
+      ticket.deliveryError = panelError.message;
+      ticket.deliveryErrorAt = new Date();
+      await ticket.save();
+      console.error('[epostaTicketService] Ticket panel delivery failed:', panelError.message);
     }
 
     // AI Smart Auto-Resolver check
@@ -325,6 +317,7 @@ module.exports = {
   handleEpostaSupportSelect,
   triggerEpostaFormModal,
   handleEpostaModalSubmit,
+  sendEkoTicketOpeningPanels,
   forwardUserToModChannel,
   forwardModToUserChannel,
   archiveEkoYildizTicket,
