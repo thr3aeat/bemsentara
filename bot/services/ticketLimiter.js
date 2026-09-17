@@ -4,6 +4,35 @@ const { PermissionFlagsBits, ChannelType } = require('discord.js');
 const Ticket = require('../../models/Ticket');
 const { GUILD2_ID, GUILD2_TICKET_CATEGORY_ID } = require('../../config');
 
+const ARCHIVED_TICKET_CATEGORY_IDS = new Set([
+  process.env.GUILD2_TICKET_ARCHIVE_CATEGORY_ID,
+  '1525218080068730991',
+].filter(Boolean));
+
+function normalizeChannelName(value) {
+  return String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ı/g, 'i');
+}
+
+function isArchivedTicketChannel(channel, guild) {
+  if (!channel) return false;
+  if (ARCHIVED_TICKET_CATEGORY_IDS.has(channel.parentId)) return true;
+
+  const parent = channel.parent || guild?.channels?.cache?.get(channel.parentId);
+  const labels = [channel.name, parent?.name].map(normalizeChannelName);
+  return labels.some((label) => /(?:arsiv|archive|kapali|closed)/.test(label));
+}
+
+async function closeArchivedTicketRecord(ticket) {
+  ticket.status = 'closed';
+  ticket.closedAt = ticket.closedAt || new Date();
+  ticket.closeReason = ticket.closeReason || 'Kanal arşivde olduğu için otomatik kapatıldı';
+  await ticket.save().catch(() => { });
+}
+
 /**
  * Bir kullanıcının sunucuda aktif açık ticket'ı olup olmadığını kontrol eder.
  * Kural: Maksimum 1 açık ticket açılabilir.
@@ -29,6 +58,10 @@ async function canUserOpenTicket(user, guild) {
           || await guild.channels.fetch(t.channelId).catch(() => null);
 
         if (ch) {
+          if (isArchivedTicketChannel(ch, guild)) {
+            await closeArchivedTicketRecord(t);
+            continue;
+          }
           return {
             allowed: false,
             channel: ch,
@@ -62,6 +95,7 @@ async function canUserOpenTicket(user, guild) {
         chName.startsWith('reklam-');
 
       if (!isTicketChannel) continue;
+      if (isArchivedTicketChannel(ch, guild)) continue;
 
       // Kullanıcının reklam kanalı mı? örn: reklam-ekoyildiz_
       if (cleanUsername && chName === `reklam-${cleanUsername}`) {
