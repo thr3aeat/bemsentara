@@ -3,6 +3,13 @@
 const { isSiteAdmin, isSiteStaff } = require("../utils/adminCheck");
 const sponsorAdService = require("./services/sponsorAdService");
 const socialHubService = require("./services/socialHubService");
+const {
+  renderPlatformHeader,
+  renderPlatformFooter,
+  renderSearchDialog,
+  platformChromeStyles,
+  platformChromeScript,
+} = require("./views/platformChrome");
 
 // ─────────────────────────────────────────────
 // SHARED LAYOUT HELPER  (declared ONCE at top)
@@ -66,6 +73,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
   ${extraHead}
+  ${platformChromeStyles('dark')}
   <style>
     :root {
       --bg:       #06060e;
@@ -478,26 +486,12 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   </style>
 </head>
 <body>
-  <header>
-    <a href="/" class="logo" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none;">
-      <img src="https://i.imgur.com/PFcAc6q.png" alt="EkoYıldız logosu" style="width:36px; height:36px; border-radius:10px; flex-shrink:0;">
-      <span style="font-weight:800; font-size:1.4rem; background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">EkoYıldız</span>
-    </a>
-    <button class="hamburger" id="hamburger" aria-label="Menü" onclick="this.classList.toggle('open');document.getElementById('nav-links').classList.toggle('open')">
-      <span></span><span></span><span></span>
-    </button>
-    <nav class="nav-links" id="nav-links">
-      ${navLink('/', 'Ana Sayfa')}
-      ${navLink('/yardim', 'Yardım')}
-      ${navLink('/cekilisler', 'Çekilişler')}
-      ${navLink('/ekoyildizda-calis', 'Ekip')}
-      ${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama (Mod)') : ''}
-      ${groupAdminLink}
-      ${staffLinks}
-      ${adminLink}
-      ${user ? `<a href="/dashboard" class="nav-link">Panel</a><a href="/settings" class="nav-link">Ayarlar</a><a href="/profile" class="nav-link">${_esc(user.username || user.discordUsername)}</a><a href="/logout" class="nav-link logout-link">Çıkış</a>` : `<a href="/login" class="nav-link nav-active">Giriş yap</a>`}
-    </nav>
-  </header>
+  ${renderPlatformHeader({
+    user,
+    activePath,
+    theme: 'dark',
+    authorizedLinks: `${user && isSiteStaff(user) ? navLink('/leaderboard', '🏆 Sıralama') : ''}${groupAdminLink}${staffLinks}${adminLink}`,
+  })}
 
   <div id="toast-container"></div>
 
@@ -505,6 +499,9 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     ${content}
     ${sponsorAdService.renderSponsorAdHtml()}
   </main>
+
+  ${renderPlatformFooter({ theme: 'dark' })}
+  ${renderSearchDialog({ theme: 'dark' })}
 
   <script>
     // ── Toast utility ──
@@ -668,6 +665,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       setTimeout(checkBrowserNotifications, 1500);
     }
   </script>
+  ${platformChromeScript()}
 </body>
 </html>`;
 }
