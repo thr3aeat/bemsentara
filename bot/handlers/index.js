@@ -3448,7 +3448,7 @@ function initializeDiscordHandlers(client) {
         const Ticket = require('../../models/Ticket');
         const { cancelInactivityWarning } = require('../services/ticketCleanup');
         const ticket = await Ticket.findOne({ channelId: message.channel.id, status: 'open' });
-        if (ticket && message.author.id === ticket.userId) {
+        if (ticket && !message.author.bot) {
           cancelInactivityWarning(ticket.ticketId);
         }
       }

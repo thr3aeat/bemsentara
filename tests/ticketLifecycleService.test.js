@@ -2,7 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createTicketLifecycle } = require('../bot/services/ticketLifecycleService');
+const { createTicketLifecycle, sendTicketPanels } = require('../bot/services/ticketLifecycleService');
+const { MessageFlags } = require('discord.js');
 
 function createTicketFactory(events) {
   return function Ticket(data) {
@@ -49,4 +50,35 @@ test('ticket lifecycle keeps a retryable record and logs panel failures', async 
   assert.match(ticket.deliveryError, /Missing Permissions/);
   assert.match(logs[0], /TICKET_PANEL_SEND_FAILED/);
   assert.match(logs[0], /EY-LIFE-2/);
+});
+
+test('ticket delivery falls back to the staff action panel when Discord rejects Components V2', async () => {
+  const attempts = [];
+  const delivered = [];
+  const ticket = {
+    ticketId: 'EY-LIFE-3',
+    userId: '3',
+    category: 'technical',
+    subject: 'Test',
+    description: 'Açıklama',
+    save: async () => {},
+  };
+
+  await sendTicketPanels(ticket, {
+    send: async (payload) => {
+      attempts.push(payload);
+      if (payload.flags === MessageFlags.IsComponentsV2) {
+        throw new Error('Invalid Form Body: Components V2 rejected');
+      }
+      delivered.push(payload);
+      return { id: `message-${delivered.length}` };
+    },
+  });
+
+  assert.equal(attempts.length, 3);
+  assert.equal(delivered.length, 2);
+  assert.ok(delivered[0].embeds?.length);
+  assert.ok(delivered[1].embeds?.length);
+  assert.equal(ticket.deliveryState, 'delivered');
+  assert.match(ticket.deliveryWarning, /Components V2 rejected/);
 });

@@ -2549,6 +2549,7 @@ Moderatörün karşılaştığı durumu analiz et ve yapılması gereken işlemi
 // Yeni ticket oluşturma
 // ─────────────────────────────────────────────────────────────────────────────
 async function handleSupportModal(interaction) {
+  const { deferTicketReply, replyToTicketInteraction } = require("../services/ticketInteractionReply");
   const isTMT = interaction.customId.startsWith("tmt_support_modal_");
   const isEko = interaction.customId.startsWith("ekoyildiz_support_modal_");
   const category = interaction.customId
@@ -2557,6 +2558,10 @@ async function handleSupportModal(interaction) {
     .replace("ekoyildiz_support_modal_", "");
   const subject = interaction.fields.getTextInputValue("support_subject");
   const description = interaction.fields.getTextInputValue("support_description");
+
+  // Kanal oluşturma ve panel teslimi Discord'un 3 saniyelik yanıt süresini aşabilir.
+  // Önce etkileşimi onayla; tüm son durumlar editReply ile tamamlanır.
+  await deferTicketReply(interaction);
 
   // ── YENİ STAJYER GÜVENLİK ──────────────────────────────────────────────────
   // Stajyer/yeni moderatörlerin abuse yapmasını engelle
@@ -2578,7 +2583,7 @@ async function handleSupportModal(interaction) {
       });
 
       if (todayTickets.length >= 2) {
-        await interaction.reply({
+        await replyToTicketInteraction(interaction, {
           content: `❌ **Stajyer Güvenlik:** Günde maksimum 2 ticket açabilirsin (açılmış: ${todayTickets.length}/2)\n\nSunucuyu spamdan korumak için bu kuralımız var. Lütfen sonra tekrar dene!`,
           ephemeral: true,
         });
@@ -2593,7 +2598,7 @@ async function handleSupportModal(interaction) {
   const { canUserOpenTicket, getActiveTicketWarningMessage } = require("../services/ticketLimiter");
   const limitCheck = await canUserOpenTicket(interaction.user, interaction.guild);
   if (!limitCheck.allowed) {
-    return interaction.reply({
+    return replyToTicketInteraction(interaction, {
       content: getActiveTicketWarningMessage(limitCheck.channel),
       ephemeral: true
     });
@@ -2802,10 +2807,10 @@ async function handleSupportModal(interaction) {
       guildId: targetGuildId,
     });
 
-    return interaction.reply({ content: `✅ Ticket oluşturuldu: ${ticketChannel}`, ephemeral: true });
+    return replyToTicketInteraction(interaction, { content: `✅ Ticket oluşturuldu: ${ticketChannel}`, ephemeral: true });
   } catch (err) {
     console.error("Ticket oluşturma hatası:", err);
-    return interaction.reply({ content: `❌ Hata: ${err.message}`, ephemeral: true });
+    return replyToTicketInteraction(interaction, { content: `❌ Hata: ${err.message}`, ephemeral: true });
   }
 }
 

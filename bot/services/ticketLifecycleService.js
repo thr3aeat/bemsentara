@@ -1,6 +1,6 @@
 'use strict';
 
-const { buildTicketUserPanel, buildTicketStaffPanel } = require('./ticketPanelService');
+const { buildTicketUserPanel, buildTicketStaffPanel, buildTicketStaffFallbackPanel } = require('./ticketPanelService');
 
 function formatPanelError(ticket, error) {
   return `[TICKET_PANEL_SEND_FAILED] ticketId=${ticket?.ticketId || 'unknown'} guildId=${ticket?.guildId || 'unknown'} channelId=${ticket?.channelId || 'unknown'} userId=${ticket?.userId || 'unknown'} error=${error?.message || String(error)}`;
@@ -9,11 +9,21 @@ function formatPanelError(ticket, error) {
 async function sendTicketPanels(ticket, channel, buildPanels) {
   const panels = buildPanels ? buildPanels(ticket) : [buildTicketUserPanel(ticket), buildTicketStaffPanel(ticket)];
   const messages = [];
-  for (const panel of panels) messages.push(await channel.send(panel));
+  let deliveryWarning = null;
+  for (let index = 0; index < panels.length; index += 1) {
+    try {
+      messages.push(await channel.send(panels[index]));
+    } catch (error) {
+      if (buildPanels || index !== 1) throw error;
+      deliveryWarning = `Components V2 staff panel fallback used: ${error?.message || String(error)}`;
+      messages.push(await channel.send(buildTicketStaffFallbackPanel(ticket)));
+    }
+  }
   ticket.panelMessageId = messages[0]?.id || null;
   ticket.staffPanelMessageId = messages[1]?.id || null;
   ticket.panelDeliveredAt = new Date();
   ticket.deliveryState = 'delivered';
+  ticket.deliveryWarning = deliveryWarning;
   ticket.deliveryError = null;
   ticket.deliveryErrorAt = null;
   await ticket.save();

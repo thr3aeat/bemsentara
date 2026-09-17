@@ -79,6 +79,17 @@ function cancelInactivityWarning(ticketId) {
   }
 }
 
+function getLatestHumanMessage(messages) {
+  if (!messages) return null;
+  const values = typeof messages.values === 'function'
+    ? Array.from(messages.values())
+    : Array.isArray(messages) ? messages : [];
+
+  return values
+    .filter(message => !message?.author?.bot)
+    .sort((a, b) => (b.createdTimestamp || b.createdAt?.getTime?.() || 0) - (a.createdTimestamp || a.createdAt?.getTime?.() || 0))[0] || null;
+}
+
 /**
  * Açık ticketlarda inaktivite kontrolü (Rate limit korumasıyla)
  * Kural: Son mesaj yetkiliden geldiyse ve üzerinden 1 saat geçtiyse → kullanıcıya DM uyarısı
@@ -168,17 +179,15 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
     
     if (!messages || messages.size === 0) return;
 
-    const lastMsg = messages.first();
+    const lastMsg = getLatestHumanMessage(messages);
     if (!lastMsg) return;
 
     // Son mesaj kullanıcıdan mı geldi? → İnaktivite yok
     if (lastMsg.author?.id === ticket.userId) return;
     
-    // Son mesaj bottan mı? → Atla
-    if (lastMsg.author?.bot) return;
-    
     // 1 saat geçmedi mi? → Henüz uyar verme
-    if (lastMsg.createdAt > warnCutoff) return;
+    const lastMessageAt = lastMsg.createdAt || new Date(lastMsg.createdTimestamp);
+    if (lastMessageAt > warnCutoff) return;
 
     // ── 1 saat geçmiş, son mesaj yetkiliden — uyar ───────────────────────────
     console.log(`[ticketCleanup] ${ticket.ticketId} → inaktivite uyarısı gönderiliyor`);
@@ -199,7 +208,8 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
         `📬 **Ticket Uyarısı — ${ticket.ticketId}**\n\n` +
         `Lütfen **${serverName}** sunucusundaki ticket'ınıza bakın!\n` +
         `Yetkili size cevap verdi ancak henüz yanıtlamadınız.\n\n` +
-        `⚠️ **2 dakika içinde yanıt vermezseniz ticket otomatik kapatılacak.**`
+        `⚠️ **5 dakika içinde yanıt vermezseniz ticket otomatik kapatılacak.**\n\n` +
+        `Ticket kanalınız: https://discord.com/channels/${guildId}/${ticket.channelId}`
       ).catch(err => {
         console.warn(`[ticketCleanup] Cannot send DM to ${ticket.userId}:`, err.code);
       });
@@ -224,10 +234,11 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
       try {
         const ch = await guild.channels.fetch(ticket.channelId).catch(() => null);
         if (ch?.isTextBased()) {
-          const msgs = await ch.messages.fetch({ limit: 3 }).catch(() => null);
+          const msgs = await ch.messages.fetch({ limit: 25 }).catch(() => null);
           if (msgs) {
-            const last = msgs.first();
-            if (last && last.author.id === ticket.userId) return; // Kullanıcı cevap verdi
+            const last = getLatestHumanMessage(msgs);
+            // Uyarıdan sonra herhangi bir insan yanıtı geldiyse eski zamanlayıcıyla kapatma.
+            if (!last || last.id !== lastMsg.id) return;
           }
         }
       } catch (_) {}
@@ -264,7 +275,11 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
 
     }, INACTIVITY_CLOSE_MS);
 
-    inactivityWarnings.set(ticket.ticketId, { warnedAt: new Date(), closeHandle });
+    inactivityWarnings.set(ticket.ticketId, {
+      warnedAt: new Date(),
+      lastHumanMessageId: lastMsg.id,
+      closeHandle,
+    });
 
   } catch (err) {
     console.warn(`[ticketCleanup] inaktivite kontrol hatası (${ticket.ticketId}):`, err.message);
@@ -438,4 +453,5 @@ module.exports = {
   scheduleTicketDeletion,
   cancelTicketDeletion,
   cancelInactivityWarning,
+  getLatestHumanMessage,
 };

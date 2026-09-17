@@ -37,4 +37,9 @@ function buildTicketStaffPanel(ticket) {
   return buildTicketV2(ticket);
 }
 
-module.exports = { buildTicketUserPanel, buildTicketStaffPanel };
+function buildTicketStaffFallbackPanel(ticket) {
+  const { buildTicketEmbed, getTicketModActionRows } = require('../embeds');
+  return { embeds: [buildTicketEmbed(ticket)], components: getTicketModActionRows(ticket.ticketId) };
+}
+
+module.exports = { buildTicketUserPanel, buildTicketStaffPanel, buildTicketStaffFallbackPanel };
