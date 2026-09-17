@@ -25,7 +25,8 @@ const {
 } = require("../views");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
-const { renderHelpHubPage, renderSafetyGuidePage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
+const { renderSafetyCenterPage, renderSafetyGuidePage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
+const { renderProductHelpCenterPage } = require("../views/productHelpCenterPage");
 const { renderPhibiSupportPage } = require("../views/phibiSupportPage");
 const { renderCareersPage } = require("../views/careersPage");
 const { renderVideoBlogPage } = require("../views/videoBlogPage");
@@ -47,7 +48,7 @@ router.get("/status", (req, res) => {
 });
 
 router.get("/yardim", (req, res) => {
-  res.send(renderHelpHubPage(req.user));
+  res.send(renderSafetyCenterPage(req.user));
 });
 
 router.get("/yardim/:slug", (req, res) => {
@@ -55,14 +56,15 @@ router.get("/yardim/:slug", (req, res) => {
 });
 
 router.get("/faq", (req, res) => res.redirect("/yardim"));
-router.get("/safety", (req, res) => res.redirect("/yardim"));
+router.get("/safety", (req, res) => res.send(renderSafetyCenterPage(req.user)));
 router.get("/blog", (req, res) => res.send(renderBlogPage()));
 router.get("/video-blog", (req, res) => res.send(renderVideoBlogPage()));
 router.get("/blog/:slug", (req, res) => res.send(renderBlogPostPage(req.params.slug)));
 router.get("/yazar/:slug", (req, res) => res.send(renderAuthorPage(req.params.slug)));
 
-router.get("/help/:topic?", (req, res) => {
-  res.send(renderPhibiSupportPage({ topic: req.params.topic || 'moderation', query: req.query, user: req.user }));
+router.get("/help", (req, res) => res.send(renderProductHelpCenterPage(req.user)));
+router.get("/help/:topic", (req, res) => {
+  res.send(renderPhibiSupportPage({ topic: req.params.topic, query: req.query, user: req.user }));
 });
 router.get("/rules", (req, res) => res.redirect("/anayasasi"));
 router.get("/cases", (req, res) => res.send(renderPhibiSupportPage({ topic: 'appeals', query: req.query, user: req.user })));
