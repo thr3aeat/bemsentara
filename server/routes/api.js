@@ -1,6 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
+router.get("/api/search", (req, res) => {
+  const { searchPublicContent } = require("../services/publicContentSearchService");
+  const query = String(req.query.q || '').slice(0, 120);
+  res.json({ success: true, results: searchPublicContent(query) });
+});
+
 router.get("/api/social-stats", (req, res) => {
   try {
     const { getSocialStats } = require("../../bot/services/socialStatsService");
