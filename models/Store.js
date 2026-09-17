@@ -241,6 +241,7 @@ const giveawayNotifications = collections.giveawayNotifications;
 const socialAds       = collections.socialAds;
 const socialAdMetrics = collections.socialAdMetrics;
 const homepageConfig  = collections.homepageConfig;
+const userActivityLogs = collections.userActivityLogs;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -397,6 +398,7 @@ module.exports = {
   socialAds,
   socialAdMetrics,
   homepageConfig,
+  userActivityLogs,
   wikis,
   InMemoryCollection,
   initStore,
