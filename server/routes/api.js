@@ -7,6 +7,15 @@ router.get("/api/search", (req, res) => {
   res.json({ success: true, results: searchPublicContent(query) });
 });
 
+router.get("/api/status", (req, res) => {
+  try {
+    const { getSystemTelemetry } = require("../services/systemStatusService");
+    res.json({ success: true, ...getSystemTelemetry() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get("/api/social-stats", (req, res) => {
   try {
     const { getSocialStats } = require("../../bot/services/socialStatsService");
