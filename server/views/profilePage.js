@@ -160,13 +160,13 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
     }
     .p-avatar:hover { transform: scale(1.05) rotate(2deg); }
 
-    /* ── Profile Body & Liquid Glass Card ── */
+    /* ── Profile Body & Dark Liquid Glass Card ── */
     .p-card {
       position: relative;
-      background: radial-gradient(130% 120% at 50% -15%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 40%, rgba(14,16,26,0.82) 100%), linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(18,20,32,0.76) 100%);
-      border: 1px solid rgba(255,255,255,0.20);
+      background: radial-gradient(130% 120% at 50% -15%, rgba(124,106,247,0.12) 0%, rgba(255,255,255,0.02) 35%, rgba(9,11,20,0.95) 100%), linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(12,14,24,0.92) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 0 0 28px 28px;
-      box-shadow: 0 28px 64px -16px rgba(0,0,0,0.65), inset 0 1.5px 1px rgba(255,255,255,0.8);
+      box-shadow: 0 28px 64px -16px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.14);
       backdrop-filter: blur(28px) saturate(210%);
       -webkit-backdrop-filter: blur(28px) saturate(210%);
       padding: 4.6rem 2.2rem 2.2rem;
@@ -292,12 +292,12 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
       display: flex;
       align-items: center;
       gap: 1rem;
-      background: radial-gradient(120% 110% at 50% -20%, rgba(255,255,255,0.12) 0%, rgba(124,106,247,0.1) 40%, rgba(16,18,28,0.7) 100%);
-      border: 1px solid rgba(255,255,255,0.18);
+      background: radial-gradient(120% 110% at 50% -20%, rgba(124,106,247,0.09) 0%, rgba(255,255,255,0.02) 40%, rgba(10,12,22,0.90) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px;
       padding: 1.1rem 1.4rem;
       margin-bottom: 1.8rem;
-      box-shadow: 0 10px 30px -8px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.6);
+      box-shadow: 0 10px 30px -8px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1);
       backdrop-filter: blur(14px);
     }
     .p-coin-icon { font-size: 2rem; }
@@ -310,13 +310,13 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
       margin: 1.4rem 0 2rem;
     }
     .p-stat {
-      background: rgba(255,255,255,0.035);
-      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.07);
       border-radius: 16px;
       padding: 1.1rem 1rem;
       text-align: center;
       backdrop-filter: blur(10px);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.15);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
       transition: all .2s cubic-bezier(0.34,1.56,0.64,1);
     }
     .p-stat:hover { border-color: rgba(124,106,247,0.5); transform: translateY(-3px); }
@@ -334,9 +334,9 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
       position: relative;
       padding: 26px;
       border-radius: 22px;
-      background: radial-gradient(130% 120% at 50% -15%, rgba(255,255,255,0.14) 0%, rgba(18,20,32,0.85) 100%);
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: 0 16px 40px -10px rgba(0,0,0,0.6), inset 0 1.5px 1px rgba(255,255,255,0.6);
+      background: radial-gradient(130% 120% at 50% -15%, rgba(124,106,247,0.08) 0%, rgba(10,12,22,0.94) 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 16px 40px -10px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.1);
       text-align: center;
       overflow: hidden;
     }
@@ -516,18 +516,23 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
       transition: all .2s cubic-bezier(0.34,1.56,0.64,1);
     }
     .p-btn-action.primary {
-      background: linear-gradient(135deg, #fff 0%, #dbe4ff 100%);
-      color: #0b0d17;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3), inset 0 1.5px 1px #fff;
+      background: linear-gradient(135deg, rgba(124,106,247,0.88) 0%, rgba(99,102,241,0.88) 100%);
+      color: #ffffff;
+      border: 1px solid rgba(167,139,250,0.5);
+      box-shadow: 0 4px 14px rgba(124,106,247,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
     }
-    .p-btn-action.primary:hover { transform: translateY(-2px) scale(1.02); background: #fff; }
-    .p-btn-action.primary:active { transform: scale(0.93) translateY(2px) !important; }
+    .p-btn-action.primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      background: linear-gradient(135deg, rgba(124,106,247,1) 0%, rgba(99,102,241,1) 100%);
+      box-shadow: 0 8px 24px rgba(124,106,247,0.5), inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .p-btn-action.primary:active { transform: scale(0.95) translateY(1px) !important; }
     .p-btn-action.secondary {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
       color: #fff;
     }
-    .p-btn-action.secondary:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
+    .p-btn-action.secondary:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.22); transform: translateY(-1px); }
 
     /* Responsive */
     @media (max-width: 768px) {

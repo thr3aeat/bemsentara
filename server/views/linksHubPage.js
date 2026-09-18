@@ -19,8 +19,8 @@ const LINKS_DATA = [
     badge: 'CANLI YAYIN',
     url: 'https://kick.com/ekoyildiz',
     brandColor: '#53fc18',
-    glowColor: 'rgba(83, 252, 24, 0.42)',
-    bgGradient: 'linear-gradient(135deg, rgba(83,252,24,0.18) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(83, 252, 24, 0.35)',
+    bgGradient: 'linear-gradient(135deg, rgba(83,252,24,0.08) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19.333 12L14.667 7.333V9.667L17 12L14.667 14.333V16.667L19.333 12ZM4.667 4H9.333V10.333L13.333 4H18.667L13.333 12L19.333 20H14L9.333 13.667V20H4.667V4Z"/></svg>`,
     external: true,
   },
@@ -34,8 +34,8 @@ const LINKS_DATA = [
     badge: 'CANLI YAYIN',
     url: 'https://www.twitch.tv/ekoyildiz',
     brandColor: '#9146ff',
-    glowColor: 'rgba(145, 70, 255, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(145,70,255,0.2) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(145, 70, 255, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(145,70,255,0.09) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0h1.714v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>`,
     external: true,
   },
@@ -49,8 +49,8 @@ const LINKS_DATA = [
     badge: 'ANA KANAL',
     url: 'https://www.youtube.com/@eko8yildiz',
     brandColor: '#ff0033',
-    glowColor: 'rgba(255, 0, 51, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(255,0,51,0.2) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(255, 0, 51, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(255,0,51,0.09) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
     external: true,
   },
@@ -64,8 +64,8 @@ const LINKS_DATA = [
     badge: '2. KANAL',
     url: 'https://www.youtube.com/@eko8yildiz2',
     brandColor: '#ff5757',
-    glowColor: 'rgba(255, 87, 87, 0.42)',
-    bgGradient: 'linear-gradient(135deg, rgba(255,87,87,0.18) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(255, 87, 87, 0.35)',
+    bgGradient: 'linear-gradient(135deg, rgba(255,87,87,0.08) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>`,
     external: true,
   },
@@ -79,8 +79,8 @@ const LINKS_DATA = [
     badge: 'SHORTS & VIRAL',
     url: 'https://www.tiktok.com/@kimdirbueko',
     brandColor: '#00f2fe',
-    glowColor: 'rgba(0, 242, 254, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(0,242,254,0.18) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(0, 242, 254, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(0,242,254,0.08) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-1.01-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 2.89 3.5 2.73 1.4-.07 2.64-.99 3.09-2.31.2-.55.24-1.15.24-1.73l.02-17.15z"/></svg>`,
     external: true,
   },
@@ -94,8 +94,8 @@ const LINKS_DATA = [
     badge: 'RESMİ TOPLULUK',
     url: 'https://discord.gg/XJWnqx9DQC',
     brandColor: '#5865f2',
-    glowColor: 'rgba(88, 101, 242, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(88,101,242,0.2) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(88, 101, 242, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(88,101,242,0.09) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>`,
     external: true,
   },
@@ -109,8 +109,8 @@ const LINKS_DATA = [
     badge: 'KATIL & ÜYE OL',
     url: 'https://www.youtube.com/channel/UCNSZYtuDQYsZYYQVJvErDVw/join',
     brandColor: '#ffd700',
-    glowColor: 'rgba(255, 215, 0, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(255, 215, 0, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`,
     external: true,
   },
@@ -124,8 +124,8 @@ const LINKS_DATA = [
     badge: 'GÜVENLİ DESTEK',
     url: 'https://www.itemsatis.com/destekle/ekoyildiz',
     brandColor: '#10b981',
-    glowColor: 'rgba(16, 185, 129, 0.42)',
-    bgGradient: 'linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(16, 185, 129, 0.35)',
+    bgGradient: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>`,
     external: true,
   },
@@ -139,8 +139,8 @@ const LINKS_DATA = [
     badge: 'ANA PROFİL',
     url: 'https://www.instagram.com/ekonqt/',
     brandColor: '#e1306c',
-    glowColor: 'rgba(225, 48, 108, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(225,48,108,0.2) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(225, 48, 108, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(225,48,108,0.09) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
     external: true,
   },
@@ -154,8 +154,8 @@ const LINKS_DATA = [
     badge: 'KİŞİSEL HESAP',
     url: 'https://www.instagram.com/egee7dino/',
     brandColor: '#c13584',
-    glowColor: 'rgba(193, 53, 132, 0.45)',
-    bgGradient: 'linear-gradient(135deg, rgba(193,53,132,0.2) 0%, rgba(18,20,32,0.85) 100%)',
+    glowColor: 'rgba(193, 53, 132, 0.38)',
+    bgGradient: 'linear-gradient(135deg, rgba(193,53,132,0.09) 0%, rgba(10,12,22,0.94) 100%)',
     iconSvg: `<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`,
     external: true,
   },
@@ -294,15 +294,15 @@ function renderLinksHubPage(user = null) {
       z-index: 10;
     }
 
-    /* Profile Hero Card - Liquid Glass */
+    /* Profile Hero Card - Dark Liquid Glass */
     .bio-profile-card {
       position: relative;
-      background: radial-gradient(130% 120% at 50% -15%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 40%, rgba(124,106,247,0.14) 75%, rgba(14,16,28,0.85) 100%), linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(18,20,34,0.82) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: radial-gradient(130% 120% at 50% -15%, rgba(124,106,247,0.12) 0%, rgba(255,255,255,0.03) 30%, rgba(10,12,22,0.92) 100%), linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(12,14,24,0.90) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 30px;
       padding: 38px 30px;
       text-align: center;
-      box-shadow: 0 32px 70px -16px rgba(0,0,0,0.7), inset 0 1.5px 1px rgba(255,255,255,0.9), inset 0 -1.5px 2px rgba(124,106,247,0.4);
+      box-shadow: 0 32px 70px -16px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(124,106,247,0.2);
       backdrop-filter: blur(28px) saturate(210%);
       -webkit-backdrop-filter: blur(28px) saturate(210%);
       overflow: hidden;
@@ -542,13 +542,13 @@ function renderLinksHubPage(user = null) {
       margin-top: 4px;
     }
 
-    /* Individual Bento Card - Liquid Glass with Optical Depth */
+    /* Individual Bento Card - Dark Obsidian Liquid Glass */
     .bio-link-card {
       position: relative;
       border-radius: var(--bio-radius);
-      background: radial-gradient(120% 110% at 50% -20%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 45%, rgba(16,18,30,0.85) 100%), var(--item-bg);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      box-shadow: 0 16px 36px -12px rgba(0,0,0,0.6), inset 0 1.5px 1px rgba(255,255,255,0.7), inset 0 -1.5px 2px rgba(255,255,255,0.06);
+      background: radial-gradient(120% 110% at 50% -20%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 45%, rgba(11,13,24,0.92) 100%), var(--item-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 36px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.03);
       backdrop-filter: blur(24px) saturate(200%);
       -webkit-backdrop-filter: blur(24px) saturate(200%);
       overflow: hidden;
@@ -564,7 +564,7 @@ function renderLinksHubPage(user = null) {
     .bio-card-spotlight {
       position: absolute;
       inset: 0;
-      background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.12), transparent 40%);
+      background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 40%);
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s ease;
@@ -728,19 +728,22 @@ function renderLinksHubPage(user = null) {
       gap: 6px;
       padding: 10px 18px;
       border-radius: 12px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(225,230,255,0.92) 100%);
-      color: #0a0b12;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+      color: #f8fafc;
       font-size: 0.82rem;
       font-weight: 850;
       text-decoration: none;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3), inset 0 1.5px 1px #ffffff;
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
       user-select: none;
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, background 0.22s ease;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
     }
     .bio-btn-visit:hover {
       transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.4), inset 0 1.5px 1px #ffffff;
-      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(124,106,247,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+      background: linear-gradient(135deg, rgba(124,106,247,0.85) 0%, rgba(99,102,241,0.85) 100%);
+      border-color: rgba(167,139,250,0.6);
+      color: #ffffff;
     }
     .bio-btn-visit:active {
       transform: translateY(0) scale(0.96);
