@@ -3576,109 +3576,7 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = []) 
 // ─────────────────────────────────────────────
 // SETTINGS PAGE
 // ─────────────────────────────────────────────
-function renderSettingsPage(user) {
-  const content = `
-    <div class="card">
-      <h1 style="font-size:2rem;font-weight:800;margin-bottom:2rem;">⚙️ Ayarlar</h1>
-
-      <div id="settings-form">
-        <label>Profil Rengi (Hex)</label>
-        <input type="color" id="color" value="${_esc(user.profileColor || '#7c6af7')}"
-               style="width:60px;height:44px;padding:4px;cursor:pointer;margin-bottom:1.2rem;">
-        <input type="text"  id="colorText" value="${_esc(user.profileColor || '#7c6af7')}"
-               placeholder="#7c6af7" style="margin-top:-0.5rem;">
-
-        <label>Biyografi</label>
-        <textarea id="bio" rows="5" placeholder="Kendinden bahset..." maxlength="500">${_esc(user.profileBio || '')}</textarea>
-        <div style="text-align:right;color:var(--muted);font-size:0.8rem;margin-top:-1rem;margin-bottom:1rem;">
-          <span id="bio-count">${(user.profileBio || '').length}</span>/500
-        </div>
-
-        <label>Site Giriş Şifresi</label>
-        <input type="password" id="sitePassword" placeholder="Yeni site şifresi girin (Değiştirmek istemiyorsanız boş bırakın)">
-
-        <hr class="divider">
-        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">🎨 Guns.lol Tarzı Profil Özelleştirme</h2>
-        
-        <label>Guns.lol Bağlantı Linki</label>
-        <input type="text" id="gunsLolUrl" value="${_esc(user.gunsLolUrl || '')}" placeholder="https://guns.lol/kullaniciadi">
-
-        <label>Profil Özel Arkaplan Resim/GIF URL</label>
-        <input type="text" id="profileBgUrl" value="${_esc(user.profileBgUrl || '')}" placeholder="https://ornek.com/resim.gif">
-
-        <label>Profil Özel Arkaplan Müzik (.mp3) URL</label>
-        <input type="text" id="profileMusicUrl" value="${_esc(user.profileMusicUrl || '')}" placeholder="https://ornek.com/muzik.mp3">
-
-        <hr class="divider">
-
-        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">🔗 Bağlı Hesaplar</h2>
-        <div style="background:rgba(255,255,255,0.025);padding:1rem 1.25rem;border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;backdrop-filter:blur(8px);">
-          <div>
-            <div style="font-weight:700;margin-bottom:0.2rem;">Discord</div>
-            <div style="color:var(--success);font-size:0.85rem;">✅ ${_esc(user.discordUsername)}</div>
-          </div>
-        </div>
-        <div style="background:rgba(255,255,255,0.025);padding:1rem 1.25rem;border-radius:12px;border:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;backdrop-filter:blur(8px);">
-          <div>
-            <div style="font-weight:700;margin-bottom:0.2rem;">Roblox</div>
-            <div style="color:${user.robloxUsername ? 'var(--success)' : 'var(--warning)'};font-size:0.85rem;">
-              ${user.robloxUsername ? '✅ ' + _esc(user.robloxUsername) : '⚠️ Bağlı değil'}
-            </div>
-          </div>
-          ${!user.robloxUsername ? `<a href="/auth/roblox" class="btn btn-sm">Bağla</a>` : `<a href="/auth/roblox/unlink" class="btn btn-sm btn-danger">Bağlantıyı Kes</a>`}
-        </div>
-
-        <button class="btn w-full" id="save-btn" onclick="saveSettings()">💾 Kaydet</button>
-      </div>
-    </div>
-
-    <script>
-      const bioEl   = document.getElementById('bio');
-      const countEl = document.getElementById('bio-count');
-      const colorEl = document.getElementById('color');
-      const colorTx = document.getElementById('colorText');
-
-      bioEl.addEventListener('input', () => { countEl.textContent = bioEl.value.length; });
-      colorEl.addEventListener('input', () => { colorTx.value = colorEl.value; });
-      colorTx.addEventListener('input', () => {
-        if (/^#[0-9A-Fa-f]{6}$/.test(colorTx.value)) colorEl.value = colorTx.value;
-      });
-
-      async function saveSettings() {
-        const btn = document.getElementById('save-btn');
-        btn.textContent = 'Kaydediliyor...';
-        btn.disabled = true;
-        try {
-          const res = await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              profileColor: colorEl.value,
-              profileBio: bioEl.value,
-              sitePassword: document.getElementById('sitePassword').value,
-              gunsLolUrl: document.getElementById('gunsLolUrl').value,
-              profileBgUrl: document.getElementById('profileBgUrl').value,
-              profileMusicUrl: document.getElementById('profileMusicUrl').value
-            })
-          });
-          if (res.ok) {
-            showToast('Ayarlar başarıyla kaydedildi!', 'success');
-            document.getElementById('sitePassword').value = ''; // clear password input after success
-          } else {
-            const d = await res.json().catch(() => ({}));
-            showToast(d.error || 'Bir hata oluştu.', 'error');
-          }
-        } catch {
-          showToast('Bağlantı hatası.', 'error');
-        } finally {
-          btn.textContent = '💾 Kaydet';
-          btn.disabled = false;
-        }
-      }
-    </script>
-  `;
-  return _layout('Ayarlar', user, content);
-}
+// renderSettingsPage is defined in the Account Management section below
 
 
 // ─────────────────────────────────────────────
@@ -9162,214 +9060,654 @@ function renderSocialPage(user) {
 function renderSettingsPage(user, query = {}) {
   const isSetupPin = query.setupPin === '1' || !user.sitePinPassword;
   const hasPin = Boolean(user.sitePinPassword);
-  const pinLength = user.pinLength || 6;
-  const is2FA = Boolean(user.twoFactorEnabled);
-  const twoFactorMethod = user.twoFactorMethod || 'discord_dm';
-  const preferences = user.portalPreferences || {};
+  const isSiteStaff = Boolean(user.isStaff || user.isAdmin || (user.roles && (user.roles.includes('staff') || user.roles.includes('admin') || user.roles.includes('yonetim'))));
+  const isSiteAdmin = Boolean(user.isAdmin || (user.roles && (user.roles.includes('admin') || user.roles.includes('yonetim'))));
 
   const content = `
-    <div style="max-width:900px; margin:2rem auto; animation:fadeUp 0.5s ease;">
-      <!-- Title Header -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+    <div class="settings-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+      
+      <!-- Top Title Bar -->
+      <div style="background: linear-gradient(135deg, rgba(16, 24, 40, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.75rem 2rem; margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <div style="color:var(--muted); font-size:0.88rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">HESAP YÖNETİMİ</div>
-          <h1 style="font-size:2.4rem; font-weight:800; background:linear-gradient(135deg, #fff, #fda4af); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Hesap Ayarları & Güvenlik</h1>
+          <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #60a5fa; background: rgba(59, 130, 246, 0.12); padding: 4px 10px; border-radius: 99px; margin-bottom: 8px;">
+            <span>⚙️</span> Denetim & Tercih Merkezi
+          </div>
+          <h1 style="margin: 0; font-size: 1.85rem; font-weight: 800; color: #fff; letter-spacing: -0.02em;">Hesap ve Sistem Ayarları</h1>
+          <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 0.95rem;">Hesap güvenliğinizi yapılandırın, yetkili kontrollerini yönetin ve yasal talep masasını kullanın.</p>
         </div>
-        <a href="/dashboard" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15);">← Dashboard'a Dön</a>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <span style="font-size: 0.85rem; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+            Kullanıcı: <strong style="color: #60a5fa;">${sanitize(user.username || 'Kullanıcı')}</strong>
+          </span>
+          ${isSiteStaff ? '<span style="font-size: 0.82rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 12px; border-radius: 10px;">🛡️ YETKİLİ</span>' : ''}
+        </div>
       </div>
 
-      ${isSetupPin ? `
-      <div style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.4); border-radius:20px; padding:1.5rem 2rem; margin-bottom:2rem; backdrop-filter:blur(16px); box-shadow:0 10px 30px rgba(244,63,94,0.2);">
-        <div style="display:flex; align-items:center; gap:1rem;">
-          <span style="font-size:2rem;">🔑</span>
-          <div>
-            <div style="font-size:1.2rem; font-weight:800; color:#fff;">Site Şifresi (PIN) Tanımlamanız Gerekiyor</div>
-            <div style="font-size:0.92rem; color:var(--muted); margin-top:0.25rem;">
-              Hesap güvenliğiniz için lütfen aşağıdan 4 veya 6 haneli bir Site PIN Şifresi belirleyin.
+      <!-- Navigation Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; overflow-x: auto;" role="tablist">
+        <button class="st-tab-btn active" onclick="switchSettingsTab('user', this)" style="padding: 12px 20px; border-radius: 12px; border: none; background: #2563eb; color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          <span>👤</span> 1. Kullanıcı Hesap Ayarları
+        </button>
+        ${isSiteStaff ? `
+        <button class="st-tab-btn" onclick="switchSettingsTab('staff', this)" style="padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          <span>🛡️</span> 2. Yetkili Ayarları
+        </button>
+        ` : ''}
+        <button class="st-tab-btn" onclick="switchSettingsTab('site', this)" style="padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          <span>🎨</span> 3. Site & Görünüm Ayarları
+        </button>
+        <button class="st-tab-btn" onclick="switchSettingsTab('legal', this)" id="tab-btn-legal" style="padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.25); background: rgba(239,68,68,0.08); color: #f87171; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          <span>⚖️</span> 4. Resmî Hukuk & Şartlar Masası
+        </button>
+      </div>
+
+      <!-- TAB 1: KULLANICI HESAP AYARLARI -->
+      <div id="st-pane-user" class="st-tab-pane" style="display: block;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+          
+          <!-- Profil & Biyografi -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+            <h3 style="margin-top:0; color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+              <span>🎭</span> Profil Görünümü & Medya
+            </h3>
+            <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:1.25rem;">Profil kartınızda ve topluluk alanlarında gözükecek kişisel detaylar.</p>
+            
+            <form onsubmit="handleSaveProfile(event)">
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Tema / Profil Vurgu Rengi</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <input type="color" id="profileColor" value="${user.profileColor || '#3b82f6'}" style="border:none; width:44px; height:44px; border-radius:10px; cursor:pointer; background:none;">
+                  <input type="text" id="profileColorHex" value="${user.profileColor || '#3b82f6'}" style="flex:1; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:monospace;" oninput="document.getElementById('profileColor').value = this.value">
+                </div>
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <label style="font-size:0.85rem; color:#cbd5e1; font-weight:600;">Kişisel Biyografi</label>
+                  <span id="bioCounter" style="font-size:0.75rem; color:#64748b;">0/500</span>
+                </div>
+                <textarea id="profileBio" rows="4" maxlength="500" placeholder="Kendinizden, hedeflerinizden veya rolünüzden bahsedin..." style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:inherit; resize:vertical;" oninput="document.getElementById('bioCounter').innerText = this.value.length + '/500'">${sanitize(user.bio || '')}</textarea>
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Guns.lol veya Kişisel Link</label>
+                <input type="url" id="profileGunsLol" value="${sanitize(user.gunsLol || '')}" placeholder="https://guns.lol/kullaniciadi" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Özel Arka Plan Görseli / GIF URL</label>
+                <input type="url" id="profileBgImage" value="${sanitize(user.customBackground || '')}" placeholder="https://ornek.com/banner.gif" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Profil Arka Plan Müziği (Doğrudan MP3 URL)</label>
+                <input type="url" id="profileMusic" value="${sanitize(user.customMusic || '')}" placeholder="https://ornek.com/muzik.mp3" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+              </div>
+
+              <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:10px; cursor:pointer;">
+                💾 Profil Bilgilerini Kaydet
+              </button>
+            </form>
+          </div>
+
+          <!-- Hesap Güvenliği & PIN / 2FA -->
+          <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <h3 style="margin-top:0; color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+                <span>🔐</span> Giriş PIN'i & 2FA Güvenliği
+              </h3>
+              <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:1.25rem;">Hassas işlem ve girişlerde kullanılan 6 haneli güvenlik PIN kodu.</p>
+
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-weight:700; color:#fff; font-size:0.95rem;">Site PIN Durumu</div>
+                    <div style="font-size:0.8rem; color:#64748b;">${hasPin ? 'PIN kodu aktif ve korunuyor.' : 'Henüz bir PIN kodu belirlemediniz.'}</div>
+                  </div>
+                  <span style="padding:4px 10px; border-radius:99px; font-size:0.8rem; font-weight:700; ${hasPin ? 'background:rgba(16,185,129,0.2); color:#10b981;' : 'background:rgba(239,68,68,0.2); color:#ef4444;'}">
+                    ${hasPin ? 'AKTİF' : 'TANIMSIZ'}
+                  </span>
+                </div>
+              </div>
+
+              <form onsubmit="handleSavePin(event)">
+                ${hasPin ? `
+                <div style="margin-bottom: 1rem;">
+                  <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Mevcut PIN Kodu</label>
+                  <input type="password" id="currentPin" maxlength="6" placeholder="******" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:monospace; letter-spacing:0.2em;">
+                </div>
+                ` : ''}
+
+                <div style="margin-bottom: 1rem;">
+                  <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Yeni PIN Kodu (6 Hane)</label>
+                  <input type="password" id="newPin" maxlength="6" placeholder="******" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:monospace; letter-spacing:0.2em;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                  <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Yeni PIN Tekrar</label>
+                  <input type="password" id="newPinConfirm" maxlength="6" placeholder="******" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:monospace; letter-spacing:0.2em;">
+                </div>
+
+                <button type="submit" style="width:100%; padding:12px; background:#4f46e5; color:#fff; font-weight:700; border:none; border-radius:10px; cursor:pointer;">
+                  🔑 PIN Kodunu Güncelle
+                </button>
+              </form>
             </div>
+
+            <!-- Bağlı Hesaplar -->
+            <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.08);">
+              <h4 style="margin:0 0 10px 0; color:#e2e8f0; font-size:0.95rem;">🔗 Bağlı Hesap Kimlikleri</h4>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:8px;">
+                  <span style="font-size:0.85rem; color:#94a3b8;">Discord ID</span>
+                  <span style="font-size:0.85rem; font-family:monospace; color:#60a5fa;">${sanitize(user.discordId || 'Bağlı Değil')}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:8px;">
+                  <span style="font-size:0.85rem; color:#94a3b8;">Roblox ID</span>
+                  <span style="font-size:0.85rem; font-family:monospace; color:#34d399;">${sanitize(user.robloxId || 'Bağlı Değil')}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: YETKİLİ AYARLARI -->
+      ${isSiteStaff ? `
+      <div id="st-pane-staff" class="st-tab-pane" style="display: none;">
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+            <div>
+              <h3 style="margin:0; color:#10b981; font-size:1.3rem; display:flex; align-items:center; gap:8px;">
+                <span>🛡️</span> EkoYıldız Yetkili Operasyon Merkezi
+              </h3>
+              <p style="margin:4px 0 0 0; color:#94a3b8; font-size:0.9rem;">Vardiya, denetim ve hızlı yetkili yönetim tercihlerinizi buradan yapılandırın.</p>
+            </div>
+            <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3); padding:8px 16px; border-radius:12px; font-weight:700; color:#34d399; font-size:0.9rem;">
+              Vardiya Modu: <span id="currentShiftBadge">${user.shiftStatus || 'Aktif'}</span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem;">
+            
+            <!-- Vardiya Durumu -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">⏰ Vardiya / Mesai Durumu</h4>
+              <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">Topluluk panelinde ve loglarda aktiflik durumunuzu belirler.</p>
+              <select id="staffShiftStatus" style="width:100%; background:rgba(15, 23, 42, 0.9); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px; border-radius:8px; font-weight:600;">
+                <option value="Aktif" ${user.shiftStatus === 'Aktif' || !user.shiftStatus ? 'selected' : ''}>🟢 Aktif Görevde</option>
+                <option value="Mola" ${user.shiftStatus === 'Mola' ? 'selected' : ''}>🟡 Molada (AFK)</option>
+                <option value="İzinli" ${user.shiftStatus === 'İzinli' ? 'selected' : ''}>🔴 İzinli / Çevrimdışı</option>
+              </select>
+            </div>
+
+            <!-- Sesli Bildirimler -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">🔔 Canlı Sesli Uyarılar</h4>
+              <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">Yeni talep veya bildirim geldiğinde sesli uyarı verilsin.</p>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1; margin-bottom:8px;">
+                <input type="checkbox" id="staffSoundAlerts" ${user.staffSoundAlerts !== false ? 'checked' : ''} style="width:18px; height:18px;">
+                Yeni Başvuru / Talep Sesli Uyarı
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1;">
+                <input type="checkbox" id="staffAutoDutyLog" ${user.staffAutoDutyLog !== false ? 'checked' : ''} style="width:18px; height:18px;">
+                Girişte Otomatik Nöbet Logu Yaz
+              </label>
+            </div>
+
+            <!-- Hızlı Yetkili Kısayolları -->
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">⚡ Hızlı Yönetim Kısayolları</h4>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <a href="/admin" style="display:block; text-align:center; padding:8px; background:rgba(59, 130, 246, 0.2); border:1px solid rgba(59, 130, 246, 0.4); color:#60a5fa; border-radius:8px; font-weight:700; text-decoration:none;">🚀 Yönetici Paneline Git</a>
+                <a href="/admin#adm-legal" style="display:block; text-align:center; padding:8px; background:rgba(239, 68, 68, 0.2); border:1px solid rgba(239, 68, 68, 0.4); color:#f87171; border-radius:8px; font-weight:700; text-decoration:none;">⚖️ Hukuki Talepleri İncele</a>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:1.5rem; text-align:right;">
+            <button onclick="saveStaffPreferences()" style="padding:10px 24px; background:#10b981; color:#064e3b; font-weight:800; border:none; border-radius:10px; cursor:pointer; font-size:0.95rem;">
+              💾 Yetkili Tercihlerini Kaydet
+            </button>
           </div>
         </div>
       </div>
       ` : ''}
 
-      <!-- Settings Cards -->
-      <div style="display:grid; grid-template-columns:1fr; gap:2rem;">
-        
-        <!-- CARD 1: SITE PIN PASSWORD -->
-        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
-          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔑</div>
-            <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">Site PIN / Şifresi</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Giriş yaparken veya hassas işlemlerde kullanılan şifreniz</p>
+      <!-- TAB 3: SİTE & GÖRÜNÜM AYARLARI -->
+      <div id="st-pane-site" class="st-tab-pane" style="display: none;">
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2rem;">
+          <h3 style="margin-top:0; color:#fff; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
+            <span>🎨</span> Arayüz, Performans ve Bildirim Ayarları
+          </h3>
+          <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem;">Cihazınıza özel yerel tarayıcı tercihlerinizi optimize edin.</p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem;">
+            
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">🖥️ Görünüm Teması</h4>
+              <select id="siteThemeSelect" style="width:100%; background:rgba(15, 23, 42, 0.9); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px; border-radius:8px; font-weight:600;" onchange="updateThemePreference(this.value)">
+                <option value="dark">🌙 EkoYıldız Koyu Neon (Varsayılan)</option>
+                <option value="oled">🖤 OLED Saf Siyah</option>
+                <option value="cyber">🔮 Siberpunk Mor</option>
+              </select>
             </div>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">⚡ Performans ve Animasyon</h4>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1; margin-bottom:10px;">
+                <input type="checkbox" id="reduceMotionToggle" onchange="toggleReduceMotion(this.checked)" style="width:18px; height:18px;">
+                Hareketleri Azalt (Düşük Donanım / GPU Dostu)
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1;">
+                <input type="checkbox" id="compactModeToggle" onchange="toggleCompactMode(this.checked)" style="width:18px; height:18px;">
+                Kompakt Liste Görünümü
+              </label>
+            </div>
+
+            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
+              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">📨 Bildirim Filtreleri</h4>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1; margin-bottom:10px;">
+                <input type="checkbox" id="notifyAnnouncements" checked style="width:18px; height:18px;">
+                Resmî Duyurular & Topluluk Haberleri
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1;">
+                <input type="checkbox" id="notifyLegalUpdates" checked style="width:18px; height:18px;">
+                Kural ve Hukuk Değişiklik Bildirimleri
+              </label>
+            </div>
+
           </div>
 
-          <div style="background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px; border:1px solid rgba(255,255,255,0.05); margin-bottom:1.5rem;">
-            <div style="font-size:0.9rem; color:var(--muted); margin-bottom:0.4rem;">Mevcut Şifre Durumu:</div>
-            <div style="font-weight:700; color:${hasPin ? 'var(--success)' : 'var(--danger)'};">
-              ${hasPin ? `✅ Şifre Aktif (${pinLength} Haneli PIN)` : '⚠️ Şifre Belirlenmemiş'}
-            </div>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:1rem; max-width:420px;">
-            <div>
-              <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">Yeni PIN Şifresi (4 veya 6 Haneli Rakam)</label>
-              <input type="password" id="settingsPinInput" class="input-field" placeholder="Örn: 123456" maxlength="6" style="font-size:1.2rem; letter-spacing:0.3rem;">
-            </div>
-            <button onclick="updateSitePin()" class="btn btn-primary" style="background:linear-gradient(135deg, #f43f5e, #e11d48); font-weight:700;">
-              💾 Şifreyi Kaydet
+          <div style="margin-top:1.5rem; text-align:right;">
+            <button onclick="saveSitePreferences()" style="padding:10px 24px; background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:10px; cursor:pointer;">
+              💾 Tercihleri Uygula
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- CARD 2: 2FA SECURITY -->
-        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
-          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(88,101,242,0.15); border:1px solid rgba(88,101,242,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🛡️</div>
-            <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">2 Aşamalı Doğrulama (2FA)</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Hesabınıza ekstra güvenlik katmanı ekleyin</p>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; background:rgba(0,0,0,0.2); padding:1.2rem; border-radius:16px;">
-            <input type="checkbox" id="toggle2FA" ${is2FA ? 'checked' : ''} style="width:20px; height:20px; accent-color:#f43f5e; cursor:pointer;">
-            <label for="toggle2FA" style="font-weight:700; cursor:pointer;">2 Aşamalı Doğrulamayı Aktif Et</label>
-          </div>
-
-          <div style="margin-bottom:1.5rem; max-width:420px;">
-            <label style="font-size:0.88rem; color:var(--muted); font-weight:600; margin-bottom:0.4rem; display:block;">2FA Doğrulama Yöntemi</label>
-            <select id="select2FAMethod" class="input-field" style="background:#0a0a14; color:#fff;">
-              <option value="discord_dm" ${twoFactorMethod === 'discord_dm' ? 'selected' : ''}>📩 Discord DM 6 Haneli Kod ile</option>
-              <option value="roblox_oauth" ${twoFactorMethod === 'roblox_oauth' ? 'selected' : ''}>🌐 Roblox OAuth Doğrulaması ile</option>
-            </select>
-          </div>
-
-          <button onclick="update2FASettings()" class="btn btn-primary" style="max-width:420px; background:linear-gradient(135deg, #5865F2, #4752C4); font-weight:700;">
-            🛡️ 2FA Ayarlarını Kaydet
-          </button>
-        </div>
-
-        <!-- CARD 3: ACCOUNT CONNECTIONS -->
-        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
-          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-            <div style="width:48px; height:48px; border-radius:16px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem;">🔗</div>
-            <div>
-              <h3 style="font-size:1.3rem; font-weight:700;">Hesap Bağlantıları</h3>
-              <p style="font-size:0.88rem; color:var(--muted);">Discord ve Roblox hesap entegrasyonlarınız</p>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.5rem;">
-            <!-- Roblox -->
-            <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
-              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Roblox Hesabı:</div>
-              <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
-                ${user.robloxUsername ? `🎮 ${_esc(user.robloxUsername)}` : '❌ Bağlı Değil'}
+      <!-- TAB 4: RESMÎ HUKUK, ŞARTLAR & TALEP MASASI -->
+      <div id="st-pane-legal" class="st-tab-pane" style="display: none;">
+        
+        <!-- Yasal Üst Bilgi Barı -->
+        <div style="background: linear-gradient(135deg, rgba(30, 27, 75, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; padding: 2rem; margin-bottom: 2rem;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+            <div style="max-width:750px;">
+              <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(239, 68, 68, 0.15); border:1px solid rgba(239, 68, 68, 0.4); color:#fca5a5; font-size:0.8rem; font-weight:800; text-transform:uppercase; padding:4px 10px; border-radius:99px; margin-bottom:8px;">
+                <span>⚖️</span> T.C. HUKUK & KVKK / GDPR UYUM MASASI
               </div>
-              <a href="/auth/roblox" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
-                🔄 Roblox Hesabımı Değiştir / Eşle
-              </a>
+              <h2 style="margin:0 0 8px 0; color:#fff; font-size:1.5rem; font-weight:800;">Resmî Hukuki İrade Beyanı & Talep Masası</h2>
+              <p style="margin:0; color:#cbd5e1; font-size:0.92rem; line-height:1.6;">
+                Bu bölüm, EkoYıldız platformu ve Discord topluluğu nezdindeki sözleşmesel rıza, veri mahremiyeti (KVKK Md. 11), telif hakkı bildirimleri ve idari yaptırım itirazlarının resmi hukuki usullere uygun olarak kayıt altına alındığı yargısal nitelikli masadır. Gönderilen her dilekçe kriptografik referans kodu ile mühürlenir.
+              </p>
             </div>
-
-            <!-- Discord -->
-            <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:18px;">
-              <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.4rem;">Discord Hesabı:</div>
-              <div style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">
-                💬 ${_esc(user.discordUsername || 'Bağlı')}
-              </div>
-              <a href="/auth/discord" class="btn btn-sm btn-ghost" style="border-color:rgba(255,255,255,0.15); text-decoration:none;">
-                🔄 Discord Hesabımı Değiştir
+            <div style="text-align:right;">
+              <a href="/anayasasi" target="_blank" style="display:inline-flex; align-items:center; gap:6px; padding:10px 18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:10px; text-decoration:none; font-size:0.88rem; font-weight:700;">
+                📜 Politika Hub'ını Aç ↗
               </a>
             </div>
           </div>
         </div>
 
-        <!-- CARD 4: PORTAL PREFERENCES -->
-        <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:2rem; backdrop-filter:blur(20px);">
-          <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;"><div style="width:48px;height:48px;border-radius:16px;background:rgba(167,139,250,.15);display:grid;place-items:center;font-size:1.4rem;">✨</div><div><h3 style="font-size:1.3rem;font-weight:700;">Portal tercihlerin</h3><p style="font-size:.88rem;color:var(--muted);">Görünümünü ve hangi bildirimleri görmek istediğini kendin belirle.</p></div></div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;">
-            <label style="display:grid;gap:.45rem;font-size:.88rem;font-weight:700;">Görünüm<select id="prefTheme" class="input-field" style="margin:0"><option value="system" ${preferences.theme !== 'dark' && preferences.theme !== 'light' ? 'selected' : ''}>Sistem ayarı</option><option value="dark" ${preferences.theme === 'dark' ? 'selected' : ''}>Koyu</option><option value="light" ${preferences.theme === 'light' ? 'selected' : ''}>Açık</option></select></label>
-            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefMotion" type="checkbox" ${preferences.reduceMotion ? 'checked' : ''}> Hareketleri azalt</label>
-            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefCompact" type="checkbox" ${preferences.compactMode ? 'checked' : ''}> Daha kompakt panel</label>
-            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefWelcome" type="checkbox" ${preferences.dashboardWelcome !== false ? 'checked' : ''}> Panel karşılama kartı</label>
-            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefDiscord" type="checkbox" ${preferences.discordUpdates !== false ? 'checked' : ''}> Discord duyuruları</label>
-            <label style="display:flex;gap:.65rem;align-items:center;font-size:.88rem;"><input id="prefGiveaway" type="checkbox" ${preferences.giveawayUpdates !== false ? 'checked' : ''}> Çekiliş bildirimleri</label>
+        <!-- 1. KULLANIM ŞARTLARI & SÖZLEŞME ONAY DURUMU -->
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2rem; margin-bottom: 2rem;">
+          <h3 style="margin:0 0 1rem 0; color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+            <span>📋</span> Topluluk Sözleşmesi & Kullanım Şartları Rıza Durumu
+          </h3>
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:12px;">
+            <div style="max-width:650px;">
+              <div style="font-weight:700; color:#fff; font-size:1rem; margin-bottom:4px;" id="tosStatusTitle">
+                ${user.tosConsent ? '✅ Kullanım Şartları ve Gizlilik Politikası Kabul Edildi' : '⚠️ Kullanım Şartları Onayı Bekleniyor / Askıda'}
+              </div>
+              <div style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
+                Platformun sağladığı hizmetlerden, oyun sunucularından ve topluluk odalarından yararlanabilmek için yürürlükteki <strong>EkoYıldız Topluluk Anayasası, Kullanım Şartları ve KVKK Aydınlatma Metni</strong> eksiksiz kabul edilmiş olmalıdır.
+              </div>
+            </div>
+            <div>
+              <button id="btnToggleTos" onclick="handleToggleTosConsent()" style="padding:12px 22px; border-radius:10px; font-weight:800; font-size:0.9rem; cursor:pointer; border:none; ${user.tosConsent ? 'background:#ef4444; color:#fff;' : 'background:#10b981; color:#fff;'}">
+                ${user.tosConsent ? '❌ Rızamı Geri Çek (Kısıtlı Mod)' : '✅ Şartları Onaylıyorum'}
+              </button>
+            </div>
           </div>
-          <button onclick="savePortalPreferences()" class="btn btn-primary" style="margin-top:1.5rem;background:linear-gradient(135deg,#8b5cf6,#ec4899);">Tercihleri kaydet</button>
+        </div>
+
+        <!-- 2. RESMÎ TALEP & DİLEKÇE GÖNDERME FORMU (HUKUK BÜROSU CİDDİYETİ) -->
+        <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 16px; padding: 2.25rem; margin-bottom: 2.5rem; box-shadow:0 15px 35px -10px rgba(0,0,0,0.6);">
+          <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:1.25rem; margin-bottom:1.75rem;">
+            <h3 style="margin:0 0 6px 0; color:#fff; font-size:1.3rem; display:flex; align-items:center; gap:8px;">
+              <span>⚖️</span> Hukuki / İdari Talep & Başvuru Dilekçesi
+            </h3>
+            <p style="margin:0; color:#94a3b8; font-size:0.88rem;">
+              Bu form vasıtasıyla iletilen talepler doğrudan <strong>EkoYıldız Hukuk & Yönetici Paneline</strong> resmi dilekçe statüsünde intikal eder ve 72 saat içerisinde gerekçeli karara bağlanır.
+            </p>
+          </div>
+
+          <form id="legalRequestForm" onsubmit="handleLegalRequestSubmit(event)">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.25rem;">
+              
+              <div>
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">Talep Türü / Hukuki Kategori *</label>
+                <select id="lrCategory" required style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px; font-weight:600;">
+                  <option value="">Seçiniz...</option>
+                  <option value="kvkk_delete">🗑️ KVKK/GDPR - Kişisel Verilerin Silinmesi / Anonimleştirilmesi (Unutulma Hakkı)</option>
+                  <option value="kvkk_export">📦 KVKK/GDPR - Veri Taşınabilirliği & Bilgi Edinme Talebi</option>
+                  <option value="ban_appeal">⚖️ İdari Yaptırım & Ban / Ceza Kararına İtiraz</option>
+                  <option value="copyright_dmca">🛡️ Fikri Mülkiyet, Telif (DMCA) veya Marka İhlal Bildirimi</option>
+                  <option value="tos_exception">📜 Şartlar & Kural İstisnası / Muafiyet Talebi</option>
+                  <option value="staff_complaint">🏛️ Yetkili Suistimali / Görevi Kötüye Kullanma Şikayeti</option>
+                  <option value="other_formal">📁 Diğer Resmî Hukuki İstem</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">Dilekçe Konu Özeti (Tek Satır) *</label>
+                <input type="text" id="lrSubject" required maxlength="120" placeholder="Örn: 15.09.2026 Tarihli Yaptırıma Dair Gerekçeli İtiraz" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
+              </div>
+
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.25rem;">
+              
+              <div>
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">İlgili Kullanıcı / ID / Bağlantılı Hesap *</label>
+                <input type="text" id="lrTargetAccount" required value="${sanitize(user.username || '')} (${sanitize(user.discordId || 'ID Yok')})" placeholder="Kullanıcı adı, Discord ID veya Roblox Profil Linki" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">İletişim / Tebligat E-Posta veya Discord *</label>
+                <input type="text" id="lrContact" required placeholder="ornek@alanadi.com veya Discord: @kullanici" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
+              </div>
+
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+              <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">Resmî Dilekçe Metni & Hukuki Gerekçe *</label>
+              <textarea id="lrContent" required rows="6" placeholder="Sayın EkoYıldız Yönetim Kurulu ve Hukuk Departmanı Dikkatine;\n\nİşbu dilekçe ile ... hususunda gerekli incelemenin yapılmasını ve haklarım çerçevesinde gereğinin ifasını saygılarımla arz ederim." style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:12px 14px; border-radius:10px; font-family:inherit; line-height:1.5; resize:vertical;"></textarea>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+              <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">Delil / Belge / Ek Bağlantıları (Varsa)</label>
+              <input type="text" id="lrEvidenceUrls" placeholder="https://imgur.com/... , https://drive.google.com/... (Virgülle ayırabilirsiniz)" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
+            </div>
+
+            <!-- Hukuki Sorumluluk & Doğruluk Beyanı Onayı -->
+            <div style="background:rgba(239, 68, 68, 0.08); border:1px solid rgba(239, 68, 68, 0.25); border-radius:10px; padding:1rem; margin-bottom:1.5rem;">
+              <label style="display:flex; align-items:flex-start; gap:12px; cursor:pointer; font-size:0.84rem; color:#e2e8f0; line-height:1.5;">
+                <input type="checkbox" id="lrLegalConsent" required style="margin-top:3px; width:18px; height:18px;">
+                <span>
+                  <strong>Hukuki Beyan ve Taahhüt:</strong> Yukarıda sunduğum tüm bilgi ve belgelerin gerçeği yansıttığını, asılsız veya yanıltıcı beyanlarla platform yönetimini meşgul etmenin EkoYıldız Topluluk Anayasası kapsamında kalıcı uzaklaştırma dahil cezai sorumluluk doğuracağını kabul ve beyan ederim.
+                </span>
+              </label>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+              <div style="font-size:0.8rem; color:#64748b;">
+                Talebiniz kriptografik SHA-256 tabanlı referans kodu alacaktır.
+              </div>
+              <button type="submit" id="btnSubmitLegalRequest" style="padding:13px 32px; background:linear-gradient(135deg, #dc2626, #991b1b); color:#fff; font-weight:800; font-size:0.95rem; border:none; border-radius:10px; cursor:pointer; box-shadow:0 4px 14px rgba(220,38,38,0.4); display:flex; align-items:center; gap:8px;">
+                <span>⚖️</span> Resmî Dilekçeyi Onayla ve Mühürle
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 3. KAYITLI TALEPLERİM VE SONUÇ TAKİBİ -->
+        <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <h3 style="margin:0; color:#fff; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+              <span>📑</span> Kayıtlı Hukuki Dilekçelerim ve İnceleme Durumu
+            </h3>
+            <button onclick="loadMyLegalRequests()" style="padding:6px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:8px; font-size:0.8rem; cursor:pointer;">
+              🔄 Listeyi Yenile
+            </button>
+          </div>
+
+          <div id="myLegalRequestsTableContainer" style="overflow-x:auto;">
+            <div style="text-align:center; padding:2rem; color:#64748b;">
+              Talepler yükleniyor...
+            </div>
+          </div>
         </div>
 
       </div>
+
     </div>
 
     <script>
-      async function updateSitePin() {
-        const pin = document.getElementById('settingsPinInput').value.trim();
-        if (!pin || (pin.length !== 4 && pin.length !== 6) || !/^\\d+$/.test(pin)) {
-          return alert('Lütfen 4 veya 6 haneli sadece rakamlardan oluşan bir PIN girin.');
-        }
-
-        try {
-          const res = await fetch('/api/settings/update-pin', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ pin })
-          });
-          const data = await res.json();
-          if (data.success) {
-            alert(data.message || 'PIN başarıyla güncellendi!');
-            window.location.href = '/settings';
+      function switchSettingsTab(tabName, btn) {
+        document.querySelectorAll('.st-tab-btn').forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'rgba(255,255,255,0.04)';
+          b.style.color = '#94a3b8';
+          b.style.borderColor = 'rgba(255,255,255,0.1)';
+        });
+        document.querySelectorAll('.st-tab-pane').forEach(p => p.style.display = 'none');
+        
+        if (btn) {
+          btn.classList.add('active');
+          if (tabName === 'legal') {
+            btn.style.background = 'rgba(239,68,68,0.2)';
+            btn.style.color = '#fca5a5';
+            btn.style.borderColor = 'rgba(239,68,68,0.5)';
           } else {
-            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+            btn.style.background = '#2563eb';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#2563eb';
           }
-        } catch (e) {
-          alert('Sunucu hatası.');
+        }
+        const activePane = document.getElementById('st-pane-' + tabName);
+        if (activePane) activePane.style.display = 'block';
+
+        if (tabName === 'legal') {
+          loadMyLegalRequests();
         }
       }
 
-      async function update2FASettings() {
-        const enabled = document.getElementById('toggle2FA').checked;
-        const method = document.getElementById('select2FAMethod').value;
+      // Check URL hash for tab
+      if (window.location.hash === '#tab-legal' || window.location.hash === '#legal') {
+        const legalBtn = document.getElementById('tab-btn-legal');
+        if (legalBtn) switchSettingsTab('legal', legalBtn);
+      }
+
+      async function handleSaveProfile(e) {
+        e.preventDefault();
+        const profileColor = document.getElementById('profileColor').value;
+        const bio = document.getElementById('profileBio').value;
+        const gunsLol = document.getElementById('profileGunsLol').value;
+        const customBackground = document.getElementById('profileBgImage').value;
+        const customMusic = document.getElementById('profileMusic').value;
 
         try {
-          const res = await fetch('/api/settings/update-2fa', {
+          const res = await fetch('/api/settings/profile', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ enabled, method })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileColor, bio, gunsLol, customBackground, customMusic })
           });
           const data = await res.json();
-          if (data.success) {
-            alert(data.message || '2FA ayarları kaydedildi!');
+          if (data.ok) {
+            alert('✅ Profil ve medya ayarlarınız başarıyla güncellendi!');
           } else {
-            alert('Hata: ' + (data.error || 'Güncellenemedi.'));
+            alert('❌ Hata: ' + (data.error || 'Profil kaydedilemedi.'));
           }
-        } catch (e) {
-          alert('Sunucu hatası.');
+        } catch (err) {
+          alert('❌ Bağlantı hatası oluştu: ' + err.message);
         }
       }
-      async function savePortalPreferences() {
-        const payload={theme:document.getElementById('prefTheme').value,reduceMotion:document.getElementById('prefMotion').checked,compactMode:document.getElementById('prefCompact').checked,dashboardWelcome:document.getElementById('prefWelcome').checked,discordUpdates:document.getElementById('prefDiscord').checked,giveawayUpdates:document.getElementById('prefGiveaway').checked,emailUpdates:false};
-        try { const res=await fetch('/api/settings/preferences',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!data.success) throw new Error(data.error); alert(data.message||'Tercihler kaydedildi.'); } catch(e) { alert('Tercihler kaydedilemedi: '+(e.message||'Sunucu hatası.')); }
+
+      async function handleSavePin(e) {
+        e.preventDefault();
+        const currentPinElem = document.getElementById('currentPin');
+        const currentPin = currentPinElem ? currentPinElem.value : '';
+        const newPin = document.getElementById('newPin').value;
+        const newPinConfirm = document.getElementById('newPinConfirm').value;
+
+        if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+          alert('⚠️ PIN kodu tam olarak 6 haneli rakamlardan oluşmalıdır.');
+          return;
+        }
+        if (newPin !== newPinConfirm) {
+          alert('⚠️ Yeni PIN kodları birbiriyle eşleşmiyor.');
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/settings/pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ currentPin, newPin })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            alert('✅ Güvenlik PIN kodunuz güncellendi!');
+            window.location.reload();
+          } else {
+            alert('❌ PIN Hatası: ' + (data.error || 'İşlem başarısız.'));
+          }
+        } catch (err) {
+          alert('❌ PIN güncellenirken hata: ' + err.message);
+        }
+      }
+
+      async function saveStaffPreferences() {
+        const shiftStatus = document.getElementById('staffShiftStatus').value;
+        const soundAlerts = document.getElementById('staffSoundAlerts').checked;
+        const autoDutyLog = document.getElementById('staffAutoDutyLog').checked;
+
+        try {
+          const res = await fetch('/api/settings/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shiftStatus, soundAlerts, autoDutyLog })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            alert('✅ Yetkili tercihleri ve vardiya durumu kaydedildi!');
+            const badge = document.getElementById('currentShiftBadge');
+            if (badge) badge.innerText = shiftStatus;
+          } else {
+            alert('❌ Hata: ' + (data.error || 'Kaydedilemedi.'));
+          }
+        } catch (err) {
+          alert('❌ Hata: ' + err.message);
+        }
+      }
+
+      function updateThemePreference(theme) {
+        localStorage.setItem('ekoyildiz_theme', theme);
+      }
+      function toggleReduceMotion(val) {
+        localStorage.setItem('ekoyildiz_reduce_motion', val ? 'true' : 'false');
+      }
+      function toggleCompactMode(val) {
+        localStorage.setItem('ekoyildiz_compact', val ? 'true' : 'false');
+      }
+      function saveSitePreferences() {
+        alert('✅ Tarayıcı görünüm ve arayüz tercihleri uygulandı.');
+      }
+
+      async function handleToggleTosConsent() {
+        if (!confirm('Kullanım şartları ve KVKK sözleşme rızanızı değiştirmek istediğinize emin misiniz? Rızanızı kaldırmanız halinde bazı platform fonksiyonları kısıtlanacaktır.')) return;
+        try {
+          const res = await fetch('/api/settings/tos-consent', { method: 'POST' });
+          const data = await res.json();
+          if (data.ok) {
+            alert(data.consented ? '✅ Kullanım Şartları ve Gizlilik Politikası kabul edildi.' : '⚠️ Şartlar rızası kaldırıldı. Kısıtlı moddasınız.');
+            window.location.reload();
+          }
+        } catch(err) {
+          alert('Hata: ' + err.message);
+        }
+      }
+
+      async function handleLegalRequestSubmit(e) {
+        e.preventDefault();
+        const category = document.getElementById('lrCategory').value;
+        const subject = document.getElementById('lrSubject').value.trim();
+        const targetAccount = document.getElementById('lrTargetAccount').value.trim();
+        const contact = document.getElementById('lrContact').value.trim();
+        const content = document.getElementById('lrContent').value.trim();
+        const evidenceUrls = document.getElementById('lrEvidenceUrls').value.trim();
+        const legalConsent = document.getElementById('lrLegalConsent').checked;
+
+        if (!legalConsent) {
+          alert('Lütfen hukuki beyan ve doğruluk taahhüdünü onaylayınız.');
+          return;
+        }
+
+        const btn = document.getElementById('btnSubmitLegalRequest');
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Mühürleniyor...';
+
+        try {
+          const res = await fetch('/api/legal-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category, subject, targetAccount, contact, content, evidenceUrls, legalConsent })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            alert('🏛️ RESMÎ DİLEKÇENİZ KAYDEDİLDİ!\n\nReferans Takip Kodu: ' + data.request.refNumber + '\n\nTalebiniz yetkili ve hukuk kuruluna intikal etmiştir.');
+            document.getElementById('legalRequestForm').reset();
+            loadMyLegalRequests();
+          } else {
+            alert('❌ Başvuru Hatası: ' + (data.error || 'Dilekçe iletilemedi.'));
+          }
+        } catch(err) {
+          alert('❌ Hata oluştu: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚖️</span> Resmî Dilekçeyi Onayla ve Mühürle';
+        }
+      }
+
+      async function loadMyLegalRequests() {
+        const container = document.getElementById('myLegalRequestsTableContainer');
+        try {
+          const res = await fetch('/api/legal-requests/my');
+          const data = await res.json();
+          if (!data.ok || !data.requests || data.requests.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:2rem; color:#64748b; font-size:0.9rem;">Henüz kayıtlı bir hukuki veya idari dilekçeniz bulunmamaktadır.</div>';
+            return;
+          }
+
+          let html = '<table style="width:100%; border-collapse:collapse; font-size:0.85rem; color:#cbd5e1;">';
+          html += '<thead style="background:rgba(255,255,255,0.04); text-align:left; border-bottom:1px solid rgba(255,255,255,0.1);">';
+          html += '<tr><th style="padding:10px;">Referans</th><th style="padding:10px;">Kategori</th><th style="padding:10px;">Konu</th><th style="padding:10px;">Tarih</th><th style="padding:10px;">Durum</th><th style="padding:10px;">Resmî Karar</th></tr>';
+          html += '</thead><tbody>';
+
+          data.requests.forEach(r => {
+            let statusColor = '#eab308';
+            let statusText = 'İnceleniyor';
+            if (r.status === 'approved') { statusColor = '#10b981'; statusText = 'Onaylandı / Çözüldü'; }
+            if (r.status === 'rejected') { statusColor = '#ef4444'; statusText = 'Reddedildi'; }
+            if (r.status === 'in_progress') { statusColor = '#3b82f6'; statusText = 'Hukuk İncelemesinde'; }
+
+            html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
+            html += '<td style="padding:10px; font-family:monospace; font-weight:700; color:#60a5fa;">' + (r.refNumber || r.id) + '</td>';
+            html += '<td style="padding:10px;">' + (r.category || 'Genel') + '</td>';
+            html += '<td style="padding:10px; font-weight:600; color:#fff;">' + (r.subject || '') + '</td>';
+            html += '<td style="padding:10px; color:#64748b;">' + (r.createdAt ? new Date(r.createdAt).toLocaleDateString('tr-TR') : '-') + '</td>';
+            html += '<td style="padding:10px;"><span style="color:' + statusColor + '; font-weight:700; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px;">' + statusText + '</span></td>';
+            html += '<td style="padding:10px; color:#94a3b8; max-width:250px;">' + (r.responseNote ? ('<span style="color:#e2e8f0;">' + r.responseNote + '</span>') : '<em>Henüz karar yazılmadı</em>') + '</td>';
+            html += '</tr>';
+          });
+
+          html += '</tbody></table>';
+          container.innerHTML = html;
+        } catch(err) {
+          container.innerHTML = '<div style="color:#ef4444; padding:1rem;">Talepler alınamadı: ' + err.message + '</div>';
+        }
       }
     </script>
   `;
 
-  return _layout('Hesap Ayarları & Güvenlik', user, content, '', '/settings');
+  return renderShell('Ayarlar - EkoYıldız', content, user, 'settings');
 }
 
-// ─────────────────────────────────────────────
-// ACCOUNT TRANSFER PAGE (MODERATOR)
-// ─────────────────────────────────────────────
-async function renderAccountTransferPage(user, staffProgress) {
-  // Bu sayfa zaten EJS template olarak oluşturuldu
-  // Bu fonksiyon sadece uyumluluk için
-  return null;
-}
-
-// ─────────────────────────────────────────────
-// USER LOGS PAGE & ADMIN USER IMPROVEMENTS
-// ─────────────────────────────────────────────
 function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], extraLogs = {}) {
   const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen Kullanıcı";
   const avatar = targetUser?.discordAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";

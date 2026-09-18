@@ -53,3 +53,25 @@ test('platform chrome supplies accessible footer, search dialog, styles and keyb
   assert.match(platformChromeStyles('dark'), /prefers-reduced-motion/);
   assert.match(platformChromeScript(), /ctrlKey|metaKey/);
 });
+
+test('platform chrome enforces technical collision and overflow safeguards', () => {
+  const styles = platformChromeStyles('dark');
+  const script = platformChromeScript();
+
+  // Stacking context isolation and layout containment
+  assert.match(styles, /isolation:isolate/);
+  assert.match(styles, /contain:layout style/);
+
+  // Non-shrinking flex guardrails preventing text overlapping
+  assert.match(styles, /flex:0 0 auto/);
+  assert.match(styles, /min-width:max-content/);
+  assert.match(styles, /white-space:nowrap/);
+
+  // Mobile menu height bounds
+  assert.match(styles, /max-height:calc\(100vh - 24px\)/);
+
+  // Dropdown keyboard & click safety
+  assert.match(script, /data-dropdown/);
+  assert.match(script, /Escape/);
+});
+

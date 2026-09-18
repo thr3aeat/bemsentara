@@ -4,7 +4,7 @@ function renderEkoYildizAnayasaPage(user) {
   const content = `
     <style>
       .mevzuat-wrapper {
-        max-width: 1240px;
+        max-width: 1260px;
         margin: 0 auto;
         padding: 1.5rem 1rem 6rem;
         color: #e2e8f0;
@@ -60,8 +60,15 @@ function renderEkoYildizAnayasaPage(user) {
         font-weight: 800;
         color: #ffffff;
         letter-spacing: -0.02em;
-        margin: 0 0 1.35rem 0;
+        margin: 0 0 0.85rem 0;
         text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      }
+      .resmi-portal-subtitle {
+        font-size: 0.98rem;
+        color: #94a3b8;
+        max-width: 820px;
+        margin: 0 auto 1.5rem;
+        line-height: 1.6;
       }
       .resmi-metadata-grid {
         display: grid;
@@ -71,7 +78,7 @@ function renderEkoYildizAnayasaPage(user) {
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
         padding: 1.1rem 1.4rem;
-        max-width: 960px;
+        max-width: 980px;
         margin: 0 auto;
         text-align: left;
       }
@@ -91,32 +98,99 @@ function renderEkoYildizAnayasaPage(user) {
         font-weight: 700;
       }
 
-      /* Başlangıç (Preamble) Kutusu */
-      .preamble-card {
-        background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
-        border: 1px solid rgba(167, 139, 250, 0.25);
-        border-left: 5px solid #a78bfa;
-        border-radius: 0 16px 16px 0;
-        padding: 1.85rem 2.2rem;
-        margin-bottom: 2.25rem;
-        font-style: italic;
-        line-height: 1.95;
-        color: #cbd5e1;
-        font-size: 1.03rem;
-        box-shadow: 0 6px 25px rgba(0,0,0,0.25);
-        position: relative;
+      /* Legal Action Banner (Hukuki Talep Masası Kısayolu) */
+      .legal-action-banner {
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+        border: 1px solid rgba(167, 139, 250, 0.35);
+        border-radius: 16px;
+        padding: 1.25rem 1.75rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        backdrop-filter: blur(12px);
       }
-      .preamble-title {
-        font-style: normal;
+      .legal-action-text h4 {
+        margin: 0 0 0.35rem 0;
+        font-size: 1.1rem;
         font-weight: 800;
-        font-size: 1.18rem;
-        color: #c4b5fd;
-        margin-bottom: 0.75rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        color: #ffffff;
         display: flex;
         align-items: center;
         gap: 8px;
+      }
+      .legal-action-text p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #cbd5e1;
+        line-height: 1.5;
+      }
+      .legal-action-btn {
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.92rem;
+        padding: 0.75rem 1.4rem;
+        border-radius: 12px;
+        text-decoration: none;
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+      .legal-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+        color: #ffffff;
+      }
+
+      /* Kategori Seçim Butonları (Pills) */
+      .category-tabs-container {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        margin-bottom: 1.5rem;
+        scrollbar-width: none;
+      }
+      .category-tabs-container::-webkit-scrollbar {
+        display: none;
+      }
+      .category-pill {
+        padding: 9px 18px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #94a3b8;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .category-pill:hover {
+        background: rgba(255, 255, 255, 0.09);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+      .category-pill.active {
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.25) 0%, rgba(99, 102, 241, 0.25) 100%);
+        border-color: #a78bfa;
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(167, 139, 250, 0.25);
+      }
+      .category-pill .pill-badge {
+        background: rgba(255, 255, 255, 0.12);
+        padding: 2px 7px;
+        border-radius: 8px;
+        font-size: 0.72rem;
       }
 
       /* Sticky Arama ve Navigasyon Barı */
@@ -250,36 +324,32 @@ function renderEkoYildizAnayasaPage(user) {
         color: #a78bfa;
       }
 
-      /* Hızlı Kısayol Rozetleri */
-      .quick-chips-wrapper {
-        margin-bottom: 2rem;
-      }
-      .quick-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-      }
-      .quick-chip {
-        background: rgba(255, 255, 255, 0.035);
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        padding: 7px 15px;
-        border-radius: 10px;
-        font-size: 0.84rem;
+      /* Başlangıç (Preamble) Kutusu */
+      .preamble-card {
+        background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
+        border: 1px solid rgba(167, 139, 250, 0.25);
+        border-left: 5px solid #a78bfa;
+        border-radius: 0 16px 16px 0;
+        padding: 1.85rem 2.2rem;
+        margin-bottom: 2.25rem;
+        font-style: italic;
+        line-height: 1.95;
         color: #cbd5e1;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        font-size: 1.03rem;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.25);
+        position: relative;
       }
-      .quick-chip:hover {
-        background: rgba(167, 139, 250, 0.18);
-        border-color: rgba(167, 139, 250, 0.5);
-        color: #fff;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(167, 139, 250, 0.2);
+      .preamble-title {
+        font-style: normal;
+        font-weight: 800;
+        font-size: 1.18rem;
+        color: #c4b5fd;
+        margin-bottom: 0.75rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       /* Bölüm & Madde Kartları */
@@ -319,6 +389,12 @@ function renderEkoYildizAnayasaPage(user) {
         margin: 0;
         line-height: 1.3;
       }
+      .bolum-aciklama {
+        font-size: 0.95rem;
+        color: #94a3b8;
+        margin-top: 6px;
+        margin-bottom: 0;
+      }
 
       .kanun-madde {
         background: rgba(255, 255, 255, 0.025);
@@ -343,169 +419,83 @@ function renderEkoYildizAnayasaPage(user) {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 0.95rem;
-        padding-bottom: 0.65rem;
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
         flex-wrap: wrap;
+        margin-bottom: 1rem;
       }
       .madde-baslik-etiketi {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #c4b5fd;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #f8fafc;
       }
       .madde-paylas-btn {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.12);
-        color: #94a3b8;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 5px 12px;
+        color: #cbd5e1;
         border-radius: 8px;
+        padding: 5px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 5px;
       }
       .madde-paylas-btn:hover {
-        background: rgba(167, 139, 250, 0.25);
+        background: rgba(167, 139, 250, 0.2);
         border-color: #a78bfa;
-        color: #ffffff;
+        color: #fff;
       }
       .madde-metin {
-        font-size: 0.97rem;
+        font-size: 0.98rem;
         line-height: 1.85;
         color: #cbd5e1;
       }
       .madde-metin p {
-        margin: 0 0 0.95rem 0;
-        text-indent: 1.25rem;
+        margin: 0 0 0.85rem 0;
       }
       .madde-metin p:last-child {
         margin-bottom: 0;
       }
       .fıkra-no {
-        font-weight: 800;
-        color: #a78bfa;
-        margin-right: 6px;
         background: rgba(167, 139, 250, 0.15);
-        padding: 1px 6px;
-        border-radius: 5px;
-        font-size: 0.88rem;
-      }
-      .bent-list {
-        margin: 0.75rem 0 1rem 1.75rem;
-        padding: 0;
-        list-style-type: none;
-      }
-      .bent-list li {
-        margin-bottom: 0.55rem;
-        position: relative;
-        padding-left: 1.6rem;
-        line-height: 1.7;
-      }
-      .bent-list li.bent-a::before { content: 'a)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
-      .bent-list li.bent-b::before { content: 'b)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
-      .bent-list li.bent-c::before { content: 'c)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
-      .bent-list li.bent-d::before { content: 'd)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
-      .bent-list li.bent-e::before { content: 'e)'; position: absolute; left: 0; color: #a78bfa; font-weight: 800; }
-
-      /* Kırmızı Çizgi / Dokunulmazlık Damgası */
-      .dokunulmaz-madde {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.09) 0%, rgba(185, 28, 28, 0.03) 100%);
-        border: 1px solid rgba(239, 68, 68, 0.4);
-        position: relative;
-      }
-      .dokunulmaz-madde .madde-baslik-etiketi {
-        color: #fca5a5;
-      }
-      .dokunulmaz-badge {
-        background: rgba(239, 68, 68, 0.25);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.5);
-        padding: 3px 10px;
-        border-radius: 7px;
-        font-size: 0.74rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        animation: pulseRed 3s infinite;
-      }
-      @keyframes pulseRed {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-        50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-      }
-
-      /* Resmî Ceza ve İntizam Cetveli Tablosu */
-      .resmi-tablo-wrapper {
-        overflow-x: auto;
-        margin-top: 1.35rem;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(0, 0, 0, 0.38);
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
-      }
-      .resmi-tablo {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-        font-size: 0.92rem;
-      }
-      .resmi-tablo th {
-        background: rgba(167, 139, 250, 0.16);
         color: #c4b5fd;
-        padding: 15px 20px;
+        font-size: 0.8rem;
         font-weight: 800;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-        white-space: nowrap;
+        padding: 2px 7px;
+        border-radius: 6px;
+        margin-right: 6px;
+        display: inline-block;
+      }
+
+      .badge-resmi {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 6px;
         text-transform: uppercase;
-        font-size: 0.82rem;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.05em;
       }
-      .resmi-tablo td {
-        padding: 14px 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        color: #cbd5e1;
-      }
-      .resmi-tablo tr:hover td {
-        background: rgba(255, 255, 255, 0.035);
-      }
-      .yaptirim-ihrac {
-        background: rgba(239, 68, 68, 0.25);
+      .badge-emredici {
+        background: rgba(239, 68, 68, 0.2);
         color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.45);
-        padding: 4px 11px;
-        border-radius: 7px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        display: inline-block;
+        border: 1px solid rgba(239, 68, 68, 0.4);
       }
-      .yaptirim-uzaklasma {
-        background: rgba(245, 158, 11, 0.25);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.45);
-        padding: 4px 11px;
-        border-radius: 7px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        display: inline-block;
+      .badge-tanim {
+        background: rgba(167, 139, 250, 0.2);
+        color: #d8b4fe;
+        border: 1px solid rgba(167, 139, 250, 0.4);
       }
-      .yaptirim-susturma {
-        background: rgba(99, 102, 241, 0.25);
-        color: #c7d2fe;
-        border: 1px solid rgba(99, 102, 241, 0.45);
-        padding: 4px 11px;
-        border-radius: 7px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        display: inline-block;
+      .badge-guvence {
+        background: rgba(52, 211, 153, 0.2);
+        color: #6ee7b7;
+        border: 1px solid rgba(52, 211, 153, 0.4);
+      }
+      .badge-kvkk {
+        background: rgba(59, 130, 246, 0.2);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.4);
       }
 
       /* Boş Sonuç Kutusu */
@@ -530,9 +520,10 @@ function renderEkoYildizAnayasaPage(user) {
         margin-bottom: 0.5rem;
       }
       .empty-search-sub {
-        font-size: 0.9rem;
-        color: #64748b;
-        margin-bottom: 1.5rem;
+        color: #94a3b8;
+        font-size: 0.92rem;
+        max-width: 550px;
+        margin: 0 auto 1.5rem;
       }
       .empty-search-btn {
         background: rgba(167, 139, 250, 0.2);
@@ -540,87 +531,9 @@ function renderEkoYildizAnayasaPage(user) {
         color: #fff;
         padding: 8px 18px;
         border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
         cursor: pointer;
-        font-weight: 600;
-      }
-
-      /* Resmî Mühür ve İmzalar */
-      .resmi-imza-alani {
-        background: linear-gradient(135deg, rgba(20, 20, 38, 0.96) 0%, rgba(10, 10, 22, 0.98) 100%);
-        border: 1px solid rgba(167, 139, 250, 0.35);
-        border-radius: 20px;
-        padding: 3rem 2rem;
-        margin-top: 4rem;
-        text-align: center;
-        position: relative;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-        scroll-margin-top: 165px;
-      }
-      .imza-ust-baslik {
-        font-size: 1.35rem;
-        font-weight: 800;
-        color: #fff;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 0.65rem;
-      }
-      .imza-aciklama {
-        color: #94a3b8;
-        font-size: 0.98rem;
-        max-width: 750px;
-        margin: 0 auto 2.25rem;
-        line-height: 1.7;
-      }
-      .muhur-grid {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        flex-wrap: wrap;
-      }
-      .muhur-kutusu {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 1.75rem 2.75rem;
-        background: rgba(0, 0, 0, 0.45);
-        border: 2px dashed rgba(167, 139, 250, 0.55);
-        border-radius: 18px;
-        position: relative;
-        min-width: 280px;
-        transition: transform 0.2s;
-      }
-      .muhur-kutusu:hover {
-        transform: translateY(-3px);
-        border-color: #a78bfa;
-      }
-      .muhur-kurum {
-        font-size: 0.82rem;
-        color: #94a3b8;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        font-weight: 800;
-        margin-bottom: 8px;
-      }
-      .muhur-imzaci {
-        font-size: 1.55rem;
-        font-weight: 900;
-        color: #a78bfa;
-        letter-spacing: 0.05em;
-      }
-      .muhur-unvan {
-        font-size: 0.94rem;
-        font-weight: 600;
-        color: #e2e8f0;
-        margin-top: 3px;
-      }
-      .muhur-kod {
-        font-family: monospace;
-        font-size: 0.78rem;
-        color: #64748b;
-        margin-top: 12px;
-        background: rgba(255, 255, 255, 0.04);
-        padding: 3px 10px;
-        border-radius: 6px;
       }
 
       /* Sayfa İçi Toast Bildirim */
@@ -686,44 +599,6 @@ function renderEkoYildizAnayasaPage(user) {
         display: none !important;
       }
 
-      /* Print CSS */
-      @media print {
-        body {
-          background: #ffffff !important;
-          color: #000000 !important;
-        }
-        header, .mevzuat-nav, .quick-chips-wrapper, .madde-paylas-btn, .btn-scroll-top, .anayasa-toast {
-          display: none !important;
-        }
-        .mevzuat-wrapper {
-          padding: 0 !important;
-          max-width: 100% !important;
-          color: #000000 !important;
-        }
-        .resmi-header, .kanun-bolum, .kanun-madde, .preamble-card, .resmi-imza-alani {
-          background: transparent !important;
-          border: 1px solid #ccc !important;
-          box-shadow: none !important;
-          color: #000000 !important;
-          break-inside: avoid;
-        }
-        .resmi-portal-title, .bolum-baslik, .madde-baslik-etiketi, .preamble-title, .meta-value {
-          color: #000000 !important;
-        }
-        .madde-metin, .resmi-tablo td {
-          color: #222222 !important;
-        }
-        .fıkra-no {
-          background: #eee !important;
-          color: #000 !important;
-        }
-        .dokunulmaz-badge, .yaptirim-ihrac, .yaptirim-uzaklasma, .yaptirim-susturma {
-          border: 1px solid #000 !important;
-          color: #000 !important;
-          background: transparent !important;
-        }
-      }
-
       @media (max-width: 768px) {
         .mevzuat-wrapper {
           padding: 1rem 0.5rem 5rem;
@@ -741,125 +616,139 @@ function renderEkoYildizAnayasaPage(user) {
         .search-container {
           min-width: 100%;
         }
-        .nav-controls-right {
-          width: 100%;
-          justify-content: space-between;
-        }
-        .jump-select {
-          flex: 1;
-        }
-        .jump-select select {
-          width: 100%;
-        }
-        .kanun-bolum {
-          padding: 1.5rem 1.1rem;
-        }
-        .kanun-madde {
-          padding: 1.2rem 1.1rem;
-        }
-        .muhur-kutusu {
-          width: 100%;
-          min-width: auto;
-          padding: 1.5rem;
-        }
       }
     </style>
 
     <div class="mevzuat-wrapper">
       <!-- RESMÎ BAŞLIK & METADATA -->
       <header class="resmi-header">
-        <div class="resmi-emblem">🇹🇷 ⭐</div>
+        <div class="resmi-emblem">🇹🇷 ⭐ ⚖️</div>
         <div class="resmi-state-title">EkoYıldız Dijital Topluluk Federasyonu</div>
-        <h1 class="resmi-portal-title">EkoYıldız Topluluğu Resmî Anayasası</h1>
+        <h1 class="resmi-portal-title">Hukuk, Politika ve Resmî Mevzuat Portalı</h1>
+        <p class="resmi-portal-subtitle">
+          EkoYıldız bünyesindeki Discord sunucuları, internet sitesi, Roblox deneyimleri ve tüm dijital servislerin anayasası, kullanım şartları, KVKK aydınlatma metni ve yaptırım mevzuatı işbu resmî merkezde toplanmıştır.
+        </p>
         
         <div class="resmi-metadata-grid">
           <div class="meta-item">
-            <div class="meta-label">Mevzuat Türü</div>
-            <div class="meta-value">Temel Anayasa Metni</div>
+            <div class="meta-label">Mevzuat Kodu</div>
+            <div class="meta-value">EKO-MEVZ-2026/V3.5</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Mevzuat No</div>
-            <div class="meta-value">2026/01</div>
+            <div class="meta-label">Resmî Sürüm</div>
+            <div class="meta-value">18 Eylül 2026 Resmî Gazete</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Kabul Tarihi</div>
-            <div class="meta-value">07 Temmuz 2026</div>
+            <div class="meta-label">Kapsam</div>
+            <div class="meta-value">Tüm Topluluk & Servisler</div>
           </div>
           <div class="meta-item">
-            <div class="meta-label">Yürürlük Durumu</div>
-            <div class="meta-value" style="color: #34d399;">● Mer'iyette (Yürürlükte)</div>
+            <div class="meta-label">Yetkili Merci</div>
+            <div class="meta-value">Hukuk & Yönetim Masası</div>
           </div>
         </div>
       </header>
 
-      <!-- BAŞLANGIÇ / ÖNSÖZ -->
-      <div class="preamble-card" id="onsoz">
-        <div class="preamble-title">📜 Başlangıç / Önsöz</div>
-        <p>EkoYıldız Topluluğu; dijital evrende bilginin, adaletin, yapıcı tartışma kültürünün ve kolektif üretimin ön planda tutulduğu saygın ve güvenli bir sosyal alan inşa etmek; bireysel hürriyetler ile kamu düzeni arasındaki sarsılmaz dengeyi kurmak, liyakat ve insan onurunu güvence altına almak amacıyla işbu Anayasa'yı en üstün bağlayıcı normlar bütünü olarak kabul ve ilan eder.</p>
-        <p style="margin-top: 0.75rem;">Topluluk çatısı altında bulunan her fert, düzenin tesisi ve hakkaniyetin idamesi için ortak ahlaki ve hukuki zemin olan bu metne sadakatle bağlı kalmayı taahhüt eder.</p>
+      <!-- Resmî Hukuki Talep Masası Kısayolu -->
+      <div class="legal-action-banner">
+        <div class="legal-action-text">
+          <h4>⚖️ Resmî Hukuki Başvuru ve KVKK Talep Masası</h4>
+          <p>Kişisel veri silme (KVKK Md. 11), disiplin/ban kararı itirazı, telif (DMCA) veya sözleşme istisnası başvurularınızı resmi dilekçe statüsünde doğrudan yönetim masasına iletebilirsiniz.</p>
+        </div>
+        <a href="/settings#tab-legal" class="legal-action-btn">
+          <span>📜 Resmî Dilekçe Gönder</span>
+          <span>→</span>
+        </a>
       </div>
 
-      <!-- NAVİGASYON VE ARAMA -->
+      <!-- Kategori Filtreleme Sekmeleri (Interactive Switcher) -->
+      <div class="category-tabs-container">
+        <button class="category-pill active" onclick="filtreleKategori('all', this)">
+          <span>🌐 Tüm Mevzuat</span>
+          <span class="pill-badge">38 Madde</span>
+        </button>
+        <button class="category-pill" onclick="filtreleKategori('anayasa', this)">
+          <span>📜 Topluluk Anayasası</span>
+          <span class="pill-badge">Anayasa</span>
+        </button>
+        <button class="category-pill" onclick="filtreleKategori('tos', this)">
+          <span>⚖️ Kullanım Şartları (ToS)</span>
+          <span class="pill-badge">Sözleşme</span>
+        </button>
+        <button class="category-pill" onclick="filtreleKategori('privacy', this)">
+          <span>🔒 Gizlilik & KVKK</span>
+          <span class="pill-badge">Aydınlatma</span>
+        </button>
+        <button class="category-pill" onclick="filtreleKategori('cookies', this)">
+          <span>🍪 Çerezler & Güvenlik</span>
+          <span class="pill-badge">Teknik</span>
+        </button>
+        <button class="category-pill" onclick="filtreleKategori('enforcement', this)">
+          <span>🛡️ Yaptırım & İtiraz</span>
+          <span class="pill-badge">Disiplin</span>
+        </button>
+      </div>
+
+      <!-- Sticky Navigasyon & Arama Barı -->
       <div class="mevzuat-nav">
         <div class="search-container">
           <span class="search-icon-fixed">🔍</span>
-          <input type="text" id="mevzuat-ara" placeholder="Madde no, fıkra veya terim ara (örn: Madde 8, Savunma, Olağanüstü Hâl, AYM, Delil)..." oninput="mevzuatAra()">
-          <button id="search-clear" class="search-clear-btn" onclick="aramaTemizle()" title="Aramayı Temizle">✕</button>
+          <input type="text" id="mevzuat-ara" placeholder="Madde no, kural, KVKK, ban, ekonomi veya anahtar kelime arayın..." oninput="mevzuatAra()" autocomplete="off">
+          <button class="search-clear-btn" id="search-clear" onclick="aramaTemizle()" title="Aramayı Temizle">✕</button>
         </div>
-        
+
         <div class="nav-controls-right">
           <div class="jump-select">
-            <select id="mevzuat-bolum-sec" onchange="bolumeGit(this.value)">
-              <option value="">⚡ Resmî Fihrist (Bölüme Git)...</option>
-              <option value="#onsoz">📜 Başlangıç / Önsöz</option>
-              <option value="#bolum-1">🏛️ KISIM I: Temel Esaslar (Md. 1-5)</option>
-              <option value="#bolum-2">👥 KISIM II: Üyelerin Temel Hak ve Teminatları (Md. 6-9)</option>
-              <option value="#bolum-3">🛡️ KISIM III: Üyelerin Yükümlülükleri ve Sadakat (Md. 10-13)</option>
-              <option value="#bolum-4">📜 KISIM IV: Yasama ve Kural Koyma Erki (Md. 14-15)</option>
-              <option value="#bolum-5">👑 KISIM V: Yürütme Organı ve Günlük İdare (Md. 16-18)</option>
-              <option value="#bolum-6">🔒 KISIM VI: Yetki Sınırları ve İdari Denetim (Md. 19-21)</option>
-              <option value="#bolum-7">⚖️ KISIM VII: Yargı, Disiplin Hukuku ve Yaptırımlar (Md. 22-26)</option>
-              <option value="#ceza-cetveli">⚖️ KISIM VII Cetvel: Resmî Yaptırım Matrisi</option>
-              <option value="#bolum-8">🚨 KISIM VIII: Olağanüstü Hâl ve Güvenlik Tedbirleri (Md. 27-28)</option>
-              <option value="#bolum-9">🗳️ KISIM IX: Anayasa Değişikliği ve Dokunulmazlık (Md. 29-30)</option>
-              <option value="#bolum-10">📜 KISIM X: Son Hükümler ve Yürürlük (Md. 31-32)</option>
-              <option value="#resmi-imzalar">✍️ Resmî Mühür ve İmzalar</option>
+            <select onchange="bolumeGit(this.value)" id="quick-jump-select">
+              <option value="">📑 Hızlı Bölüm Seçimi...</option>
+              <optgroup label="📜 Topluluk Anayasası">
+                <option value="#bolum-1">Kısım I — Temel Esaslar</option>
+                <option value="#bolum-2">Kısım II — Temel Haklar & Hürriyetler</option>
+                <option value="#bolum-3">Kısım III — Genel Yükümlülükler</option>
+                <option value="#bolum-4">Kısım IV — Yasama & Kurallar</option>
+                <option value="#bolum-5">Kısım V — Yürütme & Yönetim</option>
+                <option value="#bolum-6">Kısım VI — Yetki Sınırları</option>
+                <option value="#ceza-cetveli">Kısım VII — Yargı & Ceza Cetveli</option>
+                <option value="#bolum-8">Kısım VIII — Olağanüstü Hâl</option>
+                <option value="#madde-30">Kısım IX — Kırmızı Çizgiler</option>
+                <option value="#bolum-10">Kısım X — Yürürlük & Hükümler</option>
+              </optgroup>
+              <optgroup label="⚖️ Kullanım Şartları (ToS)">
+                <option value="#bolum-tos">Kullanım Şartları & Hizmet Sözleşmesi</option>
+              </optgroup>
+              <optgroup label="🔒 Gizlilik & KVKK">
+                <option value="#bolum-privacy">Gizlilik Politikası & KVKK Metni</option>
+              </optgroup>
+              <optgroup label="🍪 Çerez & Güvenlik">
+                <option value="#bolum-cookies">Çerez ve Oturum Standartları</option>
+              </optgroup>
+              <optgroup label="🛡️ Yaptırım & İtiraz">
+                <option value="#bolum-enforcement">Yaptırım Baremi & İtirazlar</option>
+              </optgroup>
             </select>
           </div>
-          <button class="btn-print" onclick="window.print()" title="Resmî Belge Olarak Yazdır veya PDF Kaydet">🖨️ Yazdır / PDF</button>
+
+          <button class="btn-print" onclick="window.print()" title="Mevzuatı Yazdır veya PDF Kaydet">
+            <span>🖨️ Yazdır / PDF</span>
+          </button>
         </div>
 
-        <div id="search-info" class="search-results-info"></div>
-      </div>
-
-      <!-- HIZLI KISAYOLLAR -->
-      <div class="quick-chips-wrapper">
-        <div class="quick-chips">
-          <a href="#onsoz" class="quick-chip">📜 Önsöz</a>
-          <a href="#bolum-1" class="quick-chip">Kısım I: Esaslar</a>
-          <a href="#bolum-2" class="quick-chip">Kısım II: Haklar</a>
-          <a href="#bolum-3" class="quick-chip">Kısım III: Yükümlülükler</a>
-          <a href="#bolum-4" class="quick-chip">Kısım IV: Yasama</a>
-          <a href="#bolum-5" class="quick-chip">Kısım V: Yürütme</a>
-          <a href="#bolum-6" class="quick-chip">Kısım VI: Yetki Sınırı</a>
-          <a href="#ceza-cetveli" class="quick-chip" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">⚖️ Yargı & Ceza Cetveli</a>
-          <a href="#bolum-8" class="quick-chip" style="border-color: rgba(245, 158, 11, 0.4); color: #fcd34d;">🚨 Olağanüstü Hâl</a>
-          <a href="#madde-30" class="quick-chip" style="border-color: rgba(239, 68, 68, 0.5); color: #fca5a5;">🔒 Kırmızı Çizgiler</a>
-          <a href="#bolum-10" class="quick-chip">Kısım X: Yürürlük</a>
-          <a href="#resmi-imzalar" class="quick-chip">✍️ Resmî Tasdik</a>
-        </div>
+        <div class="search-results-info" id="search-info"></div>
       </div>
 
       <!-- BOŞ ARAMA SONUCU BİLDİRİMİ -->
       <div id="empty-search" class="empty-search-state">
         <div class="empty-search-icon">🔍</div>
         <div class="empty-search-text">Aramanızla Eşleşen Madde Bulunamadı</div>
-        <div class="empty-search-sub">Lütfen arama ifadenizi kontrol ediniz veya filtrelemeyi temizleyerek tüm anayasa metnini görüntüleyiniz.</div>
+        <div class="empty-search-sub">Lütfen arama ifadenizi kontrol ediniz veya filtrelemeyi temizleyerek tüm anayasa ve politika metinlerini görüntüleyiniz.</div>
         <button class="empty-search-btn" onclick="aramaTemizle()">Aramayı Temizle</button>
       </div>
 
-      <!-- KISIM I: TEMEL ESASLAR -->
-      <section id="bolum-1" class="kanun-bolum">
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TOPLULUK ANAYASASI BÖLÜMLERİ (ORİJİNAL MADDELER)                       -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div id="container-anayasa" class="section-kategori-anayasa">
+<section id="bolum-1" class="kanun-bolum">
         <div class="bolum-head">
           <div class="bolum-no">KISIM I</div>
           <h2 class="bolum-baslik">🏛️ Temel Esaslar (Madde 1 – 5)</h2>
@@ -1436,6 +1325,240 @@ function renderEkoYildizAnayasaPage(user) {
         </div>
       </div>
     </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- EK POLİTİKALAR: TOS, KVKK, ÇEREZLER, YAPTIRIMLAR                      -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- KULLANIM ŞARTLARI VE HİZMET SÖZLEŞMESİ (TERMS OF SERVICE)             -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <section id="bolum-tos" class="kanun-bolum section-kategori-tos">
+        <div class="bolum-head">
+          <div class="bolum-no" style="color: #60a5fa;">SÖZLEŞME METNİ • KULLANIM ŞARTLARI</div>
+          <h2 class="bolum-baslik">⚖️ Topluluk Kullanım Şartları ve Hizmet Sözleşmesi (ToS)</h2>
+          <p class="bolum-aciklama">EkoYıldız dijital platformu, internet sitesi, Discord botları, Roblox oyun mekanizmaları ve ilişkili tüm servislerin kullanım kurallarıdır.</p>
+        </div>
+
+        <!-- Madde T1 -->
+        <div class="kanun-madde" id="madde-tos-1">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE T-1 — Taraflar ve Sözleşmenin Bağlayıcılığı</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-emredici">Zorunlu Hüküm</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-tos-1')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> İşbu Kullanım Şartları ve Hizmet Sözleşmesi; EkoYıldız Topluluğu Platform Yönetimi (“Yönetim”) ile web portalına, Discord sunucusuna, bot komutlarına veya Roblox deneyimlerine erişim sağlayan gerçek/tüzel kişiler (“Kullanıcı”) arasında yürürlüğe girmiştir.</p>
+            <p><span class="fıkra-no">(2)</span> Platforma erişen veya Discord OAuth sistemiyle oturum açan her birey, işbu şartları, platform kurallarını ve ekindeki Gizlilik Politikasını herhangi bir çekince koymaksızın kabul ve taahhüt etmiş sayılır.</p>
+          </div>
+        </div>
+
+        <!-- Madde T2 -->
+        <div class="kanun-madde" id="madde-tos-2">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE T-2 — Hesap Güvenliği, PIN ve Yaş Sınırı</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-tanim">Uyumluluk</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-tos-2')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Kullanıcılar, Discord Inc. ve Roblox Corporation hizmet şartlarında belirtilen en az 13 yaş sınırına sahip olduklarını beyan ederler. 13 yaş altı kullanıcıların tespiti hâlinde hesapları dondurulur.</p>
+            <p><span class="fıkra-no">(2)</span> Kullanıcı, sitede belirlediği Site PIN şifresinin, 2FA güvenlik kodunun ve oturum çerezlerinin gizliliğinden bizzat sorumludur. Hesabın üçüncü kişilere devri, kiralanması veya satılması kesinlikle yasaktır.</p>
+          </div>
+        </div>
+
+        <!-- Madde T3 -->
+        <div class="kanun-madde" id="madde-tos-3">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE T-3 — Sanal Ekonomi (EkoCoin), Mağaza ve Çekilişler</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-tanim">Ekonomi</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-tos-3')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> EkoCoin ve platform içi sanal eşyalar sadece eğlence ve topluluk etkileşimi amaçlıdır; resmî para birimi, menkul kıymet veya kripto varlık teşkil etmez ve gerçek nakit paraya dönüştürülemez.</p>
+            <p><span class="fıkra-no">(2)</span> Hile, bot açığı, yazılım hatası veya çoklu hesap (multi-account) kullanımı ile haksız avantaj ve EkoCoin sağlayan kullanıcıların tüm kazanımları sıfırlanır ve hesapları süresiz yasaklanır.</p>
+          </div>
+        </div>
+
+        <!-- Madde T4 -->
+        <div class="kanun-madde" id="madde-tos-4">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE T-4 — Siber Güvenlik ve Yasaklı Faaliyetler</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-emredici" style="background: rgba(239, 68, 68, 0.3); color: #fca5a5;">Ağır İhlal</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-tos-4')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Platform altyapısına, API rotalarına veya sunuculara yönelik DDoS, yetkisiz veri kazıma (scraping), SQL Injection, XSS veya kaba kuvvet saldırıları (brute-force) derhal engellenir.</p>
+            <p><span class="fıkra-no">(2)</span> Bu tür kötü niyetli eylemlerde bulunan şahısların IP, oturum ve Discord kimlik kayıtları delil olarak tespit edilerek Türk Ceza Kanunu'nun bilişim suçları hükümleri uyarınca adli makamlara intikal ettirilir.</p>
+          </div>
+        </div>
+
+        <!-- Madde T5 -->
+        <div class="kanun-madde" id="madde-tos-5">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE T-5 — Fikri Mülkiyet, Telif ve DMCA Bildirimleri</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-guvence">Telif Hakları</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-tos-5')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> EkoYıldız logosu, tescilli markası, arayüz tasarımları, bot kod blokları ve özel grafikler EkoYıldız yönetiminin mülkiyetindedir; yazılı izin olmaksızın kopyalanamaz veya dağıtılamaz.</p>
+            <p><span class="fıkra-no">(2)</span> Telif hakkı ihlali iddiasında bulunmak isteyen hak sahipleri, <a href="/settings#tab-legal" style="color:#c4b5fd;font-weight:700;">Hukuki Talep Masası</a> üzerinden resmî DMCA / Telif İhbar Formu doldurabilir. İhbarlar 48 saat içerisinde değerlendirilir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- GİZLİLİK POLİTİKASI VE KVKK / GDPR AYDINLATMA METNİ                   -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <section id="bolum-privacy" class="kanun-bolum section-kategori-privacy">
+        <div class="bolum-head">
+          <div class="bolum-no" style="color: #38bdf8;">VERİ KORUMA • KVKK AYDINLATMA METNİ</div>
+          <h2 class="bolum-baslik">🔒 Gizlilik Politikası ve Kişisel Verilerin Korunması (KVKK/GDPR)</h2>
+          <p class="bolum-aciklama">6698 Sayılı Kişisel Verilerin Korunması Kanunu ve Avrupa Birliği GDPR prensipleri uyarınca veri işleme süreçlerine ilişkin bilgilendirmedir.</p>
+        </div>
+
+        <!-- Madde G1 -->
+        <div class="kanun-madde" id="madde-priv-1">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE G-1 — Veri Sorumlusu ve Kapsam</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-kvkk">KVKK Md. 10</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-priv-1')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> EkoYıldız Dijital Platformu, kullanıcılarının gizliliğine ve kişisel verilerinin korunmasına azami ehemmiyet göstermektedir. İşbu politika, toplanan tüm teknik ve kişisel verilerin hukuki zeminini teşkil eder.</p>
+            <p><span class="fıkra-no">(2)</span> Platform, kişisel verileri hiçbir üçüncü tarafa reklam veya ticari pazarlama amacıyla devretmez, kiralamaz veya satmaz.</p>
+          </div>
+        </div>
+
+        <!-- Madde G2 -->
+        <div class="kanun-madde" id="madde-priv-2">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE G-2 — İşlenen Veri Türleri ve Toplama Yöntemi</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-tanim">Veri Envanteri</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-priv-2')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> <b>Kimlik ve Hesap Verileri:</b> Discord ID, Discord Kullanıcı Adı, Avatar Görseli, Roblox Kullanıcı Adı ve ID'si.</p>
+            <p><span class="fıkra-no">(2)</span> <b>İletişim ve Beyan Verileri:</b> Resmî başvuru, destek talebi veya itiraz sırasında kullanıcının beyan ettiği ad, soyad ve e-posta adresi.</p>
+            <p><span class="fıkra-no">(3)</span> <b>Güvenlik ve Erişim Kayıtları:</b> Giriş yapılan IP adresi, erişim zaman damgası, kullanıcı oturum belirteci ve bcrypt ile tuzlanmış PIN şifre özeti.</p>
+          </div>
+        </div>
+
+        <!-- Madde G3 -->
+        <div class="kanun-madde" id="madde-priv-3">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE G-3 — İlgili Kişinin Hakları ve Unutulma Hakkı (KVKK Md. 11)</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-guvence">Yasal Haklar</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-priv-3')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Her kullanıcı, 6698 sayılı KVKK'nın 11. maddesi kapsamında; verilerinin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme ve verilerinin dökümünü alma hakkına sahiptir.</p>
+            <p><span class="fıkra-no">(2)</span> <b>Veri Silme & Unutulma Talebi:</b> Kullanıcı dilediği an <a href="/settings#tab-legal" style="color:#c4b5fd;font-weight:700;">Resmî Dilekçe Masası</a> üzerinden "KVKK Veri Silme Talebi" ileterek platformdaki tüm profil, oyun ve oturum verilerinin kalıcı olarak silinmesini talep edebilir.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- ÇEREZ VE OTURUM GÜVENLİĞİ STANDARTLARI                                -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <section id="bolum-cookies" class="kanun-bolum section-kategori-cookies">
+        <div class="bolum-head">
+          <div class="bolum-no" style="color: #a78bfa;">GÜVENLİK STANDARDI • ÇEREZ POLİTİKASI</div>
+          <h2 class="bolum-baslik">🍪 Çerez Politikası ve Oturum Güvenliği Standartları</h2>
+          <p class="bolum-aciklama">Web sitemizin güvenli, stabil ve kullanıcı dostu çalışmasını temin eden çerez ve oturum mimarisidir.</p>
+        </div>
+
+        <!-- Madde C1 -->
+        <div class="kanun-madde" id="madde-ck-1">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE C-1 — Oturum Çerezleri ve Şifreleme</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-emredici">Güvenlik</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-ck-1')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Platformumuzda yalnızca kullanıcının kimlik doğrulamasını sağlayan ve yetkisiz oturum çalma (session hijacking) girişimlerini engelleyen HttpOnly ve SameSite=Lax bayraklı oturum çerezleri kullanılır.</p>
+            <p><span class="fıkra-no">(2)</span> Tema ve hareket azaltma tercihleri tarayıcının yerel hafızasında (localStorage) saklanır ve harici sunuculara aktarılmaz.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- YAPTIRIM BAREMİ, CEZA DERECELERİ VE İTİRAZ MEVZUATI                   -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <section id="bolum-enforcement" class="kanun-bolum section-kategori-enforcement">
+        <div class="bolum-head">
+          <div class="bolum-no" style="color: #f87171;">DİSİPLİN VE YARGI • YAPTIRIM MEVZUATI</div>
+          <h2 class="bolum-baslik">🛡️ Yaptırım Baremi, Ceza Dereceleri ve İtiraz İlkeleri</h2>
+          <p class="bolum-aciklama">Disiplin cezalarının kademeli uygulanma şartları, yetki sınırları ve resmî itiraz mercilerinin çalışma usulüdür.</p>
+        </div>
+
+        <!-- Madde Y1 -->
+        <div class="kanun-madde" id="madde-enf-1">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE Y-1 — Kademeli Ceza Baremi ve Uygulama Esasları</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-emredici">Ceza Hükmü</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-enf-1')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Kural ihlallerinde keyfi ceza verilemez. Yetkililer ihlalin ağırlığına göre şu baremi izlemekle yükümlüdür:</p>
+            <ul>
+              <li><b>1. Aşama:</b> Sözlü Hatırlatma veya Bot Üzerinden Kayıtlı İhtar (Warn),</li>
+              <li><b>2. Aşama:</b> Süreli Susturma / Zaman Aşımı (Timeout / Mute: 10 dk ila 24 saat),</li>
+              <li><b>3. Aşama:</b> Geçici Uzaklaştırma (Temp Ban: 3 gün ila 30 gün),</li>
+              <li><b>4. Aşama:</b> Süresiz İhraç (Permanent Ban),</li>
+              <li><b>5. Aşama:</b> Tam İzolasyon ve Karaliste (Blacklist).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Madde Y2 -->
+        <div class="kanun-madde" id="madde-enf-2">
+          <div class="madde-head-row">
+            <div class="madde-baslik-etiketi">MADDE Y-2 — Resmî İtiraz Usulü ve Hukuk Masası İncelemesi</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="badge-resmi badge-guvence">Yargı Güvencesi</span>
+              <button class="madde-paylas-btn" onclick="maddeKopyala('madde-enf-2')" title="Maddeyi Kopyala">🔗 Kopyala</button>
+              <a href="/settings#tab-legal" class="madde-paylas-btn" style="color: #93c5fd; text-decoration: none;" title="Resmî Dilekçe">⚖️ Talep Gönder</a>
+            </div>
+          </div>
+          <div class="madde-metin">
+            <p><span class="fıkra-no">(1)</span> Hakkında disiplin cezası uygulanan her üye, tebliğ tarihinden itibaren 15 takvim günü içinde <a href="/settings#tab-legal" style="color:#c4b5fd;font-weight:700;">Resmî Dilekçe Masası</a> üzerinden Hukuk Masasına itiraz edebilir.</p>
+            <p><span class="fıkra-no">(2)</span> İtiraz dilekçeleri doğrudan Admin ve Hukuk Masası paneline düşer. İnceleme en geç 7 iş günü içinde gerekçeli resmî karar ile sonuçlandırılır ve başvuru sahibine bildirilir.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
 
     <!-- SAYFA İÇİ TOAST BİLDİRİMİ -->
     <div id="anayasa-toast" class="anayasa-toast">
@@ -1448,10 +1571,68 @@ function renderEkoYildizAnayasaPage(user) {
 
     <!-- İNTERAKTİF İSTEMCİ SCRİPTİ -->
     <script>
+      let aktifKategori = 'all';
+
+      function filtreleKategori(kategori, btn) {
+        aktifKategori = kategori;
+
+        document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const anayasaContainer = document.getElementById('container-anayasa');
+        const tosSection = document.getElementById('bolum-tos');
+        const privSection = document.getElementById('bolum-privacy');
+        const cookieSection = document.getElementById('bolum-cookies');
+        const enfSection = document.getElementById('bolum-enforcement');
+
+        if (kategori === 'all') {
+          if (anayasaContainer) anayasaContainer.style.display = '';
+          if (tosSection) tosSection.style.display = '';
+          if (privSection) privSection.style.display = '';
+          if (cookieSection) cookieSection.style.display = '';
+          if (enfSection) enfSection.style.display = '';
+        } else if (kategori === 'anayasa') {
+          if (anayasaContainer) anayasaContainer.style.display = '';
+          if (tosSection) tosSection.style.display = 'none';
+          if (privSection) privSection.style.display = 'none';
+          if (cookieSection) cookieSection.style.display = 'none';
+          if (enfSection) enfSection.style.display = 'none';
+        } else if (kategori === 'tos') {
+          if (anayasaContainer) anayasaContainer.style.display = 'none';
+          if (tosSection) tosSection.style.display = '';
+          if (privSection) privSection.style.display = 'none';
+          if (cookieSection) cookieSection.style.display = 'none';
+          if (enfSection) enfSection.style.display = 'none';
+        } else if (kategori === 'privacy') {
+          if (anayasaContainer) anayasaContainer.style.display = 'none';
+          if (tosSection) tosSection.style.display = 'none';
+          if (privSection) privSection.style.display = '';
+          if (cookieSection) cookieSection.style.display = 'none';
+          if (enfSection) enfSection.style.display = 'none';
+        } else if (kategori === 'cookies') {
+          if (anayasaContainer) anayasaContainer.style.display = 'none';
+          if (tosSection) tosSection.style.display = 'none';
+          if (privSection) privSection.style.display = 'none';
+          if (cookieSection) cookieSection.style.display = '';
+          if (enfSection) enfSection.style.display = 'none';
+        } else if (kategori === 'enforcement') {
+          if (anayasaContainer) anayasaContainer.style.display = 'none';
+          if (tosSection) tosSection.style.display = 'none';
+          if (privSection) privSection.style.display = 'none';
+          if (cookieSection) cookieSection.style.display = 'none';
+          if (enfSection) enfSection.style.display = '';
+        }
+
+        mevzuatAra();
+      }
+
       function bolumeGit(secici) {
         if (!secici) return;
         const hedef = document.querySelector(secici);
         if (hedef) {
+          if (hedef.closest && (hedef.style.display === 'none' || (hedef.parentElement && hedef.parentElement.style.display === 'none'))) {
+            filtreleKategori('all', document.querySelector('.category-pill'));
+          }
           hedef.scrollIntoView({ behavior: 'smooth' });
         }
       }
@@ -1510,7 +1691,7 @@ function renderEkoYildizAnayasaPage(user) {
         const clearBtn = document.getElementById('search-clear');
         const infoDiv = document.getElementById('search-info');
         const emptyState = document.getElementById('empty-search');
-        const kelime = input.value.toLowerCase().trim();
+        const kelime = input ? input.value.toLowerCase().trim() : '';
         const maddeler = document.querySelectorAll('.kanun-madde');
         const bolumler = document.querySelectorAll('.kanun-bolum');
 
@@ -1534,6 +1715,11 @@ function renderEkoYildizAnayasaPage(user) {
         let toplamEslenen = 0;
 
         bolumler.forEach(bolum => {
+          if (bolum.style.display === 'none' || (bolum.parentElement && bolum.parentElement.style.display === 'none')) {
+            bolum.classList.add('hidden-item');
+            return;
+          }
+
           let bolumdeVar = false;
           const bolumMaddeleri = bolum.querySelectorAll('.kanun-madde');
 
@@ -1557,7 +1743,7 @@ function renderEkoYildizAnayasaPage(user) {
 
         if (infoDiv) {
           infoDiv.style.display = 'block';
-          infoDiv.innerHTML = '🔍 "<b>' + kelime + '</b>" ifadesiyle eşleşen <b>' + toplamEslenen + '</b> madde listeleniyor.';
+          infoDiv.innerHTML = '🔍 "<b>' + kelime + '</b>" aramasıyla eşleşen <b>' + toplamEslenen + '</b> madde listeleniyor.';
         }
 
         if (emptyState) {
@@ -1565,7 +1751,6 @@ function renderEkoYildizAnayasaPage(user) {
         }
       }
 
-      // Sayfa yüklendiğinde URL hash varsa oraya odaklan
       window.addEventListener('DOMContentLoaded', () => {
         if (window.location.hash) {
           setTimeout(() => {
@@ -1577,7 +1762,7 @@ function renderEkoYildizAnayasaPage(user) {
   `;
 
   const { _layout } = require("../views");
-  return _layout("EkoYıldız Topluluğu Resmî Anayasası & Mevzuat Portalı", user, content, "", "/anayasasi");
+  return _layout("EkoYıldız Hukuk, Politika ve Resmî Mevzuat Portalı", user, content, "", "/anayasasi");
 }
 
 module.exports = {

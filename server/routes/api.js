@@ -104,7 +104,7 @@ const axios = require("axios");
 const Ticket = require("../../models/Ticket");
 const User = require("../../models/User");
 const Economy = require("../../models/Economy");
-const { wikiArticles, saveStoreNow } = require("../../models/Store");
+const { collections, wikiArticles, saveStoreNow } = require("../../models/Store");
 const { isSiteAdmin, isSiteStaff } = require("../../utils/adminCheck");
 const { SHOP_ITEMS, findItem } = require("../../bot/config/shopItems");
 const { BASE_URL, WEBHOOK_SECRET, MAKE_WEBHOOK_URL } = require("../../config");
@@ -2228,6 +2228,223 @@ router.post("/api/settings", async (req, res) => {
       }
     }
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Resmî Hukuki Talepler & Dilekçe Masası (Legal Desk) ───────────────────────
+router.post("/api/legal-requests", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const {
+    requestType,
+    fullName,
+    officialEmail,
+    idOrDiscord,
+    legalBasis,
+    subject,
+    statement,
+    legalLiabilityAccepted,
+    termsAccepted
+  } = req.body || {};
+
+  if (!fullName || String(fullName).trim().length < 3) {
+    return res.status(400).json({ error: "Lütfen geçerli bir Ad Soyad / Resmî İsim beyan ediniz." });
+  }
+  if (!officialEmail || !String(officialEmail).includes("@")) {
+    return res.status(400).json({ error: "Lütfen geçerli bir resmî iletişim e-posta adresi giriniz." });
+  }
+  if (!subject || String(subject).trim().length < 4) {
+    return res.status(400).json({ error: "Dilekçe konusu en az 4 karakter olmalıdır." });
+  }
+  if (!statement || String(statement).trim().length < 20) {
+    return res.status(400).json({ error: "Resmî gerekçeli dilekçe metni en az 20 karakter olmalıdır." });
+  }
+  if (!legalLiabilityAccepted) {
+    return res.status(400).json({ error: "Resmî yasal sorumluluk ve doğruluk beyanını onaylamalısınız." });
+  }
+
+  const validTypes = [
+    'kvkk_delete', 'kvkk_export', 'sanction_appeal',
+    'dmca_copyright', 'tos_special_request', 'official_complaint'
+  ];
+  const type = validTypes.includes(requestType) ? requestType : 'official_complaint';
+
+  const refCode = 'EKO-LEG-2026-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  const now = new Date();
+
+  try {
+    const record = collections.legalRequests.create({
+      refCode,
+      userId: String(req.user._id),
+      discordId: String(req.user.discordId),
+      discordUsername: req.user.discordUsername || req.user.username || 'Bilinmiyor',
+      requestType: type,
+      fullName: String(fullName).trim().slice(0, 100),
+      officialEmail: String(officialEmail).trim().slice(0, 150),
+      idOrDiscord: String(idOrDiscord || req.user.discordId).trim().slice(0, 80),
+      legalBasis: String(legalBasis || 'KVKK / Topluluk Mevzuatı').trim().slice(0, 200),
+      subject: String(subject).trim().slice(0, 200),
+      statement: String(statement).trim().slice(0, 3000),
+      legalLiabilityAccepted: true,
+      termsAccepted: Boolean(termsAccepted),
+      status: 'pending',
+      adminNote: '',
+      officialResponse: '',
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    saveStoreNow();
+
+    if (termsAccepted) {
+      try {
+        const user = await User.findById(req.user._id);
+        if (user) {
+          user.tosAccepted = true;
+          user.tosAcceptedAt = now;
+          await user.save();
+        }
+      } catch (_) {}
+    }
+
+    try {
+      const { logTrustUserActivity } = require('../../bot/services/security/trustScoreService');
+      const { getDiscordClient } = require('../../bot/discordClient');
+      logTrustUserActivity(
+        getDiscordClient(),
+        req.user.discordId,
+        'Resmî Hukuki Başvuru Alındı',
+        'Referans Kodu: **' + refCode + '** | Konu: ' + String(subject).slice(0, 60) + ' | Tür: ' + type,
+        '⚖️',
+        0x8b5cf6
+      );
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      refCode,
+      message: 'Resmî dilekçeniz [' + refCode + '] referans koduyla kayıt altına alınmış olup Hukuk ve Yönetim Masasına sevk edilmiştir.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/api/legal-requests/my", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  try {
+    const list = collections.legalRequests.find({
+      $or: [
+        { userId: String(req.user._id) },
+        { discordId: String(req.user.discordId) }
+      ]
+    }) || [];
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    res.json({ success: true, requests: list });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/settings/tos-consent", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  const { accept } = req.body || {};
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    user.tosAccepted = Boolean(accept);
+    user.tosAcceptedAt = accept ? new Date() : null;
+    await user.save();
+    saveStoreNow();
+    res.json({
+      success: true,
+      tosAccepted: user.tosAccepted,
+      tosAcceptedAt: user.tosAcceptedAt,
+      message: accept ? "Topluluk Kullanım Şartları ve Gizlilik Politikası kabul edildi." : "Şart kabulü geri çekildi."
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/settings/staff", async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Giriş yapmanız gerekmektedir." });
+  if (!isSiteStaff(req.user) && !isSiteAdmin(req.user)) {
+    return res.status(403).json({ error: "Bu ayara sadece yetkili personeller erişebilir." });
+  }
+  const { shiftStatus, soundAlerts, ticketAlerts, autoDutyLog } = req.body || {};
+  const validShifts = ['active', 'break', 'leave'];
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    user.staffSettings = {
+      shiftStatus: validShifts.includes(shiftStatus) ? shiftStatus : 'active',
+      soundAlerts: Boolean(soundAlerts),
+      ticketAlerts: Boolean(ticketAlerts),
+      autoDutyLog: Boolean(autoDutyLog),
+      updatedAt: new Date()
+    };
+    await user.save();
+    saveStoreNow();
+    res.json({ success: true, message: "Yetkili çalışma ayarlarınız kaydedildi.", staffSettings: user.staffSettings });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Admin: Hukuki Talepler & Dilekçe İnceleme Masası ──────────────────────────
+router.get("/api/admin/legal-requests", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  try {
+    const list = collections.legalRequests.find({}) || [];
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    res.json({ success: true, requests: list });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/admin/legal-requests/:id/respond", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+  const { id } = req.params;
+  const { status, officialResponse, adminNote } = req.body || {};
+  const validStatuses = ['pending', 'investigating', 'approved', 'rejected', 'completed'];
+
+  try {
+    const reqItem = collections.legalRequests.findOne({ _id: id }) || collections.legalRequests.findOne({ refCode: id });
+    if (!reqItem) return res.status(404).json({ error: "Dilekçe kaydı bulunamadı." });
+
+    if (status && validStatuses.includes(status)) {
+      reqItem.status = status;
+    }
+    if (officialResponse !== undefined) {
+      reqItem.officialResponse = String(officialResponse).trim().slice(0, 3000);
+    }
+    if (adminNote !== undefined) {
+      reqItem.adminNote = String(adminNote).trim().slice(0, 1000);
+    }
+    reqItem.reviewedBy = req.user.discordUsername || req.user.username || 'Admin';
+    reqItem.reviewedAt = new Date();
+    reqItem.save();
+    saveStoreNow();
+
+    try {
+      const { logTrustUserActivity } = require('../../bot/services/security/trustScoreService');
+      const { getDiscordClient } = require('../../bot/discordClient');
+      logTrustUserActivity(
+        getDiscordClient(),
+        reqItem.discordId,
+        'Hukuki Dilekçe Karara Bağlandı',
+        'Dilekçe [' + reqItem.refCode + '] durumu: **' + reqItem.status.toUpperCase() + '** | Yetkili: ' + reqItem.reviewedBy,
+        '⚖️',
+        reqItem.status === 'approved' || reqItem.status === 'completed' ? 0x2ecc71 : 0xe74c3c
+      );
+    } catch (_) {}
+
+    res.json({ success: true, message: "Hukuki talep kararı ve gerekçesi kaydedildi.", request: reqItem });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
