@@ -32,6 +32,7 @@ const { renderCareersPage } = require("../views/careersPage");
 const { renderVideoBlogPage } = require("../views/videoBlogPage");
 const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
 const { renderAdvertisingLandingPage } = require("../views/advertisingLandingPage");
+const { renderLinksHubPage } = require("../views/linksHubPage");
 
 const router = express.Router();
 
@@ -39,6 +40,11 @@ router.get("/ads.txt", (req, res) => {
   res.type("text/plain");
   res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
 });
+
+router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
+router.get("/links", (req, res) => res.redirect("/linkler"));
+router.get("/bio", (req, res) => res.redirect("/linkler"));
+router.get("/eko", (req, res) => res.redirect("/linkler"));
 
 router.get("/", (req, res) => {
   res.send(renderMainPage(req.user));
