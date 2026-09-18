@@ -31,6 +31,7 @@ const { renderPhibiSupportPage } = require("../views/phibiSupportPage");
 const { renderCareersPage } = require("../views/careersPage");
 const { renderVideoBlogPage } = require("../views/videoBlogPage");
 const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
+const { renderAdvertisingLandingPage } = require("../views/advertisingLandingPage");
 
 const router = express.Router();
 
@@ -59,6 +60,7 @@ router.get("/faq", (req, res) => res.redirect("/yardim"));
 router.get("/safety", (req, res) => res.send(renderSafetyCenterPage(req.user)));
 router.get("/blog", (req, res) => res.send(renderBlogPage()));
 router.get("/video-blog", (req, res) => res.send(renderVideoBlogPage()));
+router.get("/reklam/ekoyildiz-ortaklik", (req, res) => res.send(renderAdvertisingLandingPage(req.user)));
 router.get("/blog/:slug", (req, res) => res.send(renderBlogPostPage(req.params.slug)));
 router.get("/yazar/:slug", (req, res) => res.send(renderAuthorPage(req.params.slug)));
 

@@ -8,8 +8,16 @@ const {
 } = require('discord.js');
 const Ticket = require('../../models/Ticket');
 const { generateTicketId } = require('../../utils/ticketId');
-const { GUILD2_ID, GUILD2_TICKET_CATEGORY_ID } = require('../../config');
+const { GUILD2_ID, GUILD2_TICKET_CATEGORY_ID, BASE_URL } = require('../../config');
 const { ROLES } = require('./staffSystem');
+
+function getAdvertisingLandingUrl(baseUrl = BASE_URL) {
+  const configured = String(baseUrl || '').trim();
+  const origin = !configured || /localhost|127\.0\.0\.1/i.test(configured)
+    ? 'https://ekoyildiz.duckdns.org'
+    : configured.replace(/\/+$/, '');
+  return `${origin}/reklam/ekoyildiz-ortaklik`;
+}
 
 /**
  * Reklam & Sponsorluk Paketleri Veritabanı
@@ -522,7 +530,12 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
       .setCustomId(`reklam_view_guarantee_${tId}`)
       .setLabel('🛡️ Erişim Sigortası')
       .setStyle(ButtonStyle.Success)
-      .setEmoji('🔒')
+      .setEmoji('🔒'),
+    new ButtonBuilder()
+      .setLabel('Neden EkoYıldız?')
+      .setStyle(ButtonStyle.Link)
+      .setURL(getAdvertisingLandingUrl())
+      .setEmoji('🌻')
   );
 
   // Satır 3: Bilgi ve planlama araçları
@@ -1391,7 +1404,12 @@ async function handleReklamModalSubmit(interaction) {
       .setCustomId(`reklam_browse_start_${ticketId}`)
       .setLabel('📦 Detaylı Paket Kataloğu')
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('📑')
+      .setEmoji('📑'),
+    new ButtonBuilder()
+      .setLabel('Neden EkoYıldız?')
+      .setStyle(ButtonStyle.Link)
+      .setURL(getAdvertisingLandingUrl())
+      .setEmoji('🌻')
   );
 
   const actionRow2 = new ActionRowBuilder().addComponents(
@@ -2907,6 +2925,7 @@ async function cleanReklamSalesMessages(channel) {
 }
 
 module.exports = {
+  getAdvertisingLandingUrl,
   REKLAM_PACKAGES,
   CUSTOM_BUILDER_MODULES,
   KAMP_SERVICES,
