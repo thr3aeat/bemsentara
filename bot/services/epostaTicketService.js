@@ -75,11 +75,14 @@ async function triggerEpostaFormModal(interaction, category) {
  * Handles submit of the support modal (Creates ONE single channel for User + Staff)
  */
 async function handleEpostaModalSubmit(interaction, category) {
+  const { deferTicketReply, replyToTicketInteraction } = require('./ticketInteractionReply');
+  await deferTicketReply(interaction);
+
   const targetGuild = await interaction.client.guilds.fetch(GUILD2_ID).catch(() => interaction.guild);
   const { canUserOpenTicket, getActiveTicketWarningMessage } = require('./ticketLimiter');
   const limitCheck = await canUserOpenTicket(interaction.user, targetGuild);
   if (!limitCheck.allowed) {
-    return interaction.reply({
+    return replyToTicketInteraction(interaction, {
       content: getActiveTicketWarningMessage(limitCheck.channel),
       ephemeral: true
     });
@@ -92,7 +95,7 @@ async function handleEpostaModalSubmit(interaction, category) {
   const User = require('../../models/User');
   const userRecord = await User.findOne({ discordId: interaction.user.id });
   if (userRecord?.ticketBanned) {
-    return interaction.reply({
+    return replyToTicketInteraction(interaction, {
       content: "🚫 **Ticket Yasaklısınız.**\nSpam/kötüye kullanım raporunuz yetkililerce onaylandığı için ticket sistemi erişiminiz engellendi. Bu konuda itirazınız varsa sunucu yöneticisiyle iletişime geçin.",
       ephemeral: true
     });
@@ -170,7 +173,7 @@ async function handleEpostaModalSubmit(interaction, category) {
     });
     await ticket.save();
 
-    await interaction.reply({
+    await replyToTicketInteraction(interaction, {
       content: `📬 **Talebiniz başarıyla oluşturuldu!** Sizin için ${ticketChannel.toString()} kanalı açıldı.`,
       ephemeral: true
     });
@@ -193,9 +196,7 @@ async function handleEpostaModalSubmit(interaction, category) {
 
   } catch (err) {
     console.error("[epostaTicketService] Support setup failed:", err.message);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `❌ Ticket oluşturulamadı: ${err.message}`, ephemeral: true }).catch(() => {});
-    }
+    await replyToTicketInteraction(interaction, { content: `❌ Ticket oluşturulamadı: ${err.message}`, ephemeral: true }).catch(() => {});
   }
 }
 

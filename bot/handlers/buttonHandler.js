@@ -1837,9 +1837,9 @@ async function handleButtonInteraction(interaction) {
         .setLabel("🛒 Hızlı Satın Al")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId(`reklam_view_deals_${ticketId}`)
-        .setLabel("🔥 %60 İndirimler")
-        .setStyle(ButtonStyle.Danger)
+        .setCustomId(`reklam_view_quality_${ticketId}`)
+        .setLabel("🛡️ Yayın Standartları")
+        .setStyle(ButtonStyle.Secondary)
     );
     return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
   }
@@ -1866,10 +1866,10 @@ async function handleButtonInteraction(interaction) {
         .setStyle(ButtonStyle.Success)
         .setEmoji("🛍️"),
       new ButtonBuilder()
-        .setCustomId(`reklam_view_deals_${ticketId}`)
-        .setLabel("🔥 %60 Fırsatlar")
-        .setStyle(ButtonStyle.Danger)
-        .setEmoji("🏷️")
+        .setCustomId(`reklam_view_quality_${ticketId}`)
+        .setLabel("🛡️ Yayın Standartları")
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji("✅")
     );
     return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
   }
@@ -1894,20 +1894,9 @@ async function handleButtonInteraction(interaction) {
   }
 
   if (customId.startsWith("reklam_view_deals_")) {
-    const { buildCampaignDealsEmbed } = require("../services/reklamTicketService");
     const ticketId = customId.replace("reklam_view_deals_", "");
-    const embed = buildCampaignDealsEmbed();
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`reklam_browse_start_${ticketId}`)
-        .setLabel("📦 Paketleri İncele")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`reklam_buy_${ticketId}`)
-        .setLabel("🛒 Satın Al")
-        .setStyle(ButtonStyle.Success)
-    );
-    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, 0, ticketId);
   }
 
   if (customId.startsWith("reklam_view_payment_")) {
@@ -1988,9 +1977,8 @@ async function handleButtonInteraction(interaction) {
 
   if (customId.startsWith("reklam_view_flash_deal_")) {
     const ticketId = customId.replace("reklam_view_flash_deal_", "");
-    const { buildFlashDealEmbed } = require("../services/reklamTicketService");
-    const { embed, components } = buildFlashDealEmbed(ticketId);
-    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, 0, ticketId);
   }
 
   if (customId.startsWith("reklam_view_analytics_")) {
@@ -2023,9 +2011,8 @@ async function handleButtonInteraction(interaction) {
 
   if (customId.startsWith("reklam_spin_wheel_")) {
     const ticketId = customId.replace("reklam_spin_wheel_", "");
-    const { buildSpinWheelEmbed } = require("../services/reklamTicketService");
-    const { embed, components } = buildSpinWheelEmbed(ticketId);
-    return interaction.reply({ embeds: [embed], components, ephemeral: true });
+    const { handlePackageNavigation } = require("../services/reklamTicketService");
+    return handlePackageNavigation(interaction, 0, ticketId);
   }
 
   if (customId.startsWith("reklam_group_audit_")) {
@@ -2120,7 +2107,7 @@ async function handleButtonInteraction(interaction) {
     const ticketId = parts.slice(2).join("_") || "general";
     const { REKLAM_PACKAGES, triggerReklamModal } = require("../services/reklamTicketService");
     const matched = REKLAM_PACKAGES.find(p => p.id === pkgId || p.code === pkgId) || REKLAM_PACKAGES[0];
-    return triggerReklamModal(interaction, `${matched.title} (${matched.discountPrice} / ${matched.discountRobux})`, ticketId);
+    return triggerReklamModal(interaction, `${matched.title} (${matched.price} / ${matched.robuxPrice})`, ticketId);
   }
 
   if (customId === "reklam_start_comm_dm") {
@@ -2146,21 +2133,22 @@ async function handleButtonInteraction(interaction) {
   }
 
   if (customId.startsWith("reklam_discount_request_")) {
-    const ticketId = customId.replace("reklam_discount_request_", "");
-    const { handleReklamDiscountRequest } = require("../services/reklamTicketService");
-    return handleReklamDiscountRequest(interaction, ticketId);
+    return interaction.reply({
+      content: "ℹ️ Reklam masası net fiyat modeliyle çalışıyor. Paket kapsamını veya bütçenize uygun seçeneği yetkiliyle birlikte planlayabilirsiniz.",
+      ephemeral: true,
+    });
   }
 
   if (customId.startsWith("reklam_approve_price_")) {
     const ticketId = customId.replace("reklam_approve_price_", "");
     const { handleReklamPriceApproval } = require("../services/reklamTicketService");
-    return handleReklamPriceApproval(interaction, ticketId, false);
+    return handleReklamPriceApproval(interaction, ticketId);
   }
 
   if (customId.startsWith("reklam_approve_discount_")) {
     const ticketId = customId.replace("reklam_approve_discount_", "");
     const { handleReklamPriceApproval } = require("../services/reklamTicketService");
-    return handleReklamPriceApproval(interaction, ticketId, true);
+    return handleReklamPriceApproval(interaction, ticketId);
   }
 
   if (customId.startsWith("reklam_close_")) {

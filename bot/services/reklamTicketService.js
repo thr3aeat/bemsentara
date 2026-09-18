@@ -13,12 +13,7 @@ const { ROLES } = require('./staffSystem');
 
 /**
  * Reklam & Sponsorluk Paketleri Veritabanı
- * Psikolojik pazarlama:
- * 1. Liste TL fiyatı üstü çizili (%40-%60 indirim)
- * 2. 3x Çoklu Yayın / Abone Alım Çapası (Anchor Effect)
- * 3. Aşırı pahalılaştırılmış, üzeri çizili fake indirimli Robux fiyatları
- * 4. Kalan Kontenjan / Kıtlık (FOMO)
- * 5. Cross-Sell / Upsell Fırsatları
+ * Her paket tek ve şeffaf net fiyatla sunulur.
  * Tüm ödemeler SADECE İTEMSATIŞ üzerinden gerçekleştirilir.
  */
 const REKLAM_PACKAGES = [
@@ -28,13 +23,10 @@ const REKLAM_PACKAGES = [
     title: 'Shorts & Hızlı Tanıtım Paketi',
     emoji: '📱',
     badge: '⚡ EN HIZLI DÖNÜŞÜM',
-    regularPrice: '75 TL',
-    discountPrice: '30 TL',
+    price: '30 TL',
     multiPackPrice: '65 TL (3x Shorts - Video Başı 21 TL!)',
     multiPackRobux: '5.200 Robux',
-    regularRobux: '4.500 Robux',
-    discountRobux: '2.400 Robux',
-    discountPercent: '%60 İNDİRİM',
+    robuxPrice: '2.400 Robux',
     color: 0x3498DB,
     category: 'Ekonomik Paketler',
     remainingSlots: 1,
@@ -58,13 +50,10 @@ const REKLAM_PACKAGES = [
     title: 'Standart Uzun Video Sponsorluğu',
     emoji: '🎬',
     badge: '🎯 FİYAT / PERFORMANS',
-    regularPrice: '125 TL',
-    discountPrice: '50 TL',
+    price: '50 TL',
     multiPackPrice: '110 TL (3x Video Alt Bant - Video Başı 36 TL!)',
     multiPackRobux: '9.200 Robux',
-    regularRobux: '7.500 Robux',
-    discountRobux: '4.200 Robux',
-    discountPercent: '%60 İNDİRİM',
+    robuxPrice: '4.200 Robux',
     color: 0x2ECC71,
     category: 'Ekonomik Paketler',
     remainingSlots: 2,
@@ -88,13 +77,10 @@ const REKLAM_PACKAGES = [
     title: 'Avantajlı Uzun Video (Mid-Roll Sesli)',
     emoji: '🔥',
     badge: '🏆 EN ÇOK TERCİH EDİLEN',
-    regularPrice: '250 TL',
-    discountPrice: '100 TL',
+    price: '100 TL',
     multiPackPrice: '220 TL (3x Sesli Mid-Roll - Video Başı 73 TL!)',
     multiPackRobux: '15.000 Robux',
-    regularRobux: '12.000 Robux',
-    discountRobux: '6.800 Robux',
-    discountPercent: '%60 İNDİRİM',
+    robuxPrice: '6.800 Robux',
     color: 0xE67E22,
     category: 'Popüler Paketler',
     remainingSlots: 1,
@@ -118,13 +104,10 @@ const REKLAM_PACKAGES = [
     title: 'Gold Kombin Paket (3 Platform)',
     emoji: '🌟',
     badge: '⚡ ÇOKLU PLATFORM GÜCÜ',
-    regularPrice: '875 TL',
-    discountPrice: '350 TL',
+    price: '350 TL',
     multiPackPrice: '750 TL (3 Aylık Gold Paket - %35 Tasarruf!)',
     multiPackRobux: '32.000 Robux',
-    regularRobux: '26.000 Robux',
-    discountRobux: '14.500 Robux',
-    discountPercent: '%60 İNDİRİM',
+    robuxPrice: '14.500 Robux',
     color: 0xF1C40F,
     category: 'Premium & Entegre Paketler',
     remainingSlots: 1,
@@ -148,13 +131,10 @@ const REKLAM_PACKAGES = [
     title: 'Mega Etkileşim Paketi (360° Reklam)',
     emoji: '🚀',
     badge: '💥 360 DERECE GÖRÜNÜRLÜK',
-    regularPrice: '1.250 TL',
-    discountPrice: '500 TL',
+    price: '500 TL',
     multiPackPrice: '1.100 TL (3x Mega Paket - %30 Tasarruf!)',
     multiPackRobux: '44.000 Robux',
-    regularRobux: '36.000 Robux',
-    discountRobux: '19.800 Robux',
-    discountPercent: '%60 İNDİRİM',
+    robuxPrice: '19.800 Robux',
     color: 0x9B59B6,
     category: 'Premium & Entegre Paketler',
     remainingSlots: 2,
@@ -179,13 +159,10 @@ const REKLAM_PACKAGES = [
     title: 'Çekilişli VIP Paket (Garantili Üye Çekimi)',
     emoji: '💎',
     badge: '🎁 GARANTİLİ ÜYE & TAKİPÇİ',
-    regularPrice: '1.490 TL',
-    discountPrice: '670 TL',
+    price: '670 TL',
     multiPackPrice: '1.450 TL (2 Aylık VIP Çekiliş Kampı)',
     multiPackRobux: '58.000 Robux',
-    regularRobux: '48.000 Robux',
-    discountRobux: '26.500 Robux',
-    discountPercent: '%55 DEV İNDİRİM',
+    robuxPrice: '26.500 Robux',
     color: 0x1ABC9C,
     category: 'VIP & Topluluk Odaklı Paketler',
     remainingSlots: 1,
@@ -209,13 +186,10 @@ const REKLAM_PACKAGES = [
     title: 'Ultimate Roblox & Topluluk Kampı',
     emoji: '👑',
     badge: '👑 MAKSİMUM PRESTİJ & LİDERLİK',
-    regularPrice: '1.890 TL',
-    discountPrice: '870 TL',
+    price: '870 TL',
     multiPackPrice: '1.900 TL (3 Aylık Mega Geliştirme Kampı)',
     multiPackRobux: '75.000 Robux',
-    regularRobux: '65.000 Robux',
-    discountRobux: '35.000 Robux',
-    discountPercent: '%54 VIP FIRSAT',
+    robuxPrice: '35.000 Robux',
     color: 0xE74C3C,
     category: 'VIP & Topluluk Odaklı Paketler',
     remainingSlots: 1,
@@ -237,13 +211,10 @@ const REKLAM_PACKAGES = [
     title: 'Özel Proje & Lansman Sponsorluğu',
     emoji: '🎯',
     badge: '✨ KİŞİYE ÖZEL KURGU',
-    regularPrice: '2.100 TL',
-    discountPrice: '1.050 TL\'den başlayan',
+    price: '1.050 TL\'den başlayan',
     multiPackPrice: 'Görüşme ile Özel Fiyatlandırma',
     multiPackRobux: 'Özel Teklif',
-    regularRobux: '88.000 Robux',
-    discountRobux: '48.000+ Robux',
-    discountPercent: '%50 İNDİRİM',
+    robuxPrice: '48.000+ Robux',
     color: 0x34495E,
     category: 'Özel Projeler',
     remainingSlots: 1,
@@ -317,7 +288,7 @@ const CUSTOM_BUILDER_MODULES = [
 ];
 
 /**
- * Tek bir paketin zenginleştirilmiş sayfa embed'ini oluşturur (İki Seviyeli İndirim Çapası ve Canlı Akış ile).
+ * Tek bir paketin şeffaf fiyat ve kapsam özetini oluşturur.
  */
 function buildPackagePageEmbed(index) {
   const total = REKLAM_PACKAGES.length;
@@ -325,8 +296,7 @@ function buildPackagePageEmbed(index) {
   const pkg = REKLAM_PACKAGES[safeIdx];
 
   const featureList = pkg.features.map(f => `  ✅ ${f}`).join('\n');
-  const slotText = `⚠️ **BU HAFTALIK KALAN KONTENJAN:** 🔴 **${pkg.remainingSlots} / ${pkg.maxSlots} Slot** *(Tükenmek Üzere!)*`;
-  const liveFeed = getLiveActivityFeedText();
+  const slotText = `📆 **Planlanabilir yayın kontenjanı:** **${pkg.remainingSlots} / ${pkg.maxSlots}**`;
 
   const embed = new EmbedBuilder()
     .setTitle(`${pkg.emoji} ${pkg.title}`)
@@ -335,14 +305,12 @@ function buildPackagePageEmbed(index) {
       `🏅 **Rozet:** \`${pkg.badge}\`\n` +
       `⏳ ${slotText}\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 **FİYAT ÇAPASI VE SEÇENEKLER (SADECE İTEMSATIŞ):**\n` +
-      `> 🎯 **1x Tek Seferlik Yayın:** ~~${pkg.regularPrice}~~ ➔ **${pkg.discountPrice}** *(%60 Fırsat İndirimi)* 🟢\n` +
-      `> 💎 **3x Çoklu Yayın Paketi:** **${pkg.multiPackPrice}** *(Ekstra %30 Tasarruf!)* ⭐\n` +
-      `> 🪙 **Robux ile Ödeme:** ~~${pkg.regularRobux}~~ ➔ **${pkg.discountRobux}** ⚠️ *(Komisyonlar Dahil)*\n` +
-      `> 🚀 *Fast-Track: Sadece +40 TL farkla 24 saat süper hızlı teslimat ve öncelikli sıra alabilirsiniz!*\n` +
+      `💰 **NET PAKET FİYATI (SADECE İTEMSATIŞ):**\n` +
+      `> 🎯 **Tek yayın:** **${pkg.price}**\n` +
+      `> 🪙 **Robux ile ödeme:** **${pkg.robuxPrice}** *(platform komisyonları dahil)*\n` +
+      `> 🚀 *Hızlı teslim seçeneği ve özel kapsam, yetkiliyle planlama aşamasında netleştirilir.*\n` +
       `> 🛡️ *Performans Güvencesi: Reklamınız hedeflenen minimum organik erişime ulaşmazsa ÜCRETSİZ telafi yayını yapılır!*\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `${liveFeed}\n\n` +
       `📝 **Paket Özeti:**\n*${pkg.summary}*\n\n` +
       `✨ **Neler Dahil? (Paket Kapsamı):**\n${featureList}\n\n` +
       `📊 **Tahmini Kitle Erişimi:**\n🔥 **${pkg.reach}**\n\n` +
@@ -366,8 +334,7 @@ const KAMP_SERVICES = [
     id: 'kamp_ana_brans',
     code: 'kamp_ana_brans',
     title: '🏰 Ana & Branş Sunucu Kurulumu',
-    regularPrice: '1.000 TL',
-    discountPrice: '500 TL',
+    price: '500 TL',
     robuxPrice: '22.000 Robux',
     desc: 'Ana & Branş sunucu mimarisi, yetki hiyerarşisi, kural & duyuru estetiği. (+90 TL Webhook & İzin Şablonları)'
   },
@@ -375,8 +342,7 @@ const KAMP_SERVICES = [
     id: 'kamp_birim_odalar',
     code: 'kamp_birim_odalar',
     title: '🏛️ Birim & Departman Odaları Paketi',
-    regularPrice: '600 TL',
-    discountPrice: '450 TL',
+    price: '450 TL',
     robuxPrice: '19.500 Robux',
     desc: 'Özel birlik/departman ses & metin kanalları, gizli operasyon odaları. (+350 TL RoWifi, +50 TL Webhook Form)'
   },
@@ -384,8 +350,7 @@ const KAMP_SERVICES = [
     id: 'kamp_panel_yonetim',
     code: 'kamp_panel_yonetim',
     title: '⚡ Eko Yıldız Paneli Rütbe & Alım Sistemi (Ömür Boyu)',
-    regularPrice: '600 TL',
-    discountPrice: '300 TL',
+    price: '300 TL',
     robuxPrice: '13.500 Robux',
     desc: 'Eko Yıldız Panel Entegreli Rütbe & Alım Yönetim Sistemi (7/24 Kesintisiz Ömür Boyu Aktif).'
   },
@@ -393,8 +358,7 @@ const KAMP_SERVICES = [
     id: 'kamp_ozel_bot',
     code: 'kamp_ozel_bot',
     title: '🤖 Özel Kodlanmış Rütbe, Aktiflik & Log Botu',
-    regularPrice: '1.500 TL',
-    discountPrice: '750 TL',
+    price: '750 TL',
     robuxPrice: '32.000 Robux',
     desc: 'Rütbe atlama, ses/yazı aktifliği, tüm denetim logları. (+300 TL Oyuna Girme Kayıtlarını Rütbe XP\'sine Dönüştürme)'
   },
@@ -402,8 +366,7 @@ const KAMP_SERVICES = [
     id: 'kamp_gfx_tasarim',
     code: 'kamp_gfx_tasarim',
     title: '🎨 Stüdyo GFX Logo + Banner VIP Seti',
-    regularPrice: '1.100 TL',
-    discountPrice: '790 TL',
+    price: '790 TL',
     robuxPrice: '34.500 Robux',
     desc: 'Stüdyo Kalite Logo (500 TL) + Özel Konsept Banner (500 TL) = Anında 310 TL Tasarrufla 790 TL!'
   },
@@ -411,8 +374,7 @@ const KAMP_SERVICES = [
     id: 'kamp_full_bundle',
     code: 'kamp_full_bundle',
     title: '👑 %100 FULL LÜKS KAMP KURULUM SETİ (ALL-IN-ONE VIP BUNDLE)',
-    regularPrice: '7.000 TL',
-    discountPrice: '4.850 TL',
+    price: '4.850 TL',
     robuxPrice: '198.000 Robux',
     desc: 'Tüm Sunucu Mimarisi + RoWifi + Birimler + Panel + 7/24 Bot + GFX Seti + KDV & Komisyon Dahil Anahtar Teslim!'
   }
@@ -548,7 +510,7 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`reklam_buy_pkg_${currentPkg.id}_${tId}`)
-      .setLabel(`🛒 Satın Al (${currentPkg.discountPrice})`)
+      .setLabel(`🛒 Satın Al (${currentPkg.price})`)
       .setStyle(ButtonStyle.Success)
       .setEmoji('🛍️'),
     new ButtonBuilder()
@@ -560,21 +522,11 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
       .setCustomId(`reklam_view_guarantee_${tId}`)
       .setLabel('🛡️ Erişim Sigortası')
       .setStyle(ButtonStyle.Success)
-      .setEmoji('🔒'),
-    new ButtonBuilder()
-      .setCustomId(`reklam_view_flash_deal_${tId}`)
-      .setLabel('⚡ Flaş Fırsat (Hediye)')
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji('🎁')
+      .setEmoji('🔒')
   );
 
-  // Satır 3: Gamification & İkna Butonları (Şans Çarkı, Grup Analizi, Örnekler, Hediyeler)
+  // Satır 3: Bilgi ve planlama araçları
   const promoRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`reklam_spin_wheel_${tId}`)
-      .setLabel('🎰 Şans Çarkı')
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji('🎁'),
     new ButtonBuilder()
       .setCustomId(`reklam_group_audit_${tId}`)
       .setLabel('📊 Grup Büyüme Raporu')
@@ -603,8 +555,8 @@ function buildPackageBrowserComponents(currentIndex, ticketId = null) {
     .addOptions(
       REKLAM_PACKAGES.map((p, i) =>
         new StringSelectMenuOptionBuilder()
-          .setLabel(`${p.title} (${p.discountPrice} / ${p.discountRobux})`)
-          .setDescription(`🔴 Kalan: ${p.remainingSlots} Slot • Sadece İtemSatış`)
+          .setLabel(`${p.title} (${p.price} / ${p.robuxPrice})`)
+          .setDescription(`Planlanabilir: ${p.remainingSlots} yayın slotu • Sadece İtemSatış`)
           .setValue(`jump_${i}`)
           .setEmoji(p.emoji)
           .setDefault(i === safeIdx)
@@ -731,26 +683,23 @@ function buildCustomerReviewsEmbed() {
 }
 
 /**
- * Cross-Sell & Upsell Fırsat Teklifi Embed'i
+ * Ek kapsam önerisi embed'i
  */
 function buildUpsellOfferEmbed(originalPkg, upsellPkg, ticketId = 'general') {
   const embed = new EmbedBuilder()
-    .setTitle('🎁 SİZE ÖZEL ANLIK SEPET YÜKSELTMESİ (UPSELL FIRSATI)')
+    .setTitle('📈 PAKET KAPSAMINI GENİŞLET')
     .setDescription(
-      `Tebrikler! **${originalPkg.title}** siparişinizi hazırlarken size özel tek seferlik bir fırsat tanımlandı!\n\n` +
+      `**${originalPkg.title}** için planlama yapılırken kapsamı genişletmek isteyip istemediğinizi seçebilirsiniz.\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🔥 **FIRSAT TEKLİFİ:**\n` +
-      `> **${originalPkg.upsellNotice}**\n\n` +
       `📦 **Yükseltilecek Paket:** **${upsellPkg.title}**\n` +
-      `> ❌ Normal Fiyatı: ~~${upsellPkg.regularPrice}~~ (${upsellPkg.regularRobux})\n` +
-      `> 🟢 **Teklife Özel Fiyat:** **${upsellPkg.discountPrice}** *(Sadece +${parseInt(upsellPkg.discountPrice) - parseInt(originalPkg.discountPrice)} TL farkla!)*\n\n` +
+      `> **Net paket fiyatı:** **${upsellPkg.price}** (${upsellPkg.robuxPrice})\n\n` +
       `✨ **Ekstra Kazanacaklarınız:**\n` +
       upsellPkg.features.map(f => `  ➕ ${f}`).join('\n') + `\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `Aşağıdaki butonlardan tercihinizi yaparak İtemSatış sipariş formunuza devam edebilirsiniz:`
     )
     .setColor(0xE67E22)
-    .setFooter({ text: 'Eko Yıldız Özel Fırsat Kulübü • Sınırlı Süreli Upsell' })
+    .setFooter({ text: 'Eko Yıldız Reklam Planlama Masası • Sadece İtemSatış' })
     .setTimestamp();
 
   const row = new ActionRowBuilder().addComponents(
@@ -761,7 +710,7 @@ function buildUpsellOfferEmbed(originalPkg, upsellPkg, ticketId = 'general') {
       .setEmoji('🎉'),
     new ButtonBuilder()
       .setCustomId(`reklam_upsell_decline_${originalPkg.id}_${ticketId}`)
-      .setLabel(`↩️ Hayır, ${originalPkg.discountPrice} ile Devam Et`)
+      .setLabel(`↩️ Hayır, ${originalPkg.price} ile Devam Et`)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -863,15 +812,13 @@ function buildCustomBuilderComponents(selectedModuleIds = [], ticketId = 'genera
 function buildAllPackagesSummaryEmbed() {
   let desc =
     `🌟 **Eko Yıldız Sponsorluk ve Reklam Paketleri Özeti**\n` +
-    `*Bütçenize ve hedefinize en uygun paketi seçerek doğrudan binlerce oyuncuya ulaşabilirsiniz.*\n\n` +
-    `🔥 **GÜNCEL KAMPANYA:** Aşağıdaki tüm paketlerimizde **%50 ile %60 arasında indirim** uygulanmıştır!\n\n`;
+    `*Hedefinize uygun paketi net fiyat ve kapsamıyla karşılaştırın.*\n\n`;
 
   for (let i = 0; i < REKLAM_PACKAGES.length; i++) {
     const p = REKLAM_PACKAGES[i];
     desc += `### ${i + 1}. ${p.emoji} ${p.title}\n`;
-    desc += `> 🎯 **1x Fiyat:** ~~${p.regularPrice}~~ ➔ **${p.discountPrice}** | 💎 **3x Paket:** **${p.multiPackPrice}**\n`;
-    desc += `> 🪙 **Robux Fiyatı:** ~~${p.regularRobux}~~ ➔ **${p.discountRobux}** *(Komisyon Dahil)*\n`;
-    desc += `> 🔴 **Kalan Slot:** ${p.remainingSlots}/${p.maxSlots} • 📊 Erişim: **${p.reach}**\n\n`;
+    desc += `> 🎯 **Net fiyat:** **${p.price}** | 🪙 **Robux:** **${p.robuxPrice}** *(komisyon dahil)*\n`;
+    desc += `> 📆 **Planlanabilir slot:** ${p.remainingSlots}/${p.maxSlots} • 📊 Erişim: **${p.reach}**\n\n`;
   }
 
   desc +=
@@ -1418,17 +1365,17 @@ async function handleReklamModalSubmit(interaction) {
       `• 📝 **Talep Türü / Detay:** ${reklamDetay}\n` +
       `• 💬 **Özel Not / Bütçe:** ${orderNotes}\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 **GÜNCEL REKLAM & SPONSORLUK FİYAT BİLGİLERİ (SADECE İTEMSATIŞ):**\n` +
-      `> 📱 **Shorts & Hızlı Tanıtım Paketi:** ~~75 TL~~ ➔ **30 TL** *(15.000 - 60.000 Dikey İzlenme)*\n` +
-      `> 🎬 **Standart Uzun Video Sponsorluğu:** ~~125 TL~~ ➔ **50 TL** *(Kalıcı Alt Bant Banner + Yorum)*\n` +
-      `> 🔥 **Avantajlı Mid-Roll (Sesli Tanıtım):** ~~250 TL~~ ➔ **100 TL** *(20-30s Sesli Reklam Arası)*\n` +
-      `> 🌟 **Gold Kombin Paket (3 Platform):** ~~875 TL~~ ➔ **350 TL** *(Uzun Video + Shorts + Topluluk)*\n` +
-      `> 🚀 **Mega Etkileşim Paketi (360°):** ~~1.250 TL~~ ➔ **500 TL** *(Video + Shorts + Topluluk + DC Duyurusu)*\n` +
-      `> 💎 **Çekilişli VIP Paket:** ~~1.490 TL~~ ➔ **670 TL** *(Mega Paket + 9.800 Robux Çekilişi)*\n` +
+      `💰 **NET REKLAM & SPONSORLUK FİYATLARI (SADECE İTEMSATIŞ):**\n` +
+      `> 📱 **Shorts & Hızlı Tanıtım Paketi:** **30 TL** *(15.000 - 60.000 dikey izlenme)*\n` +
+      `> 🎬 **Standart Uzun Video Sponsorluğu:** **50 TL** *(kalıcı alt bant banner + yorum)*\n` +
+      `> 🔥 **Sesli Mid-Roll Tanıtım:** **100 TL** *(20-30 saniye sesli reklam arası)*\n` +
+      `> 🌟 **Gold Kombin Paket:** **350 TL** *(uzun video + Shorts + topluluk)*\n` +
+      `> 🚀 **Mega Etkileşim Paketi:** **500 TL** *(video + Shorts + topluluk + Discord duyurusu)*\n` +
+      `> 💎 **Çekilişli VIP Paket:** **670 TL** *(Mega kapsam + 9.800 Robux çekilişi)*\n` +
       `> 🏰 **Roblox & Kamp Kurulum Hizmetleri:** 300 TL - 4.850 TL\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `🛡️ **Ödeme Güvencesi:** Tüm ödemeler %100 3D Secure güvencesiyle **SADECE İTEMSATIŞ** üzerinden alınır.\n` +
-      `Lütfen aşağıdaki butonlardan fiyatları onaylayabilir veya fiyatlar yüksek geldiyse indirim talep edebilirsiniz:`
+      `Paket detaylarını inceleyebilir, kapsamınızı oluşturabilir veya net fiyatları onaylayabilirsiniz:`
     )
     .setColor(0xF1C40F)
     .setFooter({ text: 'Eko Yıldız Reklam & Sponsorluk Departmanı • Sadece İtemSatış' })
@@ -1437,14 +1384,9 @@ async function handleReklamModalSubmit(interaction) {
   const actionRow1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`reklam_approve_price_${ticketId}`)
-      .setLabel('✅ Fiyatları Onaylıyorum')
+      .setLabel('✅ Net Fiyatı Onayla')
       .setStyle(ButtonStyle.Success)
       .setEmoji('🛍️'),
-    new ButtonBuilder()
-      .setCustomId(`reklam_discount_request_${ticketId}`)
-      .setLabel('💸 Fiyatlar Pahalı / İndirim İste')
-      .setStyle(ButtonStyle.Danger)
-      .setEmoji('🏷️'),
     new ButtonBuilder()
       .setCustomId(`reklam_browse_start_${ticketId}`)
       .setLabel('📦 Detaylı Paket Kataloğu')
@@ -1486,64 +1428,23 @@ async function handleReklamModalSubmit(interaction) {
   }).catch(() => { });
 }
 
-/**
- * Handles discount offer when user indicates prices are high / requests discount
- */
 async function handleReklamDiscountRequest(interaction, ticketId) {
-  const discountEmbed = new EmbedBuilder()
-    .setTitle('🎁 SİZE ÖZEL %20 EKSTRA JEST İNDİRİMİ TANIMLANDI!')
-    .setDescription(
-      `Bütçenizi rahatlatmak ve projenizi desteklemek adına **Eko Yıldız Yönetimi** tarafından size özel **%20 Ekstra Jest İndirimi** tanımlandı! 🎁\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🏷️ **GÜNCELLENMİŞ İNDİRİMLİ FİYAT LİSTESİ (SADECE İTEMSATIŞ):**\n` +
-      `> 📱 **Shorts & Hızlı Tanıtım:** ~~30 TL~~ ➔ **25 TL** *(Süper Fırsat)*\n` +
-      `> 🎬 **Standart Uzun Video:** ~~50 TL~~ ➔ **40 TL** *(%20 İndirim)*\n` +
-      `> 🔥 **Avantajlı Mid-Roll (Sesli):** ~~100 TL~~ ➔ **80 TL** *(20 TL Net Tasarruf)*\n` +
-      `> 🌟 **Gold Kombin (3 Platform):** ~~350 TL~~ ➔ **280 TL** *(70 TL İndirim)*\n` +
-      `> 🚀 **Mega Etkileşim:** ~~500 TL~~ ➔ **400 TL** *(100 TL İndirim)*\n` +
-      `> 💎 **Çekilişli VIP Paket:** ~~670 TL~~ ➔ **530 TL** *(140 TL Dev İndirim)*\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🛡️ *Bu indirim sadece bu talebinize özeldir. İtemSatış 3D Secure güvencesiyle hemen başlatabilirsiniz!*`
-    )
-    .setColor(0x2ECC71)
-    .setFooter({ text: 'Eko Yıldız Özel İndirim Kulübü • Sadece İtemSatış' })
-    .setTimestamp();
-
-  const discountRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`reklam_approve_discount_${ticketId}`)
-      .setLabel('🎉 İndirimli Fiyatı Onaylıyorum')
-      .setStyle(ButtonStyle.Success)
-      .setEmoji('🛍️'),
-    new ButtonBuilder()
-      .setCustomId(`reklam_ask_emre_${ticketId}`)
-      .setLabel('💬 Danışmana Özel Bütçe Yaz')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('❓'),
-    new ButtonBuilder()
-      .setCustomId(`reklam_close_${ticketId}`)
-      .setLabel('🔒 Talebi Kapat')
-      .setStyle(ButtonStyle.Danger)
-  );
-
   return interaction.reply({
-    content: `🎁 <@${interaction.user.id}> için özel jest indirimi tanımlandı:`,
-    embeds: [discountEmbed],
-    components: [discountRow]
+    content: `ℹ️ Bu reklam masası net fiyat modeliyle çalışıyor. Paket kapsamını veya bütçenize uygun seçeneği yetkiliyle birlikte planlayabilirsiniz.`,
+    ephemeral: true,
   });
 }
 
 /**
- * Handles price approval (normal or discounted) and tags ekoyildiz_
+ * Handles net price approval and tags ekoyildiz_
  */
-async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = false) {
+async function handleReklamPriceApproval(interaction, ticketId) {
   const ticket = await Ticket.findOne({ ticketId });
   if (!ticket) {
     return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
   }
 
   ticket.priceApproved = true;
-  ticket.approvedDiscount = isDiscounted;
   ticket.approvedAt = new Date();
   await ticket.save();
 
@@ -1552,7 +1453,7 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
     .setDescription(
       `👑 **Müşteri:** <@${ticket.userId}> (\`${ticket.userName}\`)\n` +
       `📋 **Talep Konusu:** ${ticket.subject}\n` +
-      `💰 **Onaylanan Fiyat / Durum:** ${isDiscounted ? '🎁 %20 İndirimli Jest Teklifi Onaylandı' : '✅ Standart Fiyat Kataloğu Onaylandı'}\n` +
+      `💰 **Onaylanan durum:** ✅ Net fiyat kataloğu onaylandı\n` +
       `💳 **Ödeme Yolu:** SADECE İTEMSATIŞ\n` +
       `📅 **Tarih:** <t:${Math.floor(Date.now() / 1000)}:F>\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -1595,7 +1496,7 @@ async function handleReklamPriceApproval(interaction, ticketId, isDiscounted = f
         .setDescription(
           `Müşteri <@${ticket.userId}> (\`${ticket.userName}\`) reklam fiyatını onayladı!\n\n` +
           `📍 **Kanal:** <#${ticket.channelId}>\n` +
-          `💰 **Onay Türü:** ${isDiscounted ? '🎁 İndirimli Fiyat Onaylandı' : '✅ Standart Fiyat Onaylandı'}\n` +
+          `💰 **Onay türü:** ✅ Net fiyat onaylandı\n` +
           `📋 **Talep Açıklaması:**\n${ticket.description || 'Detay belirtilmedi'}`
         )
         .setColor(0x2ECC71)
@@ -1628,10 +1529,9 @@ function buildSimplePackageBrowser(currentIndex = 0, ticketId = 'general') {
     .setDescription(
       `Hiç kafanızı karıştırmayın! İşte sıradaki reklam seçeneğimiz:\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 **SADE & NET FİYATLAR (SADECE İTEMSATIŞ):**\n` +
-      `> 🎯 **1x Tek Seferlik İndirimli Fiyat:** ~~${pkg.regularPrice}~~ ➔ **${pkg.discountPrice}** *(%60 İndirim)*\n` +
-      `> ⭐ **3x Çoklu Yayın Paketi:** **${pkg.multiPackPrice}**\n` +
-      `> 🪙 **Robux ile Ödeme:** **${pkg.discountRobux}** ⚠️ *(Komisyonlar Dahil)*\n\n` +
+      `💰 **NET PAKET FİYATI (SADECE İTEMSATIŞ):**\n` +
+      `> 🎯 **Tek yayın:** **${pkg.price}**\n` +
+      `> 🪙 **Robux ile Ödeme:** **${pkg.robuxPrice}** ⚠️ *(Komisyonlar Dahil)*\n\n` +
       `📝 **Kısaca Ne İşe Yarar?**\n` +
       `*${pkg.summary}*\n\n` +
       `✨ **Öne Çıkan Özellikler:**\n${featureList}\n\n` +
@@ -1666,7 +1566,7 @@ function buildSimplePackageBrowser(currentIndex = 0, ticketId = 'general') {
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`reklam_select_pkg_${pkg.id}_${ticketId}`)
-      .setLabel(`🎯 Bu Paketi Seç (${pkg.discountPrice})`)
+      .setLabel(`🎯 Paketi Seç (${pkg.price})`)
       .setStyle(ButtonStyle.Success)
       .setEmoji('✅'),
     new ButtonBuilder()
@@ -1694,10 +1594,10 @@ function buildEkoThinkingEmbed(pkgId = '', ticketId = 'general') {
     .setDescription(
       `> [████████░░] **%80 Analiz Tamamlandı**\n\n` +
       `🤖 **Eko Yıldız Kamp & Büyüme Algoritması Devrede:**\n` +
-      `• Seçtiğiniz paket: **${pkg.title} (${pkg.discountPrice})** inceleniyor...\n` +
-      `• **Kampınıza & Roblox grubunuza nasıl daha çok adam çekebiliriz diye sistemlerimiz düşünüyor...**\n` +
-      `• Size özel kitle patlaması yaratacak **Ek Fırsat & Performans Garantisi** hesaplanıyor...\n\n` +
-      `*Lütfen 1 saniye bekleyin, kampınıza özel tavsiye ve fırsat kartı ekrana geliyor...*`
+      `• Seçtiğiniz paket: **${pkg.title} (${pkg.price})** inceleniyor...\n` +
+      `• Kapsam ve teslim planı reklam ekibine aktarılıyor...\n` +
+      `• Paketiniz için uygun yayın yerleşimi hazırlanıyor...\n\n` +
+      `*Kısa süre içinde planlama kartı açılacak.*`
     )
     .setColor(0x3498DB)
     .setFooter({ text: 'Eko Yıldız Büyüme Laboratuvarı • Analiz Ediliyor' });
@@ -1739,7 +1639,7 @@ function buildEkoUpsellPromptEmbed(pkgId = '', ticketId = 'general') {
   const embed = new EmbedBuilder()
     .setTitle('💡 EKO AKILLI BÜYÜME ANALİZİ TAMAMLANDI!')
     .setDescription(
-      `🎯 **Seçtiğiniz Ana Paket:** **${pkg.title}** ➔ **${pkg.discountPrice}**\n\n` +
+      `🎯 **Seçtiğiniz Ana Paket:** **${pkg.title}** — **${pkg.price}**\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `🔥 **KAMPINIZA DAHA ÇOK ADAM ÇEKMEK İÇİN SİSTEMİMİZİN ÖZEL TAVSİYESİ:**\n\n` +
       `> 🎁 **SADECE +${bumpPrice} TL FARKLA \`${bumpTitle.toUpperCase()}\` İSTER MİSİNİZ?**\n` +
@@ -1760,7 +1660,7 @@ function buildEkoUpsellPromptEmbed(pkgId = '', ticketId = 'general') {
       .setEmoji('🔥'),
     new ButtonBuilder()
       .setCustomId(`reklam_confirm_without_bump_${pkg.id}_${ticketId}`)
-      .setLabel(`❌ Hayır, Sadece ${pkg.discountPrice} Olanı Al`)
+      .setLabel(`❌ Hayır, ${pkg.price} paketle devam et`)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -2591,8 +2491,8 @@ async function triggerPurchaseSelection(interaction, ticketId) {
     .addOptions(
       REKLAM_PACKAGES.map(p =>
         new StringSelectMenuOptionBuilder()
-          .setLabel(`${p.title} — ${p.discountPrice}`)
-          .setDescription(`3x Paket: ${p.multiPackPrice} • Sadece İtemSatış`)
+          .setLabel(`${p.title} — ${p.price}`)
+          .setDescription(`${p.summary.slice(0, 90)} • Sadece İtemSatış`)
           .setValue(p.code)
           .setEmoji(p.emoji)
       )
@@ -2615,7 +2515,7 @@ async function handlePurchaseSelection(interaction) {
   const selectedValue = interaction.values[0];
 
   const matchedPkg = REKLAM_PACKAGES.find(p => p.code === selectedValue || p.id === selectedValue);
-  const packageName = matchedPkg ? `${matchedPkg.title} (${matchedPkg.discountPrice} / ${matchedPkg.discountRobux})` : selectedValue;
+  const packageName = matchedPkg ? `${matchedPkg.title} (${matchedPkg.price} / ${matchedPkg.robuxPrice})` : selectedValue;
 
   const ticket = await Ticket.findOne({ ticketId });
   if (!ticket) {
@@ -2629,7 +2529,7 @@ async function handlePurchaseSelection(interaction) {
   const managerPing = `<@1031620522406072350>`;
   if (interaction.channel) {
     await interaction.channel.send({
-      content: `🚨 **Yeni İtemSatış Siparişi Talebi!**\n<@${ticket.userId}> kullanıcısı **${packageName}** paketini İtemSatış üzerinden almak istiyor.\n💳 **Tutar:** ${matchedPkg?.discountPrice || ''} / ${matchedPkg?.discountRobux || ''}\nLütfen ilgilenin: ${managerPing}`
+      content: `🚨 **Yeni İtemSatış Siparişi Talebi!**\n<@${ticket.userId}> kullanıcısı **${packageName}** paketini İtemSatış üzerinden almak istiyor.\n💳 **Tutar:** ${matchedPkg?.price || ''} / ${matchedPkg?.robuxPrice || ''}\nLütfen ilgilenin: ${managerPing}`
     });
   }
 
@@ -2738,7 +2638,7 @@ async function checkAbandonedReklamTickets(client) {
         .setDescription(
           `Merhaba **${user.username}**! 👋\n\n` +
           `Eko Yıldız Reklam ve Sponsorluk Departmanı'nda başlattığınız reklam talebiniz rezerve edilmiş durumda bekliyor.\n\n` +
-          `⚠️ **Son 12 Saat:** Kampanyalı kontenjanınız ve indirim hakkınız **12 saat sonra** otomatik olarak sıradaki diğer kullanıcıya aktarılacaktır.\n\n` +
+          `⚠️ **Son 12 Saat:** Rezervasyonunuz **12 saat sonra** otomatik olarak sıradaki kullanıcıya aktarılacaktır.\n\n` +
           `💬 **Desteğe İhtiyacınız Var mı?**\n` +
           `İtemSatış ödeme adımlarında veya aklınıza takılan herhangi bir konuda yardıma ihtiyacınız varsa buradan doğrudan danışmanımız **Emre**'ye yazabilirsiniz!`
         )
