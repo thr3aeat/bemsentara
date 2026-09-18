@@ -9708,6 +9708,13 @@ function renderSettingsPage(user, query = {}) {
   return renderShell('Ayarlar - EkoYıldız', content, user, 'settings');
 }
 
+// ─────────────────────────────────────────────
+// ACCOUNT TRANSFER PAGE (MODERATOR)
+// ─────────────────────────────────────────────
+async function renderAccountTransferPage(user, staffProgress) {
+  return null;
+}
+
 function renderUserLogsPage(currentUser, targetUser, trustRecord, webLogs = [], extraLogs = {}) {
   const username = targetUser?.discordUsername || targetUser?.username || trustRecord?.username || "Bilinmeyen Kullanıcı";
   const avatar = targetUser?.discordAvatar || "https://cdn.discordapp.com/embed/avatars/0.png";
