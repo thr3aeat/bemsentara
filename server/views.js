@@ -9264,11 +9264,29 @@ function renderSettingsPage(user, query = {}) {
         }
       }
 
-      // Check URL hash for tab
-      if (window.location.hash === '#tab-legal' || window.location.hash === '#legal') {
-        const legalBtn = document.getElementById('tab-btn-legal');
-        if (legalBtn) switchSettingsTab('legal', legalBtn);
-      }
+      // Check URL hash for tab – wait for full DOM parse before querying elements
+      (function() {
+        function checkHashAndSwitch() {
+          const hash = window.location.hash;
+          if (hash === '#tab-legal' || hash === '#legal') {
+            const legalBtn = document.getElementById('tab-btn-legal');
+            if (legalBtn) switchSettingsTab('legal', legalBtn);
+          } else if (hash === '#tab-staff' || hash === '#staff') {
+            const staffBtn = document.querySelector('[onclick*="switchSettingsTab(\'staff\'"]');
+            if (staffBtn) switchSettingsTab('staff', staffBtn);
+          } else if (hash === '#tab-site' || hash === '#site') {
+            const siteBtn = document.querySelector('[onclick*="switchSettingsTab(\'site\'"]');
+            if (siteBtn) switchSettingsTab('site', siteBtn);
+          }
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', checkHashAndSwitch);
+        } else {
+          checkHashAndSwitch();
+        }
+        // Also handle hash changes without full page reload
+        window.addEventListener('hashchange', checkHashAndSwitch);
+      })();
 
       async function handleSaveProfile(e) {
         e.preventDefault();
