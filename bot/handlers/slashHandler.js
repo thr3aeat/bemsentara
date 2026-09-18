@@ -346,9 +346,20 @@ async function handleSlashCommand(interaction) {
           `\`/support\` - Destek menüsü\n` +
           `\`/ping\` - Bot gecikmesi\n` +
           `\`/stats\` - Bot istatistikleri\n` +
+          `\`/blog\` - İnteraktif topluluk blogları\n` +
           `\`/yardim\` - Bu komutu görüntüle\n\n` +
           `**Diğer kategoriler:** \`/yardim @kategori\``
         );
+        embed.addFields({
+          name: "📖 Resmi Blog & Topluluk Rehberleri",
+          value:
+            "ℹ️ [Roblox Askeri Kamp RP Dünyası](https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi)\n" +
+            "ℹ️ [Bedava Nitro ve Hacker Dramı (Phishing)](https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami)\n" +
+            "ℹ️ [Gece 03:47 Ticket Günlüğü](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar)\n" +
+            "ℹ️ [Dolandırıcılara Karşı Akıl Sağlığı (Scammer)](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi)\n" +
+            "ℹ️ [Tüm Blog ve Rehberler Kütüphanesi](https://ekoyildiz.com/blog)",
+          inline: false
+        });
       } else if (kategori === "economy") {
         embed.setDescription(
           `**Ekonomi Komutları:**\n` +
@@ -364,9 +375,26 @@ async function handleSlashCommand(interaction) {
           `\`/kelime_oyunu\` - Kelime oyunu\n` +
           `\`/oyunlar\` - Diğer oyunlar`
         );
+      } else if (kategori === "blog" || kategori === "rehber") {
+        embed.setDescription(
+          `**📖 Eko Yıldız Resmi Blog & Rehberler:**\n\n` +
+          `ℹ️ [Roblox Askeri Kamp RP Dünyası](https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi) — *Askeri RP perde arkası, nizamiye dramları ve rütbe hiyerarşisi.*\n\n` +
+          `ℹ️ [Bedava Nitro ve Hacker Dramı](https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami) — *Phishing tuzakları, token avcıları ve 3 adımda hesap kurtarma.*\n\n` +
+          `ℹ️ [Gece 03:47 Ticket Günlüğü](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar) — *Gece nöbetinde açılan efsanevi biletler ve sabır testi.*\n\n` +
+          `ℹ️ [Dolandırıcılara Karşı Akıl Sağlığı](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi) — *Scammer taktikleri ve karaliste güvenlik kuralları.*\n\n` +
+          `ℹ️ [Yeni Moderasyon Araçlarımız](https://ekoyildiz.com/blog/yeni-moderasyon-araclari)\n\n` +
+          `ℹ️ [Report Sistemi Yenilendi](https://ekoyildiz.com/blog/report-sistemi-yenilendi)\n\n` +
+          `ℹ️ [Discord ile Giriş Nasıl Çalışır?](https://ekoyildiz.com/blog/discord-ile-giris-nasil-calisir)\n\n` +
+          `ℹ️ [Tüm Blog ve Rehberler Kütüphanesi](https://ekoyildiz.com/blog)`
+        );
       }
 
       return interaction.editReply({ embeds: [embed] });
+    }
+
+    if (commandName === "blog" || commandName === "rehber") {
+      const { sendBlogMenu } = require("../services/helpService");
+      return sendBlogMenu(interaction);
     }
 
     // ────────── PERSONEL/STAFF KOMUTLARI ──────────────────────────────────

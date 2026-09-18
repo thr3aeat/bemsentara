@@ -289,18 +289,50 @@ function renderMainHomePage(userOrOptions = null) {
     }
     .announcement-close:hover { opacity: 1; }
 
-    /* ── Modern Sticky Navbar ── */
+    /* ── Liquid Glass Sticky Navbar ── */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 90;
-      background: rgba(6, 8, 19, 0.82);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border-subtle);
-      transition: all 0.3s ease;
+      background: radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 40%, rgba(139, 92, 246, 0.12) 75%, rgba(10, 12, 26, 0.78) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(15, 17, 35, 0.75) 100%);
+      backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.5), inset 0 1.5px 1px rgba(255, 255, 255, 0.85), inset 0 3px 6px rgba(255, 255, 255, 0.25), inset 0 -1.5px 2px rgba(129, 140, 248, 0.35), inset 0 -3px 8px rgba(236, 72, 153, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.15);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: visible;
+    }
+    .portal-nav::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,.7) 0%, rgba(168,85,247,.65) 35%, rgba(56,189,248,.65) 65%, rgba(255,255,255,.5) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: .85;
+      z-index: 1;
+    }
+    .portal-nav::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(460px circle at var(--liquid-mouse-x, 50%) var(--liquid-mouse-y, 50%), rgba(255,255,255,.22) 0%, rgba(139,92,246,.12) 35%, transparent 70%);
+      pointer-events: none;
+      opacity: var(--liquid-light-opacity, 0);
+      transition: opacity .35s ease;
+      mix-blend-mode: overlay;
+      z-index: 2;
+    }
+    .portal-nav:hover::after {
+      --liquid-light-opacity: 1;
     }
     .nav-inner {
+      position: relative;
+      z-index: 3;
       max-width: 1280px;
       margin: 0 auto;
       padding: 0.9rem 1.5rem;
@@ -364,19 +396,30 @@ function renderMainHomePage(userOrOptions = null) {
       font-size: 0.92rem;
       padding: 0.5rem 0.9rem;
       border-radius: 10px;
-      transition: all 0.2s ease;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
     }
     .nav-item-link:hover {
       color: #fff;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), inset 0 -1px 2px rgba(129,140,248,0.3), 0 4px 12px rgba(0,0,0,0.2);
     }
     .nav-item-link.highlight {
       color: #fff;
-      background: rgba(244, 63, 94, 0.15);
-      border: 1px solid rgba(244, 63, 94, 0.3);
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), 0 4px 14px rgba(244, 63, 94, 0.3);
+    }
+    .nav-item-link:active, .cmd-k-btn:active, .btn-portal-primary:active, .nav-brand:active {
+      transform: scale(0.935) translateY(2px) !important;
+      transition: transform 0.06s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
+      box-shadow: inset 0 2.5px 6px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.4), 0 0 18px rgba(139,92,246,0.55) !important;
     }
 
     .nav-actions {
@@ -2051,6 +2094,30 @@ function renderMainHomePage(userOrOptions = null) {
         alert('Sunucu hatası.');
       }
     }
+
+    // Liquid Glass Portal Nav Caustic Tracking & Ripple
+    (function(){
+      const nav = document.querySelector('.portal-nav');
+      if (!nav) return;
+      nav.addEventListener('mousemove', e => {
+        const r = nav.getBoundingClientRect();
+        nav.style.setProperty('--liquid-mouse-x', (e.clientX - r.left) + 'px');
+        nav.style.setProperty('--liquid-mouse-y', (e.clientY - r.top) + 'px');
+      });
+      nav.addEventListener('pointerdown', e => {
+        const btn = e.target.closest('a, button, .nav-brand');
+        if (!btn) return;
+        const r = btn.getBoundingClientRect();
+        const ripple = document.createElement('span');
+        ripple.className = 'liquid-ripple';
+        const d = Math.max(r.width, r.height);
+        ripple.style.width = ripple.style.height = d + 'px';
+        ripple.style.left = (e.clientX - r.left - d / 2) + 'px';
+        ripple.style.top = (e.clientY - r.top - d / 2) + 'px';
+        btn.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 500);
+      });
+    })();
   </script>
 </body>
 </html>`;

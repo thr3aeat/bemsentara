@@ -28,14 +28,9 @@ const SUPPORTERS_LIST = [
   'adamgeldi_adam4',
   'askasaf ve TSK ordusu',
   'swoxy',
-  'lejyon',
-  'funter'
+  'funter',
+  'lejyon'
 ];
-
-/**
- * Sends or updates the EkoYıldız "Teşekkürler" donors message using Discord Components V2.
- * (Accent color kaldırıldı — nötr/renksiz container)
- */
 async function sendThanksMessage(client, targetChannelId = THANKS_CHANNEL_ID, options = {}) {
   try {
     const channel = await client.channels.fetch(targetChannelId).catch(() => null);

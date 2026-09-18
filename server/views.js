@@ -827,47 +827,67 @@ function renderMainPage(user = null) {
       min-height: 100vh;
       overflow-x: hidden;
     }
-    .glow {
-      position:fixed; width:500px; height:500px; border-radius:50%;
-      opacity:0.1; z-index:0; filter:blur(180px); pointer-events:none;
-      animation: floatGlow 16s infinite ease-in-out alternate;
-    }
-    .glow-1 { background:#f43f5e; top:-150px; right:-150px; }
-    .glow-2 { background:#fb7185; bottom:-150px; left:-150px; animation-delay:-8s; }
-    @keyframes floatGlow {
-      0% { transform: scale(1) translate(0,0); }
-      100% { transform: scale(1.15) translate(20px,30px); }
-    }
-
     header {
-      background: rgba(10,10,20,0.55);
-      backdrop-filter: blur(28px) saturate(1.3);
-      -webkit-backdrop-filter: blur(28px) saturate(1.3);
-      border: 1px solid rgba(244,63,94,0.25);
+      background: radial-gradient(130% 120% at 50% -15%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(244, 63, 94, 0.14) 70%, rgba(10, 10, 24, 0.8) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(18, 16, 30, 0.76) 100%);
+      backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 50px;
       padding: 0.65rem 2rem;
       display: flex; justify-content: space-between; align-items: center;
       position: sticky; top: 1.5rem; z-index: 200;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+      box-shadow: 0 28px 64px -16px rgba(0,0,0,0.55), 0 12px 26px -8px rgba(0,0,0,0.35), inset 0 1.5px 1px rgba(255,255,255,0.85), inset 0 3px 6px rgba(255,255,255,0.25), inset 0 -1.5px 2px rgba(244,63,94,0.38), inset 0 -3px 8px rgba(236,72,153,0.18), 0 0 0 1px rgba(255,255,255,0.18);
       max-width: 1200px; margin: 1.5rem auto 0;
       width: calc(100% - 3rem);
+      overflow: visible;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,.7) 0%, rgba(244,63,94,.65) 35%, rgba(168,85,247,.65) 65%, rgba(255,255,255,.5) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: .85;
+      z-index: 1;
     }
     .logo {
       display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;
+      position: relative; z-index: 2; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
     }
+    .logo:active { transform: scale(0.94) translateY(1.5px) !important; }
     .logo span {
       font-weight: 800; font-size: 1.45rem;
       background: linear-gradient(135deg, #ffffff 0%, #fda4af 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       letter-spacing: -0.5px;
     }
-    nav { display: flex; gap: 1rem; align-items: center; }
-    nav a {
-      color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.95rem;
-      padding: 0.45rem 0.9rem; border-radius: 30px; transition: all 0.3s;
+    nav { display: flex; gap: 0.65rem; align-items: center; position: relative; z-index: 2; }
+    nav a, nav button, .nav-btn-login {
+      position: relative; overflow: hidden; user-select: none;
+      transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
     }
-    nav a:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-
+    nav a {
+      color: var(--muted); text-decoration: none; font-weight: 600; font-size: 0.92rem;
+      padding: 0.45rem 1rem; border-radius: 30px; border: 1px solid transparent;
+    }
+    nav a:hover {
+      color: var(--text); background: rgba(255,255,255,0.1);
+      transform: translateY(-1px) scale(1.02);
+      border-color: rgba(255,255,255,0.2);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 4px 12px rgba(0,0,0,0.2);
+    }
+    nav a:active, nav button:active, .nav-btn-login:active {
+      transform: scale(0.935) translateY(2px) !important;
+      transition: transform 0.06s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
+      box-shadow: inset 0 2.5px 6px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.4), 0 0 18px rgba(244,63,94,0.55) !important;
+    }
     .nav-btn-login {
       background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
       border: 1px solid rgba(244,63,94,0.4);

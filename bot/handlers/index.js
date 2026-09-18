@@ -2381,9 +2381,9 @@ function initializeDiscordHandlers(client) {
     }
 
     // ── Gelişmiş s! ve ! Prefix Komut Sistemi ─────────────────────────────
-    if (message.guild && !message.author.bot && (content.startsWith('s!') || content.startsWith('S!') || content.startsWith('!') || content.startsWith('.'))) {
+    if (message.guild && !message.author.bot && (content.startsWith('s!') || content.startsWith('S!') || content.startsWith('e!') || content.startsWith('E!') || content.startsWith('!') || content.startsWith('.'))) {
       let prefixLen = 1;
-      if (content.toLowerCase().startsWith('s!')) prefixLen = 2;
+      if (content.toLowerCase().startsWith('s!') || content.toLowerCase().startsWith('e!')) prefixLen = 2;
 
       const args = content.slice(prefixLen).trim().split(/ +/);
       const cmd = args.shift().toLowerCase();
@@ -2400,7 +2400,14 @@ function initializeDiscordHandlers(client) {
         return;
       }
 
-      // 1) s!yardım / s!help
+            // 1.1) s!blog / s!rehber (Resmi Blog & Rehberler)
+      if (['blog', 'bloglar', 'rehber', 'rehberler', 'bilgi', 'yazilar', 'yazılar', 'makale', 'makaleler'].includes(cmd)) {
+        const { sendBlogMenu } = require("../services/helpService");
+        await sendBlogMenu(message);
+        return;
+      }
+
+// 1) s!yardım / s!help
       if (['yardım', 'yardim', 'help', 'komutlar', 'kategoriler'].includes(cmd)) {
         const { sendHelpMenu } = require("../services/helpService");
         await sendHelpMenu(message);

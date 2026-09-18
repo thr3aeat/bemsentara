@@ -342,6 +342,13 @@ Lütfen ${dateStr} tarihi için:
     return;
   }
 
+  // ── blog: Resmi Blog & Topluluk Rehberleri ─────────────────────────
+  if (commandName === "blog" || commandName === "rehber" || commandName === "bilgi") {
+    const { sendBlogMenu } = require("../services/helpService");
+    await sendBlogMenu(interaction);
+    return;
+  }
+
   // ── uyar: Resmi Disiplin Uyarısı Verme ───────────────────────────
   if (commandName === "uyar" || commandName === "warn") {
     if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers)) {

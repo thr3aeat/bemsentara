@@ -12,7 +12,11 @@ function buildTicketUserPanel(ticket) {
   const embed = new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle('EkoYıldız Destek Merkezi')
-    .setDescription(`Merhaba <@${userId}>, destek talebiniz başarıyla oluşturuldu.\n\nBir ekip üyesi mümkün olan en kısa sürede sizinle ilgilenecektir. Sürecin daha hızlı ilerlemesi için yaşadığınız problemi mümkün olduğunca detaylı anlatabilirsiniz.`)
+    .setDescription(
+      `Merhaba <@${userId}>, destek talebiniz başarıyla oluşturuldu.\n\n` +
+      `Bir ekip üyesi mümkün olan en kısa sürede sizinle ilgilenecektir. Sürecin daha hızlı ilerlemesi için yaşadığınız problemi mümkün olduğunca detaylı anlatabilirsiniz.\n\n` +
+      `ℹ️ [Yetkili Günlüğü & Ticket Açarken Bilinmesi Gerekenler](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar)`
+    )
     .addFields(
       { name: 'Ticket ID', value: `\`${id}\``, inline: true },
       { name: 'Durum', value: '🟡 Yetkili bekleniyor', inline: true },

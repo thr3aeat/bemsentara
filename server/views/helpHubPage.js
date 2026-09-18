@@ -72,7 +72,131 @@ function renderSafetyGuidePage(slug) {
 }
 
 function renderBlogPage() { const categories = ['Tümü', 'Haberler', 'Güncellemeler', 'Topluluk', 'Geliştirici', 'Güvenlik']; return shell('Blog', `<section class="hero"><div class="eyebrow">EKOYILDIZ JOURNAL</div><h1>Toplulukta olan biteni anlatıyoruz.</h1><p>Güncellemelerden güvenliğe, geliştirici notlarından topluluğun öne çıkan işlerine kadar; neyi neden yaptığımızı burada paylaşırız.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px">${categories.map(c => `<span style="border:1px solid var(--line);border-radius:20px;padding:7px 11px;font-weight:700;font-size:.8rem">${c}</span>`).join('')}</div></section><section class="section" style="padding-top:10px"><div class="feature-grid">${postCard(posts[0])}<div class="post-stack">${posts.slice(1,3).map(p=>postCard(p,true)).join('')}</div></div></section><section class="section"><div class="feature-grid" style="grid-template-columns:repeat(3,1fr)">${posts.slice(3).map(p=>postCard(p,true)).join('')}</div></section>`); }
-function renderBlogPostPageLegacy(slug) { const post = posts.find(p => p.slug === slug); if (!post) return shell('Yazı bulunamadı', '<section class="article"><div class="eyebrow">404</div><h1>Bu yazı bulunamadı.</h1><a class="button" href="/blog">Bloga dön</a></section>'); const author = authors[post.author]; const related = posts.filter(p=>p.slug!==post.slug && (p.category===post.category || p.author===post.author)).slice(0,2); const feedback = `<section class="article-feedback" data-post="${esc(post.slug)}"><b>Bu yazı faydalı oldu mu?</b><p>Geri bildirimin, sıradaki rehberleri daha net hazırlamamıza yardım eder.</p><div class="reaction-row"><button class="reaction" data-reaction="helpful">👍 Faydalı <span>0</span></button><button class="reaction" data-reaction="like">✦ Beğendim <span>0</span></button><button class="reaction" data-reaction="more">🧭 Daha fazla örnek</button></div><small class="reaction-note" aria-live="polite"></small></section>`; const script = `<script>(()=>{const box=document.querySelector('.article-feedback');if(!box)return;const key='eko-blog-reaction-'+box.dataset.post;let state={};try{state=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}const notes={helpful:'Geri bildirimin kaydedildi. Teşekkürler!',like:'Bu yazıyı beğendiğini not aldık. ✦',more:'Daha fazla örnek isteğini editör ekibine iletmek üzere not aldık.'};box.querySelectorAll('[data-reaction]').forEach(btn=>{const type=btn.dataset.reaction;if(state[type])btn.classList.add('is-active');const count=btn.querySelector('span');if(count)count.textContent=state[type]?1:0;btn.addEventListener('click',()=>{state[type]=!state[type];localStorage.setItem(key,JSON.stringify(state));btn.classList.toggle('is-active',state[type]);if(count)count.textContent=state[type]?1:0;box.querySelector('.reaction-note').textContent=state[type]?notes[type]:'Geri bildirimin geri alındı.'})})})()</script>`; return shell(post.title, `<article class="article"><div class="tag">${esc(post.category)} · ${esc(post.date)}</div><h1>${esc(post.title)}</h1><p class="lede">${esc(post.excerpt)}</p><div class="byline">${mascotMarkup(author)}<div><a href="/yazar/${encodeURIComponent(author.slug)}">${esc(author.name)}</a><div style="color:var(--muted);font-size:.84rem">${esc(author.role)} · ${esc(author.mascotName)}</div></div></div>${post.body.map((p,i)=>i===1?'<h2>Neler değişti?</h2><p>'+esc(p)+'</p>':'<p>'+esc(p)+'</p>').join('')}${feedback}<div class="article-cta"><div><div class="tag">İLGİLİ MAKALELER</div><strong>Safety Center’da bu konu hakkında bilgi edin.</strong></div><a class="button" href="/yardim">Safety Center →</a></div></article>${related.length?'<section class="section"><div class="eyebrow">İLGİLİ YAZILAR</div><div class="feature-grid" style="grid-template-columns:repeat(2,1fr)">'+related.map(p=>postCard(p,true)).join('')+'</div></section>':''}${script}`); }
+function renderBlogPostPageLegacy(slug) {
+  const post = posts.find(p => p.slug === slug);
+  if (!post) return shell('Yazı bulunamadı', '<section class="article"><div class="eyebrow">404</div><h1>Bu yazı bulunamadı.</h1><a class="button" href="/blog">Bloga dön</a></section>');
+  const author = authors[post.author];
+  const related = posts.filter(p=>p.slug!==post.slug && (p.category===post.category || p.author===post.author)).slice(0,2);
+  
+  const formatParagraph = (p) => {
+    if (typeof p !== 'string') return '';
+    const raw = p.trim();
+    if (raw.startsWith('<')) return raw;
+    if (raw.startsWith('### ')) return `<h3>${esc(raw.slice(4))}</h3>`;
+    if (raw.startsWith('## ')) return `<h2>${esc(raw.slice(3))}</h2>`;
+    if (raw.startsWith('> ')) return `<blockquote>${esc(raw.slice(2))}</blockquote>`;
+    
+    // Bold, italic, code
+    let formatted = esc(raw)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>');
+    return `<p>${formatted}</p>`;
+  };
+
+  const feedback = `<section class="article-feedback" data-post="${esc(post.slug)}">
+    <b>Bu yazı faydalı oldu mu?</b>
+    <p>Geri bildirimin, sıradaki rehberleri daha net ve eğlenceli hazırlamamıza yardım eder.</p>
+    <div class="reaction-row">
+      <button class="reaction" data-reaction="helpful">👍 Faydalı <span>0</span></button>
+      <button class="reaction" data-reaction="like">✦ Beğendim <span>0</span></button>
+      <button class="reaction" data-reaction="laugh">😂 Güldürdü <span>0</span></button>
+      <button class="reaction" data-reaction="more">🧭 Daha fazla içerik</button>
+    </div>
+    <small class="reaction-note" aria-live="polite"></small>
+  </section>`;
+
+  const script = `<style>
+    .callout-box{margin:28px 0;padding:20px 24px;border-radius:16px;background:#f7f6ff;border:1px solid #dcd7ff;color:#2d2b4e;position:relative}
+    .callout-box.fun{background:#fff8ee;border-color:#f8dfba;color:#5a3f12}
+    .callout-box.alert{background:#fff1f3;border-color:#ffd1d8;color:#6d1827}
+    .callout-title{display:flex;align-items:center;gap:8px;font:800 1.05rem Manrope;margin-bottom:8px}
+    .blog-accordion{margin:24px 0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.03)}
+    .blog-accordion summary{padding:16px 20px;font:800 .98rem Manrope;cursor:pointer;background:#fafafc;user-select:none;outline:none;display:flex;align-items:center;gap:10px}
+    .blog-accordion summary::-webkit-details-marker{display:none}
+    .blog-accordion summary:hover{background:#f1f0ff;color:var(--violet)}
+    .blog-accordion-content{padding:20px;border-top:1px solid var(--line);color:#474752;line-height:1.75;font-size:1rem}
+    .interactive-quiz{margin:32px 0;padding:24px;border-radius:18px;background:linear-gradient(145deg,#1c1b29,#13121f);color:#fff;border:1px solid #3c3a56}
+    .quiz-question{font:800 1.15rem Manrope;margin-bottom:14px;color:#f0f0ff}
+    .quiz-options{display:grid;gap:10px;margin-top:14px}
+    .quiz-btn{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:12px;border:1px solid #444263;background:rgba(255,255,255,.05);color:#fff;font:650 .92rem 'DM Sans';cursor:pointer;transition:all .18s ease;text-align:left}
+    .quiz-btn:hover{background:rgba(255,255,255,.12);border-color:#7165e7}
+    .quiz-feedback{margin-top:14px;padding:14px;border-radius:10px;font-size:.9rem;line-height:1.55;display:none}
+    .quiz-feedback.show{display:block}
+    .quiz-feedback.correct{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7}
+    .quiz-feedback.wrong{background:rgba(251,113,133,.15);border:1px solid rgba(251,113,133,.3);color:#fda4af}
+  </style>
+  <script>(()=>{
+    const box=document.querySelector('.article-feedback');
+    if(box){
+      const key='eko-blog-reaction-'+box.dataset.post;
+      let state={};
+      try{state=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+      const notes={
+        helpful:'Geri bildirimin kaydedildi. Teşekkürler!',
+        like:'Bu yazıyı beğendiğini not aldık. ✦',
+        laugh:'Gülümsemene ortak olduk! Eğlenceli içerikler devam edecek. 😄',
+        more:'Daha fazla detaylı örnek isteğini editör masasına ilettik.'
+      };
+      box.querySelectorAll('[data-reaction]').forEach(btn=>{
+        const type=btn.dataset.reaction;
+        if(state[type])btn.classList.add('is-active');
+        const count=btn.querySelector('span');
+        if(count)count.textContent=state[type]?1:0;
+        btn.addEventListener('click',()=>{
+          state[type]=!state[type];
+          localStorage.setItem(key,JSON.stringify(state));
+          btn.classList.toggle('is-active',state[type]);
+          if(count)count.textContent=state[type]?1:0;
+          box.querySelector('.reaction-note').textContent=state[type]?notes[type]:'Geri bildirimin güncellendi.';
+        });
+      });
+    }
+    // Quiz etkileşimi
+    document.querySelectorAll('.interactive-quiz').forEach(quiz=>{
+      const fb=quiz.querySelector('.quiz-feedback');
+      quiz.querySelectorAll('.quiz-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const isCorrect=btn.dataset.correct==='true';
+          const msg=btn.dataset.explain||(isCorrect?'Tebrikler, doğru tespit!':'Yanlış seçenek ama iyi denemeydi!');
+          if(fb){
+            fb.className='quiz-feedback show '+(isCorrect?'correct':'wrong');
+            fb.innerHTML=(isCorrect?'✅ ':'❌ ')+msg;
+          }
+        });
+      });
+    });
+  })()</script>`;
+
+  return shell(post.title, `<article class="article">
+    <div class="tag">${esc(post.category)} · ${esc(post.date)}</div>
+    <h1>${esc(post.title)}</h1>
+    <p class="lede">${esc(post.excerpt)}</p>
+    <div class="byline">
+      ${mascotMarkup(author)}
+      <div>
+        <a href="/yazar/${encodeURIComponent(author.slug)}">${esc(author.name)}</a>
+        <div style="color:var(--muted);font-size:.84rem">${esc(author.role)} · ${esc(author.mascotName)}</div>
+      </div>
+    </div>
+    ${post.body.map(formatParagraph).join('')}
+    ${feedback}
+    <div class="article-cta">
+      <div>
+        <div class="tag">İLGİLİ MAKALELER</div>
+        <strong>Safety Center ve diğer rehberlerle güvenliğini pekiştir.</strong>
+      </div>
+      <a class="button" href="/yardim">Safety Center →</a>
+    </div>
+  </article>
+  ${related.length?`<section class="section">
+    <div class="eyebrow">İLGİLİ YAZILAR</div>
+    <div class="feature-grid" style="grid-template-columns:repeat(2,1fr)">
+      ${related.map(p=>postCard(p,true)).join('')}
+    </div>
+  </section>`:''}
+  ${script}`);
+}
 function renderBlogPostPage(slug) { const post = posts.find((item) => item.slug === slug); const html = renderBlogPostPageLegacy(slug); if (!post) return html; return html.replace(`${esc(post.category)} · ${esc(post.date)}`, `${esc(post.category)} · ${esc(post.date)} · ${readingTime(post)} dk okuma`); }
 function renderAuthorPage(slug) { const author = authors[slug]; if (!author) return shell('Yazar bulunamadı', '<section class="profile"><h1>Yazar bulunamadı.</h1></section>'); const authorPosts=posts.filter(p=>p.author===slug); return shell(author.name, `<section class="profile"><div class="profile-hero"><div class="profile-mascot mascot ${esc(author.mascot)}" data-badge="✦"><img src="/public/assets/mascot.png" alt="${esc(author.mascotName)}"></div><div><div class="eyebrow" style="color:#f5a6b9">MASKOT YAZAR PROFİLİ</div><h1>${esc(author.name)}</h1><p><strong>${esc(author.role)}</strong> · ${esc(author.bio)}</p><div class="mascot-status"><i></i>${esc(author.status)}</div><div class="mascot-actions"><button id="mascot-wave">${esc(author.mascotName)}’na el salla</button><button id="follow-author">Yazıları hatırla</button></div><div class="mascot-message" id="mascot-message"></div></div></div><div class="profile-grid"><section class="section" style="padding-top:0;border:0"><div class="eyebrow">YAZILARI</div><h2>${authorPosts.length} yayın</h2><div class="author-posts">${authorPosts.map(p=>postCard(p,true)).join('')}</div></section><aside class="profile-note"><b>${esc(author.mascotName)} ne yapıyor?</b><p>${esc(author.specialty)} alanında yazılar hazırlıyor; yeni bir not yayımlandığında blog ana sayfasında görünecek.</p><small>✦ Maskota tıklamayı dene.</small></aside></div></section><script>const mascot=document.querySelector('.profile-mascot'),message=document.getElementById('mascot-message'),wave=document.getElementById('mascot-wave'),follow=document.getElementById('follow-author');function hello(){mascot.classList.remove('mascot-wave');void mascot.offsetWidth;mascot.classList.add('mascot-wave');message.textContent='✦ ${esc(author.mascotName)} selamını aldı. Yeni yazılar için bloga göz at!'}mascot.addEventListener('click',hello);wave.addEventListener('click',hello);const key='eko-follow-${esc(author.slug)}';if(localStorage.getItem(key)){follow.textContent='Bu yazar hatırlandı'}follow.addEventListener('click',()=>{localStorage.setItem(key,'1');follow.textContent='Bu yazar hatırlandı';message.textContent='✦ Tarayıcında bu yazarın notlarını takip etmeyi hatırlayacağız.'})</script>`); }
 module.exports = { renderHelpHubPage, renderSafetyCenterPage, renderSafetyGuidePage, renderBlogPage, renderBlogPostPage, renderAuthorPage };

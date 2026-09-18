@@ -184,8 +184,9 @@ async function renderBlacklist(client) {
     } else {
       for (const person of people) {
         const line = formatItemLine(person);
+        const hasValidPhoto = isValidImageUrl(person.imageUrl);
 
-        if (person.imageUrl) {
+        if (hasValidPhoto) {
           // Önceki biriken metni yazdır
           flushTextBuffer();
 
@@ -199,12 +200,16 @@ async function renderBlacklist(client) {
           );
           currentComponentCount++;
 
-          currentContainer.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-              new MediaGalleryItemBuilder().setURL(person.imageUrl)
-            )
-          );
-          currentComponentCount++;
+          try {
+            currentContainer.addMediaGalleryComponents(
+              new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(person.imageUrl.trim())
+              )
+            );
+            currentComponentCount++;
+          } catch (e) {
+            console.warn(`[blacklist] Failed to attach photo for ${person.name}:`, e.message);
+          }
         } else {
           // Fotoğrafı yoksa buffer'a ekle
           if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
@@ -239,8 +244,9 @@ async function renderBlacklist(client) {
     } else {
       for (const group of groups) {
         const line = formatItemLine(group);
+        const hasValidPhoto = isValidImageUrl(group.imageUrl);
 
-        if (group.imageUrl) {
+        if (hasValidPhoto) {
           flushTextBuffer();
 
           if (currentComponentCount >= 6) {
@@ -252,12 +258,16 @@ async function renderBlacklist(client) {
           );
           currentComponentCount++;
 
-          currentContainer.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-              new MediaGalleryItemBuilder().setURL(group.imageUrl)
-            )
-          );
-          currentComponentCount++;
+          try {
+            currentContainer.addMediaGalleryComponents(
+              new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(group.imageUrl.trim())
+              )
+            );
+            currentComponentCount++;
+          } catch (e) {
+            console.warn(`[blacklist] Failed to attach photo for group ${group.name}:`, e.message);
+          }
         } else {
           if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
             flushTextBuffer();
@@ -279,7 +289,10 @@ async function renderBlacklist(client) {
         .setDivider(true)
     );
     currentContainer.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`*Son Güncelleme: <t:${Math.floor(Date.now() / 1000)}:f>*`)
+      new TextDisplayBuilder().setContent(
+        `*Son Güncelleme: <t:${Math.floor(Date.now() / 1000)}:f>*\n` +
+        `ℹ️ [Dolandırıcılara Karşı Akıl Sağlığını Koruma Rehberi & Karaliste](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi)`
+      )
     );
     currentComponentCount += 2;
     pushCurrentContainer();
@@ -328,12 +341,20 @@ async function renderBlacklist(client) {
 }
 
 /**
+ * Helper to validate URL
+ */
+const isValidImageUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  return /^https?:\/\/\S+$/i.test(url.trim());
+};
+
+/**
  * Parses and processes a message written in the blacklist channel.
  */
 async function handleBlacklistMessage(message, client) {
   if (message.author.bot) return;
 
-  const content = message.content.trim();
+  const rawContent = message.content ? message.content.trim() : '';
   const logChannel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
 
   const deleteMessage = () => {
@@ -357,27 +378,58 @@ async function handleBlacklistMessage(message, client) {
       (a.contentType && a.contentType.startsWith('image/')) ||
       /\.(png|jpe?g|webp|gif)$/i.test(a.name || '')
     ) || message.attachments.first();
+
     if (imgAtt) {
-      imageUrl = imgAtt.url;
+      // Discord ephemeral URL'leri kullanıcı mesajı silinince silinmesin diye log kanalına yedekle
+      if (logChannel) {
+        try {
+          const backupMsg = await logChannel.send({
+            content: `📷 **[KARALİSTE GÖRSEL YEDEK]** <@${message.author.id}> tarafından yüklenen görsel:`,
+            files: [{ attachment: imgAtt.url, name: imgAtt.name || 'blacklist_image.png' }]
+          }).catch(() => null);
+          if (backupMsg && backupMsg.attachments && backupMsg.attachments.size > 0) {
+            imageUrl = backupMsg.attachments.first().url;
+          } else {
+            imageUrl = imgAtt.url;
+          }
+        } catch (_) {
+          imageUrl = imgAtt.url;
+        }
+      } else {
+        imageUrl = imgAtt.url;
+      }
     }
   }
 
   // Metin içinde görsel URL'si varsa yakala
   if (!imageUrl) {
-    const urlMatch = content.match(/https?:\/\/\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?/i);
+    const urlMatch = rawContent.match(/https?:\/\/\S+/i);
     if (urlMatch) {
       imageUrl = urlMatch[0];
     }
   }
 
+  // URL'yi metinden temizle ve ayrıştırma için kullan
+  let content = rawContent.replace(/https?:\/\/\S+/gi, '').replace(/\s+/g, ' ').trim();
+
+  // Eğer mesajda sadece resim varsa ve metin boşsa
+  if (!content && imageUrl) {
+    return sendWarning(`⚠️ **Fotoğraf kime ait?** Lütfen fotoğraf ile birlikte kişinin adını yazın (Örn: \`alionur738\` veya \`alionur738 (sebep)\`).`);
+  }
+
+  if (!content && !imageUrl) {
+    deleteMessage();
+    return;
+  }
+
   const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const additionPattern = /^\(?([^)]+?)\)?\s*\(([^)]+?)\)$/;
-  const groupAdditionPattern = /^\(?([^)]+?)\)?\s*grubu\s*\(([^)]+?)\)$/i;
-  const removalPattern = /^\(?([^)]+?)\)?\s*\(sorunçözüldü\)\s*Kaldırıldı$/i;
-  const completeRemovalPattern = /^\(?([^)]+?)\)?\s*Tamamen\s*kaldırıldı$/i;
-  const reopenPattern = /^\(?([^)]+?)\)?\s*\(sorun\s*çözülmemiş\)\s*Yeniden\s*Açıldı$/i;
   const removePhotoPattern = /^\(?([^)]+?)\)?\s*\((?:foto|fotograf|fotoğraf|resim)\s*(?:sil|kaldır|kaldir)\)$/i;
+  const completeRemovalPattern = /^\(?([^)]+?)\)?\s*Tamamen\s*kaldırıldı$/i;
+  const removalPattern = /^\(?([^)]+?)\)?\s*\(sorun\s*çözüldü\)\s*Kaldırıldı$/i;
+  const reopenPattern = /^\(?([^)]+?)\)?\s*\(sorun\s*çözülmemiş\)\s*Yeniden\s*Açıldı$/i;
+  const groupAdditionPattern = /^\(?([^)]+?)\)?\s*grubu\s*(?:\(([^)]*?)\))?$/i;
+  const additionPattern = /^\(?([^)]+?)\)?\s*\(([^)]+?)\)$/;
   const singleNamePattern = /^\(?([^\(\)\r\n]+?)\)?$/;
 
   // 1. Fotoğraf Kaldırma
@@ -511,13 +563,13 @@ async function handleBlacklistMessage(message, client) {
   if (groupAdditionPattern.test(content)) {
     const match = content.match(groupAdditionPattern);
     const groupName = match[1].trim();
-    const reason = match[2].trim();
+    const reason = match[2] ? match[2].trim() : '';
 
     try {
       let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(groupName)}$`, 'i') }, type: 'group' });
       let isNew = false;
       if (existing) {
-        existing.reason = reason;
+        if (reason) existing.reason = reason;
         existing.status = 'active';
         existing.removedAt = null;
         if (imageUrl) existing.imageUrl = imageUrl;
@@ -540,7 +592,7 @@ async function handleBlacklistMessage(message, client) {
         const cleanName = groupName.replace(/[<@!>]/g, "");
         const photoInfo = imageUrl ? ' 📸 *(Fotoğraf eklendi)*' : '';
         await logChannel.send({
-          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi. (Sebep: ${reason})${photoInfo}${isNew ? '' : ' *(Güncellendi)*'}`,
+          content: `🛡️ **[KARALİSTE GRUP EKLENDİ]** <@${message.author.id}> tarafından **${cleanName}** grubu eklendi.${reason ? ` (Sebep: ${reason})` : ''}${photoInfo}${isNew ? '' : ' *(Güncellendi)*'}`,
           allowedMentions: { users: [] }
         }).catch(() => {});
       }
@@ -600,15 +652,6 @@ async function handleBlacklistMessage(message, client) {
     const match = content.match(singleNamePattern);
     let name = match[1].trim();
 
-    // Eğer link içeriyorsa linki ayıkla
-    if (imageUrl && name.includes(imageUrl)) {
-      name = name.replace(imageUrl, '').trim();
-    }
-
-    if (!name && imageUrl) {
-      return sendWarning(`⚠️ **Fotoğraf kime ait?** Lütfen fotoğraf ile birlikte kişinin adını yazın (Örn: \`alionur738\`).`);
-    }
-
     if (name) {
       try {
         let existing = await Blacklist.findOne({ name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } });
@@ -654,6 +697,8 @@ async function handleBlacklistMessage(message, client) {
     }
   }
 
+  // Herhangi bir desene uymuyorsa bilgilendir
+  return sendWarning(`⚠️ **Geçersiz format!**\nDoğru formatlar:\n• \`KullanıcıAdı (Sebep)\`\n• \`KullanıcıAdı\` *(Fotoğrafla)*\n• \`GrupAdı grubu (Sebep)\`\n• \`KullanıcıAdı (foto sil)\`\n• \`KullanıcıAdı (sorunçözüldü) Kaldırıldı\`\n• \`KullanıcıAdı Tamamen kaldırıldı\``);
 }
 
 /**

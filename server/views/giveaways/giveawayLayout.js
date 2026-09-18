@@ -85,7 +85,7 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
       overflow-x: hidden;
     }
 
-    /* ── ÖZEL ÇEKİLİŞ NAVBAR ── */
+    /* ── Liquid Glass Çekiliş Topbar ── */
     .gw-header {
       position: sticky;
       top: 1rem;
@@ -93,16 +93,48 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
       max-width: 1280px;
       width: calc(100% - 2rem);
       margin: 1rem auto 0;
-      background: rgba(10, 11, 24, 0.85);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--gw-border);
+      background: radial-gradient(130% 120% at 50% -15%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(139, 92, 246, 0.12) 70%, rgba(10, 11, 24, 0.82) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(16, 18, 36, 0.8) 100%);
+      backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 24px;
       padding: 0.75rem 1.75rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(139, 92, 246, 0.1);
+      box-shadow: 0 28px 64px -16px rgba(0,0,0,0.55), 0 12px 26px -8px rgba(0,0,0,0.35), inset 0 1.5px 1px rgba(255,255,255,0.85), inset 0 3px 6px rgba(255,255,255,0.25), inset 0 -1.5px 2px rgba(129,140,248,0.38), inset 0 -3px 8px rgba(236,72,153,0.18), 0 0 0 1px rgba(255,255,255,0.18);
+      overflow: visible;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .gw-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,.7) 0%, rgba(168,85,247,.65) 35%, rgba(56,189,248,.65) 65%, rgba(255,255,255,.5) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: .85;
+      z-index: 1;
+    }
+    .gw-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(460px circle at var(--liquid-mouse-x, 50%) var(--liquid-mouse-y, 50%), rgba(255,255,255,.22) 0%, rgba(139,92,246,.12) 35%, transparent 70%);
+      pointer-events: none;
+      opacity: var(--liquid-light-opacity, 0);
+      transition: opacity .35s ease;
+      mix-blend-mode: overlay;
+      z-index: 2;
+    }
+    .gw-header:hover::after {
+      --liquid-light-opacity: 1;
     }
 
     .gw-brand {
@@ -163,13 +195,20 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
     }
     .gw-nav-link:hover {
       color: #ffffff;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(129,140,248,0.3), 0 4px 14px rgba(0,0,0,0.25);
     }
     .gw-nav-link.active {
       color: #ffffff;
-      background: rgba(139, 92, 246, 0.18);
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(236, 72, 153, 0.22) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: inset 0 1.5px 1px rgba(255,255,255,0.9), 0 0 18px rgba(139, 92, 246, 0.35);
+    }
+    .gw-nav-link:active, .gw-brand:active, .btn-gw-admin:active, .gw-user-card:active, .btn-return-main:active {
+      transform: scale(0.935) translateY(2px) !important;
+      transition: transform 0.06s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
+      box-shadow: inset 0 2.5px 6px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.4), 0 0 18px rgba(139,92,246,0.55) !important;
     }
 
     .gw-nav-actions {

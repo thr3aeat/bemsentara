@@ -149,6 +149,7 @@ const CATEGORIES = {
     minRole: 'user',
     commands: [
       { name: `${PREFIX}yardım / ${PREFIX}help`, desc: 'Tüm komut kategorilerini ve yetkinize özel kullanım rehberini açar.' },
+      { name: `${PREFIX}blog / ${PREFIX}rehber`, desc: 'İnteraktif topluluk bloglarını ve rehber bağlantılarını listeler.' },
       { name: `${PREFIX}rank / ${PREFIX}seviye [@üye]`, desc: 'Seviye, XP ve mesaj istatistik kartınızı görüntüler.' },
       { name: `${PREFIX}leaderboard / ${PREFIX}top`, desc: 'Sunucu seviye, XP ve mesaj sıralamasını listeler.' },
       { name: `${PREFIX}avatar [@üye]`, desc: 'Kullanıcının profil fotoğrafını yüksek çözünürlükte gösterir.' },
@@ -163,6 +164,22 @@ const CATEGORIES = {
       { name: `${PREFIX}dogrula`, desc: 'Roblox ve Discord hesap doğrulama sihirbazını başlatır.' },
       { name: `${PREFIX}kurallar`, desc: 'Sunucu anayasasını ve kurallarını okuyup onaylar.' },
       { name: `${PREFIX}ticket`, desc: 'Destek talebi (Ticket) kategorisini ve menüsünü açar.' }
+    ]
+  },
+  blog: {
+    title: '📖 Resmi Blog & Topluluk Rehberleri',
+    description: 'Eko Yıldız interaktif blogları, eğlenceli perde arkası hikayeleri ve güvenlik rehberleri:',
+    emoji: '📖',
+    minRole: 'user',
+    commands: [
+      { name: 'ℹ️ [Roblox Askeri Kamp RP Dünyası](https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi)', desc: 'Askeri RP perde arkası, nizamiye dramları ve rütbe hiyerarşisi (İnteraktif testli).' },
+      { name: 'ℹ️ [Bedava Nitro ve Hacker Dramı](https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami)', desc: 'Phishing tuzakları, token avcıları ve 3 adımda acil hesap kurtarma.' },
+      { name: 'ℹ️ [Gece 03:47 Ticket Günlüğü](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar)', desc: 'Gece nöbetinde açılan efsanevi biletler ve moderatör sabır testi.' },
+      { name: 'ℹ️ [Dolandırıcılara Karşı Akıl Sağlığı](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi)', desc: 'Scammer taktikleri, 15 gün karaliste affı ve güvenli ticaret kuralları.' },
+      { name: 'ℹ️ [Yeni Moderasyon Araçları](https://ekoyildiz.com/blog/yeni-moderasyon-araclari)', desc: 'Şeffaf sicil sistemi, akıllı raid kalkanı ve vaka merkezi yenilikleri.' },
+      { name: 'ℹ️ [Report Sistemi Yenilendi](https://ekoyildiz.com/blog/report-sistemi-yenilendi)', desc: '3 tıkla şüpheli bildirimi ve hızlı denetim.' },
+      { name: 'ℹ️ [Discord ile Giriş Nasıl Çalışır?](https://ekoyildiz.com/blog/discord-ile-giris-nasil-calisir)', desc: 'OAuth yetkilendirmesi, DM şifresiz kodu ve güvenlik detayları.' },
+      { name: 'ℹ️ [Tüm Blog ve Rehberler](https://ekoyildiz.com/blog)', desc: 'Eko Yıldız Journal - Tüm interaktif makale ve içerik kütüphanesi.' }
     ]
   }
 };
@@ -208,12 +225,12 @@ function getUserPermissionLevel(member, user) {
  */
 function getAccessibleCategoryKeys(roleLevel) {
   if (roleLevel === 'owner') {
-    return ['owner_system', 'moderation', 'staff', 'court', 'fun', 'economy', 'general'];
+    return ['owner_system', 'moderation', 'staff', 'court', 'fun', 'economy', 'general', 'blog'];
   }
   if (roleLevel === 'moderator') {
-    return ['moderation', 'staff', 'court', 'fun', 'economy', 'general'];
+    return ['moderation', 'staff', 'court', 'fun', 'economy', 'general', 'blog'];
   }
-  return ['fun', 'economy', 'general'];
+  return ['fun', 'economy', 'general', 'blog'];
 }
 
 /**
@@ -246,7 +263,11 @@ function createRoleBasedHelpPayload(member, user, categoryKey = null) {
     embed.setTitle(`${selectedCat.emoji} ${selectedCat.title} (${roleBadge.badge})`);
     let cmdText = `${selectedCat.description}\n\n`;
     selectedCat.commands.forEach(c => {
-      cmdText += `> **\`${c.name}\`**\n> └ *${c.desc}*\n\n`;
+      if (selectedCat === CATEGORIES.blog || c.name.startsWith('ℹ️')) {
+        cmdText += `${c.name}\n> └ *${c.desc}*\n\n`;
+      } else {
+        cmdText += `> **\`${c.name}\`**\n> └ *${c.desc}*\n\n`;
+      }
     });
 
     if (cmdText.length > 4000) {
@@ -264,12 +285,25 @@ function createRoleBasedHelpPayload(member, user, categoryKey = null) {
     accessibleKeys.forEach(k => {
       const cat = CATEGORIES[k];
       if (cat) {
-        const cmdPills = cat.commands.slice(0, 5).map(c => `\`${c.name.split(' ')[0]}\``).join(' ');
-        embed.addFields({
-          name: cat.title,
-          value: `${cmdPills}${cat.commands.length > 5 ? ` *+${cat.commands.length - 5} daha*` : ''}`,
-          inline: false
-        });
+        if (k === 'blog') {
+          embed.addFields({
+            name: `${cat.emoji} ${cat.title}`,
+            value:
+              'ℹ️ [Roblox Askeri Kamp RP Dünyası](https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi)\n' +
+              'ℹ️ [Bedava Nitro ve Hacker Dramı](https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami)\n' +
+              'ℹ️ [Gece 03:47 Ticket Günlüğü](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar)\n' +
+              'ℹ️ [Dolandırıcılara Karşı Akıl Sağlığı](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi)\n' +
+              'ℹ️ [Tüm Blog ve Rehberler](https://ekoyildiz.com/blog)',
+            inline: false
+          });
+        } else {
+          const cmdPills = cat.commands.slice(0, 5).map(c => `\`${c.name.split(' ')[0]}\``).join(' ');
+          embed.addFields({
+            name: cat.title,
+            value: `${cmdPills}${cat.commands.length > 5 ? ` *+${cat.commands.length - 5} daha*` : ''}`,
+            inline: false
+          });
+        }
       }
     });
   }
@@ -438,6 +472,84 @@ async function sendHelpMenu(interactionOrMessage, categoryKey = null) {
   }
 }
 
+/**
+ * Eko Yıldız Resmi Blog Menüsü & Linkleri
+ */
+function createBlogMenuPayload(member, user) {
+  const embed = new EmbedBuilder()
+    .setColor(0x8b5cf6)
+    .setTitle('📖 Eko Yıldız Resmi Blog & Topluluk Rehberleri')
+    .setDescription(
+      `Topluluk dinamikleri, Roblox analizleri, mizahi perde arkası hikayeleri ve hesap güvenliği rehberlerimiz yayında!\n\n` +
+      `ℹ️ [Roblox Askeri Kamp RP Dünyası: Neden Herkes Mareşal Olmak İstiyor?](https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi)\n` +
+      `└ *Sınır kapısında zıplayan acemiler, nizamiye dramı ve interaktif rütbe testi.*\n\n` +
+      `ℹ️ [Bedava Nitro Yalanları ve 12 Yaşındaki Hacker'ın Dramı](https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami)\n` +
+      `└ *Phishing tuzakları, token kapma senaryoları ve 3 adımda acil ilk yardım.*\n\n` +
+      `ℹ️ [Saat 03:47, Ticket Kanalında Bir Hayalet Var: Gece Nöbeti Günlüğü](https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar)\n` +
+      `└ *Gece 3'te açılan absürt biletler, moderatör sabır testi ve hızlı çözüm tüyoları.*\n\n` +
+      `ℹ️ [Dolandırıcılara Karşı Akıl Sağlığını Koruma Rehberi (Scammer Karaliste)](https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi)\n` +
+      `└ *'Önce sen ver' taktikleri, 15 günlük karaliste affı ve güvenli ticaret sırları.*\n\n` +
+      `ℹ️ [Daha Güvenli Bir Topluluk İçin Yeni Moderasyon Araçlarımız](https://ekoyildiz.com/blog/yeni-moderasyon-araclari)\n` +
+      `└ *Şeffaf sicil sistemi, akıllı raid kalkanı ve vaka merkezi yenilikleri.*\n\n` +
+      `ℹ️ [Report Sistemi Yenilendi: 3 Tıkla Şüpheli Bildirimi](https://ekoyildiz.com/blog/report-sistemi-yenilendi)\n` +
+      `└ *Hızlı delil eşleme ve doğrudan yetkili denetimi.*\n\n` +
+      `ℹ️ [Discord ile Giriş Nasıl Çalışır? Şifrenizi Görüyor muyuz?](https://ekoyildiz.com/blog/discord-ile-giris-nasil-calisir)\n` +
+      `└ *OAuth2 yetkilendirmesi, DM şifresiz kod ve sıfır-şifre politikası.*\n\n` +
+      `ℹ️ [Tüm Makale ve Rehberler Kütüphanesi](https://ekoyildiz.com/blog)\n` +
+      `└ *Tüm güncel bloglar ve interaktif anketler web sitemizde!*`
+    )
+    .setFooter({ text: 'Eko Yıldız Journal • Her blog interaktif test ve sürprizler içerir!' })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setURL('https://ekoyildiz.com/blog/roblox-askeri-kamplarin-perde-arkasi')
+      .setLabel('🎖️ Askeri RP Blogu')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setURL('https://ekoyildiz.com/blog/bedava-nitro-ve-hacker-drami')
+      .setLabel('🚨 Bedava Nitro Tuzağı')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setURL('https://ekoyildiz.com/blog/gece-3te-acilan-efsanevi-ticketlar')
+      .setLabel('☕ Gece 3 Ticketları')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setURL('https://ekoyildiz.com/blog/scammer-tuzaklari-ve-akil-sagligi')
+      .setLabel('🛡️ Scammer Rehberi')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setURL('https://ekoyildiz.com/blog')
+      .setLabel('📚 Tüm Bloglar')
+      .setStyle(ButtonStyle.Link)
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
+async function sendBlogMenu(interactionOrMessage) {
+  const member = interactionOrMessage.member;
+  const user = interactionOrMessage.author || interactionOrMessage.user;
+  const payload = createBlogMenuPayload(member, user);
+  const isInteraction = Boolean(interactionOrMessage.isCommand || interactionOrMessage.isChatInputCommand);
+
+  if (isInteraction) {
+    if (interactionOrMessage.replied || interactionOrMessage.deferred) {
+      await interactionOrMessage.editReply(payload).catch(() => {});
+    } else {
+      await interactionOrMessage.reply(payload).catch(() => {});
+    }
+  } else if (interactionOrMessage.reply) {
+    await interactionOrMessage.reply(payload).catch(async () => {
+      if (interactionOrMessage.channel) {
+        await interactionOrMessage.channel.send(payload).catch(() => {});
+      }
+    });
+  } else if (interactionOrMessage.channel) {
+    await interactionOrMessage.channel.send(payload).catch(() => {});
+  }
+}
+
 module.exports = {
   CATEGORIES,
   getUserPermissionLevel,
@@ -446,5 +558,7 @@ module.exports = {
   createRoleBasedHelpPayload,
   findClosestCommand,
   createCommandSuggestionPayload,
-  sendHelpMenu
+  sendHelpMenu,
+  createBlogMenuPayload,
+  sendBlogMenu
 };
