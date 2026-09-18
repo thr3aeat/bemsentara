@@ -46,6 +46,38 @@ router.get("/links", (req, res) => res.redirect("/linkler"));
 router.get("/bio", (req, res) => res.redirect("/linkler"));
 router.get("/eko", (req, res) => res.redirect("/linkler"));
 
+// ── Kutu Açma & Şans Çarkı Yönlendirmeleri & API'leri ───────────────────────
+router.get("/kutu-ac", (req, res) => {
+  if (req.user) return res.redirect("/profile?tab=rewards&view=box");
+  res.redirect("/login?redirect=/profile?tab=rewards");
+});
+router.get("/cark", (req, res) => {
+  if (req.user) return res.redirect("/profile?tab=rewards&view=wheel");
+  res.redirect("/login?redirect=/profile?tab=rewards");
+});
+router.get("/rewards", (req, res) => {
+  if (req.user) return res.redirect("/profile?tab=rewards");
+  res.redirect("/login?redirect=/profile?tab=rewards");
+});
+router.get("/api/rewards/status", async (req, res) => {
+  const userId = req.user ? req.user.discordId : null;
+  const { getUserRewardsStatus } = require("../services/rewardBoxService");
+  const status = await getUserRewardsStatus(userId);
+  res.json({ success: true, ...status });
+});
+router.post("/api/rewards/open-box", async (req, res) => {
+  const userId = req.user ? req.user.discordId : null;
+  const { openBoxForUser } = require("../services/rewardBoxService");
+  const result = await openBoxForUser(userId);
+  res.json({ success: true, ...result });
+});
+router.post("/api/rewards/spin-wheel", async (req, res) => {
+  const userId = req.user ? req.user.discordId : null;
+  const { spinWheelForUser } = require("../services/rewardBoxService");
+  const result = await spinWheelForUser(userId);
+  res.json({ success: true, ...result });
+});
+
 router.get("/", (req, res) => {
   res.send(renderMainPage(req.user));
 });

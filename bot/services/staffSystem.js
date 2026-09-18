@@ -1618,16 +1618,31 @@ async function checkDailyCompletion(progress, client, autoSave = true) {
           `✨ **+${xpReward} 💎 Elmas (XP)** kazanıldı!\n` +
           (streakMultiplier > 1.0 ? `🔥 **Seri Çarpanı Aktif:** \`${consecutiveDays} Gün\` ardışık aktifliğin sayesinde **x${streakMultiplier}** ödül kazandın!\n\n` : "") +
           `💰 **+${coinReward} TL (₺)** kazanıldı!\n` +
+          `🎁 **1x GİZEMLİ GÖREV SANDIĞI & ÇARK HAKKI KAZANDIN!**\n` +
+          `Aşağıdaki linkten web sitesine giderek kutunu 3D animasyonla açabilir veya çarkı çevirip özel profil efektleri kazanabilirsin! 🚀\n\n` +
           `💳 **Güncel Bakiyen:** \`${progress.gamification.ecoCoins} TL\` | \`${progress.gamification.currentXP} 💎 Elmas\``
         )
-        .setFooter({ text: 'Eko Yıldız • Personel Sistemi' })
+        .setFooter({ text: 'Eko Yıldız • Personel & Ödül Sistemi' })
         .setTimestamp();
+
+      try {
+        const { awardBoxToUser } = require('../../server/services/rewardBoxService');
+        awardBoxToUser(progress.userId, 'Günlük Görev').catch(() => {});
+      } catch (_) {}
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
+          .setLabel('🎁 Kutunu Sitede Aç!')
+          .setStyle(ButtonStyle.Link)
+          .setURL('https://ekoyildiz.com/kutu-ac'),
+        new ButtonBuilder()
+          .setLabel('🎡 Şans Çarkını Çevir!')
+          .setStyle(ButtonStyle.Link)
+          .setURL('https://ekoyildiz.com/cark'),
+        new ButtonBuilder()
           .setCustomId('staff_update_progress')
-          .setLabel('👤 Moderatör Anasayfası')
-          .setStyle(ButtonStyle.Primary)
+          .setLabel('👤 Personel Durumum')
+          .setStyle(ButtonStyle.Secondary)
       );
 
       try {
@@ -1819,6 +1834,11 @@ async function recordTicketSolved(userId, client) {
 
     p.weeklyStats = p.weeklyStats || { voiceMinutes: 0, ticketsSolved: 0, moderationActions: 0 };
     p.weeklyStats.ticketsSolved = (p.weeklyStats.ticketsSolved || 0) + 1;
+
+    try {
+      const { awardBoxToUser } = require('../../server/services/rewardBoxService');
+      awardBoxToUser(userId, 'Ticket Çözümü').catch(() => {});
+    } catch (_) {}
 
     try {
       const StaffUnit = require('../../models/StaffUnit');
