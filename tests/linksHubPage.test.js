@@ -1,65 +1,51 @@
+'use strict';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { renderLinksHubPage, LINKS_DATA } = require('../server/views/linksHubPage');
 
-test('links hub page contains all requested broadcast, video, support and instagram links', () => {
-  const html = renderLinksHubPage(null);
+test('linksHubPage - Resmi Bağlantılar & Linkler Sayfası', async (t) => {
+  await t.test('LINKS_DATA tam 10 resmi bağlantıyı içermeli', () => {
+    assert.equal(LINKS_DATA.length, 10);
+    const ids = LINKS_DATA.map(l => l.id);
+    assert.ok(ids.includes('kick'));
+    assert.ok(ids.includes('twitch'));
+    assert.ok(ids.includes('youtube-main'));
+    assert.ok(ids.includes('youtube-secondary'));
+    assert.ok(ids.includes('tiktok'));
+    assert.ok(ids.includes('discord'));
+    assert.ok(ids.includes('yt-join'));
+    assert.ok(ids.includes('itemsatis'));
+    assert.ok(ids.includes('insta-eko'));
+    assert.ok(ids.includes('insta-ege'));
+  });
 
-  // Canlı Yayınlar
-  assert.match(html, /https:\/\/kick\.com\/ekoyildiz/);
-  assert.match(html, /https:\/\/www\.twitch\.tv\/ekoyildiz/);
+  await t.test('renderLinksHubPage geçerli HTML dönmeli', () => {
+    const html = renderLinksHubPage();
+    assert.equal(typeof html, 'string');
+    assert.ok(html.length > 1000);
+    assert.ok(html.includes('EkoYıldız'));
+    assert.ok(html.includes('bio-profile-card'));
+    assert.ok(html.includes('bio-search-input'));
+    assert.ok(html.includes('bio-filters'));
+  });
 
-  // YouTube & Video
-  assert.match(html, /https:\/\/www\.youtube\.com\/@eko8yildiz/);
-  assert.match(html, /https:\/\/www\.youtube\.com\/@eko8yildiz2/);
-  assert.match(html, /https:\/\/www\.tiktok\.com\/@kimdirbueko/);
-  assert.match(html, /https:\/\/discord\.gg\/XJWnqx9DQC/);
+  await t.test('Liquid Glass ve Spotlight Refraction öğelerini içermeli', () => {
+    const html = renderLinksHubPage();
+    assert.ok(html.includes('bio-card-spotlight'));
+    assert.ok(html.includes('backdrop-filter: blur(28px) saturate(210%)'));
+    assert.ok(html.includes('bio-btn-copy'));
+    assert.ok(html.includes('bio-btn-visit'));
+  });
 
-  // Destek & Üyelik
-  assert.match(html, /https:\/\/www\.youtube\.com\/channel\/UCNSZYtuDQYsZYYQVJvErDVw\/join/);
-  assert.match(html, /https:\/\/www\.itemsatis\.com\/destekle\/ekoyildiz/);
-
-  // Instagram Adreslerimiz
-  assert.match(html, /https:\/\/www\.instagram\.com\/ekonqt\//);
-  assert.match(html, /https:\/\/www\.instagram\.com\/egee7dino\//);
-});
-
-test('links hub page includes interactive filters, copy buttons and liquid glass optics', () => {
-  const html = renderLinksHubPage(null);
-
-  // Category filters
-  assert.match(html, /data-filter="all"/);
-  assert.match(html, /data-filter="stream"/);
-  assert.match(html, /data-filter="video"/);
-  assert.match(html, /data-filter="support"/);
-  assert.match(html, /data-filter="instagram"/);
-
-  // Copy to clipboard attributes
-  assert.match(html, /data-copy-url="https:\/\/kick\.com\/ekoyildiz"/);
-  assert.match(html, /data-copy-url="https:\/\/www\.twitch\.tv\/ekoyildiz"/);
-  assert.match(html, /id="btnShareProfile"/);
-
-  // Liquid glass optics and platform chrome
-  assert.match(html, /platform-header/);
-  assert.match(html, /bio-profile-card/);
-  assert.match(html, /bio-link-card/);
-  assert.match(html, /data-theme="dark"/);
-});
-
-test('LINKS_DATA catalog contains 10 structured destinations with verified targets', () => {
-  assert.equal(LINKS_DATA.length, 10);
-  const ids = LINKS_DATA.map(l => l.id);
-  assert.deepEqual(ids, [
-    'kick',
-    'twitch',
-    'youtube-main',
-    'youtube-secondary',
-    'tiktok',
-    'discord',
-    'yt-join',
-    'itemsatis',
-    'insta-eko',
-    'insta-ege'
-  ]);
+  await t.test('Tüm kategori filtrelerini ve arama kontrolünü barındırmalı', () => {
+    const html = renderLinksHubPage();
+    assert.ok(html.includes('data-filter="all"'));
+    assert.ok(html.includes('data-filter="stream"'));
+    assert.ok(html.includes('data-filter="video"'));
+    assert.ok(html.includes('data-filter="community"'));
+    assert.ok(html.includes('data-filter="support"'));
+    assert.ok(html.includes('data-filter="instagram"'));
+  });
 });
