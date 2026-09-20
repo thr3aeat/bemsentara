@@ -10,6 +10,7 @@ const apiRoutes = require("./routes/api");
 const pagesRoutes = require("./routes/pages");
 const giveawayRoutes = require("./routes/giveaways");
 const adRoutes = require("./routes/ads");
+const { router: adminControlCenterRoutes } = require("./routes/adminControlCenter");
 
 const logger = require("../utils/logger");
 
@@ -248,6 +249,7 @@ app.use((req, res, next) => {
 app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
+app.use(adminControlCenterRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);
 
