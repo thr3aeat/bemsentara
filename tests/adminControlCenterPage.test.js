@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { renderAdminControlCenterShell, adminControlCenterAssets } = require('../server/views/adminControlCenter');
+const { renderAdminControlCenterShell, adminControlCenterAssets, renderAdminMetric, renderAdminOverviewSkeleton } = require('../server/views/adminControlCenter');
 
 test('admin shell renders grouped navigation and escapes administrator identity', () => {
   const html = renderAdminControlCenterShell({
@@ -14,4 +14,13 @@ test('admin shell renders grouped navigation and escapes administrator identity'
   assert.match(html, /id="adm-users"/);
   assert.doesNotMatch(html, /<img src=x/);
   assert.match(adminControlCenterAssets(), /\/public\/admin\/control-center\.css/);
+});
+
+test('admin metrics distinguish zero from unavailable data', () => {
+  assert.match(renderAdminMetric(0, 'Açık ticket'), />0</);
+  assert.match(renderAdminMetric(null, 'Açık ticket'), /Veri alınamadı/);
+  const html = renderAdminOverviewSkeleton();
+  assert.match(html, /data-admin-queue/);
+  assert.match(html, /data-admin-live-users/);
+  assert.match(html, /data-admin-services/);
 });
