@@ -178,6 +178,66 @@ function renderSystemHubWorkspace() {
 </section>`;
 }
 
+function renderStaffWorkspace() {
+  return `<section id="adm-staff" class="acc-workspace-panel" data-admin-workspace="staff" hidden>
+  <header class="acc-page-head">
+    <div>
+      <span class="acc-eyebrow">YÖNETİM KADROSU</span>
+      <h1>Personel ve Yetkili Merkezi</h1>
+      <p>Yetkili kadrosu, performans puanları ve personel akademisi.</p>
+    </div>
+  </header>
+  <div class="acc-cards-grid">
+    <a href="/staff" class="acc-action-card">
+      <div class="acc-action-icon">👔</div>
+      <div class="acc-action-info">
+        <strong>Yetkili Operasyon Masası</strong>
+        <p>Aktif kadro listesi, vardiya takibi ve yetkili puanlama arayüzü.</p>
+      </div>
+      <span class="acc-arrow">→</span>
+    </a>
+    <a href="/staff-academy" class="acc-action-card">
+      <div class="acc-action-icon">🎓</div>
+      <div class="acc-action-info">
+        <strong>Yetkili Akademisi</strong>
+        <p>Eğitim modülleri, sınavlar ve stajyer personel oryantasyonu.</p>
+      </div>
+      <span class="acc-arrow">→</span>
+    </a>
+  </div>
+</section>`;
+}
+
+function renderTicketsWorkspace() {
+  return `<section id="adm-tickets" class="acc-workspace-panel" data-admin-workspace="tickets" hidden>
+  <header class="acc-page-head">
+    <div>
+      <span class="acc-eyebrow">DESTEK SİSTEMİ</span>
+      <h1>Ticket ve Destek Masası</h1>
+      <p>Kullanıcı talepleri, şikayetler ve doğrulama süreçleri.</p>
+    </div>
+  </header>
+  <div class="acc-cards-grid">
+    <a href="/tickets" class="acc-action-card">
+      <div class="acc-action-icon">🎫</div>
+      <div class="acc-action-info">
+        <strong>Destek Biletleri Masası</strong>
+        <p>Tüm açık, bekleyen ve kilitli destek taleplerini inceleyin.</p>
+      </div>
+      <span class="acc-arrow">→</span>
+    </a>
+    <a href="/tickets/create" class="acc-action-card">
+      <div class="acc-action-icon">➕</div>
+      <div class="acc-action-info">
+        <strong>Yeni Destek Talebi Aç</strong>
+        <p>Kullanıcı adına resmi inceleme veya bildirim bileti oluşturun.</p>
+      </div>
+      <span class="acc-arrow">→</span>
+    </a>
+  </div>
+</section>`;
+}
+
 function renderAdminControlCenterShell({ user, legacyContent }) {
   const nav = groups.map(([label, items]) => `
     <section class="acc-nav-group">
@@ -225,6 +285,8 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
 
       <div class="acc-workspace">
         ${renderOperationsWorkspace()}
+        ${renderStaffWorkspace()}
+        ${renderTicketsWorkspace()}
         ${renderContentHubWorkspace()}
         ${renderSystemHubWorkspace()}
         ${legacyContent}

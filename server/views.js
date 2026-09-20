@@ -11,6 +11,11 @@ const {
   platformChromeScript,
 } = require("./views/platformChrome");
 const { renderProfilePage: renderAdvancedProfilePage } = require("./views/profilePage");
+const {
+  renderAdminControlCenterShell,
+  renderAdminOverviewSkeleton,
+  adminControlCenterAssets,
+} = require("./views/adminControlCenter");
 
 // ─────────────────────────────────────────────
 // SHARED LAYOUT HELPER  (declared ONCE at top)
@@ -3879,7 +3884,7 @@ function renderWikiArticlePage(user, article, canManage = false) {
 function renderAdminPage(user) {
   const content = `
     <!-- Sekme başlıkları -->
-    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+    <div data-admin-legacy-tabs style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;">
       <button class="adm-tab adm-tab-active" onclick="admTab('stats',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--text);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
         📊 İstatistikler
@@ -3916,7 +3921,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- İstatistikler -->
-    <div id="adm-stats" class="card">
+    <div id="adm-stats" class="card acc-legacy-workspace" data-admin-workspace="stats">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">📊 İstatistikler</h1>
       <p class="text-muted mb-3">Sunucu ve kullanıcı aktiflik istatistikleri.</p>
 
@@ -3952,7 +3957,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- Kullanıcı yönetimi -->
-    <div id="adm-users" class="card" style="display:none;">
+    <div id="adm-users" class="card acc-legacy-workspace" data-admin-workspace="users" style="display:none;">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">⚙️ Admin Paneli</h1>
       <p class="text-muted mb-3">Kullanıcı yetkileri ve ban yönetimi.</p>
       <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
@@ -3994,7 +3999,7 @@ function renderAdminPage(user) {
 
 
     <!-- Coin yönetimi -->
-    <div id="adm-coins" class="card" style="display:none;">
+    <div id="adm-coins" class="card acc-legacy-workspace" data-admin-workspace="coins" style="display:none;">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:.5rem;">💰 Coin Yönetimi</h1>
       <p class="text-muted mb-3">Kullanıcılara coin verin. Maksimum tek seferde 1.000.000 coin.</p>
 
@@ -4023,7 +4028,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- Ban yönetimi -->
-    <div id="adm-bans" class="card" style="display:none;">
+    <div id="adm-bans" class="card acc-legacy-workspace" data-admin-workspace="bans" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
           <h1 style="font-size:2rem;font-weight:800;">🚫 Ban Yönetimi</h1>
@@ -4056,7 +4061,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- Otomasyon / Alımlar -->
-    <div id="adm-automation" class="card" style="display:none;">
+    <div id="adm-automation" class="card acc-legacy-workspace" data-admin-workspace="automation" style="display:none;">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">🤖 Otomasyon & Alımlar</h1>
       <p class="text-muted mb-3">Sınavlı (AI) veya sınavsız olarak avukat alımı gerçekleştirin.</p>
 
@@ -4075,7 +4080,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- ── DOLDURULAN FORMLAR ────────────────────────────────────────────── -->
-    <div id="adm-submissions" class="card" style="display:none;">
+    <div id="adm-submissions" class="card acc-legacy-workspace" data-admin-workspace="submissions" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
           <h1 style="font-size:2rem;font-weight:800;">📥 Doldurulan Formlar</h1>
@@ -4157,7 +4162,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- Panel Formları -->
-    <div id="adm-forms" class="card" style="display:none;">
+    <div id="adm-forms" class="card acc-legacy-workspace" data-admin-workspace="forms" style="display:none;">
       <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.5rem;">📋 Panel Formları</h1>
       <p class="text-muted mb-3">Discord yetkili panelinde yer alan formları doğrudan web üzerinden doldurup gönderin.</p>
       
@@ -4185,7 +4190,7 @@ function renderAdminPage(user) {
     </div>
 
     <!-- Grup Değişiklikleri & Geri Al -->
-    <div id="adm-group-logs" class="card" style="display:none;">
+    <div id="adm-group-logs" class="card acc-legacy-workspace" data-admin-workspace="group-logs" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
         <div>
           <h1 style="font-size:2rem;font-weight:800;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.6rem;">
@@ -5483,41 +5488,54 @@ function renderAdminPage(user) {
           return;
         }
 
-        resultBox.style.color = 'var(--muted)';
-        resultBox.innerText = '⏳ Hesap geçişi yapılıyor...';
+        const executeTransfer = async () => {
+          resultBox.style.color = 'var(--muted)';
+          resultBox.innerText = '⏳ Hesap geçişi yapılıyor...';
 
-        try {
-          const res = await fetch('/api/account-transfer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              oldDiscordId: oldId,
-              newDiscordId: newId,
-              reason: 'Admin panelinden manuel transfer'
-            })
-          });
+          try {
+            const res = await fetch('/api/account-transfer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                oldDiscordId: oldId,
+                newDiscordId: newId,
+                reason: 'Admin panelinden manuel transfer'
+              })
+            });
 
-          const d = await res.json().catch(() => ({}));
+            const d = await res.json().catch(() => ({}));
 
-          if (res.ok && d.success) {
-            showToast('✅ Hesap başarıyla geçirildi!', 'success');
-            resultBox.style.color = '#34d399';
-            resultBox.innerHTML = '<strong>✅ Başarılı!</strong><br>' +
-              'Eski ID: <code>' + adminEsc(oldId) + '</code><br>' +
-              'Yeni ID: <code>' + adminEsc(newId) + '</code><br>' +
-              'Transfer edilen veriler: Personel, Ekonomi, Ticketlar, Tüm Mod Paneli Verileri';
-            document.getElementById('transfer-old-id').value = '';
-            document.getElementById('transfer-new-id').value = '';
-            setTimeout(() => { resultBox.innerText = ''; }, 5000);
-          } else {
-            showToast(d.error || 'Transfer başarısız', 'error');
+            if (res.ok && d.success) {
+              showToast('✅ Hesap başarıyla geçirildi!', 'success');
+              resultBox.style.color = '#34d399';
+              resultBox.innerHTML = '<strong>✅ Başarılı!</strong><br>' +
+                'Eski ID: <code>' + adminEsc(oldId) + '</code><br>' +
+                'Yeni ID: <code>' + adminEsc(newId) + '</code><br>' +
+                'Transfer edilen veriler: Personel, Ekonomi, Ticketlar, Tüm Mod Paneli Verileri';
+              document.getElementById('transfer-old-id').value = '';
+              document.getElementById('transfer-new-id').value = '';
+              setTimeout(() => { resultBox.innerText = ''; }, 5000);
+            } else {
+              showToast(d.error || 'Transfer başarısız', 'error');
+              resultBox.style.color = '#fb7185';
+              resultBox.innerText = '❌ ' + (d.error || 'Hata oluştu');
+            }
+          } catch (err) {
+            showToast('Bağlantı hatası', 'error');
             resultBox.style.color = '#fb7185';
-            resultBox.innerText = '❌ ' + (d.error || 'Hata oluştu');
+            resultBox.innerText = '❌ İstek hatası: ' + err.message;
           }
-        } catch (err) {
-          showToast('Bağlantı hatası', 'error');
-          resultBox.style.color = '#fb7185';
-          resultBox.innerText = '❌ İstek hatası: ' + err.message;
+        };
+
+        if (typeof window.confirmAdminAction === 'function') {
+          await window.confirmAdminAction({
+            title: 'Hesap Transferini Onayla',
+            summary: oldId + ' kullanıcısının tüm verileri ' + newId + ' hesabına aktarılacaktır. Bu işlem geri alınamaz!',
+            tone: 'warning',
+            execute: executeTransfer,
+          });
+        } else {
+          await executeTransfer();
         }
       }
 
@@ -5633,20 +5651,33 @@ function renderAdminPage(user) {
             return;
           }
 
-          const res = await fetch('/api/admin/users/' + encodeURIComponent(found.discordId) + '/ban', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason, discordBan, siteBan })
-          });
-          const d = await res.json().catch(() => ({}));
+          const executeBan = async () => {
+            const res = await fetch('/api/admin/users/' + encodeURIComponent(found.discordId) + '/ban', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reason, discordBan, siteBan })
+            });
+            const d = await res.json().catch(() => ({}));
 
-          if (res.ok) {
-            showToast(d.message || 'Kullanıcı yasaklandı.', 'success');
-            document.getElementById('ban-id').value = '';
-            document.getElementById('ban-reason').value = '';
-            loadBans();
+            if (res.ok) {
+              showToast(d.message || 'Kullanıcı yasaklandı.', 'success');
+              document.getElementById('ban-id').value = '';
+              document.getElementById('ban-reason').value = '';
+              loadBans();
+            } else {
+              showToast(d.error || 'Yasaklanamadı', 'error');
+            }
+          };
+
+          if (typeof window.confirmAdminAction === 'function') {
+            await window.confirmAdminAction({
+              title: 'Kullanıcıyı Yasakla',
+              summary: (found.discordUsername || found.discordId) + ' kullanıcısı ' + (discordBan ? 'Discord ve ' : '') + (siteBan ? 'Siteden ' : '') + 'yasaklanacaktır. Onaylıyor musunuz?',
+              tone: 'danger',
+              execute: executeBan,
+            });
           } else {
-            showToast(d.error || 'Yasaklanamadı', 'error');
+            await executeBan();
           }
         } catch (err) {
           showToast('Bağlantı hatası.', 'error');
@@ -5703,23 +5734,36 @@ function renderAdminPage(user) {
           return;
         }
 
-        resultBox.innerHTML = \`<span style="color:var(--muted);">\${adminEsc(found.discordUsername)} kullanıcısına \${amount.toLocaleString('tr-TR')} coin veriliyor...</span>\`;
+        const executeGiveCoins = async () => {
+          resultBox.innerHTML = \`<span style="color:var(--muted);">\${adminEsc(found.discordUsername)} kullanıcısına \${amount.toLocaleString('tr-TR')} coin veriliyor...</span>\`;
 
-        const res = await fetch('/api/admin/users/' + encodeURIComponent(found.discordId) + '/give-coins', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, reason })
-        });
-        const d = await res.json().catch(() => ({}));
+          const res = await fetch('/api/admin/users/' + encodeURIComponent(found.discordId) + '/give-coins', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount, reason })
+          });
+          const d = await res.json().catch(() => ({}));
 
-        if (res.ok) {
-          showToast(d.message || 'Coin verildi.', 'success');
-          resultBox.innerHTML = \`<span style="color:var(--success);">✅ \${adminEsc(d.message)} • Yeni bakiye: \${(d.newBalance || 0).toLocaleString('tr-TR')} 🪙</span>\`;
-          document.getElementById('coin-id').value = '';
-          document.getElementById('coin-amount').value = '';
-          document.getElementById('coin-reason').value = '';
+          if (res.ok) {
+            showToast(d.message || 'Coin verildi.', 'success');
+            resultBox.innerHTML = \`<span style="color:var(--success);">✅ \${adminEsc(d.message)} • Yeni bakiye: \${(d.newBalance || 0).toLocaleString('tr-TR')} 🪙</span>\`;
+            document.getElementById('coin-id').value = '';
+            document.getElementById('coin-amount').value = '';
+            document.getElementById('coin-reason').value = '';
+          } else {
+            resultBox.innerHTML = \`<span style="color:var(--danger);">❌ \${adminEsc(d.error || 'Hata')}</span>\`;
+            showToast(d.error || 'Hata', 'error');
+          }
+        };
+
+        if (typeof window.confirmAdminAction === 'function') {
+          await window.confirmAdminAction({
+            title: 'Coin İşlemini Onayla',
+            summary: (found.discordUsername || found.discordId) + ' kullanıcısına ' + amount.toLocaleString('tr-TR') + ' coin verilecektir. Onaylıyor musunuz?',
+            tone: 'warning',
+            execute: executeGiveCoins,
+          });
         } else {
-          resultBox.innerHTML = \`<span style="color:var(--danger);">❌ \${adminEsc(d.error || 'Hata')}</span>\`;
-          showToast(d.error || 'Hata', 'error');
+          await executeGiveCoins();
         }
       }
 
@@ -5773,7 +5817,12 @@ function renderAdminPage(user) {
 
     <\/script>
   `;
-  return _layout('Admin', user, content, '', '/admin');
+
+  const adminContent = renderAdminControlCenterShell({
+    user,
+    legacyContent: `${renderAdminOverviewSkeleton()}${content}`,
+  });
+  return _layout('Admin Control Center', user, adminContent, adminControlCenterAssets(), '/admin');
 }
 
 function renderGroupAdminPage(user, isOwner = false) {
