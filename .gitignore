@@ -6,3 +6,4 @@ data/store.json.tmp
 .DS_Store
 dist/
 build/
+.worktrees/
