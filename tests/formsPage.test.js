@@ -11,6 +11,7 @@ const {
 } = require('../server/views/formsPage');
 const express = require('express');
 const pagesRouter = require('../server/routes/pages');
+const sponsorAdService = require('../server/services/sponsorAdService');
 
 async function requestPages(pathname) {
   const app = express();
@@ -62,4 +63,22 @@ test('catalog routes render new forms while legacy aliases still redirect', asyn
   const alias = await requestPages('/forms/topluluk-elcisi');
   assert.equal(alias.status, 302);
   assert.equal(alias.headers.get('location'), '/forms/community-ambassador');
+});
+
+test('sponsor renderer exposes an empty state and complete active component', () => {
+  const empty = sponsorAdService.renderSponsorAdHtml({ isActive: false });
+  assert.match(empty, /sponsor-ad--empty/);
+  assert.match(empty, /Şu anda gösterilecek sponsorlu bağlantı yok/);
+
+  const active = sponsorAdService.renderSponsorAdHtml({
+    _id: 'ad-1',
+    title: 'EkoYıldız Store',
+    description: 'Topluluğa özel ürünler',
+    sponsorName: 'EkoYıldız',
+    ctaText: 'İncele',
+    imageUrl: 'https://example.com/logo.png',
+    isActive: true,
+  });
+  assert.match(active, /role="complementary"/);
+  assert.match(active, /rel="noopener noreferrer sponsored"/);
 });

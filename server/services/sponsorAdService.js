@@ -227,8 +227,11 @@ class SponsorAdService {
    */
   renderSponsorAdHtml(customAd = null) {
     const ad = customAd || this.getRandomActiveAd();
-    if (!ad) {
-      return ''; // Hiçbir aktif reklam yoksa sıfır görsel artık, boşluk yok!
+    if (!ad || ad.isActive === false) {
+      return `<aside class="sponsor-ad sponsor-ad--empty" role="status" aria-label="Sponsorlu bağlantı">
+        <span class="sponsor-ad__label">Sponsorlu bağlantı</span>
+        <p>Şu anda gösterilecek sponsorlu bağlantı yok.</p>
+      </aside>`;
     }
 
     const adId = escapeHtml(ad._id);
@@ -239,28 +242,28 @@ class SponsorAdService {
     const image = escapeHtml(this._isSafeTargetUrl(ad.imageUrl) ? ad.imageUrl : 'https://i.imgur.com/PFcAc6q.png');
 
     return `
-      <div class="sponsor-ad-card-wrapper" id="sponsor-ad-${adId}" data-ad-id="${adId}" role="complementary" aria-label="Sponsorlu Alan">
-        <div class="sponsor-ad-header">
-          <span class="sponsor-ad-tag">
-            <span class="sponsor-ad-dot"></span> SPONSORLU BAĞLANTI
+      <aside class="sponsor-ad" id="sponsor-ad-${adId}" data-ad-id="${adId}" role="complementary" aria-label="Sponsorlu bağlantı">
+        <div class="sponsor-ad__header">
+          <span class="sponsor-ad__label">
+            <span class="sponsor-ad__dot" aria-hidden="true"></span> Sponsorlu bağlantı
           </span>
-          <span class="sponsor-ad-by">${sponsor}</span>
+          <span class="sponsor-ad__by">${sponsor}</span>
         </div>
-        <div class="sponsor-ad-body">
-          <div class="sponsor-ad-image-box">
-            <img src="${image}" alt="${title}" loading="lazy" class="sponsor-ad-img" onerror="this.onerror=null;this.src='https://i.imgur.com/PFcAc6q.png'">
+        <div class="sponsor-ad__body">
+          <div class="sponsor-ad__media">
+            <img src="${image}" alt="${title}" loading="lazy" class="sponsor-ad__image" onerror="this.onerror=null;this.src='https://i.imgur.com/PFcAc6q.png'">
           </div>
-          <div class="sponsor-ad-content">
-            <h4 class="sponsor-ad-title">${title}</h4>
-            <p class="sponsor-ad-desc">${description}</p>
+          <div class="sponsor-ad__content">
+            <h4 class="sponsor-ad__title">${title}</h4>
+            <p class="sponsor-ad__description">${description}</p>
           </div>
-          <div class="sponsor-ad-action">
-            <a href="/api/ads/${adId}/click" target="_blank" rel="noopener noreferrer sponsored" class="sponsor-ad-cta-btn">
+          <div class="sponsor-ad__action">
+            <a href="/api/ads/${adId}/click" target="_blank" rel="noopener noreferrer sponsored" class="sponsor-ad__cta">
               ${cta}
             </a>
           </div>
         </div>
-      </div>
+      </aside>
       <script>
         (function() {
           try {
