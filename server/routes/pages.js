@@ -22,7 +22,13 @@ const {
   renderTumModlarPage,
   renderEkoYildizAnayasaPage,
   renderStatusPage,
+  renderErrorPage,
+  renderFormsHubPage,
+  renderFormPage,
+  renderClosedFormPage,
 } = require("../views");
+const { getFormDefinition } = require("../forms/catalog");
+const FormSubmission = require("../../models/FormSubmission");
 const { users, tickets, economies, wikiArticles } = require("../../models/Store");
 const { isSiteAdmin } = require("../../utils/adminCheck");
 const { renderSafetyCenterPage, renderSafetyGuidePage, renderBlogPage, renderBlogPostPage, renderAuthorPage } = require("../views/helpHubPage");
@@ -814,74 +820,29 @@ router.get("/webhook", (req, res) => {
 
 
 // ── Yetkili Formları Dashboard & Etkinlik Yetkilisi Formu ──────────────────────
-router.get("/forms", (req, res) => {
-  const { renderFormsHubPage } = require("../views");
-  res.send(renderFormsHubPage(req.user));
-});
-
-router.get("/forms/game-moderation", (req, res) => {
-  const { renderClosedFormPage } = require("../views");
-  res.send(renderClosedFormPage(req.user, "Oyun Moderasyon Ekibi", ""));
-});
-
-router.get("/forms/event-staff", async (req, res) => {
-  const { renderEventStaffFormPage } = require("../views");
-  const FormSubmission = require("../../models/FormSubmission");
-
-  let existingSubmission = null;
-  if (req.user) {
-    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "event_staff");
-  }
-
-  res.send(renderEventStaffFormPage(req.user, existingSubmission));
-});
-
-router.get("/forms/community-ambassador", async (req, res) => {
-  const { renderCommunityAmbassadorFormPage } = require("../views");
-  const FormSubmission = require("../../models/FormSubmission");
-
-  let existingSubmission = null;
-  if (req.user) {
-    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "community_ambassador");
-  }
-
-  res.send(renderCommunityAmbassadorFormPage(req.user, existingSubmission));
-});
+router.get("/forms", (req, res) => res.send(renderFormsHubPage(req.user)));
 
 router.get("/forms/topluluk-elcisi", (req, res) => {
   res.redirect("/forms/community-ambassador");
-});
-
-router.get("/forms/developer", async (req, res) => {
-  const { renderDeveloperFormPage } = require("../views");
-  const FormSubmission = require("../../models/FormSubmission");
-
-  let existingSubmission = null;
-  if (req.user) {
-    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "developer");
-  }
-
-  res.send(renderDeveloperFormPage(req.user, existingSubmission));
 });
 
 router.get("/forms/gelistirici", (req, res) => {
   res.redirect("/forms/developer");
 });
 
-router.get("/forms/debug-office", async (req, res) => {
-  const { renderDebugOfficeFormPage } = require("../views");
-  const FormSubmission = require("../../models/FormSubmission");
-
-  let existingSubmission = null;
-  if (req.user) {
-    existingSubmission = await FormSubmission.findPendingByUser(req.user.discordId, "debug_office");
-  }
-
-  res.send(renderDebugOfficeFormPage(req.user, existingSubmission));
-});
-
 router.get("/forms/hata-ayiklama", (req, res) => {
   res.redirect("/forms/debug-office");
+});
+
+router.get("/forms/:slug", async (req, res) => {
+  const definition = getFormDefinition(req.params.slug);
+  if (!definition) return res.status(404).send(renderErrorPage(req.user, 'Form bulunamadı.'));
+  if (definition.status === 'maintenance') return res.send(renderClosedFormPage(req.user, definition));
+
+  const existingSubmission = req.user
+    ? await FormSubmission.findPendingByUser(req.user.discordId, definition.formType)
+    : null;
+  return res.send(renderFormPage(req.user, definition, existingSubmission));
 });
 
 // Briefing Onboarding

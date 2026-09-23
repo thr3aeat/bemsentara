@@ -9,6 +9,24 @@ const {
   renderFormPage,
   renderClosedFormPage,
 } = require('../server/views/formsPage');
+const express = require('express');
+const pagesRouter = require('../server/routes/pages');
+
+async function requestPages(pathname) {
+  const app = express();
+  app.use((req, res, next) => { req.user = null; next(); });
+  app.use(pagesRouter);
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
+  });
+
+  try {
+    const { port } = server.address();
+    return await fetch(`http://127.0.0.1:${port}${pathname}`, { redirect: 'manual' });
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+}
 
 test('forms hub separates staff and other forms without legacy gaming UI', () => {
   const html = renderFormsHubPage(null);
@@ -34,4 +52,14 @@ test('only maintenance form renders a disabled maintenance action', () => {
 
   assert.match(html, /Başvurular geçici olarak kapalı/);
   assert.match(html, /disabled/);
+});
+
+test('catalog routes render new forms while legacy aliases still redirect', async () => {
+  const contact = await requestPages('/forms/contact');
+  assert.equal(contact.status, 200);
+  assert.match(await contact.text(), /Genel İletişim/);
+
+  const alias = await requestPages('/forms/topluluk-elcisi');
+  assert.equal(alias.status, 302);
+  assert.equal(alias.headers.get('location'), '/forms/community-ambassador');
 });
