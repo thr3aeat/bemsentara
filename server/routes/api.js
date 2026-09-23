@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const { getFormDefinition } = require('../forms/catalog');
+const { submitCatalogForm } = require('../forms/submissionService');
 
 router.get("/api/search", (req, res) => {
   const { searchPublicContent } = require("../services/publicContentSearchService");
@@ -2686,6 +2688,25 @@ router.get("/api/admin/bans", async (req, res) => {
   }
 });
 
+// ── Paylaşımlı Forms gönderim akışı ─────────────────────────────────────────
+router.post('/api/forms/:slug/submit', async (req, res) => {
+  const definition = getFormDefinition(req.params.slug);
+
+  try {
+    const result = await submitCatalogForm({ definition, body: req.body, user: req.user });
+    return res.status(201).json({ success: true, ...result });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message || 'Başvuru şu anda gönderilemedi.',
+      errors: error.errors,
+    });
+  }
+});
+
+// ── Eski form endpointleri: katalog route'u bu tanımlardan önce eşleşir. ─────
+// Bu handler'lar eski istemciler için kaynakta tutulur; yeni Forms deneyimi
+// doğrulanmış paylaşımlı gönderim akışını kullanır.
 // ── Etkinlik Yetkilisi Formu Gönderme ───────────────────────────────────────
 router.post("/api/forms/event-staff/submit", async (req, res) => {
   try {
@@ -2751,12 +2772,6 @@ router.post("/api/forms/community-ambassador/submit", async (req, res) => {
     const { discordUsername, discordId: bodyDiscordId, section1, section2, section3, section4, section5, section6, behavior } = req.body;
     const userId = req.user ? req.user.discordId : ("guest_" + Date.now());
     const targetDiscordId = bodyDiscordId || req.body.q_discord_id || (req.user ? req.user.discordId : userId);
-
-    // Check 20-hour application deadline
-    const DEADLINE_MS = 1786455128000;
-    if (Date.now() > DEADLINE_MS) {
-      return res.status(400).json({ error: "Topluluk Elçiliği başvuruları 20 saatlik sürenin dolması nedeniyle kapanmıştır." });
-    }
 
     // Check existing pending application if user is logged in
     if (req.user) {
