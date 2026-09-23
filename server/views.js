@@ -10670,6 +10670,7 @@ function renderCreateTicketPage(user, categories = []) {
 }
 
 const { renderCommunityAmbassadorFormPage, renderDeveloperFormPage, renderDebugOfficeFormPage } = require("./_form_views_patch");
+const formsPage = require("./views/formsPage");
 const { renderTumModlarPage } = require("./views/tumModlarPage");
 const { renderEkoYildizAnayasaPage } = require("./views/ekoYildizAnayasaPage");
 const { render404Page } = require("./views/notFoundPage");
@@ -10696,7 +10697,8 @@ module.exports = {
   renderWikiArticlePage,
   renderAdminPage,
   renderUserLogsPage,
-  renderFormsHubPage,
+  renderFormsHubPage: formsPage.renderFormsHubPage,
+  renderFormPage: formsPage.renderFormPage,
   renderEventStaffFormPage,
   renderCommunityAmbassadorFormPage,
   renderDeveloperFormPage,
@@ -10709,7 +10711,7 @@ module.exports = {
   renderErrorPage,
   renderSocialPage,
   renderAccountTransferPage,
-  renderClosedFormPage,
+  renderClosedFormPage: formsPage.renderClosedFormPage,
   renderTumModlarPage,
   renderEkoYildizAnayasaPage,
   renderStatusPage,
