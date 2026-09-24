@@ -28,6 +28,13 @@ Bu çalışma mevcut sayfaları yeniden tasarlamaz veya yeni bir frontend framew
 - Loading metinleri nötr ve bağlama uygun olacaktır: “İçerik getiriliyor…”, “Topluluk bilgileri yükleniyor…”, “Roller hazırlanıyor…” ve “Hazır”.
 - Var olan route, API payload, auth, permission ve submit sözleşmeleri korunacaktır.
 - Çalışma ağacındaki konu dışı değişikliklere dokunulmayacaktır.
+- Admin ve admin/mod yetkili kullanıcılar yeni loading katmanını görmeyecektir. Mevcut yetki modelinde bu grup `isSiteStaff(user)` ile belirlenir; helper hem `user.isStaff` kullanıcılarını hem de `isSiteAdmin(user)` sonucunu kapsar.
+
+## Loading Uygunluğu
+
+Ortak layout ve bağımsız sayfa renderer'ları `loadingEnabled = !isSiteStaff(user)` kararını sunucu tarafında verir. Yetkili kullanıcı için loading stylesheet/script, PageLoader ve skeleton markup üretilmez. İstemci kodu `window.LoadingUI` bulunmadığında mevcut doğrudan veri/submit davranışını sürdürür.
+
+Bu ayrım yalnızca görsel loading deneyimini etkiler. Double-submit engeli, buton disable etme, hata mesajı, authorization ve permission kontrolleri kullanıcı rolünden bağımsız olarak korunur.
 
 ## Mimari
 
@@ -78,17 +85,9 @@ Skeleton shimmer düşük kontrastlı tek bir highlight bandı kullanır. Animas
 
 ## Hedef Ekranlar ve Loading Türleri
 
-### Admin Control Center
+### Admin ve Admin/Mod Alanları
 
-`/api/admin/control-center` ilk yükleme ve manuel yenileme çağrıları gerçek loading kaynağıdır.
-
-- İlk yüklemede altı metrik için sayı skeletonu gösterilir.
-- Operasyon kuyruğu, canlı kullanıcılar, servis sağlığı ve son işlemler alanlarında gerçek satır düzenini taklit eden skeletonlar kullanılır.
-- Ana overview container `aria-busy="true"` olur; sonuç veya hata işlendiğinde `false` yapılır.
-- “Verileri yenile” butonu işlem boyunca disable olur, spinner ve “Yenileniyor…” metni gösterir.
-- Manuel yenileme başarılı olduğunda butonda kısa “✓ Güncellendi” durumu gösterilir.
-- Yenileme sırasında mevcut kullanılabilir içerik tamamen silinmez; ikinci ve sonraki yenilemelerde skeleton yerine daha hafif lokal progress kullanılır.
-- 401/403 ve ağ hataları mevcut dürüst hata durumlarına dönmeye devam eder.
+Admin Control Center, Tüm Modlar ve Staff Panel yeni loading katmanının kapsamı dışındadır. Bu sayfaların mevcut veri yükleme, disable, hata ve boş durum davranışları korunur; yeni skeleton, progress bar, spinner veya loading-step eklenmez.
 
 ### Profil
 
@@ -100,17 +99,7 @@ Profil sayfası ekonomi, ticket ve ödül bilgilerini istemcide API üzerinden a
 - Envanter skeletonu gerçek grid kolonlarını takip eder ve içerik geldiğinde 180–220 ms opacity geçişiyle açılır.
 - Profil/avatar görselleri placeholder üzerinde yüklenir ve `load` olayında fade-in olur. `error` olayında placeholder korunur.
 - “Kuşan”, kutu ve çark gibi kullanıcı aksiyonlarında ilgili buton lokal olarak busy olur; sayfanın tamamı kilitlenmez.
-
-### Tüm Modlar
-
-`/api/tumodlar/data` moderatör kartları ve özet sayaçlarını doldurur.
-
-- İlk yüklemede masaüstünde mevcut grid yapısına uygun kart skeletonları, mobilde tek kolon gösterilir.
-- Skeleton kartta avatar dairesi, ad/rütbe barları, iki detay satırı ve eylem alanı bulunur.
-- Grid `aria-busy` kullanır; başarıda gerçek kartlar kısa fade ile görünür.
-- Filtre ve arama yalnızca bellekteki hazır veri üzerinde çalıştığı için loading göstermez.
-- Ayar toggle, hesap değiştirme, kovma ve global toggle eylemlerinde yalnızca eylemi başlatan kontrol disable edilir ve spinner gösterir.
-- Başarılı ayar değişikliklerinde “✓ Güncellendi”; başarısız durumda kontrolün önceki değeri geri yüklenir ve mevcut hata mesajı gösterilir.
+- Profil sayfasını görüntüleyen kullanıcı admin veya admin/mod yetkiliyse skeleton, loading steps, spinner ve image-loading animasyonu üretilmez; veri geldikçe mevcut yer tutucular doğrudan güncellenir.
 
 ### Formlar
 
@@ -121,15 +110,7 @@ Form katalog sayfası SSR üretildiği için skeleton almaz. Yalnızca gerçek s
 - API başarılı olduğunda kısa “✓ Gönderildi” durumundan sonra mevcut başarı paneli gösterilir.
 - API hata verirse buton anında normal haline döner, form değerleri korunur ve hata canlı alanda açıklanır.
 - İstemci doğrulaması başarısız olduğunda loader başlamaz.
-
-### Ticket ve API Listeleri
-
-İlk paket `/tickets` ve staff ticket listesi gibi istemcide gerçek API çağrısıyla dolan listelerle sınırlıdır.
-
-- İlk veri alımında gerçek satır/kart düzenine uygun skeleton gösterilir.
-- Kapatma, yeniden açma, silme ve puanlama işlemlerinde yalnızca ilgili eylem kontrolü busy olur.
-- Başarılı kullanıcı aksiyonunda gerekli yerde kısa “✓ Güncellendi” veya “✓ Gönderildi” geri bildirimi kullanılır.
-- Boş sonuç loading ile karıştırılmaz; istek tamamlandıktan sonra mevcut empty state gösterilir.
+- Admin veya admin/mod yetkili kullanıcıda form yine double-submit'i önlemek için disable olur fakat spinner, geçici loading metni ve loading animasyonu göstermez.
 
 ### Global Arama
 
@@ -139,6 +120,7 @@ Arama diyaloğundaki debounce süresi korunur.
 - Sonuç container `aria-busy` kullanır ve mevcut `aria-live="polite"` davranışı korunur.
 - Eski bir istek yeni sorgunun sonucunu ezmemesi için istek kimliği veya `AbortController` kullanılır.
 - Sonuçlar geldiğinde 150–180 ms fade uygulanır; reduced-motion modunda geçiş kaldırılır.
+- Admin veya admin/mod yetkili kullanıcıda arama mevcut sade “Aranıyor…” metniyle çalışır; spinner ve sonuç fade'i kullanılmaz.
 
 ### Sayfa Geçişleri
 
@@ -149,6 +131,7 @@ Page loader bütün linklerde zorunlu değildir. Ortak platform kabuğunu kullan
 - Yeni sayfada `pageshow` ile tamamlanır ve 150–220 ms içinde kaybolur.
 - Yeni sekme, indirme, hash-only link, modifier tuşlu tıklama, dış bağlantı ve `target` kullanan linkler yakalanmaz.
 - Navigasyon geciktirilmez; çıkış animasyonu için `preventDefault` veya zamanlayıcı kullanılmaz.
+- Admin veya admin/mod yetkili kullanıcı için PageLoader render edilmez ve navigasyon dinleyicisi bağlanmaz.
 
 ### Dashboard
 
@@ -188,17 +171,17 @@ Her davranış test-öncelikli uygulanacaktır.
 
 - Loading renderer testleri semantik rol, ARIA ve escape davranışını doğrular.
 - Button state testleri orijinal label/disabled durumunun hata sonrası geri geldiğini ve çift başlangıcın güvenli olduğunu doğrular.
+- Yetki-gating testleri `isSiteStaff(user)` sonucunda loading asset, skeleton ve PageLoader üretilmediğini doğrular.
 - Reduced-motion ve tema adaptörleri üretilen CSS sözleşmesi üzerinden değil, mümkün olan yerde örnek render davranışı üzerinden kontrol edilir.
 - Form testleri validation hatasında busy durumunun başlamadığını; submit başladığında buton/form durumunun değiştiğini; başarı ve hatada temizlendiğini doğrular.
-- Admin testleri ilk snapshot yüklemesi, manuel yenileme, 401/403 ve hata cleanup davranışını doğrular.
 - Profil testleri kısmi API hatasında başarılı alanların kalmasını ve başarısız alanın skeletondan çıkmasını doğrular.
-- Tüm Modlar testleri skeleton grid, başarılı reveal ve eylem kontrolünün eski durumuna dönmesini doğrular.
 - Global arama testleri eski yanıtın yeni sorguyu ezemediğini doğrular.
 - İlgili hedefli testlerden sonra tüm `node --test` paketi ve değiştirilen JavaScript dosyaları için syntax kontrolleri çalıştırılır.
 
 ## Kapsam Dışı
 
 - Bütün sayfalara full-screen loader eklemek.
+- Admin Control Center, Tüm Modlar ve Staff Panel'e yeni loading görselleri eklemek.
 - SSR ile hazır gelen statik içeriği yapay olarak gizlemek.
 - Authentication, Discord OAuth veya Roblox doğrulama akışlarını yeniden tasarlamak.
 - Gerçek ilerleme verisi bulunmayan işlemlerde yüzde göstermek.
