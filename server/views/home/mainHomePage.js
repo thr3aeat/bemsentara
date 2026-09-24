@@ -52,7 +52,9 @@ function renderFocusedHomePage(user) {
     .home-nav { height:76px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
     .home-brand { font-weight:800; letter-spacing:-.06em; font-size:1.25rem; } .home-brand i { color:var(--pink); font-style:normal; }
     .home-links { display:flex; align-items:center; gap:25px; color:#4d4d53; font-size:.9rem; font-weight:600; }
-    .home-links a:hover { color:var(--ink); } .home-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 18px; border-radius:9px; font-weight:700; font-size:.9rem; }
+    .home-links a:hover { color:var(--ink); } .home-button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 18px; border-radius:9px; font-weight:700; font-size:.9rem; transition:transform 0.14s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.18s ease, background 0.18s ease; user-select:none; }
+    .home-button:hover { transform:translateY(-1.5px); box-shadow:0 8px 24px rgba(0,0,0,0.08); }
+    .home-button:active { transform:scale(0.975) translateY(0.5px); }
     .home-button-dark { color:#fff; background:#19191b; } .home-button-light { color:#19191b; background:#fff; border:1px solid #d9d9de; }
     .home-hero { display:grid; grid-template-columns:1.15fr .85fr; gap:56px; min-height:550px; align-items:center; padding:75px 0; }
     .home-eyebrow { color:var(--pink); font-size:.76rem; letter-spacing:.12em; font-weight:800; text-transform:uppercase; }

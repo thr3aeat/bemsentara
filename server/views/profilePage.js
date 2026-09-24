@@ -125,6 +125,11 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
       margin: 18px auto 60px;
       padding: 0 16px;
     }
+    .p-banner-stage {
+      position: relative;
+      width: 100%;
+      z-index: 20;
+    }
     .p-banner {
       width: 100%;
       height: 290px;
@@ -143,10 +148,11 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
     }
     .p-avatar-wrap {
       position: absolute;
-      bottom: -54px;
+      bottom: -58px;
       left: 2.2rem;
-      z-index: 10;
-      filter: drop-shadow(0 8px 24px rgba(0,0,0,.7));
+      z-index: 35;
+      filter: drop-shadow(0 12px 28px rgba(0,0,0,.85));
+      pointer-events: auto;
     }
     .p-avatar {
       width: 124px;
@@ -552,8 +558,10 @@ function renderProfilePage(user, profileUser, isOwn = false, robloxGroups = [], 
 
   <div class="p-root" id="p-root">
     <!-- Banner Stage -->
-    <div class="p-banner" id="p-banner">
-      <div class="p-banner-overlay"></div>
+    <div class="p-banner-stage">
+      <div class="p-banner" id="p-banner">
+        <div class="p-banner-overlay"></div>
+      </div>
       <div class="p-avatar-wrap">
         <img src="${avatarSrc}" class="p-avatar" id="p-avatar" alt="Avatar">
       </div>

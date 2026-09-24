@@ -14,6 +14,7 @@ const { chatWithAI } = require("./aiService");
 const { jailUser } = require("./jailService");
 const { issueWarning } = require("./punishmentService");
 const { logTrustUserActivity, updateTrustScore } = require("./security/trustScoreService");
+const { forgiveAutomodIncident } = require("./profanityAutomodService");
 const MOD_CEZA_LOG_CHANNEL_ID = process.env.EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
 
 async function sendCezaLog(client, embed) {
@@ -50,22 +51,38 @@ async function handleAutomodPunishmentButton(interaction) {
       return interaction.reply({ content: "❌ Sunucu bulunamadı.", ephemeral: true });
     }
 
-    const member = await guild.members.fetch(userId).catch(() => null);
-    const dbUser = await User.findOne({ discordId: userId }) || {};
-    const trustRecord = await UserTrustScore.findOne({ userId }) || {};
-
     const originalEmbed = interaction.message?.embeds?.[0];
     const msgContent = originalEmbed?.description?.match(/📝 \*\*İçerik:\*\* `([\s\S]*?)`/)?.[1] || "Uygunsuz içerik / küfür";
 
     // ── 1. YOKSAY ──────────────────────────────────────────────────────────
     if (action === "ignore") {
+      const forgiveness = await forgiveAutomodIncident({
+        messageId: msgId,
+        guild,
+        moderatorId: interaction.user.id
+      });
+      if (forgiveness.reason === "in_progress") {
+        return interaction.reply({ content: "⏳ Bu mesaj için geri yükleme işlemi zaten sürüyor.", ephemeral: true }).catch(() => {});
+      }
       const updatedEmbed = EmbedBuilder.from(originalEmbed)
         .setColor(0x95a5a6)
-        .setTitle("✅ Automod Uyarısı — Yoksayıldı")
-        .setDescription((originalEmbed?.description || "") + `\n\n> 👤 **${interaction.user.tag}** tarafından yoksayıldı.`);
+        .setTitle(forgiveness.restored
+          ? "✅ Automod Uyarısı — Mesaj Geri Yüklendi"
+          : "✅ Automod Uyarısı — Yoksayıldı")
+        .setDescription((originalEmbed?.description || "") +
+          `\n\n> 👤 **${interaction.user.tag}** tarafından yoksayıldı.` +
+          (forgiveness.restored ? "\n> ♻️ Silinen mesaj yeniden yayınlandı ve kullanıcıdan özür dilendi." : "") +
+          (forgiveness.retryable ? "\n> ⚠️ Geri yükleme tamamlanamadı; tekrar denenebilir." : ""));
 
-      return interaction.update({ embeds: [updatedEmbed], components: [] }).catch(() => {});
+      return interaction.update({
+        embeds: [updatedEmbed],
+        components: forgiveness.retryable ? (interaction.message?.components || []) : []
+      }).catch(() => {});
     }
+
+    const member = await guild.members.fetch(userId).catch(() => null);
+    const dbUser = await User.findOne({ discordId: userId }) || {};
+    const trustRecord = await UserTrustScore.findOne({ userId }) || {};
 
     // ── 2. YAPAY ZEKANIN ÖNERDİĞİ CEZAYI UYGULA ───────────────────────────
     if (action === "ai" || customId.startsWith("jail_ai_auto_punish_")) {

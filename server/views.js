@@ -88,12 +88,35 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   <meta name="twitter:description" content="EkoYıldız topluluk, destek ve içerik merkezi.">
   <meta name="description" content="EkoYıldız topluluk, destek ve içerik merkezi.">
 
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <meta name="google-adsense-account" content="ca-pub-8395596912297122">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8395596912297122" crossorigin="anonymous"></script>
+  <!-- Appearance Customization Instant Loader -->
+  <script>
+    (function() {
+      try {
+        var raw = localStorage.getItem('ekoyildiz_appearance_v2');
+        if (raw) {
+          var p = JSON.parse(raw);
+          var root = document.documentElement;
+          if (p.bg) root.style.setProperty('--bg', p.bg);
+          if (p.accent) {
+            root.style.setProperty('--accent', p.accent);
+            root.style.setProperty('--accent2', p.accent2 || p.accent);
+          }
+          if (p.surface) root.style.setProperty('--surface', p.surface);
+          if (p.border) root.style.setProperty('--border', p.border);
+          if (p.blur !== undefined) root.style.setProperty('--glass-blur', p.blur + 'px');
+          if (p.radius !== undefined) root.style.setProperty('--card-radius', p.radius + 'px');
+          if (p.font) root.style.setProperty('--site-font', p.font);
+          if (p.fontScale) root.style.setProperty('--font-scale', p.fontScale + '%');
+          if (p.reduceMotion) root.classList.add('reduce-motion');
+          if (p.compact) root.classList.add('compact-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
   ${extraHead}
   ${platformChromeStyles('dark')}
   <style>
@@ -110,15 +133,19 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       --danger:   #fb7185;
       --glass-blur: 20px;
       --glass-glow: inset 0 1px 0 rgba(255,255,255,0.06);
+      --card-radius: 18px;
+      --site-font: 'Outfit', sans-serif;
+      --font-scale: 100%;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
+    html { scroll-behavior:smooth; font-size: var(--font-scale); }
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
+      font-family: var(--site-font);
       min-height: 100vh;
       overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
     body::before {
       content:'';
@@ -275,185 +302,140 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     .badge-pending { background: rgba(251,191,36,0.1);  color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
     .badge-admin   { background: rgba(129,140,248,0.1); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
 
-    /* ── Toast ── */
+    /* ── Modern Toast Notifications (Glass & Stacked) ── */
     #toast-container {
       position: fixed;
       bottom: 2rem; right: 2rem;
       z-index: 9999;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.65rem;
       pointer-events: none;
     }
     .toast {
-      padding: 0.9rem 1.4rem;
+      padding: 0.85rem 1.25rem;
       border-radius: 14px;
-    main { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; position:relative; z-index:1; }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 2rem;
-      backdrop-filter: blur(var(--glass-blur));
-      -webkit-backdrop-filter: blur(var(--glass-blur));
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2), var(--glass-glow);
-      transition: border-color 0.3s, box-shadow 0.3s;
+      font-weight: 550;
+      font-size: 0.88rem;
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(18, 18, 26, 0.92);
+      color: var(--text);
+      animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.22s cubic-bezier(0.16, 1, 0.3, 1) 2.8s forwards;
+      pointer-events: auto;
+      max-width: 360px;
+      box-shadow: 0 16px 40px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
     }
-    .card:hover {
-      border-color: rgba(255,255,255,0.12);
+    .toast-inner { display: flex; align-items: center; gap: 0.75rem; }
+    .toast-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; flex-shrink: 0; font-weight: 700; }
+    .toast-success .toast-icon { background: rgba(52,211,153,0.18); color: var(--success); }
+    .toast-error .toast-icon   { background: rgba(251,113,133,0.18); color: var(--danger); }
+    .toast-info .toast-icon    { background: rgba(167,139,250,0.18); color: var(--accent); }
+    .toast-warning .toast-icon { background: rgba(251,191,36,0.18); color: var(--warning); }
+    .toast-close {
+      cursor: pointer; opacity: 0.45; margin-left: auto; flex-shrink: 0; font-size: 0.85rem;
+      background: none; border: none; color: inherit; padding: 2px 6px; line-height: 1; border-radius: 6px;
+      transition: opacity 0.15s, background 0.15s;
     }
-    .card + .card { margin-top: 2rem; }
+    .toast-close:hover { opacity: 1; background: rgba(255,255,255,0.08); }
+    @keyframes toastIn  { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-6px) scale(0.96); } }
 
-    /* ── Buttons ── */
+    /* ── Apple-like Micro-Interactions: Buttons & Cards ── */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.4rem;
-      background: rgba(167,139,250,0.18);
-      border: 1px solid rgba(167,139,250,0.25);
-      color: var(--accent);
-      border-radius: 12px;
-      cursor: pointer;
-      font-family: inherit;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 12px rgba(167,139,250,0.1);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      position: relative;
-      overflow: hidden;
-    }
-    .btn::before {
-      content:''; position:absolute; inset:0;
-      background: linear-gradient(135deg, rgba(167,139,250,0.08), rgba(129,140,248,0.04));
-      opacity:0; transition: opacity 0.3s;
+      transition: transform 0.14s cubic-bezier(0.2, 0.8, 0.4, 1), background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn:hover {
-      background: rgba(167,139,250,0.28);
-      border-color: rgba(167,139,250,0.4);
-      color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(167,139,250,0.2);
+      transform: translateY(-1.5px) !important;
     }
-    .btn:hover::before { opacity:1; }
-    .btn:active { transform: translateY(0); }
-    .btn-sm { padding: 0.45rem 0.9rem; font-size: 0.82rem; border-radius:10px; }
-    .btn-danger {
-      background: rgba(251,113,133,0.15);
-      border-color: rgba(251,113,133,0.25);
-      color: var(--danger);
-      box-shadow: 0 2px 12px rgba(251,113,133,0.1);
+    .btn:active {
+      transform: scale(0.972) translateY(0.5px) !important;
+      transition: transform 0.08s ease !important;
     }
-    .btn-danger:hover {
-      background: rgba(251,113,133,0.28);
-      border-color: rgba(251,113,133,0.4);
-      color:#fff;
-      box-shadow: 0 6px 24px rgba(251,113,133,0.2);
-    }
-    .btn-success {
-      background: rgba(52,211,153,0.15);
-      border-color: rgba(52,211,153,0.25);
-      color: var(--success);
-      box-shadow: 0 2px 12px rgba(52,211,153,0.1);
-    }
-    .btn-success:hover {
-      background: rgba(52,211,153,0.28);
-      border-color: rgba(52,211,153,0.4);
-      color:#fff;
-      box-shadow: 0 6px 24px rgba(52,211,153,0.2);
-    }
-    .btn-ghost {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--muted);
-      box-shadow: none;
-      backdrop-filter: none;
-    }
-    .btn-ghost:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.15);
-      color: var(--text);
-      box-shadow: none;
-    }
-
-    /* ── Form elements ── */
-    label { display: block; margin-bottom: 0.4rem; color: var(--muted); font-size: 0.85rem; font-weight: 500; letter-spacing:0.3px; }
-    input, textarea, select {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 0.92rem;
-      margin-bottom: 1.2rem;
-      outline: none;
-      transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: rgba(167,139,250,0.4);
-      box-shadow: 0 0 0 3px rgba(167,139,250,0.08), 0 0 20px rgba(167,139,250,0.05);
-      background: rgba(255,255,255,0.04);
-    }
-    input::placeholder, textarea::placeholder { color: rgba(124,124,154,0.5); }
-    select option { background: #0e0e1a; }
-
-    /* ── Badges ── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.7rem;
-      border-radius: 20px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      backdrop-filter: blur(8px);
-    }
-    .badge-open    { background: rgba(52,211,153,0.1);  color: var(--success); border: 1px solid rgba(52,211,153,0.2); }
-    .badge-closed  { background: rgba(251,113,133,0.1); color: var(--danger);  border: 1px solid rgba(251,113,133,0.2); }
-    .badge-pending { background: rgba(251,191,36,0.1);  color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
-    .badge-admin   { background: rgba(129,140,248,0.1); color: var(--accent2); border: 1px solid rgba(129,140,248,0.2); }
-
-    /* ── Toast ── */
-    #toast-container {
-      position: fixed;
-      bottom: 2rem; right: 2rem;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
+    .btn.is-loading {
+      opacity: 0.75;
       pointer-events: none;
+      cursor: wait;
     }
-    .toast {
-      padding: 0.9rem 1.4rem;
-      border-radius: 14px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid;
-      animation: toastIn 0.35s ease, toastOut 0.35s ease 2.7s forwards;
-      pointer-events: auto;
-      max-width: 340px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3), var(--glass-glow);
+    .card {
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease !important;
     }
-    .toast-success { background: rgba(52,211,153,0.12);  color: var(--success); border-color: rgba(52,211,153,0.2); }
-    .toast-error   { background: rgba(251,113,133,0.12); color: var(--danger);  border-color: rgba(251,113,133,0.2); }
-    .toast-info    { background: rgba(167,139,250,0.12); color: var(--accent);  border-color: rgba(167,139,250,0.2); }
-    .toast-warning { background: rgba(251,191,36,0.12);  color: var(--warning); border-color: rgba(251,191,36,0.2); }
-    .toast-inner   { display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; }
-    .toast-close   { cursor:pointer; opacity:0.5; flex-shrink:0; font-size:0.9rem; background:none; border:none; color:inherit; padding:0; line-height:1; transition:opacity 0.2s; }
-    .toast-close:hover { opacity:1; }
-    @keyframes toastIn  { from { opacity:0; transform:translateY(12px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
-    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(-8px) scale(0.95); } }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 44px -10px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.12), var(--glass-glow);
+    }
+
+    /* ── Status Pulse & Live Indicator ── */
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      position: relative;
+      vertical-align: middle;
+    }
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(52,211,153,0.6);
+    }
+    .status-dot.online::after {
+      content: '';
+      position: absolute; inset: -2px;
+      border-radius: 50%;
+      border: 1px solid var(--success);
+      animation: softPulse 2.8s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    }
+    @keyframes softPulse {
+      0%   { transform: scale(0.95); opacity: 0.8; }
+      50%  { transform: scale(1.6);  opacity: 0; }
+      100% { transform: scale(1.6);  opacity: 0; }
+    }
+
+    /* ── Skeleton Loading ── */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.8s ease-in-out infinite;
+      border-radius: 8px;
+    }
+    .skeleton-avatar { width: 44px; height: 44px; border-radius: 50%; }
+    .skeleton-text   { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+    .skeleton-text.short { width: 55%; }
+    .skeleton-card   { min-height: 120px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+    @keyframes skeletonShimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Copy Button State ── */
+    .btn-copy.copied {
+      background: rgba(52,211,153,0.2) !important;
+      border-color: rgba(52,211,153,0.4) !important;
+      color: var(--success) !important;
+    }
+
+    /* ── Page Reveal ── */
+    main {
+      animation: pageReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes pageReveal {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        transform: none !important;
+      }
+      .skeleton { animation: none !important; background: rgba(255,255,255,0.05) !important; }
+    }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width:6px; }
@@ -561,18 +543,77 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
   ${platformChromeScript()}
 
   <script>
-    // ── Toast utility ──
-    function showToast(msg, type = 'info', duration = 3500) {
+            // ── Modern Toast utility with icons ──
+    const TOAST_ICONS = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ'
+    };
+    function showToast(msg, type = 'info', duration = 3000) {
       const c = document.getElementById('toast-container');
       if (!c) return;
       const t = document.createElement('div');
       t.className = 'toast toast-' + type;
-      t.innerHTML = \`<div class="toast-inner"><span>\${msg}</span><button class="toast-close" onclick="this.closest('.toast').remove()">✕</button></div>\`;
+      const icon = TOAST_ICONS[type] || 'ℹ';
+      t.innerHTML = '<div class="toast-inner"><span class="toast-icon">' + icon + '</span><span>' + msg + '</span><button class="toast-close" onclick="this.closest(\'.toast\').remove()">✕</button></div>';
       c.appendChild(t);
-      const timer = setTimeout(() => t.remove(), duration);
-      t.querySelector('.toast-close').addEventListener('click', () => clearTimeout(timer));
+      const timer = setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(-6px) scale(0.96)';
+        setTimeout(() => t.remove(), 240);
+      }, duration);
+      t.querySelector('.toast-close').addEventListener('click', () => {
+        clearTimeout(timer);
+        t.remove();
+      });
     }
     window.showToast = showToast;
+
+    // ── Universal Copy Button Helper ──
+    function copyText(text, btn) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Panoya kopyalandı', 'success', 2200);
+        if (btn) {
+          const original = btn.innerHTML;
+          btn.classList.add('copied');
+          btn.innerHTML = '✓ Kopyalandı';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = original;
+          }, 1800);
+        }
+      }).catch(() => {
+        showToast('Kopyalama başarısız oldu', 'error');
+      });
+    }
+    window.copyText = copyText;
+
+    // ── Form Submit Micro-Feedback ──
+    document.addEventListener('submit', (e) => {
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+      if (submitBtn && !form.dataset.noFeedback) {
+        submitBtn.classList.add('is-loading');
+        if (submitBtn.tagName === 'BUTTON') {
+          submitBtn.dataset.origText = submitBtn.innerHTML;
+          submitBtn.innerHTML = 'İşleniyor…';
+        }
+      }
+    });
+
+    // ── Subtle Logo Easter Egg ──
+    let logoClicks = 0;
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.platform-brand')) {
+        logoClicks++;
+        if (logoClicks === 5) {
+          showToast('🌟 EkoYıldız • Harika bir gün dileriz!', 'info', 4000);
+          logoClicks = 0;
+        }
+      }
+    });
 
     // ── Confirm util ──
     function confirmAction(msg) {
@@ -9081,54 +9122,374 @@ function renderSettingsPage(user, query = {}) {
 
       <!-- TAB 3: SİTE & GÖRÜNÜM AYARLARI -->
       <div id="st-pane-site" class="st-tab-pane" style="display: none;">
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 2rem;">
-          <h3 style="margin-top:0; color:#fff; font-size:1.2rem; display:flex; align-items:center; gap:8px;">
-            <span>🎨</span> Arayüz, Performans ve Bildirim Ayarları
-          </h3>
-          <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem;">Cihazınıza özel yerel tarayıcı tercihlerinizi optimize edin.</p>
-
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:1.5rem;">
-            
-            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
-              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">🖥️ Görünüm Teması</h4>
-              <select id="siteThemeSelect" style="width:100%; background:rgba(15, 23, 42, 0.9); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px; border-radius:8px; font-weight:600;" onchange="updateThemePreference(this.value)">
-                <option value="dark">🌙 EkoYıldız Koyu Neon (Varsayılan)</option>
-                <option value="oled">🖤 OLED Saf Siyah</option>
-                <option value="cyber">🔮 Siberpunk Mor</option>
-              </select>
+        <!-- Top Toolbar -->
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 27, 75, 0.85)); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 1.75rem 2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; backdrop-filter: blur(16px); box-shadow: 0 8px 30px rgba(0,0,0,0.35);">
+          <div>
+            <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #a78bfa; background: rgba(167, 139, 250, 0.12); padding: 4px 12px; border-radius: 99px; margin-bottom: 8px;">
+              <span>🎨</span> Tasarım & Arayüz Stüdyosu
             </div>
-
-            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
-              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">⚡ Performans ve Animasyon</h4>
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1; margin-bottom:10px;">
-                <input type="checkbox" id="reduceMotionToggle" onchange="toggleReduceMotion(this.checked)" style="width:18px; height:18px;">
-                Hareketleri Azalt (Düşük Donanım / GPU Dostu)
-              </label>
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1;">
-                <input type="checkbox" id="compactModeToggle" onchange="toggleCompactMode(this.checked)" style="width:18px; height:18px;">
-                Kompakt Liste Görünümü
-              </label>
-            </div>
-
-            <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.25rem; border-radius:12px;">
-              <h4 style="margin:0 0 10px 0; color:#fff; font-size:1rem;">📨 Bildirim Filtreleri</h4>
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1; margin-bottom:10px;">
-                <input type="checkbox" id="notifyAnnouncements" checked style="width:18px; height:18px;">
-                Resmî Duyurular & Topluluk Haberleri
-              </label>
-              <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.9rem; color:#cbd5e1;">
-                <input type="checkbox" id="notifyLegalUpdates" checked style="width:18px; height:18px;">
-                Kural ve Hukuk Değişiklik Bildirimleri
-              </label>
-            </div>
-
+            <h2 style="margin: 0; font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: -0.02em;">Görünüm ve Sistem Tercihleri</h2>
+            <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 0.92rem;">Renkler, cam derinliği, köşe yumuşaklığı ve arayüz ölçeği dahil her detayı zevkinize göre özelleştirin.</p>
           </div>
-
-          <div style="margin-top:1.5rem; text-align:right;">
-            <button onclick="saveSitePreferences()" style="padding:10px 24px; background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:10px; cursor:pointer;">
-              💾 Tercihleri Uygula
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" onclick="randomizeTheme()" style="padding: 10px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #e2e8f0; border-radius: 12px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+              <span>🎲</span> Rastgele Lüks Tema
+            </button>
+            <button type="button" onclick="resetSitePreferences()" style="padding: 10px 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; border-radius: 12px; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+              <span>🔄</span> Varsayılana Dön
+            </button>
+            <button type="button" onclick="saveSitePreferences()" style="padding: 10px 22px; background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); transition: all 0.2s;">
+              <span>💾</span> Tercihleri Kaydet
             </button>
           </div>
+        </div>
+
+        <!-- Studio Grid Layout (Controls + Live Preview) -->
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.85fr); gap: 1.5rem; align-items: start;">
+          
+          <!-- LEFT: Customization Controls -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <!-- SECTION 1: Lüks Hazır Tema Paketleri -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <div>
+                  <h3 style="margin: 0; color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                    <span>🌌</span> Hazır Lüks Tema Paketleri
+                  </h3>
+                  <p style="margin: 4px 0 0; color: #94a3b8; font-size: 0.82rem;">Tek dokunuşla tüm platform atmosferini yeniden tasarlayın.</p>
+                </div>
+                <span id="activePresetBadge" style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.3);">Obsidian Gece</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;" id="themePresetsGrid">
+                <!-- Obsidian Gece (Default) -->
+                <div class="theme-preset-card active" data-preset="obsidian" onclick="selectThemePreset('obsidian')" style="background: rgba(6, 6, 14, 0.9); border: 2px solid #a78bfa; border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">🌌 Obsidian Gece</span>
+                    <span class="preset-check" style="color: #a78bfa; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Derin uzay & lavanta cam ışıltısı</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #06060e; border: 1px solid rgba(255,255,255,0.2);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #a78bfa;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #818cf8;"></span>
+                  </div>
+                </div>
+
+                <!-- OLED Pure Black -->
+                <div class="theme-preset-card" data-preset="oled" onclick="selectThemePreset('oled')" style="background: #000000; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">🖤 OLED Saf Siyah</span>
+                    <span class="preset-check" style="display: none; color: #38bdf8; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Saf #000 zemin, sıfır ışık sızıntısı</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #000000; border: 1px solid rgba(255,255,255,0.3);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #ffffff;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #38bdf8;"></span>
+                  </div>
+                </div>
+
+                <!-- Siber Ametist -->
+                <div class="theme-preset-card" data-preset="cyber" onclick="selectThemePreset('cyber')" style="background: #0c0817; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">🔮 Siber Ametist</span>
+                    <span class="preset-check" style="display: none; color: #c084fc; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Neon mor & eflatun cyberpunk zarafet</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #0c0817; border: 1px solid rgba(255,255,255,0.2);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #c084fc;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #f43f5e;"></span>
+                  </div>
+                </div>
+
+                <!-- Derin Okyanus -->
+                <div class="theme-preset-card" data-preset="ocean" onclick="selectThemePreset('ocean')" style="background: #04121a; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">🌊 Derin Okyanus</span>
+                    <span class="preset-check" style="display: none; color: #2dd4bf; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Marin teal & zümrüt turkuaz sakinliği</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #04121a; border: 1px solid rgba(255,255,255,0.2);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #2dd4bf;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #0ea5e9;"></span>
+                  </div>
+                </div>
+
+                <!-- Titanyum Grafit -->
+                <div class="theme-preset-card" data-preset="titanium" onclick="selectThemePreset('titanium')" style="background: #0e1117; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">🛡️ Titanyum Grafit</span>
+                    <span class="preset-check" style="display: none; color: #38bdf8; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Minimalist soğuk metal & gri tonlar</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #0e1117; border: 1px solid rgba(255,255,255,0.2);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #94a3b8;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #38bdf8;"></span>
+                  </div>
+                </div>
+
+                <!-- Kraliyet Kehribarı -->
+                <div class="theme-preset-card" data-preset="amber" onclick="selectThemePreset('amber')" style="background: #140d04; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.2s; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #fff; font-size: 0.9rem;">👑 Kraliyet Kehribarı</span>
+                    <span class="preset-check" style="display: none; color: #fbbf24; font-weight: 800;">✓</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">Lüks altın, bronz & sıcak şampanya</div>
+                  <div style="display: flex; gap: 6px;">
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #140d04; border: 1px solid rgba(255,255,255,0.2);"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #fbbf24;"></span>
+                    <span style="width: 18px; height: 18px; border-radius: 50%; background: #f59e0b;"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: Vurgu Rengi & Özel Renk Paleti -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+              <h3 style="margin: 0 0 4px; color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <span>💎</span> Vurgu Rengi & Özel Palet (Accent Color)
+              </h3>
+              <p style="margin: 0 0 1.25rem; color: #94a3b8; font-size: 0.82rem;">Butonlar, linkler, aktif sekmeler ve rozetlerin ana rengini belirleyin.</p>
+
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                <button type="button" class="accent-swatch active" data-color="#a78bfa" onclick="setAccentColor('#a78bfa')" style="width: 38px; height: 38px; border-radius: 12px; background: #a78bfa; border: 2px solid #fff; cursor: pointer; box-shadow: 0 0 12px rgba(167,139,250,0.5);"></button>
+                <button type="button" class="accent-swatch" data-color="#38bdf8" onclick="setAccentColor('#38bdf8')" style="width: 38px; height: 38px; border-radius: 12px; background: #38bdf8; border: 2px solid transparent; cursor: pointer;"></button>
+                <button type="button" class="accent-swatch" data-color="#34d399" onclick="setAccentColor('#34d399')" style="width: 38px; height: 38px; border-radius: 12px; background: #34d399; border: 2px solid transparent; cursor: pointer;"></button>
+                <button type="button" class="accent-swatch" data-color="#f43f5e" onclick="setAccentColor('#f43f5e')" style="width: 38px; height: 38px; border-radius: 12px; background: #f43f5e; border: 2px solid transparent; cursor: pointer;"></button>
+                <button type="button" class="accent-swatch" data-color="#fbbf24" onclick="setAccentColor('#fbbf24')" style="width: 38px; height: 38px; border-radius: 12px; background: #fbbf24; border: 2px solid transparent; cursor: pointer;"></button>
+                <button type="button" class="accent-swatch" data-color="#ffffff" onclick="setAccentColor('#ffffff')" style="width: 38px; height: 38px; border-radius: 12px; background: #ffffff; border: 2px solid transparent; cursor: pointer;"></button>
+              </div>
+
+              <!-- Custom Color Input -->
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px; display: flex; align-items: center; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin: 0;">
+                  Özel HEX Renk:
+                </label>
+                <input type="color" id="customColorPicker" value="#a78bfa" oninput="handleCustomColorInput(this.value)" style="width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer; background: transparent;">
+                <input type="text" id="customColorHex" value="#a78bfa" maxlength="7" oninput="handleCustomColorHex(this.value)" style="width: 110px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 8px 12px; border-radius: 8px; font-family: monospace; font-size: 0.85rem; font-weight: 700; margin: 0;">
+                <span style="font-size: 0.78rem; color: #64748b;">(Örnek: #a78bfa, #38bdf8)</span>
+              </div>
+            </div>
+
+            <!-- SECTION 3: Cam Morfizmini, Opaklık ve Kenarlık -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+              <h3 style="margin: 0 0 4px; color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <span>🪟</span> Cam Morfizmini, Saydamlık & Işıltı
+              </h3>
+              <p style="margin: 0 0 1.5rem; color: #94a3b8; font-size: 0.82rem;">Kartların arka plan bulanıklığını, şeffaflık seviyesini ve kenar parlaklığını ayarlayın.</p>
+
+              <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <!-- Blur Slider -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
+                    <span>Buzlu Cam Bulanıklığı (Backdrop Blur)</span>
+                    <span id="blurValLabel" style="color: #a78bfa; font-family: monospace;">20px</span>
+                  </div>
+                  <input type="range" id="glassBlurSlider" min="0" max="40" step="2" value="20" oninput="handleBlurChange(this.value)" style="width: 100%; accent-color: #a78bfa; cursor: pointer; margin: 0;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-top: 4px;">
+                    <span>0px (Şeffaf Düz)</span>
+                    <span>20px (Lüks Cam)</span>
+                    <span>40px (Ultra Yoğun Buz)</span>
+                  </div>
+                </div>
+
+                <!-- Surface Opacity Slider -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
+                    <span>Kart Yüzey Opaklığı (Surface Opacity)</span>
+                    <span id="surfaceValLabel" style="color: #a78bfa; font-family: monospace;">%3.5</span>
+                  </div>
+                  <input type="range" id="surfaceOpacitySlider" min="1" max="25" step="1" value="4" oninput="handleSurfaceChange(this.value)" style="width: 100%; accent-color: #a78bfa; cursor: pointer; margin: 0;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-top: 4px;">
+                    <span>%1 (Ultra Şeffaf)</span>
+                    <span>%4 (Dengeli)</span>
+                    <span>%25 (Koyu Katı)</span>
+                  </div>
+                </div>
+
+                <!-- Border Opacity Slider -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
+                    <span>Kenarlık Işıltı Yoğunluğu (Border Glow)</span>
+                    <span id="borderValLabel" style="color: #a78bfa; font-family: monospace;">%8</span>
+                  </div>
+                  <input type="range" id="borderOpacitySlider" min="2" max="30" step="1" value="8" oninput="handleBorderChange(this.value)" style="width: 100%; accent-color: #a78bfa; cursor: pointer; margin: 0;">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 4: Köşe Yuvarlaklığı & Tipografi -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+              <h3 style="margin: 0 0 4px; color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <span>📐</span> Köşe Yuvarlaklığı & Tipografi Dili
+              </h3>
+              <p style="margin: 0 0 1.25rem; color: #94a3b8; font-size: 0.82rem;">Arayüzün geometrisi ve okuma fontunu kişiselleştirin.</p>
+
+              <!-- Radius Selector -->
+              <div style="margin-bottom: 1.25rem;">
+                <label style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 8px; display: block;">Köşe Yuvarlaklığı</label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;" id="radiusButtonsGroup">
+                  <button type="button" class="radius-btn" data-radius="8" onclick="setCornerRadius(8)" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;">
+                    ⏹️ Keskin (8px)
+                  </button>
+                  <button type="button" class="radius-btn active" data-radius="18" onclick="setCornerRadius(18)" style="padding: 10px; background: rgba(167,139,250,0.15); border: 1px solid #a78bfa; color: #fff; border-radius: 18px; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;">
+                    🔲 Standart (18px)
+                  </button>
+                  <button type="button" class="radius-btn" data-radius="26" onclick="setCornerRadius(26)" style="padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 26px; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;">
+                    🔘 Apple Lüks (26px)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Font & Scale -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                  <label style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px; display: block;">Yazı Tipi Tercihi</label>
+                  <select id="fontFamilySelect" onchange="setFontFamily(this.value)" style="width: 100%; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px; border-radius: 10px; font-weight: 600; margin: 0;">
+                    <option value="'Outfit', sans-serif">Outfit (Modern Geometrik)</option>
+                    <option value="'Inter', sans-serif">Inter (Temiz Apple Stili)</option>
+                    <option value="'JetBrains Mono', monospace">JetBrains Mono (Teknoloji & Kod)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600; margin-bottom: 6px; display: block;">Arayüz Metin Ölçeği</label>
+                  <select id="fontScaleSelect" onchange="setFontScale(this.value)" style="width: 100%; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 10px; border-radius: 10px; font-weight: 600; margin: 0;">
+                    <option value="92">%92 (Kompakt / Veri Odaklı)</option>
+                    <option value="100" selected>%100 (Standart / Önerilen)</option>
+                    <option value="108">%108 (Büyük / Kolay Okuma)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 5: Hissiyat, Animasyon ve Performans -->
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.75rem;">
+              <h3 style="margin: 0 0 4px; color: #fff; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span> Deneyim, Mikro Etkileşim & Performans
+              </h3>
+              <p style="margin: 0 0 1.25rem; color: #94a3b8; font-size: 0.82rem;">Animasyonlar, dokunsal basma hissi ve arka plan ışıklarını kontrol edin.</p>
+
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); margin: 0;">
+                  <div>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Haptic / Dokunsal Buton Basma Hissi</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8;">Tıklamalarda Apple tarzı yumuşak yaylanma mikro animasyonu</div>
+                  </div>
+                  <input type="checkbox" id="toggleHaptic" checked onchange="handleHapticToggle(this.checked)" style="width: 20px; height: 20px; accent-color: #a78bfa; margin: 0;">
+                </label>
+
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); margin: 0;">
+                  <div>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Hareketleri Azalt (Düşük Donanım / GPU Dostu)</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8;">Geçiş animasyonlarını kapatarak pil ve performans tasarrufu sağlar</div>
+                  </div>
+                  <input type="checkbox" id="reduceMotionToggle" onchange="toggleReduceMotion(this.checked)" style="width: 20px; height: 20px; accent-color: #a78bfa; margin: 0;">
+                </label>
+
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); margin: 0;">
+                  <div>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Kompakt Arayüz & Liste Modu</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8;">Kart boşluklarını azaltarak tek ekranda daha fazla bilgi gösterir</div>
+                  </div>
+                  <input type="checkbox" id="compactModeToggle" onchange="toggleCompactMode(this.checked)" style="width: 20px; height: 20px; accent-color: #a78bfa; margin: 0;">
+                </label>
+
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); margin: 0;">
+                  <div>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Canlı Sistem Bildirimleri & Rozetler</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8;">Kopyalama, onay ve işlem tamamlanma bildirimleri gösterilsin</div>
+                  </div>
+                  <input type="checkbox" id="notifyAnnouncements" checked style="width: 20px; height: 20px; accent-color: #a78bfa; margin: 0;">
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT: Live Interactive Preview Showcase (Sticky) -->
+          <div style="position: sticky; top: 90px;">
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 1.75rem; backdrop-filter: blur(16px); box-shadow: 0 10px 35px rgba(0,0,0,0.4);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                <div style="font-weight: 700; color: #fff; font-size: 1rem; display: flex; align-items: center; gap: 6px;">
+                  <span>👁️</span> Canlı Önizleme Vitrini
+                </div>
+                <span id="liveStatusBadge" style="font-size: 0.75rem; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 3px 8px; border-radius: 6px;">
+                  ● ANLIK SENKRONİZE
+                </span>
+              </div>
+
+              <!-- Preview Card Wrapper -->
+              <div id="livePreviewContainer" style="background: var(--bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.25rem; transition: all 0.3s ease;">
+                
+                <!-- Mock Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <div id="livePreviewLogoDot" style="width: 24px; height: 24px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 900; color: #fff;">
+                      ✦
+                    </div>
+                    <span style="font-weight: 800; font-size: 0.9rem; color: #fff;">EkoYıldız v2.4</span>
+                  </div>
+                  <span id="livePreviewPill" style="font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 99px;">
+                    Önizleme
+                  </span>
+                </div>
+
+                <!-- Mock Glass Card -->
+                <div id="livePreviewCard" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--card-radius, 18px); padding: 1.25rem; backdrop-filter: blur(var(--glass-blur)); margin-bottom: 1rem; transition: all 0.3s ease;">
+                  <h4 style="margin: 0 0 6px 0; color: #fff; font-size: 0.95rem; font-weight: 700;">Lüks Cam Kart Örneği</h4>
+                  <p style="margin: 0 0 12px 0; color: var(--muted); font-size: 0.8rem; line-height: 1.4;">
+                    Seçtiğiniz tema, cam bulanıklığı, saydamlık ve vurgu rengi bu kart üzerinde gerçek zamanlı yansıtılır.
+                  </p>
+
+                  <!-- Mock Input -->
+                  <div style="margin-bottom: 12px;">
+                    <input type="text" id="livePreviewInput" placeholder="Örnek metin kutusu..." value="EkoYıldız Deneyim Tasarımı" style="margin-bottom: 0; padding: 8px 12px; font-size: 0.82rem;">
+                  </div>
+
+                  <!-- Mock Buttons -->
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="livePreviewBtnPrimary" class="btn" style="padding: 8px 16px; font-size: 0.82rem;" onclick="showToast('✨ Lüks buton tıklaması test edildi!', 'success')">
+                      <span>✨</span> Birincil Eylem
+                    </button>
+                    <button type="button" class="btn btn-ghost" style="padding: 8px 12px; font-size: 0.82rem;" onclick="copyText('EkoYıldız-2026', this)">
+                      Kopyala
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Live Details Info -->
+                <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px; font-size: 0.75rem; color: #94a3b8; display: flex; flex-direction: column; gap: 4px;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Aktif Vurgu:</span>
+                    <strong id="liveInfoAccent" style="color: var(--accent); font-family: monospace;">#a78bfa</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Cam Bulanıklığı:</span>
+                    <strong id="liveInfoBlur" style="color: #fff; font-family: monospace;">20px</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Köşe Yuvarlaklığı:</span>
+                    <strong id="liveInfoRadius" style="color: #fff; font-family: monospace;">18px</strong>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Save Action in Sidebar -->
+              <div style="margin-top: 1.25rem;">
+                <button type="button" onclick="saveSitePreferences()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); transition: all 0.2s;">
+                  <span>💾</span> Ayarları Tüm Siteye Uygula & Kaydet
+                </button>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -9416,18 +9777,393 @@ function renderSettingsPage(user, query = {}) {
         }
       }
 
-      function updateThemePreference(theme) {
-        localStorage.setItem('ekoyildiz_theme', theme);
+      // ─────────────────────────────────────────────
+      // APPEARANCE & SYSTEM STUDIO ENGINE (V2)
+      // ─────────────────────────────────────────────
+      const THEME_PRESETS = {
+        obsidian: {
+          name: 'Obsidian Gece',
+          bg: '#06060e',
+          accent: '#a78bfa',
+          accent2: '#818cf8',
+          surface: 'rgba(255, 255, 255, 0.035)',
+          border: 'rgba(255, 255, 255, 0.08)',
+          blur: 20,
+          surfacePct: 4,
+          borderPct: 8,
+          radius: 18,
+          font: "'Outfit', sans-serif"
+        },
+        oled: {
+          name: 'OLED Saf Siyah',
+          bg: '#000000',
+          accent: '#ffffff',
+          accent2: '#38bdf8',
+          surface: 'rgba(255, 255, 255, 0.02)',
+          border: 'rgba(255, 255, 255, 0.12)',
+          blur: 0,
+          surfacePct: 2,
+          borderPct: 12,
+          radius: 14,
+          font: "'Outfit', sans-serif"
+        },
+        cyber: {
+          name: 'Siber Ametist',
+          bg: '#0c0817',
+          accent: '#c084fc',
+          accent2: '#f43f5e',
+          surface: 'rgba(192, 132, 252, 0.05)',
+          border: 'rgba(192, 132, 252, 0.18)',
+          blur: 24,
+          surfacePct: 6,
+          borderPct: 18,
+          radius: 18,
+          font: "'Outfit', sans-serif"
+        },
+        ocean: {
+          name: 'Derin Okyanus',
+          bg: '#04121a',
+          accent: '#2dd4bf',
+          accent2: '#0ea5e9',
+          surface: 'rgba(45, 212, 191, 0.05)',
+          border: 'rgba(45, 212, 191, 0.16)',
+          blur: 22,
+          surfacePct: 5,
+          borderPct: 16,
+          radius: 18,
+          font: "'Outfit', sans-serif"
+        },
+        titanium: {
+          name: 'Titanyum Grafit',
+          bg: '#0e1117',
+          accent: '#38bdf8',
+          accent2: '#94a3b8',
+          surface: 'rgba(255, 255, 255, 0.04)',
+          border: 'rgba(255, 255, 255, 0.1)',
+          blur: 16,
+          surfacePct: 4,
+          borderPct: 10,
+          radius: 12,
+          font: "'Inter', sans-serif"
+        },
+        amber: {
+          name: 'Kraliyet Kehribarı',
+          bg: '#140d04',
+          accent: '#fbbf24',
+          accent2: '#f59e0b',
+          surface: 'rgba(251, 191, 36, 0.05)',
+          border: 'rgba(251, 191, 36, 0.16)',
+          blur: 20,
+          surfacePct: 5,
+          borderPct: 16,
+          radius: 18,
+          font: "'Outfit', sans-serif"
+        }
+      };
+
+      let currentAppearance = {
+        preset: 'obsidian',
+        bg: '#06060e',
+        accent: '#a78bfa',
+        accent2: '#818cf8',
+        surface: 'rgba(255, 255, 255, 0.035)',
+        border: 'rgba(255, 255, 255, 0.08)',
+        blur: 20,
+        surfacePct: 4,
+        borderPct: 8,
+        radius: 18,
+        font: "'Outfit', sans-serif",
+        fontScale: 100,
+        haptic: true,
+        reduceMotion: false,
+        compact: false,
+        notifications: true
+      };
+
+      function hexToRgbStr(hex) {
+        if (!hex || typeof hex !== 'string') return '167, 139, 250';
+        var h = hex.replace('#', '');
+        if (h.length === 3) h = h.split('').map(function(c) { return c + c; }).join('');
+        if (h.length !== 6) return '167, 139, 250';
+        var r = parseInt(h.substring(0, 2), 16);
+        var g = parseInt(h.substring(2, 4), 16);
+        var b = parseInt(h.substring(4, 6), 16);
+        return isNaN(r) ? '167, 139, 250' : (r + ', ' + g + ', ' + b);
       }
-      function toggleReduceMotion(val) {
-        localStorage.setItem('ekoyildiz_reduce_motion', val ? 'true' : 'false');
+
+      function applyAppearanceLive(conf, updateFormControls) {
+        var root = document.documentElement;
+        if (conf.bg) root.style.setProperty('--bg', conf.bg);
+        if (conf.accent) {
+          root.style.setProperty('--accent', conf.accent);
+          root.style.setProperty('--accent2', conf.accent2 || conf.accent);
+        }
+        if (conf.surface) root.style.setProperty('--surface', conf.surface);
+        if (conf.border) root.style.setProperty('--border', conf.border);
+        if (conf.blur !== undefined) root.style.setProperty('--glass-blur', conf.blur + 'px');
+        if (conf.radius !== undefined) root.style.setProperty('--card-radius', conf.radius + 'px');
+        if (conf.font) root.style.setProperty('--site-font', conf.font);
+        if (conf.fontScale) root.style.setProperty('--font-scale', conf.fontScale + '%');
+
+        if (conf.reduceMotion) root.classList.add('reduce-motion');
+        else root.classList.remove('reduce-motion');
+
+        if (conf.compact) root.classList.add('compact-mode');
+        else root.classList.remove('compact-mode');
+
+        // Sync Live Preview Card Elements
+        var liveAccent = document.getElementById('liveInfoAccent');
+        if (liveAccent) liveAccent.innerText = conf.accent;
+        var liveBlur = document.getElementById('liveInfoBlur');
+        if (liveBlur) liveBlur.innerText = conf.blur + 'px';
+        var liveRadius = document.getElementById('liveInfoRadius');
+        if (liveRadius) liveRadius.innerText = conf.radius + 'px';
+
+        var liveCard = document.getElementById('livePreviewCard');
+        if (liveCard) {
+          liveCard.style.borderRadius = conf.radius + 'px';
+          liveCard.style.background = conf.surface;
+          liveCard.style.border = '1px solid ' + conf.border;
+          liveCard.style.backdropFilter = 'blur(' + conf.blur + 'px)';
+        }
+
+        var liveBtnPrimary = document.getElementById('livePreviewBtnPrimary');
+        if (liveBtnPrimary) {
+          liveBtnPrimary.style.background = 'rgba(' + hexToRgbStr(conf.accent) + ', 0.18)';
+          liveBtnPrimary.style.borderColor = 'rgba(' + hexToRgbStr(conf.accent) + ', 0.35)';
+          liveBtnPrimary.style.color = conf.accent;
+        }
+
+        var logoDot = document.getElementById('livePreviewLogoDot');
+        if (logoDot) logoDot.style.background = conf.accent;
+
+        var livePill = document.getElementById('livePreviewPill');
+        if (livePill) livePill.style.color = conf.accent;
+
+        var presetBadge = document.getElementById('activePresetBadge');
+        if (presetBadge) {
+          var pName = (THEME_PRESETS[conf.preset] && THEME_PRESETS[conf.preset].name) || 'Özel Ayar';
+          presetBadge.innerText = pName;
+        }
+
+        if (updateFormControls) {
+          syncFormControls(conf);
+        }
       }
-      function toggleCompactMode(val) {
-        localStorage.setItem('ekoyildiz_compact', val ? 'true' : 'false');
+
+      function syncFormControls(conf) {
+        // Preset cards active state
+        document.querySelectorAll('.theme-preset-card').forEach(function(el) {
+          var isMatch = el.dataset.preset === conf.preset;
+          el.classList.toggle('active', isMatch);
+          el.style.border = isMatch ? '2px solid ' + (conf.accent || '#a78bfa') : '1px solid rgba(255,255,255,0.12)';
+          var check = el.querySelector('.preset-check');
+          if (check) check.style.display = isMatch ? 'inline' : 'none';
+        });
+
+        // Accent swatches
+        document.querySelectorAll('.accent-swatch').forEach(function(btn) {
+          var isCur = btn.dataset.color && btn.dataset.color.toLowerCase() === conf.accent.toLowerCase();
+          btn.classList.toggle('active', isCur);
+          btn.style.border = isCur ? '2px solid #fff' : '2px solid transparent';
+          btn.style.boxShadow = isCur ? '0 0 12px ' + conf.accent : 'none';
+        });
+
+        // Custom color input
+        var customColorPicker = document.getElementById('customColorPicker');
+        if (customColorPicker) customColorPicker.value = conf.accent;
+        var customColorHex = document.getElementById('customColorHex');
+        if (customColorHex) customColorHex.value = conf.accent;
+
+        // Sliders
+        var blurSlider = document.getElementById('glassBlurSlider');
+        if (blurSlider) blurSlider.value = conf.blur;
+        var blurLabel = document.getElementById('blurValLabel');
+        if (blurLabel) blurLabel.innerText = conf.blur + 'px';
+
+        var surfaceSlider = document.getElementById('surfaceOpacitySlider');
+        if (surfaceSlider) surfaceSlider.value = conf.surfacePct || 4;
+        var surfaceLabel = document.getElementById('surfaceValLabel');
+        if (surfaceLabel) surfaceLabel.innerText = '%' + (conf.surfacePct || 4);
+
+        var borderSlider = document.getElementById('borderOpacitySlider');
+        if (borderSlider) borderSlider.value = conf.borderPct || 8;
+        var borderLabel = document.getElementById('borderValLabel');
+        if (borderLabel) borderLabel.innerText = '%' + (conf.borderPct || 8);
+
+        // Radius buttons
+        document.querySelectorAll('.radius-btn').forEach(function(btn) {
+          var isAct = parseInt(btn.dataset.radius, 10) === conf.radius;
+          btn.classList.toggle('active', isAct);
+          btn.style.background = isAct ? 'rgba(' + hexToRgbStr(conf.accent) + ', 0.15)' : 'rgba(0,0,0,0.3)';
+          btn.style.borderColor = isAct ? conf.accent : 'rgba(255,255,255,0.1)';
+          btn.style.color = isAct ? '#fff' : '#cbd5e1';
+        });
+
+        // Fonts
+        var fontSelect = document.getElementById('fontFamilySelect');
+        if (fontSelect && conf.font) fontSelect.value = conf.font;
+        var fontScaleSelect = document.getElementById('fontScaleSelect');
+        if (fontScaleSelect && conf.fontScale) fontScaleSelect.value = String(conf.fontScale);
+
+        // Toggles
+        var toggleHaptic = document.getElementById('toggleHaptic');
+        if (toggleHaptic) toggleHaptic.checked = conf.haptic !== false;
+        var reduceMotion = document.getElementById('reduceMotionToggle');
+        if (reduceMotion) reduceMotion.checked = Boolean(conf.reduceMotion);
+        var compactMode = document.getElementById('compactModeToggle');
+        if (compactMode) compactMode.checked = Boolean(conf.compact);
+        var notifyAnnouncements = document.getElementById('notifyAnnouncements');
+        if (notifyAnnouncements) notifyAnnouncements.checked = conf.notifications !== false;
       }
+
+      function selectThemePreset(key) {
+        var p = THEME_PRESETS[key];
+        if (!p) return;
+        currentAppearance.preset = key;
+        currentAppearance.bg = p.bg;
+        currentAppearance.accent = p.accent;
+        currentAppearance.accent2 = p.accent2;
+        currentAppearance.surface = p.surface;
+        currentAppearance.border = p.border;
+        currentAppearance.blur = p.blur;
+        currentAppearance.surfacePct = p.surfacePct;
+        currentAppearance.borderPct = p.borderPct;
+        currentAppearance.radius = p.radius;
+        currentAppearance.font = p.font;
+
+        applyAppearanceLive(currentAppearance, true);
+        if (typeof showToast === 'function') {
+          showToast('🌌 ' + p.name + ' teması uygulandı', 'info', 2000);
+        }
+      }
+
+      function setAccentColor(color) {
+        currentAppearance.accent = color;
+        currentAppearance.accent2 = color;
+        currentAppearance.preset = 'custom';
+        applyAppearanceLive(currentAppearance, true);
+      }
+
+      function handleCustomColorInput(color) {
+        setAccentColor(color);
+      }
+
+      function handleCustomColorHex(hex) {
+        if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+          setAccentColor(hex);
+        }
+      }
+
+      function handleBlurChange(val) {
+        var num = parseInt(val, 10);
+        currentAppearance.blur = num;
+        var label = document.getElementById('blurValLabel');
+        if (label) label.innerText = num + 'px';
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function handleSurfaceChange(val) {
+        var num = parseInt(val, 10);
+        currentAppearance.surfacePct = num;
+        var alpha = (num / 100).toFixed(3);
+        currentAppearance.surface = 'rgba(255, 255, 255, ' + alpha + ')';
+        var label = document.getElementById('surfaceValLabel');
+        if (label) label.innerText = '%' + num;
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function handleBorderChange(val) {
+        var num = parseInt(val, 10);
+        currentAppearance.borderPct = num;
+        var alpha = (num / 100).toFixed(3);
+        currentAppearance.border = 'rgba(255, 255, 255, ' + alpha + ')';
+        var label = document.getElementById('borderValLabel');
+        if (label) label.innerText = '%' + num;
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function setCornerRadius(r) {
+        currentAppearance.radius = r;
+        applyAppearanceLive(currentAppearance, true);
+      }
+
+      function setFontFamily(font) {
+        currentAppearance.font = font;
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function setFontScale(scale) {
+        currentAppearance.fontScale = parseInt(scale, 10);
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function handleHapticToggle(checked) {
+        currentAppearance.haptic = checked;
+      }
+
+      function toggleReduceMotion(checked) {
+        currentAppearance.reduceMotion = checked;
+        applyAppearanceLive(currentAppearance, false);
+      }
+
+      function toggleCompactMode(checked) {
+        currentAppearance.compact = checked;
+        applyAppearanceLive(currentAppearance, false);
+      }
+
       function saveSitePreferences() {
-        alert('✅ Tarayıcı görünüm ve arayüz tercihleri uygulandı.');
+        try {
+          localStorage.setItem('ekoyildiz_appearance_v2', JSON.stringify(currentAppearance));
+          if (typeof showToast === 'function') {
+            showToast('✅ Görünüm tercihleri tüm siteye uygulandı ve kaydedildi!', 'success', 3500);
+          } else {
+            alert('✅ Görünüm tercihleri tüm siteye uygulandı ve kaydedildi!');
+          }
+        } catch (e) {
+          alert('Tercihler kaydedilirken hata oluştu: ' + e.message);
+        }
       }
+
+      function resetSitePreferences() {
+        if (!confirm('Tüm arayüz ve görünüm ayarlarını varsayılan Obsidian Gece stiline sıfırlamak istiyor musunuz?')) return;
+        localStorage.removeItem('ekoyildiz_appearance_v2');
+        currentAppearance = Object.assign({}, THEME_PRESETS.obsidian, {
+          preset: 'obsidian',
+          fontScale: 100,
+          haptic: true,
+          reduceMotion: false,
+          compact: false,
+          notifications: true
+        });
+        applyAppearanceLive(currentAppearance, true);
+        if (typeof showToast === 'function') {
+          showToast('🔄 Varsayılan Obsidian ayarlarına dönüldü.', 'info', 2500);
+        }
+      }
+
+      function randomizeTheme() {
+        var presetKeys = ['obsidian', 'oled', 'cyber', 'ocean', 'titanium', 'amber'];
+        var randomKey = presetKeys[Math.floor(Math.random() * presetKeys.length)];
+        selectThemePreset(randomKey);
+        if (typeof showToast === 'function') {
+          showToast('🎲 Rastgele lüks tema oluşturuldu: ' + THEME_PRESETS[randomKey].name, 'success', 2500);
+        }
+      }
+
+      // Initialize Appearance on Page Load
+      (function initAppearanceStudio() {
+        try {
+          var saved = localStorage.getItem('ekoyildiz_appearance_v2');
+          if (saved) {
+            var parsed = JSON.parse(saved);
+            currentAppearance = Object.assign({}, currentAppearance, parsed);
+          }
+          applyAppearanceLive(currentAppearance, true);
+        } catch (e) {
+          console.warn('Appearance init warning:', e);
+        }
+      })();
 
       async function handleToggleTosConsent() {
         if (!confirm('Kullanım şartları ve KVKK sözleşme rızanızı değiştirmek istediğinize emin misiniz? Rızanızı kaldırmanız halinde bazı platform fonksiyonları kısıtlanacaktır.')) return;

@@ -21,7 +21,7 @@ const MOD_CEZA_LOG_CHANNEL_ID = process.env.EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID ||
 const userViolations = new Map();
 
 // Bellek temizleme (5 dakikada bir)
-setInterval(() => {
+const violationCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [userId, logs] of userViolations.entries()) {
     const valid = logs.filter(l => now - l.timestamp < 15 * 60 * 1000);
@@ -29,6 +29,18 @@ setInterval(() => {
     else userViolations.set(userId, valid);
   }
 }, 5 * 60 * 1000);
+violationCleanupTimer.unref?.();
+
+// Silinen mesajları, bir moderatör yanlış pozitifi affedene kadar kısa süreli tutar.
+// messageId -> özgün mesaj ve yalnızca bu olayın otomatik yaptırım bilgileri
+const automodIncidents = new Map();
+const incidentCleanupTimer = setInterval(() => {
+  const cutoff = Date.now() - 15 * 60 * 1000;
+  for (const [messageId, incident] of automodIncidents.entries()) {
+    if (incident.createdAt < cutoff) automodIncidents.delete(messageId);
+  }
+}, 60 * 1000);
+incidentCleanupTimer.unref?.();
 
 /**
  * 1. UNICODE HOMOGLYPH DÖNÜŞTÜRÜCÜ (Kiril / Grek / Şekilli Harf Bypass Kalkanı)
@@ -96,12 +108,14 @@ const PROFANITY_TIERS = {
     points: -5.0,
     words: [
       "orospu", "orospucocugu", "orospuçocuğu", "orosbu", "orospunun", "orospular",
+      "orospuya", "orospusun", "orospuymuş",
       "yarrak", "yarak", "yarram", "yarragim", "yarrağım", "yarrrak",
       "amcık", "amcik", "amcığı", "amcığını", "amcıklar",
       "sikeyim", "siktim", "siktiğimin", "sikerim", "sikiş", "sikis", "sikim", "sikem", "sik kırığı", "sikişmek", "sikismek",
       "amına", "amını", "amina", "amini", "amk", "aq", "amq", "anaskm", "amınakoyim", "amınakoyayım", "amınakodumun", "amkoyim", "aminakoyim",
-      "piç", "pic", "pici", "piçin", "picin", "piçler", "picler",
+      "piç", "pic", "pici", "piçin", "picin", "piçler", "picler", "piçsin",
       "oç", "oc", "götveren", "gotveren", "gavat", "kaltak", "fahişe", "fahise", "kahpe", "puşt", "pust"
+      , "gavatsın", "gavatlar"
     ]
   },
 
@@ -112,8 +126,9 @@ const PROFANITY_TIERS = {
     points: -2.0,
     words: [
       "göt", "got", "göte", "gote", "götü", "gotu", "götlek", "gotlek", "göt kafalı",
-      "sik", "siktir", "siktirgit", "sg", "sktir",
-      "yavşak", "yavsak", "ibne", "top", "dingil", "dangalak", "pezevenk", "pezevenkler"
+      "sik", "siktir", "siktirin", "siktirsin", "siktirgit", "sg", "sktir",
+      "yavşak", "yavsak", "yavşağın", "ibne", "ibneler", "ibnesin", "ibneyim",
+      "top", "dingil", "dangalak", "pezevenk", "pezevenkler"
     ]
   }
 };
@@ -168,13 +183,42 @@ function cleanAndNormalizeText(rawText) {
   };
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function maskSafeWords(rawText) {
+  let masked = rawText.toLocaleLowerCase("tr-TR");
+  const alphabet = "a-zğüşıöç";
+  for (const safeWord of [...SAFE_WORDS].sort((a, b) => b.length - a.length)) {
+    const regex = new RegExp(`(^|[^${alphabet}])${escapeRegex(safeWord)}(?=$|[^${alphabet}])`, "gi");
+    masked = masked.replace(regex, "$1 ");
+  }
+  return masked;
+}
+
+/**
+ * Bir terimi normalizasyon varyantlarında yalnızca bağımsız tam kelime/ifade olarak arar.
+ * Kök, ek veya kelime içi tahmin yapılmaz; her izin verilmeyen biçim sözlükte açıkça yer alır.
+ */
+function containsNormalizedTerm(norm, term) {
+  const normalizedTerm = cleanAndNormalizeText(term).cleaned;
+  const escapedTerm = escapeRegex(normalizedTerm);
+  const boundaryRegex = new RegExp(
+    `(^|[^a-zğüşıöç])${escapedTerm}($|[^a-zğüşıöç])`,
+    "i"
+  );
+  return [norm.raw, norm.cleaned, norm.collapsed, norm.reduced, norm.singleChar]
+    .some(value => boundaryRegex.test(value));
+}
+
 /**
  * 3. Akıllı Küfür & Bypass Tespiti
  */
 function detectProfanity(rawText) {
   if (!rawText || typeof rawText !== "string") return null;
 
-  const norm = cleanAndNormalizeText(rawText);
+  const norm = cleanAndNormalizeText(maskSafeWords(rawText));
 
   // Güvenli kelime kontrolü: Eğer metin tamamen safe word ise atla
   const rawWords = norm.raw.split(/\s+/);
@@ -194,8 +238,7 @@ function detectProfanity(rawText) {
 
   // 2. Kritik Kelimeler
   for (const word of PROFANITY_TIERS.CRITICAL.words) {
-    const wRegex = new RegExp(`\\b${word}\\b`, 'i');
-    if (wRegex.test(norm.raw) || norm.cleaned.includes(word) || norm.collapsed.includes(word) || norm.singleChar.includes(word)) {
+    if (containsNormalizedTerm(norm, word)) {
       return {
         tier: PROFANITY_TIERS.CRITICAL,
         matched: word,
@@ -206,34 +249,15 @@ function detectProfanity(rawText) {
 
   // 3. Ağır Küfürler (Severe)
   for (const word of PROFANITY_TIERS.SEVERE.words) {
-    // Özel durumlar: amk, aq gibi kısa kelimelerde kelime sınırı ve safe word kontrolü
-    if (word === "amk" || word === "aq" || word === "amq" || word === "oç" || word === "oc") {
-      const shortRegex = new RegExp(`(^|\\s|[^a-zğüşıöç])${word}($|\\s|[^a-zğüşıöç])`, 'i');
-      if (shortRegex.test(norm.raw) || shortRegex.test(norm.collapsed) || shortRegex.test(norm.singleChar)) {
-        if (!SAFE_WORDS.some(sw => norm.raw.includes(sw) && !norm.raw.includes(` ${word} `))) {
-          return { tier: PROFANITY_TIERS.SEVERE, matched: word, severity: "SEVERE" };
-        }
-      }
-    } else {
-      if (norm.raw.includes(word) || norm.cleaned.includes(word) || norm.collapsed.includes(word) || norm.reduced.includes(word) || norm.singleChar.includes(word)) {
-        return { tier: PROFANITY_TIERS.SEVERE, matched: word, severity: "SEVERE" };
-      }
+    if (containsNormalizedTerm(norm, word)) {
+      return { tier: PROFANITY_TIERS.SEVERE, matched: word, severity: "SEVERE" };
     }
   }
 
   // 4. Orta Derece Argo / Toksik (Moderate)
   for (const word of PROFANITY_TIERS.MODERATE.words) {
-    if (word === "sik" || word === "göt" || word === "sg") {
-      const shortRegex = new RegExp(`(^|\\s|[^a-zğüşıöç])${word}($|\\s|[^a-zğüşıöç])`, 'i');
-      if (shortRegex.test(norm.raw) || shortRegex.test(norm.collapsed) || shortRegex.test(norm.singleChar)) {
-        if (!SAFE_WORDS.some(sw => norm.raw.includes(sw) && (norm.raw.includes("sık") || norm.raw.includes("sıkıntı")))) {
-          return { tier: PROFANITY_TIERS.MODERATE, matched: word, severity: "MODERATE" };
-        }
-      }
-    } else {
-      if (norm.raw.includes(word) || norm.cleaned.includes(word) || norm.collapsed.includes(word) || norm.singleChar.includes(word)) {
-        return { tier: PROFANITY_TIERS.MODERATE, matched: word, severity: "MODERATE" };
-      }
+    if (containsNormalizedTerm(norm, word)) {
+      return { tier: PROFANITY_TIERS.MODERATE, matched: word, severity: "MODERATE" };
     }
   }
 
@@ -259,6 +283,7 @@ async function processMessageAutomod(message, client) {
     let logs = userViolations.get(userId) || [];
     logs = logs.filter(l => now - l.timestamp < 15 * 60 * 1000);
     logs.push({
+      messageId: message.id,
       timestamp: now,
       severity: detection.severity,
       matched: detection.matched
@@ -268,7 +293,11 @@ async function processMessageAutomod(message, client) {
     const violationCount = logs.length;
 
     // 2. Mesajı Anında Sil
-    await message.delete().catch(() => {});
+    let messageDeleted = false;
+    try {
+      await message.delete();
+      messageDeleted = true;
+    } catch (_) {}
 
     // 3. Güven Puanını Düşür
     const pointsToDeduct = detection.tier.points || -2.0;
@@ -279,6 +308,8 @@ async function processMessageAutomod(message, client) {
     let actionTaken = "UYARI";
     let actionDesc = "Kullanıcının mesajı silindi ve güven puanı düşürüldü.";
     let embedColor = 0xf1c40f;
+    let timeoutDurationMs = null;
+    let timeoutExpectedUntil = null;
 
     // ── KADEMELİ CEZA SENARYOLARI ──────────────────────────────────────────
 
@@ -287,7 +318,12 @@ async function processMessageAutomod(message, client) {
       actionTaken = "🚨 KRİTİK İHLAL — DOĞRUDAN HAPİS & SUSTURMA";
       embedColor = 0x900c3f;
       if (member) {
-        await member.timeout(60 * 60 * 1000, `Automod Kritik İhlal: ${detection.matched}`).catch(() => {});
+        const requestedDurationMs = 60 * 60 * 1000;
+        try {
+          const timedOutMember = await member.timeout(requestedDurationMs, `Automod Kritik İhlal: ${detection.matched}`);
+          timeoutExpectedUntil = timedOutMember?.communicationDisabledUntilTimestamp || member.communicationDisabledUntilTimestamp || null;
+          if (timeoutExpectedUntil) timeoutDurationMs = requestedDurationMs;
+        } catch (_) {}
         await jailUser(client, guild, userId, `Automod Kritik İhlal: ${detection.matched}`, 60, client.user.id).catch(() => {});
       }
       actionDesc = `🚨 **Ağır Yaptırım:** Kullanıcı milli/dini/ağır değer ihlali sebebiyle **60 dakika hapse atıldı ve susturuldu.**`;
@@ -306,7 +342,12 @@ async function processMessageAutomod(message, client) {
       actionTaken = "🔇 TEKERRÜR — OTOMATİK SUSTURMA";
       embedColor = 0xe67e22;
       if (member) {
-        await member.timeout(15 * 60 * 1000, `Automod 2. Küfür İhlali (${detection.matched})`).catch(() => {});
+        const requestedDurationMs = 15 * 60 * 1000;
+        try {
+          const timedOutMember = await member.timeout(requestedDurationMs, `Automod 2. Küfür İhlali (${detection.matched})`);
+          timeoutExpectedUntil = timedOutMember?.communicationDisabledUntilTimestamp || member.communicationDisabledUntilTimestamp || null;
+          if (timeoutExpectedUntil) timeoutDurationMs = requestedDurationMs;
+        } catch (_) {}
       }
       actionDesc = `🔇 **2. Tekerrür:** Kullanıcı kuralı tekrar ihlal ettiği için **15 dakika susturuldu.**`;
     }
@@ -316,6 +357,27 @@ async function processMessageAutomod(message, client) {
       embedColor = 0xf1c40f;
       actionDesc = `⚠️ **İlk İhlal:** Mesaj silindi, güven puanı düşürüldü ve sistem uyarısı gönderildi.`;
     }
+
+    automodIncidents.set(message.id, {
+      messageId: message.id,
+      guildId: guild.id,
+      channelId: channel.id,
+      userId,
+      content: message.content,
+      attachments: Array.from(message.attachments?.values?.() || []).map(attachment => ({
+        url: attachment.url,
+        name: attachment.name || "ek-dosya"
+      })),
+      timeoutDurationMs,
+      timeoutExpectedUntil,
+      messageDeleted,
+      state: "pending",
+      counterRolledBack: false,
+      restored: false,
+      apologySent: false,
+      timeoutCleared: false,
+      createdAt: Date.now()
+    });
 
     // Kullanıcıya / Kanala Hızlı Geçici Uyarı Mesajı Gönder (5 saniye sonra silinir)
     channel.send({
@@ -374,9 +436,91 @@ async function processMessageAutomod(message, client) {
   }
 }
 
+async function forgiveAutomodIncident({ messageId, guild, moderatorId }) {
+  const incident = automodIncidents.get(messageId);
+  if (!incident || incident.guildId !== guild.id) return { restored: false, reason: "not_found" };
+  if (Date.now() - incident.createdAt >= 15 * 60 * 1000) {
+    automodIncidents.delete(messageId);
+    return { restored: false, reason: "expired" };
+  }
+  if (incident.state === "restoring") return { restored: false, reason: "in_progress", retryable: true };
+  incident.state = "restoring";
+
+  if (!incident.counterRolledBack) {
+    const logs = userViolations.get(incident.userId) || [];
+    const remainingLogs = logs.filter(log => log.messageId !== messageId);
+    if (remainingLogs.length > 0) userViolations.set(incident.userId, remainingLogs);
+    else userViolations.delete(incident.userId);
+    incident.counterRolledBack = true;
+  }
+
+  let timeoutRetryable = false;
+  if (incident.timeoutDurationMs && !incident.timeoutCleared) {
+    const member = await guild.members.fetch(incident.userId).catch(() => null);
+    if (!member) {
+      incident.state = "pending";
+      return { restored: false, reason: "member_unavailable", retryable: true, timeoutCleared: false };
+    }
+    const activeUntil = member?.communicationDisabledUntilTimestamp || 0;
+    const isSameAutomodTimeout = Math.abs(activeUntil - incident.timeoutExpectedUntil) <= 1000;
+    if (member && isSameAutomodTimeout) {
+      try {
+        await member.timeout(null, `Automod yanlış pozitif kararı — Yetkili: ${moderatorId}`);
+        incident.timeoutCleared = true;
+      } catch (_) {
+        timeoutRetryable = true;
+      }
+    }
+  }
+
+  const channel = await guild.channels.fetch(incident.channelId).catch(() => null);
+  if (!channel || !channel.isTextBased()) {
+    incident.state = "pending";
+    return { restored: false, reason: "channel_unavailable", retryable: true, timeoutCleared: incident.timeoutCleared };
+  }
+
+  try {
+    if (incident.messageDeleted && !incident.restored) {
+      await channel.send({
+        content: incident.content || undefined,
+        files: incident.attachments.map(attachment => ({ attachment: attachment.url, name: attachment.name })),
+        allowedMentions: { parse: [] }
+      });
+      incident.restored = true;
+    }
+
+    if (!incident.apologySent) {
+      await channel.send({
+        content: incident.messageDeleted
+          ? `⚠️ <@${incident.userId}>, AutoMod mesajınızı yanlış değerlendirdi. Mesajınız yeniden yayınlandı; özür dileriz.`
+          : `⚠️ <@${incident.userId}>, AutoMod mesajınızı yanlış değerlendirdi; özür dileriz. Mesajınız silinmedi.`,
+        allowedMentions: { users: [incident.userId] }
+      });
+      incident.apologySent = true;
+    }
+  } catch (_) {
+    incident.state = "pending";
+    return { restored: incident.restored, reason: "restore_failed", retryable: true, timeoutCleared: incident.timeoutCleared };
+  }
+
+  if (timeoutRetryable) {
+    incident.state = "pending";
+    return { restored: incident.restored, reason: "timeout_clear_failed", retryable: true, timeoutCleared: false };
+  }
+
+  automodIncidents.delete(messageId);
+  return {
+    restored: incident.restored,
+    messageWasPresent: !incident.messageDeleted,
+    timeoutCleared: incident.timeoutCleared,
+    incident
+  };
+}
+
 module.exports = {
   detectProfanity,
   cleanAndNormalizeText,
   processMessageAutomod,
+  forgiveAutomodIncident,
   PROFANITY_TIERS
 };
