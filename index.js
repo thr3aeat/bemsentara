@@ -352,6 +352,14 @@ async function start() {
             logger.warn(`[AnalyticsScheduler] Başlatma uyarısı: ${analyticsErr && analyticsErr.message}`);
           }
 
+          // ── EkoYıldız Otomatik Takipçi Seviye (Level 3-4) & Grup Üyelik Kontrol Servisi ──
+          try {
+            const { startFollowerLevelScheduler } = require("./bot/services/followerLevelScheduler");
+            startFollowerLevelScheduler(discordBot);
+          } catch (followerErr) {
+            logger.warn(`[FollowerLevelScheduler] Başlatma uyarısı: ${followerErr && followerErr.message}`);
+          }
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;
