@@ -185,10 +185,67 @@ async function escalateToEkoTelegram(ticket, channel, client, userNote = '') {
 async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
   if (!telegramText || typeof telegramText !== 'string') return false;
 
-  const targetEscalation = getLatestEscalatedTicket();
-  if (!targetEscalation) {
-    return false; // Aktif eskalasyon yoksa normal telegram akışı devam etsin
+  // 1. Reply edilen mesajdan bilet ID'sini çıkar (Örn: #TK-MU5WLFQ1-STEMU veya Bilet ID: #TK-...)
+  let targetTicketId = null;
+  const replyText = rawMessage?.reply_to_message?.text || '';
+  const matchReply = replyText.match(/#?(TK-[A-Z0-9-]+)/i);
+  if (matchReply) {
+    targetTicketId = matchReply[1].toUpperCase();
   }
+
+  // 2. Mesaj metninden bilet ID'sini çıkar
+  if (!targetTicketId) {
+    const matchMsg = telegramText.match(/#?(TK-[A-Z0-9-]+)/i);
+    if (matchMsg) {
+      targetTicketId = matchMsg[1].toUpperCase();
+    }
+  }
+
+  // 3. Hedef bileti bul
+  let targetEscalation = null;
+  if (targetTicketId) {
+    if (activeEscalations.has(targetTicketId)) {
+      targetEscalation = activeEscalations.get(targetTicketId);
+    } else {
+      const dbTicket = await Ticket.findOne({ ticketId: targetTicketId });
+      if (dbTicket) {
+        targetEscalation = {
+          ticketId: dbTicket.ticketId,
+          channelId: dbTicket.channelId,
+          guildId: dbTicket.guildId,
+          userId: dbTicket.userId,
+          userName: dbTicket.userName || 'Kullanıcı',
+          subject: dbTicket.subject || 'Destek'
+        };
+      }
+    }
+  }
+
+  if (!targetEscalation) {
+    targetEscalation = getLatestEscalatedTicket();
+  }
+
+  if (!targetEscalation) {
+    const openTickets = await Ticket.find({ status: 'open' });
+    if (openTickets && openTickets.length > 0) {
+      const sorted = openTickets.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const latestOpen = sorted[0];
+      targetEscalation = {
+        ticketId: latestOpen.ticketId,
+        channelId: latestOpen.channelId,
+        guildId: latestOpen.guildId,
+        userId: latestOpen.userId,
+        userName: latestOpen.userName || 'Kullanıcı',
+        subject: latestOpen.subject || 'Destek'
+      };
+    }
+  }
+
+  if (!targetEscalation) {
+    return false; // Aktif bilet yoksa normal telegram akışı devam etsin
+  }
+
+  logger.info(`[EKOai] Telegram köprü mesajı alındı: "${telegramText}" -> Hedef Bilet: #${targetEscalation.ticketId}`);
 
   const prompt =
     `Sen EKOai Telegram Yönetim Köprüsüsün.\n` +
@@ -199,7 +256,7 @@ async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
     `- Kullanıcı: ${targetEscalation.userName}\n\n` +
     `GÖREV:\n` +
     `1. Bu mesaj Discord biletindeki kullanıcıya iletilecek bir yanıt/talimat mı? ` +
-    `(Örn: "Yetkili arkadaşlar ilgilenecektir", "Dekontu kanala atmasını söyleyin", "Kontrol ettim hallediyorum" vb.)\n` +
+    `(Örn: "Yetkili arkadaşlar ilgilenecektir", "Dekontu kanala atmasını söyleyin", "Kontrol ettim hallediyorum", "test" vb.)\n` +
     `2. Yoksa Başkan bot'a (sana) bir soru mu soruyor? (Örn: "kim bekliyor", "durum ne", "konu nedir" vb.)\n\n` +
     `YALNIZCA GEÇERLİ JSON DÖN:\n` +
     `{\n` +
@@ -216,7 +273,17 @@ async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
       if (match) parsed = JSON.parse(match[0]);
     }
 
-    const channel = await client.channels.fetch(targetEscalation.channelId).catch(() => null);
+    // Kanalı ID ile veya isim ile bul
+    let channel = await client.channels.fetch(targetEscalation.channelId).catch(() => null);
+    if (!channel) {
+      for (const guild of client.guilds.cache.values()) {
+        channel = guild.channels.cache.find(c =>
+          c.id === targetEscalation.channelId ||
+          (c.name && c.name.toLowerCase().includes(targetEscalation.ticketId.toLowerCase()))
+        );
+        if (channel) break;
+      }
+    }
 
     if (parsed && parsed.intent === 'reply_to_eko' && parsed.replyForEko) {
       await sendTelegramAlert(`🤖 <b>EKOai Yanıtı:</b>\n${parsed.replyForEko}`);
@@ -249,6 +316,12 @@ async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
 
       await sendTelegramAlert(
         `✅ <b>İletildi:</b> Sayın Başkanım, yanıtınız <b>#${channel.name}</b> (<code>#${targetEscalation.ticketId}</code>) biletine başarıyla aktarıldı.`
+      );
+      return true;
+    } else {
+      logger.warn(`[EKOai] Hedef kanal bulunamadı (${targetEscalation.channelId}).`);
+      await sendTelegramAlert(
+        `⚠️ Sayın Başkanım, <code>#${targetEscalation.ticketId}</code> biletinin Discord kanalı bulunamadı veya kapatılmış.`
       );
       return true;
     }

@@ -267,7 +267,7 @@ let isAttemptingRecovery = false;
 async function startTelegramPolling(client) {
   if (isPollingActive) return;
   
-  const pollingEnabled = process.env.TELEGRAM_POLLING_ENABLED?.toLowerCase() !== "false";
+  const pollingEnabled = String(process.env.TELEGRAM_POLLING_ENABLED || 'true').trim().toLowerCase() !== "false";
   if (!pollingEnabled) {
     console.log("[Telegram Polling] Telegram polling .env veya ortam değişkenleri üzerinden devre dışı bırakıldı.");
     return;
@@ -302,9 +302,9 @@ async function startTelegramPolling(client) {
   
   console.log("[Telegram Polling] ✅ Polling dinleyici başlatılıyor...");
 
-  // Delete webhook first to avoid 409 Conflict errors
+  // Delete webhook first to avoid 409 Conflict errors (keep pending updates)
   try {
-    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/deleteWebhook?drop_pending_updates=true`);
+    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/deleteWebhook?drop_pending_updates=false`);
     console.log("[Telegram Polling] ✅ Webhook silindi (polling aktif).");
   } catch (err) {
     console.warn("[Telegram Polling] Webhook silinirken hata:", err.message);
