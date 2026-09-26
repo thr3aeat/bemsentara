@@ -360,6 +360,14 @@ async function start() {
             logger.warn(`[FollowerLevelScheduler] Başlatma uyarısı: ${followerErr && followerErr.message}`);
           }
 
+          // ── EkoYıldız DuckDNS Domain & Donanım Sistemleri Sağlık İzleme Servisi ──
+          try {
+            const { startEkoDomainMonitor } = require("./bot/services/ekoDomainMonitorService");
+            startEkoDomainMonitor(discordBot);
+          } catch (domainMonErr) {
+            logger.warn(`[DomainMonitor] Başlatma uyarısı: ${domainMonErr && domainMonErr.message}`);
+          }
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;
