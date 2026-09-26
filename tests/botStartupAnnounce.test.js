@@ -20,12 +20,14 @@ test('botStartupAnnounceService gets git metadata correctly and defines announce
   assert.equal(SHORT_ANNOUNCE_CHANNEL_ID, '1518705723184386198');
 });
 
-test('generateShortUpdateNote produces concise clean summary', async () => {
+test('generateShortUpdateNote produces concise clean summary without leaking commit details', async () => {
   const short = await generateShortUpdateNote({
     commitMessage: 'fix(admin): fix sanitize ReferenceError and improve layout'
   });
   assert.ok(typeof short === 'string');
   assert.ok(short.length > 0 && short.length <= 80);
+  assert.ok(!short.includes('sanitize'), 'Should not mention code function details');
+  assert.ok(!short.includes('ReferenceError'), 'Should not mention raw errors');
 });
 
 test('gitAutoDeployWatcher functions are defined and executable', () => {

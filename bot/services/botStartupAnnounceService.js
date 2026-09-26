@@ -184,14 +184,14 @@ async function announceBotStartup(discordClient) {
           components: [
             ComponentsV2Factory.container([
               ComponentsV2Factory.text(headerTitle),
-              ComponentsV2Factory.text(`*Derleme: \`${gitMeta.commitHash}\` • Servisler operasyonel.*`)
+              ComponentsV2Factory.text('*EkoYıldız Resmî Altyapı Servisi • Tüm sistemler operasyonel.*')
             ])
           ]
         };
 
         await shortChannel.send(v2MessagePayload).catch(async (v2Err) => {
           logger.warn(`[StartupAnnounce] Components V2 gönderilemedi, text fallback deneniyor: ${v2Err.message}`);
-          await shortChannel.send({ content: `${headerTitle}\n*Derleme: \`${gitMeta.commitHash}\` • Servisler operasyonel.*` });
+          await shortChannel.send({ content: `${headerTitle}\n*EkoYıldız Resmî Altyapı Servisi • Tüm sistemler operasyonel.*` });
         });
 
         logger.success(`[StartupAnnounce] ✅ Kısa güncelleme notu ${SHORT_ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
@@ -214,31 +214,56 @@ async function announceBotStartup(discordClient) {
   }
 }
 
+const CORPORATE_SHORT_NOTES = [
+  'Çekirdek sistem kararlılığı ve altyapı optimizasyonları tamamlandı.',
+  'Periyodik servis bakımı ve operasyonel iyileştirmeler devreye alındı.',
+  'Altyapı kararlılığı ve servis güvenilirlik standartları güncellendi.',
+  'Sistem mimarisi optimizasyonları ve performans güncellemeleri uygulandı.',
+  'Rutin servis optimizasyonları ve altyapı iyileştirmeleri gerçekleştirildi.',
+  'Platform kararlılığı ve kesintisiz servis idamesi sağlandı.'
+];
+
 /**
- * 4-7 kelimelik son derece kısa, net ve zarif bir güncelleme başlığı üretir.
+ * Ne eklendiğinden veya teknik commit detaylarından bahsetmeyen;
+ * son derece kurumsal, resmî, prestijli ve minimal bir güncelleme başlığı üretir.
  */
-async function generateShortUpdateNote(gitMeta) {
-  let note = (gitMeta.commitMessage || 'Sistem optimizasyonları yapıldı.').trim();
+async function generateShortUpdateNote(gitMeta = {}) {
+  // Deterministic selection based on commit hash
+  let hashNum = 0;
+  const hash = String(gitMeta.commitHash || gitMeta.fullHash || 'ekoyildiz');
+  for (let i = 0; i < hash.length; i++) {
+    hashNum = (hashNum + hash.charCodeAt(i)) % CORPORATE_SHORT_NOTES.length;
+  }
+  let selectedNote = CORPORATE_SHORT_NOTES[hashNum];
 
   try {
     const { chatWithAI } = require('./aiService');
-    const prompt = `Aşağıdaki teknik commit mesajını 4-7 kelimelik, son derece sade ve şık bir Türkçe güncelleme başlığı haline getir.\n` +
-      `Örnek: "Admin merkezi ve itiraf sistemi güncellendi"\n` +
-      `Commit: "${note}"\n` +
-      `Yalnızca bu birkaç kelimelik cümleyi yaz, tırnak, emoji veya selamlama ekleme.`;
+    const prompt =
+      'Sen EkoYıldız Kurumsal İletişim Direktörüsün.\n' +
+      'GÖREV: Sistem güncellemesi sonrasında paylaşılmak üzere son derece resmî, ağırbaşlı ve kurumsal 4-7 kelimelik tek bir Türkçe durum cümlesi yaz.\n' +
+      'KESİNLİKLE YASAKLAR:\n' +
+      '- Asla teknik detaylardan, kodlardan, dosyalardan veya NEYİN EKLENDİĞİNDEN/DEĞİŞTİRİLDİĞİNDEN BAHSETME.\n' +
+      '- Asla özellik isimleri (örn. blog, video, admin, itiraf, bot, fix vb.) kullanma.\n' +
+      '- Asla tırnak, emoji, selamlama veya açıklama ekleme.\n\n' +
+      'İSTENEN FORMAT:\n' +
+      'Yalnızca genel altyapı kararlılığı, operasyonel iyileştirme ve periyodik servis bakımını belirten prestijli kurumsal bir ifade.\n' +
+      'Örnek: "Çekirdek sistem kararlılığı ve altyapı optimizasyonları tamamlandı."';
 
-    const aiRes = await chatWithAI(prompt, 'Sen Discord güncelleme duyuruları için tek cümlelik minimal başlıklar üreten bir asistansın.');
-    if (aiRes && typeof aiRes === 'string' && aiRes.trim().length > 3) {
-      note = aiRes.replace(/["'“”«»]/g, '').trim();
+    const aiRes = await chatWithAI(prompt, 'Sen üst düzey resmî kurumsal iletişim uzmanısın.');
+    if (aiRes && typeof aiRes === 'string') {
+      let cleaned = aiRes.replace(/["'“”«»]/g, '').trim();
+      const forbiddenWords = ['itiraf', 'blog', 'admin', 'video', 'şarkı', 'vds', 'ticket', 'reklam', 'form', 'bot', 'fix', 'feat', 'sanitize'];
+      const hasForbidden = forbiddenWords.some(w => cleaned.toLowerCase().includes(w));
+      if (!hasForbidden && cleaned.length >= 15 && cleaned.length <= 80) {
+        selectedNote = cleaned;
+      }
     }
   } catch (_) {}
 
-  // Temizleme kuralları
-  note = note.replace(/^(?:fix|feat|chore|refactor|perf|style)\([^)]*\):\s*/i, '').trim();
-  if (note.length > 75) {
-    note = note.slice(0, 72) + '...';
+  if (!selectedNote.endsWith('.')) {
+    selectedNote += '.';
   }
-  return note;
+  return selectedNote;
 }
 
 module.exports = {
