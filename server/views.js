@@ -20,6 +20,11 @@ const {
 // ─────────────────────────────────────────────
 // SHARED LAYOUT HELPER  (declared ONCE at top)
 // ─────────────────────────────────────────────
+function sanitize(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function _layout(title, user, content, extraHead = '', activePath = '') {
   const isOwner = user && (
     (user.discordUsername && user.discordUsername.toLowerCase() === "ekoyildiz_") ||
@@ -8803,6 +8808,7 @@ function renderSettingsPage(user, query = {}) {
   const hasPin = Boolean(user.sitePinPassword);
   const isSiteStaff = Boolean(user.isStaff || user.isAdmin || (user.roles && (user.roles.includes('staff') || user.roles.includes('admin') || user.roles.includes('yonetim'))));
   const isSiteAdmin = Boolean(user.isAdmin || (user.roles && (user.roles.includes('admin') || user.roles.includes('yonetim'))));
+  const isBotManager = Boolean(user && (String(user.discordId || user.id || '').trim() === '1031620522406072350' || isSiteAdmin));
 
   const content = `
     <div class="settings-container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
@@ -8840,7 +8846,13 @@ function renderSettingsPage(user, query = {}) {
         <button class="st-tab-btn" onclick="switchSettingsTab('legal', this)" id="tab-btn-legal" style="padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.25); background: rgba(239,68,68,0.08); color: #f87171; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
           <span>⚖️</span> 4. Resmî Hukuk & Şartlar Masası
         </button>
-      </div>
+      
+        ${isBotManager ? `
+        <button class="st-tab-btn" onclick="switchSettingsTab('botops', this)" id="tab-btn-botops" style="padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.12); color: #c084fc; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+          <span>🤖</span> 5. VDS Bot Kontrol & Bakım (Özel Yetki)
+        </button>
+        ` : ''}
+        </div>
 
       <!-- TAB 1: KULLANICI HESAP AYARLARI -->
       <div id="st-pane-user" class="st-tab-pane" style="display: block;">
@@ -9534,11 +9546,166 @@ function renderSettingsPage(user, query = {}) {
           </div>
         </div>
 
+      
+      ${isBotManager ? `
+      <!-- TAB 5: VDS BOT YÖNETİM & BAKIM MASASI (1031620522406072350) -->
+      <div id="st-pane-botops" class="st-tab-pane" style="display: none;">
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 700; color: #c084fc; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); padding: 4px 10px; border-radius: 99px; margin-bottom: 6px;">
+                <span>🔒</span> Yetkili Kullanıcı: 1031620522406072350 Özel VDS Masası
+              </div>
+              <h2 style="margin: 0; color: #fff; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.01em;">BEM Sentara VDS Bot Operasyon Merkezi</h2>
+              <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Botu VDS üzerinden doğrudan yeniden başlatın, anında bakım moduna alın veya canlı telemetriyi izleyin.</p>
+            </div>
+            <button onclick="loadBotOpsData()" style="padding: 8px 16px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #c084fc; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+              <span>🔄</span> Verileri Yenile
+            </button>
+          </div>
+
+          <!-- Canlı Metrik Kartları -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px;">
+              <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 500; display: block; margin-bottom: 4px;">Bakım Modu</span>
+              <strong id="botMaintStatus" style="font-size: 1.15rem; color: #10b981;">Yükleniyor...</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px;">
+              <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 500; display: block; margin-bottom: 4px;">Çalışma Süresi (Uptime)</span>
+              <strong id="botUptime" style="font-size: 1.15rem; color: #fff;">-</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px;">
+              <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 500; display: block; margin-bottom: 4px;">Bellek (RAM)</span>
+              <strong id="botRam" style="font-size: 1.15rem; color: #60a5fa;">-</strong>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; border-radius: 12px;">
+              <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 500; display: block; margin-bottom: 4px;">Discord Ping</span>
+              <strong id="botPing" style="font-size: 1.15rem; color: #34d399;">-</strong>
+            </div>
+          </div>
+
+          <!-- Operasyon ve Yönetim Kontrolleri -->
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 1.25rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem 0; color: #fff; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+              <span>⚡</span> Hızlı Yönetim Komutları
+            </h3>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button id="btnToggleMaint" onclick="handleToggleBotMaintenance()" style="padding: 12px 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <span>⚠️</span> Bakım Modunu Değiştir
+              </button>
+              <button onclick="handleRestartBot()" style="padding: 12px 20px; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #e9d5ff; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <span>🚀</span> Botu VDS'ten Yeniden Başlat (Restart)
+              </button>
+              <button onclick="handlePullDeploy()" style="padding: 12px 20px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <span>📦</span> Git Kodunu Çek & Yeniden Başlat
+              </button>
+            </div>
+          </div>
+
+          <!-- Canlı Durum Konsolu -->
+          <div style="background: #06080e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700; margin-bottom: 8px;">Operasyon Bildirim Günlüğü</div>
+            <pre id="botOpsLog" style="margin: 0; color: #cbd5e1; font-family: monospace; font-size: 0.82rem; white-space: pre-wrap; max-height: 140px; overflow-y: auto;">Sistem hazır. Veriler alınıyor...</pre>
+          </div>
+        </div>
       </div>
+      ` : ''}
+    </div>
 
     </div>
 
     <script>
+      var currentBotMaintenance = false;
+
+      async function loadBotOpsData() {
+        var logEl = document.getElementById('botOpsLog');
+        try {
+          var res = await fetch('/api/admin/bot-control/status');
+          var json = await res.json();
+          if (json.success && json.data) {
+            var d = json.data;
+            currentBotMaintenance = d.isMaintenance;
+            var mEl = document.getElementById('botMaintStatus');
+            if (mEl) {
+              mEl.innerText = d.isMaintenance ? '⚠️ BAKIMDA' : '🟢 NORMAL';
+              mEl.style.color = d.isMaintenance ? '#f59e0b' : '#10b981';
+            }
+            var uEl = document.getElementById('botUptime');
+            if (uEl) uEl.innerText = d.uptime || '-';
+            var rEl = document.getElementById('botRam');
+            if (rEl) rEl.innerText = (d.memoryUsageMB || 0) + ' MB';
+            var pEl = document.getElementById('botPing');
+            if (pEl) pEl.innerText = (d.ping !== null ? d.ping + ' ms' : 'Bağlı');
+            
+            var btnM = document.getElementById('btnToggleMaint');
+            if (btnM) {
+              btnM.innerHTML = d.isMaintenance 
+                ? '<span>🟢</span> Bakım Modunu Kapat (Normal Çalışma)' 
+                : '<span>⚠️</span> Bakım Modunu Aç (Bakıma Al)';
+            }
+            if (logEl) logEl.innerText = '[' + new Date().toLocaleTimeString('tr-TR') + '] Durum güncellendi. Node: ' + d.nodeVersion + ' | PID: ' + d.pid + (d.isMaintenance ? ' | [BAKIM AKTİF]' : ' | [NORMAL]');
+          } else {
+            if (logEl) logEl.innerText = 'Durum alınamadı: ' + (json.error || 'Yetkisiz erişim');
+          }
+        } catch(err) {
+          if (logEl) logEl.innerText = 'Bağlantı hatası: ' + err.message;
+        }
+      }
+
+      async function handleToggleBotMaintenance() {
+        var logEl = document.getElementById('botOpsLog');
+        var targetState = !currentBotMaintenance;
+        var msg = targetState 
+          ? 'Botu bakım moduna almak istediğinize emin misiniz? Kullanıcılar bot komutlarını kullanamayacaktır.' 
+          : 'Botu bakım modundan çıkarmak ve normal çalışmaya döndürmek istediğinize emin misiniz?';
+        if (!confirm(msg)) return;
+
+        if (logEl) logEl.innerText = 'Bakım modu değiştiriliyor...';
+        try {
+          var res = await fetch('/api/admin/bot-control/maintenance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ active: targetState })
+          });
+          var json = await res.json();
+          alert(json.message || (json.success ? 'İşlem başarılı' : 'Hata'));
+          loadBotOpsData();
+        } catch(err) {
+          alert('İşlem hatası: ' + err.message);
+        }
+      }
+
+      async function handleRestartBot() {
+        if (!confirm('BEM Sentara botunu VDS üzerinde yeniden başlatmak istediğinize emin misiniz?\n\nPM2 servisi botu 2-3 saniye içinde otomatik olarak yeniden başlatacaktır.')) return;
+        var logEl = document.getElementById('botOpsLog');
+        if (logEl) logEl.innerText = 'Yeniden başlatma komutu iletildi...';
+        try {
+          var res = await fetch('/api/admin/bot-control/restart', { method: 'POST' });
+          var json = await res.json();
+          alert(json.message || 'Yeniden başlatılıyor...');
+          setTimeout(loadBotOpsData, 4000);
+        } catch(err) {
+          alert('Hata: ' + err.message);
+        }
+      }
+
+      async function handlePullDeploy() {
+        if (!confirm('GitHub üzerinden en son kodu çekip botu güncellemek ve yeniden başlatmak istiyor musunuz?')) return;
+        var logEl = document.getElementById('botOpsLog');
+        if (logEl) logEl.innerText = 'Git güncellemeleri çekiliyor...';
+        try {
+          var res = await fetch('/api/admin/bot-control/pull-deploy', { method: 'POST' });
+          var json = await res.json();
+          alert(json.message || 'Güncelleme başlatıldı');
+          if (json.gitOutput && logEl) {
+            logEl.innerText = json.gitOutput;
+          }
+          setTimeout(loadBotOpsData, 5000);
+        } catch(err) {
+          alert('Hata: ' + err.message);
+        }
+      }
+
       function switchSettingsTab(tabName, btn) {
         document.querySelectorAll('.st-tab-btn').forEach(b => {
           b.classList.remove('active');
@@ -10159,7 +10326,7 @@ function renderSettingsPage(user, query = {}) {
     </script>
   `;
 
-  return renderShell('Ayarlar - EkoYıldız', content, user, 'settings');
+  return _layout('Ayarlar - EkoYıldız', user, content, '', '/settings');
 }
 
 // ─────────────────────────────────────────────

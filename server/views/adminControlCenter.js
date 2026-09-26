@@ -166,6 +166,14 @@ function renderSystemHubWorkspace() {
       </div>
       <span class="acc-arrow">→</span>
     </a>
+    <a href="/settings#tab-botops" class="acc-action-card" style="border-color: rgba(168,85,247,0.35); background: rgba(168,85,247,0.08);">
+      <div class="acc-action-icon">🤖</div>
+      <div class="acc-action-info">
+        <strong style="color: #c084fc;">VDS Bot Operasyon & Bakım (1031620522406072350)</strong>
+        <p>Botu VDS üzerinden doğrudan yeniden başlatın, anında bakım moduna alın veya güncelleyin.</p>
+      </div>
+      <span class="acc-arrow">→</span>
+    </a>
     <a href="/group-admin" class="acc-action-card">
       <div class="acc-action-icon">🛡️</div>
       <div class="acc-action-info">
@@ -265,7 +273,6 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
         <a href="/" class="acc-back-link">← Siteye Dön</a>
       </div>
     </aside>
-    <div class="acc-sidebar-backdrop" data-admin-sidebar-close></div>
 
     <section class="acc-main">
       <header class="acc-commandbar">
@@ -292,6 +299,8 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
         ${legacyContent}
       </div>
     </section>
+
+    <div class="acc-sidebar-backdrop" data-admin-sidebar-close></div>
 
     <!-- Komut Paleti Dialog -->
     <div class="acc-command-dialog-wrap" data-admin-command-dialog hidden>

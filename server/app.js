@@ -11,6 +11,7 @@ const pagesRoutes = require("./routes/pages");
 const giveawayRoutes = require("./routes/giveaways");
 const adRoutes = require("./routes/ads");
 const { router: adminControlCenterRoutes } = require("./routes/adminControlCenter");
+const { router: botControlRoutes } = require("./routes/botControl");
 
 const logger = require("../utils/logger");
 
@@ -250,6 +251,7 @@ app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
 app.use(adminControlCenterRoutes);
+app.use("/api/admin/bot-control", botControlRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);
 

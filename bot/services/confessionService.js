@@ -19,6 +19,7 @@ const {
 } = require('../../models/Confession');
 const Economy = require('../../models/Economy');
 const logger = require('../../utils/logger');
+const { chatWithAI } = require('./aiService');
 
 // Sunucu ve Kanal Sabitleri
 const GUILD_ID = '1367646464804655104';
@@ -1337,7 +1338,7 @@ async function handleDirectMessageRelay(message) {
  * ── 12. Sahte / Seed Aktivite Motoru (Inactivity Seed Engine) ───
  */
 const SEED_CONFESSIONS = [
-  // ── GRUP 1: Yazım kurallarına uymayan, küçük harfli, doğal Discord / oyun jargonu ──
+  // ── GRUP 1: Discord ve Ses Odası Komik Anıları ──
   {
     category: 'Komik Anı',
     content: 'olm dun gece seste uyuyakalmisim horlama sesim herkese gitmis rezil oldum ya kimse de uyandirmamis niye boylesiniz',
@@ -1349,18 +1350,60 @@ const SEED_CONFESSIONS = [
     poll: null
   },
   {
-    category: 'Sunucu İtirafı',
-    content: 'valla kafayi yicem artik geceleri uyuyamiyom surekli overthinking yapmaktan beynim eridi cidden',
+    category: 'Komik Anı',
+    content: 'gecen gun seste mute tusuna bastim sanip anneme "anneee patates kizartmasi yap bana" diye bagirdim 10 kisi gulme krizine girdi hala utaniyorum',
     poll: null
   },
   {
-    category: 'Aşk / Platonik',
-    content: 'sunucudaki birinden fena hoslaniyorum ama yazmaya cesaretim yok storysine alev atsam cok mu belli olur acil taktik lazim',
-    poll: { question: 'Storysine alev atmalı mı?', optA: 'At gitsin taktik falan yok', optB: 'Sakın atma çok belli olur' }
+    category: 'Komik Anı',
+    content: 'annem arkadan bagirirken mik acik kalmis "oglum donunu topla" dedigi ses odadaki herkese gitti 3 gundur sese giremiyorum utanctan',
+    poll: null
   },
   {
     category: 'Komik Anı',
-    content: 'olm roblox oynarken arkadasim beni trolleyip asagi atti aglicaktim sinirden klavyeyi kirdim az kalsin',
+    content: 'gece 4 te sunucuda kimse yok sanıp kendi kendime seslide şarkı söylüyordum, meğer biri kulaklığı açıp beni dinliyormuş kaydımı alıp genel sohbete attı yerin dibine girdim ahahah',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'mikrofonun kapalı olduğunu unutup 20 dakika boyunca discorddaki arkadaşıma hayat dersi anlattım, kanka mik kapalıymış deyince ruhumu teslim ettim',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'seslideyken yanlışlıkla ekran yayını açmışım, 15 dakika boyunca ekranda komik kedi videolarına güldüğümü izlemişler kimse de uyarmamış',
+    poll: null
+  },
+  {
+    category: 'Komik Anı',
+    content: 'okulda tahtaya soru çözerken cebimden discord bildirim sesi son ses dı-dın diye yankılandı, hoca telefonumu aldı 1 hafta internetsiz kaldım',
+    poll: null
+  },
+
+  // ── GRUP 2: Roblox & TMT / Askeri RP Oyun Anıları ──
+  {
+    category: 'Oyun / Roblox',
+    content: 'roblox askeri denetimde komutan tekmil verirken arkada annem çorba kaynadı diye bağırdı, tekmil yerine geliyorum anne dedim rütbemi düşürdüler ahahah',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'roblox ta askeri akademi eğitiminde afk kalmamak için space tuşuna taş koydum, karakter 3 saat duvara zıplayıp durmuş komutanlar troll sanıp sunucudan uçurdu',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'komutan emir verirken yanlış tuşa basıp roketatar sıktım bütün bölük patladı, beni hain ilan edip ihraç ettiler hala gülüyorum',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'roblox sınır kapısında nöbet tutarken karşı tarafın askeriyle gizlice dans emotu attık, komutan gelince birbirimize ateş açıp rol yaptık yakalanmadık',
+    poll: null
+  },
+  {
+    category: 'Oyun / Roblox',
+    content: 'blade ball da son 2 kişi kaldık heyecandan masadaki su bardağını devirdim klavye bozuldu ama maçı kazandım, zaferin bedeli pahalı oldu',
     poll: null
   },
   {
@@ -1369,13 +1412,8 @@ const SEED_CONFESSIONS = [
     poll: null
   },
   {
-    category: 'Komik Anı',
-    content: 'gece 3 te mutfaga su icmeye diye inip dolaptaki butun cikolatalari yedim sabah annem sordu kediye attim sucu kedi bile yuzume ters bakiyo',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'itiraf ediyorum genel sohbette kavga baslayinca cipsimi alip sadece izliyorum asiri sariyo hic bitmesin lutfen devam edin',
+    category: 'Oyun / Roblox',
+    content: 'tower of hell in son katında trolleme yapan elemana sinirlenip monitöre yumruk attım, pikseli öldü ekranın ortasında siyah bir nokta var',
     poll: null
   },
   {
@@ -1384,97 +1422,15 @@ const SEED_CONFESSIONS = [
     poll: null
   },
   {
-    category: 'Komik Anı',
-    content: 'gecen gun yanlislikla sinif hocasina komik caps attim gruptan cikip telefonu kapattim 1 gun acamadim korkudan',
-    poll: null
-  },
-  {
-    category: 'Genel',
-    content: 'dc de biriyle konusurken arkada baska sekmede video izleyip "hıhı evet cok haklisin" diyen tek kisi ben olamam di mi',
-    poll: { question: 'Bunu siz de yapıyor musunuz?', optA: 'Evet her gün :D', optB: 'Asla dinlerim' }
-  },
-  {
     category: 'Oyun / Roblox',
     content: 'herkes sevgilisiyle roblox oynarken ben tek basima parkur yapmaya calisiyorum yalnizligin gozu kor olsun be',
     poll: null
   },
-  {
-    category: 'Genel',
-    content: 'bi arkadasla 2 yildir konusuyoruz ama adini hic sormadim simdi sorarsam ayip olur diye nickiyle hitap ediyom hala adami da taniyamiyom',
-    poll: null
-  },
-  {
-    category: 'Komik Anı',
-    content: 'annem arkadan bagirirken mik acik kalmis "oglum donunu topla" dedigi ses odadaki herkese gitti 3 gundur sese giremiyorum utanctan',
-    poll: null
-  },
 
-  // ── GRUP 2: Çocukça, Eko Abi hayranı, Roblox & sevimli içerikler ──
-  {
-    category: 'Sunucu İtirafı',
-    content: 'eko abi seni cokkk seviyorum her videonu bastan sona izliyorum bildirimleri de actim ne zaman yeni roblox videosu gelicek lutfen kanala kalp at eko abimm ❤️❤️❤️',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'abi valla sen olmasan canim cok sıkılıyordu okuldan gelince hemen senin yayinlarini izliyorum cansın eko abii beni yetkili yapar misin nolur soz cok iyi bakarim',
-    poll: null
-  },
-  {
-    category: 'Oyun / Roblox',
-    content: 'eko abi bana 50 robux verir misin nolur avatarim cok cirkin oyunda dalga geciyolar seni cok seviyorum eko abi nolur yardim et',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'arkadaslar bugun eko abiyle ayni oyuna denk geldim elim titredi heyecandan ekran goruntusu alip masaustu yaptim cok mutluyummm',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'eko abi beni yayina veya videoya cikarir misin lutfen discorddan sana mesaj attim gormedin herhalde seni dunyalar kadar cok seviyorum kralsin abi',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'abiler lutfen dalga gecmeyin bu sunucuda nasil moderator olunuyor yasim 12 ama cok olgunum ve eko abiyi dunyalar kadar seviyorum',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'eko abi bugun benim dogum gunum yayinda bir kere ismimi soyleyip kutlar misin lutfen en buyuk hayranınım seni cok seviyorum',
-    poll: null
-  },
-  {
-    category: 'Komik Anı',
-    content: 'eko abinin yayininda chatte adimi okudu diye sevincten odada takla attim kafami kapiya carptim ama degdi ahahaha eko abim canimsin',
-    poll: null
-  },
-  {
-    category: 'Oyun / Roblox',
-    content: 'eko abi roblox blade ball da seninle vs atmak en buyuk hayalim beni oyuna cagirir misin lutfen tek dilegim bu',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'okulda herkese eko abinin sunucusunu anlattim butun sinif arkadaslarimi buraya getirdim eko abi beni gorur insallah kral adam',
-    poll: null
-  },
-  {
-    category: 'Oyun / Roblox',
-    content: 'abi roblox cekilisini ben kazanamadim diye agladim ama olsun seni hala cok seviyorum eko abi canin sagolsun ❤️',
-    poll: null
-  },
-
-  // ── GRUP 3: Aşırı kurallara uyan, edebi, ciddi, özenli ve duygusal Türkçe ──
+  // ── GRUP 3: Duygusal Dertleşme, Samimiyet ve Gerçek Hayat ──
   {
     category: 'Dertleşme / Tavsiye',
     content: 'Uzun zamandır içimde taşıdığım bu hissi artık bir yerlere dökmem gerekiyordu. İnsan bazen en kalabalık ortamlarda bile kendini yapayalnız hissedebiliyor. Yine de bu sunucudaki samimi sohbetler bana her zaman umut veriyor.',
-    poll: null
-  },
-  {
-    category: 'Sunucu İtirafı',
-    content: 'Topluluk içerisinde gösterilen nezaket ve saygı ortamı gerçekten takdire şayan. İnternet dünyasının bu denli toksikleştiği bir dönemde böylesine kaliteli bir ortam sağlayan yetkili ekibine teşekkür ederim.',
     poll: null
   },
   {
@@ -1493,162 +1449,180 @@ const SEED_CONFESSIONS = [
     poll: null
   },
   {
+    category: 'Dertleşme / Tavsiye',
+    content: 'bazen sadece kimsenin benden bir şey beklemediği bir odaya geçip saatlerce susmak istiyorum. büyüdükçe sorumluluklar omuzlarıma çok ağır gelmeye başladı.',
+    poll: null
+  },
+  {
+    category: 'Dertleşme / Tavsiye',
+    content: 'üniversite sınavı yaklaştıkça herkes benden derece bekliyor ama benim içimde en ufak bir heves kalmadı. kimseyi hayal kırıklığına uğratmak istemiyorum.',
+    poll: null
+  },
+  {
+    category: 'Dertleşme / Tavsiye',
+    content: 'bazen buradaki insanların samimiyeti gerçek hayattaki arkadaşlarımdan çok daha gerçek geliyor. iyi ki bu topluluk var.',
+    poll: null
+  },
+
+  // ── GRUP 4: Aşk & Platonik İtiraflar ──
+  {
+    category: 'Aşk / Platonik',
+    content: 'sunucudaki birinden fena hoslaniyorum ama yazmaya cesaretim yok storysine alev atsam cok mu belli olur acil taktik lazim',
+    poll: { question: 'Storysine alev atmalı mı?', optA: 'At gitsin taktik falan yok', optB: 'Sakın atma çok belli olur' }
+  },
+  {
+    category: 'Aşk / Platonik',
+    content: 'aynı ses odasında saatlerce hiç konuşmadan sadece nefes alışını dinlemek bile huzur veriyor ama onun bundan haberi bile yok...',
+    poll: null
+  },
+  {
+    category: 'Aşk / Platonik',
+    content: 'onun sevdiği şarkıları sanki kendi favorilerimmiş gibi her gün dinliyorum, belki bir gün denk geliriz de aynı şarkıyı mırıldanırız diye...',
+    poll: null
+  },
+  {
+    category: 'Aşk / Platonik',
+    content: 'bana sadece selam nasılsın yazdığında bile elim ayağım titriyor, ne cevap vereceğimi 15 dakika düşünüp sonra sadece iyiyim sen yazıyorum...',
+    poll: null
+  },
+
+  // ── GRUP 5: Sunucu & Topluluk İtirafları ──
+  {
+    category: 'Sunucu İtirafı',
+    content: 'itiraf ediyorum genel sohbette kavga baslayinca cipsimi alip sadece izliyorum asiri sariyo hic bitmesin lutfen devam edin',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'moderatör olmak için başvuru formuna 18 yaşındayım kriz yönetimim iyidir yazdım ama aslında 14 yaşındayım ve biri ses tonunu yükseltince ağlayasım geliyor',
+    poll: null
+  },
+  {
+    category: 'Sunucu İtirafı',
+    content: 'Topluluk içerisinde gösterilen nezaket ve saygı ortamı gerçekten takdire şayan. İnternet dünyasının bu denli toksikleştiği bir dönemde böylesine kaliteli bir ortam sağlayan yetkili ekibine teşekkür ederim.',
+    poll: null
+  },
+  {
     category: 'Sunucu İtirafı',
     content: 'Bazen sadece ses odasında oturup insanların birbirine kahkahalarla anlattığı anıları dinlemek bile günün tüm yorgunluğunu üzerimden alıyor. İyi ki varsınız.',
     poll: null
   },
   {
-    category: 'Genel',
-    content: 'Hak etmediğim bir ithamla karşılaştığımda susmayı tercih ettim; fakat bu suskunluk kabulleniş değil, sadece seviyemi koruma çabasıydı.',
-    poll: null
-  },
-
-  // ── GRUP 4: Troll, eğlenceli, sahte telif ve şaka içerikli itiraflar ──
-  {
-    category: 'Komik Anı',
-    content: 'itiraf ediyorum seste oyun oynarken "lag oldu öldüm" diyorum ama aslında oynamayı beceremiyorum ahahaha',
-    poll: null
-  },
-  {
-    category: 'Komik Anı',
-    content: 'gecen gun seste mute tusuna bastim sanip anneme "anneee patates kizartmasi yap bana" diye bagirdim 10 kisi gulme krizine girdi hala utaniyorum',
-    poll: null
-  },
-  {
-    category: 'Troll / Mizah',
-    content: 'sunucudaki birinin profil fotografini o kadar cok begeniyorum ki gizlice calip baska platformda profilim yaptim hakkini helal et kankam',
-    poll: null
-  },
-  {
-    category: 'Troll / Mizah',
-    content: 'bu itirafı okuyan kişi: evet tam olarak senden bahsediyorum, yarın ilk derste arkana bakma sakın 👀',
-    poll: null
-  },
-  {
-    category: 'Oyun / Roblox',
-    content: 'itiraf ediyorum roblox oynarken arkadasim bana esya versin diye kiz taklidi yaptim ve ise yaradi... vicdan azabi cekiyorum su an',
-    poll: null
-  },
-  {
-    category: 'Komik Anı',
-    content: 'matematik sınavında arkadasımdan kopya cekerken yanlıs sorunun cevabını yanlıs yere yazmısım ikimiz de 10 aldık hoca bizi disipline verdi cok dramatikti',
+    category: 'Sunucu İtirafı',
+    content: 'eko abinin yayınında adımı okuduğunda sevinçten odada takla attım kafamı dolaba çarptım ama değdi kral adam valla',
     poll: null
   }
 ];
 
-// Gerçekçi Anonim Yorum Havuzları (Doğal Türkçe, sokak/discord dili, Eko abi hayranlığı, sahte telif şakaları)
+// Gerçekçi & Bağlama Uygun Doğal Fallback Yorum Havuzları
 const REALISTIC_COMMENTS = {
-  // Eko abi ve çocukça itiraflara gelen yorumlar
   eko: [
-    'eko abi bunu gorsun kesin videoya cikarir ahahaha',
-    'eko abiii bak hayranın ne yazmıs yerim ya @eko',
-    'oyyy cok tatli yaa, eko abi gör şunu ❤️',
-    'valla helal olsun kucuk kardesimiz cok icten yazmis sevindim',
-    'eko abiyi sevmeyen mi var zaten ya kral adam valla',
-    'harbiden cok masum ve samimi olmus helal olsun kardesim',
-    'eko abi yayinda bunu kesin okur bence :D',
-    'kral yaa eko abi duysun sesini insallah',
-    'cok samimi geldi valla yalan yok helal olsun kardesime',
-    'bu cocuk harbi eko abi sevdalısı helal valla ahaha'
+    'harbiden çok içten yazmış helal olsun kardeşim',
+    'eko abi duysun sesini inşallah, samimi olmuş',
+    'oyy çok tatlı yaa helal valla',
+    'valla kral adam, yayında kesin denk gelir',
+    'çok masum ve samimi olmuş eline sağlık'
   ],
-  // Komik, rezillik ve troll anılara gelen yorumlar
   humor: [
-    'GŞKLASDGJKASŞLGK yarıldım olm bu ne',
-    'kanka rezil olmussun gecmis olsun KSJDFHGKSDF',
-    'gece gece sesli guldum evdekiler uyandi yapma boyle seyler ahahaha 💀',
-    'puhaha kanka nasil becerdin onu yaa cildirdim',
-    'hahaha olm ya gecmis olsun buyuk talihsizlik valla',
-    'bu ne olm koptum resmen ASDKJŞLGAFSJK',
-    'kim bu cabuk itiraf etsin meraktan uyuyamam simdi ben 👀',
-    'bunu yazanin nickini tahmin etmeye calisiyorum su an kafamda 3 kisi var',
-    'aşırı rezillik ahahahah geçmiş olsun kral',
-    'patladım olm bu nasıl anı dskjghsdkfg',
-    'yok artık bunu ciddili yaşayan var mıymış ya ahaha',
-    'sesli kahkaha attım odadakiler bana bakıyor'
+    'kanka rezil olmuşsun geçmiş olsun ahahaha 💀',
+    'gece gece sesli güldüm evdekiler uyandı yapma şöyle şeyler ahahaha',
+    'puhaha nasıl becerdin onu ya koptum resmen',
+    'büyük talihsizlik valla geçmiş olsun kral ahaha',
+    'aşırı rezillik ahahahah geçmiş olsun ama çok iyi anı',
+    'sesli kahkaha attım odadakiler bana bakıyor dskjghsdkfg',
+    'kim bu çabuk itiraf etsin meraktan uyuyamam şimdi ben 👀'
   ],
-  // Sahte telif ve troll takılma yorumları ("sahte telifler atsın")
-  telif_troll: [
-    'aga bu hikaye benden çalıntı yalnız sahte telif atıcam hahahah 😂',
-    'bu anının telif hakları bana aittir avukatımla görüşürsün şaka maka çok iyi anıymış djkfhgds',
-    'hocam metnin telif hakları saklıdır lütfen telif hakkı sahibini etiketleyiniz hahahaha patladım',
-    'bu olay direkt benim hayatımdan alıntı telif davası açmaya gidiyorum resmen ben ahaha',
-    'bunu ben yaşamıştım telif davası loading... şaka bi yana geçmiş olsun kanks'
-  ],
-  // Dertleşme, duygusal ve tavsiye yorumları
   support: [
     'Cidden çok anlamlı ve güzel yazmışsın, yalnız değilsin dostum.',
-    'Reis aynı yollardan ben de geçtim, hiç kafana takma zamanla her şey rayına oturuyor.',
-    'Çok haklı bir sitem bu arada. İnsanlar samimiyeti unutmuş maalesef.',
-    'Bence kesinlikle git konuş kanka, içinde kalacağına söyle gitsin ne kaybedersin ki.',
-    'Sonuna kadar arkandayım, umarım gönlündeki her şey gerçek olur.',
-    'Kendine çok yüklenme dostum, hepimizin böyle zor dönemleri oluyor. Geçecek emin ol.',
-    'Okurken içim burkuldu resmen, her zaman dertleşebilirsin buradayız.',
-    'Çok güzel ve içten ifade etmişsin hislerini, eline sağlık.',
-    'Zaman her şeyin ilacı derler ya, harbiden öyle. Sabırlı ol dostum.'
+    'Reis aynı dönemlerden ben de geçtim, hiç kafana takma zamanla her şey rayına oturuyor.',
+    'Çok haklı bir sitem bu arada. Kendine çok yüklenme, geçecek emin ol.',
+    'İçini ferah tut kral, her zaman dertleşebilirsin buradayız.',
+    'Okurken içim burkuldu resmen, umarım her şey en kısa sürede gönlünce olur.',
+    'Zaman her şeyin ilacı derler ya, harbiden öyle. Sabırlı ol ve güçlü kal dostum.'
   ],
-  // Aşk / Platonik yorumları
   romance: [
-    'bence kesinlikle git acil kanka icinde kalacagina disinda kalsin ne kaybedersin ki',
-    'kim bu cabuk itiraf etsin meraktan uyuyamam simdi ben 👀',
-    'bunu yazan kisi su an burayi okuyor adim gibi eminim...',
-    'bence hislerini saklama, hayat ertelemek icin cok kisa',
-    'umarim bahsettigin o kisi bu itirafi okuyordur da anlar',
-    'hissediyorsan pesini birakma kral arkandayiz'
+    'Bence kesinlikle git konuş kanka, içinde kalacağına bilsin ne kaybedersin ki.',
+    'Hislerini saklama bence, hayat ertelemek için çok kısa.',
+    'Umarım bahsettiğin o kişi bu itirafı okuyordur da anlar...',
+    'Bence cesaretini topla ve bir adım at, arkandayız kral.',
+    'Aşırı tatlı bir his, umarım karşılığını alırsın dostum.'
   ],
-  // Genel / Doğal Discord konuşmaları
+  gaming: [
+    'Ahaha roblox sunucularında her an her şey olabiliyor ya klasik.',
+    'Oyun zevkini tryhardlar bozuyor cidden, takma kafana chill takıl kral.',
+    'Komutanın tepkisini hayal edebiliyorum ahahah harika anıymış.',
+    'Kral beraber oynayalım istersen, sese gel takılırız.',
+    'Tekmil verirken mikrofon kazası yaşamayan asker yoktur zaten ahaha.'
+  ],
   casual: [
-    'harbiden ben de oyleyim ya yalnız degilmisim sevindim',
-    'aşırı relatable bu arada',
-    'valla buyuk cesaret tebrik ederim',
-    'bu itirafın sahibi kimse bilsin ki harbi haklı...',
-    'aynen oyle katılıyorum valla',
-    'nasi ya cidden mi dksljgs',
-    'bunu yasayan tek ben degilmisim oh be',
-    'hahaha kral adamsin valla',
-    'bence de boyle olmaliydi sonuna kadar katiliyorum'
+    'Harbiden ben de öyleyim ya yalnız değilmişim sevindim.',
+    'Aşırı relatable bu arada, yüzde yüz katılıyorum.',
+    'Valla büyük cesaret tebrik ederim.',
+    'Bu itirafın sahibi kimse bilsin ki harbi haklı...',
+    'Bunu yaşayan tek kişi sen değilsin emin ol, içini rahat tut.'
   ]
 };
 
 /**
- * İtirafın içeriğine ve kategorisine göre en gerçekçi anonim yorumu seçer
+ * İtiraf içeriğine ve duygusuna göre bağlamlı fallback yorum seçer
  */
 function pickRealisticComment(content, category) {
   const text = (content || '').toLowerCase();
   const cat = (category || '').toLowerCase();
 
-  let pool = [];
-
-  // Eko abi ve çocukça içerikler
-  if (text.includes('eko') || text.includes('abi') || text.includes('robux') || text.includes('yayın') || text.includes('yayin') || text.includes('roblox') || text.includes('videoya')) {
-    pool = [...REALISTIC_COMMENTS.eko];
-  } 
-  // Dertleşme / Hüzün / Tavsiye
-  else if (cat.includes('dert') || cat.includes('tavsiye') || text.includes('yalnız') || text.includes('hissediyorum') || text.includes('kaygı') || text.includes('üzgün') || text.includes('sıkıldım')) {
-    pool = [...REALISTIC_COMMENTS.support];
+  if (text.includes('eko') || text.includes('yayın') || text.includes('videoya')) {
+    return REALISTIC_COMMENTS.eko[Math.floor(Math.random() * REALISTIC_COMMENTS.eko.length)];
   }
-  // Aşk / Platonik
-  else if (cat.includes('aşk') || cat.includes('ask') || cat.includes('platonik') || text.includes('hoşlan') || text.includes('seviyorum') || text.includes('açıl')) {
-    pool = [...REALISTIC_COMMENTS.romance, ...REALISTIC_COMMENTS.casual];
+  if (cat.includes('oyun') || text.includes('roblox') || text.includes('komutan') || text.includes('tekmil') || text.includes('blade ball') || text.includes('tower of hell')) {
+    return REALISTIC_COMMENTS.gaming[Math.floor(Math.random() * REALISTIC_COMMENTS.gaming.length)];
   }
-  // Komik Anı / Mizah / Troll
-  else if (cat.includes('komik') || text.includes('rezil') || text.includes('güldüm') || text.includes('koptum') || text.includes('lag') || text.includes('haha') || text.includes('olm') || text.includes('troll')) {
-    // %35 şansla sahte telif troll yorumu, %65 mizah
-    if (Math.random() < 0.35) {
-      pool = [...REALISTIC_COMMENTS.telif_troll];
-    } else {
-      pool = [...REALISTIC_COMMENTS.humor];
-    }
-  } else {
-    // Genel havuz: mizah, telif şakası ve casual karışık
-    pool = [...REALISTIC_COMMENTS.casual, ...REALISTIC_COMMENTS.humor, ...REALISTIC_COMMENTS.telif_troll];
+  if (cat.includes('dert') || cat.includes('tavsiye') || text.includes('yalnız') || text.includes('kaygı') || text.includes('hüzün') || text.includes('kırıldım')) {
+    return REALISTIC_COMMENTS.support[Math.floor(Math.random() * REALISTIC_COMMENTS.support.length)];
   }
-
-  return pool[Math.floor(Math.random() * pool.length)];
+  if (cat.includes('aşk') || cat.includes('ask') || cat.includes('platonik') || text.includes('hoşlan') || text.includes('seviyorum')) {
+    return REALISTIC_COMMENTS.romance[Math.floor(Math.random() * REALISTIC_COMMENTS.romance.length)];
+  }
+  if (cat.includes('komik') || text.includes('rezil') || text.includes('güldüm') || text.includes('koptum') || text.includes('sesli') || text.includes('kahkaha')) {
+    return REALISTIC_COMMENTS.humor[Math.floor(Math.random() * REALISTIC_COMMENTS.humor.length)];
+  }
+  return REALISTIC_COMMENTS.casual[Math.floor(Math.random() * REALISTIC_COMMENTS.casual.length)];
 }
 
 /**
- * Gerçek ve seed itiraflar için organik tepkiler (reaksiyonlar) ve thread anonim yorumları planlar
+ * AI ve akıllı bağlam motoru ile itirafa doğrudan uyan, asla saçmalamayan organik yorum üretir
  */
+async function generateRealisticComment(content, category) {
+  const text = (content || '').trim();
+  const cat = (category || 'Genel').trim();
+
+  try {
+    const systemPrompt = 'Sen popüler bir Türk Discord topluluğunun samimi, esprili ve doğal bir üyesisin.\n' +
+      'GÖREV: Aşağıdaki anonim itirafa doğrudan İÇERİĞİYLE İLGİLİ, 1 cümlelik, doğal bir Discord sohbeti yorumu yaz.\n' +
+      'İTİRAF: "' + text.replace(/"/g, '\"') + '"\n' +
+      'KATEGORİ: "' + cat + '"\n\n' +
+      'KURALLAR:\n' +
+      '- ASLA bot gibi konuşma. "Ben yapay zekayım", "İtirafınız kaydedildi" vb. ifadeler KESİNLİKLE YASAKTIR.\n' +
+      '- ASLA konuyla alakasız saçma veya rastgele telif esprileri yapma. Sadece itirafın anlattığı duruma odaklan.\n' +
+      '- İtiraf hüzünlü/dertleşmeyse destek ver ("yalnız değilsin kral, hepimizin böyle dönemleri oluyor").\n' +
+      '- İtiraf komik/rezillik ise güler yüzlü tepki ver ("kanka mik açık nasıl unuttun ya geçmiş olsun ahaha").\n' +
+      '- İtiraf aşk/platonik ise tatlı arkadaş tavsiyesi ver ("içinde kalacağına söyle ne kaybedersin").\n' +
+      '- İtiraf oyun/Roblox ise oyuncu tepkisi ver.\n' +
+      '- Maksimum 1 cümle, en fazla 120 karakter, saf doğal Türkçe.';
+
+    const aiRes = await chatWithAI(text, systemPrompt, 'confession', { max_tokens: 60, temperature: 0.8 });
+    if (aiRes && typeof aiRes === 'string') {
+      let cleaned = aiRes.replace(/^["'“”«»]+|["'“”«»]+$/g, '').trim();
+      if (cleaned.length >= 8 && cleaned.length <= 160 && !cleaned.toLowerCase().includes('yapay zeka') && !cleaned.toLowerCase().includes('assistant')) {
+        return cleaned;
+      }
+    }
+  } catch (err) {
+    logger.debug('[ConfessionComment] AI yorum üretimi fallbacke devredildi: ' + err.message);
+  }
+
+  return pickRealisticComment(text, cat);
+}
+
 function scheduleOrganicEngagement(client, confessionId) {
   try {
     // ⏳ 1. Adım: 45 - 120 saniye sonra organik sahte tepkiler (reaksiyonlar)
@@ -1699,7 +1673,7 @@ function scheduleOrganicEngagement(client, confessionId) {
         const thread = await client.channels.fetch(conf.threadId).catch(() => null);
         if (!thread || !thread.isTextBased()) return;
 
-        const commentText = pickRealisticComment(conf.content, conf.category);
+        const commentText = await generateRealisticComment(conf.content, conf.category);
         const commentAlias = generateAnonymousName();
 
         await thread.send({ content: `🕵️ **${commentAlias}:**\n> ${commentText}` });
@@ -1716,7 +1690,7 @@ function scheduleOrganicEngagement(client, confessionId) {
               const thread2 = await client.channels.fetch(conf2.threadId).catch(() => null);
               if (!thread2 || !thread2.isTextBased()) return;
 
-              let secondCommentText = pickRealisticComment(conf2.content, conf2.category);
+              let secondCommentText = await generateRealisticComment(conf2.content, conf2.category);
               if (secondCommentText === commentText) {
                 secondCommentText = REALISTIC_COMMENTS.casual[Math.floor(Math.random() * REALISTIC_COMMENTS.casual.length)];
               }
