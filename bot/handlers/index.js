@@ -397,6 +397,14 @@ function initializeDiscordHandlers(client) {
       console.error("[coachWelcome] Başlatma hatası:", err.message);
     }
 
+    // EkoYıldız Teşekkürler Paneli & Otomatik Dinamik Güncelleyici
+    try {
+      const { setupThanksAutoUpdater } = require("../services/thanksService");
+      setupThanksAutoUpdater(client);
+    } catch (err) {
+      console.error("[thanksAutoUpdater] Başlatma hatası:", err.message);
+    }
+
     // Moderatör Okulu Başlatma
     try {
       const { initializeModeratorSchool } = require("../services/moderatorSchool");
