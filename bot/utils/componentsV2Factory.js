@@ -122,7 +122,7 @@ class ComponentsV2Factory {
         custom_id: btn.custom_id || btn.customId,
         url: btn.url,
         disabled: btn.disabled || false,
-        emoji: btn.emoji,
+        emoji: typeof btn.emoji === 'string' ? { name: btn.emoji } : btn.emoji,
       })),
     };
   }

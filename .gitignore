@@ -6,6 +6,7 @@ data/store.json
 data/store.json.tmp
 data/sessions.json
 data/last_restart_state.json
+data/ekoai_ticket_state.json
 *askpass*
 *vds_exec*
 *temp*

@@ -411,6 +411,7 @@ function initializeDiscordHandlers(client) {
     try {
       const { startTelegramPolling } = require("../services/telegramService");
       startTelegramPolling(client);
+      try { require("../services/ekoAITicketService").startEkoAITicketMonitor(client); } catch (e) { console.error("[EKOai] Init error:", e.message); }
     } catch (err) {
       console.error("[Telegram] Başlatılamadı:", err.message);
     }
@@ -2323,6 +2324,14 @@ function initializeDiscordHandlers(client) {
       } catch (tunnelErr) {
         console.error('[messageCreate] Whistleblower Thread-to-DM forward error:', tunnelErr.message);
       }
+    }
+
+    // EKOai Destek Bileti Asistanı (Kanal içi mesajlar)
+    try {
+      const { handleTicketChannelMessage } = require("../services/ekoAITicketService");
+      await handleTicketChannelMessage(message, client);
+    } catch (ekoErr) {
+      console.error("[messageCreate] EKOai ticket handler error:", ekoErr.message);
     }
 
     // Bilmece kanalı mesaj kontrolü
@@ -4872,6 +4881,9 @@ async function handleInteraction(interaction) {
     }
     const voiceResult = await handleVoiceButton(interaction);
     if (voiceResult !== null) return voiceResult;
+    if (interaction.customId?.startsWith('ekoai_')) {
+      return require("../services/ekoAITicketService").handleButtonInteraction(interaction);
+    }
     return handleButtonInteraction(interaction);
   }
 

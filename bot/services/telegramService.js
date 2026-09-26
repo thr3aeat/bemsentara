@@ -174,6 +174,17 @@ async function handleTelegramMessage(client, message) {
   
   console.log(`[Telegram Chat] Mesaj alındı: "${text}"`);
   
+  // ── EKOai Destek Bileti Yönetici Köprüsü ─────────────────────────
+  try {
+    const { handleEkoTelegramBridge } = require("./ekoAITicketService");
+    const bridgeHandled = await handleEkoTelegramBridge(client, text, message);
+    if (bridgeHandled) {
+      return;
+    }
+  } catch (bridgeErr) {
+    console.warn(`[Telegram Chat] EKOai köprü kontrol hatası:`, bridgeErr.message);
+  }
+  
   try {
     // ── SUNUCU CONTEXT BİLGİSİ ──
     const Ticket = require("../../models/Ticket");
