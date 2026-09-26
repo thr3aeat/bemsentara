@@ -393,7 +393,9 @@ const formsStyles = `
   }
   .field textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
   .field select option { background: #12121a; color: #fff; }
-  .field input:focus, .field textarea:focus, .field select:focus {
+  .field input:focus, .field textarea:focus, .field select:focus,
+  .field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible,
+  .forms-submit-btn:focus-visible {
     border-color: var(--f-accent);
     background: rgba(14, 14, 24, 0.85);
     box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18), 0 0 20px rgba(167, 139, 250, 0.1);
@@ -405,6 +407,9 @@ const formsStyles = `
     color: var(--f-danger);
     font-size: 0.82rem;
     font-weight: 600;
+  }
+  .form-detail, .forms-hero, .form-card {
+    overflow-wrap:anywhere;
   }
 
   .forms-submit-card {
@@ -497,7 +502,7 @@ const formsStyles = `
     color: #fff;
   }
 
-  @media (max-width: 768px) {
+  @media(max-width:760px) {
     .forms-hero { grid-template-columns: 1fr; padding: 28px 20px; }
     .forms-meta { justify-content: flex-start; }
     .forms-submit-card { flex-direction: column; align-items: stretch; }
@@ -610,8 +615,8 @@ function renderFormsHubPage(user) {
       </div>
     </section>
 
-    ${renderSection('staff', 'Yetkili & Kadro Alımları', 'Sunucu ve topluluk yönetiminde aktif rol almak isteyenler için başvuru formları.')}
-    ${renderSection('other', 'Topluluk & Destek Formları', 'İçerik üreticiliği, reklam, sponsorluk ve genel taleplerinizi doğrudan ekibimize ulaştırın.')}
+    ${renderSection('staff', 'Yetkili Alımları & Kadro', 'Sunucu ve topluluk yönetiminde aktif rol almak isteyenler için başvuru formları.')}
+    ${renderSection('other', 'Diğer Formlar & Destek', 'İçerik üreticiliği, reklam, sponsorluk ve genel taleplerinizi doğrudan ekibimize ulaştırın.')}
   `;
   return renderFormsDocument({ user, activePath: '/forms', title: 'Formlar', body });
 }
@@ -809,11 +814,16 @@ function renderClosedFormPage(user, definition) {
       </header>
       <section class="form-success-card" style="border-color:rgba(251,191,36,0.3);background:linear-gradient(135deg,rgba(30,24,15,0.85) 0%,rgba(18,14,10,0.95) 100%);">
         <div class="form-success-icon" style="background:rgba(251,191,36,0.2);color:var(--f-warning);box-shadow:0 0 30px rgba(251,191,36,0.25);">⏳</div>
-        <h2>Başvurular Geçici Olarak Kapalı</h2>
+        <h2>Başvurular geçici olarak kapalı</h2>
         <p>Yönetim ekibi bu form için kontenjanları doldurduğundan veya bakım çalışması yapıldığından alımlar durdurulmuştur. Yeniden açıldığında duyurulacaktır.</p>
-        <a href="/forms" class="forms-submit-btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);box-shadow:none;">
-          ← Açık Formları İncele
-        </a>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="forms-submit-btn" disabled style="opacity:0.5;cursor:not-allowed;">
+            <span>🚫 Başvuru Kapalı (Bakım)</span>
+          </button>
+          <a href="/forms" class="forms-submit-btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);box-shadow:none;">
+            ← Açık Formları İncele
+          </a>
+        </div>
       </section>
     </article>
   `;
