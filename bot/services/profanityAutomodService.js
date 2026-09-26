@@ -359,6 +359,9 @@ async function processMessageAutomod(message, client) {
     }
 
     automodIncidents.set(message.id, {
+      matched: detection.matched,
+      tierName: detection.tier.name,
+      severity: detection.severity,
       messageId: message.id,
       guildId: guild.id,
       channelId: channel.id,
@@ -379,12 +382,40 @@ async function processMessageAutomod(message, client) {
       createdAt: Date.now()
     });
 
-    // Kullanıcıya / Kanala Hızlı Geçici Uyarı Mesajı Gönder (5 saniye sonra silinir)
+    // ── İtiraz Merkezi Bağlantısı & Butonu ──────────────────────────────
+    const baseUrl = process.env.BASE_URL || "https://ekoyildiz.duckdns.org";
+    const appealUrl = `${baseUrl}/itiraz?incident=${message.id}&user=${userId}`;
+    const appealRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel("İtiraz Et")
+        .setStyle(ButtonStyle.Link)
+        .setURL(appealUrl)
+        .setEmoji("⚖️")
+    );
+
+    // Kullanıcıya / Kanala Hızlı Uyarı Mesajı Gönder (15 saniye sonra silinir)
     channel.send({
-      content: `⚠️ <@${userId}>, mesajınız **EkoYıldız Automod Kalkanı** tarafından engellendi. *(Kural İhlali: Küfür / Argo / Uygunsuz Dil)*. ${violationCount > 1 ? `**[Tekerrür: ${violationCount}. İhlal]**` : ''}`
+      content: `⚠️ <@${userId}>, mesajınız **EkoYıldız Automod Kalkanı** tarafından engellendi. *(Kural İhlali: Küfür / Argo / Uygunsuz Dil)*. ${violationCount > 1 ? `**[Tekerrür: ${violationCount}. İhlal]**` : ''}\n` +
+        `Yanlış bir işlem olduğunu düşünüyorsanız aşağıdaki butondan **İtiraz Merkezi**'ne başvurabilirsiniz.`,
+      components: [appealRow]
     }).then(msg => {
-      setTimeout(() => msg.delete().catch(() => {}), 6000);
+      setTimeout(() => msg.delete().catch(() => {}), 15000);
     }).catch(() => {});
+
+    // Kullanıcıya doğrudan DM ile bilgilendirme ve itiraz butonu ilet
+    if (member) {
+      const sendTarget = typeof member.send === 'function'
+        ? member
+        : (member.user && typeof member.user.send === 'function' ? member.user : null);
+      if (sendTarget) {
+        sendTarget.send({
+          content: `⚠️ **EkoYıldız Automod Uyarısı:** <#${channel.id}> kanalındaki mesajınız küfür/argo filtresine takıldığı için kaldırıldı.\n` +
+            `📌 **Tespit:** \`${detection.matched}\` (${detection.tier.name})\n` +
+            `⚖️ Eğer bir hata veya yanlış anlaşılma olduğunu düşünüyorsanız, aşağıdaki **İtiraz Et** butonundan savunmanızı iletebilirsiniz:`,
+          components: [appealRow]
+        }).catch(() => {});
+      }
+    }
 
     // ── MODERASYON LOG KANALINA BUTONLU CEZA KARTI GÖNDER ──────────────────
     const logChannel = await client.channels.fetch(MOD_CEZA_LOG_CHANNEL_ID).catch(() => null);
@@ -517,7 +548,22 @@ async function forgiveAutomodIncident({ messageId, guild, moderatorId }) {
   };
 }
 
+
+function getAutomodIncident(messageId) {
+  return automodIncidents.get(messageId) || null;
+}
+
+function recordAutomodIncident(messageId, data) {
+  automodIncidents.set(messageId, {
+    messageId,
+    createdAt: Date.now(),
+    ...data
+  });
+}
+
 module.exports = {
+  getAutomodIncident,
+  recordAutomodIncident,
   detectProfanity,
   cleanAndNormalizeText,
   processMessageAutomod,

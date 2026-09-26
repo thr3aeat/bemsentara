@@ -38,7 +38,10 @@ const { renderCareersPage } = require("../views/careersPage");
 const { renderVideoBlogPage } = require("../views/videoBlogPage");
 const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
 const { renderAdvertisingLandingPage } = require("../views/advertisingLandingPage");
+const { renderItirazMerkeziPage } = require("../views/itirazMerkeziPage");
+const { getDiscordClient } = require("../../bot/discordClient");
 const { renderLinksHubPage } = require("../views/linksHubPage");
+
 
 const router = express.Router();
 
@@ -46,6 +49,47 @@ router.get("/ads.txt", (req, res) => {
   res.type("text/plain");
   res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
 });
+
+// ── Automod & Güvenlik İtiraz Merkezi ──────────────────────────────────
+router.get("/itiraz", (req, res) => {
+  res.send(renderItirazMerkeziPage({ query: req.query, user: req.user }));
+});
+router.get("/itiraz-merkezi", (req, res) => {
+  const queryStr = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect("/itiraz" + queryStr);
+});
+router.get("/appeal", (req, res) => {
+  const queryStr = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect("/itiraz" + queryStr);
+});
+router.get("/appeals", (req, res) => {
+  const queryStr = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect("/itiraz" + queryStr);
+});
+
+router.post("/api/automod/appeal", async (req, res) => {
+  try {
+    const { userId, incidentId, appealMessage } = req.body || {};
+    if (!userId || !appealMessage) {
+      return res.status(400).json({ success: false, error: "Kullanıcı ID ve itiraz savunması zorunludur." });
+    }
+
+    const { submitAutomodAppeal } = require("../../bot/services/automodAppealService");
+    const client = getDiscordClient() || req.app.get("client") || null;
+
+    if (!client) {
+      return res.status(503).json({ success: false, error: "Discord bot istemcisine ulaşılamıyor, lütfen tekrar deneyiniz." });
+    }
+
+    const result = await submitAutomodAppeal({ incidentId, userId, appealMessage, client });
+    return res.json(result);
+  } catch (err) {
+    console.error("[api/automod/appeal] error:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
 
 router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
 router.get("/links", (req, res) => res.redirect("/linkler"));

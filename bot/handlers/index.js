@@ -405,7 +405,17 @@ function initializeDiscordHandlers(client) {
       console.error("[thanksAutoUpdater] Başlatma hatası:", err.message);
     }
 
+    // Automod İtiraz & Telegram Gecikme Takip Planlayıcısı
+    try {
+      const { startAppealMonitoringScheduler } = require("../services/automodAppealService");
+      startAppealMonitoringScheduler(client);
+    } catch (err) {
+      console.error("[automodAppealScheduler] Başlatma hatası:", err.message);
+    }
+
     // Moderatör Okulu Başlatma
+
+// Moderatör Okulu Başlatma
     try {
       const { initializeModeratorSchool } = require("../services/moderatorSchool");
       initializeModeratorSchool(client).catch(err => {

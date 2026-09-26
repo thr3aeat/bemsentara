@@ -98,7 +98,22 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // ── Automod İtiraz Yetkili Butonları (Kabul Et / Reddet) ─────────────────
+  if (customId.startsWith('automod_appeal_')) {
+    const { handleModeratorDecision } = require('../services/automodAppealService');
+    if (customId.startsWith('automod_appeal_approve_')) {
+      const appealId = customId.replace('automod_appeal_approve_', '');
+      return handleModeratorDecision(interaction, appealId, 'approve');
+    }
+    if (customId.startsWith('automod_appeal_reject_')) {
+      const appealId = customId.replace('automod_appeal_reject_', '');
+      return handleModeratorDecision(interaction, appealId, 'reject');
+    }
+  }
+
   // ── Gelişmiş İtiraf & Anonim Köprü Sistemi Butonları ─────────────────────────
+
+// ── Gelişmiş İtiraf & Anonim Köprü Sistemi Butonları ─────────────────────────
   if (customId.startsWith('confession_')) {
     const confessionService = require('../services/confessionService');
     if (customId === 'confession_btn_public') {
