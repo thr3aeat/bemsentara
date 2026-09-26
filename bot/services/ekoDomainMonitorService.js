@@ -1,14 +1,53 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const { EmbedBuilder } = require("discord.js");
 const logger = require("../../utils/logger");
 
 const TARGET_URL = process.env.BASE_URL || "https://ekoyildiz.duckdns.org";
 const TARGET_CHANNEL_ID = "1518692466860101915";
 const TARGET_GUILD_ID = "1367646464804655104";
-const ALERT_MESSAGE_TEXT = "EkoYıldız teknik ve donanım sistemlerinde bir hata keşif ettik. Bu hatayı teklnik ekipleirmize aktardık en kısa sürede düzelecek .";
 const STATE_FILE = path.join(__dirname, "../../data/domain_monitor_state.json");
 const CHECK_INTERVAL_MS = 45 * 1000; // 45 saniyede bir kontrol
+
+function createAlertPayload() {
+  const embed = new EmbedBuilder()
+    .setColor(0xE67E22) // Modern Amber / Canlı Turuncu
+    .setAuthor({
+      name: "EkoYıldız Altyapı ve Sistem İzleme",
+      iconURL: "https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/26a0.png"
+    })
+    .setTitle("⚠️ Teknik ve Donanım Sistemlerinde Kesinti")
+    .setDescription(
+      "> **EkoYıldız teknik ve donanım sistemlerimizde beklenmeyen bir hata keşfedilmiştir.**\n\n" +
+      "🔧 **Müdahale Durumu:**\n" +
+      "Bu arıza teknik ve sistem mühendisliği ekiplerimize ivedilikle aktarılmış olup, sistemlerin stabilizasyonu için gerekli çalışmalar sürdürülmektedir.\n\n" +
+      "⏱️ En kısa sürede tüm servisler yeniden aktif hale getirilecektir."
+    )
+    .addFields(
+      {
+        name: "📡 Etkilenen Sistem",
+        value: "```\nWeb Paneli & API Gateway (ekoyildiz.duckdns.org)\n```",
+        inline: false
+      },
+      {
+        name: "⚡ Canlı Durum",
+        value: "🔴 **Servis Dışı (Müdahale Ediliyor)**",
+        inline: true
+      },
+      {
+        name: "🔄 Otomatik Kurtarma",
+        value: "🟢 **Normale dönünce bu mesaj silinecektir**",
+        inline: true
+      }
+    )
+    .setFooter({
+      text: "EkoYıldız Altyapı & Donanım Güvenlik İzleme Servisi • 7/24 Aktif"
+    })
+    .setTimestamp();
+
+  return { embeds: [embed] };
+}
 
 function loadState() {
   try {
@@ -39,15 +78,13 @@ let isChecking = false;
 
 async function checkDomainHealth(url) {
   try {
-    // Hem HEAD hem GET fallback
     const res = await axios.get(url, {
       timeout: 10000,
-      validateStatus: () => true, // Herhangi bir HTTP kodu dönerse sunucu/domain aktiftir
+      validateStatus: () => true,
       headers: {
         "User-Agent": "EkoYildiz-Monitor/1.0"
       }
     });
-    // 500 ve üzeri sunucu çökmesi veya 502/503/504 bad gateway ise down kabul edilir
     if (res.status >= 502 && res.status <= 504) {
       return { ok: false, error: `HTTP ${res.status}` };
     }
@@ -66,7 +103,6 @@ async function performDomainCheck(discordBot) {
     state.lastCheck = new Date().toISOString();
 
     if (!health.ok) {
-      // Domain veya sunucu kapalı / hata veriyor
       logger.warn(`[DomainMonitor] ${TARGET_URL} erişilemez durumda: ${health.error}`);
 
       if (!state.alertMessageId) {
@@ -75,22 +111,22 @@ async function performDomainCheck(discordBot) {
             || await discordBot.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
 
           if (channel && channel.isTextBased()) {
-            const sent = await channel.send(ALERT_MESSAGE_TEXT);
+            const payload = createAlertPayload();
+            const sent = await channel.send(payload);
             state.alertMessageId = sent.id;
             state.isDown = true;
             saveState(state);
-            logger.info(`[DomainMonitor] Uyarı mesajı gönderildi (Mesaj ID: ${sent.id})`);
+            logger.info(`[DomainMonitor] Modern uyarı bildirimi gönderildi (Mesaj ID: ${sent.id})`);
           } else {
             logger.warn(`[DomainMonitor] Hedef kanal (${TARGET_CHANNEL_ID}) bulunamadı veya metin kanalı değil.`);
           }
         } catch (sendErr) {
-          logger.error(`[DomainMonitor] Uyarı mesajı gönderilirken hata: ${sendErr && sendErr.message}`);
+          logger.error(`[DomainMonitor] Uyarı bildirimi gönderilirken hata: ${sendErr && sendErr.message}`);
         }
       }
     } else {
-      // Domain sağlıklı ve aktif
       if (state.alertMessageId || state.isDown) {
-        logger.info(`[DomainMonitor] ${TARGET_URL} yeniden aktif oldu! Uyarı mesajı temizleniyor...`);
+        logger.info(`[DomainMonitor] ${TARGET_URL} yeniden aktif oldu! Uyarı bildirimi temizleniyor...`);
         try {
           const channel = discordBot.channels.cache.get(TARGET_CHANNEL_ID)
             || await discordBot.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
@@ -104,15 +140,17 @@ async function performDomainCheck(discordBot) {
               }
             }
 
-            // Garanti temizlik: botun daha önce atmış olabileceği eşleşen mesajları da temizle
+            // Botun daha önce gönderdiği eşleşen uyarıları da temizle
             try {
               const recent = await channel.messages.fetch({ limit: 15 }).catch(() => null);
               if (recent) {
                 for (const [, m] of recent) {
-                  if (m.author.id === discordBot.user.id && m.content.includes("EkoYıldız teknik ve donanım")) {
-                    if (m.deletable) {
-                      await m.delete().catch(() => {});
-                    }
+                  const isBotAlert = m.author.id === discordBot.user.id && (
+                    m.content.includes("EkoYıldız teknik") ||
+                    (m.embeds.length && m.embeds[0].title?.includes("Teknik ve Donanım"))
+                  );
+                  if (isBotAlert && m.deletable) {
+                    await m.delete().catch(() => {});
                   }
                 }
               }
@@ -141,12 +179,10 @@ function startEkoDomainMonitor(discordBot) {
 
   logger.info(`[DomainMonitor] EkoYıldız domain izleme servisi aktif (${TARGET_URL} -> #${TARGET_CHANNEL_ID})`);
 
-  // İlk kontrolü 10 saniye sonra yap
   setTimeout(() => {
     performDomainCheck(discordBot).catch(() => {});
   }, 10000);
 
-  // Periyodik kontrol
   monitorTimer = setInterval(() => {
     performDomainCheck(discordBot).catch(() => {});
   }, CHECK_INTERVAL_MS);
@@ -155,5 +191,6 @@ function startEkoDomainMonitor(discordBot) {
 module.exports = {
   startEkoDomainMonitor,
   checkDomainHealth,
-  performDomainCheck
+  performDomainCheck,
+  createAlertPayload
 };
