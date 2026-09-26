@@ -4,7 +4,9 @@ const {
   EmbedBuilder, ChannelType, PermissionFlagsBits,
   ActionRowBuilder, ButtonBuilder, ButtonStyle,
   StringSelectMenuBuilder, StringSelectMenuOptionBuilder,
-  ModalBuilder, TextInputBuilder, TextInputStyle
+  ModalBuilder, TextInputBuilder, TextInputStyle,
+  ContainerBuilder, TextDisplayBuilder, SeparatorBuilder,
+  SeparatorSpacingSize, MessageFlags
 } = require('discord.js');
 const Ticket = require('../../models/Ticket');
 const { generateTicketId } = require('../../utils/ticketId');
@@ -17,6 +19,179 @@ function getAdvertisingLandingUrl(baseUrl = BASE_URL) {
     ? 'https://ekoyildiz.duckdns.org'
     : configured.replace(/\/+$/, '');
   return `${origin}/reklam/ekoyildiz-ortaklik`;
+}
+
+function buildCorporateAdvertisingPanel({
+  ticketId = 'general',
+  userId = '',
+  communityName = '',
+  targetLink = '',
+  requestDetails = '',
+  orderNotes = '',
+} = {}) {
+  const applicant = userId ? `<@${userId}>` : 'Başvuru sahibi';
+  const requestSummary = [
+    communityName && `**Topluluk / marka:** ${communityName}`,
+    targetLink && `**Tanıtım bağlantısı:** ${targetLink}`,
+    requestDetails && `**Talep:** ${requestDetails}`,
+    orderNotes && `**Not:** ${orderNotes}`,
+  ].filter(Boolean).join('\n');
+
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `## Reklam ve Sponsorluk Talebi\n-# Talep no: ${ticketId} • Başvuru sahibi: ${applicant}`
+      )
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        requestSummary || 'Talebiniz kaydedildi. Reklam ekibi kapsamı ve yayın planını bu kanal üzerinden netleştirecektir.'
+      )
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `### Neden EkoYıldız ile sponsor olmalısınız?\n` +
+        `EkoYıldız; YouTube içerikleri, Shorts yayınları ve Discord topluluğu üzerinden markanızı gerçek ve ilgili bir kitleye ulaştırır. ` +
+        `Kampanya metni ve yerleşimi yayın öncesinde birlikte planlanır. Erişim ve görünürlük hedeflenir; satış veya üye artışı garanti edilmez.`
+      )
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `### İttifak Orduları kampları için reklam koşulları\n` +
+        `1. YGS veya GS olma şartı yalnızca ücretli reklam alacak kamplar için geçerlidir.\n` +
+        `2. Bunun dışındaki başvurularda rütbe fark etmez.\n` +
+        `3. Ücretsiz reklam yalnızca 5.000+ gerçek üyeye sahip kamplar için değerlendirilir. Bot hesaplar üye sayısında sayılmaz ve ücretsiz başvurularda bekleme süresi oldukça uzundur.`
+      )
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        '-# Paket kapsamı, yayın takvimi ve ödeme bilgileri yetkili tarafından yazılı olarak paylaşılır. Ödemeler yalnızca resmî İtemSatış süreci üzerinden yürütülür.'
+      )
+    )
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`reklam_browse_start_${ticketId}`)
+          .setLabel('Paketleri İncele')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`reklam_open_modal_general_${ticketId}`)
+          .setLabel('Başvuru Bilgilerini Güncelle')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setLabel('Detaylı Bilgi')
+          .setStyle(ButtonStyle.Link)
+          .setURL(getAdvertisingLandingUrl())
+      )
+    )
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`claim_ticket_${ticketId}`)
+          .setLabel('Yetkili Üstlen')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`ticket_change_category_${ticketId}`)
+          .setLabel('Türü Değiştir')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`reklam_close_${ticketId}`)
+          .setLabel('Talebi Kapat')
+          .setStyle(ButtonStyle.Secondary)
+      )
+    );
+
+  return {
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  };
+}
+
+function buildAdvertisingCommunicationPrompt(userName = '') {
+  const greeting = userName ? `Merhaba **${userName}**. ` : '';
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('## Reklam görüşmesi için iletişim kanalını seçin')
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `${greeting}Başvurunuz için aşağıdaki iki güvenli iletişim yönteminden birini kullanabilirsiniz.`
+      )
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**DM:** Görüşme botun özel mesaj kutusunda yürütülür; sunucudaki personel kanalını görmezsiniz.\n` +
+        `**Sunucu kanalı:** Yalnızca sizin ve reklam ekibinin görebildiği gizli bir kanal açılır.`
+      )
+    )
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('reklam_start_comm_dm')
+          .setLabel('DM ile Görüş')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('reklam_start_comm_guild')
+          .setLabel('Sunucu Kanalında Görüş')
+          .setStyle(ButtonStyle.Secondary)
+      )
+    );
+
+  return {
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  };
+}
+
+function buildCorporatePackageOverview(ticketId = 'general') {
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('## EkoYıldız Şeffaf Reklam ve Sponsorluk Paketleri')
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        'Tüm paketlerimiz tek net başlangıç fiyatı ile listelenir. Üretim, yerleşim ve raporlama süreçleri şeffaf olarak yürütülür.'
+      )
+    )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    )
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        '• **Shorts & Hızlı Tanıtım:** 30 TL net başlangıç fiyatı\\n' +
+        '• **Standart Video Sponsorluğu:** 50 TL net başlangıç fiyatı\\n' +
+        '• **Sesli Mid-Roll Anlatım:** 100 TL net başlangıç fiyatı\\n' +
+        '• **Gold Kombin (Video + Shorts):** 350 TL net başlangıç fiyatı\\n' +
+        '• **Mega Etkileşim:** 500 TL net başlangıç fiyatı\\n' +
+        '• **VIP Çekilişli Kapsam:** 670 TL net başlangıç fiyatı'
+      )
+    )
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`reklam_browse_start_${ticketId}`)
+          .setLabel('Paket Detaylarını Gör')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setLabel('Web Kataloğu')
+          .setStyle(ButtonStyle.Link)
+          .setURL(getAdvertisingLandingUrl())
+      )
+    );
+
+  return {
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  };
 }
 
 /**
@@ -1367,76 +1542,14 @@ async function handleReklamModalSubmit(interaction) {
   });
   await ticket.save();
 
-  // Send Pricing & Information embed to the newly opened channel
-  const priceCatalogEmbed = new EmbedBuilder()
-    .setTitle(`📢 Eko Yıldız Reklam ve Sponsorluk Masası — #${ticketId}`)
-    .setDescription(
-      `🎉 Hoş geldiniz <@${interaction.user.id}>! Reklam ve sponsorluk talebiniz başarıyla alındı.\n\n` +
-      `📋 **İlettiğiniz Talep Detayları:**\n` +
-      `• 🏢 **Topluluk / Marka:** ${communityName}\n` +
-      `• 🔗 **Tanıtım Linki:** ${targetLink}\n` +
-      `• 📝 **Talep Türü / Detay:** ${reklamDetay}\n` +
-      `• 💬 **Özel Not / Bütçe:** ${orderNotes}\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 **NET REKLAM & SPONSORLUK FİYATLARI (SADECE İTEMSATIŞ):**\n` +
-      `> 📱 **Shorts & Hızlı Tanıtım Paketi:** **30 TL** *(15.000 - 60.000 dikey izlenme)*\n` +
-      `> 🎬 **Standart Uzun Video Sponsorluğu:** **50 TL** *(kalıcı alt bant banner + yorum)*\n` +
-      `> 🔥 **Sesli Mid-Roll Tanıtım:** **100 TL** *(20-30 saniye sesli reklam arası)*\n` +
-      `> 🌟 **Gold Kombin Paket:** **350 TL** *(uzun video + Shorts + topluluk)*\n` +
-      `> 🚀 **Mega Etkileşim Paketi:** **500 TL** *(video + Shorts + topluluk + Discord duyurusu)*\n` +
-      `> 💎 **Çekilişli VIP Paket:** **670 TL** *(Mega kapsam + 9.800 Robux çekilişi)*\n` +
-      `> 🏰 **Roblox & Kamp Kurulum Hizmetleri:** 300 TL - 4.850 TL\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `🛡️ **Ödeme Güvencesi:** Tüm ödemeler %100 3D Secure güvencesiyle **SADECE İTEMSATIŞ** üzerinden alınır.\n` +
-      `Paket detaylarını inceleyebilir, kapsamınızı oluşturabilir veya net fiyatları onaylayabilirsiniz:`
-    )
-    .setColor(0xF1C40F)
-    .setFooter({ text: 'Eko Yıldız Reklam & Sponsorluk Departmanı • Sadece İtemSatış' })
-    .setTimestamp();
-
-  const actionRow1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`reklam_approve_price_${ticketId}`)
-      .setLabel('✅ Net Fiyatı Onayla')
-      .setStyle(ButtonStyle.Success)
-      .setEmoji('🛍️'),
-    new ButtonBuilder()
-      .setCustomId(`reklam_browse_start_${ticketId}`)
-      .setLabel('📦 Detaylı Paket Kataloğu')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('📑'),
-    new ButtonBuilder()
-      .setLabel('Neden EkoYıldız?')
-      .setStyle(ButtonStyle.Link)
-      .setURL(getAdvertisingLandingUrl())
-      .setEmoji('🌻')
-  );
-
-  const actionRow2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`reklam_builder_open_${ticketId}`)
-      .setLabel('🎯 Kendi Paketini Oluştur')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('⚙️'),
-    new ButtonBuilder()
-      .setCustomId(`claim_ticket_${ticketId}`)
-      .setLabel('🙋‍♂️ Yetkili Üstlen')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId(`ticket_change_category_${ticketId}`)
-      .setLabel('🔄 Tür Değiştir')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId(`reklam_close_${ticketId}`)
-      .setLabel('🔒 Kapat')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  await channel.send({
-    content: `👑 <@${interaction.user.id}> ve Reklam Departmanı Yetkilileri için talep masası hazırlandı.`,
-    embeds: [priceCatalogEmbed],
-    components: [actionRow1, actionRow2]
-  });
+  await channel.send(buildCorporateAdvertisingPanel({
+    ticketId,
+    userId: interaction.user.id,
+    communityName,
+    targetLink,
+    requestDetails: reklamDetay,
+    orderNotes,
+  }));
 
   // Start claim routing if configured
   startTicketClaimRouting(ticket, targetGuild, interaction.client).catch(() => { });
@@ -1962,38 +2075,11 @@ async function showCommunicationPreferencePrompt(interaction) {
     });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle("🎯 REKLAM İLETİŞİM YÖNTEMİNİ SEÇİN")
-    .setDescription(
-      `Eko Yıldız Reklam ve Sponsorluk Departmanı ile nasıl iletişim kurmak istersiniz?\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `📩 **1. DM ÜZERİNDEN İLETİŞİM (GİZLİ & ÖZEL):**\n` +
-      `• Sunucuda kanal aramakla uğraşmazsınız.\n` +
-      `• Sunucu kanalını **görmezsiniz**, doğrudan botun **DM (Özel Mesaj)** kutusundan danışmanımızla birebir yazışırsınız.\n\n` +
-      `🏛️ **2. SUNUCU ÜZERİNDEN İLETİŞİM (SUNUCU KANALI):**\n` +
-      `• Eko Yıldız sunucusunda size özel gizli bir reklam masası kanalı (\`#reklam-${interaction.user.username.toLowerCase()}\`) açılır.\n` +
-      `• Görüşmeyi doğrudan sunucu kanalından yaparsınız, DM kutunuza mesaj gitmez.\n` +
-      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-      `Lütfen aşağıdaki butonlardan tercih ettiğiniz iletişim yöntemine tıklayın:`
-    )
-    .setColor(0xF1C40F)
-    .setFooter({ text: 'Eko Yıldız Müşteri İletişim Tercihi • Sadece İtemSatış' })
-    .setTimestamp();
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("reklam_start_comm_dm")
-      .setLabel("📩 DM Üzerinden İletişim İstiyorum")
-      .setStyle(ButtonStyle.Success)
-      .setEmoji("💬"),
-    new ButtonBuilder()
-      .setCustomId("reklam_start_comm_guild")
-      .setLabel("🏛️ Sunucu Üzerinden İletişim İstiyorum")
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji("🏰")
-  );
-
-  return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  const prompt = buildAdvertisingCommunicationPrompt(interaction.user.username);
+  return interaction.reply({
+    ...prompt,
+    flags: prompt.flags | MessageFlags.Ephemeral,
+  });
 }
 
 /**
@@ -2121,15 +2207,12 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
 
     await channel.send({ embeds: [staffNoticeEmbed], components: [rowButtons1] });
 
-    // Send DM to user with initial wizard and chat invitation
-    const step1Data = buildReklamWizardStep(1, ticketId);
+    // Send the concise corporate panel to the user and keep chat in DM.
     try {
-      await interaction.user.send({
-        content: `👑 **Merhaba ${interaction.user.username}! Eko Yıldız DM Reklam Masanız Açıldı.**\n` +
-          `Danışmanımız **Emre** sizinle ilgileniyor. Doğrudan buraya mesaj yazarak sorularınızı iletebilir veya aşağıdaki adımları inceleyebilirsiniz:`,
-        embeds: [step1Data.embed],
-        components: step1Data.components
-      });
+      await interaction.user.send(buildCorporateAdvertisingPanel({
+        ticketId,
+        userId: interaction.user.id,
+      }));
     } catch (_) { }
 
   } else {
@@ -2139,25 +2222,10 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
       ephemeral: true
     });
 
-    const step1Data = buildReklamWizardStep(1, ticketId);
-    const wizardMsg = await channel.send({
-      content: `🎉 Hoş geldiniz <@${interaction.user.id}>! Eko Yıldız Reklam ve Sponsorluk Masanız açıldı.\n` +
-        `Danışmanımız **Emre** sizinle ilgileniyor. İletişim doğrudan bu kanaldan sağlanacaktır.`,
-      embeds: [step1Data.embed],
-      components: step1Data.components
-    }).catch(() => null);
-
-    // Advance to step 2 after 5 seconds
-    if (wizardMsg) {
-      setTimeout(async () => {
-        try {
-          const checkTicket = await Ticket.findOne({ ticketId });
-          if (!checkTicket || checkTicket.status !== 'open') return;
-          const step2Data = buildReklamWizardStep(2, ticketId);
-          await wizardMsg.edit({ embeds: [step2Data.embed], components: step2Data.components }).catch(() => { });
-        } catch (_) { }
-      }, 5000);
-    }
+    await channel.send(buildCorporateAdvertisingPanel({
+      ticketId,
+      userId: interaction.user.id,
+    })).catch(() => null);
   }
 
   // Start staff claim routing
@@ -2926,6 +2994,8 @@ async function cleanReklamSalesMessages(channel) {
 
 module.exports = {
   getAdvertisingLandingUrl,
+  buildCorporateAdvertisingPanel,
+  buildAdvertisingCommunicationPrompt,
   REKLAM_PACKAGES,
   CUSTOM_BUILDER_MODULES,
   KAMP_SERVICES,

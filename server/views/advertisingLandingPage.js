@@ -67,7 +67,7 @@ function renderAdvertisingLandingPage(user = null) {
   <main>
     <section class="hero shell">
       <div class="reveal"><span class="eyebrow">EkoYıldız Partner Studio · Özel bağlantı</span><h1>Reklam değil, <span>doğru toplulukla bağ.</span></h1><p class="lead">Roblox Türk topluluklarını gerçekten tanıyan bir YouTube kanalı, aktif bir Discord ekosistemi ve içeriğin akışını bozmayan reklam formatları. Mesajınızı yalnızca göstermeyelim; doğru bağlama yerleştirelim.</p><div class="hero-actions"><a class="button primary" href="/tickets/new?category=reklam">Bir kampanya planla <span>→</span></a><a class="button secondary" href="#paketler">Net fiyatları incele</a></div><div class="honesty"><b>✓</b><span>Şeffaflık notu: Kampanya sonuçları kitle ve kreatife göre değişir. Teslim kapsamını, yerleşimi ve raporlamayı baştan netleştiriyoruz.</span></div></div>
-      <aside class="signal-card reveal"><div class="signal-head"><span>Kampanya sinyali</span><span class="live">Planlamaya açık</span></div><div class="signal-main"><small>Odak kitle</small><strong>Roblox Türkiye</strong><p>YouTube içeriği + Discord topluluğu + doğal anlatım</p></div><div class="signal-list"><div class="signal-item"><span>Yerleşim</span><b>İçeriğe uyumlu</b></div><div class="signal-item"><span>Onay süreci</span><b>Yayın öncesi</b></div><div class="signal-item"><span>Teslim</span><b>Raporlanabilir</b></div></div><div class="mascot-note">🌻 EkoMaskot diyor ki: “Reklamı videoya bantlamıyoruz; hikâyeye düzgünce oturtuyoruz.”</div></aside>
+      <aside class="signal-card reveal"><div class="signal-head"><span>Kampanya özeti</span><span class="live">Planlamaya açık</span></div><div class="signal-main"><small>Odak kitle</small><strong>Roblox Türkiye</strong><p>YouTube içeriği + Discord topluluğu + doğal anlatım</p></div><div class="signal-list"><div class="signal-item"><span>Yerleşim</span><b>İçeriğe uyumlu</b></div><div class="signal-item"><span>Onay süreci</span><b>Yayın öncesi</b></div><div class="signal-item"><span>Teslim</span><b>Raporlanabilir</b></div></div><div class="mascot-note">Kampanya kapsamı, yayın takvimi ve teslim ölçütleri başlamadan önce yazılı olarak netleştirilir.</div></aside>
     </section>
     <div class="trust-strip shell reveal"><div class="trust-item"><strong>Niş topluluk</strong><span>Roblox ve topluluk kültürünü bilen izleyici</span></div><div class="trust-item"><strong>Çoklu dağıtım</strong><span>YouTube, Shorts, topluluk ve Discord</span></div><div class="trust-item"><strong>Önce onay</strong><span>Metin ve yerleşim yayın öncesi netleşir</span></div><div class="trust-item"><strong>Güvenli ödeme</strong><span>Yalnızca resmî İtemSatış süreci</span></div></div>
 
@@ -94,11 +94,21 @@ function renderAdvertisingLandingPage(user = null) {
     </section>
 
     <section class="shell">
+      <div class="section-head reveal"><div><span class="section-kicker">Başvuru koşulları</span><h2>İttifak Orduları kampları için açık ölçütler.</h2></div><p>Başvurular ücretli ve ücretsiz reklam türüne göre ayrı değerlendirilir. Üye sayısı incelenirken yalnızca gerçek hesaplar dikkate alınır.</p></div>
+      <div class="value-grid">
+        <article class="value-card reveal"><span class="number">01 / ÜCRETLİ REKLAM</span><div class="icon">YGS</div><h3>YGS veya GS şartı</h3><p>YGS veya GS olma şartı yalnızca ücretli reklam alacak İttifak Orduları kampları için geçerlidir.</p></article>
+        <article class="value-card reveal"><span class="number">02 / RÜTBE</span><div class="icon">—</div><h3>Rütbe fark etmez</h3><p>Ücretli reklam şartının dışında kalan uygun başvurularda kamp yöneticisinin rütbesi değerlendirmeyi değiştirmez.</p></article>
+        <article class="value-card reveal"><span class="number">03 / ÜCRETSİZ REKLAM</span><div class="icon">5K+</div><h3>5.000+ gerçek üye</h3><p>Ücretsiz reklam yalnızca 5.000+ gerçek üyeli kamplar için değerlendirilir. Bot hesaplar üye sayısında sayılmaz ve bekleme süresi oldukça uzundur.</p></article>
+      </div>
+      <p class="pricing-note">Reklam çalışmaları erişim ve görünürlük sağlar; satış veya üye artışı garanti edilmez.</p>
+    </section>
+
+    <section class="shell">
       <div class="section-head reveal"><div><span class="section-kicker">Nasıl ilerliyor?</span><h2>Dört adımda yayına hazır.</h2></div><p>Uzun formlar ve belirsiz bekleyiş yerine, kararların ticket içinde görülebildiği kısa bir planlama akışı.</p></div>
       <div class="process reveal"><article class="step"><b>ADIM 01</b><h3>Hedefini anlat</h3><p>Topluluğunu, bağlantını, bütçeni ve ulaşmak istediğin kişiyi paylaş.</p></article><article class="step"><b>ADIM 02</b><h3>Formatı birlikte seç</h3><p>Shorts, video içi anlatım veya çoklu dağıtım arasından doğru kapsamı belirleyelim.</p></article><article class="step"><b>ADIM 03</b><h3>Metni onayla</h3><p>Yayın metni ve kreatif yerleşim açık biçimde sana sunulsun; gerekirse revize edilsin.</p></article><article class="step"><b>ADIM 04</b><h3>Yayın ve teslim</h3><p>Onaylanan takvimde yayınlansın, bağlantılar ve teslim bilgisi ticket’a eklensin.</p></article></div>
     </section>
 
-    <section class="shell faq-layout"><div class="reveal"><span class="section-kicker">Kısa cevaplar</span><h2>Aklında soru kalmasın.</h2><p>Yine de kaldıysa ticket aç. Reklam ekibi “bu soru fazla detaylı” diye kaçmıyor — en fazla kahvesini tazeliyor.</p></div><div class="reveal">${faq}</div></section>
+    <section class="shell faq-layout"><div class="reveal"><span class="section-kicker">Kısa cevaplar</span><h2>Başlamadan önce bilinmesi gerekenler.</h2><p>Ek sorularınızı reklam talebi üzerinden iletebilir; kapsam, takvim ve ödeme sürecini yetkiliyle yazılı olarak netleştirebilirsiniz.</p></div><div class="reveal">${faq}</div></section>
 
     <section class="final-cta shell reveal"><h2>Topluluğunu doğru yerde büyüt.</h2><p>Hazır bir paket seç veya bütçeni ve hedefini anlat; EkoYıldız reklam ekibi sana uygun kapsamı ticket içinde netleştirsin.</p><div class="hero-actions"><a class="button primary" href="/tickets/new?category=reklam">Reklam talebi oluştur →</a><a class="button secondary" href="${DISCORD_URL}" target="_blank" rel="noopener noreferrer">Discord’a katıl</a><a class="button secondary" href="${YOUTUBE_URL}" target="_blank" rel="noopener noreferrer">Kanalı incele ↗</a></div></section>
   </main>

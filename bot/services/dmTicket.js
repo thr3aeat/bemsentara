@@ -205,6 +205,25 @@ function buildUserDMControlRow(ticketId) {
   );
 }
 
+async function findRecentTicketsForUser(userId, dependencies = {}) {
+  const findTickets = dependencies.findTickets || ((query) => Ticket.find(query));
+
+  try {
+    const results = await findTickets({ userId });
+    if (!Array.isArray(results)) return [];
+
+    return [...results]
+      .sort((left, right) => {
+        const rightTime = new Date(right?.createdAt || 0).getTime();
+        const leftTime = new Date(left?.createdAt || 0).getTime();
+        return rightTime - leftTime;
+      })
+      .slice(0, 5);
+  } catch (_) {
+    return [];
+  }
+}
+
 // ── Bot'a DM gelen mesajı işle ──────────────────────────────────────────────
 async function handleDMMessage(message, client) {
   const userId = message.author.id;
@@ -833,7 +852,7 @@ async function handleDMButton(interaction, client) {
   // 6. Kullanıcının Kendi Taleplerini Listelemesi
   if (customId.startsWith('dm_my_tickets_')) {
     pendingConfirmation.delete(userId);
-    const tickets = await Ticket.find({ userId }).sort({ createdAt: -1 }).limit(5).catch(() => []);
+    const tickets = await findRecentTicketsForUser(userId);
     if (!tickets.length) {
       await interaction.update({
         content: 'ℹ️ Daha önce açılmış herhangi bir destek talebiniz bulunmuyor.',
@@ -1398,5 +1417,6 @@ module.exports = {
   handleDMModal,
   forwardChannelToDM,
   handleDMCloseButton,
+  findRecentTicketsForUser,
   activeDMTickets,
 };

@@ -65,16 +65,17 @@ function buildTicketEmbed(ticket) {
     .setTimestamp(dateObj);
 }
 
-function getTicketModActionRows(ticketId) {
+function getTicketModActionRows(ticketId, claimedByName = null) {
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`close_ticket_${ticketId}`)
       .setLabel("🔒 Talebi Kapat")
       .setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
-      .setCustomId(`claim_ticket_${ticketId}`)
-      .setLabel("🙋‍♂️ Talebi Üstlen")
-      .setStyle(ButtonStyle.Success),
+      .setCustomId(claimedByName ? `claimed_ticket_disabled_${ticketId}` : `claim_ticket_${ticketId}`)
+      .setLabel(claimedByName ? `Üstlendi: ${claimedByName}` : "🙋‍♂️ Talebi Üstlen")
+      .setStyle(claimedByName ? ButtonStyle.Secondary : ButtonStyle.Success)
+      .setDisabled(!!claimedByName),
     new ButtonBuilder()
       .setCustomId(`ticket_notify_user_${ticketId}`)
       .setLabel("🔔 DM Bildirimi")
@@ -133,6 +134,7 @@ function buildCloseButton(ticketId) {
 /** Components V2 Ticket Detay Payload'ı (Accent colorsuz, gelişmiş bol butonlu mod paneli) */
 function buildTicketV2(ticket) {
   const ComponentsV2Factory = require("./utils/componentsV2Factory");
+  const { resolveTicketGuide } = require("./services/ticketGuideResolver");
   const categoryInfo = (ticket && ticket.category && SUPPORT_CATEGORIES[ticket.category]) || SUPPORT_CATEGORIES.other || { name: 'Genel Destek' };
   const dateObj = ticket && ticket.createdAt ? new Date(ticket.createdAt) : new Date();
   const timeSeconds = Math.floor(dateObj.getTime() / 1000);
@@ -155,6 +157,7 @@ function buildTicketV2(ticket) {
   const categoryName = categoryInfo.name || ticket?.category || 'Genel Destek';
   const cleanSubject = (ticket?.subject && ticket.subject.trim()) || 'Konu belirtilmedi';
   const cleanDesc = (ticket?.description && ticket.description.trim()) || 'Açıklama belirtilmedi';
+  const guide = resolveTicketGuide(ticket?.category);
 
   const components = [
     ...ComponentsV2Factory.headerBlock(`Destek Talebi — #${ticketId}`, '🎫'),
@@ -174,12 +177,29 @@ function buildTicketV2(ticket) {
     ),
     ComponentsV2Factory.separator(false),
     ComponentsV2Factory.text(
-      `### 🛡️ Moderatör & Yetkili Hızlı Eylem Masası\n` +
+      `### 👤 Kullanıcı İşlemleri\n` +
+      `*Bu araçlar talep sahibi için kapatma, personel çağırma ve talep bilgilerine erişim sağlar.*`
+    ),
+    ComponentsV2Factory.actionRow([
+      { custom_id: `ticket_user_close_${ticketId}`, label: "Ticketi Kapat", style: ButtonStyle.Danger, emoji: { name: "🔒" } },
+      { custom_id: `ticket_staff_call_${ticketId}`, label: "Personel Çağır", style: ButtonStyle.Primary, emoji: { name: "🔔" } },
+      { custom_id: `ticket_owner_info_${ticketId}`, label: "Ticket Bilgileri", style: ButtonStyle.Secondary, emoji: { name: "ℹ️" } },
+      { url: guide.url, label: "Yardım Dokümanı", style: ButtonStyle.Link, emoji: { name: "🛡️" } }
+    ]),
+    ComponentsV2Factory.separator(false),
+    ComponentsV2Factory.text(
+      `### 🛡️ Yetkili İşlemleri\n` +
       `*Aşağıdaki araçları kullanarak talebi kapatabilir, üstlenebilir, kullanıcıya DM bildirimi gönderebilir veya sicilini sorgulayabilirsiniz.*`
     ),
     ComponentsV2Factory.actionRow([
       { custom_id: `close_ticket_${ticketId}`, label: "Talebi Kapat", style: ButtonStyle.Danger, emoji: { name: "🔒" } },
-      { custom_id: `claim_ticket_${ticketId}`, label: "Talebi Üstlen", style: ButtonStyle.Success, emoji: { name: "🙋‍♂️" } },
+      {
+        custom_id: ticket?.claimedBy ? `claimed_ticket_disabled_${ticketId}` : `claim_ticket_${ticketId}`,
+        label: ticket?.claimedBy ? `Üstlendi: ${ticket.claimedByName || ticket.claimedBy}` : "Talebi Üstlen",
+        style: ticket?.claimedBy ? ButtonStyle.Secondary : ButtonStyle.Success,
+        disabled: !!ticket?.claimedBy,
+        emoji: { name: "🙋‍♂️" }
+      },
       { custom_id: `ticket_notify_user_${ticketId}`, label: "DM Bildirimi", style: ButtonStyle.Primary, emoji: { name: "🔔" } },
       { custom_id: `ticket_ai_dispute_${ticketId}`, label: "AI İhtilaf Analizi", style: ButtonStyle.Secondary, emoji: { name: "🚨" } }
     ]),

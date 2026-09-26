@@ -14,6 +14,10 @@ const Ticket = {
     const results = tickets.find(query);
     return Promise.resolve(results);
   },
+
+  countDocuments(query = {}) {
+    return Promise.resolve(tickets.find(query).length);
+  },
 };
 
 // Constructor-like: new Ticket({...}) then .save()
@@ -82,5 +86,6 @@ function TicketConstructor(data) {
 TicketConstructor.findOne = Ticket.findOne;
 TicketConstructor.findById = Ticket.findById;
 TicketConstructor.find = Ticket.find;
+TicketConstructor.countDocuments = Ticket.countDocuments;
 
 module.exports = TicketConstructor;

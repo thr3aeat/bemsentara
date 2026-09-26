@@ -1,26 +1,26 @@
 'use strict';
 
-const { buildTicketUserPanel, buildTicketStaffPanel, buildTicketStaffFallbackPanel } = require('./ticketPanelService');
+const { buildTicketPanel, buildTicketFallbackPanel } = require('./ticketPanelService');
 
 function formatPanelError(ticket, error) {
   return `[TICKET_PANEL_SEND_FAILED] ticketId=${ticket?.ticketId || 'unknown'} guildId=${ticket?.guildId || 'unknown'} channelId=${ticket?.channelId || 'unknown'} userId=${ticket?.userId || 'unknown'} error=${error?.message || String(error)}`;
 }
 
 async function sendTicketPanels(ticket, channel, buildPanels) {
-  const panels = buildPanels ? buildPanels(ticket) : [buildTicketUserPanel(ticket), buildTicketStaffPanel(ticket)];
+  const panels = buildPanels ? buildPanels(ticket) : [buildTicketPanel(ticket)];
   const messages = [];
   let deliveryWarning = null;
   for (let index = 0; index < panels.length; index += 1) {
     try {
       messages.push(await channel.send(panels[index]));
     } catch (error) {
-      if (buildPanels || index !== 1) throw error;
-      deliveryWarning = `Components V2 staff panel fallback used: ${error?.message || String(error)}`;
-      messages.push(await channel.send(buildTicketStaffFallbackPanel(ticket)));
+      if (buildPanels || index !== 0) throw error;
+      deliveryWarning = `Components V2 combined panel fallback used: ${error?.message || String(error)}`;
+      messages.push(await channel.send(buildTicketFallbackPanel(ticket)));
     }
   }
   ticket.panelMessageId = messages[0]?.id || null;
-  ticket.staffPanelMessageId = messages[1]?.id || null;
+  ticket.staffPanelMessageId = null;
   ticket.panelDeliveredAt = new Date();
   ticket.deliveryState = 'delivered';
   ticket.deliveryWarning = deliveryWarning;

@@ -24,6 +24,20 @@ test('private advertising landing page explains value and uses honest net pricin
   assert.doesNotMatch(html, /sahte|garantili satış|kesin dönüşüm/i);
 });
 
+test('advertising landing page publishes Allied Armies eligibility without growth promises', () => {
+  const html = renderAdvertisingLandingPage(null);
+
+  assert.match(html, /İttifak Orduları kampları/i);
+  assert.match(html, /YGS veya GS/i);
+  assert.match(html, /yalnızca ücretli reklam/i);
+  assert.match(html, /Rütbe fark etmez/i);
+  assert.match(html, /5\.000\+ gerçek üye/i);
+  assert.match(html, /Bot hesaplar.*sayılmaz/i);
+  assert.match(html, /bekleme süresi.*uzun/i);
+  assert.match(html, /üye artışı garanti edilmez/i);
+  assert.doesNotMatch(html, /TL fark|vergi karşılama jesti|erişim sigortası/i);
+});
+
 test('advertising landing stays unlisted but has a direct route', () => {
   const routeSource = fs.readFileSync(path.join(__dirname, '../server/routes/pages.js'), 'utf8');
   const chrome = renderPlatformHeader({ user: null }) + renderPlatformFooter();

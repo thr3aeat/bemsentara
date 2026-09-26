@@ -52,7 +52,7 @@ test('ticket lifecycle keeps a retryable record and logs panel failures', async 
   assert.match(logs[0], /EY-LIFE-2/);
 });
 
-test('ticket delivery falls back to the staff action panel when Discord rejects Components V2', async () => {
+test('ticket delivery falls back to one classic combined panel when Discord rejects Components V2', async () => {
   const attempts = [];
   const delivered = [];
   const ticket = {
@@ -75,10 +75,35 @@ test('ticket delivery falls back to the staff action panel when Discord rejects 
     },
   });
 
-  assert.equal(attempts.length, 3);
-  assert.equal(delivered.length, 2);
+  assert.equal(attempts.length, 2);
+  assert.equal(delivered.length, 1);
   assert.ok(delivered[0].embeds?.length);
-  assert.ok(delivered[1].embeds?.length);
+  const fallbackButtons = delivered[0].components.flatMap((row) => row.components);
+  assert.ok(fallbackButtons.some((button) => button.data.custom_id === 'ticket_owner_info_EY-LIFE-3'));
+  assert.ok(fallbackButtons.some((button) => button.data.custom_id === 'claim_ticket_EY-LIFE-3'));
   assert.equal(ticket.deliveryState, 'delivered');
   assert.match(ticket.deliveryWarning, /Components V2 rejected/);
+});
+
+test('default ticket delivery sends one opening message and stores only its id', async () => {
+  const sent = [];
+  const ticket = {
+    ticketId: 'EY-LIFE-4',
+    userId: '4',
+    category: 'technical',
+    subject: 'Test',
+    description: 'Açıklama',
+    save: async () => {},
+  };
+
+  await sendTicketPanels(ticket, {
+    send: async (payload) => {
+      sent.push(payload);
+      return { id: 'message-combined' };
+    },
+  });
+
+  assert.equal(sent.length, 1);
+  assert.equal(ticket.panelMessageId, 'message-combined');
+  assert.equal(ticket.staffPanelMessageId, null);
 });

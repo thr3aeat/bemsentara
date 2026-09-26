@@ -225,10 +225,8 @@ async function archiveEkoYildizTicket(ticket, interaction, reason) {
   const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
   if (channel) {
     await channel.setParent(archiveCategoryId, { lockPermissions: false }).catch(() => {});
-    await channel.permissionOverwrites.set([
-      { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-      { id: ticket.userId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages] }
-    ]).catch(() => {});
+    const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
+    await ensureTicketOwnerAccess(channel, ticket.userId);
 
     const closedEmbed = new EmbedBuilder()
       .setTitle("🔒 Destek Talebi Kapatıldı")
@@ -299,15 +297,13 @@ async function reopenEkoYildizTicket(ticket, interaction) {
   const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
   if (channel) {
     await channel.setParent(ticketCategoryId, { lockPermissions: false }).catch(() => {});
-    await channel.permissionOverwrites.edit(ticket.userId, {
-      ViewChannel: true,
-      SendMessages: true,
-      ReadMessageHistory: true,
-    }).catch(() => {});
+    const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
+    await ensureTicketOwnerAccess(channel, ticket.userId);
 
     await channel.send(`🔄 **Ticket Yeniden Açıldı.** (Açan: ${interaction.user.username})`);
   }
 
+  if (!channel) throw new Error('Ticket kanalı bulunamadı');
   ticket.status = 'open';
   ticket.closedAt = null;
   ticket.closeReason = null;

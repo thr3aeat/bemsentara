@@ -28,10 +28,9 @@ let inactivityInterval = null;
  * Bot hazır olduğunda çağrılır — periyodik kontrol başlatır.
  */
 function startCleanupScheduler() {
-  if (checkInterval) return;
-  checkInterval = setInterval(runCleanupCheck, CHECK_INTERVAL_MS);
+  if (inactivityInterval) return;
   inactivityInterval = setInterval(runInactivityCheck, INACTIVITY_CHECK_MS);
-  console.log("[ticketCleanup] Zamanlayıcı başlatıldı (30s aralık).");
+  console.log("[ticketCleanup] İnaktivite zamanlayıcısı başlatıldı; ticket kanalları kalıcı olarak korunuyor.");
 }
 
 /**
@@ -40,18 +39,8 @@ function startCleanupScheduler() {
  * @param {string} ticketId
  */
 function scheduleTicketDeletion(ticketId) {
-  // Zaten kuyruktaysa iptal et ve yeniden ekle
-  if (pendingDeletions.has(ticketId)) {
-    clearTimeout(pendingDeletions.get(ticketId));
-  }
-
-  const handle = setTimeout(() => {
-    pendingDeletions.delete(ticketId);
-    deleteTicketChannel(ticketId);
-  }, CLEANUP_DELAY_MS);
-
-  pendingDeletions.set(ticketId, handle);
-  console.log(`[ticketCleanup] ${ticketId} → 5 dakika sonra silinecek.`);
+  console.log(`[ticketCleanup] ${ticketId} → kanal korunuyor; otomatik silme devre dışı.`);
+  return false;
 }
 
 /**
@@ -265,8 +254,11 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
       try {
         const ch = await guild.channels.fetch(ticket.channelId).catch(() => null);
         if (ch) {
-          await ch.send("🔒 Ticket inaktivite nedeniyle kapatıldı. Kanal 5 dakika içinde silinecek.").catch(() => {});
-          await ch.permissionOverwrites.edit(ticket.userId, { ViewChannel: false, SendMessages: false }).catch(() => {});
+          await ch.send("🔒 Ticket inaktivite nedeniyle kapatıldı. Kanal erişilebilir kalacaktır.").catch(() => {});
+          const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
+          await ensureTicketOwnerAccess(ch, ticket.userId).catch(err => {
+            console.warn(`[ticketCleanup] ${ticket.ticketId} sahibi erişimi korunamadı:`, err.message);
+          });
         }
       } catch (_) {}
 

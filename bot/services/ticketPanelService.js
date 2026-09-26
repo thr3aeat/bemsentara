@@ -1,6 +1,6 @@
 'use strict';
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { resolveTicketGuide } = require('./ticketGuideResolver');
 
 function buildTicketUserPanel(ticket) {
@@ -28,22 +28,50 @@ function buildTicketUserPanel(ticket) {
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`ticket_user_close_${id}`).setLabel('Ticketi Kapat').setEmoji('🔒').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId(`ticket_staff_call_${id}`).setLabel('Personel Çağır').setEmoji('🔔').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setURL(guide.url).setLabel('Safety Center').setEmoji('🛡️').setStyle(ButtonStyle.Link),
-    new ButtonBuilder().setURL(guide.url).setLabel('İlgili Doküman').setEmoji('📚').setStyle(ButtonStyle.Link),
-    new ButtonBuilder().setCustomId(`ticket_user_info_${id}`).setLabel('Ticket Bilgileri').setEmoji('ℹ️').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId(`ticket_owner_info_${id}`).setLabel('Ticket Bilgileri').setEmoji('ℹ️').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setURL(guide.url).setLabel('Yardım Dokümanı').setEmoji('🛡️').setStyle(ButtonStyle.Link)
   );
 
   return { embeds: [embed], components: [row] };
 }
 
-function buildTicketStaffPanel(ticket) {
+function buildTicketPanel(ticket) {
   const { buildTicketV2 } = require('../embeds');
   return buildTicketV2(ticket);
 }
 
-function buildTicketStaffFallbackPanel(ticket) {
-  const { buildTicketEmbed, getTicketModActionRows } = require('../embeds');
-  return { embeds: [buildTicketEmbed(ticket)], components: getTicketModActionRows(ticket.ticketId) };
+function buildTicketStaffPanel(ticket) {
+  return buildTicketPanel(ticket);
 }
 
-module.exports = { buildTicketUserPanel, buildTicketStaffPanel, buildTicketStaffFallbackPanel };
+function buildTicketFallbackPanel(ticket) {
+  const { buildTicketEmbed, getTicketModActionRows } = require('../embeds');
+  const userPanel = buildTicketUserPanel(ticket);
+  const embed = buildTicketEmbed(ticket).addFields(
+    { name: '👤 Kullanıcı İşlemleri', value: 'İlk buton satırı talep sahibine aittir.', inline: false },
+    { name: '🛡️ Yetkili İşlemleri', value: 'Alttaki buton satırları yalnızca yetkili ekip içindir.', inline: false },
+  );
+  return {
+    embeds: [embed],
+    components: [...userPanel.components, ...getTicketModActionRows(ticket.ticketId, ticket.claimedByName)],
+  };
+}
+
+function buildTicketPanelForMessage(ticket, message) {
+  const flags = message?.flags;
+  const isComponentsV2 = Boolean(flags?.has?.(MessageFlags.IsComponentsV2)) ||
+    (typeof flags === 'number' && (flags & MessageFlags.IsComponentsV2) !== 0) ||
+    (typeof flags?.bitfield === 'number' && (flags.bitfield & MessageFlags.IsComponentsV2) !== 0);
+  return isComponentsV2 ? buildTicketPanel(ticket) : buildTicketFallbackPanel(ticket);
+}
+
+const buildTicketStaffFallbackPanel = buildTicketFallbackPanel;
+
+module.exports = {
+  buildTicketPanel,
+  buildTicketFallbackPanel,
+  buildTicketPanelForMessage,
+  buildTicketUserPanel,
+  buildTicketStaffPanel,
+  buildTicketStaffFallbackPanel,
+};

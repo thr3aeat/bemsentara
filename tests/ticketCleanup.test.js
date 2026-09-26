@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { getLatestHumanMessage } = require('../bot/services/ticketCleanup');
+const { getLatestHumanMessage, scheduleTicketDeletion } = require('../bot/services/ticketCleanup');
 
 test('inactivity checks use the latest human reply when a bot panel is the newest message', () => {
   const staffReply = {
@@ -23,4 +23,21 @@ test('inactivity checks use the latest human reply when a bot panel is the newes
   ]));
 
   assert.equal(latestHuman, staffReply);
+});
+
+test('closed ticket channels are retained so their owners can keep using them', () => {
+  const originalSetTimeout = global.setTimeout;
+  let scheduled = false;
+  global.setTimeout = () => {
+    scheduled = true;
+    return { fake: true };
+  };
+
+  try {
+    const result = scheduleTicketDeletion('KEEP-1');
+    assert.equal(result, false);
+    assert.equal(scheduled, false);
+  } finally {
+    global.setTimeout = originalSetTimeout;
+  }
 });

@@ -2951,16 +2951,14 @@ async function handleCloseReasonModal(interaction) {
         .setTitle("🔒 Ticket Kapatıldı")
         .setDescription(
           `**Kapatan:** ${interaction.user.username}\n**Sebep:** ${reason}\n\n` +
-          `⏳ Bu kanal **5 dakika** içinde yeniden açılmazsa otomatik silinecektir.`
+          `Bu kanal erişilebilir kalır; ticket sahibi geçmişi görmeye ve yazmaya devam edebilir.`
         )
         .setColor(0xed4245)
         .setTimestamp();
 
       await channel.send({ embeds: [closeEmbed] });
-      await channel.permissionOverwrites.edit(ticket.userId, {
-        ViewChannel: false,
-        SendMessages: false,
-      });
+      const { ensureTicketOwnerAccess } = require("../services/ticketOwnerPermissions");
+      await ensureTicketOwnerAccess(channel, ticket.userId);
     }
 
     // 5) 5 dakika sonra kanal silinmek üzere kuyruğa al

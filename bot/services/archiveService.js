@@ -30,20 +30,18 @@ async function applyPrivateArchivePermissions(channelOrCategory) {
     const guild = channelOrCategory.guild;
     await guild.roles.fetch().catch(() => {});
 
-    // Collect all overwrites: @everyone is denied ViewChannel
-    const overwrites = [
-      {
-        id: guild.id, // @everyone role
-        deny: [PermissionFlagsBits.ViewChannel]
-      }
-    ];
+    // Mevcut kullanıcı/bot izinlerini koru; tüm listeyi set() ile değiştirmek
+    // ticket sahibinin kanal erişimini siliyordu.
+    await channelOrCategory.permissionOverwrites.edit(guild.id, {
+      ViewChannel: false,
+    }, { reason: "Otomatik Özel Arşiv İzinleri (@everyone Engellendi)" });
 
     // Deny ViewChannel for all staff/mod roles (unless they possess full Administrator permissions)
-    guild.roles.cache.forEach(role => {
-      if (role.id === guild.id) return; // skip @everyone
+    for (const role of guild.roles.cache.values()) {
+      if (role.id === guild.id) continue; // skip @everyone
       
       // If role has Administrator permission, leave them untouched so full admins/owner can view
-      if (role.permissions.has(PermissionFlagsBits.Administrator)) return;
+      if (role.permissions.has(PermissionFlagsBits.Administrator)) continue;
 
       const lowerRoleName = role.name.toLowerCase();
       const isModOrStaff = role.permissions.has(PermissionFlagsBits.ManageMessages) ||
@@ -60,14 +58,11 @@ async function applyPrivateArchivePermissions(channelOrCategory) {
                            lowerRoleName.includes('koordinatör');
 
       if (isModOrStaff) {
-        overwrites.push({
-          id: role.id,
-          deny: [PermissionFlagsBits.ViewChannel]
-        });
+        await channelOrCategory.permissionOverwrites.edit(role.id, {
+          ViewChannel: false,
+        }, { reason: "Otomatik Özel Arşiv İzinleri (Mod Rolü Engellendi)" });
       }
-    });
-
-    await channelOrCategory.permissionOverwrites.set(overwrites, "Otomatik Özel Arşiv İzinleri (@everyone ve Modlar Engellendi)").catch(() => {});
+    }
   } catch (err) {
     console.error(`[ArchiveService] Error applying permissions to "${channelOrCategory?.name}":`, err.message);
   }
@@ -184,44 +179,15 @@ async function handleArchiveChannel(channel) {
  */
 async function scanAndFixArchivedTicketPermissions(client) {
   try {
-    console.log("[ArchiveService] 🔍 Kapatılan ve arşive alınan ticket kanalları tek seferlik taranıyor...");
-    if (!client || !client.guilds) return;
-
-    for (const guild of client.guilds.cache.values()) {
-      try {
-        await guild.channels.fetch().catch(() => {});
-        await guild.roles.fetch().catch(() => {});
-
-        // 1. Find all ticket archive / closed categories
-        const archiveCategories = guild.channels.cache.filter(c => {
-          if (c.type !== ChannelType.GuildCategory) return false;
-          const norm = normalizeString(c.name);
-          return (norm.includes("arsiv") || norm.includes("arşiv") || norm.includes("kapali") || norm.includes("closed")) &&
-                 (norm.includes("ticket") || norm.includes("destek") || norm.includes("bilet") || norm.includes("talep"));
-        });
-
-        for (const cat of archiveCategories.values()) {
-          await applyPrivateArchivePermissions(cat).catch(() => {});
-        }
-
-        // 2. Find all closed/archived ticket channels
-        const targetChannels = guild.channels.cache.filter(c => {
-          if (c.type === ChannelType.GuildCategory || c.isThread?.()) return false;
-          return isTicketChannel(c);
-        });
-
-        console.log(`[ArchiveService] ${guild.name} sunucusunda ${targetChannels.size} adet kapatılmış/arşivlenmiş ticket kanalı bulundu. Yetkiler düzenleniyor...`);
-
-        for (const ch of targetChannels.values()) {
-          await applyPrivateArchivePermissions(ch).catch(() => {});
-        }
-      } catch (gErr) {
-        console.error(`[ArchiveService] Guild ${guild.id} scan error:`, gErr.message);
-      }
-    }
-    console.log("[ArchiveService] ✅ Kapatılan ve arşive alınan ticket izinleri tek seferlik başarıyla tarandı ve kilitlendi.");
+    console.log("[ArchiveService] 🔍 Ticket sahibi izinleri yenileniyor...");
+    if (!client || !client.guilds) return { checked: 0, repaired: 0, failed: 0 };
+    const { reconcileTicketOwnerPermissions } = require('./ticketOwnerPermissions');
+    const result = await reconcileTicketOwnerPermissions(client);
+    console.log(`[ArchiveService] ✅ Ticket sahibi izinleri yenilendi: ${result.repaired}/${result.checked}, hata: ${result.failed}.`);
+    return result;
   } catch (err) {
     console.error("[ArchiveService] scanAndFixArchivedTicketPermissions error:", err.message);
+    return { checked: 0, repaired: 0, failed: 1 };
   }
 }
 

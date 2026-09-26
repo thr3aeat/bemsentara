@@ -1141,7 +1141,10 @@ function resetInactivityTimer(ticketId, channel, ticket, client) {
                 .setDescription('Kullanıcı 10 dakika boyunca yanıt vermedi.')
                 .setTimestamp()],
             }).catch(() => {});
-            await ch.permissionOverwrites.edit(t.userId, { ViewChannel: false, SendMessages: false }).catch(() => {});
+            const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
+            await ensureTicketOwnerAccess(ch, t.userId).catch(err => {
+              console.warn(`[ticketAI] ${ticketId} sahibi erişimi korunamadı:`, err.message);
+            });
           }
         }
       } catch (_) {}

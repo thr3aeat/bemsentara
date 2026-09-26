@@ -1405,32 +1405,6 @@ async function handleButtonInteraction(interaction) {
     return;
   }
 
-  if (customId.startsWith("reopen_ticket_")) {
-    const ticketId = customId.replace("reopen_ticket_", "");
-    const Ticket = require("../../models/Ticket");
-    const ticket = await Ticket.findOne({ ticketId });
-    if (!ticket) return interaction.reply({ content: "❌ Destek talebi bulunamadı.", ephemeral: true });
-
-    const isStaff = !((ticket.userId === interaction.user.id) || (ticket.additionalUsers?.includes(interaction.user.id)));
-
-    if (!isStaff && ticket.lockReopen) {
-      return interaction.reply({ content: "❌ Bu destek talebini yeniden açma yetkiniz kilitlenmiştir. Açılması için bir yöneticinin izin vermesi gerekir.", ephemeral: true });
-    }
-
-    const { reopenEkoYildizTicket } = require("../../bot/services/epostaTicketService");
-    await reopenEkoYildizTicket(ticket, interaction);
-
-    if (interaction.channel) {
-      await interaction.reply({ content: "🔄 Destek talebi yeniden açıldı!", ephemeral: true });
-      try {
-        await interaction.message.delete().catch(() => { });
-      } catch (_) { }
-    } else {
-      await interaction.reply({ content: "🔄 Destek talebi yeniden açıldı!", ephemeral: true });
-    }
-    return;
-  }
-
   if (customId.startsWith("eposta_lock_reopen_")) {
     const ticketId = customId.replace("eposta_lock_reopen_", "");
     const Ticket = require("../../models/Ticket");
@@ -2214,29 +2188,10 @@ async function handleButtonInteraction(interaction) {
     });
 
     try {
-      const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
       const currentMessage = interaction.message;
       if (currentMessage) {
-        const originalRow = currentMessage.components[0];
-        const newComponents = [];
-        if (originalRow) {
-          const updatedRow = new ActionRowBuilder();
-          originalRow.components.forEach(comp => {
-            if (comp.customId.startsWith("claim_ticket_")) {
-              updatedRow.addComponents(
-                new ButtonBuilder()
-                  .setCustomId(`claimed_ticket_disabled_${ticketId}`)
-                  .setLabel(`Üstlendi: ${interaction.user.username}`)
-                  .setStyle(ButtonStyle.Secondary)
-                  .setDisabled(true)
-              );
-            } else {
-              updatedRow.addComponents(ButtonBuilder.from(comp));
-            }
-          });
-          newComponents.push(updatedRow);
-        }
-        await currentMessage.edit({ components: newComponents }).catch(() => { });
+        const { buildTicketPanelForMessage } = require("../services/ticketPanelService");
+        await currentMessage.edit(buildTicketPanelForMessage(ticket, currentMessage)).catch(() => { });
       }
     } catch (editErr) {
       console.warn("Failed to edit welcome message components on claim:", editErr.message);
@@ -6306,7 +6261,11 @@ async function handleButtonInteraction(interaction) {
 
     if (!ticket) return interaction.reply({ content: "❌ Ticket bulunamadı", ephemeral: true });
     if (ticket.status === "open") return interaction.reply({ content: "❌ Bu ticket zaten açık", ephemeral: true });
-    if (ticket.userId !== interaction.user.id) return interaction.reply({ content: "❌ Bu ticket size ait değil", ephemeral: true });
+    const isStaff = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
+    const { canReopenTicket, ensureTicketOwnerAccess } = require("../services/ticketOwnerPermissions");
+    if (!canReopenTicket(ticket, interaction.user.id, isStaff)) {
+      return interaction.reply({ content: "❌ Bu ticket'ı yeniden açma yetkiniz yok", ephemeral: true });
+    }
 
     try {
       const guildId = ticket.guildId || TARGET_GUILD_ID;
@@ -6316,11 +6275,7 @@ async function handleButtonInteraction(interaction) {
         : null;
 
       if (existingChannel) {
-        await existingChannel.permissionOverwrites.edit(ticket.userId, {
-          ViewChannel: true,
-          SendMessages: true,
-          ReadMessageHistory: true,
-        });
+        await ensureTicketOwnerAccess(existingChannel, ticket.userId);
         await existingChannel.send({
           embeds: [
             new EmbedBuilder()
@@ -7529,9 +7484,9 @@ const originalHandler = handleButtonInteraction;
 
 async function handleTicketUserPanelAction(interaction, dependencies = {}) {
   const customId = interaction?.customId || '';
-  if (!/^ticket_(user_close|staff_call|user_info)_/.test(customId)) return false;
+  if (!/^ticket_(user_close|staff_call|owner_info)_/.test(customId)) return false;
 
-  const ticketId = customId.replace(/^ticket_(?:user_close|staff_call|user_info)_/, '');
+  const ticketId = customId.replace(/^ticket_(?:user_close|staff_call|owner_info)_/, '');
   const findTicket = dependencies.findTicket || ((query) => Ticket.findOne(query));
   const ticket = await findTicket({ ticketId });
   if (!ticket) {
@@ -7548,7 +7503,7 @@ async function handleTicketUserPanelAction(interaction, dependencies = {}) {
 
   if (customId.startsWith('ticket_user_close_')) return interaction.showModal(buildCloseReasonModal(ticketId));
 
-  if (customId.startsWith('ticket_user_info_')) {
+  if (customId.startsWith('ticket_owner_info_')) {
     const openedAt = Math.floor(new Date(ticket.createdAt || Date.now()).getTime() / 1000);
     await interaction.reply({ content: `ℹ️ **${ticket.ticketId}**\nDurum: **${ticket.status || 'open'}**\nKategori: **${ticket.category || 'genel'}**\nAçılış: <t:${openedAt}:F>\nİlgilenen: ${ticket.claimedBy ? `<@${ticket.claimedBy}>` : 'Henüz atanmadı'}`, ephemeral: true });
     return true;
@@ -7574,9 +7529,37 @@ async function handleTicketUserPanelAction(interaction, dependencies = {}) {
   return true;
 }
 
+const TICKET_STAFF_ACTION_PREFIXES = [
+  'close_ticket_',
+  'claim_ticket_',
+  'ticket_notify_user_',
+  'ticket_ai_dispute_',
+  'ticket_user_info_',
+  'ticket_add_note_',
+  'ticket_save_transcript_',
+  'ticket_toggle_slowmode_',
+  'ticket_add_user_prompt_',
+  'ticket_change_priority_',
+  'ticket_change_category_',
+  'ticket_lock_chat_',
+];
+
+async function handleTicketStaffActionAuthorization(interaction) {
+  const customId = interaction?.customId || '';
+  if (!TICKET_STAFF_ACTION_PREFIXES.some((prefix) => customId.startsWith(prefix))) return false;
+
+  const isStaff = Boolean(interaction.member?.permissions?.has?.(PermissionFlagsBits.ManageMessages));
+  if (isStaff) return false;
+
+  await interaction.reply({ content: '❌ Bu işlem yalnızca yetkili ekip tarafından kullanılabilir.', ephemeral: true });
+  return true;
+}
+
 async function enhancedButtonInteraction(interaction) {
   const ticketPanelHandled = await handleTicketUserPanelAction(interaction);
   if (ticketPanelHandled) return true;
+  const staffActionBlocked = await handleTicketStaffActionAuthorization(interaction);
+  if (staffActionBlocked) return true;
   const { customId } = interaction;
 
   // Grafik & İstatistik Butonları
@@ -7599,6 +7582,7 @@ async function enhancedButtonInteraction(interaction) {
 module.exports = {
   handleButtonInteraction: enhancedButtonInteraction,
   handleTicketUserPanelAction,
+  handleTicketStaffActionAuthorization,
   renderChannelSelectionPanel,
   renderChefsSelectionPanel,
   renderRoleCustomizationPanel
