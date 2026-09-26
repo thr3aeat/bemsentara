@@ -2996,6 +2996,7 @@ module.exports = {
   getAdvertisingLandingUrl,
   buildCorporateAdvertisingPanel,
   buildAdvertisingCommunicationPrompt,
+  buildCorporatePackageOverview,
   REKLAM_PACKAGES,
   CUSTOM_BUILDER_MODULES,
   KAMP_SERVICES,

@@ -1,0 +1,192 @@
+'use strict';
+
+const { execSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const { EmbedBuilder } = require('discord.js');
+const logger = require('../../utils/logger');
+
+const ANNOUNCE_CHANNEL_ID = '1553530701926629539';
+const LAST_RESTART_STATE_FILE = path.join(__dirname, '../../data/last_restart_state.json');
+
+/**
+ * Git repository bilgilerini güvenli bir şekilde toplar.
+ */
+function getGitMetadata() {
+  const meta = {
+    version: '1.0.0',
+    commitHash: 'unknown',
+    fullHash: '',
+    author: 'Geliştirici',
+    date: 'Bilinmiyor',
+    commitMessage: 'Genel sistem güncellemesi ve iyileştirmeler.',
+    changedFiles: [],
+    recentCommits: '',
+    diffStat: ''
+  };
+
+  try {
+    const pkg = require('../../package.json');
+    if (pkg.version) meta.version = pkg.version;
+  } catch (_) {}
+
+  try {
+    meta.commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
+    meta.fullHash = execSync('git rev-parse HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
+    
+    const logDetails = execSync('git log -1 --pretty=format:"%s|%an|%cr"', { encoding: 'utf8', timeout: 4000 }).trim();
+    const parts = logDetails.split('|');
+    if (parts[0]) meta.commitMessage = parts[0].trim();
+    if (parts[1]) meta.author = parts[1].trim();
+    if (parts[2]) meta.date = parts[2].trim();
+
+    const recent = execSync('git log -3 --pretty=format:"• %h: %s (%cr)"', { encoding: 'utf8', timeout: 4000 }).trim();
+    meta.recentCommits = recent;
+
+    const diffOutput = execSync('git diff-tree --no-commit-id --name-status -r HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
+    if (diffOutput) {
+      meta.changedFiles = diffOutput.split('\n').map(l => l.trim()).filter(Boolean);
+    }
+
+    meta.diffStat = execSync('git show --stat --oneline -s HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
+  } catch (err) {
+    logger.warn(`[StartupAnnounce] Git bilgisi alınırken fallback kullanılıyor: ${err.message}`);
+  }
+
+  return meta;
+}
+
+/**
+ * aiService kullanarak yapılan değişikliklerin neden ve nasıl yapıldığını analiz eder.
+ */
+async function generateAiChangelog(gitMeta) {
+  try {
+    const { chatWithAI } = require('./aiService');
+
+    const prompt = `
+Aşağıdaki git commit bilgileri ve dosya değişikliklerini incele. EkoYıldız Discord botu ve web platformu yeniden başlatıldı.
+Versiyon: v${gitMeta.version} (${gitMeta.commitHash})
+Son Commit Mesajı: ${gitMeta.commitMessage}
+Yazar: ${gitMeta.author}
+Tarih: ${gitMeta.date}
+
+Son Değişen Dosyalar:
+${gitMeta.changedFiles.slice(0, 15).join('\n') || 'Belirtilmedi'}
+
+Son Commit Geçmişi:
+${gitMeta.recentCommits || 'Yok'}
+
+Görev:
+Discord duyuru kanalına paylaşılmak üzere, bu güncellemenin:
+1) Neden yapıldığını ve amacını (Örn: hata düzeltmesi, yeni özellik, performans, sponsorluk sayfası revizyonu vb.)
+2) Hangi modüllerde / dosyalarda ne gibi değişiklikler ve geliştirmeler yapıldığını
+3) Kullanıcılara veya sunucu yönetimine sağlanan faydaları
+madde madde, Türkçe, son derece net, profesyonel, modern ve emojilerle zenginleştirilmiş bir şekilde özetle.
+Yalnızca özeti yaz; ekstra selamlama veya gevezelik ekleme.
+`;
+
+    const aiResponse = await chatWithAI(prompt, 'Sen EkoYıldız sistemlerinin baş mimarısın. Her bot yeniden başladığında yapılan teknik değişiklikleri ve nedenlerini Discord kanalına raporlarsın.');
+    if (aiResponse && aiResponse.trim().length > 20) {
+      return aiResponse.trim();
+    }
+  } catch (err) {
+    logger.warn(`[StartupAnnounce] AI changelog üretilemedi, standart özet kullanılıyor: ${err.message}`);
+  }
+
+  // Fallback özet
+  return `🎯 **Güncelleme Amacı:** ${gitMeta.commitMessage}\n` +
+         `⚡ **Durum:** Son commit başarıyla derlendi ve sistem yeniden başlatıldı.\n` +
+         `📁 **Değişen Dosyalar:** ${gitMeta.changedFiles.length} dosya güncellendi.\n` +
+         `🛡️ **Sistem:** Tüm servisler ve 7/24 Discord bağlantısı aktif.`;
+}
+
+/**
+ * Bot başladığında hedef kanala versiyon, değişiklikler ve AI analizi gönderir.
+ */
+async function announceBotStartup(discordClient) {
+  if (!discordClient || !discordClient.isReady()) {
+    logger.warn('[StartupAnnounce] Discord client hazır değil, bekleniyor...');
+    return;
+  }
+
+  try {
+    const channel = await discordClient.channels.fetch(ANNOUNCE_CHANNEL_ID).catch(() => null);
+    if (!channel || typeof channel.send !== 'function') {
+      logger.warn(`[StartupAnnounce] Hedef duyuru kanalı bulunamadı (${ANNOUNCE_CHANNEL_ID}).`);
+      return;
+    }
+
+    const gitMeta = getGitMetadata();
+
+    // Prevent duplicate spam on rapid gateway reconnects without new process start
+    const restartTimestamp = new Date().toISOString();
+    const pid = process.pid;
+
+    logger.info(`[StartupAnnounce] Sürüm analizi yapılıyor (v${gitMeta.version} - ${gitMeta.commitHash})...`);
+    const aiAnalysis = await generateAiChangelog(gitMeta);
+
+    const changedFilesText = gitMeta.changedFiles.length > 0
+      ? '```diff\n' + gitMeta.changedFiles.slice(0, 10).map(f => {
+          if (f.startsWith('A')) return '+ ' + f.slice(2);
+          if (f.startsWith('M')) return '! ' + f.slice(2);
+          if (f.startsWith('D')) return '- ' + f.slice(2);
+          return '• ' + f;
+        }).join('\n') + (gitMeta.changedFiles.length > 10 ? `\n... (+${gitMeta.changedFiles.length - 10} dosya daha)` : '') + '\n```'
+      : '`Değişiklik listesi derlenemedi`';
+
+    const memoryMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
+    const nodeVer = process.version;
+
+    const embed = new EmbedBuilder()
+      .setColor(0x8b5cf6)
+      .setAuthor({
+        name: 'EkoYıldız Bot · Canlıya Alma & Sürüm Raporu',
+        iconURL: discordClient.user.displayAvatarURL()
+      })
+      .setTitle(`🚀 Bot Yeniden Başlatıldı · v${gitMeta.version} [${gitMeta.commitHash}]`)
+      .setDescription(aiAnalysis.length > 4000 ? aiAnalysis.slice(0, 3950) + '...' : aiAnalysis)
+      .addFields(
+        {
+          name: '📌 Son Değişiklik / Commit (Neden Yapıldı)',
+          value: `**${gitMeta.commitMessage}**\n*Geliştirici:* ${gitMeta.author} • *Zaman:* ${gitMeta.date}`,
+          inline: false
+        },
+        {
+          name: `📂 Etkilenen Dosyalar (${gitMeta.changedFiles.length})`,
+          value: changedFilesText,
+          inline: false
+        },
+        {
+          name: '⚙️ Çalışma Ortamı & Sistem Durumu',
+          value: `🟢 **PID:** \`${pid}\` • 🧠 **Bellek (RAM):** \`${memoryMb} MB\` • ⚡ **Node:** \`${nodeVer}\` • 🖥️ **Platform:** \`${process.platform}\``,
+          inline: false
+        }
+      )
+      .setFooter({
+        text: `EkoYıldız Otomatik Sürüm Denetleyicisi & AI Service • ${new Date().toLocaleTimeString('tr-TR')}`
+      })
+      .setTimestamp();
+
+    await channel.send({ embeds: [embed] });
+    logger.success(`[StartupAnnounce] ✅ Başlatma sürüm raporu ${ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
+
+    try {
+      fs.writeFileSync(LAST_RESTART_STATE_FILE, JSON.stringify({
+        lastReportedAt: restartTimestamp,
+        commit: gitMeta.commitHash,
+        version: gitMeta.version,
+        pid
+      }, null, 2), 'utf8');
+    } catch (_) {}
+
+  } catch (err) {
+    logger.error(`[StartupAnnounce] Sürüm raporu gönderilirken hata: ${err.message}`);
+  }
+}
+
+module.exports = {
+  announceBotStartup,
+  getGitMetadata,
+  generateAiChangelog,
+  ANNOUNCE_CHANNEL_ID
+};

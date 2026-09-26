@@ -368,6 +368,22 @@ async function start() {
             logger.warn(`[DomainMonitor] Başlatma uyarısı: ${domainMonErr && domainMonErr.message}`);
           }
 
+          // ── Bot Başlangıç AI Sürüm Raporu & Otomatik Git Deploy Servisi ──
+          try {
+            const { announceBotStartup } = require("./bot/services/botStartupAnnounceService");
+            const { startGitAutoDeployWatcher } = require("./bot/services/gitAutoDeployWatcher");
+
+            // Başlatma raporunu duyuru kanalına (1553530701926629539) ilet
+            announceBotStartup(discordBot).catch((err) => {
+              logger.warn(`[StartupAnnounce] Sürüm raporu hatası: ${err && err.message}`);
+            });
+
+            // Git push algılayıcıyı başlat (her 30s kontrol ve otomatik pull/restart)
+            startGitAutoDeployWatcher(30000);
+          } catch (startupErr) {
+            logger.warn(`[StartupAnnounce] Başlatma uyarısı: ${startupErr && startupErr.message}`);
+          }
+
           return;
         } catch (err) {
           const retryAfterMs = err.retryAfter ?? err.sublimitTimeout ?? null;

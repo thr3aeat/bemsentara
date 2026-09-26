@@ -1,7 +1,17 @@
 node_modules/
 .env
+.env.*
+!.env.example
 data/store.json
 data/store.json.tmp
+data/sessions.json
+data/last_restart_state.json
+*askpass*
+*vds_exec*
+*temp*
+*.pem
+*.key
+*.crt
 *.log
 .DS_Store
 dist/

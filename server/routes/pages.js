@@ -158,7 +158,7 @@ router.get("/tickets/new", (req, res) => {
   if (!req.user) return res.redirect("/login");
   const { SUPPORT_CATEGORIES } = require("../../config");
   const cats = Object.values(SUPPORT_CATEGORIES).map(c => c.name);
-  res.send(renderCreateTicketPage(req.user, cats));
+  res.send(renderCreateTicketPage(req.user, cats, req.query));
 });
 
 router.get("/staff", (req, res) => {

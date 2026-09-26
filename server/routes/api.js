@@ -3772,6 +3772,24 @@ router.post("/api/profile/equip", async (req, res) => {
   }
 });
 
+// ── GitHub Push & Auto-Deploy Webhook ─────────────────────────────────────────
+router.post(["/api/webhook/github", "/api/webhook/deploy"], async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "GitHub deploy webhook alındı. Kod güncelleniyor ve bot yeniden başlatılıyor.",
+    timestamp: new Date().toISOString()
+  });
+
+  setImmediate(async () => {
+    try {
+      const { triggerImmediateDeploy } = require("../../bot/services/gitAutoDeployWatcher");
+      await triggerImmediateDeploy();
+    } catch (err) {
+      console.error("[GitHub Webhook Deploy] Hata:", err.message);
+    }
+  });
+});
+
 // ── Webhook Proxy ────────────────────────────────────────────────────────────
 // Roblox → bu endpoint → Discord webhook
 // Roblox'tan: POST /api/webhook/proxy

@@ -53,8 +53,28 @@ function renderAdvertisingLandingPage(user = null) {
     .why-price{display:grid;grid-template-columns:.9fr 1.1fr;gap:42px;align-items:center}.why-copy h2{font-size:clamp(2.4rem,5vw,4.8rem);line-height:.98;letter-spacing:-.07em;margin:10px 0 20px}.why-copy>p{color:var(--muted)}.cost-stack{display:grid;gap:10px}.cost-row{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:14px;padding:17px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.035)}.cost-row>span:first-child{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.055)}.cost-row strong{display:block;font-size:.88rem}.cost-row small{display:block;color:var(--muted)}.cost-row>em{font-style:normal;color:var(--green);font-size:.72rem;font-weight:800}
     .process{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:22px;overflow:hidden}.step{padding:26px;min-height:235px;border-right:1px solid var(--line);background:rgba(255,255,255,.025)}.step:last-child{border:0}.step b{color:#8f86ff;font-size:.75rem}.step h3{margin:38px 0 10px;font-size:1.04rem}.step p{margin:0;color:var(--muted);font-size:.82rem}.faq-layout{display:grid;grid-template-columns:.7fr 1.3fr;gap:60px}.faq-layout h2{font-size:clamp(2.4rem,4.5vw,4rem);line-height:1;letter-spacing:-.06em;margin:10px 0}.faq-layout>div>p{color:var(--muted)}details{border-top:1px solid var(--line)}details:last-child{border-bottom:1px solid var(--line)}summary{list-style:none;display:flex;justify-content:space-between;gap:20px;padding:22px 0;cursor:pointer;font-weight:800}summary::-webkit-details-marker{display:none}summary span{color:var(--muted);font-size:1.25rem;transition:transform .2s}details[open] summary span{transform:rotate(45deg)}details p{margin:-6px 0 23px;max-width:700px;color:var(--muted);font-size:.88rem}
     .final-cta{position:relative;margin:45px auto 25px;padding:clamp(40px,8vw,90px);border:1px solid var(--line);border-radius:30px;background:linear-gradient(135deg,rgba(128,117,255,.18),rgba(255,102,143,.09) 50%,rgba(255,255,255,.035));text-align:center;overflow:hidden}.final-cta::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.12),transparent 45%);pointer-events:none}.final-cta h2{position:relative;margin:0 auto 17px;max-width:850px;font-size:clamp(2.6rem,6vw,5.7rem);line-height:.95;letter-spacing:-.075em}.final-cta p{position:relative;color:#b9bac4;max-width:650px;margin:0 auto 30px}.final-cta .hero-actions{position:relative;justify-content:center;margin-top:0}.footer{display:flex;justify-content:space-between;gap:25px;padding:32px 0 46px;color:#777a85;font-size:.74rem}.footer a{text-decoration:none}.reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}.reveal.visible{opacity:1;transform:none}
-    @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:90px}.signal-card{max-width:620px}.section-head,.why-price,.faq-layout{grid-template-columns:1fr}.value-grid,.price-grid{grid-template-columns:repeat(2,1fr)}.process{grid-template-columns:repeat(2,1fr)}.step:nth-child(2){border-right:0}.step:nth-child(-n+2){border-bottom:1px solid var(--line)}.trust-strip{grid-template-columns:repeat(2,1fr)}.trust-item:nth-child(2){border-right:0}.trust-item:nth-child(-n+2){border-bottom:1px solid var(--line)}}
-    @media(max-width:580px){.shell{width:min(100% - 26px,1180px)}.topbar{top:8px;margin-top:8px}.private-pill,.quiet-link{display:none}.hero{min-height:auto;padding:78px 0 65px;gap:40px}h1{font-size:clamp(3rem,15vw,4.7rem)}.hero-actions{flex-direction:column}.button{width:100%}.trust-strip,.value-grid,.price-grid,.process{grid-template-columns:1fr}.trust-item,.step{border-right:0;border-bottom:1px solid var(--line)}.trust-item:last-child,.step:last-child{border-bottom:0}.section-head{gap:18px}.footer{flex-direction:column}}
+        .case-studies-section{padding-top:70px}
+    .growth-banner{display:flex;align-items:flex-start;gap:20px;padding:26px;border-radius:22px;border:1px solid rgba(139,92,246,.3);background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(236,72,153,.06) 60%,rgba(255,255,255,.02));margin-bottom:34px}
+    .growth-banner-icon{font-size:2.2rem;flex-shrink:0;background:rgba(139,92,246,.2);width:58px;height:58px;border-radius:16px;display:grid;place-items:center;border:1px solid rgba(139,92,246,.4)}
+    .growth-banner-content h3{margin:0 0 8px;font-size:1.3rem;letter-spacing:-.03em;color:#fff}
+    .growth-banner-content p{margin:0;color:#c5c7d4;font-size:.9rem;line-height:1.65}
+    .case-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .case-card{display:flex;flex-direction:column;padding:26px;border:1px solid var(--line);border-radius:22px;background:var(--surface);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+    .case-card:hover{transform:translateY(-4px);border-color:rgba(139,92,246,.5);box-shadow:0 18px 45px rgba(0,0,0,.4)}
+    .case-badge{align-self:flex-start;font-size:.65rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);margin-bottom:14px}
+    .case-badge.warning{background:rgba(251,191,36,.14);color:#fbbf24;border-color:rgba(251,191,36,.3)}
+    .case-badge.success{background:rgba(52,211,153,.14);color:#6ee7b7;border-color:rgba(52,211,153,.3)}
+    .case-partner{font-size:1.35rem;font-weight:900;letter-spacing:-.035em;color:#fff;margin-bottom:14px}
+    .case-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:14px}
+    .case-metric-item{display:flex;flex-direction:column}
+    .metric-val{font-size:1.15rem;font-weight:900;color:#fff;letter-spacing:-.03em}
+    .metric-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    .case-desc{color:#b6b8c4;font-size:.86rem;line-height:1.6;margin:0 0 18px}
+    .transparency-note{display:block;margin-top:6px;font-style:normal;font-size:.78rem;color:#9ca3af}
+    .case-link{margin-top:auto;display:inline-flex;align-items:center;justify-content:space-between;padding:11px 15px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line);text-decoration:none;font-size:.8rem;font-weight:800;color:#f3f4f6;transition:background .2s,border-color .2s}
+    .case-link:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+    @media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:90px}.signal-card{max-width:620px}.section-head,.why-price,.faq-layout{grid-template-columns:1fr}.value-grid,.price-grid,.case-grid{grid-template-columns:repeat(2,1fr)}.process{grid-template-columns:repeat(2,1fr)}.step:nth-child(2){border-right:0}.step:nth-child(-n+2){border-bottom:1px solid var(--line)}.trust-strip{grid-template-columns:repeat(2,1fr)}.trust-item:nth-child(2){border-right:0}.trust-item:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+    @media(max-width:580px){.shell{width:min(100% - 26px,1180px)}.topbar{top:8px;margin-top:8px}.private-pill,.quiet-link{display:none}.hero{min-height:auto;padding:78px 0 65px;gap:40px}h1{font-size:clamp(3rem,15vw,4.7rem)}.hero-actions{flex-direction:column}.button{width:100%}.trust-strip,.value-grid,.price-grid,.case-grid,.process{grid-template-columns:1fr}.trust-item,.step{border-right:0;border-bottom:1px solid var(--line)}.trust-item:last-child,.step:last-child{border-bottom:0}.section-head{gap:18px}.footer{flex-direction:column}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.mini-cta,.button,.value-card{transition:none}}
   </style>
 </head>
@@ -91,6 +111,98 @@ function renderAdvertisingLandingPage(user = null) {
     <section class="shell why-price">
       <div class="why-copy reveal"><span class="section-kicker">Fiyatlar neden böyle?</span><h2>Gösterim değil, üretim ve yerleşim satın alırsınız.</h2><p>Bir reklamın değeri yalnızca ekranda kaldığı saniye değildir. Doğru cümle, doğru bağlam, yayın öncesi kontrol ve sonrasında doğrulanabilir teslim aynı sürecin parçalarıdır.</p><a class="button secondary" href="/tickets/new?category=reklam">Bütçeme göre planla →</a></div>
       <div class="cost-stack reveal"><div class="cost-row"><span>✦</span><div><strong>İçerik uyarlaması</strong><small>Mesajın EkoYıldız izleyicisine uygun dile çevrilmesi</small></div><em>Dahil</em></div><div class="cost-row"><span>🎬</span><div><strong>Üretim ve yerleşim</strong><small>Kurgu, seslendirme, görsel veya bağlantı konumlandırması</small></div><em>Dahil</em></div><div class="cost-row"><span>◎</span><div><strong>Yayın öncesi revize</strong><small>İsim, mesaj ve kreatif unsurların birlikte kontrolü</small></div><em>Dahil</em></div><div class="cost-row"><span>↗</span><div><strong>Topluluk dağıtımı</strong><small>Seçilen pakete göre YouTube, Shorts ve Discord desteği</small></div><em>Pakete göre</em></div><div class="cost-row"><span>▥</span><div><strong>Teslim kaydı</strong><small>Yayın bağlantıları ve uygun paketlerde performans özeti</small></div><em>Şeffaf</em></div></div>
+    </section>
+
+    <section class="shell case-studies-section" id="isbirlikleri">
+      <div class="section-head reveal">
+        <div>
+          <span class="section-kicker">Kanıtlanmış Sonuçlar & Partner Başarıları</span>
+          <h2>İş birliklerimizin somut yükseliş hikayeleri.</h2>
+        </div>
+        <p>Tahmini vaatler değil; YouTube videoları, aktiflik verileri ve gerçek topluluk büyüme çıktıları. Önceki partnerlerimizin EkoYıldız ile yakaladığı somut yükselişi inceleyin.</p>
+      </div>
+
+      <div class="growth-banner reveal">
+        <div class="growth-banner-icon">📈</div>
+        <div class="growth-banner-content">
+          <h3>EkoYıldız ile Topluluk Yükselişi Nasıl Gerçekleşiyor?</h3>
+          <p>
+            EkoYıldız izleyicisi yapay veya ilgisiz bot hesaplardan oluşmaz; doğrudan Roblox askeriye, rol yapma ve Türk oyun topluluklarının içinde aktif olan gerçek oyunculardan meydana gelir. 
+            Doğru kurgulanan bir tanıtım yalnızca izlenme kazandırmakla kalmaz; Discord sunucusunda anlık sohbet patlamaları (dakikada 45 mesaj), katlanan denetim katılımları (15'ten 65'e) ve ticari projelerde düzenli sipariş akışı sağlar.
+          </p>
+        </div>
+      </div>
+
+      <div class="case-grid">
+        <!-- 1. İMPREİUS FAMİLY -->
+        <article class="case-card reveal">
+          <div class="case-badge">🏆 TOPLULUK & SOHBET PATLAMASI</div>
+          <div class="case-partner">İMPREİUS FAMİLY</div>
+          <div class="case-metrics">
+            <div class="case-metric-item">
+              <span class="metric-val">150 ➔ 980</span>
+              <span class="metric-lbl">Üye Büyümesi</span>
+            </div>
+            <div class="case-metric-item">
+              <span class="metric-val">45 Mesaj/Dk</span>
+              <span class="metric-lbl">Sohbet Aktifliği</span>
+            </div>
+          </div>
+          <p class="case-desc">
+            150 üyeli başlangıç seviyesinden 980 üyeye hızlı bir yükseliş sağlandı. Tanıtım sonrasında sunucu sohbetinde dakikada 45 mesajlık yüksek bir canlılık ve organik etkileşim temposu korundu.
+          </p>
+          <a class="case-link" href="https://www.youtube.com/watch?v=fNrMzxYGP64&t=1225s&pp=0gcJCWMAwfN6Pr3D" target="_blank" rel="noopener noreferrer">
+            <span>YouTube Videosunu İzle (12:25)</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- 2. ASKER OYUNU MAP SAĞLAYICISI -->
+        <article class="case-card reveal">
+          <div class="case-badge warning">📦 TİCARİ LANSMAN & SİPARİŞ</div>
+          <div class="case-partner">Asker Oyunu Map Sağlayıcısı</div>
+          <div class="case-metrics">
+            <div class="case-metric-item">
+              <span class="metric-val">10–15</span>
+              <span class="metric-lbl">Aylık Düzenli Sipariş</span>
+            </div>
+            <div class="case-metric-item">
+              <span class="metric-val">Sıfırdan Lansman</span>
+              <span class="metric-lbl">İlk Tanıtım</span>
+            </div>
+          </div>
+          <p class="case-desc">
+            Pazara yeni çıktığında EkoYıldız kanalında tanıtıldı ve ayda 10-15 siparişe kadar yükseldi. <em class="transparency-note">(Not: Sonradan operasyonunu kapattı — şeffaf arşiv kaydı).</em>
+          </p>
+          <a class="case-link" href="https://www.youtube.com/watch?v=op1ipqwgxRU&t=8s" target="_blank" rel="noopener noreferrer">
+            <span>Tanıtım Videosunu İncele (0:08)</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <!-- 3. TTA TURKISH ARMED FORCES -->
+        <article class="case-card reveal">
+          <div class="case-badge success">🛡️ DENETİM VE AKTİFLİK ARTIŞI</div>
+          <div class="case-partner">TTA TURKISH ARMED FORCES</div>
+          <div class="case-metrics">
+            <div class="case-metric-item">
+              <span class="metric-val">15 ➔ 65</span>
+              <span class="metric-lbl">Denetim Aktifliği</span>
+            </div>
+            <div class="case-metric-item">
+              <span class="metric-val">Haziran 2025</span>
+              <span class="metric-lbl">Etkinlik Dönemi</span>
+            </div>
+          </div>
+          <p class="case-desc">
+            15 güncel aktiflik seviyesinden 65 denetim aktifliğine yükselerek askeri rol yapma alanında rekor katılıma ulaştı. Topluluk içi rütbe ve tatbikat disiplininde güçlü bir sıçrama kaydedildi.
+          </p>
+          <a class="case-link" href="https://www.youtube.com/watch?v=vYT9LFfzHxc&t=149s" target="_blank" rel="noopener noreferrer">
+            <span>Tatbikat & Tanıtım Videosu (2:29)</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </article>
+      </div>
     </section>
 
     <section class="shell">

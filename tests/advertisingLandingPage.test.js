@@ -57,3 +57,18 @@ test('Discord advertising catalog links to the private sales guide', () => {
 
   assert.ok(urls.some(url => /\/reklam\/ekoyildiz-ortaklik$/.test(url)));
 });
+
+test('advertising landing page showcases verified partner growth case studies with YouTube links', () => {
+  const html = renderAdvertisingLandingPage(null);
+  assert.match(html, /İMPREİUS FAMİLY/);
+  assert.match(html, /150 ➔ 980/);
+  assert.match(html, /45 Mesaj\/Dk/);
+  assert.match(html, /fNrMzxYGP64/);
+  assert.match(html, /Asker Oyunu Map Sağlayıcısı/);
+  assert.match(html, /10–15/);
+  assert.match(html, /op1ipqwgxRU/);
+  assert.match(html, /TTA TURKISH ARMED FORCES/);
+  assert.match(html, /15 ➔ 65/);
+  assert.match(html, /Haziran 2025/);
+  assert.match(html, /vYT9LFfzHxc/);
+});
