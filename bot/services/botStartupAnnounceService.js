@@ -4,9 +4,11 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { EmbedBuilder } = require('discord.js');
+const ComponentsV2Factory = require('../utils/componentsV2Factory');
 const logger = require('../../utils/logger');
 
 const ANNOUNCE_CHANNEL_ID = '1553530701926629539';
+const SHORT_ANNOUNCE_CHANNEL_ID = '1518705723184386198';
 const LAST_RESTART_STATE_FILE = path.join(__dirname, '../../data/last_restart_state.json');
 
 /**
@@ -170,6 +172,34 @@ async function announceBotStartup(discordClient) {
     await channel.send({ embeds: [embed] });
     logger.success(`[StartupAnnounce] ✅ Başlatma sürüm raporu ${ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
 
+    // ── 2. KANAL (1518705723184386198): Çok kısa, zarif, Components V2 (accent colorsuz) güncelleme notu ──
+    try {
+      const shortChannel = await discordClient.channels.fetch(SHORT_ANNOUNCE_CHANNEL_ID).catch(() => null);
+      if (shortChannel && typeof shortChannel.send === 'function') {
+        const shortNote = await generateShortUpdateNote(gitMeta);
+        const headerTitle = `ℹ️ **Sentara, v.${gitMeta.version}, güncelleme: ${shortNote}**`;
+
+        const v2MessagePayload = {
+          flags: ComponentsV2Factory.FLAGS,
+          components: [
+            ComponentsV2Factory.container([
+              ComponentsV2Factory.text(headerTitle),
+              ComponentsV2Factory.text(`*Derleme: \`${gitMeta.commitHash}\` • Servisler operasyonel.*`)
+            ])
+          ]
+        };
+
+        await shortChannel.send(v2MessagePayload).catch(async (v2Err) => {
+          logger.warn(`[StartupAnnounce] Components V2 gönderilemedi, text fallback deneniyor: ${v2Err.message}`);
+          await shortChannel.send({ content: `${headerTitle}\n*Derleme: \`${gitMeta.commitHash}\` • Servisler operasyonel.*` });
+        });
+
+        logger.success(`[StartupAnnounce] ✅ Kısa güncelleme notu ${SHORT_ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
+      }
+    } catch (shortErr) {
+      logger.warn(`[StartupAnnounce] Kısa güncelleme kanalı gönderim hatası: ${shortErr.message}`);
+    }
+
     try {
       fs.writeFileSync(LAST_RESTART_STATE_FILE, JSON.stringify({
         lastReportedAt: restartTimestamp,
@@ -184,9 +214,38 @@ async function announceBotStartup(discordClient) {
   }
 }
 
+/**
+ * 4-7 kelimelik son derece kısa, net ve zarif bir güncelleme başlığı üretir.
+ */
+async function generateShortUpdateNote(gitMeta) {
+  let note = (gitMeta.commitMessage || 'Sistem optimizasyonları yapıldı.').trim();
+
+  try {
+    const { chatWithAI } = require('./aiService');
+    const prompt = `Aşağıdaki teknik commit mesajını 4-7 kelimelik, son derece sade ve şık bir Türkçe güncelleme başlığı haline getir.\n` +
+      `Örnek: "Admin merkezi ve itiraf sistemi güncellendi"\n` +
+      `Commit: "${note}"\n` +
+      `Yalnızca bu birkaç kelimelik cümleyi yaz, tırnak, emoji veya selamlama ekleme.`;
+
+    const aiRes = await chatWithAI(prompt, 'Sen Discord güncelleme duyuruları için tek cümlelik minimal başlıklar üreten bir asistansın.');
+    if (aiRes && typeof aiRes === 'string' && aiRes.trim().length > 3) {
+      note = aiRes.replace(/["'“”«»]/g, '').trim();
+    }
+  } catch (_) {}
+
+  // Temizleme kuralları
+  note = note.replace(/^(?:fix|feat|chore|refactor|perf|style)\([^)]*\):\s*/i, '').trim();
+  if (note.length > 75) {
+    note = note.slice(0, 72) + '...';
+  }
+  return note;
+}
+
 module.exports = {
   announceBotStartup,
   getGitMetadata,
   generateAiChangelog,
-  ANNOUNCE_CHANNEL_ID
+  generateShortUpdateNote,
+  ANNOUNCE_CHANNEL_ID,
+  SHORT_ANNOUNCE_CHANNEL_ID
 };
