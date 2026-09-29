@@ -561,7 +561,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       const t = document.createElement('div');
       t.className = 'toast toast-' + type;
       const icon = TOAST_ICONS[type] || 'ℹ';
-      t.innerHTML = '<div class="toast-inner"><span class="toast-icon">' + icon + '</span><span>' + msg + '</span><button class="toast-close" onclick="this.closest(\'.toast\').remove()">✕</button></div>';
+      t.innerHTML = '<div class="toast-inner"><span class="toast-icon">' + icon + '</span><span>' + msg + '</span><button class="toast-close" onclick="this.closest(\\'.toast\\').remove()">✕</button></div>';
       c.appendChild(t);
       const timer = setTimeout(() => {
         t.style.opacity = '0';
@@ -9743,10 +9743,10 @@ function renderSettingsPage(user, query = {}) {
             const legalBtn = document.getElementById('tab-btn-legal');
             if (legalBtn) switchSettingsTab('legal', legalBtn);
           } else if (hash === '#tab-staff' || hash === '#staff') {
-            const staffBtn = document.querySelector('[onclick*="switchSettingsTab(\'staff\'"]');
+            const staffBtn = document.querySelector('[onclick*="switchSettingsTab(\\'staff\\'"]');
             if (staffBtn) switchSettingsTab('staff', staffBtn);
           } else if (hash === '#tab-site' || hash === '#site') {
-            const siteBtn = document.querySelector('[onclick*="switchSettingsTab(\'site\'"]');
+            const siteBtn = document.querySelector('[onclick*="switchSettingsTab(\\'site\\'"]');
             if (siteBtn) switchSettingsTab('site', siteBtn);
           }
         }
