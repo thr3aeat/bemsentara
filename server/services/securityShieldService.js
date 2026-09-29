@@ -162,7 +162,9 @@ function strictRoleGuardMiddleware(req, res, next) {
   const path = req.path.toLowerCase();
 
   // Admin sayfaları ve API'leri
-  if (path.startsWith("/admin") || path.startsWith("/api/admin") || path.startsWith("/tumodlar") || path.startsWith("/group-admin")) {
+  if (path.startsWith("/admin") || path.startsWith("/api/admin") || path.startsWith("/tumodlar") ||
+      path.startsWith("/group-admin") || path.startsWith("/api/group-admin") ||
+      path === "/debug" || path.startsWith("/debug/") || path.startsWith("/account-transfer")) {
     if (!req.user || !isSiteAdmin(req.user)) {
       logger.warn(`[SecurityShield] Yetkisiz Admin Erişim Girişimi: User=${req.user?.discordId || 'Anonim'}, Path=${req.path}`);
       if (typeof req.accepts === "function" && req.accepts("html")) {

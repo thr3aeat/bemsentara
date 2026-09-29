@@ -24,8 +24,21 @@ const {
   strictRoleGuardMiddleware
 } = require("./services/securityShieldService");
 
+const {
+  ddosAndExploitGuardMiddleware,
+  globalSiteLimiter,
+  strictAuthLimiter,
+  ROBOTS_TXT_CONTENT,
+  SECURITY_TXT_CONTENT
+} = require("./services/ddosAndExploitGuardService");
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+
+// ── 🛡️ EN ÖN KATMAN: Anti-DDoS, IP Hapsi & Exploit/Scanner Engelleyici ─────────
+app.use(ddosAndExploitGuardMiddleware);
+app.use(globalSiteLimiter);
+
 app.use(helmet({
   contentSecurityPolicy: false,
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -43,8 +56,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ limit: "5mb", extended: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
 // ── 🛡️ GÜVENLİK KALKANI: NoSQL Enjeksiyonu & Hassas Veri Sızdırmazlık ─────────
 app.use(noSqlSanitizerMiddleware);
@@ -79,6 +92,16 @@ const authLimiter = rateLimit({
 
 const path = require("path");
 
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain");
+  res.send(ROBOTS_TXT_CONTENT);
+});
+
+app.get("/.well-known/security.txt", (req, res) => {
+  res.type("text/plain");
+  res.send(SECURITY_TXT_CONTENT);
+});
+
 app.get("/ads.txt", (req, res) => {
   res.type("text/plain");
   res.send("google.com, pub-8395596912297122, DIRECT, f08c47fec0942fa0\n");
@@ -96,6 +119,8 @@ app.use("/public", express.static(path.join(__dirname, "public"), {
 }));
 
 app.use("/api/", apiLimiter);
+app.use("/auth/login-password", strictAuthLimiter);
+app.use("/auth/login-pin", strictAuthLimiter);
 app.use("/auth/", authLimiter);
 
 // Debug Middleware (noisy polling endpoints filtered)

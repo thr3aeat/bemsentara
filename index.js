@@ -276,10 +276,14 @@ async function start() {
 
     // 1. Express sunucusunu hemen başlat (Render port binding algılaması için)
     logger.section("WEB SERVER");
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.success(`Sunucu hazır: ${BASE_URL}`);
       logger.info(`Ticket sistemi port ${PORT} üzerinde dinleniyor`);
     });
+    // 🛡️ Slowloris & Slow Connection DDoS Koruması
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    server.timeout = 30000;
 
     logger.section("DISCORD CONNECTION");
 

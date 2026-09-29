@@ -7,6 +7,14 @@ const { syncRoleConnectionForUser } = require("../services/discordRoleConnection
 const UserActivityLog = require("../../models/UserActivityLog");
 const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = require("../../config");
 
+const {
+  getClientIp,
+  checkLoginBruteForce,
+  recordFailedLogin,
+  clearFailedLogin,
+  assertNotAdminForPasswordLogin
+} = require("../services/ddosAndExploitGuardService");
+
 async function syncLinkedRoleMetadata(user, session = null) {
   if (!user?.discordId) return;
 
@@ -177,13 +185,27 @@ router.get("/auth/discord/callback", passport.authenticate("discord", { failureR
 });
 
 async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    res.status(429).json({ error: brute.error });
+    return true;
+  }
+
   const u = String(usernameInput || '').trim().toLowerCase();
   const p = String(passwordInput || '').trim();
 
   const isUserMatch = u === "bugrupyönetimikullaniciadi" || u === "bugrupyonetimikullaniciadi";
-  const isPassMatch = p === "bugrupyönetimisifresi" || p === "bugrupyonetimisifresi";
+  if (!isUserMatch) return false;
 
-  if (!isUserMatch || !isPassMatch) return false;
+  const isPassMatch = p === "bugrupyönetimisifresi" || p === "bugrupyonetimisifresi";
+  if (!isPassMatch) {
+    recordFailedLogin(ip, u);
+    res.status(401).json({ error: "Geçersiz grup yöneticisi şifresi!" });
+    return true;
+  }
+
+  clearFailedLogin(ip);
 
   const { groupAdmins, saveStoreNow } = require("../../models/Store");
   if (!groupAdmins.findOne({ username: "bugrupyönetimikullaniciadi" })) {
@@ -231,11 +253,18 @@ async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
 
 // Password-based login endpoint
 router.post("/auth/login-password", async (req, res) => {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    return res.status(429).json({ error: brute.error });
+  }
+
   const { password, username } = req.body;
 
   if (await tryGroupAdminLogin(req, res, username, password)) return;
 
   if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    recordFailedLogin(ip, username);
     return res.status(400).json({ error: "Geçersiz şifre formatı (6 haneli olmalı)" });
   }
 
@@ -243,12 +272,22 @@ router.post("/auth/login-password", async (req, res) => {
     const user = await User.findOne({ loginPassword: password });
 
     if (!user) {
+      recordFailedLogin(ip, username);
       return res.status(401).json({ error: "Geçersiz şifre" });
     }
 
     if (user.isBanned) {
       return res.status(403).json({ error: "Hesabınız yasaklandı" });
     }
+
+    // 🔒 YÖNETİCİ & KURUCU HESAP KORUMASI: Şifre ile Admin girişi KESİNLİKLE engellenir!
+    if (assertNotAdminForPasswordLogin(user, req)) {
+      return res.status(403).json({
+        error: "Güvenlik Engeli: Yönetici ve Kurucu hesaplarına şifre ile giriş yapılamaz. Yalnızca resmi Discord OAuth ile iki adımlı doğrulama zorunludur."
+      });
+    }
+
+    clearFailedLogin(ip);
 
     // Manüel session kurma
     req.login(user, (err) => {
@@ -335,10 +374,363 @@ router.post("/auth/check-username", async (req, res) => {
 });
 
 router.post("/auth/login-pin", async (req, res) => {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    return res.status(429).json({ error: brute.error });
+  }
+
   try {
     const { username, pin } = req.body;
     if (await tryGroupAdminLogin(req, res, username, pin)) return;
-    if (!username || !pin) return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
+    if (!username || !pin) {
+      recordFailedLogin(ip, username);
+      return res.status(400).json({ error: "Kullanıcı adı ve şifre gereklidir." });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { discordUsername: new RegExp(`^${username}const express = require("express");
+const passport = require("../passport");
+const User = require("../../models/User");
+const { renderLoginPage, renderAuthorizePage } = require("../views");
+const { saveStoreNow } = require("../../models/Store");
+const { syncRoleConnectionForUser } = require("../services/discordRoleConnectionService");
+const UserActivityLog = require("../../models/UserActivityLog");
+const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = require("../../config");
+
+const {
+  getClientIp,
+  checkLoginBruteForce,
+  recordFailedLogin,
+  clearFailedLogin,
+  assertNotAdminForPasswordLogin
+} = require("../services/ddosAndExploitGuardService");
+
+async function syncLinkedRoleMetadata(user, session = null) {
+  if (!user?.discordId) return;
+
+  const accessToken = user.discordAccessToken || session?.discordAccessToken;
+  const applicationId = process.env.DISCORD_ROLE_CONNECTION_APPLICATION_ID;
+  if (!accessToken || !applicationId) return;
+
+  await syncRoleConnectionForUser(user, accessToken, applicationId, {});
+}
+
+const router = express.Router();
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findPortalUser(username) {
+  const value = String(username || '').trim();
+  if (!value) return null;
+  const exact = new RegExp(`^${escapeRegex(value)}$`, 'i');
+  return User.findOne({ $or: [
+    { username: exact },
+    { discordUsername: exact },
+    { discordId: value }
+  ] });
+}
+
+function isStrongPassword(password) {
+  const value = String(password || '');
+  return value.length >= 10 && /[a-z]/i.test(value) && /\d/.test(value);
+}
+
+async function tryAutoSyncRoles(user) {
+  if (!user?.robloxId || !user?.discordId) return;
+  const { getDiscordClient } = require("../../bot/discordClient");
+  const { syncMemberRoles } = require("../../bot/services/roleSyncService");
+  const { TARGET_GUILD_ID } = require("../../config");
+  const client = getDiscordClient();
+  if (!client?.isReady()) return;
+  const guild = await client.guilds.fetch(TARGET_GUILD_ID);
+  const member = await guild.members.fetch(user.discordId);
+  await syncMemberRoles(guild, member, parseInt(user.robloxId, 10), user.robloxUsername);
+}
+
+const axios = require('axios');
+const crypto = require('crypto');
+const discordLogger = require('../../bot/services/discordLogger');
+const logger = require('../../utils/logger');
+
+async function logWebLogin(user, req) {
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || 'Bilinmiyor';
+    let location = 'Bilinmiyor';
+
+    if (ip && ip !== '::1' && ip !== '127.0.0.1' && ip !== 'Bilinmiyor') {
+      try {
+        const geoRes = await axios.get(`http://ip-api.com/json/${ip.split(',')[0].trim()}`);
+        if (geoRes.data && geoRes.data.status === 'success') {
+          location = `${geoRes.data.city}, ${geoRes.data.country}`;
+        }
+      } catch (e) { }
+    }
+
+    const message = `**Web Girişi Yapıldı**\n**Kullanıcı:** ${user.username || user.discordUsername || "Bilinmiyor"} (${user.discordId})\n**IP:** ${ip}\n**Konum:** ${location}`;
+
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    const btn = new ButtonBuilder()
+      .setLabel('Canlı İzle / Geçmişi Gör')
+      .setStyle(ButtonStyle.Link)
+      .setURL(`${process.env.BASE_URL || 'https://ekoyildiz.duckdns.org'}/debug?watch=${user.discordId}`);
+
+    const row = new ActionRowBuilder().addComponents(btn);
+    await discordLogger.sendLog('web', message, null, 'INFO', row);
+
+    // Activity logging
+    UserActivityLog.log(user.discordId, UserActivityLog.ACTIVITY_TYPES.LOGIN, {
+      ip: ip,
+      location: location,
+      source: 'web'
+    });
+
+    // Personal user log channel activity
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      const client = getDiscordClient();
+      if (client && user.discordId) {
+        logTrustUserActivity(client, user.discordId, "Web Portalı Girişi Yapıldı", `🌐 **IP Adresi:** \`${ip}\`\n📍 **Konum:** ${location}\n🔑 **Giriş Yöntemi:** Web Oturumu`, "🌐").catch(() => {});
+      }
+    } catch (_) {}
+  } catch (err) {
+    console.error("[logWebLogin] Error:", err.message);
+  }
+}
+
+/**
+ * Generate a random 6-digit password
+ */
+function generatePassword() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+router.get("/login", (req, res) => {
+  const { error } = req.query;
+  let errorMsg = null;
+  if (error === "discord") {
+    errorMsg = "Discord ile giriş yapılırken bir hata oluştu.";
+  } else if (error === "unauthorized") {
+    errorMsg = "Bu sayfaya erişmek için giriş yapmalısınız.";
+  } else if (error) {
+    errorMsg = "Giriş başarısız oldu.";
+  }
+  res.send(renderLoginPage(errorMsg));
+});
+
+const bcrypt = require("bcrypt");
+
+async function resolveDiscordUser(username) {
+  const { getDiscordClient } = require("../../bot/discordClient");
+  const { TARGET_GUILD_ID, GUILD2_ID } = require("../../config");
+  const client = getDiscordClient();
+  if (!client || !client.isReady()) throw new Error("Discord botu aktif değil.");
+
+  if (/^\d{17,20}$/.test(username)) {
+    return await client.users.fetch(username).catch(() => null);
+  }
+
+  const wanted = String(username).replace(/^@/, '').toLocaleLowerCase('tr');
+  for (const guildId of [...new Set([TARGET_GUILD_ID, GUILD2_ID].filter(Boolean))]) {
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
+    if (!guild) continue;
+    const members = await guild.members.fetch().catch(() => null);
+    const member = members?.find((m) => [m.user.username, m.user.globalName, m.nickname]
+      .filter(Boolean)
+      .some((name) => String(name).toLocaleLowerCase('tr') === wanted));
+    if (member) return member.user;
+  }
+  return null;
+}
+
+// --- Discord Auth Routes ---
+router.get("/auth/discord", (req, res, next) => {
+  const rememberMe = req.query.remember === 'true';
+  if (rememberMe) {
+    req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
+    req.session.rememberMe = true;
+  } else {
+    req.session.rememberMe = false;
+  }
+  next();
+}, passport.authenticate("discord"));
+
+router.get("/auth/discord/callback", passport.authenticate("discord", { failureRedirect: "/login?error=discord" }), async (req, res) => {
+  if (req.session.rememberMe) {
+    req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
+  }
+  if (req.session.linkDiscordId) {
+    if (String(req.user.discordId) !== req.session.linkDiscordId) {
+      return res.redirect("/dashboard?wrongDiscord=1");
+    }
+    return res.redirect("/auth/roblox");
+  }
+  tryAutoSyncRoles(req.user).catch(() => { });
+  syncLinkedRoleMetadata(req.user, req.session).catch(() => { });
+  logger.log("[AUTH] " + (req.user.username || req.user.discordUsername) + " (" + req.user.discordId + ") Discord OAuth ile giriş yaptı.", "auth");
+  logWebLogin(req.user, req);
+  res.redirect("/dashboard");
+});
+
+async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    res.status(429).json({ error: brute.error });
+    return true;
+  }
+
+  const u = String(usernameInput || '').trim().toLowerCase();
+  const p = String(passwordInput || '').trim();
+
+  const isUserMatch = u === "bugrupyönetimikullaniciadi" || u === "bugrupyonetimikullaniciadi";
+  if (!isUserMatch) return false;
+
+  const isPassMatch = p === "bugrupyönetimisifresi" || p === "bugrupyonetimisifresi";
+  if (!isPassMatch) {
+    recordFailedLogin(ip, u);
+    res.status(401).json({ error: "Geçersiz grup yöneticisi şifresi!" });
+    return true;
+  }
+
+  clearFailedLogin(ip);
+
+  const { groupAdmins, saveStoreNow } = require("../../models/Store");
+  if (!groupAdmins.findOne({ username: "bugrupyönetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyönetimikullaniciadi", createdAt: new Date() });
+  }
+  if (!groupAdmins.findOne({ username: "bugrupyonetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyonetimikullaniciadi", createdAt: new Date() });
+  }
+
+  let user = await User.findOne({
+    $or: [
+      { username: "bugrupyönetimikullaniciadi" },
+      { discordUsername: "bugrupyönetimikullaniciadi" },
+      { username: "bugrupyonetimikullaniciadi" },
+      { discordUsername: "bugrupyonetimikullaniciadi" }
+    ]
+  });
+
+  if (!user) {
+    user = await User.create({
+      username: "bugrupyönetimikullaniciadi",
+      discordUsername: "bugrupyönetimikullaniciadi",
+      discordId: "99911517908",
+      isAuthorized: true,
+      isGroupAdmin: true
+    });
+  } else {
+    user.isGroupAdmin = true;
+    await user.save();
+  }
+
+  saveStoreNow();
+
+  req.login(user, (err) => {
+    if (err) return res.status(500).json({ error: "Oturum açma hatası." });
+    try {
+      logger.log("[AUTH] Grup Yöneticisi (bugrupyönetimikullaniciadi) siteye giriş yaptı.", "auth");
+    } catch (_) {}
+    logWebLogin(user, req);
+    return res.json({ success: true, message: "Grup Yöneticisi olarak başarıyla giriş yapıldı!", redirectUrl: "/group-admin", user });
+  });
+
+  return true;
+}
+
+// Password-based login endpoint
+router.post("/auth/login-password", async (req, res) => {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    return res.status(429).json({ error: brute.error });
+  }
+
+  const { password, username } = req.body;
+
+  if (await tryGroupAdminLogin(req, res, username, password)) return;
+
+  if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    recordFailedLogin(ip, username);
+    return res.status(400).json({ error: "Geçersiz şifre formatı (6 haneli olmalı)" });
+  }
+
+  try {
+    const user = await User.findOne({ loginPassword: password });
+
+    if (!user) {
+      recordFailedLogin(ip, username);
+      return res.status(401).json({ error: "Geçersiz şifre" });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({ error: "Hesabınız yasaklandı" });
+    }
+
+    // 🔒 YÖNETİCİ & KURUCU HESAP KORUMASI: Şifre ile Admin girişi KESİNLİKLE engellenir!
+    if (assertNotAdminForPasswordLogin(user, req)) {
+      return res.status(403).json({
+        error: "Güvenlik Engeli: Yönetici ve Kurucu hesaplarına şifre ile giriş yapılamaz. Yalnızca resmi Discord OAuth ile iki adımlı doğrulama zorunludur."
+      });
+    }
+
+    clearFailedLogin(ip);
+
+    // Manüel session kurma
+    req.login(user, (err) => {
+      if (err) {
+        return res.status(500).json({ error: "Oturum açma hatası" });
+      }
+      res.json({ success: true, message: "Giriş başarılı", user });
+    });
+  } catch (err) {
+    console.error("[auth] Login password error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+// Generate or reset password for authenticated user
+router.post("/auth/generate-password", async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Oturum açmanız gerekir" });
+  }
+
+  try {
+    const password = generatePassword();
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ error: "Kullanıcı bulunamadı" });
+    }
+
+    user.loginPassword = password;
+    user.passwordCreatedAt = new Date();
+    await user.save();
+    saveStoreNow();
+
+    res.json({
+      success: true,
+      message: "Şifre başarıyla oluşturuldu",
+      password: password,
+      createdAt: new Date()
+    });
+  } catch (err) {
+    console.error("[auth] Generate password error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+// --- Custom EkoYıldız Authentication Endpoints ---
+
+router.post("/auth/check-username", async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    if (!username) return res.status(400).json({ error: "Lütfen kullanıcı adı girin." });
 
     const user = await User.findOne({
       $or: [
@@ -348,15 +740,434 @@ router.post("/auth/login-pin", async (req, res) => {
       ]
     });
 
-    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    if (!user) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const hasPassword = !!(user.sitePinPassword || user.loginPassword || user.sitePassword);
+    const hasDiscord = !!user.discordId;
+    const hasRoblox = !!user.robloxId;
+
+    return res.json({
+      success: true,
+      exists: true,
+      userId: user.discordId || user._id,
+      username: user.username || user.discordUsername,
+      discordId: user.discordId,
+      robloxUsername: user.robloxUsername,
+      hasPassword,
+      hasDiscord,
+      hasRoblox
+    });
+  } catch (err) {
+    console.error("[auth] check-username error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+, 'i') },
+        { username: new RegExp(`^${username}const express = require("express");
+const passport = require("../passport");
+const User = require("../../models/User");
+const { renderLoginPage, renderAuthorizePage } = require("../views");
+const { saveStoreNow } = require("../../models/Store");
+const { syncRoleConnectionForUser } = require("../services/discordRoleConnectionService");
+const UserActivityLog = require("../../models/UserActivityLog");
+const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = require("../../config");
+
+const {
+  getClientIp,
+  checkLoginBruteForce,
+  recordFailedLogin,
+  clearFailedLogin,
+  assertNotAdminForPasswordLogin
+} = require("../services/ddosAndExploitGuardService");
+
+async function syncLinkedRoleMetadata(user, session = null) {
+  if (!user?.discordId) return;
+
+  const accessToken = user.discordAccessToken || session?.discordAccessToken;
+  const applicationId = process.env.DISCORD_ROLE_CONNECTION_APPLICATION_ID;
+  if (!accessToken || !applicationId) return;
+
+  await syncRoleConnectionForUser(user, accessToken, applicationId, {});
+}
+
+const router = express.Router();
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findPortalUser(username) {
+  const value = String(username || '').trim();
+  if (!value) return null;
+  const exact = new RegExp(`^${escapeRegex(value)}$`, 'i');
+  return User.findOne({ $or: [
+    { username: exact },
+    { discordUsername: exact },
+    { discordId: value }
+  ] });
+}
+
+function isStrongPassword(password) {
+  const value = String(password || '');
+  return value.length >= 10 && /[a-z]/i.test(value) && /\d/.test(value);
+}
+
+async function tryAutoSyncRoles(user) {
+  if (!user?.robloxId || !user?.discordId) return;
+  const { getDiscordClient } = require("../../bot/discordClient");
+  const { syncMemberRoles } = require("../../bot/services/roleSyncService");
+  const { TARGET_GUILD_ID } = require("../../config");
+  const client = getDiscordClient();
+  if (!client?.isReady()) return;
+  const guild = await client.guilds.fetch(TARGET_GUILD_ID);
+  const member = await guild.members.fetch(user.discordId);
+  await syncMemberRoles(guild, member, parseInt(user.robloxId, 10), user.robloxUsername);
+}
+
+const axios = require('axios');
+const crypto = require('crypto');
+const discordLogger = require('../../bot/services/discordLogger');
+const logger = require('../../utils/logger');
+
+async function logWebLogin(user, req) {
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || 'Bilinmiyor';
+    let location = 'Bilinmiyor';
+
+    if (ip && ip !== '::1' && ip !== '127.0.0.1' && ip !== 'Bilinmiyor') {
+      try {
+        const geoRes = await axios.get(`http://ip-api.com/json/${ip.split(',')[0].trim()}`);
+        if (geoRes.data && geoRes.data.status === 'success') {
+          location = `${geoRes.data.city}, ${geoRes.data.country}`;
+        }
+      } catch (e) { }
+    }
+
+    const message = `**Web Girişi Yapıldı**\n**Kullanıcı:** ${user.username || user.discordUsername || "Bilinmiyor"} (${user.discordId})\n**IP:** ${ip}\n**Konum:** ${location}`;
+
+    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+    const btn = new ButtonBuilder()
+      .setLabel('Canlı İzle / Geçmişi Gör')
+      .setStyle(ButtonStyle.Link)
+      .setURL(`${process.env.BASE_URL || 'https://ekoyildiz.duckdns.org'}/debug?watch=${user.discordId}`);
+
+    const row = new ActionRowBuilder().addComponents(btn);
+    await discordLogger.sendLog('web', message, null, 'INFO', row);
+
+    // Activity logging
+    UserActivityLog.log(user.discordId, UserActivityLog.ACTIVITY_TYPES.LOGIN, {
+      ip: ip,
+      location: location,
+      source: 'web'
+    });
+
+    // Personal user log channel activity
+    try {
+      const { getDiscordClient } = require("../../bot/discordClient");
+      const { logTrustUserActivity } = require("../../bot/services/security/trustScoreService");
+      const client = getDiscordClient();
+      if (client && user.discordId) {
+        logTrustUserActivity(client, user.discordId, "Web Portalı Girişi Yapıldı", `🌐 **IP Adresi:** \`${ip}\`\n📍 **Konum:** ${location}\n🔑 **Giriş Yöntemi:** Web Oturumu`, "🌐").catch(() => {});
+      }
+    } catch (_) {}
+  } catch (err) {
+    console.error("[logWebLogin] Error:", err.message);
+  }
+}
+
+/**
+ * Generate a random 6-digit password
+ */
+function generatePassword() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+router.get("/login", (req, res) => {
+  const { error } = req.query;
+  let errorMsg = null;
+  if (error === "discord") {
+    errorMsg = "Discord ile giriş yapılırken bir hata oluştu.";
+  } else if (error === "unauthorized") {
+    errorMsg = "Bu sayfaya erişmek için giriş yapmalısınız.";
+  } else if (error) {
+    errorMsg = "Giriş başarısız oldu.";
+  }
+  res.send(renderLoginPage(errorMsg));
+});
+
+const bcrypt = require("bcrypt");
+
+async function resolveDiscordUser(username) {
+  const { getDiscordClient } = require("../../bot/discordClient");
+  const { TARGET_GUILD_ID, GUILD2_ID } = require("../../config");
+  const client = getDiscordClient();
+  if (!client || !client.isReady()) throw new Error("Discord botu aktif değil.");
+
+  if (/^\d{17,20}$/.test(username)) {
+    return await client.users.fetch(username).catch(() => null);
+  }
+
+  const wanted = String(username).replace(/^@/, '').toLocaleLowerCase('tr');
+  for (const guildId of [...new Set([TARGET_GUILD_ID, GUILD2_ID].filter(Boolean))]) {
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
+    if (!guild) continue;
+    const members = await guild.members.fetch().catch(() => null);
+    const member = members?.find((m) => [m.user.username, m.user.globalName, m.nickname]
+      .filter(Boolean)
+      .some((name) => String(name).toLocaleLowerCase('tr') === wanted));
+    if (member) return member.user;
+  }
+  return null;
+}
+
+// --- Discord Auth Routes ---
+router.get("/auth/discord", (req, res, next) => {
+  const rememberMe = req.query.remember === 'true';
+  if (rememberMe) {
+    req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
+    req.session.rememberMe = true;
+  } else {
+    req.session.rememberMe = false;
+  }
+  next();
+}, passport.authenticate("discord"));
+
+router.get("/auth/discord/callback", passport.authenticate("discord", { failureRedirect: "/login?error=discord" }), async (req, res) => {
+  if (req.session.rememberMe) {
+    req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
+  }
+  if (req.session.linkDiscordId) {
+    if (String(req.user.discordId) !== req.session.linkDiscordId) {
+      return res.redirect("/dashboard?wrongDiscord=1");
+    }
+    return res.redirect("/auth/roblox");
+  }
+  tryAutoSyncRoles(req.user).catch(() => { });
+  syncLinkedRoleMetadata(req.user, req.session).catch(() => { });
+  logger.log("[AUTH] " + (req.user.username || req.user.discordUsername) + " (" + req.user.discordId + ") Discord OAuth ile giriş yaptı.", "auth");
+  logWebLogin(req.user, req);
+  res.redirect("/dashboard");
+});
+
+async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    res.status(429).json({ error: brute.error });
+    return true;
+  }
+
+  const u = String(usernameInput || '').trim().toLowerCase();
+  const p = String(passwordInput || '').trim();
+
+  const isUserMatch = u === "bugrupyönetimikullaniciadi" || u === "bugrupyonetimikullaniciadi";
+  if (!isUserMatch) return false;
+
+  const isPassMatch = p === "bugrupyönetimisifresi" || p === "bugrupyonetimisifresi";
+  if (!isPassMatch) {
+    recordFailedLogin(ip, u);
+    res.status(401).json({ error: "Geçersiz grup yöneticisi şifresi!" });
+    return true;
+  }
+
+  clearFailedLogin(ip);
+
+  const { groupAdmins, saveStoreNow } = require("../../models/Store");
+  if (!groupAdmins.findOne({ username: "bugrupyönetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyönetimikullaniciadi", createdAt: new Date() });
+  }
+  if (!groupAdmins.findOne({ username: "bugrupyonetimikullaniciadi" })) {
+    groupAdmins.create({ username: "bugrupyonetimikullaniciadi", createdAt: new Date() });
+  }
+
+  let user = await User.findOne({
+    $or: [
+      { username: "bugrupyönetimikullaniciadi" },
+      { discordUsername: "bugrupyönetimikullaniciadi" },
+      { username: "bugrupyonetimikullaniciadi" },
+      { discordUsername: "bugrupyonetimikullaniciadi" }
+    ]
+  });
+
+  if (!user) {
+    user = await User.create({
+      username: "bugrupyönetimikullaniciadi",
+      discordUsername: "bugrupyönetimikullaniciadi",
+      discordId: "99911517908",
+      isAuthorized: true,
+      isGroupAdmin: true
+    });
+  } else {
+    user.isGroupAdmin = true;
+    await user.save();
+  }
+
+  saveStoreNow();
+
+  req.login(user, (err) => {
+    if (err) return res.status(500).json({ error: "Oturum açma hatası." });
+    try {
+      logger.log("[AUTH] Grup Yöneticisi (bugrupyönetimikullaniciadi) siteye giriş yaptı.", "auth");
+    } catch (_) {}
+    logWebLogin(user, req);
+    return res.json({ success: true, message: "Grup Yöneticisi olarak başarıyla giriş yapıldı!", redirectUrl: "/group-admin", user });
+  });
+
+  return true;
+}
+
+// Password-based login endpoint
+router.post("/auth/login-password", async (req, res) => {
+  const ip = getClientIp(req);
+  const brute = checkLoginBruteForce(ip);
+  if (!brute.allowed) {
+    return res.status(429).json({ error: brute.error });
+  }
+
+  const { password, username } = req.body;
+
+  if (await tryGroupAdminLogin(req, res, username, password)) return;
+
+  if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    recordFailedLogin(ip, username);
+    return res.status(400).json({ error: "Geçersiz şifre formatı (6 haneli olmalı)" });
+  }
+
+  try {
+    const user = await User.findOne({ loginPassword: password });
+
+    if (!user) {
+      recordFailedLogin(ip, username);
+      return res.status(401).json({ error: "Geçersiz şifre" });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({ error: "Hesabınız yasaklandı" });
+    }
+
+    // 🔒 YÖNETİCİ & KURUCU HESAP KORUMASI: Şifre ile Admin girişi KESİNLİKLE engellenir!
+    if (assertNotAdminForPasswordLogin(user, req)) {
+      return res.status(403).json({
+        error: "Güvenlik Engeli: Yönetici ve Kurucu hesaplarına şifre ile giriş yapılamaz. Yalnızca resmi Discord OAuth ile iki adımlı doğrulama zorunludur."
+      });
+    }
+
+    clearFailedLogin(ip);
+
+    // Manüel session kurma
+    req.login(user, (err) => {
+      if (err) {
+        return res.status(500).json({ error: "Oturum açma hatası" });
+      }
+      res.json({ success: true, message: "Giriş başarılı", user });
+    });
+  } catch (err) {
+    console.error("[auth] Login password error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+// Generate or reset password for authenticated user
+router.post("/auth/generate-password", async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Oturum açmanız gerekir" });
+  }
+
+  try {
+    const password = generatePassword();
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ error: "Kullanıcı bulunamadı" });
+    }
+
+    user.loginPassword = password;
+    user.passwordCreatedAt = new Date();
+    await user.save();
+    saveStoreNow();
+
+    res.json({
+      success: true,
+      message: "Şifre başarıyla oluşturuldu",
+      password: password,
+      createdAt: new Date()
+    });
+  } catch (err) {
+    console.error("[auth] Generate password error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+// --- Custom EkoYıldız Authentication Endpoints ---
+
+router.post("/auth/check-username", async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim();
+    if (!username) return res.status(400).json({ error: "Lütfen kullanıcı adı girin." });
+
+    const user = await User.findOne({
+      $or: [
+        { discordUsername: new RegExp(`^${username}$`, 'i') },
+        { username: new RegExp(`^${username}$`, 'i') },
+        { discordId: username }
+      ]
+    });
+
+    if (!user) {
+      return res.json({ success: true, exists: false });
+    }
+
+    const hasPassword = !!(user.sitePinPassword || user.loginPassword || user.sitePassword);
+    const hasDiscord = !!user.discordId;
+    const hasRoblox = !!user.robloxId;
+
+    return res.json({
+      success: true,
+      exists: true,
+      userId: user.discordId || user._id,
+      username: user.username || user.discordUsername,
+      discordId: user.discordId,
+      robloxUsername: user.robloxUsername,
+      hasPassword,
+      hasDiscord,
+      hasRoblox
+    });
+  } catch (err) {
+    console.error("[auth] check-username error:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+, 'i') },
+        { discordId: username }
+      ]
+    });
+
+    if (!user) {
+      recordFailedLogin(ip, username);
+      return res.status(404).json({ error: "Kullanıcı bulunamadı." });
+    }
 
     if (user.sitePinPassword === pin || user.loginPassword === pin) {
+      // 🔒 YÖNETİCİ & KURUCU HESAP KORUMASI: Şifre veya PIN ile Admin girişi KESİNLİKLE engellenir!
+      if (assertNotAdminForPasswordLogin(user, req)) {
+        return res.status(403).json({
+          error: "Güvenlik Engeli: Yönetici ve Kurucu hesaplarına PIN/Şifre ile giriş yapılamaz. Hesabınızın güvenliği için resmi Discord OAuth iki adımlı doğrulama zorunludur."
+        });
+      }
+
+      clearFailedLogin(ip);
+
       req.login(user, (err) => {
         if (err) return res.status(500).json({ error: "Oturum açma hatası." });
         const needsPassword = !user.sitePinPassword;
         return res.json({ success: true, redirectUrl: "/dashboard", needsPassword, user });
       });
     } else {
+      recordFailedLogin(ip, username);
       return res.status(400).json({ error: "Hatalı şifre veya PIN numarası!" });
     }
   } catch (err) {
@@ -416,6 +1227,13 @@ router.post("/auth/verify-discord-dm-code", async (req, res) => {
     }
 
     if (req.session.dmAuthCode !== String(code).trim()) {
+      req.session.dmAuthFailCount = (req.session.dmAuthFailCount || 0) + 1;
+      if (req.session.dmAuthFailCount >= 3) {
+        delete req.session.dmAuthCode;
+        delete req.session.dmAuthTargetId;
+        delete req.session.dmAuthFailCount;
+        return res.status(400).json({ error: "Çok fazla hatalı kod denendi. Güvenliğiniz için kod iptal edildi. Lütfen yeni bir kod isteyin." });
+      }
       return res.status(400).json({ error: "Geçersiz veya hatalı doğrulama kodu!" });
     }
 
