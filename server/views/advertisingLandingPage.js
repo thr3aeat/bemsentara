@@ -1937,6 +1937,353 @@ function renderAdvertisingLandingPage(user = null) {
       color: var(--text-tertiary);
       padding: 4px 8px 0;
     }
+
+    /* ── DIRECT PAYMENT BUTTON (Image 3 fix) ── */
+    .btn-direct-pay {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.28);
+      color: #c7d2fe;
+      font-size: 0.86rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+    .btn-direct-pay:hover {
+      background: rgba(99, 102, 241, 0.22);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+    }
+    .btn-direct-pay:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* ── TEŞEKKÜRLER & HALL OF FAME CARDS (Image 1 fix) ── */
+    .credits-section {
+      padding: 80px 0;
+      position: relative;
+    }
+    .credits-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .credit-card {
+      position: relative;
+      background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.03) 0%, rgba(15,18,28,0.95) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 24px;
+      padding: 28px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 16px 36px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+      overflow: hidden;
+    }
+    .credit-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(124, 106, 247, 0.4);
+      box-shadow: 0 24px 48px -12px rgba(0,0,0,0.8), 0 0 25px rgba(124, 106, 247, 0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .credit-card-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .credit-avatar {
+      width: 58px;
+      height: 58px;
+      min-width: 58px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 850;
+      font-size: 1.3rem;
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.4);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+    }
+    .credit-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .credit-name-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .credit-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .credit-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(124, 106, 247, 0.15);
+      border: 1px solid rgba(124, 106, 247, 0.35);
+      color: #c7d2fe;
+    }
+    .credit-role {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .credit-desc {
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: #cbd5e1;
+      margin: 0;
+    }
+    .credit-perks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .credit-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #e2e8f0;
+      transition: all 0.2s ease;
+    }
+    .credit-card:hover .credit-pill {
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    @media (max-width: 768px) {
+      .credits-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── EKOAI STUDIO SECTION (Image 2 fix) ── */
+    .ekoai-section {
+      padding: 80px 0 100px;
+    }
+    .ekoai-card {
+      position: relative;
+      background: radial-gradient(120% 120% at 50% 0%, rgba(99,102,241,0.06) 0%, rgba(12,15,24,0.96) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 28px;
+      padding: 40px 36px;
+      box-shadow: 0 24px 60px -15px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.12);
+      overflow: hidden;
+    }
+    .ekoai-card-glow {
+      position: absolute;
+      top: -120px;
+      right: -100px;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%);
+      pointer-events: none;
+      filter: blur(50px);
+    }
+    .ekoai-header {
+      margin-bottom: 24px;
+    }
+    .ekoai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6366f1;
+      box-shadow: 0 0 10px #6366f1;
+      animation: pulseAiDot 1.8s infinite;
+    }
+    @keyframes pulseAiDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .ekoai-chips-wrap {
+      margin-bottom: 22px;
+    }
+    .chips-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ekoai-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ekoai-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 8px 15px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ekoai-chip:hover {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.22);
+    }
+
+    .ekoai-console {
+      background: #080a11;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .ekoai-messages-box {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-height: 480px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+    .ekoai-input-form {
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ekoai-text-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 12px 18px;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .ekoai-text-input:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(99, 102, 241, 0.6);
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.2);
+    }
+    .ekoai-submit-btn {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border: none;
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .ekoai-submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+    .send-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* AI Bubble Markdown Table Styling */
+    .ekoai-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin: 12px 0 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .ekoai-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+    .ekoai-table th {
+      background: rgba(99, 102, 241, 0.15);
+      padding: 10px 14px;
+      font-weight: 750;
+      color: #e2e8f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .ekoai-table td {
+      padding: 10px 14px;
+      color: #cbd5e1;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .ekoai-table tr:last-child td {
+      border-bottom: none;
+    }
+    .ekoai-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
   </style>
 </head>
 <body>

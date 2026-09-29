@@ -211,8 +211,8 @@ function renderAtaturkExhibitionPage(user = null) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  ${platformChromeStyles()}
   <style>
-    ${platformChromeStyles}
 
     :root {
       --ata-bg: #07080c;
@@ -1073,8 +1073,8 @@ function renderAtaturkExhibitionPage(user = null) {
 
   ${renderPlatformFooter()}
 
+  ${platformChromeScript()}
   <script>
-    ${platformChromeScript}
 
     const PHOTOS_DB = ${JSON.stringify(GALLERY_PHOTOS)};
 

@@ -9676,7 +9676,7 @@ function renderSettingsPage(user, query = {}) {
       }
 
       async function handleRestartBot() {
-        if (!confirm('BEM Sentara botunu VDS üzerinde yeniden başlatmak istediğinize emin misiniz?\n\nPM2 servisi botu 2-3 saniye içinde otomatik olarak yeniden başlatacaktır.')) return;
+        if (!confirm('BEM Sentara botunu VDS üzerinde yeniden başlatmak istediğinize emin misiniz?\\n\\nPM2 servisi botu 2-3 saniye içinde otomatik olarak yeniden başlatacaktır.')) return;
         var logEl = document.getElementById('botOpsLog');
         if (logEl) logEl.innerText = 'Yeniden başlatma komutu iletildi...';
         try {
@@ -10271,7 +10271,7 @@ function renderSettingsPage(user, query = {}) {
           });
           const data = await res.json();
           if (data.ok) {
-            alert('🏛️ RESMÎ DİLEKÇENİZ KAYDEDİLDİ!\n\nReferans Takip Kodu: ' + data.request.refNumber + '\n\nTalebiniz yetkili ve hukuk kuruluna intikal etmiştir.');
+            alert('🏛️ RESMÎ DİLEKÇENİZ KAYDEDİLDİ!\\n\\nReferans Takip Kodu: ' + data.request.refNumber + '\\n\\nTalebiniz yetkili ve hukuk kuruluna intikal etmiştir.');
             document.getElementById('legalRequestForm').reset();
             loadMyLegalRequests();
           } else {
