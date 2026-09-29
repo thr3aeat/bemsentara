@@ -573,12 +573,41 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             catSelect.value = catParam.toLowerCase();
           }
         }
+
         const pkgParam = params.get('package');
+        const withDiscordParam = params.get('withDiscord') === 'true';
+        const summaryParam = params.get('summary');
+        const priceParam = params.get('price');
+
         if (pkgParam) {
           const card = document.querySelector('[data-pkg-id="' + pkgParam + '"]');
           if (card) card.click();
         }
+
         onCategoryChanged();
+
+        const subjectEl = document.getElementById('ticket-subject');
+        const descEl = document.getElementById('ticket-description');
+        const budgetEl = document.getElementById('rek-budget');
+
+        if (pkgParam === 'custom' && summaryParam) {
+          const decodedSummary = decodeURIComponent(summaryParam);
+          if (subjectEl) subjectEl.value = 'Özel Reklam Paketi · ' + decodedSummary;
+          if (descEl && !descEl.value) {
+            descEl.value = 'Seçilen Özel Paket Bileşenleri:\n• ' + decodedSummary.replace(/ \+ /g, '\n• ');
+          }
+          if (budgetEl && priceParam) {
+            budgetEl.value = priceParam + ' TL (Tahmini Paket Tutarı)';
+          }
+        } else if (withDiscordParam && subjectEl && subjectEl.value) {
+          if (!subjectEl.value.includes('Discord')) {
+            subjectEl.value = subjectEl.value.replace(/\)$/, ' + Discord Duyurusu)');
+          }
+          if (descEl && !descEl.value) {
+            descEl.value = 'Seçilen Ek Hizmet: EkoYıldız Discord Topluluk Duyurusu dahil.';
+          }
+        }
+        updateCharCount(subjectEl, 'subject-count');
       });
 
       async function handleTicketFormSubmit(e) {

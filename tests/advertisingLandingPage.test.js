@@ -72,3 +72,29 @@ test('advertising landing page showcases verified partner growth case studies wi
   assert.match(html, /Haziran 2025/);
   assert.match(html, /vYT9LFfzHxc/);
 });
+
+test('advertising landing page provides dynamic Discord add-on excluding Shorts and showcases Custom Package Builder', () => {
+  const html = renderAdvertisingLandingPage(null);
+
+  // Shorts kartında Discord duyurusu kesinlikle bulunmamalı
+  assert.doesNotMatch(html, /id="addon-box-shorts"/);
+
+  // Standart, Mid-roll ve diğer video paketlerinde Discord duyurusu add-on bulunmalı
+  assert.match(html, /id="addon-box-standart"/);
+  assert.match(html, /id="addon-box-midroll"/);
+  assert.match(html, /id="addon-box-gold"/);
+
+  // Dinamik avantaj etiketleri
+  assert.match(html, /₺30 Avantaj/);
+  assert.match(html, /₺60 Avantaj/);
+  assert.match(html, /₺90 Avantaj/);
+
+  // Kendi Paketini Oluştur (YENİ / BETA)
+  assert.match(html, /Kendi Paketini Oluştur/);
+  assert.match(html, /YENİ/);
+  assert.match(html, /BETA/);
+  assert.match(html, /Paket Özeti/);
+  assert.match(html, /Tahmini Toplam/);
+  assert.match(html, /Paketimi Oluştur/);
+});
+
