@@ -7,6 +7,15 @@ data/store.json.tmp
 data/sessions.json
 data/last_restart_state.json
 data/ekoai_ticket_state.json
+data/history_tracker.json
+data/robloxland_*.json
+data/server_daily_analytics.json
+data/social_stats_cache.json
+data/youtube_milestones_cache.json
+data/domain_monitor_state.json
+data_runtime_backup/
+bot/status_state.json
+scratch/
 *askpass*
 *vds_exec*
 *temp*

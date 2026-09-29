@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 const logger = require('../../utils/logger');
 
@@ -8,7 +10,7 @@ let watcherTimer = null;
 
 /**
  * Uzak depoyu (origin/main) kontrol eder. Yeni bir git push varsa
- * kodu çeker (pull) ve botu yeniden başlatır.
+ * kodu çeker ve botu yeniden başlatır.
  */
 async function checkAndDeploy() {
   if (isDeploying) return;
@@ -27,19 +29,51 @@ async function checkAndDeploy() {
     if (localCommit && remoteCommit && localCommit !== remoteCommit) {
       isDeploying = true;
       logger.info(`[GitAutoDeploy] 🚀 Yeni git push algılandı! Local: ${localCommit.slice(0, 7)} ➔ Remote: ${remoteCommit.slice(0, 7)}`);
-      logger.info('[GitAutoDeploy] Kod güncelleniyor (git pull origin main)...');
+      logger.info('[GitAutoDeploy] Kod güncelleniyor (güvenli sync & backup)...');
 
-      const pullOutput = execSync('git pull origin main', { encoding: 'utf8', timeout: 30000 });
-      logger.success(`[GitAutoDeploy] Güncelleme tamamlandı:\n${pullOutput}`);
+      // 1. Çalışma zamanı verilerini korumak için geçici yedek al
+      const backupDir = path.join(process.cwd(), 'data_runtime_backup');
+      const dataDir = path.join(process.cwd(), 'data');
+      const statusFile = path.join(process.cwd(), 'bot', 'status_state.json');
 
-      // Eğer package.json değiştiyse hızlı npm install
-      if (pullOutput.includes('package.json')) {
-        logger.info('[GitAutoDeploy] Paket bağımlılıkları güncelleniyor (npm install)...');
-        try {
-          execSync('npm install --production --prefer-offline', { encoding: 'utf8', timeout: 60000 });
-        } catch (npmErr) {
-          logger.warn(`[GitAutoDeploy] npm install uyarısı: ${npmErr.message}`);
+      try {
+        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+        if (fs.existsSync(dataDir)) {
+          execSync(`cp -a "${dataDir}/"* "${backupDir}/" 2>/dev/null || true`);
         }
+        if (fs.existsSync(statusFile)) {
+          execSync(`cp -a "${statusFile}" "${backupDir}/status_state.json" 2>/dev/null || true`);
+        }
+      } catch (backupErr) {
+        logger.warn(`[GitAutoDeploy] Yedekleme uyarısı: ${backupErr.message}`);
+      }
+
+      // 2. Kodları origin/main seviyesine sıfırla (merge conflict oluşmasını engeller)
+      execSync('git fetch origin main', { encoding: 'utf8', timeout: 30000 });
+      const resetOutput = execSync('git reset --hard origin/main', { encoding: 'utf8', timeout: 30000 });
+      logger.success(`[GitAutoDeploy] Güncelleme tamamlandı:\n${resetOutput}`);
+
+      // 3. Çalışma zamanı verilerini geri yükle
+      try {
+        if (fs.existsSync(backupDir)) {
+          execSync(`cp -a "${backupDir}/"* "${dataDir}/" 2>/dev/null || true`);
+          if (fs.existsSync(path.join(backupDir, 'status_state.json'))) {
+            execSync(`cp -a "${path.join(backupDir, 'status_state.json')}" "${statusFile}" 2>/dev/null || true`);
+          }
+        }
+      } catch (restoreErr) {
+        logger.warn(`[GitAutoDeploy] Veri geri yükleme uyarısı: ${restoreErr.message}`);
+      }
+
+      // 4. Eğer package.json değiştiyse hızlı npm install
+      try {
+        const gitDiff = execSync(`git diff --name-only ${localCommit} origin/main`, { encoding: 'utf8', timeout: 10000 });
+        if (gitDiff.includes('package.json')) {
+          logger.info('[GitAutoDeploy] Paket bağımlılıkları güncelleniyor (npm install)...');
+          execSync('npm install --production --prefer-offline', { encoding: 'utf8', timeout: 60000 });
+        }
+      } catch (npmErr) {
+        logger.warn(`[GitAutoDeploy] npm install uyarısı: ${npmErr.message}`);
       }
 
       logger.success('[GitAutoDeploy] Sistem yeniden başlatılıyor (PM2 otomatik ayağa kaldıracak)...');
@@ -48,10 +82,11 @@ async function checkAndDeploy() {
       }, 1000);
     }
   } catch (err) {
-    // Sessizce yut veya warn bas (ağ kesintisi vb. durumlar botu çökertmesin)
     if (!err.message.includes('not a git repository')) {
       logger.warn(`[GitAutoDeploy] Kontrol uyarısı: ${err.message}`);
     }
+  } finally {
+    isDeploying = false;
   }
 }
 
