@@ -3036,12 +3036,22 @@ function renderAdvertisingLandingPage(user = null) {
     }
 
     function formatAiText(text) {
-      let t = escapeHtml(text);
-      t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      t = t.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      t = t.replace(/\n/g, '<br>');
-      t = t.replace(/(\/tickets\/new[^\s<]*)/g, '<a href="$1" class="quiet-link" style="text-decoration:underline;color:#a5b4fc;">$1 ↗</a>');
-      return t;
+      var t = escapeHtml(text);
+      var lines = t.split(String.fromCharCode(10));
+      var processed = lines.map(function(line) {
+        var boldParts = line.split('**');
+        var bOut = '';
+        for (var i = 0; i < boldParts.length; i++) {
+          bOut += (i % 2 === 1) ? '<strong>' + boldParts[i] + '</strong>' : boldParts[i];
+        }
+        var italicParts = bOut.split('*');
+        var iOut = '';
+        for (var j = 0; j < italicParts.length; j++) {
+          iOut += (j % 2 === 1) ? '<em>' + italicParts[j] + '</em>' : italicParts[j];
+        }
+        return iOut;
+      });
+      return processed.join('<br>');
     }
 
     async function sendQuestionToAI(question, source = 'inline') {
@@ -3170,8 +3180,11 @@ function renderAdvertisingLandingPage(user = null) {
     function escalateToHumanStaff() {
       let summary = 'EkoAI asistanından canlı yetkiliye aktarım talebi.';
       if (aiChatHistory.length > 0) {
-        const lastMsgs = aiChatHistory.slice(-4).map(m => (m.role === 'user' ? 'Kullanıcı: ' : 'EkoAI: ') + m.content).join(' \n');
-        summary = 'EkoAI Görüşme Özeti:\n' + lastMsgs;
+        const newlineChar = String.fromCharCode(10);
+        const lastMsgs = aiChatHistory.slice(-4).map(function(m) {
+          return (m.role === 'user' ? 'Kullanıcı: ' : 'EkoAI: ') + m.content;
+        }).join(' ' + newlineChar);
+        summary = 'EkoAI Görüşme Özeti:' + newlineChar + lastMsgs;
       }
       window.location.href = '/tickets/new?category=reklam&summary=' + encodeURIComponent(summary);
     }

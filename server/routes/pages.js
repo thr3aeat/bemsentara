@@ -198,7 +198,21 @@ router.get("/tickets", async (req, res) => {
     res.send(await renderTicketsPage(req.user));
   } catch (err) {
     console.error('[Pages] Ticket page render error:', err.message);
-    res.status(500).send(renderLegalPage('Destek merkezi yüklenemedi', '<p>Destek biletlerin yüklenirken bir sorun oluştu. Lütfen kısa süre sonra tekrar dene.</p>'));
+    const errorRecoveryHtml = `
+      <div style="max-width:640px;margin:3rem auto;padding:2.5rem;background:var(--card-bg);border:1px solid var(--border);border-radius:24px;text-align:center;">
+        <div style="font-size:3rem;margin-bottom:1rem;">🎫</div>
+        <h2 style="font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.75rem;">Destek Biletleri Geçici Olarak Yüklenemedi</h2>
+        <p style="color:var(--muted);font-size:0.95rem;line-height:1.6;margin-bottom:2rem;">
+          Veritabanı bağlantısı veya bilet listeleme servisi yanıt veremedi. Biletleriniz güvendedir ve Discord sunucumuz üzerinden aktiftir.
+        </p>
+        <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+          <button onclick="window.location.reload()" style="background:#6366f1;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:700;cursor:pointer;">🔄 Sayfayı Yenile</button>
+          <a href="/tickets/new" style="background:rgba(255,255,255,0.08);color:#fff;text-decoration:none;padding:10px 20px;border-radius:12px;font-weight:700;border:1px solid var(--border);">+ Yeni Bilet Aç</a>
+          <a href="https://discord.gg/rEu5gvRBdM" target="_blank" rel="noopener noreferrer" style="background:#5865f2;color:#fff;text-decoration:none;padding:10px 20px;border-radius:12px;font-weight:700;">💬 Discord Masası</a>
+        </div>
+      </div>
+    `;
+    res.status(500).send(renderLegalPage('Destek Talepleri Durumu', errorRecoveryHtml));
   }
 });
 

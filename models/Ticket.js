@@ -11,8 +11,30 @@ const Ticket = {
   },
 
   find(query) {
-    const results = tickets.find(query);
-    return Promise.resolve(results);
+    const results = tickets.find(query) || [];
+    let currentResults = Array.isArray(results) ? [...results] : [];
+    const p = Promise.resolve(currentResults);
+    p.sort = function(sortObj) {
+      if (sortObj && typeof sortObj === 'object') {
+        const [field, dir] = Object.entries(sortObj)[0] || ['createdAt', -1];
+        currentResults.sort((a, b) => {
+          const valA = a[field] ? new Date(a[field]).getTime() || a[field] : 0;
+          const valB = b[field] ? new Date(b[field]).getTime() || b[field] : 0;
+          return dir === -1 ? (valB > valA ? 1 : -1) : (valA > valB ? 1 : -1);
+        });
+      }
+      return p;
+    };
+    p.limit = function(n) {
+      if (typeof n === 'number' && n > 0) {
+        currentResults.length = Math.min(currentResults.length, n);
+      }
+      return p;
+    };
+    p.lean = function() {
+      return p;
+    };
+    return p;
   },
 
   countDocuments(query = {}) {

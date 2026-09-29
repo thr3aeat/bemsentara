@@ -11274,10 +11274,19 @@ function renderClosedFormPage(currentUser, formName = 'Bu Form', bannerUrl = '')
 }
 
 async function renderTicketsPage(user) {
-  const Ticket = require("./models/Ticket");
+  let Ticket;
+  try {
+    Ticket = require("../models/Ticket");
+  } catch (e) {
+    console.error("Ticket model require error:", e.message);
+  }
   let userTickets = [];
   try {
-    userTickets = await Ticket.find({ userId: user.discordId }).sort({ createdAt: -1 });
+    if (Ticket && typeof Ticket.find === 'function') {
+      const q = Ticket.find({ userId: user.discordId });
+      userTickets = await (q && typeof q.sort === 'function' ? q.sort({ createdAt: -1 }) : q);
+      if (!Array.isArray(userTickets)) userTickets = [];
+    }
   } catch (err) {
     console.error("renderTicketsPage load error:", err.message);
   }
