@@ -1541,7 +1541,7 @@ function initializeDiscordHandlers(client) {
                   }
                   if (ghostRole && !memberToReward.roles.cache.has(ghostRole.id)) {
                     await memberToReward.roles.add(ghostRole.id).catch(() => { });
-                    memberToReward.send('🎉 **Gizli Başarım Kazanıldı: Hayalet!**\nSeste en az 1 saat boyunca tamamen sessiz/susturulmuş kaldığınız için `👻 Hayalet` rolünü kazandınız!').catch(() => { });
+                    // Hayalet basarimi icin durduk yere DM gonderilmez
                   }
                 }
 

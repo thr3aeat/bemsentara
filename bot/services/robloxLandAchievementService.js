@@ -775,6 +775,9 @@ async function awardEligible(member, p, data, options = {}) {
       : [];
 
     for (const achievement of ACHIEVEMENTS) {
+      // Hayalet ve Sessiz Takipçi durduk yere asla tetiklenmez, verilmez ve bildirim atmaz
+      if (achievement.key === "ghost" || achievement.key === "silent_follower") continue;
+
       // 1. Durum Kontrolü: Zaten verildiyse atla
       if (userProgress.awarded[achievement.key]) continue;
 
@@ -910,7 +913,7 @@ async function trackValidMessage(message) {
   const wins = await awardEligible(message.member, p, data);
   for (const [targetId, targetP] of mentionedTargets) {
     const targetMember = message.guild.members.cache.get(targetId) || await message.guild.members.fetch(targetId).catch(() => null);
-    if (targetMember) await awardEligible(targetMember, targetP, data);
+    if (targetMember) await awardEligible(targetMember, targetP, data, { silent: true });
   }
 
   // Mevcut profil kartıyla uyumluluk
@@ -937,7 +940,7 @@ async function trackMessageDelete(message) {
   p.chat.quickDeletes += 1;
   delete data.messages[message.id];
   saveData(data);
-  await awardEligible(member, p, data);
+  await awardEligible(member, p, data, { silent: true });
 }
 
 async function trackMessageEdit(message) {
@@ -949,7 +952,7 @@ async function trackMessageEdit(message) {
   p.chat.edits += 1;
   tracked.edited = true;
   saveData(data);
-  await awardEligible(message.member, p, data);
+  await awardEligible(message.member, p, data, { silent: true });
 }
 
 async function trackVoiceState(oldState, newState) {
@@ -974,7 +977,7 @@ async function trackVoiceState(oldState, newState) {
   }
   data.users[member.id] = p;
   saveData(data);
-  await awardEligible(member, p, data);
+  await awardEligible(member, p, data, { silent: true });
 }
 
 async function tickVoice(client) {
@@ -1021,7 +1024,7 @@ async function tickVoice(client) {
     }
   }
   saveData(data);
-  for (const [member, p] of touched) await awardEligible(member, p, data);
+  for (const [member, p] of touched) await awardEligible(member, p, data, { silent: true });
 }
 
 let tenureCursor = 0;

@@ -2,7 +2,7 @@
   "users": {
     "test-user-award-1": {
       "awarded": {
-        "first_word": "2026-09-29T14:27:36.885Z"
+        "first_word": "2026-09-29T14:31:56.748Z"
       },
       "chat": {
         "messages": 1
@@ -5337,9 +5337,9 @@
     },
     "test-silent-member-1": {
       "awarded": {
-        "new_dev": "2026-09-29T14:27:36.903Z",
-        "settling": "2026-09-29T14:27:36.903Z",
-        "loyal_dev": "2026-09-29T14:27:36.903Z"
+        "new_dev": "2026-09-29T14:31:56.768Z",
+        "settling": "2026-09-29T14:31:56.768Z",
+        "loyal_dev": "2026-09-29T14:31:56.768Z"
       },
       "chat": {
         "messages": 0
