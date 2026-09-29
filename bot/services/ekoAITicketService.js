@@ -26,12 +26,16 @@ function loadState() {
       const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
       if (Array.isArray(data.escalations)) {
         for (const item of data.escalations) {
-          activeEscalations.set(item.ticketId, item);
+          if (item && item.ticketId) {
+            activeEscalations.set(item.ticketId, item);
+          }
         }
       }
       if (Array.isArray(data.interventions)) {
         for (const item of data.interventions) {
-          ticketInterventions.set(item.ticketId, item);
+          if (item && item.ticketId) {
+            ticketInterventions.set(item.ticketId, item);
+          }
         }
       }
     }
@@ -48,9 +52,17 @@ function saveState() {
     const dir = path.dirname(STATE_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
+    const interventionsList = [];
+    for (const [id, item] of ticketInterventions.entries()) {
+      interventionsList.push({
+        ticketId: id,
+        ...item
+      });
+    }
+
     const data = {
       escalations: Array.from(activeEscalations.values()),
-      interventions: Array.from(ticketInterventions.values()),
+      interventions: interventionsList,
       updatedAt: new Date().toISOString()
     };
     fs.writeFileSync(STATE_FILE, JSON.stringify(data, null, 2), 'utf8');
@@ -135,11 +147,18 @@ async function escalateToEkoTelegram(ticket, channel, client, userNote = '') {
     escalatedAt: new Date().toISOString()
   });
 
-  const intervention = ticketInterventions.get(ticketId) || { attempts: 0 };
+  const intervention = ticketInterventions.get(ticketId) || { ticketId, attempts: 0 };
+  intervention.ticketId = ticketId;
   intervention.stage = 'escalated';
   intervention.lastInterventionAt = new Date().toISOString();
   ticketInterventions.set(ticketId, intervention);
   saveState();
+
+  ticket.ekoaiIntervened = true;
+  ticket.ekoaiStage = 'escalated';
+  if (typeof ticket.save === 'function') {
+    await ticket.save().catch(() => {});
+  }
 
   const telegramHtml =
     `👑 <b>EKOai — Destek Bileti Yönetici Bildirimi</b>\n\n` +
@@ -352,15 +371,24 @@ async function processOpenTickets(client) {
       const createdAt = new Date(ticket.createdAt || now).getTime();
       const openMinutes = Math.floor((now - createdAt) / (60 * 1000));
 
-      const intervention = ticketInterventions.get(ticketId) || { stage: 'none', attempts: 0 };
+      const intervention = ticketInterventions.get(ticketId) || { ticketId, stage: 'none', attempts: 0 };
+      intervention.ticketId = ticketId;
 
       // En az 3 dakikadır açık olan biletlere müdahale edilir
       if (openMinutes < 3) continue;
 
-      // Zaten eskalasyon yapılmışsa tekrar otomatik spam yapma
-      if (intervention.stage === 'escalated') continue;
+      // Zaten eskalasyon yapılmışsa veya eskalasyon teklifi sunulmuşsa KESİNLİKLE tekrar mesaj atma (SPAM ÖNLEME)
+      if (intervention.stage === 'escalated' || intervention.stage === 'offered_escalation' || intervention.stage === 'interpreted') {
+        continue;
+      }
 
-      // Son müdahaleden bu yana en az 5 dakika geçmiş olmalı
+      // Herhangi bir otomatik müdahale 1 veya daha fazla kez yapıldıysa asla tekrar otomatik yazma
+      if ((intervention.attempts || 0) >= 1) continue;
+
+      // Bilet veri modelinde daha önce müdahale yapıldığı işaretliyse atla
+      if (ticket.ekoaiIntervened) continue;
+
+      // Son müdahaleden bu yana en az 5 dakika geçmiş olmalı (güvenlik tamponu)
       if (intervention.lastInterventionAt) {
         const lastMs = new Date(intervention.lastInterventionAt).getTime();
         if (now - lastMs < 5 * 60 * 1000) continue;
@@ -368,6 +396,39 @@ async function processOpenTickets(client) {
 
       const channel = await client.channels.fetch(ticket.channelId).catch(() => null);
       if (!channel || typeof channel.send !== 'function') continue;
+
+      // KANAL MESAJ KONTROLÜ (Son 15 mesaj): Bot daha önce bu kanalda EKOai mesajı veya butonu gönderdiyse kesinlikle tekrar atma
+      try {
+        if (typeof channel.messages?.fetch === 'function') {
+          const recentMessages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+          if (recentMessages) {
+            const msgList = typeof recentMessages.values === 'function' ? Array.from(recentMessages.values()) : Array.from(recentMessages);
+            const hasExistingEkoAIMsg = msgList.some(m => {
+              if (client.user?.id && m.author?.id !== client.user.id) return false;
+              const content = m.content || '';
+              const hasText = content.includes('EKOai') || content.includes('Yönetim Kurulu Başkanı') || content.includes('Destek Asistanı');
+              const hasComponents = (m.components || []).some(row =>
+                (row.components || []).some(c => (c.customId || '').startsWith('ekoai_'))
+              );
+              return hasText || hasComponents;
+            });
+
+            if (hasExistingEkoAIMsg) {
+              intervention.stage = 'offered_escalation';
+              intervention.attempts = Math.max(intervention.attempts || 0, 1);
+              ticketInterventions.set(ticketId, intervention);
+              saveState();
+              ticket.ekoaiIntervened = true;
+              if (typeof ticket.save === 'function') {
+                await ticket.save().catch(() => {});
+              }
+              continue;
+            }
+          }
+        }
+      } catch (e) {
+        // fetch hatası durumunda devam et
+      }
 
       logger.info(`[EKOai] Bilet #${ticketId} uzun süredir açık (${openMinutes} dk). Değerlendiriliyor...`);
 
@@ -380,6 +441,12 @@ async function processOpenTickets(client) {
         intervention.attempts = (intervention.attempts || 0) + 1;
         ticketInterventions.set(ticketId, intervention);
         saveState();
+
+        ticket.ekoaiIntervened = true;
+        ticket.ekoaiStage = 'interpreted';
+        if (typeof ticket.save === 'function') {
+          await ticket.save().catch(() => {});
+        }
 
         const solvePayload = {
           flags: ComponentsV2Factory.FLAGS,
@@ -398,12 +465,18 @@ async function processOpenTickets(client) {
         await channel.send(solvePayload).catch(() => {});
         logger.info(`[EKOai] Bilet #${ticketId} için kolay çözüm yorumu gönderildi.`);
       } else {
-        // Zor veya uzun süredir bekleyen bilet: Kullanıcıya başkana bağlama teklifi sun
+        // Zor veya uzun süredir bekleyen bilet: Kullanıcıya başkana bağlama teklifi sun (Yalnızca 1 kez sunulur)
         intervention.stage = 'offered_escalation';
         intervention.lastInterventionAt = new Date().toISOString();
         intervention.attempts = (intervention.attempts || 0) + 1;
         ticketInterventions.set(ticketId, intervention);
         saveState();
+
+        ticket.ekoaiIntervened = true;
+        ticket.ekoaiStage = 'offered_escalation';
+        if (typeof ticket.save === 'function') {
+          await ticket.save().catch(() => {});
+        }
 
         const subjectText = ticket.subject ? `**${ticket.subject}**` : 'belirttiğiniz konu';
         const escalatePayload = {
@@ -539,5 +612,9 @@ module.exports = {
   handleEkoTelegramBridge,
   handleTicketChannelMessage,
   handleButtonInteraction,
-  getLatestEscalatedTicket
+  getLatestEscalatedTicket,
+  ticketInterventions,
+  activeEscalations,
+  loadState,
+  saveState
 };

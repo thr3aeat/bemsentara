@@ -120,6 +120,45 @@ test("awardEligible bir kez kazanılan başarımı mükerrer olarak vermez ve DM
   assert.equal(dmSent.length, 1);
 });
 
+test("awardEligible silent modunda DM göndermez ve Hayalet/Sessiz Takipçi yanlışlıkla tetiklenmez", async () => {
+  const dmSent = [];
+  const mockMember = {
+    id: "test-silent-member-1",
+    guild: {
+      id: GUILD_ID,
+      roles: {
+        cache: new Map(),
+        create: async (opts) => ({ id: `role-${opts.name}`, name: opts.name })
+      }
+    },
+    roles: {
+      cache: new Map(),
+      add: async () => {}
+    },
+    send: async (msg) => { dmSent.push(msg); },
+    joinedTimestamp: Date.now() - 35 * 86400000 // 35 gün önce katılmış (Sadık Dev hak eder)
+  };
+
+  const p = {
+    awarded: {},
+    chat: { messages: 0 }, // 0 mesajı var ama Hayalet tetiklenmemeli
+    voice: {},
+    social: {},
+    streak: {}
+  };
+
+  // Arka plan taraması simülasyonu: silent: true
+  const won = await awardEligible(mockMember, p, null, { silent: true });
+
+  // Sadık Dev kazanılmış olmalı ama Hayalet veya Sessiz Takipçi KESİNLİKLE verilmemeli
+  assert.ok(won.includes("Sadık Dev"));
+  assert.equal(won.includes("Hayalet"), false, "Hayalet başarımı aktif üyelere/0 mesajlılara yanlışlıkla verilmemeli");
+  assert.equal(won.includes("Sessiz Takipçi"), false, "Sessiz Takipçi yanlışlıkla verilmemeli");
+
+  // silent: true olduğu için DM KESİNLİKLE gönderilmemeli
+  assert.equal(dmSent.length, 0, "Silent modda arka plan taraması asla DM göndermemeli");
+});
+
 test("getUserAchievements ve hasAchievement sorguları doğru çalışır", () => {
   const userId = "test-query-user-1";
   const p = _test.blankProgress(userId);

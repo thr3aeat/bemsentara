@@ -359,14 +359,14 @@ const ACHIEVEMENTS = [
     name: "Hayalet",
     color: "#F1C40F",
     description: "30 gündür sunucudasın ama tek bir mesaj bile yazmadın. Görünmezlik pelerinin çok havalı!",
-    test: (p, c) => (c.joinDays || 0) >= 30 && (p.chat?.messages || 0) === 0
+    test: () => false
   },
   {
     key: "silent_follower",
     name: "Sessiz Takipçi",
     color: "#F1C40F",
     description: "60 gündür buradasın ve 10'dan az mesaj attın. Gölgeden izlemeyi tercih eden gizemli üye!",
-    test: (p, c) => (c.joinDays || 0) >= 60 && (p.chat?.messages || 0) < 10
+    test: () => false
   },
 
   // ── Sosyal Başarımlar (9) ──
@@ -747,7 +747,7 @@ function buildAchievementDmMessage(wonAchievements) {
  * Kullanıcının mevcut durumunu inceleyip hak kazandığı başarımları tek seferlik verir.
  * Mutex kilidi sayesinde aynı kullanıcı için eşzamanlı çift tetiklenmeleri %100 önler.
  */
-async function awardEligible(member, p, data) {
+async function awardEligible(member, p, data, options = {}) {
   if (!member || member.guild?.id !== GUILD_ID || member.user?.bot) return [];
 
   const userId = member.id || member.user?.id;
@@ -823,9 +823,10 @@ async function awardEligible(member, p, data) {
       store.users[userId] = userProgress;
       saveData(store);
 
-      const v2Payload = buildAchievementComponentsV2Payload(won);
-      const dmText = buildAchievementDmMessage(won);
-      if (typeof member.send === "function") {
+      // Rutin arka plan taramalarında (silent mode) gece yarısı / durduk yere DM spamı ATILMAZ!
+      if (!options.silent && typeof member.send === "function") {
+        const v2Payload = buildAchievementComponentsV2Payload(won);
+        const dmText = buildAchievementDmMessage(won);
         if (v2Payload) {
           await member.send(v2Payload).catch(async () => {
             if (dmText) await member.send(dmText).catch(() => {});
@@ -1037,7 +1038,7 @@ async function scanTenure(client, batchSize = 5) {
   tenureCursor = (tenureCursor + batch.length) % members.length;
   for (const member of batch) {
     if (member.user.bot) continue;
-    await awardEligible(member, getProgress(data, member.id), data);
+    await awardEligible(member, getProgress(data, member.id), data, { silent: true });
   }
 }
 

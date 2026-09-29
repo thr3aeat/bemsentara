@@ -89,3 +89,115 @@ test('handleEkoTelegramBridge forwards directive from Eko to Discord ticket with
   assert.equal(channelMessage.components[0].type, 17);
   assert.equal(channelMessage.components[0].accent_color, undefined, 'Must be accent colorsuz');
 });
+
+test('processOpenTickets does not spam when ticket already offered escalation or intervened', async () => {
+  const Ticket = require('../models/Ticket');
+  const testTicketId = 'TK-ANTI-SPAM-001';
+  const channelId = 'ch-anti-spam-001';
+
+  // Ticket oluştur
+  const ticketDoc = new Ticket({
+    ticketId: testTicketId,
+    channelId,
+    status: 'open',
+    createdAt: new Date(Date.now() - 10 * 60 * 1000), // 10 dakika önce açılmış
+    subject: 'Reklam Talebi (YK Türk Asker Oyunu)',
+    category: 'reklam'
+  });
+  await ticketDoc.save();
+
+  // State'e daha önce teklif yapılmış olarak kaydet
+  ekoAITicketService.ticketInterventions.set(testTicketId, {
+    ticketId: testTicketId,
+    stage: 'offered_escalation',
+    attempts: 1,
+    lastInterventionAt: new Date(Date.now() - 6 * 60 * 1000).toISOString() // 6 dk önce (5 dk sınırını geçmiş)
+  });
+
+  let messageSentCount = 0;
+  const mockClient = {
+    isReady: () => true,
+    user: { id: 'bot-123' },
+    channels: {
+      fetch: async () => ({
+        id: channelId,
+        messages: {
+          fetch: async () => []
+        },
+        send: async () => {
+          messageSentCount++;
+          return { id: 'msg-spam' };
+        }
+      })
+    }
+  };
+
+  await ekoAITicketService.processOpenTickets(mockClient);
+
+  // Zaten offered_escalation aşamasında olduğu için KESİNLİKLE mesaj atılmamalı
+  assert.equal(messageSentCount, 0, 'Bot must not send duplicate spam when escalation is already offered');
+
+  // Şimdi stage'i sıfırlayalım ama kanala önceden EKOai mesajı atılmış yapalım
+  ekoAITicketService.ticketInterventions.delete(testTicketId);
+  ticketDoc.ekoaiIntervened = false;
+  await ticketDoc.save();
+
+  const mockClientWithExistingMsg = {
+    isReady: () => true,
+    user: { id: 'bot-123' },
+    channels: {
+      fetch: async () => ({
+        id: channelId,
+        messages: {
+          fetch: async () => [
+            {
+              author: { id: 'bot-123' },
+              content: '### 🤖 EKOai — Destek Asistanı\nTicketiniz uzun zamandır açık...',
+              components: []
+            }
+          ]
+        },
+        send: async () => {
+          messageSentCount++;
+          return { id: 'msg-spam-2' };
+        }
+      })
+    }
+  };
+
+  await ekoAITicketService.processOpenTickets(mockClientWithExistingMsg);
+
+  // Kanalda zaten EKOai mesajı olduğu için dedup mekanizması tetiklenmeli ve mesaj atılmamalı
+  assert.equal(messageSentCount, 0, 'Bot must not send duplicate message if channel already has an EKOai message');
+
+  // Temizlik
+  const { tickets } = require('../models/Store');
+  tickets.deleteOne({ ticketId: testTicketId });
+  ekoAITicketService.ticketInterventions.delete(testTicketId);
+});
+
+test('saveState and loadState correctly preserve ticketId in interventions', () => {
+  const tId = 'TK-PERSIST-999';
+  ekoAITicketService.ticketInterventions.set(tId, {
+    ticketId: tId,
+    stage: 'offered_escalation',
+    attempts: 1,
+    lastInterventionAt: new Date().toISOString()
+  });
+
+  ekoAITicketService.saveState();
+  ekoAITicketService.ticketInterventions.clear();
+
+  assert.equal(ekoAITicketService.ticketInterventions.has(tId), false);
+
+  ekoAITicketService.loadState();
+  assert.equal(ekoAITicketService.ticketInterventions.has(tId), true);
+  const loaded = ekoAITicketService.ticketInterventions.get(tId);
+  assert.equal(loaded.ticketId, tId);
+  assert.equal(loaded.stage, 'offered_escalation');
+
+  // Temizlik
+  ekoAITicketService.ticketInterventions.delete(tId);
+  ekoAITicketService.saveState();
+});
+

@@ -154,19 +154,201 @@ async function sendTelegramAlert(text) {
 let lastUpdateId = 0;
 let isPollingActive = false;
 
+async function buildServerContext(client) {
+  const context = {
+    // Bot sistem bilgileri
+    botUptimeSec: Math.floor(process.uptime()),
+    botRamMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+    nodeVersion: process.version,
+    // Guild bilgileri
+    totalGuilds: 0,
+    totalMembers: 0,
+    onlineMembers: 0,
+    voiceMembers: 0,
+    botCount: 0,
+    // Üye rol dağılımı
+    staffRoleCount: 0,
+    bannedMembersCount: 0,
+    // Kanal/aktivite
+    textChannelCount: 0,
+    voiceChannelCount: 0,
+    activeVoiceChannels: [],
+    // Chat aktivite
+    recentMessages10min: getRecentMessageCount(),
+    activityLevel: "Sakin",
+    // Ticket
+    openTickets: 0,
+    closedTickets24h: 0,
+    pendingTickets: 0,
+    // Staff
+    activeStaff: 0,
+    // Automod
+    activeAutomodIncidents: 0,
+    // İtiraz
+    pendingAppeals: 0,
+    totalAppealsToday: 0,
+    // Abuse
+    pendingAbuse: 0,
+    // TrustScore
+    avgTrustScore: null,
+    lowTrustCount: 0,
+    // Ekonomi
+    totalCoinsInCirculation: 0,
+    // Frog Level
+    avgLevel: null,
+    maxLevel: null,
+    // Son yetkili hareketleri
+    recentStaffActions: []
+  };
+
+  // ── Guild istatistikleri ─────────────────────────────────────────
+  try {
+    const MAIN_GUILD_ID = "1367646464804655104";
+    const guild = client.guilds.cache.get(MAIN_GUILD_ID) || client.guilds.cache.first();
+    if (guild) {
+      // Üye çekimi için fetch
+      const members = guild.members.cache;
+      context.totalGuilds = client.guilds.cache.size;
+      context.totalMembers = guild.memberCount || members.size;
+      context.botCount = members.filter(m => m.user.bot).size;
+
+      // Çevrimiçi üyeler (presence cache'den)
+      context.onlineMembers = members.filter(m => {
+        const s = m.presence?.status;
+        return s === "online" || s === "idle" || s === "dnd";
+      }).size;
+
+      // Voice üyeler
+      const voiceMembers = members.filter(m => m.voice.channel);
+      context.voiceMembers = voiceMembers.size;
+
+      // Aktif voice kanalları
+      const voiceMap = new Map();
+      voiceMembers.forEach(m => {
+        const ch = m.voice.channel;
+        if (ch) {
+          if (!voiceMap.has(ch.id)) voiceMap.set(ch.id, { name: ch.name, count: 0 });
+          voiceMap.get(ch.id).count++;
+        }
+      });
+      context.activeVoiceChannels = [...voiceMap.values()]
+        .filter(v => v.count > 0)
+        .map(v => `#${v.name} (${v.count} kişi)`);
+
+      // Kanal sayıları
+      context.textChannelCount = guild.channels.cache.filter(c => c.type === 0).size;
+      context.voiceChannelCount = guild.channels.cache.filter(c => c.type === 2).size;
+
+      // Staff rol sayısı (STAFF_ROLE_ID veya "yetkili" içeren roller)
+      const staffRoles = guild.roles.cache.filter(r =>
+        r.name.toLowerCase().includes("yetkili") ||
+        r.name.toLowerCase().includes("moderatör") ||
+        r.name.toLowerCase().includes("admin") ||
+        r.name.toLowerCase().includes("kurucu")
+      );
+      staffRoles.forEach(r => { context.staffRoleCount += r.members.size; });
+
+      // Aktivite seviyesi
+      const rm = context.recentMessages10min;
+      const vm = context.voiceMembers;
+      if (rm > 50 || vm > 10) context.activityLevel = "Çok Aktif 🔥";
+      else if (rm > 15 || vm > 3) context.activityLevel = "Orta Aktif ⚡";
+      else if (rm > 3 || vm > 0) context.activityLevel = "Düşük Aktif 🌙";
+      else context.activityLevel = "Sakin / Sessiz 😴";
+
+      // Son 5 audit log hareketi (ban/kick/timeout)
+      try {
+        const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: 22 /* MEMBER_BAN_ADD */ }).catch(() => null);
+        if (auditLogs) {
+          context.recentStaffActions = auditLogs.entries.map(entry =>
+            `${entry.executor?.tag || "Bilinmeyen"} → ${entry.target?.tag || entry.targetId} (Ban, ${new Date(entry.createdTimestamp).toLocaleTimeString("tr-TR")})`
+          );
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  // ── Ticket istatistikleri ────────────────────────────────────────
+  try {
+    const Ticket = require("../../models/Ticket");
+    const [openCount, closedCount, pendingCount] = await Promise.all([
+      Ticket.countDocuments({ status: "open" }).catch(() => 0),
+      Ticket.countDocuments({ status: "closed", updatedAt: { $gte: new Date(Date.now() - 86400000) } }).catch(() => 0),
+      Ticket.countDocuments({ status: "pending" }).catch(() => 0)
+    ]);
+    context.openTickets = openCount;
+    context.closedTickets24h = closedCount;
+    context.pendingTickets = pendingCount;
+  } catch (_) {}
+
+  // ── Staff istatistikleri ─────────────────────────────────────────
+  try {
+    const StaffProgress = require("../../models/StaffProgress");
+    context.activeStaff = await StaffProgress.countDocuments({ status: "active" }).catch(() => 0);
+  } catch (_) {}
+
+  // ── Automod incidents ────────────────────────────────────────────
+  try {
+    const { getAutomodIncident } = require("./profanityAutomodService");
+    // Mevcut fonksiyon tek ID ile çalışıyor; automodIncidents map'ini doğrudan erişemeyiz
+    // Yerine son 24 saat içindeki appeal sayısına bakıyoruz
+    const AutomodAppeal = require("../../models/AutomodAppeal");
+    const [pendingAppeals, todayAppeals] = await Promise.all([
+      AutomodAppeal.countDocuments({ status: "rejected_by_ai_pending_mod" }).catch(() => 0),
+      AutomodAppeal.countDocuments({ submittedAt: { $gte: new Date(Date.now() - 86400000) } }).catch(() => 0)
+    ]);
+    context.pendingAppeals = pendingAppeals;
+    context.totalAppealsToday = todayAppeals;
+  } catch (_) {}
+
+  // ── Abuse detector ───────────────────────────────────────────────
+  try {
+    const { nightModePendingBans } = require("./discordAbuseDetector");
+    context.pendingAbuse = nightModePendingBans ? nightModePendingBans.size : 0;
+  } catch (_) {}
+
+  // ── TrustScore istatistikleri ────────────────────────────────────
+  try {
+    const UserTrustScore = require("../../models/UserTrustScore");
+    const scores = await UserTrustScore.find({}, "score").lean().catch(() => []);
+    if (scores.length > 0) {
+      const avg = scores.reduce((sum, s) => sum + (s.score || 0), 0) / scores.length;
+      context.avgTrustScore = Math.round(avg);
+      context.lowTrustCount = scores.filter(s => (s.score || 0) < 40).length;
+    }
+  } catch (_) {}
+
+  // ── Ekonomi (toplam altın/coin) ──────────────────────────────────
+  try {
+    const Economy = require("../../models/Economy");
+    const agg = await Economy.aggregate([{ $group: { _id: null, total: { $sum: "$balance" } } }]).catch(() => []);
+    context.totalCoinsInCirculation = agg[0]?.total || 0;
+  } catch (_) {}
+
+  // ── Frog Level (seviye dağılımı) ─────────────────────────────────
+  try {
+    const FrogLevel = require("../../models/FrogLevel");
+    const levels = await FrogLevel.find({}, "level").lean().catch(() => []);
+    if (levels.length > 0) {
+      context.avgLevel = Math.round(levels.reduce((s, l) => s + (l.level || 0), 0) / levels.length);
+      context.maxLevel = Math.max(...levels.map(l => l.level || 0));
+    }
+  } catch (_) {}
+
+  return context;
+}
+
 async function handleTelegramMessage(client, message) {
   const text = message.text;
   const chatId = message.chat.id;
   
   if (!text) return;
   
-  // Eğer henüz cache edilmemişse ve ilk kez yazıyorsa veya token/id eşleşiyorsa
   if (!cachedChatId) {
     cachedChatId = chatId;
     console.log(`[Telegram] İlk chat ID önbelleğe alındı: ${cachedChatId}`);
   }
   
-  // Sadece yetkili chat ID'sine yanıt ver
   if (cachedChatId && String(chatId) !== String(cachedChatId)) {
     console.log(`[Telegram Chat] Yetkisiz chat ID yoksayıldı: ${chatId}`);
     return;
@@ -178,82 +360,93 @@ async function handleTelegramMessage(client, message) {
   try {
     const { handleEkoTelegramBridge } = require("./ekoAITicketService");
     const bridgeHandled = await handleEkoTelegramBridge(client, text, message);
-    if (bridgeHandled) {
-      return;
-    }
+    if (bridgeHandled) return;
   } catch (bridgeErr) {
     console.warn(`[Telegram Chat] EKOai köprü kontrol hatası:`, bridgeErr.message);
   }
   
   try {
-    // ── SUNUCU CONTEXT BİLGİSİ ──
-    const Ticket = require("../../models/Ticket");
-    const StaffProgress = require("../../models/StaffProgress");
-    const { nightModePendingBans } = require("./discordAbuseDetector");
-    
-    // 1. Voice Üyeleri
-    let activeVoiceUsers = 0;
-    try {
-      for (const guild of client.guilds.cache.values()) {
-        activeVoiceUsers += guild.members.cache.filter(m => m.voice.channel).size;
-      }
-    } catch (_) {}
-    
-    // 2. Açık Destek Biletleri
-    let openTicketsCount = 0;
-    try {
-      openTicketsCount = (await Ticket.find({ status: "open" })).length;
-    } catch (_) {}
-    
-    // 3. Aktif Yetkililer
-    let activeStaffCount = 0;
-    try {
-      activeStaffCount = (await StaffProgress.find({ status: "active" })).length;
-    } catch (_) {}
-    
-    // 4. Bekleyen Abuse / Sabotaj Şüpheleri
-    let pendingAbuseCount = 0;
-    try {
-      if (nightModePendingBans) {
-        pendingAbuseCount = nightModePendingBans.size;
-      }
-    } catch (_) {}
-    
-    // 5. Son 10 Dakikadaki Chat Aktifliği
-    const recentMsgs = getRecentMessageCount();
-    
-    let activityDesc = "Sakin / Düşük Aktiflik";
-    if (recentMsgs > 50 || activeVoiceUsers > 10) {
-      activityDesc = "Çok Aktif / Hararetli Sohbet Var";
-    } else if (recentMsgs > 10 || activeVoiceUsers > 3) {
-      activityDesc = "Orta Seviye Aktiflik";
-    }
-    
-    let abuseDesc = pendingAbuseCount > 0 
-      ? `🚨 DİKKAT: Sistemde şu anda aktif olarak tespit edilen ${pendingAbuseCount} şüpheli işlem / abuse bulunuyor!` 
-      : "✅ Sunucuda şu an herhangi bir abuse şüphesi veya kural ihlali bulunmuyor.";
+    // ── Kapsamlı sunucu bağlamını topla ──────────────────────────
+    const ctx = await buildServerContext(client);
 
-    const systemPrompt = `Sen Sentara sunucu yönetim yapay zeka asistanısın.
-Bu konuşma Telegram botu üzerinden sistem yöneticisi ile yapılmaktadır.
-Sana sunucunun güncel durumu, aktifliği ve abuse tespit raporları canlı olarak verilir. Bu bilgilere dayanarak yöneticinin sorularını detaylı, profesyonel ve doğru şekilde cevapla.
+    const uptimeHours = Math.floor(ctx.botUptimeSec / 3600);
+    const uptimeMins  = Math.floor((ctx.botUptimeSec % 3600) / 60);
+    const uptimeStr   = `${uptimeHours}s ${uptimeMins}dk`;
 
-GÜNCEL SUNUCU BİLGİLERİ:
-- Sunucu Aktiflik Durumu: ${activityDesc}
-- Sesteki Aktif Üye Sayısı: ${activeVoiceUsers}
-- Son 10 Dakikada Gönderilen Mesaj Sayısı: ${recentMsgs}
-- Açık Destek Biletleri (Tickets): ${openTicketsCount}
-- Aktif Yetkili Sayısı (Staff): ${activeStaffCount}
-- Abuse/Şüpheli İşlem Durumu: ${abuseDesc}
+    const abuseDesc = ctx.pendingAbuse > 0
+      ? `🚨 DİKKAT: ${ctx.pendingAbuse} aktif şüpheli işlem / abuse tespit edildi!`
+      : "✅ Şu an herhangi bir abuse şüphesi yok.";
+
+    const systemPrompt = `Sen EkoYıldız Discord Sunucusu ve Sentara Bot'un baş yönetim yapay zeka asistanısın (EKOai).
+Bu konuşma Telegram üzerinden yetkili sunucu sahibi "Eko" ile yapılmaktadır.
+Aşağıda sana sunucunun GERÇEK ZAMANLI, kapsamlı performans ve durum raporları verilmiştir.
+Bu verilere dayanarak yöneticinin her türlü sorusunu (performans, aktiflik, güvenlik, ekonomi, moderasyon, istatistik vb.) eksiksiz, profesyonel ve net şekilde yanıtla.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 BOT SİSTEM DURUMU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Uptime: ${uptimeStr}
+• RAM Kullanımı: ${ctx.botRamMB} MB
+• Node.js: ${ctx.nodeVersion}
+• Bağlı Sunucu Sayısı: ${ctx.totalGuilds}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👥 ÜYE & AKTİFLİK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Toplam Üye: ${ctx.totalMembers} (${ctx.botCount} bot)
+• Çevrimiçi (online/idle/dnd): ${ctx.onlineMembers}
+• Ses Kanalında: ${ctx.voiceMembers} üye
+• Son 10 Dk Mesaj: ${ctx.recentMessages10min}
+• Genel Aktiflik: ${ctx.activityLevel}
+${ctx.activeVoiceChannels.length > 0 ? `• Aktif Ses Kanalları: ${ctx.activeVoiceChannels.join(" | ")}` : "• Aktif Ses Kanalı Yok"}
+• Metin Kanalı: ${ctx.textChannelCount} | Ses Kanalı: ${ctx.voiceChannelCount}
+• Yetkili Rol Üyesi (Toplam): ${ctx.staffRoleCount}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎫 DESTEK & OPERASYON
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Açık Ticket: ${ctx.openTickets}
+• Bekleyen Ticket: ${ctx.pendingTickets}
+• Son 24s Kapatılan Ticket: ${ctx.closedTickets24h}
+• Aktif Staff Sayısı: ${ctx.activeStaff}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚖️ AUTOMOD & İTİRAZ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Bekleyen İtiraz (Yetkili Onayı): ${ctx.pendingAppeals}
+• Bugün Toplam İtiraz: ${ctx.totalAppealsToday}
+• Abuse/Şüpheli: ${abuseDesc}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️ GÜVENİLİRLİK & TOPLULUK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ortalama Trust Score: ${ctx.avgTrustScore !== null ? ctx.avgTrustScore + "/100" : "Veri yok"}
+• Düşük Trust Scoreli Üye (<40): ${ctx.lowTrustCount}
+• Ortalama Frog Level: ${ctx.avgLevel !== null ? ctx.avgLevel : "Veri yok"}
+• En Yüksek Frog Level: ${ctx.maxLevel !== null ? ctx.maxLevel : "Veri yok"}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 EKONOMİ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Dolaşımdaki Toplam Altın: ${ctx.totalCoinsInCirculation.toLocaleString("tr-TR")}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 SON YETKİLİ HAREKETLERİ (Ban)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${ctx.recentStaffActions.length > 0 ? ctx.recentStaffActions.join("\n") : "Son 5 ban hareketi yok."}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Kurallar:
-- Türkçe cevap ver.
-- Canlı istatistikleri ve durumu yöneticinin sorusuna uygun şekilde netçe paylaş.
-- Yöneticinin sorduğu sorulara göre sunucunun durumunu (insanlar sohbet ediyor mu, aktiflik var mı, abuse var mı vb.) yukarıdaki verilere dayanarak cevapla.`;
+- Türkçe yanıt ver, emoji kullan.
+- Yöneticinin sorusunu yukarıdaki gerçek zamanlı veriler doğrultusunda net ve detaylı yanıtla.
+- Eğer veri "Veri yok" veya 0 ise bunu dürüstçe belirt ama varsa yorumunu ekle.
+- İstenen konuya odaklan; tüm istatistikleri sayma, sadece sorulana odaklan.`;
 
     const { chatWithAI } = require("./aiService");
     const response = await chatWithAI([{ role: "user", content: text }], systemPrompt);
     
     await sendTelegramAlert(response);
+    console.log(`[Telegram Chat] EKOai yanıtı gönderildi.`);
   } catch (err) {
     console.error("[Telegram Chat] AI Hata:", err.message);
     await sendTelegramAlert(`❌ Yapay zeka yanıt verirken hata oluştu: ${err.message}`);
