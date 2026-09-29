@@ -176,6 +176,80 @@ test('processOpenTickets does not spam when ticket already offered escalation or
   ekoAITicketService.ticketInterventions.delete(testTicketId);
 });
 
+test('isEkoAIMessage and Components V2 dedup correctly detects nested components and cleans duplicates', async () => {
+  const v2Msg = {
+    author: { id: 'bot-123' },
+    content: '', // V2'de content boş olur
+    components: [
+      {
+        type: 17, // Container
+        components: [
+          {
+            type: 10, // TextDisplay
+            content: '### 🤖 EKOai — Destek Asistanı\nTicketiniz uzun zamandır açık...'
+          },
+          {
+            type: 1, // ActionRow
+            components: [
+              {
+                type: 2, // Button
+                customId: 'ekoai_connect_telegram_TK-TEST-V2',
+                label: "👑 Yönetim Kurulu Başkanı'na Bağla"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  assert.equal(ekoAITicketService.isEkoAIMessage(v2Msg, 'bot-123'), true);
+
+  // Duplicate silme testi
+  let deletedMsgCount = 0;
+  const oldMsg1 = { ...v2Msg, delete: async () => { deletedMsgCount++; } };
+  const oldMsg2 = { ...v2Msg, delete: async () => { deletedMsgCount++; } };
+  const latestMsg = { ...v2Msg, delete: async () => { deletedMsgCount++; } };
+
+  const testTicketId = 'TK-DEDUP-V2';
+  const channelId = 'chan-dedup-v2';
+  const Ticket = require('../models/Ticket');
+  const ticketDoc = new Ticket({
+    ticketId: testTicketId,
+    channelId,
+    status: 'open',
+    createdAt: new Date(Date.now() - 10 * 60 * 1000),
+    subject: 'Genel Yardım',
+    category: 'other'
+  });
+  await ticketDoc.save();
+
+  let sentCount = 0;
+  const mockClient = {
+    isReady: () => true,
+    user: { id: 'bot-123' },
+    channels: {
+      fetch: async () => ({
+        id: channelId,
+        messages: {
+          fetch: async () => [latestMsg, oldMsg1, oldMsg2] // En yeni ilk eleman
+        },
+        send: async () => { sentCount++; }
+      })
+    }
+  };
+
+  await ekoAITicketService.processOpenTickets(mockClient);
+
+  assert.equal(sentCount, 0, 'No new messages sent because duplicate V2 messages exist');
+  assert.equal(deletedMsgCount, 2, 'Two older duplicate messages should be deleted to prevent spam clutter');
+
+  // Temizlik
+  const { tickets } = require('../models/Store');
+  tickets.deleteOne({ ticketId: testTicketId });
+  ekoAITicketService.ticketInterventions.delete(testTicketId);
+});
+
 test('saveState and loadState correctly preserve ticketId in interventions', () => {
   const tId = 'TK-PERSIST-999';
   ekoAITicketService.ticketInterventions.set(tId, {
@@ -200,4 +274,6 @@ test('saveState and loadState correctly preserve ticketId in interventions', () 
   ekoAITicketService.ticketInterventions.delete(tId);
   ekoAITicketService.saveState();
 });
+
+
 

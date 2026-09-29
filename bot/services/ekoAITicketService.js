@@ -352,6 +352,59 @@ async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
 }
 
 /**
+/**
+ * Bir mesajın EKOai asistanına ait olup olmadığını tespit eder (V1 & V2 uyumlu).
+ */
+function isEkoAIMessage(m, clientUserId) {
+  if (!m) return false;
+  if (clientUserId && m.author?.id && m.author.id !== clientUserId) return false;
+
+  // 1. Content kontrolü
+  const content = m.content || '';
+  if (content.includes('EKOai') || content.includes('Yönetim Kurulu Başkanı') || content.includes('Destek Asistanı')) {
+    return true;
+  }
+
+  // 2. Embed kontrolü
+  if (Array.isArray(m.embeds)) {
+    for (const emb of m.embeds) {
+      const embStr = `${emb.title || ''} ${emb.description || ''}`;
+      if (embStr.includes('EKOai') || embStr.includes('Yönetim Kurulu Başkanı') || embStr.includes('Destek Asistanı')) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Components kontrolü (Derin özyinelemeli: Container, ActionRow, Button, TextDisplay)
+  const checkComponent = (comp) => {
+    if (!comp) return false;
+    const cid = comp.customId || comp.custom_id || '';
+    if (cid.startsWith('ekoai_')) return true;
+    if (typeof comp.content === 'string' && (comp.content.includes('EKOai') || comp.content.includes('Yönetim Kurulu Başkanı') || comp.content.includes('Destek Asistanı'))) {
+      return true;
+    }
+    if (Array.isArray(comp.components)) {
+      return comp.components.some(checkComponent);
+    }
+    return false;
+  };
+
+  if (Array.isArray(m.components) && m.components.some(checkComponent)) {
+    return true;
+  }
+
+  // 4. Raw JSON string kontrolü
+  try {
+    const raw = JSON.stringify(m);
+    if (raw.includes('ekoai_') || raw.includes('EKOai') || raw.includes('Yönetim Kurulu Başkanı') || raw.includes('Destek Asistanı')) {
+      return true;
+    }
+  } catch (_) {}
+
+  return false;
+}
+
+/**
  * Açık biletleri periyodik olarak tarayıp uzun süre açık kalanları değerlendirir.
  */
 async function processOpenTickets(client) {
@@ -397,31 +450,43 @@ async function processOpenTickets(client) {
       const channel = await client.channels.fetch(ticket.channelId).catch(() => null);
       if (!channel || typeof channel.send !== 'function') continue;
 
-      // KANAL MESAJ KONTROLÜ (Son 15 mesaj): Bot daha önce bu kanalda EKOai mesajı veya butonu gönderdiyse kesinlikle tekrar atma
+      // KANAL MESAJ KONTROLÜ (Son 50 mesaj): Bot daha önce bu kanalda EKOai mesajı veya butonu gönderdiyse kesinlikle tekrar atma
       try {
         if (typeof channel.messages?.fetch === 'function') {
-          const recentMessages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+          const recentMessages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
           if (recentMessages) {
             const msgList = typeof recentMessages.values === 'function' ? Array.from(recentMessages.values()) : Array.from(recentMessages);
-            const hasExistingEkoAIMsg = msgList.some(m => {
-              if (client.user?.id && m.author?.id !== client.user.id) return false;
-              const content = m.content || '';
-              const hasText = content.includes('EKOai') || content.includes('Yönetim Kurulu Başkanı') || content.includes('Destek Asistanı');
-              const hasComponents = (m.components || []).some(row =>
-                (row.components || []).some(c => (c.customId || '').startsWith('ekoai_'))
-              );
-              return hasText || hasComponents;
-            });
+            const ekoAIMessages = msgList.filter(m => isEkoAIMessage(m, client.user?.id));
 
-            if (hasExistingEkoAIMsg) {
+            if (ekoAIMessages.length > 0) {
+              // Eğer kanalda birden fazla duplicate EKOai mesajı birikmişse (spam olmuşsa), en güncel 1 tanesini bırakıp eskileri sil
+              if (ekoAIMessages.length > 1) {
+                const duplicatesToDelete = ekoAIMessages.slice(1);
+                for (const oldMsg of duplicatesToDelete) {
+                  if (typeof oldMsg.delete === 'function') {
+                    await oldMsg.delete().catch(() => {});
+                  }
+                }
+              }
+
               intervention.stage = 'offered_escalation';
               intervention.attempts = Math.max(intervention.attempts || 0, 1);
               ticketInterventions.set(ticketId, intervention);
               saveState();
               ticket.ekoaiIntervened = true;
+              ticket.ekoaiStage = 'offered_escalation';
               if (typeof ticket.save === 'function') {
                 await ticket.save().catch(() => {});
               }
+              try {
+                const { tickets } = require('../models/Store');
+                const stored = tickets.findOne({ ticketId });
+                if (stored) {
+                  stored.ekoaiIntervened = true;
+                  stored.ekoaiStage = 'offered_escalation';
+                  if (typeof stored.save === 'function') await stored.save();
+                }
+              } catch (_) {}
               continue;
             }
           }
@@ -447,6 +512,15 @@ async function processOpenTickets(client) {
         if (typeof ticket.save === 'function') {
           await ticket.save().catch(() => {});
         }
+        try {
+          const { tickets } = require('../models/Store');
+          const stored = tickets.findOne({ ticketId });
+          if (stored) {
+            stored.ekoaiIntervened = true;
+            stored.ekoaiStage = 'interpreted';
+            if (typeof stored.save === 'function') await stored.save();
+          }
+        } catch (_) {}
 
         const solvePayload = {
           flags: ComponentsV2Factory.FLAGS,
@@ -477,6 +551,15 @@ async function processOpenTickets(client) {
         if (typeof ticket.save === 'function') {
           await ticket.save().catch(() => {});
         }
+        try {
+          const { tickets } = require('../models/Store');
+          const stored = tickets.findOne({ ticketId });
+          if (stored) {
+            stored.ekoaiIntervened = true;
+            stored.ekoaiStage = 'offered_escalation';
+            if (typeof stored.save === 'function') await stored.save();
+          }
+        } catch (_) {}
 
         const subjectText = ticket.subject ? `**${ticket.subject}**` : 'belirttiğiniz konu';
         const escalatePayload = {
@@ -587,26 +670,27 @@ async function handleButtonInteraction(interaction) {
 }
 
 /**
- * Bilet izleme zamanlayıcısını başlatır (Her 2 dakikada bir kontrol)
+ * Bilet izleme zamanlayıcısını başlatır (Her 5 dakikada bir kontrol)
  */
 function startEkoAITicketMonitor(client) {
   if (monitorInterval) clearInterval(monitorInterval);
 
-  logger.info('[EKOai] 🤖 Destek biletleri AI ve Telegram Yönetim Köprüsü monitörü aktif (2 dk periyot).');
+  logger.info('[EKOai] 🤖 Destek biletleri AI ve Telegram Yönetim Köprüsü monitörü aktif (5 dk periyot).');
 
-  // İlk kontrolü 30 saniye sonra yap
+  // İlk kontrolü 60 saniye sonra yap
   setTimeout(() => {
     processOpenTickets(client).catch(() => {});
-  }, 30000);
+  }, 60000);
 
   monitorInterval = setInterval(() => {
     processOpenTickets(client).catch(() => {});
-  }, 2 * 60 * 1000);
+  }, 5 * 60 * 1000);
 }
 
 module.exports = {
   startEkoAITicketMonitor,
   processOpenTickets,
+  isEkoAIMessage,
   evaluateTicketWithAI,
   escalateToEkoTelegram,
   handleEkoTelegramBridge,
