@@ -421,11 +421,28 @@ async function processOpenTickets(client) {
       if (ticket.claimedBy) continue;
 
       const ticketId = ticket.ticketId;
-      const createdAt = new Date(ticket.createdAt || now).getTime();
-      const openMinutes = Math.floor((now - createdAt) / (60 * 1000));
-
       const intervention = ticketInterventions.get(ticketId) || { ticketId, stage: 'none', attempts: 0 };
       intervention.ticketId = ticketId;
+
+      // 0. Reklam biletleri ve sipariş masaları EKOai eskalasyon/destek asistanı döngüsünden KESİNLİKLE muaftır!
+      const isReklamTicket =
+        ticket.category === 'reklam_destek' ||
+        ticket.category === 'reklam' ||
+        (typeof ticket.subject === 'string' && /reklam/i.test(ticket.subject)) ||
+        (typeof ticket.ticketId === 'string' && (ticket.ticketId.startsWith('RBLX-') || ticket.ticketId.startsWith('REKLAM-')));
+
+      if (isReklamTicket) {
+        if (intervention.stage !== 'reklam_exempt') {
+          intervention.stage = 'reklam_exempt';
+          intervention.attempts = 1;
+          ticketInterventions.set(ticketId, intervention);
+          saveState();
+        }
+        continue;
+      }
+
+      const createdAt = new Date(ticket.createdAt || now).getTime();
+      const openMinutes = Math.floor((now - createdAt) / (60 * 1000));
 
       // En az 3 dakikadır açık olan biletlere müdahale edilir
       if (openMinutes < 3) continue;
