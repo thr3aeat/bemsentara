@@ -502,11 +502,165 @@ const formsStyles = `
     color: #fff;
   }
 
+  /* ── Wizard Progress & Steps ── */
+  .form-wizard-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--f-border);
+    border-radius: 18px;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .wizard-step-node {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    cursor: pointer;
+    min-width: 120px;
+    transition: opacity 0.2s;
+  }
+  .wizard-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--f-muted);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .wizard-step-node.is-active .wizard-circle {
+    background: var(--f-accent);
+    color: #0b0c16;
+    border-color: var(--f-accent);
+    box-shadow: 0 0 16px rgba(167, 139, 250, 0.4);
+  }
+  .wizard-step-node.is-completed .wizard-circle {
+    background: var(--f-success);
+    color: #06281a;
+    border-color: var(--f-success);
+  }
+  .wizard-step-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--f-muted);
+    white-space: nowrap;
+  }
+  .wizard-step-node.is-active .wizard-step-title {
+    color: #ffffff;
+    font-weight: 700;
+  }
+  .char-counter {
+    font-size: 0.74rem;
+    color: var(--f-muted);
+    text-align: right;
+    margin-top: 4px;
+    font-family: monospace;
+  }
+  .form-nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .btn-step-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    border: 1px solid var(--f-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    transition: all 0.2s;
+  }
+  .btn-step-nav:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+  .btn-step-nav.primary {
+    background: var(--f-accent);
+    color: #0b0c16;
+    border-color: var(--f-accent);
+  }
+  .btn-step-nav.primary:hover {
+    background: #c4b5fd;
+    box-shadow: 0 4px 18px rgba(167, 139, 250, 0.35);
+  }
+  .draft-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--f-success);
+    padding: 5px 12px;
+    background: rgba(52, 211, 153, 0.1);
+    border-radius: 999px;
+    border: 1px solid rgba(52, 211, 153, 0.25);
+  }
+  .summary-review-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--f-border);
+    border-radius: 18px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .summary-review-card h3 {
+    font-size: 1.1rem;
+    color: #ffffff;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.9rem;
+  }
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 8px;
+  }
+  .summary-item-label {
+    font-size: 0.78rem;
+    color: var(--f-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .summary-item-val {
+    color: #f1f5f9;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   @media(max-width:760px) {
     .forms-hero { grid-template-columns: 1fr; padding: 28px 20px; }
     .forms-meta { justify-content: flex-start; }
     .forms-submit-card { flex-direction: column; align-items: stretch; }
     .forms-submit-btn { width: 100%; }
+    .form-wizard-progress { flex-direction: column; align-items: flex-start; }
+    .wizard-step-node { width: 100%; }
+    .form-nav-row { flex-direction: column; }
+    .btn-step-nav { width: 100%; justify-content: center; }
   }
 `;
 
@@ -631,8 +785,12 @@ function renderField(definitionField) {
   const attributes = `id="${id}" name="${escapeHtml(definitionField.name)}" aria-describedby="${describedBy}" aria-invalid="false"${definitionField.required ? ' required' : ''}${definitionField.maxLength ? ` maxlength="${definitionField.maxLength}"` : ''}`;
 
   let control;
+  let counter = '';
   if (definitionField.type === 'textarea') {
     control = `<textarea ${attributes} placeholder="${escapeHtml(definitionField.placeholder)}"></textarea>`;
+    if (definitionField.maxLength) {
+      counter = `<div class="char-counter" id="${id}-counter">0 / ${definitionField.maxLength} karakter</div>`;
+    }
   } else if (definitionField.type === 'select') {
     control = `<select ${attributes}><option value="">Seçim yapınız…</option>${definitionField.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join('')}</select>`;
   } else {
@@ -644,6 +802,7 @@ function renderField(definitionField) {
       <label for="${id}">${escapeHtml(definitionField.label)} ${required}</label>
       ${description}
       ${control}
+      ${counter}
       <p id="${errorId}" class="field-error" aria-live="polite"></p>
     </div>
   `;
@@ -652,12 +811,63 @@ function renderField(definitionField) {
 function renderFormPage(user, definition, existingSubmission) {
   const sections = definition.sections || [];
   const fields = getFields(definition);
-  const sectionMarkup = sections.map((section, index) => `
-    <section class="form-section-card" data-form-section="${index + 1}">
-      <h2>${escapeHtml(section.title)}</h2>
-      ${section.fields.map(renderField).join('')}
-    </section>
-  `).join('');
+  const isMultiStep = sections.length > 1;
+
+  // Wizard Progress Çizelgesi
+  let progressHtml = '';
+  if (isMultiStep) {
+    progressHtml = `
+      <div class="form-wizard-progress" role="tablist" aria-label="Başvuru Adımları">
+        ${sections.map((section, idx) => `
+          <div class="wizard-step-node ${idx === 0 ? 'is-active' : ''}" id="step-node-${idx + 1}" onclick="window.goToFormStep(${idx + 1})" role="tab" tabindex="0">
+            <div class="wizard-circle">${idx + 1}</div>
+            <div class="wizard-step-title">${escapeHtml(section.stepTitle || section.title || `Adım ${idx + 1}`)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  const sectionMarkup = sections.map((section, index) => {
+    const isFirst = index === 0;
+    const isLast = index === sections.length - 1;
+
+    let navHtml = '';
+    if (isMultiStep) {
+      navHtml = `
+        <div class="form-nav-row">
+          ${!isFirst ? `<button type="button" class="btn-step-nav" onclick="window.stepFormNav(-1)">← Önceki Adım</button>` : `<div></div>`}
+          ${!isLast ? `<button type="button" class="btn-step-nav primary" onclick="window.stepFormNav(1)">Sonraki Adım: ${escapeHtml(sections[index + 1]?.stepTitle || 'İleri')} →</button>` : `<div></div>`}
+        </div>
+      `;
+    }
+
+    let summaryBox = '';
+    if (isLast && isMultiStep) {
+      summaryBox = `
+        <div class="summary-review-card" id="summary-review-box">
+          <h3>📋 Başvuru Özeti ve Son Kontrol</h3>
+          <p style="color:var(--f-muted);font-size:0.86rem;margin-bottom:14px;line-height:1.5;">
+            Lütfen yanıtlarınızı son kez kontrol ediniz. Dilerseniz yukarıdaki adımlara tıklayarak düzenleyebilirsiniz.
+          </p>
+          <div class="summary-list" id="summary-review-list"></div>
+        </div>
+      `;
+    }
+
+    return `
+      <section class="form-section-card" data-form-section="${index + 1}" style="${isMultiStep && !isFirst ? 'display:none;' : ''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <h2 style="margin:0;">${escapeHtml(section.title)}</h2>
+          ${isMultiStep ? `<span style="font-size:0.8rem;color:var(--f-muted);font-weight:600;">Adım ${index + 1} / ${sections.length}</span>` : ''}
+        </div>
+        ${section.description ? `<p style="color:var(--f-muted);font-size:0.9rem;margin-bottom:20px;line-height:1.55;">${escapeHtml(section.description)}</p>` : ''}
+        ${section.fields.map(renderField).join('')}
+        ${summaryBox}
+        ${navHtml}
+      </section>
+    `;
+  }).join('');
 
   const existingNotice = existingSubmission ? `
     <div style="padding:16px 20px;border-radius:14px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);color:#fde68a;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
@@ -678,18 +888,20 @@ function renderFormPage(user, definition, existingSubmission) {
           <h1 class="form-detail-title">${escapeHtml(definition.title)}</h1>
           <p class="form-detail-summary">${escapeHtml(definition.description)}</p>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span class="draft-pill" id="draft-status-tag" style="display:none;">💾 Taslak Kaydedildi</span>
           <span class="forms-pill-tag">⏱️ Yaklaşık ${definition.estimatedMinutes} dakika</span>
           <span class="forms-pill-tag">🛡️ Gizli & Güvenli İnceleme</span>
         </div>
       </header>
 
       ${existingNotice}
+      ${progressHtml}
 
       <form class="forms-form" data-forms-form data-form-slug="${escapeHtml(definition.slug)}" novalidate>
         ${sectionMarkup}
         
-        <div class="forms-submit-card">
+        <div class="forms-submit-card" id="forms-submit-card" style="${isMultiStep ? 'display:none;' : ''}">
           <p style="margin:0;color:var(--f-muted);font-size:0.88rem;line-height:1.5;">
             Gönderdiğiniz bilgiler doğrudan yetkili kurulu tarafından incelenir ve KVKK ilkeleri uyarınca korunur.
           </p>
@@ -700,20 +912,28 @@ function renderFormPage(user, definition, existingSubmission) {
         <div data-form-live aria-live="polite" style="margin-top:12px;text-align:right;color:var(--f-accent);font-weight:600;font-size:0.9rem;"></div>
       </form>
     </article>
-    <script>${renderFormScript(fields)}</script>
+    <script>${renderFormScript(fields, definition.slug, sections)}</script>
   `;
 
   return renderFormsDocument({ user, activePath: '/forms', title: definition.title, body });
 }
 
-function renderFormScript(fields) {
-  const schema = JSON.stringify(fields.map((item) => ({ name: item.name, required: item.required, type: item.type })));
+function renderFormScript(fields, slug = '', sections = []) {
+  const schema = JSON.stringify(fields.map((item) => ({ name: item.name, label: item.label, required: item.required, type: item.type, maxLength: item.maxLength })));
+  const totalSteps = sections.length || 1;
+
   return `(function(){
     const form = document.querySelector('[data-forms-form]');
     if (!form) return;
     const fields = ${schema};
+    const slug = "${slug}";
+    const totalSteps = ${totalSteps};
+    let currentStep = 1;
     const live = form.querySelector('[data-form-live]');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const submitCard = document.getElementById('forms-submit-card');
+    const draftStatus = document.getElementById('draft-status-tag');
+    const draftKey = 'ekoyildiz_draft_' + slug;
 
     const setError = (input, message) => {
       const error = document.getElementById(input.id + '-error');
@@ -721,15 +941,151 @@ function renderFormScript(fields) {
       if (error) error.textContent = message || '';
     };
 
-    // Dinamik input odak ve hata temizleme
-    form.querySelectorAll('input, textarea, select').forEach(el => {
-      el.addEventListener('input', () => {
-        if (el.getAttribute('aria-invalid') === 'true') {
-          setError(el, '');
+    // Karakter sayaçları
+    function updateCounter(input, max) {
+      if (!max) return;
+      const counter = document.getElementById(input.id + '-counter');
+      if (counter) {
+        const len = (input.value || '').length;
+        counter.textContent = len + ' / ' + max + ' karakter';
+        counter.style.color = len >= max ? '#fb7185' : 'var(--f-muted)';
+      }
+    }
+
+    // Taslak Kaydetme (localStorage)
+    function saveDraft() {
+      if (!slug) return;
+      try {
+        const data = {};
+        fields.forEach(f => {
+          const el = form.elements.namedItem(f.name);
+          if (el) data[f.name] = el.value;
+        });
+        localStorage.setItem(draftKey, JSON.stringify(data));
+        if (draftStatus) {
+          draftStatus.style.display = 'inline-flex';
+          draftStatus.textContent = '💾 Taslak Kaydedildi';
         }
+      } catch(_) {}
+    }
+
+    // Taslak Geri Yükleme
+    function loadDraft() {
+      if (!slug) return;
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (raw) {
+          const data = JSON.parse(raw);
+          fields.forEach(f => {
+            const el = form.elements.namedItem(f.name);
+            if (el && data[f.name] !== undefined) {
+              el.value = data[f.name];
+              if (f.type === 'textarea' && f.maxLength) updateCounter(el, f.maxLength);
+            }
+          });
+          if (draftStatus) {
+            draftStatus.style.display = 'inline-flex';
+            draftStatus.textContent = '💾 Kaydedilmiş Taslak Yüklendi';
+          }
+        }
+      } catch(_) {}
+    }
+
+    // Input dinleyicileri
+    form.querySelectorAll('input, textarea, select').forEach(el => {
+      const fSpec = fields.find(f => f.name === el.name);
+      if (fSpec && fSpec.type === 'textarea' && fSpec.maxLength) {
+        updateCounter(el, fSpec.maxLength);
+      }
+      el.addEventListener('input', () => {
+        if (el.getAttribute('aria-invalid') === 'true') setError(el, '');
+        if (fSpec && fSpec.type === 'textarea' && fSpec.maxLength) updateCounter(el, fSpec.maxLength);
+        saveDraft();
       });
+      el.addEventListener('change', saveDraft);
     });
 
+    // Özet Tablosu Doldurma
+    function populateSummary() {
+      const list = document.getElementById('summary-review-list');
+      if (!list) return;
+      list.innerHTML = '';
+      fields.forEach(f => {
+        const el = form.elements.namedItem(f.name);
+        const val = el ? (el.value || '').trim() : '';
+        if (val) {
+          const item = document.createElement('div');
+          item.className = 'summary-item';
+          item.innerHTML = '<span class="summary-item-label">' + f.label + '</span>' +
+                           '<span class="summary-item-val">' + (val.length > 250 ? val.substring(0, 250) + '…' : val) + '</span>';
+          list.appendChild(item);
+        }
+      });
+    }
+
+    // Adım Değiştirme
+    window.goToFormStep = function(targetStep) {
+      if (targetStep < 1 || targetStep > totalSteps) return;
+      if (targetStep > currentStep) {
+        // İleri giderken geçerli adımı doğrula
+        if (!validateStep(currentStep)) return;
+      }
+
+      currentStep = targetStep;
+      document.querySelectorAll('[data-form-section]').forEach(s => {
+        const sNum = parseInt(s.getAttribute('data-form-section'), 10);
+        s.style.display = (sNum === currentStep) ? 'block' : 'none';
+      });
+
+      document.querySelectorAll('.wizard-step-node').forEach((node, idx) => {
+        const stepNum = idx + 1;
+        node.classList.toggle('is-active', stepNum === currentStep);
+        node.classList.toggle('is-completed', stepNum < currentStep);
+      });
+
+      if (submitCard) {
+        submitCard.style.display = (currentStep === totalSteps) ? 'flex' : 'none';
+      }
+
+      if (currentStep === totalSteps) {
+        populateSummary();
+      }
+
+      window.scrollTo({ top: form.offsetTop - 80, behavior: 'smooth' });
+    };
+
+    window.stepFormNav = function(delta) {
+      window.goToFormStep(currentStep + delta);
+    };
+
+    function validateStep(stepNum) {
+      const sec = document.querySelector('[data-form-section="' + stepNum + '"]');
+      if (!sec) return true;
+      let valid = true;
+      let first = null;
+
+      sec.querySelectorAll('input, textarea, select').forEach(input => {
+        const spec = fields.find(f => f.name === input.name);
+        if (spec && spec.required) {
+          const val = String(input.value || '').trim();
+          if (!val) {
+            setError(input, 'Bu alanı doldurman gerekiyor.');
+            valid = false;
+            if (!first) first = input;
+          }
+        }
+      });
+
+      if (!valid && first) {
+        first.focus();
+        if (live) live.textContent = 'Lütfen bu adımdaki zorunlu alanları doldurunuz.';
+      } else if (live) {
+        live.textContent = '';
+      }
+      return valid;
+    }
+
+    // Form Gönderim
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       let first = null;
@@ -739,7 +1095,7 @@ function renderFormScript(fields) {
         const input = form.elements.namedItem(spec.name);
         if (!input) continue;
         const value = String(input.value || '').trim();
-        const message = spec.required && !value ? 'Bu alanı doldurmanız gerekiyor.' : '';
+        const message = spec.required && !value ? 'Bu alanı doldurman gerekiyor.' : '';
         setError(input, message);
         if (message) {
           valid = false;
@@ -748,16 +1104,24 @@ function renderFormScript(fields) {
       }
 
       if (!valid) {
-        if (first) first.focus();
-        if (live) live.textContent = 'Lütfen işaretli zorunlu alanları kontrol ediniz.';
+        if (first) {
+          // Hatalı alanın bulunduğu adıma geç
+          const sec = first.closest('[data-form-section]');
+          if (sec) {
+            const sNum = parseInt(sec.getAttribute('data-form-section'), 10);
+            window.goToFormStep(sNum);
+          }
+          first.focus();
+        }
+        if (live) live.textContent = 'Lütfen tüm adımlardaki zorunlu alanları kontrol ediniz.';
         return;
       }
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳ Gönderiliyor…</span>';
+        submitBtn.innerHTML = '<span>⏳ Başvuru Gönderiliyor…</span>';
       }
-      if (live) live.textContent = 'Başvurunuz şifrelenip iletiliyor…';
+      if (live) live.textContent = 'Başvurunuz şifrelenip yetkili kuruluna iletiliyor…';
 
       const payload = Object.fromEntries(new FormData(form).entries());
 

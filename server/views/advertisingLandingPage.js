@@ -97,6 +97,9 @@ function renderAdvertisingLandingPage(user = null) {
                 <path d="M6 3.5L10.5 8 6 12.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </a>
+            <button type="button" class="btn-direct-pay" onclick="openPaymentModal('${pkg.id}', '${pkg.title.replace(/'/g, "\\'")}', ${pkg.basePrice})">
+              <span>💳 Ödeme Seçenekleri (Papara / İtemSatış)</span>
+            </button>
           </div>
         </div>
       </article>
@@ -121,6 +124,51 @@ function renderAdvertisingLandingPage(user = null) {
       </summary>
       <p class="faq-answer">${answer}</p>
     </details>
+  `).join('');
+
+  // Teşekkürler Bölümü Verisi (Data-driven Credits - Components V2)
+  const CREDITS_DATA = [
+    {
+      id: 'yusuf',
+      name: 'Yusuf',
+      role: 'Topluluk & Proje Katkısı',
+      badge: 'Özel Destekçi',
+      description: 'Projenin kuruluşundan bugüne kadar sağladığı vizyon, yapıcı geri bildirimler ve topluluk koordinasyonundaki emekleri için içtenlikle teşekkür ederiz.',
+      avatarText: 'Y',
+      avatarGradient: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+      highlights: ['Vizyon & Strateji', 'Topluluk Koordinasyonu', 'Kesintisiz Destek']
+    },
+    {
+      id: 'yk_ordusu',
+      name: 'YK Ordusu',
+      role: 'Topluluk & Dayanışma Gücü',
+      badge: 'Onur Topluluğu',
+      description: 'Her yayında, etkinlikte ve platformun büyüme adımlarında gösterdikleri sarsılmaz birliktelik, yüksek enerji ve samimi topluluk ruhu için minnettarız.',
+      avatarText: 'YK',
+      avatarGradient: 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)',
+      highlights: ['Sadık Dayanışma', 'Pozitif Topluluk Ruhu', 'Birlik ve Beraberlik']
+    }
+  ];
+
+  const creditsCardsHtml = CREDITS_DATA.map(c => `
+    <div class="credit-card" id="credit-${c.id}">
+      <div class="credit-card-head">
+        <div class="credit-avatar" style="background:${c.avatarGradient};">
+          <span>${c.avatarText}</span>
+        </div>
+        <div class="credit-info">
+          <div class="credit-name-row">
+            <h3 class="credit-name">${c.name}</h3>
+            <span class="credit-badge">${c.badge}</span>
+          </div>
+          <span class="credit-role">${c.role}</span>
+        </div>
+      </div>
+      <p class="credit-desc">${c.description}</p>
+      <div class="credit-perks">
+        ${c.highlights.map(h => `<span class="credit-pill">${h}</span>`).join('')}
+      </div>
+    </div>
   `).join('');
 
   return `<!doctype html>
@@ -1310,6 +1358,585 @@ function renderAdvertisingLandingPage(user = null) {
       0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
       30% { transform: translateY(-4px); opacity: 1; }
     }
+
+    /* Atatürk Sayfası Topbar Link */
+    .special-ataturk-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #fca5a5 !important;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.22);
+      transition: all var(--transition);
+      font-size: 0.84rem;
+    }
+    .special-ataturk-link:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.45);
+      transform: translateY(-1px);
+      color: #fff !important;
+    }
+
+    /* Paket Kartlarında Doğrudan Ödeme Seçenek Butonu */
+    .btn-direct-pay {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-direct-pay:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: var(--border-active);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Teşekkürler Bölümü (Components V2) */
+    .credits-section {
+      padding: 72px 0;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .credits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+    .credit-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: border-color var(--transition), transform var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .credit-card:hover {
+      border-color: var(--border-active);
+      transform: translateY(-2px);
+    }
+    .credit-card-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .credit-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+    .credit-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .credit-name-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .credit-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .credit-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c4b5fd;
+    }
+    .credit-role {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .credit-desc {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .credit-perks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .credit-pill {
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-tertiary);
+    }
+
+    /* Checkout & Payment Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .payment-modal-card {
+      width: min(580px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #0f1118;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px) scale(0.97); }
+      to { transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .modal-kicker {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a5b4fc;
+      margin-bottom: 4px;
+    }
+    .modal-header h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .modal-pkg-summary {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+    }
+    .modal-pkg-summary .summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+    .modal-pkg-summary .summary-price {
+      color: #a5b4fc;
+    }
+    .modal-pkg-summary .summary-subnote {
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+    .payment-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 520px) {
+      .payment-cards-grid { grid-template-columns: 1fr; }
+    }
+    .pay-method-card {
+      background: var(--bg-surface-elevated);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      user-select: none;
+      outline: none;
+    }
+    .pay-method-card:hover {
+      border-color: var(--border-active);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .pay-method-card:focus-visible {
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+    }
+    .pay-method-card.is-selected {
+      border-color: #6366f1;
+      background: rgba(99, 102, 241, 0.08);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.18);
+    }
+    .pay-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .pay-card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pay-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .papara-icon { background: #9333ea; }
+    .itemsatis-icon { background: #2563eb; }
+    .fee-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .fee-badge.zero-fee {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+    .fee-badge.fee-added {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+    .pay-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin: 0;
+    }
+    .pay-perks {
+      list-style: none;
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0;
+      margin: 0;
+    }
+    .pay-details-block {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .papara-account-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(147, 51, 234, 0.08);
+      border: 1px solid rgba(147, 51, 234, 0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    .account-meta { display: flex; flex-direction: column; gap: 2px; }
+    .account-meta .acc-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+    .account-meta .acc-number { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.08em; color: #fff; font-family: monospace; }
+    .btn-copy-acc {
+      background: #9333ea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition);
+    }
+    .btn-copy-acc:hover { background: #a855f7; transform: translateY(-1px); }
+    .copy-svg { width: 14px; height: 14px; }
+    .copy-toast {
+      font-size: 0.8rem;
+      color: #34d399;
+      font-weight: 600;
+      padding: 4px 8px;
+      text-align: center;
+    }
+    .upload-proof-box { display: flex; flex-direction: column; gap: 6px; }
+    .proof-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+    .proof-input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .proof-input:focus { border-color: #9333ea; }
+    .proof-hint { font-size: 0.74rem; color: var(--text-tertiary); }
+    .itemsatis-trust-callout {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      border-radius: 10px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: #bfdbfe;
+    }
+    .shield-svg { width: 22px; height: 22px; color: #60a5fa; flex-shrink: 0; margin-top: 1px; }
+    .price-breakdown-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .price-breakdown-card .bd-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+    .price-breakdown-card .bd-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 0;
+    }
+    .price-breakdown-card .total-row {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 8px;
+    }
+    .btn-cancel {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-cancel:hover { background: rgba(255, 255, 255, 0.04); color: #fff; }
+    .btn-checkout-confirm {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all var(--transition);
+    }
+    .btn-checkout-confirm:hover:not(:disabled) {
+      background: #4f46e5;
+      transform: translateY(-1px);
+    }
+    .btn-checkout-confirm:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .btn-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Redesigned Chat UI (Intercom Style) */
+    .chat-date-separator {
+      text-align: center;
+      position: relative;
+      margin: 12px 0 6px;
+    }
+    .chat-date-separator::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+    .chat-date-separator span {
+      position: relative;
+      background: var(--bg-surface);
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+    }
+    .ekoai-msg {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 88%;
+      animation: fadeInMsg 0.2s ease;
+    }
+    @keyframes fadeInMsg { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .ekoai-msg.ai { align-self: flex-start; }
+    .ekoai-msg.user { align-self: flex-end; }
+    .ekoai-author-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      color: var(--text-tertiary);
+      padding: 0 4px;
+    }
+    .ekoai-msg.user .ekoai-author-row { justify-content: flex-end; }
+    .ekoai-sender-name { font-weight: 700; color: var(--text-secondary); }
+    .ekoai-role-badge {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+      font-weight: 600;
+    }
+    .ekoai-msg-time { font-size: 0.68rem; color: var(--text-tertiary); }
+    .ekoai-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .ekoai-msg.ai .ekoai-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-medium);
+      color: #f1f5f9;
+      border-bottom-left-radius: 4px;
+    }
+    .ekoai-msg.user .ekoai-bubble {
+      background: #6366f1;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+    .ekoai-msg-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      padding-left: 4px;
+    }
+    .ekoai-escalate-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .ekoai-escalate-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .ekoai-keyboard-hint {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      padding: 4px 8px 0;
+    }
   </style>
 </head>
 <body>
@@ -1322,6 +1949,10 @@ function renderAdvertisingLandingPage(user = null) {
       <span class="brand-sub">Partner Studio</span>
     </a>
     <div class="top-actions">
+      <a class="special-ataturk-link" href="/ataturk">
+        <span aria-hidden="true">🇹🇷</span>
+        <span>Atatürk Sergisi</span>
+      </a>
       ${accountLink}
       <a class="btn-top-cta" href="/tickets/new?category=reklam">Reklam talebi oluştur</a>
     </div>
@@ -1856,6 +2487,21 @@ function renderAdvertisingLandingPage(user = null) {
       </div>
     </section>
 
+    <!-- TEŞEKKÜRLER — COMPONENTS V2 -->
+    <section class="credits-section shell" id="tesekkurler">
+      <div class="section-head" style="text-align:center;max-width:720px;margin:0 auto 40px;">
+        <span class="section-kicker">Gönülden Teşekkür</span>
+        <h2 class="section-title">Projeye katkıları ve destekleri için teşekkür ederiz.</h2>
+        <p class="section-desc">
+          EkoYıldız platformunun büyümesinde, topluluk ruhunun korunmasında ve yolculuğumuzun her evresinde emeği geçen yol arkadaşlarımıza en içten şükranlarımızla.
+        </p>
+      </div>
+
+      <div class="credits-grid">
+        ${creditsCardsHtml}
+      </div>
+    </section>
+
     <!-- SSS -->
     <section class="section-wrap shell">
       <div class="faq-layout">
@@ -1872,18 +2518,18 @@ function renderAdvertisingLandingPage(user = null) {
       </div>
     </section>
 
-    <!-- EKOai Canlı Reklam ve Sponsorluk Danışmanı -->
+    <!-- EkoAI — Canlı Reklam ve Destek Asistanı -->
     <section class="ekoai-section shell" id="ekoai-danisman">
       <div class="ekoai-card">
         <div class="ekoai-card-glow"></div>
         <div class="ekoai-header">
           <div class="ekoai-badge">
             <span class="pulse-dot"></span>
-            <span>7/24 Yapay Zeka Danışmanı</span>
+            <span>EkoAI · AI Destek Asistanı</span>
           </div>
           <h2 class="section-title" style="margin-bottom:10px;">EKOai Reklam Danışmanına Sorun</h2>
           <p class="section-desc">
-            Paket kapsamları, Discord duyurusu entegrasyonu, İttifak kampları kuralları veya fiyatlandırma hakkında aklınıza takılanları anında sorun.
+            Paket kapsamları, Discord duyurusu entegrasyonu, İtemSatış / Papara ödeme yöntemleri veya İttifak kampları kuralları hakkında sorularınızı anında yöneltebilirsiniz.
           </p>
         </div>
 
@@ -1891,29 +2537,41 @@ function renderAdvertisingLandingPage(user = null) {
           <span class="chips-label">Örnek Hızlı Sorular:</span>
           <div class="ekoai-chips">
             <button type="button" class="ekoai-chip" onclick="askEkoAI('Shorts paketinde Discord duyurusu var mı?')">💡 Shorts paketinde Discord duyurusu var mı?</button>
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('Papara ile İtemSatış ödemesi arasındaki komisyon farkı nedir?')">💳 Papara vs İtemSatış ödeme farkı nedir?</button>
             <button type="button" class="ekoai-chip" onclick="askEkoAI('Dedicated Özel Video ile Midroll arasındaki temel fark nedir?')">💡 Dedicated ile Midroll arasındaki fark nedir?</button>
             <button type="button" class="ekoai-chip" onclick="askEkoAI('İttifak Orduları kampları için reklam koşulları neler?')">💡 İttifak kampları reklam koşulları neler?</button>
-            <button type="button" class="ekoai-chip" onclick="askEkoAI('Ödeme süreci nasıl işliyor ve güvenli mi?')">💡 Ödeme süreci nasıl ve güvenli mi?</button>
             <button type="button" class="ekoai-chip" onclick="askEkoAI('Kendi paketimi oluştururken indirim kazanabilir miyim?')">💡 Paketimi oluştururken indirim kazanabilir miyim?</button>
           </div>
         </div>
 
         <div class="ekoai-console">
           <div class="ekoai-messages-box" id="ekoai-inline-chat">
+            <div class="chat-date-separator"><span>Bugün</span></div>
             <div class="ekoai-msg ai">
-              <div class="ekoai-avatar">🤖</div>
+              <div class="ekoai-author-row">
+                <span class="ekoai-sender-name">EkoAI</span>
+                <span class="ekoai-role-badge">AI Destek Asistanı</span>
+                <span class="ekoai-msg-time">Şimdi</span>
+              </div>
               <div class="ekoai-bubble">
-                Merhaba! Ben EkoYıldız Partner Studio'nun reklam danışmanı <strong>EKOai</strong>. Aklınızdaki herhangi bir reklam sorusunu buraya yazabilir veya yukarıdaki örnek sorulardan birine tıklayabilirsiniz.
+                Merhaba! Ben EkoYıldız Partner Studio'nun yapay zekâ destekli asistanı <strong>EkoAI</strong>. Reklam paketleri, Papara/İtemSatış ödeme detayları veya süreçle ilgili sorularınızı yanıtlayabilirim.
+              </div>
+              <div class="ekoai-msg-actions">
+                <button type="button" class="ekoai-escalate-btn" onclick="escalateToHumanStaff()">👤 Yetkiliye Aktar (Bilet Aç)</button>
               </div>
             </div>
           </div>
           <form class="ekoai-input-form" onsubmit="handleInlineSubmit(event)">
-            <input type="text" id="ekoai-inline-input" class="ekoai-text-input" placeholder="Reklam paketleri veya süreçle ilgili bir soru sorun..." autocomplete="off">
+            <input type="text" id="ekoai-inline-input" class="ekoai-text-input" placeholder="Reklam paketleri veya süreçle ilgili bir soru yazın... (Enter ile gönder)" autocomplete="off">
             <button type="submit" id="ekoai-inline-btn" class="ekoai-submit-btn">
               <span>Sor</span>
               <svg viewBox="0 0 16 16" fill="none" class="send-icon"><path d="M2 8l11-5-3.5 11-2.5-4-5-2z" fill="currentColor"/></svg>
             </button>
           </form>
+          <div class="ekoai-keyboard-hint">
+            <span>EkoAI bir yapay zekâ asistanıdır. Gerçek yetkili değildir.</span>
+            <span>Enter: Gönder · Shift+Enter: Yeni satır</span>
+          </div>
         </div>
       </div>
     </section>
@@ -1945,38 +2603,162 @@ function renderAdvertisingLandingPage(user = null) {
     </div>
   </aside>
 
-  <!-- Floating EKOai Widget (Sağ Altta) -->
+  <!-- Floating EkoAI Widget (Sağ Altta) -->
   <aside class="ekoai-floating-widget" id="ekoai-floating-widget">
     <div class="ekoai-chat-window" id="ekoai-chat-window" style="display:none;">
       <div class="ekoai-chat-header">
         <div class="ekoai-agent-info">
           <span class="ekoai-online-indicator"></span>
           <div>
-            <strong>EKOai Danışman</strong>
-            <small>Reklam & Sponsorluk Asistanı</small>
+            <strong>EkoAI</strong>
+            <small>AI Destek Asistanı</small>
           </div>
         </div>
         <button type="button" class="ekoai-close-btn" onclick="toggleFloatingChat()" aria-label="Kapat">✕</button>
       </div>
       <div class="ekoai-chat-body" id="ekoai-floating-chat-body">
+        <div class="chat-date-separator"><span>Bugün</span></div>
         <div class="ekoai-msg ai">
-          <div class="ekoai-avatar">🤖</div>
+          <div class="ekoai-author-row">
+            <span class="ekoai-sender-name">EkoAI</span>
+            <span class="ekoai-role-badge">AI Destek Asistanı</span>
+            <span class="ekoai-msg-time">Şimdi</span>
+          </div>
           <div class="ekoai-bubble">
-            Merhaba! Reklam paketlerimiz, Discord duyurusu veya İttifak kampları hakkında sorularınızı yanıtlamaya hazırım. Size nasıl yardımcı olabilirim?
+            Merhaba! Reklam paketlerimiz, Discord duyurusu veya Papara / İtemSatış ödeme adımları hakkında sorularınızı yanıtlamaya hazırım. Size nasıl yardımcı olabilirim?
+          </div>
+          <div class="ekoai-msg-actions">
+            <button type="button" class="ekoai-escalate-btn" onclick="escalateToHumanStaff()">👤 Yetkiliye Aktar</button>
           </div>
         </div>
       </div>
       <form class="ekoai-chat-footer" onsubmit="handleFloatingSubmit(event)">
-        <input type="text" id="ekoai-floating-input" placeholder="Bir soru sorun..." autocomplete="off">
+        <input type="text" id="ekoai-floating-input" placeholder="Bir soru yazın..." autocomplete="off">
         <button type="submit" aria-label="Gönder">➔</button>
       </form>
     </div>
 
-    <button type="button" class="ekoai-floating-trigger" id="ekoai-floating-trigger" onclick="toggleFloatingChat()" aria-label="EKOai Danışman">
+    <button type="button" class="ekoai-floating-trigger" id="ekoai-floating-trigger" onclick="toggleFloatingChat()" aria-label="EkoAI Destek Asistanı">
       <span class="ekoai-trigger-icon">🤖</span>
-      <span class="ekoai-trigger-label">EKOai'ya Sor</span>
+      <span class="ekoai-trigger-label">EkoAI'ya Danış</span>
     </button>
   </aside>
+
+  <!-- ÖDEME VE SATIN ALMA SEÇİM MODALI (Papara 0 TL vs İtemSatış +5 TL) -->
+  <div class="modal-backdrop" id="payment-modal" style="display:none;" onclick="handleModalBackdropClick(event)">
+    <div class="payment-modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-pkg-title">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-kicker">Şeffaf Ödeme Yöntemleri</span>
+          <h3 id="modal-pkg-title">Paket Ödeme Seçimi</h3>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="closePaymentModal()" aria-label="Kapat">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-pkg-summary">
+          <div class="summary-line">
+            <span class="summary-title" id="modal-item-name">Seçilen Paket</span>
+            <span class="summary-price" id="modal-item-price">₺100</span>
+          </div>
+          <div class="summary-subnote" id="modal-item-note">Resmî sipariş ve kampanya başlangıcı</div>
+        </div>
+
+        <!-- 2 Payment Choice Cards -->
+        <div class="payment-cards-grid">
+          <!-- PAPARA CARD -->
+          <div class="pay-method-card is-selected" id="pay-card-papara" onclick="selectPaymentMethod('papara')" tabindex="0" role="radio" aria-checked="true">
+            <div class="pay-card-head">
+              <div class="pay-card-title-row">
+                <span class="pay-icon papara-icon">P</span>
+                <strong>Papara</strong>
+              </div>
+              <span class="fee-badge zero-fee">0 TL Komisyon</span>
+            </div>
+            <p class="pay-card-desc">Papara numarasına doğrudan ödeme yaparak ek işlem ücreti ödemeden işleminizi tamamlayabilirsiniz.</p>
+            <ul class="pay-perks">
+              <li>✓ Ek komisyon yok (0 TL)</li>
+              <li>✓ Doğrudan ve hızlı işlem</li>
+              <li>✓ 1 Tıkla hesap no kopyalama</li>
+            </ul>
+          </div>
+
+          <!-- ITEMSATIS CARD -->
+          <div class="pay-method-card" id="pay-card-itemsatis" onclick="selectPaymentMethod('itemsatis')" tabindex="0" role="radio" aria-checked="false">
+            <div class="pay-card-head">
+              <div class="pay-card-title-row">
+                <span class="pay-icon itemsatis-icon">İS</span>
+                <strong>İtemSatış</strong>
+              </div>
+              <span class="fee-badge fee-added">+5 TL İşlem Ücreti</span>
+            </div>
+            <p class="pay-card-desc">Ödeme İtemSatış üzerinden gerçekleştirilebilir. Platform hizmet bedeli şeffaf olarak yansıtılır.</p>
+            <ul class="pay-perks">
+              <li>✓ Platform güvencesiyle işlem</li>
+              <li>✓ Kredi kartı, banka kartı ve bakiye</li>
+              <li>✓ Şeffaf +5 TL işlem ücreti dökümü</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Papara Details Section (Shown when Papara is active) -->
+        <div id="papara-details-block" class="pay-details-block">
+          <div class="papara-account-box">
+            <div class="account-meta">
+              <span class="acc-label">Papara Hesap Numarası:</span>
+              <span class="acc-number" id="papara-acc-number">1947291842</span>
+            </div>
+            <button type="button" class="btn-copy-acc" id="btn-copy-papara" onclick="copyPaparaNumber()">
+              <span id="copy-btn-text">Kopyala</span>
+              <svg viewBox="0 0 16 16" fill="none" class="copy-svg"><path d="M4 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6 2V1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+          </div>
+          <div id="copy-feedback-toast" class="copy-toast" style="display:none;">✓ Papara Numarası Panoya Kopyalandı!</div>
+          <div class="upload-proof-box">
+            <label class="proof-label" for="payment-proof-ref">Ödeme Dekont / İşlem Kodu (İsteğe Bağlı):</label>
+            <input type="text" id="payment-proof-ref" class="proof-input" placeholder="Dekont takip no veya Papara gönderici adı...">
+            <small class="proof-hint">Ödemeyi yaptıktan sonra biletinizde yetkili anında eşleştirir.</small>
+          </div>
+        </div>
+
+        <!-- ItemSatis Details Section (Shown when ItemSatis is active) -->
+        <div id="itemsatis-details-block" class="pay-details-block" style="display:none;">
+          <div class="itemsatis-trust-callout">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="shield-svg"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
+            <span>Ödeme İtemSatış güvencesiyle platform üzerinden gerçekleştirilebilir. Sipariş bağlantınız biletinizde güvenle tanımlanacaktır.</span>
+          </div>
+        </div>
+
+        <!-- Price Breakdown Table -->
+        <div class="price-breakdown-card">
+          <div class="bd-row">
+            <span>Paket Tutarı</span>
+            <strong id="bd-base-price">₺100</strong>
+          </div>
+          <div class="bd-row" id="bd-fee-row" style="color:var(--text-secondary);">
+            <span id="bd-fee-label">İşlem Komisyonu (Papara 0 TL)</span>
+            <strong id="bd-fee-price">₺0</strong>
+          </div>
+          <div class="bd-divider"></div>
+          <div class="bd-row total-row">
+            <span>Ödenecek Toplam</span>
+            <strong id="bd-total-price">₺100</strong>
+          </div>
+        </div>
+
+        <!-- Status message / feedback -->
+        <div id="payment-status-message" class="payment-status-message" style="display:none;"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closePaymentModal()">Kapat</button>
+        <button type="button" class="btn-checkout-confirm" id="btn-confirm-payment" onclick="processPaymentSelection()">
+          <span class="btn-spinner" id="confirm-spinner" style="display:none;"></span>
+          <span id="confirm-btn-label">Talebi & Ödemeyi Başlat</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="footer shell">
@@ -2383,6 +3165,181 @@ function renderAdvertisingLandingPage(user = null) {
       if (input && input.value.trim()) {
         sendQuestionToAI(input.value.trim(), 'floating');
       }
+    }
+
+    function escalateToHumanStaff() {
+      let summary = 'EkoAI asistanından canlı yetkiliye aktarım talebi.';
+      if (aiChatHistory.length > 0) {
+        const lastMsgs = aiChatHistory.slice(-4).map(m => (m.role === 'user' ? 'Kullanıcı: ' : 'EkoAI: ') + m.content).join(' \n');
+        summary = 'EkoAI Görüşme Özeti:\n' + lastMsgs;
+      }
+      window.location.href = '/tickets/new?category=reklam&summary=' + encodeURIComponent(summary);
+    }
+
+    // 4. Ödeme Modalı ve Seçim Mantığı (Papara 0 TL vs İtemSatış +5 TL)
+    let currentModalPkg = { id: 'midroll', title: 'Sesli Mid-Roll (Önerilen)', basePrice: 100 };
+    let selectedPaymentMethod = 'papara';
+    let isSubmittingPayment = false;
+
+    function openPaymentModal(pkgId, pkgTitle, basePrice) {
+      currentModalPkg = {
+        id: pkgId || 'midroll',
+        title: pkgTitle || 'Reklam Paketi',
+        basePrice: Number(basePrice) || 100
+      };
+
+      const modal = document.getElementById('payment-modal');
+      const titleEl = document.getElementById('modal-pkg-title');
+      const itemNameEl = document.getElementById('modal-item-name');
+      const noteEl = document.getElementById('modal-item-note');
+
+      if (titleEl) titleEl.textContent = currentModalPkg.title + ' — Ödeme Seçimi';
+      if (itemNameEl) itemNameEl.textContent = currentModalPkg.title;
+      if (noteEl) noteEl.textContent = 'Resmî sipariş ve kampanya başlangıcı (' + currentModalPkg.basePrice + ' TL)';
+
+      selectPaymentMethod('papara');
+
+      if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closePaymentModal() {
+      const modal = document.getElementById('payment-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target && e.target.id === 'payment-modal') {
+        closePaymentModal();
+      }
+    }
+
+    function selectPaymentMethod(method) {
+      selectedPaymentMethod = method === 'itemsatis' ? 'itemsatis' : 'papara';
+
+      const cardPapara = document.getElementById('pay-card-papara');
+      const cardItemsatis = document.getElementById('pay-card-itemsatis');
+      const paparaBlock = document.getElementById('papara-details-block');
+      const itemsatisBlock = document.getElementById('itemsatis-details-block');
+      const bdFeeLabel = document.getElementById('bd-fee-label');
+      const bdFeePrice = document.getElementById('bd-fee-price');
+      const bdBasePrice = document.getElementById('bd-base-price');
+      const bdTotalPrice = document.getElementById('bd-total-price');
+
+      const base = currentModalPkg.basePrice;
+      const fee = selectedPaymentMethod === 'itemsatis' ? 5 : 0;
+      const total = base + fee;
+
+      if (bdBasePrice) bdBasePrice.textContent = '₺' + base;
+      if (bdTotalPrice) bdTotalPrice.textContent = '₺' + total;
+
+      if (selectedPaymentMethod === 'papara') {
+        if (cardPapara) {
+          cardPapara.classList.add('is-selected');
+          cardPapara.setAttribute('aria-checked', 'true');
+        }
+        if (cardItemsatis) {
+          cardItemsatis.classList.remove('is-selected');
+          cardItemsatis.setAttribute('aria-checked', 'false');
+        }
+        if (paparaBlock) paparaBlock.style.display = 'flex';
+        if (itemsatisBlock) itemsatisBlock.style.display = 'none';
+        if (bdFeeLabel) bdFeeLabel.textContent = 'İşlem Komisyonu (Papara)';
+        if (bdFeePrice) {
+          bdFeePrice.textContent = '0 TL';
+          bdFeePrice.style.color = '#34d399';
+        }
+      } else {
+        if (cardItemsatis) {
+          cardItemsatis.classList.add('is-selected');
+          cardItemsatis.setAttribute('aria-checked', 'true');
+        }
+        if (cardPapara) {
+          cardPapara.classList.remove('is-selected');
+          cardPapara.setAttribute('aria-checked', 'false');
+        }
+        if (itemsatisBlock) itemsatisBlock.style.display = 'flex';
+        if (paparaBlock) paparaBlock.style.display = 'none';
+        if (bdFeeLabel) bdFeeLabel.textContent = 'İtemSatış Platform İşlem Ücreti';
+        if (bdFeePrice) {
+          bdFeePrice.textContent = '+₺5';
+          bdFeePrice.style.color = '#fbbf24';
+        }
+      }
+    }
+
+    function copyPaparaNumber() {
+      const numEl = document.getElementById('papara-acc-number');
+      const toast = document.getElementById('copy-feedback-toast');
+      const btnText = document.getElementById('copy-btn-text');
+      const text = numEl ? numEl.textContent.trim() : '1947291842';
+
+      navigator.clipboard.writeText(text).then(() => {
+        if (toast) {
+          toast.style.display = 'block';
+          setTimeout(() => { toast.style.display = 'none'; }, 2500);
+        }
+        if (btnText) {
+          btnText.textContent = 'Kopyalandı!';
+          setTimeout(() => { btnText.textContent = 'Kopyala'; }, 2000);
+        }
+      }).catch(() => {
+        if (btnText) btnText.textContent = '1947291842';
+      });
+    }
+
+    function processPaymentSelection() {
+      if (isSubmittingPayment) return; // Çift tıklama / duplicate engelleme
+      isSubmittingPayment = true;
+
+      const btn = document.getElementById('btn-confirm-payment');
+      const spinner = document.getElementById('confirm-spinner');
+      const label = document.getElementById('confirm-btn-label');
+      const proofInput = document.getElementById('payment-proof-ref');
+      const proofVal = proofInput ? proofInput.value.trim() : '';
+
+      if (btn) btn.disabled = true;
+      if (spinner) spinner.style.display = 'inline-block';
+      if (label) label.textContent = 'Ödeme hazırlanıyor...';
+
+      const pkgId = currentModalPkg.id;
+      const method = selectedPaymentMethod;
+      const fee = method === 'itemsatis' ? 5 : 0;
+      const total = currentModalPkg.basePrice + fee;
+
+      setTimeout(() => {
+        let targetUrl = '/tickets/new?category=reklam&package=' + encodeURIComponent(pkgId) +
+          '&paymentMethod=' + encodeURIComponent(method) +
+          '&totalAmount=' + encodeURIComponent(total);
+
+        if (proofVal) {
+          targetUrl += '&proof=' + encodeURIComponent(proofVal);
+        }
+
+        window.location.href = targetUrl;
+      }, 650);
+    }
+
+    // Klavye desteği: ESC ile modal kapatma, Enter / Shift+Enter desteği
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closePaymentModal();
+      }
+    });
+
+    const inlineChatInput = document.getElementById('ekoai-inline-input');
+    if (inlineChatInput) {
+      inlineChatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleInlineSubmit(e);
+        }
+      });
     }
 
     // İlk yüklemede builder summary başlat

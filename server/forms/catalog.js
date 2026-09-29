@@ -19,12 +19,77 @@ function field(name, label, options = {}) {
 
 const FORM_CATALOG = Object.freeze([
   {
+    slug: 'moderator',
+    route: '/forms/moderator',
+    formType: 'moderator',
+    section: 'staff',
+    category: 'Yetkili Kadrosu',
+    status: 'open',
+    estimatedMinutes: 8,
+    isWizard: true,
+    title: 'Topluluk Moderatör Başvurusu',
+    description: 'EkoYıldız Discord ve oyun topluluğunda adaleti, düzeni ve huzuru sağlayacak kadroya katılın.',
+    sections: [
+      {
+        step: 1,
+        stepTitle: 'Hakkında',
+        title: '1. Temel Bilgiler',
+        description: 'Sizi daha yakından tanıyabilmemiz için temel iletişim ve aktiflik bilgilerinizi giriniz.',
+        fields: [
+          field('username', 'Adınız veya Kullanıcı Adınız', { maxLength: MAX_SHORT, placeholder: 'Örn. Alp' }),
+          field('discordUsername', 'Discord Kullanıcı Adınız (veya Etiketiniz)', { maxLength: MAX_SHORT, placeholder: 'Örn. kullanici_adi (veya ID)' }),
+          field('ageRange', 'Yaşınız veya Yaş Aralığınız', { type: 'select', options: ['13–15', '16–17', '18–20', '21+'] }),
+          field('timezone', 'Bulunduğunuz Şehir / Saat Dilimi', { maxLength: MAX_SHORT, placeholder: 'Örn. İstanbul / GMT+3' }),
+          field('availability', 'Günlük ve Haftalık Aktiflik Süreniz', { type: 'textarea', maxLength: MAX_MEDIUM, placeholder: 'Günde ortalama kaç saat Discord ve toplulukta aktif olabilirsiniz? Hangi saatler arası müsaitsiniz?' })
+        ]
+      },
+      {
+        step: 2,
+        stepTitle: 'Deneyim',
+        title: '2. Moderasyon ve Topluluk Deneyimi',
+        description: 'Daha önceki tecrübelerinizi, üstlendiğiniz rolleri ve yetkinliklerinizi paylaşınız.',
+        fields: [
+          field('pastExperience', 'Daha önce bir sunucuda veya oyunda moderasyon yaptınız mı?', { type: 'select', options: ['Evet, birden fazla toplulukta aktif görev aldım', 'Evet, küçük bir sunucuda deneyimim var', 'Hayır, ancak kurallara ve sisteme çok hakimim'] }),
+          field('previousCommunities', 'Hangi topluluklarda görev aldınız ve ne kadar süre kaldınız?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Örn. X sunucusu (Moderatör - 6 ay), Y sunucusu (Destek Ekibi - 3 ay)...' }),
+          field('responsibilities', 'Önceki görevlerinizde hangi sorumlulukları üstlendiniz?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Chat düzeni, bilet yanıtlama, etkinlik denetimi, ses odaları moderasyonu vb.' }),
+          field('toolsExperience', 'Moderasyon araçları ve bot komutlarıyla deneyiminiz var mı?', { type: 'textarea', maxLength: MAX_MEDIUM, placeholder: 'Kullandığınız moderasyon botları, audit log okuma, ceza geçmişi yönetimi tecrübeleriniz...' })
+        ]
+      },
+      {
+        step: 3,
+        stepTitle: 'Senaryolar',
+        title: '3. Kriz Yönetimi ve Senaryo Soruları',
+        description: 'Topluluk içinde karşılaşabileceğiniz durumlara karşı reflekslerinizi ve adalet anlayışınızı değerlendiriyoruz.',
+        fields: [
+          field('scenarioDispute', 'Senaryo 1: İki kullanıcı genel sohbette sert bir tartışmaya girdi. İlk müdahaleniz ve adım adım izleyeceğiniz yol nedir?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Sohbeti nasıl sakinleştirirsiniz? Hangi aşamada uyarı veya susturma uygularsınız?' }),
+          field('scenarioFriendViolation', 'Senaryo 2: Çok yakın bir arkadaşınızın sunucu kurallarını ihlal ettiğini gördünüz. Nasıl hareket edersiniz?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Arkadaşlık ilişkisi ile yetkili sorumluluğu arasındaki dengeyi nasıl sağlarsınız?' }),
+          field('scenarioStaffAbuse', 'Senaryo 3: Bir başka yetkilinin yetkisini haksız yere (abuse) kullandığından şüphelendiniz. Ne yaparsınız?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Doğrudan tartışmaya mı girersiniz yoksa kanıt toplayıp üst yönetime mi iletirsiniz?' }),
+          field('scenarioDmInsult', 'Senaryo 4: Ceza uyguladığınız bir kullanıcı size özelden (DM) hakaret veya tehdit etti. Tepkiniz ne olur?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Kişisel polemiğe girer misiniz? İşlemi nasıl belgelersiniz?' }),
+          field('scenarioUncertainty', 'Senaryo 5: Kurallarda tam karşılığı yazmayan, emin olamadığınız belirsiz bir durumla karşılaştınız. Nasıl ilerlersiniz?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Kendi inisiyatifinizle mi karar verirsiniz yoksa ekibe danışır mısınız?' })
+        ]
+      },
+      {
+        step: 4,
+        stepTitle: 'Motivasyon & Onay',
+        title: '4. Motivasyon, Ekip Uyumu ve Taahhütler',
+        description: 'Ekibe katılım amacınızı belirtiniz ve yetkili taahhütlerini onaylayınız.',
+        fields: [
+          field('motivation', 'Neden EkoYıldız kadrosuna katılmak istiyorsunuz?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Topluluğa ve ekibe katmak istediğiniz değer...' }),
+          field('strengthsAndWeaknesses', 'Güçlü bulduğunuz yönleriniz ve geliştirmek istediğiniz alanlar nelerdir?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Örn. Sabırlıyım, hızlı iletişim kurarım. Geliştirmek istediğim alan: Kriz anlarında daha soğukkanlı olmak...' }),
+          field('whyYou', 'Diğer adaylar arasından neden sizi değerlendirmeliyiz?', { type: 'textarea', maxLength: MAX_LONG, placeholder: 'Sizi öne çıkaran en belirgin özelliğiniz nedir?' }),
+          field('commitmentRules', 'EkoYıldız kurallarını ve moderatör ilkelerini okudunuz mu, yetkiyi asla kişisel çıkar için kullanmayacağınızı taahhüt ediyor musunuz?', { type: 'select', options: ['Evet, kuralları okudum, anladım ve tarafsızlık taahhüdünü kabul ediyorum'] }),
+          field('commitmentPrivacy', 'Yetkili kanallarındaki bilgi, konuşma ve kullanıcı verilerinin gizliliğini koruyacağınızı onaylıyor musunuz?', { type: 'select', options: ['Evet, gizlilik ilkelerine kayıtsız şartsız uyacağımı onaylıyorum'] })
+        ]
+      }
+    ]
+  },
+  {
     slug: 'event-staff', route: '/forms/event-staff', formType: 'event_staff', section: 'staff', category: 'Başvurular', status: 'open', estimatedMinutes: 12,
     title: 'Etkinlik Ekibi Başvurusu', description: 'Etkinlikleri düzenleyen ve topluluğa rehberlik eden ekibe katıl.',
     sections: [
       { title: 'Temel Bilgiler', fields: [field('discordUsername', 'Discord kullanıcı adın', { maxLength: MAX_SHORT }), field('availability', 'Haftalık uygunluğun', { type: 'textarea', maxLength: MAX_MEDIUM, placeholder: 'Hangi gün ve saatlerde aktifsin?' })] },
       { title: 'Başvuru Bilgileri', fields: [field('motivation', 'Neden etkinlik ekibine katılmak istiyorsun?', { type: 'textarea', maxLength: MAX_LONG }), field('experience', 'İlgili deneyimin', { type: 'textarea', required: false, maxLength: MAX_LONG, description: 'Varsa önceki topluluk veya etkinlik deneyimlerini paylaş.' })] },
-    ],
+    ]
   },
   {
     slug: 'community-ambassador', route: '/forms/community-ambassador', formType: 'community_ambassador', section: 'staff', category: 'Başvurular', status: 'open', estimatedMinutes: 15,

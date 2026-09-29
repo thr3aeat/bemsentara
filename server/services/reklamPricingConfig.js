@@ -395,10 +395,70 @@ function calculateCustomPackagePrice(selections = {}) {
   };
 }
 
+/**
+ * Ödeme Yöntemleri ve Komisyon Yapılandırması
+ */
+const PAYMENT_METHODS = {
+  papara: {
+    id: 'papara',
+    title: 'Papara ile Ödeme',
+    badge: '0 TL Komisyon',
+    fee: 0,
+    feeLabel: '0 TL (Komisyonsuz)',
+    paparaNumber: '1947291842',
+    accountHolder: 'Alp Ç. / EkoYıldız Topluluğu',
+    highlights: [
+      'Ek işlem ücreti veya komisyon alınmaz (0 TL)',
+      'Hızlı ve anında hesap onayı',
+      'Mobil Papara uygulamasından tek dokunuşla transfer'
+    ],
+    description: 'Papara numarasına doğrudan ödeme yaparak ek işlem ücreti ödemeden işleminizi tamamlayabilirsiniz.',
+    trustNote: 'Ödemeniz doğrudan resmî hesap tarafından doğrulanır.'
+  },
+  itemsatis: {
+    id: 'itemsatis',
+    title: 'İtemSatış ile Ödeme',
+    badge: '+5 TL İşlem Ücreti',
+    fee: 5,
+    feeLabel: '+5 TL İşlem Ücreti',
+    platformUrl: 'https://www.itemsatis.com',
+    highlights: [
+      'İtemSatış platform altyapısı üzerinden güvenli ödeme',
+      'Kart, havale/EFT ve platform bakiyesi desteği',
+      'Şeffaf +5 TL işlem/hizmet bedeli yansıtılır'
+    ],
+    description: 'Ödeme İtemSatış güvencesiyle platform üzerinden gerçekleştirilebilir.',
+    trustNote: 'İtemSatış üzerinden yapılan ödemelerde platform işlem/komisyon bedeli (+5 TL) şeffaf olarak fiyata eklenir.'
+  }
+};
+
+/**
+ * Ödeme yöntemi komisyonunu hesaplar
+ */
+function calculatePaymentTotal(amount, method = 'papara') {
+  const numericAmount = Math.max(0, Number(amount) || 0);
+  const config = PAYMENT_METHODS[method] || PAYMENT_METHODS.papara;
+  const fee = config.fee;
+  const total = numericAmount + fee;
+
+  return {
+    method: config.id,
+    baseAmount: numericAmount,
+    fee,
+    feeLabel: config.feeLabel,
+    total,
+    title: config.title,
+    description: config.description
+  };
+}
+
 module.exports = {
   BASE_DISCORD_ANNOUNCEMENT_PRICE,
   PRESET_PACKAGES,
   CUSTOM_MODULES,
+  PAYMENT_METHODS,
   getDiscordAddonForPackage,
-  calculateCustomPackagePrice
+  calculateCustomPackagePrice,
+  calculatePaymentTotal
 };
+

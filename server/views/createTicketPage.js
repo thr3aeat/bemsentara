@@ -382,6 +382,146 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
         border: 1px solid rgba(16, 185, 129, 0.35);
         color: #6ee7b7;
       }
+
+      /* Ticket Payment Method Cards */
+      .ticket-pay-group {
+        margin-top: 1.25rem;
+      }
+      .ticket-pay-title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ticket-pay-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      @media (max-width: 520px) {
+        .ticket-pay-cards { grid-template-columns: 1fr; }
+      }
+      .ticket-pay-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+      .ticket-pay-card:hover {
+        border-color: rgba(139, 92, 246, 0.4);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .ticket-pay-card.active {
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.12);
+        box-shadow: 0 0 14px rgba(139, 92, 246, 0.2);
+      }
+      .ticket-pay-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+      .ticket-pay-card-title {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+      }
+      .ticket-pay-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+      }
+      .ticket-pay-badge.zero {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+      }
+      .ticket-pay-badge.fee {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+      }
+      .ticket-pay-desc {
+        font-size: 0.76rem;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      /* EkoAI Ticket Assistant Button & Box */
+      .btn-ekoai-assist {
+        background: rgba(139, 92, 246, 0.12);
+        border: 1px solid rgba(139, 92, 246, 0.35);
+        color: #c4b5fd;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      }
+      .btn-ekoai-assist:hover {
+        background: rgba(139, 92, 246, 0.22);
+        color: #fff;
+        border-color: #8b5cf6;
+      }
+      .ekoai-assist-box {
+        background: rgba(15, 18, 28, 0.95);
+        border: 1px solid rgba(139, 92, 246, 0.35);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        display: none;
+        animation: fadeIn 0.2s ease;
+      }
+      .ekoai-assist-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .ekoai-assist-title {
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: #c4b5fd;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ekoai-assist-text {
+        font-size: 0.85rem;
+        color: #cbd5e1;
+        line-height: 1.55;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 10px 12px;
+        white-space: pre-wrap;
+      }
+      .btn-apply-suggestion {
+        background: #8b5cf6;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 5px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 8px;
+        transition: all 0.2s ease;
+      }
+      .btn-apply-suggestion:hover {
+        background: #7c3aed;
+      }
     </style>
 
     <div class="ticket-container">
@@ -463,6 +603,30 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
                 <input type="text" id="rek-goal" class="form-control" placeholder="Örn: Üye büyümesi, video içi sponsor, sipariş artışı" maxlength="100">
               </div>
             </div>
+
+            <!-- Reklam Ödeme Tercihi (Papara 0 TL vs İtemSatış +5 TL) -->
+            <div class="ticket-pay-group">
+              <div class="ticket-pay-title">
+                <span>💳 Tercih Ettiğiniz Ödeme Yöntemi</span>
+                <small style="color:var(--muted);font-weight:normal;">(Bilet içinde doğrudan netleştirilir)</small>
+              </div>
+              <div class="ticket-pay-cards">
+                <div class="ticket-pay-card active" id="ticket-pay-papara" onclick="selectTicketPayment('papara')">
+                  <div class="ticket-pay-card-head">
+                    <span class="ticket-pay-card-title">Papara</span>
+                    <span class="ticket-pay-badge zero">0 TL Komisyon</span>
+                  </div>
+                  <div class="ticket-pay-desc">Papara numarasına doğrudan ödeme. Ek işlem ücreti alınmaz.</div>
+                </div>
+                <div class="ticket-pay-card" id="ticket-pay-itemsatis" onclick="selectTicketPayment('itemsatis')">
+                  <div class="ticket-pay-card-head">
+                    <span class="ticket-pay-card-title">İtemSatış</span>
+                    <span class="ticket-pay-badge fee">+5 TL İşlem Ücreti</span>
+                  </div>
+                  <div class="ticket-pay-desc">Ödeme İtemSatış üzerinden gerçekleştirilebilir. Şeffaf komisyon eklenir.</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Konu Başlığı -->
@@ -474,13 +638,32 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             <input type="text" id="ticket-subject" class="form-control" placeholder="Destek talebinizi özetleyen kısa bir başlık" maxlength="100" required>
           </div>
 
-          <!-- Açıklama / Mesaj -->
+          <!-- Açıklama / Mesaj & EkoAI Ticket Asistanı -->
           <div class="form-group">
-            <label class="form-label" for="ticket-description">
-              <span id="desc-label-text">Talebiniz / Mesajınız <span class="req">*</span></span>
-              <small style="color:var(--muted);font-weight:400;"><span id="desc-count">0</span>/2000</small>
-            </label>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+              <label class="form-label" for="ticket-description" style="margin-bottom:0;">
+                <span id="desc-label-text">Talebiniz / Mesajınız <span class="req">*</span></span>
+              </label>
+              <button type="button" class="btn-ekoai-assist" id="btn-ekoai-help" onclick="requestEkoAITicketHelp()">
+                <span>🤖 EkoAI'dan Yardım Al</span>
+              </button>
+            </div>
+
+            <!-- EkoAI Suggestion Box -->
+            <div id="ekoai-assist-box" class="ekoai-assist-box">
+              <div class="ekoai-assist-head">
+                <span class="ekoai-assist-title">🤖 EkoAI Önerisi &amp; Özeti</span>
+                <button type="button" onclick="closeEkoAIAssist()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;" aria-label="Kapat">✕</button>
+              </div>
+              <div id="ekoai-assist-content" class="ekoai-assist-text">EkoAI talebinizi inceliyor ve en uygun taslağı hazırlıyor...</div>
+              <button type="button" class="btn-apply-suggestion" onclick="applyEkoAISuggestion()">✓ Bu Metni Açıklamaya Uygula</button>
+            </div>
+
             <textarea id="ticket-description" class="form-control" rows="6" placeholder="Lütfen detayları ayrıntılı olarak anlatın..." maxlength="2000" required style="resize:vertical;"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+              <small style="color:var(--muted);font-size:0.75rem;">Açık ve net ifadeler destek sürecini hızlandırır.</small>
+              <small style="color:var(--muted);font-size:0.75rem;"><span id="desc-count">0</span>/2000</small>
+            </div>
           </div>
 
           <!-- Durum ve Hata Bildirimi -->
@@ -502,6 +685,93 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
       let selectedPackageId = '${queryPkg || 'midroll'}';
       let selectedPackageName = 'Sesli Mid-Roll (Önerilen)';
       let selectedPackagePrice = '100 TL';
+      let selectedTicketPayment = 'papara';
+      let isSubmittingTicket = false;
+      let lastAIGeneratedText = '';
+
+      function selectTicketPayment(method) {
+        selectedTicketPayment = method === 'itemsatis' ? 'itemsatis' : 'papara';
+        const cardP = document.getElementById('ticket-pay-papara');
+        const cardI = document.getElementById('ticket-pay-itemsatis');
+        if (cardP && cardI) {
+          if (selectedTicketPayment === 'papara') {
+            cardP.classList.add('active');
+            cardI.classList.remove('active');
+          } else {
+            cardI.classList.add('active');
+            cardP.classList.remove('active');
+          }
+        }
+      }
+
+      async function requestEkoAITicketHelp() {
+        const box = document.getElementById('ekoai-assist-box');
+        const content = document.getElementById('ekoai-assist-content');
+        const cat = document.getElementById('ticket-category').value;
+        const subj = document.getElementById('ticket-subject').value.trim();
+        const desc = document.getElementById('ticket-description').value.trim();
+        const com = document.getElementById('rek-community') ? document.getElementById('rek-community').value.trim() : '';
+        const link = document.getElementById('rek-link') ? document.getElementById('rek-link').value.trim() : '';
+
+        if (box) box.style.display = 'block';
+        if (content) content.textContent = 'EkoAI talebinizi inceliyor ve en uygun taslağı hazırlıyor...';
+
+        const promptSummary = 'Kategori: ' + cat +
+          (cat === 'reklam' ? (' | Paket: ' + selectedPackageName + ' | Topluluk: ' + com + ' | Link: ' + link + ' | Ödeme: ' + selectedTicketPayment) : '') +
+          (subj ? (' | Konu: ' + subj) : '') +
+          (desc ? (' | Kullanıcı Notu: ' + desc) : '');
+
+        try {
+          const res = await fetch('/api/reklam/ekoai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question: 'Kullanıcının açmak istediği destek bileti için net ve özet bir kampanya/destek mesajı taslağı oluştur: ' + promptSummary
+            })
+          });
+          const data = await res.json();
+          if (data && data.success && data.answer) {
+            lastAIGeneratedText = data.answer.replace(/<[^>]*>?/gm, '');
+            if (content) content.textContent = lastAIGeneratedText;
+          } else {
+            fallbackEkoAITemplate();
+          }
+        } catch (e) {
+          fallbackEkoAITemplate();
+        }
+      }
+
+      function fallbackEkoAITemplate() {
+        const cat = document.getElementById('ticket-category').value;
+        const content = document.getElementById('ekoai-assist-content');
+        let text = '';
+        if (cat === 'reklam') {
+          text = 'Merhaba EkoYıldız Ekibi,\n' +
+            'Belirttiğim topluluk için ' + selectedPackageName + ' paketiniz kapsamında sponsorluk görüşmesi yapmak istiyorum. ' +
+            'Ödememi ' + (selectedTicketPayment === 'papara' ? 'Papara (0 TL komisyon)' : 'İtemSatış (+5 TL işlem ücreti)') + ' yöntemiyle tamamlamayı planlıyorum. ' +
+            'Yayın takvimi ve detaylar için kanal onayınızı rica ederim.';
+        } else {
+          text = 'Merhaba Destek Ekibi,\n' +
+            'Konuyla ilgili detaylı bilgi ve yardım talep ediyorum. İnceleyip dönüş yapabilirseniz sevinirim.';
+        }
+        lastAIGeneratedText = text;
+        if (content) content.textContent = text;
+      }
+
+      function closeEkoAIAssist() {
+        const box = document.getElementById('ekoai-assist-box');
+        if (box) box.style.display = 'none';
+      }
+
+      function applyEkoAISuggestion() {
+        if (!lastAIGeneratedText) return;
+        const descEl = document.getElementById('ticket-description');
+        if (descEl) {
+          descEl.value = lastAIGeneratedText;
+          updateCharCount(descEl, 'desc-count');
+        }
+        closeEkoAIAssist();
+      }
 
       function selectPackage(id, name, price) {
         selectedPackageId = id;
@@ -578,6 +848,11 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
         const withDiscordParam = params.get('withDiscord') === 'true';
         const summaryParam = params.get('summary');
         const priceParam = params.get('price');
+        const payParam = params.get('paymentMethod');
+
+        if (payParam) {
+          selectTicketPayment(payParam);
+        }
 
         if (pkgParam) {
           const card = document.querySelector('[data-pkg-id="' + pkgParam + '"]');
@@ -599,6 +874,8 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           if (budgetEl && priceParam) {
             budgetEl.value = priceParam + ' TL (Tahmini Paket Tutarı)';
           }
+        } else if (summaryParam && descEl && !descEl.value) {
+          descEl.value = decodeURIComponent(summaryParam);
         } else if (withDiscordParam && subjectEl && subjectEl.value) {
           if (!subjectEl.value.includes('Discord')) {
             subjectEl.value = subjectEl.value.replace(/\)$/, ' + Discord Duyurusu)');
@@ -612,6 +889,8 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
 
       async function handleTicketFormSubmit(e) {
         e.preventDefault();
+        if (isSubmittingTicket) return; // Çift tıklama engelleme
+
         const alertEl = document.getElementById('ticket-alert');
         const submitBtn = document.getElementById('btn-submit-ticket');
         const submitText = document.getElementById('submit-text');
@@ -659,14 +938,15 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           }
 
           fullDescription = 
-            '📋 REKLAM & SPONSORLUK DETAYLARI\\n' +
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n' +
-            '• Seçilen Paket: ' + selectedPackageName + ' (' + selectedPackagePrice + ')\\n' +
-            '• Topluluk / Proje: ' + community + '\\n' +
-            '• Bağlantı (Link): ' + link + '\\n' +
-            (budget ? ('• Bütçe Tercihi: ' + budget + '\\n') : '') +
-            (goal ? ('• Kampanya Hedefi: ' + goal + '\\n') : '') +
-            '\\n📝 KAMPANYA NOTLARI / AÇIKLAMA:\\n' +
+            '📋 REKLAM & SPONSORLUK DETAYLARI\n' +
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
+            '• Seçilen Paket: ' + selectedPackageName + ' (' + selectedPackagePrice + ')\n' +
+            '• Ödeme Yöntemi Tercihi: ' + (selectedTicketPayment === 'papara' ? 'Papara (0 TL Komisyon, Doğrudan Ödeme)' : 'İtemSatış (+5 TL Platform Hizmet Bedeli)') + '\n' +
+            '• Topluluk / Proje: ' + community + '\n' +
+            '• Tanıtım Bağlantısı: ' + link + '\n' +
+            (budget ? ('• Bütçe Tercihi: ' + budget + '\n') : '') +
+            (goal ? ('• Kampanya Hedefi: ' + goal + '\n') : '') +
+            '\n📝 KAMPANYA NOTLARI / AÇIKLAMA:\n' +
             baseDescription;
         } else {
           if (!baseDescription) {
@@ -675,6 +955,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           }
         }
 
+        isSubmittingTicket = true;
         submitBtn.disabled = true;
         submitIcon.textContent = '⏳';
         submitText.textContent = 'Bilet oluşturuluyor & kanal açılıyor...';
@@ -708,12 +989,14 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
               window.location.href = '/tickets';
             }, 1800);
           } else {
+            isSubmittingTicket = false;
             showAlert(data.error || 'Bilet oluşturulurken bir hata meydana geldi.', 'error');
             submitBtn.disabled = false;
             submitIcon.textContent = '📨';
             submitText.textContent = 'Talebi Gönder & Kanal Aç';
           }
         } catch (err) {
+          isSubmittingTicket = false;
           showAlert('Bağlantı hatası oluştu. Lütfen internetinizi kontrol edip tekrar deneyin.', 'error');
           submitBtn.disabled = false;
           submitIcon.textContent = '📨';
