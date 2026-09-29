@@ -947,7 +947,368 @@ function renderAdvertisingLandingPage(user = null) {
       .brand-sub { display: none; }
       .hero-actions { flex-direction: column; width: 100%; }
       .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
-      .mobile-sticky-bar { display: block; }
+    /* ── EKOai Reklam Danışmanı Stilleri ── */
+    .ekoai-section {
+      margin: 80px auto;
+      position: relative;
+    }
+    .ekoai-card {
+      position: relative;
+      background: radial-gradient(120% 120% at 50% 0%, rgba(99, 102, 241, 0.12) 0%, rgba(15, 17, 24, 0.85) 60%), #0f1118;
+      border: 1px solid rgba(129, 140, 248, 0.28);
+      border-radius: var(--radius-xl);
+      padding: 44px;
+      box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      overflow: hidden;
+    }
+    .ekoai-card-glow {
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+      filter: blur(50px);
+      pointer-events: none;
+    }
+    .ekoai-header {
+      max-width: 640px;
+      margin-bottom: 28px;
+    }
+    .ekoai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 102, 241, 0.14);
+      border: 1px solid rgba(129, 140, 248, 0.32);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .ekoai-chips-wrap {
+      margin-bottom: 24px;
+    }
+    .chips-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .ekoai-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ekoai-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-medium);
+      color: var(--text-secondary);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: left;
+    }
+    .ekoai-chip:hover {
+      background: rgba(99, 102, 241, 0.16);
+      border-color: rgba(129, 140, 248, 0.4);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+    .ekoai-console {
+      background: rgba(9, 10, 15, 0.7);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ekoai-messages-box {
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-right: 6px;
+    }
+    .ekoai-messages-box::-webkit-scrollbar {
+      width: 5px;
+    }
+    .ekoai-messages-box::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .ekoai-msg {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .ekoai-msg.user {
+      flex-direction: row-reverse;
+    }
+    .ekoai-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: grid;
+      place-items: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .ekoai-msg.user .ekoai-avatar {
+      background: #272a38;
+      font-size: 0.85rem;
+    }
+    .ekoai-bubble {
+      max-width: 82%;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .ekoai-msg.ai .ekoai-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+    }
+    .ekoai-msg.ai .ekoai-bubble strong {
+      color: #fff;
+    }
+    .ekoai-msg.ai .ekoai-bubble ul {
+      margin: 8px 0 8px 18px;
+    }
+    .ekoai-msg.ai .ekoai-bubble li {
+      margin-bottom: 4px;
+    }
+    .ekoai-msg.user .ekoai-bubble {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+    .ekoai-input-form {
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+    }
+    .ekoai-text-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .ekoai-text-input:focus {
+      border-color: #6366f1;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .ekoai-submit-btn {
+      background: #ffffff;
+      color: #090a0f;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0 20px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform var(--transition), opacity var(--transition);
+    }
+    .ekoai-submit-btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.94;
+    }
+    .send-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Floating Widget */
+    .ekoai-floating-widget {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .ekoai-floating-trigger {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      padding: 12px 20px;
+      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.88rem;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    }
+    .ekoai-floating-trigger:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 16px 36px rgba(99, 102, 241, 0.55);
+    }
+    .ekoai-trigger-icon {
+      font-size: 1.15rem;
+    }
+    .ekoai-chat-window {
+      width: 360px;
+      height: 480px;
+      background: #0f1118;
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.15);
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+      overflow: hidden;
+      animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .ekoai-chat-header {
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ekoai-agent-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ekoai-online-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .ekoai-agent-info strong {
+      display: block;
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }
+    .ekoai-agent-info small {
+      display: block;
+      color: var(--text-tertiary);
+      font-size: 0.72rem;
+    }
+    .ekoai-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+    }
+    .ekoai-close-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .ekoai-chat-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ekoai-chat-footer {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 8px;
+    }
+    .ekoai-chat-footer input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .ekoai-chat-footer input:focus {
+      border-color: #6366f1;
+    }
+    .ekoai-chat-footer button {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      width: 38px;
+      height: 38px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: opacity var(--transition);
+    }
+    .ekoai-chat-footer button:hover {
+      opacity: 0.9;
+    }
+    .ekoai-typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+    .typing-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #a5b4fc;
+      animation: typing 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
     }
   </style>
 </head>
@@ -1511,6 +1872,52 @@ function renderAdvertisingLandingPage(user = null) {
       </div>
     </section>
 
+    <!-- EKOai Canlı Reklam ve Sponsorluk Danışmanı -->
+    <section class="ekoai-section shell" id="ekoai-danisman">
+      <div class="ekoai-card">
+        <div class="ekoai-card-glow"></div>
+        <div class="ekoai-header">
+          <div class="ekoai-badge">
+            <span class="pulse-dot"></span>
+            <span>7/24 Yapay Zeka Danışmanı</span>
+          </div>
+          <h2 class="section-title" style="margin-bottom:10px;">EKOai Reklam Danışmanına Sorun</h2>
+          <p class="section-desc">
+            Paket kapsamları, Discord duyurusu entegrasyonu, İttifak kampları kuralları veya fiyatlandırma hakkında aklınıza takılanları anında sorun.
+          </p>
+        </div>
+
+        <div class="ekoai-chips-wrap">
+          <span class="chips-label">Örnek Hızlı Sorular:</span>
+          <div class="ekoai-chips">
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('Shorts paketinde Discord duyurusu var mı?')">💡 Shorts paketinde Discord duyurusu var mı?</button>
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('Dedicated Özel Video ile Midroll arasındaki temel fark nedir?')">💡 Dedicated ile Midroll arasındaki fark nedir?</button>
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('İttifak Orduları kampları için reklam koşulları neler?')">💡 İttifak kampları reklam koşulları neler?</button>
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('Ödeme süreci nasıl işliyor ve güvenli mi?')">💡 Ödeme süreci nasıl ve güvenli mi?</button>
+            <button type="button" class="ekoai-chip" onclick="askEkoAI('Kendi paketimi oluştururken indirim kazanabilir miyim?')">💡 Paketimi oluştururken indirim kazanabilir miyim?</button>
+          </div>
+        </div>
+
+        <div class="ekoai-console">
+          <div class="ekoai-messages-box" id="ekoai-inline-chat">
+            <div class="ekoai-msg ai">
+              <div class="ekoai-avatar">🤖</div>
+              <div class="ekoai-bubble">
+                Merhaba! Ben EkoYıldız Partner Studio'nun reklam danışmanı <strong>EKOai</strong>. Aklınızdaki herhangi bir reklam sorusunu buraya yazabilir veya yukarıdaki örnek sorulardan birine tıklayabilirsiniz.
+              </div>
+            </div>
+          </div>
+          <form class="ekoai-input-form" onsubmit="handleInlineSubmit(event)">
+            <input type="text" id="ekoai-inline-input" class="ekoai-text-input" placeholder="Reklam paketleri veya süreçle ilgili bir soru sorun..." autocomplete="off">
+            <button type="submit" id="ekoai-inline-btn" class="ekoai-submit-btn">
+              <span>Sor</span>
+              <svg viewBox="0 0 16 16" fill="none" class="send-icon"><path d="M2 8l11-5-3.5 11-2.5-4-5-2z" fill="currentColor"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
     <!-- Final CTA -->
     <section class="final-cta shell">
       <h2>Topluluğunu doğru yerde büyüt.</h2>
@@ -1536,6 +1943,39 @@ function renderAdvertisingLandingPage(user = null) {
         Devam Et →
       </a>
     </div>
+  </aside>
+
+  <!-- Floating EKOai Widget (Sağ Altta) -->
+  <aside class="ekoai-floating-widget" id="ekoai-floating-widget">
+    <div class="ekoai-chat-window" id="ekoai-chat-window" style="display:none;">
+      <div class="ekoai-chat-header">
+        <div class="ekoai-agent-info">
+          <span class="ekoai-online-indicator"></span>
+          <div>
+            <strong>EKOai Danışman</strong>
+            <small>Reklam & Sponsorluk Asistanı</small>
+          </div>
+        </div>
+        <button type="button" class="ekoai-close-btn" onclick="toggleFloatingChat()" aria-label="Kapat">✕</button>
+      </div>
+      <div class="ekoai-chat-body" id="ekoai-floating-chat-body">
+        <div class="ekoai-msg ai">
+          <div class="ekoai-avatar">🤖</div>
+          <div class="ekoai-bubble">
+            Merhaba! Reklam paketlerimiz, Discord duyurusu veya İttifak kampları hakkında sorularınızı yanıtlamaya hazırım. Size nasıl yardımcı olabilirim?
+          </div>
+        </div>
+      </div>
+      <form class="ekoai-chat-footer" onsubmit="handleFloatingSubmit(event)">
+        <input type="text" id="ekoai-floating-input" placeholder="Bir soru sorun..." autocomplete="off">
+        <button type="submit" aria-label="Gönder">➔</button>
+      </form>
+    </div>
+
+    <button type="button" class="ekoai-floating-trigger" id="ekoai-floating-trigger" onclick="toggleFloatingChat()" aria-label="EKOai Danışman">
+      <span class="ekoai-trigger-icon">🤖</span>
+      <span class="ekoai-trigger-label">EKOai'ya Sor</span>
+    </button>
   </aside>
 
   <!-- Footer -->
@@ -1786,6 +2226,163 @@ function renderAdvertisingLandingPage(user = null) {
       const totalText = document.getElementById('builder-total').textContent.replace('₺', '').trim();
       const summaryParam = encodeURIComponent(items.join(' + ') + ' (Tahmini: ' + totalText + ' TL)');
       window.location.href = '/tickets/new?category=reklam&package=custom&summary=' + summaryParam + '&price=' + totalText;
+    }
+
+    // 3. EKOai Reklam Danışmanı Canlı Sohbet Mantığı
+    const aiChatHistory = [];
+    let isAiResponding = false;
+
+    function toggleFloatingChat() {
+      const win = document.getElementById('ekoai-chat-window');
+      if (!win) return;
+      if (win.style.display === 'none' || !win.style.display) {
+        win.style.display = 'flex';
+        const input = document.getElementById('ekoai-floating-input');
+        if (input) setTimeout(() => input.focus(), 150);
+      } else {
+        win.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatAiText(text) {
+      let t = escapeHtml(text);
+      t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      t = t.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      t = t.replace(/\n/g, '<br>');
+      t = t.replace(/(\/tickets\/new[^\s<]*)/g, '<a href="$1" class="quiet-link" style="text-decoration:underline;color:#a5b4fc;">$1 ↗</a>');
+      return t;
+    }
+
+    async function sendQuestionToAI(question, source = 'inline') {
+      if (!question || isAiResponding) return;
+      isAiResponding = true;
+
+      const inlineChat = document.getElementById('ekoai-inline-chat');
+      const floatingChat = document.getElementById('ekoai-floating-chat-body');
+      const inlineInput = document.getElementById('ekoai-inline-input');
+      const floatingInput = document.getElementById('ekoai-floating-input');
+      const inlineBtn = document.getElementById('ekoai-inline-btn');
+
+      if (inlineInput) inlineInput.value = '';
+      if (floatingInput) floatingInput.value = '';
+      if (inlineBtn) inlineBtn.disabled = true;
+
+      const userHtml = '<div class="ekoai-msg user">' +
+        '<div class="ekoai-avatar">👤</div>' +
+        '<div class="ekoai-bubble">' + escapeHtml(question) + '</div>' +
+        '</div>';
+
+      if (inlineChat) {
+        inlineChat.insertAdjacentHTML('beforeend', userHtml);
+        inlineChat.scrollTop = inlineChat.scrollHeight;
+      }
+      if (floatingChat) {
+        floatingChat.insertAdjacentHTML('beforeend', userHtml);
+        floatingChat.scrollTop = floatingChat.scrollHeight;
+      }
+
+      const typingId = 'typing-' + Date.now();
+      const typingHtml = '<div class="ekoai-msg ai" id="' + typingId + '">' +
+        '<div class="ekoai-avatar">🤖</div>' +
+        '<div class="ekoai-bubble">' +
+          '<span class="ekoai-typing-indicator">' +
+            '<span>EKOai yazıyor</span>' +
+            '<span class="typing-dot"></span>' +
+            '<span class="typing-dot"></span>' +
+            '<span class="typing-dot"></span>' +
+          '</span>' +
+        '</div>' +
+        '</div>';
+
+      if (inlineChat) {
+        inlineChat.insertAdjacentHTML('beforeend', typingHtml);
+        inlineChat.scrollTop = inlineChat.scrollHeight;
+      }
+      if (floatingChat) {
+        floatingChat.insertAdjacentHTML('beforeend', typingHtml);
+        floatingChat.scrollTop = floatingChat.scrollHeight;
+      }
+
+      try {
+        const response = await fetch('/api/reklam/ekoai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: question,
+            history: aiChatHistory
+          })
+        });
+
+        const data = await response.json();
+        const answer = (data && data.success && data.answer) ? data.answer : (data && data.error ? data.error : 'Yanıt alınamadı.');
+
+        aiChatHistory.push({ role: 'user', content: question });
+        aiChatHistory.push({ role: 'assistant', content: answer });
+
+        document.querySelectorAll('#' + typingId).forEach(el => el.remove());
+
+        const aiHtml = '<div class="ekoai-msg ai">' +
+          '<div class="ekoai-avatar">🤖</div>' +
+          '<div class="ekoai-bubble">' + formatAiText(answer) + '</div>' +
+          '</div>';
+
+        if (inlineChat) {
+          inlineChat.insertAdjacentHTML('beforeend', aiHtml);
+          inlineChat.scrollTop = inlineChat.scrollHeight;
+        }
+        if (floatingChat) {
+          floatingChat.insertAdjacentHTML('beforeend', aiHtml);
+          floatingChat.scrollTop = floatingChat.scrollHeight;
+        }
+      } catch (err) {
+        console.error('[EKOai Chat Error]:', err);
+        document.querySelectorAll('#' + typingId).forEach(el => el.remove());
+        const errorHtml = '<div class="ekoai-msg ai">' +
+          '<div class="ekoai-avatar">🤖</div>' +
+          '<div class="ekoai-bubble" style="color:#f87171;">' +
+            'Bağlantı sırasında bir hata oluştu. Lütfen biraz sonra tekrar deneyin veya doğrudan reklam masası biletinizi açın.' +
+          '</div>' +
+          '</div>';
+
+        if (inlineChat) inlineChat.insertAdjacentHTML('beforeend', errorHtml);
+        if (floatingChat) floatingChat.insertAdjacentHTML('beforeend', errorHtml);
+      } finally {
+        isAiResponding = false;
+        if (inlineBtn) inlineBtn.disabled = false;
+      }
+    }
+
+    function askEkoAI(question) {
+      const targetSec = document.getElementById('ekoai-danisman');
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      sendQuestionToAI(question, 'inline');
+    }
+
+    function handleInlineSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('ekoai-inline-input');
+      if (input && input.value.trim()) {
+        sendQuestionToAI(input.value.trim(), 'inline');
+      }
+    }
+
+    function handleFloatingSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('ekoai-floating-input');
+      if (input && input.value.trim()) {
+        sendQuestionToAI(input.value.trim(), 'floating');
+      }
     }
 
     // İlk yüklemede builder summary başlat

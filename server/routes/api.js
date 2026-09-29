@@ -9,6 +9,32 @@ router.get("/api/search", (req, res) => {
   res.json({ success: true, results: searchPublicContent(query) });
 });
 
+// ── EKOai Reklam ve Sponsorluk Danışmanı Chat API ──────────────────────────────
+router.post("/api/reklam/ekoai-chat", async (req, res) => {
+  try {
+    const { question, history } = req.body || {};
+    if (!question || typeof question !== 'string' || !question.trim()) {
+      return res.status(400).json({ success: false, error: "Lütfen geçerli bir soru yazın." });
+    }
+
+    const { answerAdvertisingQuestion } = require("../services/reklamAIAssistantService");
+    const answer = await answerAdvertisingQuestion(question, history);
+
+    return res.json({
+      success: true,
+      answer,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("[EKOai Reklam Chat API] Hata:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Yapay zeka asistanı yanıt üretirken bir hata oluştu.",
+      message: err.message
+    });
+  }
+});
+
 router.get("/api/status", (req, res) => {
   try {
     const { getSystemTelemetry } = require("../services/systemStatusService");
