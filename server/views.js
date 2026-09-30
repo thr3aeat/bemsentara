@@ -8879,22 +8879,22 @@ function renderSettingsPage(user, query = {}) {
                   <label style="font-size:0.85rem; color:#cbd5e1; font-weight:600;">Kişisel Biyografi</label>
                   <span id="bioCounter" style="font-size:0.75rem; color:#64748b;">0/500</span>
                 </div>
-                <textarea id="profileBio" rows="4" maxlength="500" placeholder="Kendinizden, hedeflerinizden veya rolünüzden bahsedin..." style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:inherit; resize:vertical;" oninput="document.getElementById('bioCounter').innerText = this.value.length + '/500'">${sanitize(user.bio || '')}</textarea>
+                <textarea id="profileBio" rows="4" maxlength="500" placeholder="Kendinizden, hedeflerinizden veya rolünüzden bahsedin..." style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px; font-family:inherit; resize:vertical;" oninput="document.getElementById('bioCounter').innerText = this.value.length + '/500'">${sanitize(user.profileBio || '')}</textarea>
               </div>
 
               <div style="margin-bottom: 1rem;">
                 <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Guns.lol veya Kişisel Link</label>
-                <input type="url" id="profileGunsLol" value="${sanitize(user.gunsLol || '')}" placeholder="https://guns.lol/kullaniciadi" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+                <input type="url" id="profileGunsLol" value="${sanitize(user.gunsLolUrl || '')}" placeholder="https://guns.lol/kullaniciadi" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
               </div>
 
               <div style="margin-bottom: 1rem;">
                 <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Özel Arka Plan Görseli / GIF URL</label>
-                <input type="url" id="profileBgImage" value="${sanitize(user.customBackground || '')}" placeholder="https://ornek.com/banner.gif" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+                <input type="url" id="profileBgImage" value="${sanitize(user.profileBgUrl || '')}" placeholder="https://ornek.com/banner.gif" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
               </div>
 
               <div style="margin-bottom: 1.5rem;">
                 <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-bottom:6px;">Profil Arka Plan Müziği (Doğrudan MP3 URL)</label>
-                <input type="url" id="profileMusic" value="${sanitize(user.customMusic || '')}" placeholder="https://ornek.com/muzik.mp3" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
+                <input type="url" id="profileMusic" value="${sanitize(user.profileMusicUrl || '')}" placeholder="https://ornek.com/muzik.mp3" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 14px; border-radius:10px;">
               </div>
 
               <button type="submit" style="width:100%; padding:12px; background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:10px; cursor:pointer;">
@@ -9434,15 +9434,15 @@ function renderSettingsPage(user, query = {}) {
           <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); padding:1.5rem; border-radius:12px;">
             <div style="max-width:650px;">
               <div style="font-weight:700; color:#fff; font-size:1rem; margin-bottom:4px;" id="tosStatusTitle">
-                ${user.tosConsent ? '✅ Kullanım Şartları ve Gizlilik Politikası Kabul Edildi' : '⚠️ Kullanım Şartları Onayı Bekleniyor / Askıda'}
+                ${user.tosAccepted ? '✅ Kullanım Şartları ve Gizlilik Politikası Kabul Edildi' : '⚠️ Kullanım Şartları Onayı Bekleniyor / Askıda'}
               </div>
               <div style="font-size:0.85rem; color:#94a3b8; line-height:1.5;">
                 Platformun sağladığı hizmetlerden, oyun sunucularından ve topluluk odalarından yararlanabilmek için yürürlükteki <strong>EkoYıldız Topluluk Anayasası, Kullanım Şartları ve KVKK Aydınlatma Metni</strong> eksiksiz kabul edilmiş olmalıdır.
               </div>
             </div>
             <div>
-              <button id="btnToggleTos" onclick="handleToggleTosConsent()" style="padding:12px 22px; border-radius:10px; font-weight:800; font-size:0.9rem; cursor:pointer; border:none; ${user.tosConsent ? 'background:#ef4444; color:#fff;' : 'background:#10b981; color:#fff;'}">
-                ${user.tosConsent ? '❌ Rızamı Geri Çek (Kısıtlı Mod)' : '✅ Şartları Onaylıyorum'}
+              <button id="btnToggleTos" onclick="handleToggleTosConsent()" style="padding:12px 22px; border-radius:10px; font-weight:800; font-size:0.9rem; cursor:pointer; border:none; ${user.tosAccepted ? 'background:#ef4444; color:#fff;' : 'background:#10b981; color:#fff;'}">
+                ${user.tosAccepted ? '❌ Rızamı Geri Çek (Kısıtlı Mod)' : '✅ Şartları Onaylıyorum'}
               </button>
             </div>
           </div>
@@ -9468,11 +9468,11 @@ function renderSettingsPage(user, query = {}) {
                   <option value="">Seçiniz...</option>
                   <option value="kvkk_delete">🗑️ KVKK/GDPR - Kişisel Verilerin Silinmesi / Anonimleştirilmesi (Unutulma Hakkı)</option>
                   <option value="kvkk_export">📦 KVKK/GDPR - Veri Taşınabilirliği & Bilgi Edinme Talebi</option>
-                  <option value="ban_appeal">⚖️ İdari Yaptırım & Ban / Ceza Kararına İtiraz</option>
-                  <option value="copyright_dmca">🛡️ Fikri Mülkiyet, Telif (DMCA) veya Marka İhlal Bildirimi</option>
-                  <option value="tos_exception">📜 Şartlar & Kural İstisnası / Muafiyet Talebi</option>
-                  <option value="staff_complaint">🏛️ Yetkili Suistimali / Görevi Kötüye Kullanma Şikayeti</option>
-                  <option value="other_formal">📁 Diğer Resmî Hukuki İstem</option>
+                  <option value="sanction_appeal">⚖️ İdari Yaptırım & Ban / Ceza Kararına İtiraz</option>
+                  <option value="dmca_copyright">🛡️ Fikri Mülkiyet, Telif (DMCA) veya Marka İhlal Bildirimi</option>
+                  <option value="tos_special_request">📜 Şartlar & Kural İstisnası / Muafiyet Talebi</option>
+                  <option value="official_complaint">🏛️ Yetkili Suistimali / Görevi Kötüye Kullanma Şikayeti</option>
+                  <option value="official_complaint">📁 Diğer Resmî Hukuki İstem</option>
                 </select>
               </div>
 
@@ -9491,8 +9491,8 @@ function renderSettingsPage(user, query = {}) {
               </div>
 
               <div>
-                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">İletişim / Tebligat E-Posta veya Discord *</label>
-                <input type="text" id="lrContact" required placeholder="ornek@alanadi.com veya Discord: @kullanici" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
+                <label style="display:block; font-size:0.85rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">Tebligat E-Postası *</label>
+                <input type="email" id="lrContact" required placeholder="ornek@alanadi.com" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:11px 14px; border-radius:10px;">
               </div>
 
             </div>
@@ -9768,13 +9768,19 @@ function renderSettingsPage(user, query = {}) {
         const customMusic = document.getElementById('profileMusic').value;
 
         try {
-          const res = await fetch('/api/settings/profile', {
+          const res = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ profileColor, bio, gunsLol, customBackground, customMusic })
+            body: JSON.stringify({
+              profileColor,
+              profileBio: bio,
+              gunsLolUrl: gunsLol,
+              profileBgUrl: customBackground,
+              profileMusicUrl: customMusic
+            })
           });
           const data = await res.json();
-          if (data.ok) {
+          if (data.success) {
             alert('✅ Profil ve medya ayarlarınız başarıyla güncellendi!');
           } else {
             alert('❌ Hata: ' + (data.error || 'Profil kaydedilemedi.'));
@@ -9791,7 +9797,7 @@ function renderSettingsPage(user, query = {}) {
         const newPin = document.getElementById('newPin').value;
         const newPinConfirm = document.getElementById('newPinConfirm').value;
 
-        if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+        if (newPin.length !== 6 || !/^\\d{6}$/.test(newPin)) {
           alert('⚠️ PIN kodu tam olarak 6 haneli rakamlardan oluşmalıdır.');
           return;
         }
@@ -9801,13 +9807,13 @@ function renderSettingsPage(user, query = {}) {
         }
 
         try {
-          const res = await fetch('/api/settings/pin', {
+          const res = await fetch('/api/settings/update-pin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ currentPin, newPin })
+            body: JSON.stringify({ pin: newPin })
           });
           const data = await res.json();
-          if (data.ok) {
+          if (data.success) {
             alert('✅ Güvenlik PIN kodunuz güncellendi!');
             window.location.reload();
           } else {
@@ -9830,7 +9836,7 @@ function renderSettingsPage(user, query = {}) {
             body: JSON.stringify({ shiftStatus, soundAlerts, autoDutyLog })
           });
           const data = await res.json();
-          if (data.ok) {
+          if (data.success) {
             alert('✅ Yetkili tercihleri ve vardiya durumu kaydedildi!');
             const badge = document.getElementById('currentShiftBadge');
             if (badge) badge.innerText = shiftStatus;
@@ -10233,11 +10239,17 @@ function renderSettingsPage(user, query = {}) {
       async function handleToggleTosConsent() {
         if (!confirm('Kullanım şartları ve KVKK sözleşme rızanızı değiştirmek istediğinize emin misiniz? Rızanızı kaldırmanız halinde bazı platform fonksiyonları kısıtlanacaktır.')) return;
         try {
-          const res = await fetch('/api/settings/tos-consent', { method: 'POST' });
+          const res = await fetch('/api/settings/tos-consent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accept: ${user.tosAccepted ? 'false' : 'true'} })
+          });
           const data = await res.json();
-          if (data.ok) {
-            alert(data.consented ? '✅ Kullanım Şartları ve Gizlilik Politikası kabul edildi.' : '⚠️ Şartlar rızası kaldırıldı. Kısıtlı moddasınız.');
+          if (data.success) {
+            alert(data.tosAccepted ? '✅ Kullanım Şartları ve Gizlilik Politikası kabul edildi.' : '⚠️ Şartlar rızası kaldırıldı. Kısıtlı moddasınız.');
             window.location.reload();
+          } else {
+            alert('❌ Hata: ' + (data.error || 'Şartlar tercihi güncellenemedi.'));
           }
         } catch(err) {
           alert('Hata: ' + err.message);
@@ -10264,14 +10276,27 @@ function renderSettingsPage(user, query = {}) {
         btn.innerHTML = '⏳ Mühürleniyor...';
 
         try {
+          const statement = evidenceUrls
+            ? content + '\\n\\nDelil / Ek Bağlantıları: ' + evidenceUrls
+            : content;
           const res = await fetch('/api/legal-requests', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category, subject, targetAccount, contact, content, evidenceUrls, legalConsent })
+            body: JSON.stringify({
+              requestType: category,
+              fullName: targetAccount.split(' (')[0].trim(),
+              officialEmail: contact,
+              idOrDiscord: targetAccount,
+              legalBasis: 'KVKK / Topluluk Mevzuatı',
+              subject,
+              statement,
+              legalLiabilityAccepted: legalConsent,
+              termsAccepted: ${user.tosAccepted ? 'true' : 'false'}
+            })
           });
           const data = await res.json();
-          if (data.ok) {
-            alert('🏛️ RESMÎ DİLEKÇENİZ KAYDEDİLDİ!\\n\\nReferans Takip Kodu: ' + data.request.refNumber + '\\n\\nTalebiniz yetkili ve hukuk kuruluna intikal etmiştir.');
+          if (data.success) {
+            alert('🏛️ RESMÎ DİLEKÇENİZ KAYDEDİLDİ!\\n\\nReferans Takip Kodu: ' + data.refCode + '\\n\\nTalebiniz yetkili ve hukuk kuruluna intikal etmiştir.');
             document.getElementById('legalRequestForm').reset();
             loadMyLegalRequests();
           } else {
@@ -10290,7 +10315,7 @@ function renderSettingsPage(user, query = {}) {
         try {
           const res = await fetch('/api/legal-requests/my');
           const data = await res.json();
-          if (!data.ok || !data.requests || data.requests.length === 0) {
+          if (!data.success || !data.requests || data.requests.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:2rem; color:#64748b; font-size:0.9rem;">Henüz kayıtlı bir hukuki veya idari dilekçeniz bulunmamaktadır.</div>';
             return;
           }
@@ -10308,12 +10333,12 @@ function renderSettingsPage(user, query = {}) {
             if (r.status === 'in_progress') { statusColor = '#3b82f6'; statusText = 'Hukuk İncelemesinde'; }
 
             html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">';
-            html += '<td style="padding:10px; font-family:monospace; font-weight:700; color:#60a5fa;">' + (r.refNumber || r.id) + '</td>';
-            html += '<td style="padding:10px;">' + (r.category || 'Genel') + '</td>';
+            html += '<td style="padding:10px; font-family:monospace; font-weight:700; color:#60a5fa;">' + (r.refCode || r._id || '-') + '</td>';
+            html += '<td style="padding:10px;">' + (r.requestType || 'Genel') + '</td>';
             html += '<td style="padding:10px; font-weight:600; color:#fff;">' + (r.subject || '') + '</td>';
             html += '<td style="padding:10px; color:#64748b;">' + (r.createdAt ? new Date(r.createdAt).toLocaleDateString('tr-TR') : '-') + '</td>';
             html += '<td style="padding:10px;"><span style="color:' + statusColor + '; font-weight:700; background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:6px;">' + statusText + '</span></td>';
-            html += '<td style="padding:10px; color:#94a3b8; max-width:250px;">' + (r.responseNote ? ('<span style="color:#e2e8f0;">' + r.responseNote + '</span>') : '<em>Henüz karar yazılmadı</em>') + '</td>';
+            html += '<td style="padding:10px; color:#94a3b8; max-width:250px;">' + (r.officialResponse ? ('<span style="color:#e2e8f0;">' + r.officialResponse + '</span>') : '<em>Henüz karar yazılmadı</em>') + '</td>';
             html += '</tr>';
           });
 
