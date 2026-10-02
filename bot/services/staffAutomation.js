@@ -105,7 +105,13 @@ async function syncStaffRobloxRanks(client, discordUserId) {
     }
 
     let staff = await StaffProgress.findOne({ userId: discordUserId });
-    const isInactive = (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned')) || (staff && (staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted'));
+    if (!staff) {
+      console.log(`[StaffAutomation] User ${discordUserId} is not in StaffProgress. Rank sync aborted.`);
+      return false;
+    }
+
+    const isInactive = staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' ||
+                       (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned'));
 
     const robloxId = parseInt(user.robloxId);
     if (isNaN(robloxId)) return false;
@@ -117,15 +123,10 @@ async function syncStaffRobloxRanks(client, discordUserId) {
       return true;
     }
 
-    if (!staff) {
-      staff = new StaffProgress({
-        userId: discordUserId,
-        level: 1, // Default to Stajyer
-        points: 0,
-        robloxVerified: true,
-        guildJoined: true
-      });
-      await staff.save();
+    // Yetkili kaydı aktif değilse veya level < 1 ise işlem yapma
+    if (staff.status !== 'active' || (staff.level || 0) < 1) {
+      console.log(`[StaffAutomation] User ${discordUserId} is not an authorized active staff member. Rank sync aborted.`);
+      return false;
     }
 
     // Rank logic for EkoYıldız Moderatör Ekibi (130659145)
@@ -198,30 +199,44 @@ async function sendAdminLog(client, channelKey, embed) {
 
 /**
  * Checks if a staff member has joined the Admin Discord server.
+ * SADECE ve SADECE doğrulanmış, aktif yetkili ise DM gönderir.
  * @param {import('discord.js').Client} client 
  * @param {string} discordUserId 
  * @returns {Promise<boolean>}
  */
 async function ensureAdminGuildMembership(client, discordUserId) {
   try {
+    const User = require('../../models/User');
+    const StaffProgress = require('../../models/StaffProgress');
+
+    const staff = await StaffProgress.findOne({ userId: String(discordUserId) });
+    const user = await User.findOne({ discordId: String(discordUserId) });
+
+    const isInactive = (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned')) ||
+                       (!staff || staff.status !== 'active' || staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' || (staff.level || 0) < 1);
+
+    // KESİNLİKLE: Aktif yetkili kadrosunda değilse hiçbir işlem yapma ve ASLA DM atma!
+    if (isInactive) {
+      return false;
+    }
+
     const guild = await client.guilds.fetch(ADMIN_GUILD_ID).catch(() => null);
     if (!guild) return false;
 
-    const member = await guild.members.fetch(discordUserId).catch(() => null);
+    const member = await guild.members.fetch(String(discordUserId)).catch(() => null);
     const hasJoined = !!member;
 
     // Update DB
-    const staff = await StaffProgress.findOne({ userId: discordUserId });
     if (staff && staff.guildJoined !== hasJoined) {
       staff.guildJoined = hasJoined;
       await staff.save();
     }
 
-    // If not joined, DM the invite link
+    // SADECE aktif yetkili yönetim sunucusuna katılmadıysa DM gönder
     if (!hasJoined) {
-      const user = await client.users.fetch(discordUserId).catch(() => null);
-      if (user) {
-        await user.send(
+      const targetUser = await client.users.fetch(String(discordUserId)).catch(() => null);
+      if (targetUser) {
+        await targetUser.send(
           "⚠️ **EkoYıldız Personel Sistemi Uyarı**\n\nPersonel statünüz gereği **EkoYıldız Yönetim** sunucusuna katılmanız zorunludur. Lütfen aşağıdaki bağlantıyı kullanarak sunucuya katılın:\n🔗 https://discord.gg/fjwjMgH54N"
         ).catch(() => { });
       }
@@ -421,21 +436,8 @@ async function syncStaffDiscordRoles(client, discordUserId) {
 
     // Rol işlemleri bitti, şimdi veritabanını (StaffProgress) güncelleyelim.
     let staffUpdate = await require('../../models/StaffProgress').findOne({ userId: discordUserId });
-    if (!staffUpdate) {
-      let level = 1;
-      if (rankName === "Personel") level = 2;
-      else if (rankName === "Gelişmiş Personel") level = 3;
-      else if (["Sekreter", "Genel Sekreter", "Yönetim Ekibi"].includes(rankName)) level = 4;
-      else if (["Kıdemli Sekreter", "Yönetici", "Kıdemli Sekreter"].includes(rankName)) level = 5;
-      else if (rankName === "Genel Koordinatör") level = 6;
-
-      staffUpdate = new StaffProgress({
-        userId: discordUserId,
-        level: level,
-        points: 0,
-        robloxVerified: true,
-        guildJoined: true
-      });
+    if (staffUpdate) {
+      staffUpdate.robloxVerified = true;
       await staffUpdate.save();
     }
 
@@ -471,7 +473,7 @@ async function syncMainGuildRoles(client, discordUserId) {
     const user = await User.findOne({ discordId: discordUserId });
     const staff = await StaffProgress.findOne({ userId: discordUserId });
 
-    const isInactive = !staff || staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' || (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned'));
+    const isInactive = !staff || staff.status !== 'active' || staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted' || (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned'));
 
     const staffRoleIds = [
       '1518692395774906648', // Stajyer Personel
@@ -491,59 +493,44 @@ async function syncMainGuildRoles(client, discordUserId) {
     if (isInactive) {
       const toRemove = currentRoles.filter(rId => staffRoleIds.includes(rId));
       if (toRemove.length > 0) {
-        await member.roles.remove(toRemove, 'Kadro dışı / Ayrıldı yapıldı').catch(err => {
+        await member.roles.remove(toRemove, 'Kadro dışı / Ayrıldı / Yetkili Değil').catch(err => {
           console.error(`[StaffAutomation] Failed to remove main guild level roles: ${err.message}`);
         });
       }
       return;
     }
 
-    // Mappings:
-    // 1. If has '1417534492251394149' or '1417530761774366821' -> give '1417533740892291214'
-    // 2. If has '1417533740892291214' or '1419688146689593415' -> give '1517919240861257758'
-    // 3. If has '1517651154220355836' or '1517695304147796058' -> give '1517919442279858307'
+    const LEVEL_ROLES = {
+      1: '1518692395774906648', // Stajyer Personel
+      2: '1518692394495643830', // Personel
+      3: '1518692393660973186', // Kıdemli Personel
+      4: '1518692392415395971', // Sekreter
+      5: '1518709348506013706', // Kıdemli Sekreter
+      6: '1518692391312298045', // Genel Koordinatör
+    };
 
     const targetRoles = [];
     const rolesToRemove = [];
 
-    const levelRoleIds = [
-      '1518692395774906648', // Stajyer Personel
-      '1518692394495643830', // Personel
-      '1518692393660973186', // Kıdemli Personel
-      '1518692392415395971', // Sekreter
-      '1518709348506013706', // Kıdemli Sekreter
-      '1518692391312298045', // Genel Koordinatör
-    ];
-
-    const hasStaffRole = levelRoleIds.some(rid => currentRoles.includes(rid));
-
-    if (hasStaffRole) {
+    const targetLevelRole = LEVEL_ROLES[staff.level];
+    if (targetLevelRole) {
+      targetRoles.push(targetLevelRole);
       targetRoles.push('1518692386836971610'); // 🧸 Moderasyon
       targetRoles.push('1518692389169135666'); // Moderatör Ekibi
-    } else {
-      rolesToRemove.push('1518692386836971610');
-      rolesToRemove.push('1518692389169135666');
     }
 
-    // Condition 1
-    if (currentRoles.includes('1518692395774906648') || currentRoles.includes('1518692394495643830')) {
-      targetRoles.push('1518692393660973186');
-    } else {
-      rolesToRemove.push('1518692393660973186');
+    if (staff.level === 5) {
+      targetRoles.push('1518709348506013706');
+    }
+    if (staff.level >= 6) {
+      targetRoles.push('1518692391312298045');
     }
 
-    // Condition 2
-    if (currentRoles.includes('1518692393660973186') || currentRoles.includes('1518692392415395971')) {
-      targetRoles.push('1518707673846251691');
-    } else {
-      rolesToRemove.push('1518707673846251691');
-    }
-
-    // Condition 3
-    if (currentRoles.includes('1518709348506013706') || currentRoles.includes('1518692391312298045')) {
-      targetRoles.push('1518708137920823327');
-    } else {
-      rolesToRemove.push('1518708137920823327');
+    // Kullanıcının seviyesi dışındaki diğer level rollerini kaldır
+    for (const [lvl, rId] of Object.entries(LEVEL_ROLES)) {
+      if (Number(lvl) !== staff.level && currentRoles.includes(rId)) {
+        rolesToRemove.push(rId);
+      }
     }
 
     // Apply removals
@@ -577,7 +564,18 @@ async function updateDynamicModList(client) {
     const channel = await client.channels.fetch(CHANNELS.MOD_LIST).catch(() => null);
     if (!channel || !channel.isTextBased()) return;
 
-    const staffList = await StaffProgress.find({ status: 'active' }).sort({ level: -1 });
+    const rawStaffList = await StaffProgress.find({ status: 'active', level: { $gte: 1 } }).sort({ level: -1 });
+    const User = require('../../models/User');
+
+    // Gerçekten aktif yetkilileri filtrele (Kadro dışı bırakılanları listeye asla ekleme)
+    const staffList = [];
+    for (const staff of rawStaffList) {
+      const u = await User.findOne({ discordId: staff.userId });
+      if (u && (u.isStaff === false || u.isLeft === true || u.modStatus === 'dismissed' || u.modStatus === 'resigned')) {
+        continue;
+      }
+      staffList.push(staff);
+    }
 
     let listContent = "📋 **EkoYıldız Güncel Yetkili Listesi**\n\n";
 
@@ -619,6 +617,43 @@ async function updateDynamicModList(client) {
   }
 }
 
+/**
+ * Kullanıcının gerçekten aktif ve yetkili personel olup olmadığını teyit eder.
+ * @param {import('discord.js').Client} client 
+ * @param {string} discordUserId 
+ * @returns {Promise<boolean>}
+ */
+async function isActualActiveStaff(client, discordUserId) {
+  if (!discordUserId) return false;
+  try {
+    const User = require('../../models/User');
+    const StaffProgress = require('../../models/StaffProgress');
+
+    const user = await User.findOne({ discordId: String(discordUserId) });
+    const staff = await StaffProgress.findOne({ userId: String(discordUserId) });
+
+    if (user && (user.isStaff === false || user.isLeft === true || user.modStatus === 'dismissed' || user.modStatus === 'resigned')) {
+      return false;
+    }
+
+    if (staff && (staff.status === 'dismissed' || staff.status === 'resigned' || staff.status === 'paused' || staff.status === 'inactive' || staff.status === 'deleted')) {
+      return false;
+    }
+
+    const hasActiveRecord = staff && staff.status === 'active' && (staff.level || 0) >= 1;
+    const hasUserStaffFlag = user && (user.isStaff === true || user.isAdmin === true);
+
+    if (!hasActiveRecord && !hasUserStaffFlag) {
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[isActualActiveStaff] error:', err.message);
+    return false;
+  }
+}
+
 module.exports = {
   ADMIN_GUILD_ID,
   CHANNELS,
@@ -633,5 +668,7 @@ module.exports = {
   ensureAdminGuildMembership,
   updateDynamicModList,
   syncStaffDiscordRoles,
-  syncMainGuildRoles
+  syncMainGuildRoles,
+  isActualActiveStaff
 };
+

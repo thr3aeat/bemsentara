@@ -400,6 +400,7 @@ async function verifyActiveStaffRole(userId, client, guildId) {
 }
 
 async function syncAndFilterActiveStaff(allProgress, client) {
+  const User = require('../../models/User');
   // Moderatör okulu sürecindeki kişilere moderatör ekibi bildirimleri gönderilmemeli
   const SCHOOL_ACTIVE_STATUSES = [
     'pending_contract',
@@ -411,13 +412,24 @@ async function syncAndFilterActiveStaff(allProgress, client) {
     'phase2_exam_submitted',
     'phase2_completed',
   ];
-  return allProgress.filter(p => {
+
+  const filtered = [];
+  for (const p of allProgress) {
+    if (!p || p.status !== 'active' || (p.level || 0) < 1) continue;
+
     const schoolStatus = p.schoolSystem?.status;
     if (schoolStatus && SCHOOL_ACTIVE_STATUSES.includes(schoolStatus)) {
-      return false; // Okul sürecindeyse moderatör ekibi bildirimlerinden çıkar
+      continue; // Okul sürecindeyse moderatör ekibi bildirimlerinden çıkar
     }
-    return true;
-  });
+
+    const u = await User.findOne({ discordId: String(p.userId) });
+    if (u && (u.isStaff === false || u.isLeft === true || u.modStatus === 'dismissed' || u.modStatus === 'resigned')) {
+      continue;
+    }
+
+    filtered.push(p);
+  }
+  return filtered;
 }
 
 function getDailyTaskCompletionStats(progress) {
@@ -4635,6 +4647,12 @@ async function checkStaffVerifications(client) {
     for (const p of allProgress) {
       // 🚨 EĞER KULLANICI İÇİN 'EKSİK DOĞRULAMA DM' KAPATILDIYSA VEYA ZATEN UYARI ALDIYSA ASLA SPAMLAMA
       if (p.verificationWarned || p.verificationWarnCount >= 1 || p.settings?.skipIncompleteVerificationDM || p.settings?.disableVerificationDM) {
+        continue;
+      }
+
+      const { isActualActiveStaff } = require('./staffAutomation');
+      const isReal = await isActualActiveStaff(client, p.userId);
+      if (!isReal) {
         continue;
       }
 

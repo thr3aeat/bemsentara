@@ -76,6 +76,16 @@ async function runModCheckCycle(client) {
       if (!record || record.enabled === false) continue;
       const userId = String(record.userId);
 
+      // KESİNLİKLE: Sadece ve sadece gerçek aktif yetkili ise kontrol döngüsünü işlet!
+      const { isActualActiveStaff } = require('./staffAutomation');
+      const isReal = await isActualActiveStaff(client, userId);
+      if (!isReal) {
+        record.enabled = false;
+        record.status = 'closed_not_staff';
+        if (typeof record.save === 'function') await record.save();
+        continue;
+      }
+
       // Daha önce mesaj gönderilmiş ve 2 gün (48 saat) geçmiş mi kontrol et
       const lastSent = record.lastSentAt ? new Date(record.lastSentAt).getTime() : 0;
       const timeDiff = now.getTime() - lastSent;
@@ -319,6 +329,12 @@ async function handleModCheckButton(interaction) {
  * Admin tarafından ID girilerek moderatör kontrolünü kaydetme / yeniden açma
  */
 async function reopenModCheck(client, adminUser, modUserId) {
+  const { isActualActiveStaff } = require('./staffAutomation');
+  const isReal = await isActualActiveStaff(client, modUserId);
+  if (!isReal) {
+    throw new Error('Belirtilen kullanıcı aktif bir yetkili/moderatör kadrosunda bulunmuyor.');
+  }
+
   let record = modCheckSystemStore.findOne({ userId: modUserId });
   if (!record) {
     record = modCheckSystemStore.create({

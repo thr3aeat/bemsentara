@@ -507,12 +507,18 @@ Lütfen ${dateStr} tarihi için:
     }
     try {
       const User = require("../../models/User");
+      const StaffProgress = require("../../models/StaffProgress");
+      const { isActualActiveStaff, syncStaffRobloxRanks, ensureAdminGuildMembership, syncStaffDiscordRoles } = require("../services/staffAutomation");
+
+      const isStaff = await isActualActiveStaff(interaction.client, interaction.user.id);
+      if (!isStaff) {
+        return interaction.editReply({
+          content: "❌ **Yetkisiz Erişim:** Bu komut yalnızca onaylı EkoYıldız Yetkili Personel kadrosu içindir. Normal kullanıcı hesap doğrulaması için lütfen `/dogrula` veya `/authorize` komutunu kullanınız."
+        });
+      }
+
       const user = await User.findOne({ discordId: interaction.user.id });
       const { BASE_URL } = require("../../config");
-
-      if (user?.robloxId) {
-        // Zaten bağlı, grupları ve sunucuyu senkronize et
-        const { syncStaffRobloxRanks, ensureAdminGuildMembership, syncStaffDiscordRoles } = require("../services/staffAutomation");
 
         // İsteği kabul edip Roblox rütbelerini verecek fonksiyonu çağırıyoruz
         await syncStaffRobloxRanks(interaction.client, interaction.user.id);

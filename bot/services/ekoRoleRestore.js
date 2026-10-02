@@ -55,7 +55,14 @@ async function autoRestoreRoles(client) {
 
       // 1. Staff System Sync
       const progress = await StaffProgress.findOne({ userId: memberId });
-      if (progress && progress.level && progress.status === 'active') {
+      const User = require('../../models/User');
+      const u = await User.findOne({ discordId: memberId });
+      const isInactiveStaff = !progress || progress.status !== 'active' || (progress.level || 0) < 1 || (u && (u.isStaff === false || u.isLeft === true || u.modStatus === 'dismissed' || u.modStatus === 'resigned'));
+
+      if (isInactiveStaff) {
+        // Eğer kullanıcı kadro dışıysa veya personel değilse, ama üzerinde eski staff rolleri kalmışsa hemen temizle
+        await staffAutomation.syncMainGuildRoles(client, memberId).catch(() => {});
+      } else {
         const roleId = ROLES[progress.level];
         if (roleId) {
           if (!member.roles.cache.has(roleId)) {

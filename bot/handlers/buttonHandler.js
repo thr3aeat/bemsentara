@@ -6056,6 +6056,14 @@ async function handleButtonInteraction(interaction) {
   if (customId === "btn_personel_check") {
     await interaction.deferReply({ ephemeral: true }).catch(() => { });
     try {
+      const { isActualActiveStaff } = require("../services/staffAutomation");
+      const isStaff = await isActualActiveStaff(interaction.client, interaction.user.id);
+      if (!isStaff) {
+        return interaction.editReply({
+          content: "❌ **Yetkisiz İşlem:** Bu doğrulama butonu sadece onaylı yetkili personel kadrosu içindir.",
+        });
+      }
+
       const User = require("../../models/User");
       const user = await User.findOne({ discordId: interaction.user.id });
 

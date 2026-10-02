@@ -166,12 +166,19 @@ async function handleSelectInteraction(interaction) {
     const StaffProgress = require('../../models/StaffProgress');
     let p = await StaffProgress.findOne({ userId: selectedUserId });
     if (!p) {
-      p = new StaffProgress({ userId: selectedUserId, guildId: interaction.guild?.id || '1367646464804655104', level: 1 });
+      // Yetkili olmayan kullanıcılar için StaffProgress kaydı oluşturma
+      p = null;
     }
 
     let title = '';
     let boost = 0;
     if (awardType === 'mod') {
+      if (!p || p.status !== 'active') {
+        return interaction.reply({
+          content: "❌ Seçilen kullanıcı aktif bir yetkili kaydına sahip değil.",
+          ephemeral: true
+        });
+      }
       title = '👑 AYIN MODERATÖRÜ';
       boost = 0.5;
       p.gamification = p.gamification || {};
@@ -185,9 +192,9 @@ async function handleSelectInteraction(interaction) {
       boost = 0.05;
     }
 
-    p.monthlyBoostMultiplier = (p.monthlyBoostMultiplier || 1.0) + boost;
-    p.monthlyAwardTitle = title;
-    await p.save();
+    if (p) p.monthlyBoostMultiplier = (p.monthlyBoostMultiplier || 1.0) + boost;
+    if (p) p.monthlyAwardTitle = title;
+    if (p) await p.save();
 
     await interaction.reply({
       content: `🎉 **${title}** olarak <@${selectedUserId}> başarıyla seçildi!\n` +
