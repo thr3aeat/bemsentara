@@ -3,282 +3,782 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EkoYıldız · Sistem Bağlantı Servisi</title>
+  <title>EkoYıldız · Servis Senkronizasyonu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
+    :root {
+      --bg: #090a11;
+      --card-bg: rgba(17, 20, 31, 0.94);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-hover: rgba(167, 139, 250, 0.4);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #7165e7;
+      --accent-light: #a5b4fc;
+      --amber: #f59e0b;
+      --emerald: #10b981;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --card-bg: rgba(255, 255, 255, 0.96);
+        --border: rgba(0, 0, 0, 0.1);
+        --border-hover: rgba(113, 101, 231, 0.4);
+        --text: #0f172a;
+        --muted: #64748b;
+        --shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+      }
+    }
+
     body {
-      background: radial-gradient(circle at 50% 20%, #151928 0%, #06080e 70%, #030407 100%);
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 50% 10%, rgba(113, 101, 231, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.04) 0%, transparent 50%);
+      color: var(--text);
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
     }
-    /* Subtle background grid & glow */
-    .bg-glow {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.08) 50%, transparent 70%);
-      top: 50%;
+
+    /* ── STAGE 1: Floating Status Banner (0-3s) ── */
+    #statusBanner {
+      position: fixed;
+      top: 20px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      filter: blur(60px);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .card {
-      position: relative;
-      z-index: 1;
-      max-width: 540px;
-      width: 100%;
-      background: rgba(15, 20, 32, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 2.75rem 2.25rem;
-      text-align: center;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      animation: fadeIn 0.4s ease-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      padding: 6px 14px;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #a5b4fc;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 1.5rem;
+      padding: 9px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+      z-index: 1000;
     }
-    .status-dot {
+
+    #statusBanner.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .dot {
       width: 8px;
       height: 8px;
-      background: #f59e0b;
       border-radius: 50%;
-      box-shadow: 0 0 10px #f59e0b;
-      animation: pulse 1.5s infinite;
+      background: var(--amber);
+      box-shadow: 0 0 10px var(--amber);
+      animation: pulse 1.6s infinite ease-in-out;
+      flex-shrink: 0;
     }
+
+    .dot.recovered {
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      animation: none;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+      50% { opacity: 0.35; transform: scale(0.85); }
     }
-    .icon-wrap {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.15));
-      border: 1px solid rgba(139, 92, 246, 0.35);
+
+    .banner-pill {
+      font-size: 0.76rem;
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--amber);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── STAGE 2: Compact Reconnect Panel (3-10s) ── */
+    #reconnectPanel {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      display: flex;
+      padding: 28px 32px;
+      width: min(440px, calc(100vw - 32px));
+      text-align: center;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.35s ease-out;
+    }
+
+    #reconnectPanel.visible {
+      display: block;
+    }
+
+    .panel-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .panel-desc {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+
+    .inline-loader {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.86rem;
+      color: var(--accent-light);
+      font-weight: 500;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(165, 180, 252, 0.25);
+      border-top-color: var(--accent-light);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── STAGE 3: Full Recovery Screen with Dino Runner (10s+) ── */
+    #recoveryScreen {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 34px 30px;
+      width: min(540px, calc(100vw - 32px));
+      text-align: center;
+      box-shadow: var(--shadow);
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: fadeUp 0.35s ease-out;
+    }
+
+    #recoveryScreen.visible {
+      display: block;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(113, 101, 231, 0.12);
+      border: 1px solid rgba(113, 101, 231, 0.25);
+      color: var(--accent-light);
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-bottom: 14px;
+    }
+
+    .screen-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .screen-desc {
+      font-size: 0.94rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    .reconnect-notice {
+      display: none;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34d399;
+      padding: 9px 18px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 20px;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25);
-    }
-    .icon-wrap svg {
-      width: 40px;
-      height: 40px;
-      color: #c084fc;
-    }
-    h1 {
-      font-size: 1.65rem;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 0.85rem;
-      letter-spacing: -0.02em;
-      line-height: 1.25;
-    }
-    p {
-      color: #94a3b8;
-      font-size: 0.95rem;
-      line-height: 1.65;
-      margin-bottom: 1.75rem;
-    }
-    .highlight-box {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 14px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      text-align: left;
-    }
-    .highlight-label {
-      font-size: 0.8rem;
-      color: #64748b;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .highlight-val {
-      font-size: 0.92rem;
-      color: #e2e8f0;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
       gap: 8px;
+      animation: fadeUp 0.25s ease-out;
     }
-    .progress-bar-wrap {
-      width: 100%;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 99px;
-      overflow: hidden;
-      margin-top: 10px;
+    .reconnect-notice.visible {
+      display: flex;
     }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #6366f1, #a855f7);
-      width: 0%;
-      transition: width 0.3s linear;
-      border-radius: 99px;
-    }
+
     .actions {
       display: flex;
-      gap: 12px;
-      justify-content: center;
       flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
     }
+
     .btn {
       appearance: none;
-      border: none;
+      border: 1px solid transparent;
       border-radius: 12px;
-      padding: 12px 24px;
-      font-size: 0.92rem;
-      font-weight: 700;
+      padding: 11px 22px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      transition: all 0.2s;
       text-decoration: none;
+      transition: all 0.2s ease;
+      color: var(--text);
     }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     .btn-primary {
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      background: var(--accent);
       color: #fff;
-      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+      box-shadow: 0 4px 14px rgba(113, 101, 231, 0.35);
     }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 26px rgba(99, 102, 241, 0.5);
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(113, 101, 231, 0.5);
+      filter: brightness(1.08);
     }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .btn-secondary {
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
+      border-color: var(--border);
+      color: var(--muted);
     }
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      color: var(--text);
     }
+
+    /* ── Mini Runner Game Section ── */
+    .game-box {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: left;
+      position: relative;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+
+    .game-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-light);
+      display: flex;
+      gap: 12px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 130px;
+      background: #05070c;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .game-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 7, 12, 0.72);
+      backdrop-filter: blur(2px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .game-overlay.hidden {
+      display: none;
+    }
+
+    .key-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 2px 7px;
+      border-radius: 6px;
+      color: var(--accent-light);
+    }
+
     .footer-note {
-      margin-top: 2rem;
+      margin-top: 18px;
       font-size: 0.78rem;
-      color: #64748b;
+      color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #statusBanner, #reconnectPanel, #recoveryScreen, .dot {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="bg-glow"></div>
+  <!-- Stage 1: Floating Status Banner (0-3s) -->
+  <div id="statusBanner" role="status" aria-atomic="true">
+    <span class="dot" id="bannerDot"></span>
+    <span id="bannerText">Bağlantı yenileniyor…</span>
+    <span class="banner-pill">İşleminiz korunuyor</span>
+  </div>
 
-  <div class="card">
-    <div class="badge">
-      <span class="status-dot"></span>
-      <span>Sistem Bakım & Senkronizasyon</span>
+  <!-- Stage 2: Reconnect Panel (3-10s) -->
+  <div id="reconnectPanel" role="alert">
+    <div style="font-size: 2rem; margin-bottom: 12px;">⚡</div>
+    <h2 class="panel-title">Kısa bir bağlantı sorunu oluştu</h2>
+    <p class="panel-desc">
+      Bazı servisler yeniden bağlanıyor. İşleminiz korunuyor, sayfayı kapatmanıza gerek yok.
+    </p>
+    <div class="inline-loader">
+      <div class="spinner"></div>
+      <span>Tekrar bağlanılıyor…</span>
+    </div>
+  </div>
+
+  <!-- Stage 3: Full Recovery Screen with Dino Runner (10s+) -->
+  <div id="recoveryScreen" role="dialog" aria-modal="true" aria-labelledby="screenTitle">
+    <div class="header-badge">
+      <span class="dot"></span>
+      <span>Servis Senkronizasyonu</span>
     </div>
 
-    <div class="icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        <path d="M12 8v4"/>
-        <path d="M12 16h.01"/>
-      </svg>
-    </div>
-
-    <h1>Sistemlerimiz Yeniden Başlatılıyor</h1>
-    <p>
-      EkoYıldız teknik ve donanım altyapısında anlık bir sistem güncellemesi ve servis senkronizasyonu yürütülüyor. Sunucularımız birkaç saniye içinde otomatik olarak yeniden aktif hale gelecektir.
+    <h1 class="screen-title" id="screenTitle">Bağlantı beklenenden uzun sürüyor</h1>
+    <p class="screen-desc">
+      Servisleri yeniden bağlamaya devam ediyoruz. İsterseniz tekrar deneyebilir ya da beklerken küçük oyunu oynayabilirsiniz.
     </p>
 
-    <div class="highlight-box">
-      <div>
-        <div class="highlight-label">Bağlantı Denemesi</div>
-        <div class="highlight-val" id="countdownLabel">Otomatik bağlanılıyor: 5 sn</div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" id="progressFill"></div>
-        </div>
-      </div>
-      <div style="font-size: 1.5rem;">⚡</div>
+    <!-- Recovery Notice -->
+    <div class="reconnect-notice" id="recoveredNotice">
+      <span>✅</span>
+      <span>Bağlantı yeniden kuruldu — devam edebilirsiniz!</span>
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" onclick="retryNow()">
-        <span>🔄</span> Şimdi Yeniden Dene
+      <button type="button" class="btn btn-primary" id="btnRetry">
+        <span id="retryIcon">🔄</span>
+        <span id="retryText">Tekrar Dene</span>
       </button>
-      <a class="btn btn-secondary" href="https://discord.gg/XUTYbU5wgd" target="_blank" rel="noopener">
-        <span>💬</span> Discord Canlı Destek
+      <a href="/" class="btn btn-secondary">
+        🏠 Ana Sayfa
+      </a>
+      <a href="https://discord.gg/XUTYbU5wgd" target="_blank" rel="noopener" class="btn btn-secondary">
+        💬 Discord Canlı Destek
       </a>
     </div>
 
+    <!-- Mini Runner Game -->
+    <div class="game-box">
+      <div class="game-header">
+        <span class="game-label">
+          🎮 Beklerken küçük bir oyun oynayabilirsiniz
+        </span>
+        <div class="score-display">
+          <span>SKOR: <b id="gameScore">0000</b></span>
+          <span>EN İYİ: <b id="gameBest">0000</b></span>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="gameWrap" tabindex="0" role="application" aria-label="EkoYıldız Mini Zıplama Oyunu">
+        <canvas id="gameCanvas" width="480" height="130"></canvas>
+        <div class="game-overlay" id="gameOverlay">
+          <span id="overlayTitle">▶️ Başlamak için Zıpla</span>
+          <span style="font-size: 0.78rem; color: var(--muted);">
+            <kbd class="key-pill">Space</kbd> veya <kbd class="key-pill">Tıkla / Dokun</kbd>
+          </span>
+        </div>
+      </div>
+    </div>
+
     <div class="footer-note">
-      EkoYıldız Operasyonel Güvenlik Kalkanı · Hata Kodu: 502_SYNC
+      EkoYıldız Altyapı Güvencesi · Hata Kodu: 502_SYNC
     </div>
   </div>
 
   <script>
-    var countdown = 5;
-    var totalTime = 5;
-    var progressFill = document.getElementById('progressFill');
-    var countdownLabel = document.getElementById('countdownLabel');
+    (function() {
+      var banner = document.getElementById('statusBanner');
+      var bannerText = document.getElementById('bannerText');
+      var bannerDot = document.getElementById('bannerDot');
+      var panel = document.getElementById('reconnectPanel');
+      var screen = document.getElementById('recoveryScreen');
+      var recoveredNotice = document.getElementById('recoveredNotice');
+      var btnRetry = document.getElementById('btnRetry');
+      var retryText = document.getElementById('retryText');
+      var retryIcon = document.getElementById('retryIcon');
 
-    function tick() {
-      countdown -= 0.5;
-      if (countdown <= 0) {
-        countdown = 5;
-        checkHealthAndReload();
+      var retryCooldown = 0;
+      var healthTimer = null;
+      var backoff = 2000;
+      var stageTimer = null;
+
+      // Stage progression:
+      // 0-3s: Stage 1 (Banner)
+      banner.classList.add('visible');
+
+      // 3-10s: Stage 2 (Panel)
+      stageTimer = setTimeout(function() {
+        banner.classList.remove('visible');
+        panel.classList.add('visible');
+
+        // 10s+: Stage 3 (Full Screen with Dino Runner)
+        stageTimer = setTimeout(function() {
+          panel.classList.remove('visible');
+          screen.classList.add('visible');
+          initGame();
+        }, 7000);
+      }, 3000);
+
+      // Health Checking & Auto Recovery
+      function probe() {
+        fetch('/api/health?_t=' + Date.now(), { method: 'GET', cache: 'no-store' })
+          .then(function(res) {
+            if (res.status === 200 || res.status === 304) {
+              onRecovered();
+            } else {
+              scheduleNext();
+            }
+          })
+          .catch(function() {
+            scheduleNext();
+          });
       }
-      var pct = Math.max(0, Math.min(100, ((totalTime - countdown) / totalTime) * 100));
-      if (progressFill) progressFill.style.width = pct + '%';
-      if (countdownLabel) countdownLabel.innerText = 'Otomatik bağlanılıyor: ' + Math.ceil(countdown) + ' sn';
-    }
 
-    var timer = setInterval(tick, 500);
+      function scheduleNext() {
+        backoff = Math.min(10000, backoff * 1.35) + Math.random() * 400;
+        clearTimeout(healthTimer);
+        healthTimer = setTimeout(probe, backoff);
+      }
 
-    function checkHealthAndReload() {
-      fetch('/api/social-stats?_t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
-        .then(function(res) {
-          if (res.status === 200 || res.status === 304 || res.status === 302) {
-            window.location.reload();
+      function onRecovered() {
+        clearTimeout(stageTimer);
+        clearTimeout(healthTimer);
+
+        bannerDot.className = 'dot recovered';
+        bannerText.textContent = 'Bağlantı yeniden kuruldu!';
+        recoveredNotice.classList.add('visible');
+
+        setTimeout(function() {
+          window.location.reload();
+        }, 1800);
+      }
+
+      // Start initial probe
+      setTimeout(probe, 2500);
+
+      // Retry Button with Cooldown
+      if (btnRetry) {
+        btnRetry.addEventListener('click', function() {
+          if (retryCooldown > 0) return;
+
+          btnRetry.disabled = true;
+          retryIcon.textContent = '⏳';
+          retryText.textContent = 'Bağlanılıyor…';
+
+          fetch('/api/health?_t=' + Date.now(), { method: 'GET', cache: 'no-store' })
+            .then(function(res) {
+              if (res.status === 200 || res.status === 304) {
+                onRecovered();
+              }
+            })
+            .catch(function() {});
+
+          retryCooldown = 5;
+          var cd = setInterval(function() {
+            retryCooldown--;
+            if (retryCooldown <= 0) {
+              clearInterval(cd);
+              btnRetry.disabled = false;
+              retryIcon.textContent = '🔄';
+              retryText.textContent = 'Tekrar Dene';
+            } else {
+              retryText.textContent = 'Bekleyin (' + retryCooldown + 's)';
+            }
+          }, 1000);
+        });
+      }
+
+      // ── Chrome Dino inspired Runner Game ──
+      var gameInit = false;
+      function initGame() {
+        if (gameInit) return;
+        gameInit = true;
+
+        var canvas = document.getElementById('gameCanvas');
+        var wrap = document.getElementById('gameWrap');
+        var overlay = document.getElementById('gameOverlay');
+        var overlayTitle = document.getElementById('overlayTitle');
+        var scoreEl = document.getElementById('gameScore');
+        var bestEl = document.getElementById('gameBest');
+        if (!canvas) return;
+
+        var ctx = canvas.getContext('2d');
+        var bestScore = 0;
+        try {
+          bestScore = parseInt(localStorage.getItem('ekoyildiz_runner_best') || '0', 10) || 0;
+          bestEl.textContent = String(bestScore).padStart(4, '0');
+        } catch (_) {}
+
+        var state = 'ready'; // ready | running | dead
+        var score = 0;
+        var gameSpeed = 3.6;
+        var gravity = 0.58;
+        var groundY = 110;
+
+        var player = {
+          x: 42,
+          y: groundY - 24,
+          w: 22,
+          h: 22,
+          vy: 0,
+          isGrounded: true,
+          jump: function() {
+            if (this.isGrounded) {
+              this.vy = -9.2;
+              this.isGrounded = false;
+            }
+          },
+          update: function() {
+            this.vy += gravity;
+            this.y += this.vy;
+            if (this.y >= groundY - this.h) {
+              this.y = groundY - this.h;
+              this.vy = 0;
+              this.isGrounded = true;
+            }
+          },
+          draw: function() {
+            ctx.save();
+            ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+            if (!this.isGrounded) {
+              ctx.rotate(this.vy * 0.05);
+            }
+            ctx.fillStyle = '#a5b4fc';
+            ctx.beginPath();
+            var r = this.w / 2;
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#7165e7';
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(r * 0.1, -3, 5, 4);
+            ctx.restore();
           }
-        })
-        .catch(function() {});
-    }
+        };
 
-    function retryNow() {
-      window.location.reload();
-    }
+        var obstacles = [];
+        var spawnTimer = 0;
+        var groundOffset = 0;
+
+        function spawnObstacle() {
+          var h = 18 + Math.floor(Math.random() * 16);
+          var w = 14 + Math.floor(Math.random() * 8);
+          obstacles.push({
+            x: canvas.width + 10,
+            y: groundY - h,
+            w: w,
+            h: h
+          });
+        }
+
+        function resetGame() {
+          score = 0;
+          gameSpeed = 3.6;
+          obstacles = [];
+          spawnTimer = 0;
+          player.y = groundY - player.h;
+          player.vy = 0;
+          player.isGrounded = true;
+          state = 'running';
+          overlay.classList.add('hidden');
+        }
+
+        function triggerAction() {
+          if (state === 'ready' || state === 'dead') {
+            resetGame();
+          } else if (state === 'running') {
+            player.jump();
+          }
+        }
+
+        window.addEventListener('keydown', function(e) {
+          if (e.code === 'Space' || e.code === 'ArrowUp') {
+            e.preventDefault();
+            triggerAction();
+          }
+        });
+
+        wrap.addEventListener('pointerdown', function(e) {
+          e.preventDefault();
+          triggerAction();
+        });
+
+        function loop() {
+          if (document.hidden) {
+            requestAnimationFrame(loop);
+            return;
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Ground
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, groundY);
+          ctx.lineTo(canvas.width, groundY);
+          ctx.stroke();
+
+          if (state === 'running') {
+            groundOffset = (groundOffset + gameSpeed) % 24;
+          }
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+          for (var gx = -groundOffset; gx < canvas.width; gx += 24) {
+            ctx.fillRect(gx, groundY + 4, 8, 2);
+          }
+
+          if (state === 'running') {
+            player.update();
+            score++;
+            scoreEl.textContent = String(score).padStart(4, '0');
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestEl.textContent = String(bestScore).padStart(4, '0');
+              try { localStorage.setItem('ekoyildiz_runner_best', String(bestScore)); } catch(_) {}
+            }
+
+            if (score % 250 === 0 && gameSpeed < 7.5) {
+              gameSpeed += 0.25;
+            }
+
+            spawnTimer++;
+            if (spawnTimer > 65 + Math.random() * 50) {
+              spawnObstacle();
+              spawnTimer = 0;
+            }
+
+            for (var i = obstacles.length - 1; i >= 0; i--) {
+              var obs = obstacles[i];
+              obs.x -= gameSpeed;
+
+              ctx.fillStyle = '#f59e0b';
+              ctx.beginPath();
+              ctx.moveTo(obs.x + obs.w / 2, obs.y);
+              ctx.lineTo(obs.x + obs.w, obs.y + obs.h);
+              ctx.lineTo(obs.x, obs.y + obs.h);
+              ctx.closePath();
+              ctx.fill();
+
+              var pad = 4;
+              if (
+                player.x + pad < obs.x + obs.w &&
+                player.x + player.w - pad > obs.x &&
+                player.y + pad < obs.y + obs.h &&
+                player.y + player.h - pad > obs.y
+              ) {
+                state = 'dead';
+                overlayTitle.textContent = '💥 Tekrar Oyna';
+                overlay.classList.remove('hidden');
+              }
+
+              if (obs.x + obs.w < -10) {
+                obstacles.splice(i, 1);
+              }
+            }
+          }
+
+          player.draw();
+          requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+      }
+    })();
   </script>
 </body>
 </html>

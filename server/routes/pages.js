@@ -1034,4 +1034,19 @@ router.post("/api/resmi-uyari/imzala", async (req, res) => {
   }
 });
 
+// ── Bakım / Sistem Senkronizasyonu & Yeniden Bağlanma Sayfası ───────────────
+router.get("/bakim", (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const htmlPath = path.join(__dirname, '../../scripts/custom_error.html');
+  if (fs.existsSync(htmlPath)) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.sendFile(htmlPath);
+  }
+  return res.redirect("/");
+});
+
+router.get("/maintenance", (req, res) => res.redirect("/bakim"));
+router.get("/recovery", (req, res) => res.redirect("/bakim"));
+
 module.exports = router;

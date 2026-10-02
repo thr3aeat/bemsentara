@@ -1,5 +1,11 @@
 'use strict';
 
+const {
+  connectionRecoveryStyles,
+  renderConnectionRecoveryMarkup,
+  connectionRecoveryScript
+} = require('./connectionRecovery');
+
 function esc(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -73,6 +79,7 @@ function platformChromeStyles(theme = 'dark') {
     @media(max-width:1120px){.platform-header{grid-template-columns:minmax(0,1fr) max-content;gap:8px}.platform-header[data-menu-open="true"]{max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}.platform-menu-toggle{display:inline-grid;place-items:center}.platform-nav,.platform-actions{display:none;grid-column:1/-1;width:100%;min-width:0;flex-direction:column;align-items:stretch;justify-content:flex-start;overflow:visible;white-space:normal}.platform-header[data-menu-open="true"] .platform-nav,.platform-header[data-menu-open="true"] .platform-actions{display:flex}.platform-nav{padding-top:6px;border-top:1px solid var(--pc-line)}.platform-nav a,.platform-nav button,.platform-search-trigger{width:100%;justify-content:flex-start;box-sizing:border-box;padding:0 11px}.platform-dropdown{width:100%;flex-direction:column;align-items:stretch}.platform-dropdown-btn{width:100%;justify-content:space-between;box-sizing:border-box;padding:0 11px}.platform-dropdown-menu{position:static;transform:none!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;box-shadow:none;background:transparent;border:none;border-left:2px solid var(--pc-line);border-radius:0;margin-left:12px;padding:4px 0 4px 8px;max-width:none}.platform-actions{gap:7px}.platform-account{width:100%;flex-wrap:wrap;gap:4px}.platform-account a{flex:0 0 auto}.platform-account .platform-account-name{max-width:min(50vw,260px)}.platform-footer{grid-template-columns:1fr}.platform-footer nav{justify-content:flex-start}}
     @media(max-width:480px){.platform-header{width:calc(100% - 20px);margin-top:10px;padding:7px 8px;border-radius:15px;top:8px}.platform-brand img{width:32px;height:32px}.platform-brand{font-size:.94rem}.platform-account{flex-direction:column;align-items:stretch}.platform-account a{width:100%;box-sizing:border-box;justify-content:flex-start}.platform-account .platform-account-name{max-width:none}.platform-search-trigger kbd{margin-left:auto}.platform-footer{width:calc(100% - 24px)}}
     @media(prefers-reduced-motion:reduce){.platform-chrome *, .platform-chrome *::before,.platform-chrome *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    ${connectionRecoveryStyles()}
   </style>`;
 }
 
@@ -154,7 +161,8 @@ function renderPlatformHeader({ user = null, activePath = '', theme = 'dark', au
 }
 
 function renderPlatformFooter({ theme = 'dark' } = {}) {
-  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a></nav></footer>`;
+  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a></nav></footer>
+  ${renderConnectionRecoveryMarkup()}`;
 }
 
 function renderSearchDialog({ theme = 'dark' } = {}) {
@@ -226,7 +234,8 @@ function platformChromeScript() {
         setTimeout(()=>ripple.remove(),500);
       });
     }
-  })();</script>`;
+  })();</script>
+  <script>${connectionRecoveryScript()}</script>`;
 }
 
 module.exports = {
@@ -235,4 +244,7 @@ module.exports = {
   renderSearchDialog,
   platformChromeStyles,
   platformChromeScript,
+  renderConnectionRecoveryMarkup,
+  connectionRecoveryStyles,
+  connectionRecoveryScript,
 };
