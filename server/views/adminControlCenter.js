@@ -1,5 +1,7 @@
 'use strict';
 
+const { renderAdminApplicationsWorkspace, adminApplicationsAssets } = require('./adminApplications');
+
 function esc(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -296,6 +298,7 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
         ${renderTicketsWorkspace()}
         ${renderContentHubWorkspace()}
         ${renderSystemHubWorkspace()}
+        ${renderAdminApplicationsWorkspace()}
         ${legacyContent}
       </div>
     </section>
@@ -330,7 +333,7 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
 }
 
 function adminControlCenterAssets() {
-  return '<link rel="stylesheet" href="/public/admin/control-center.css">\n<script defer src="/public/admin/control-center.js"></script>';
+  return '<link rel="stylesheet" href="/public/admin/control-center.css">\n' + adminApplicationsAssets() + '\n<script defer src="/public/admin/control-center.js"></script>';
 }
 
 module.exports = {

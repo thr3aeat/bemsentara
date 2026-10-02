@@ -58,6 +58,10 @@
       const hashId = target === 'overview' ? 'stats' : target;
       history.replaceState(null, '', `#adm-${hashId}`);
     }
+
+    document.dispatchEvent(new CustomEvent('admin:workspace-activated', {
+      detail: { workspace: target }
+    }));
   }
 
   // Bind nav clicks
