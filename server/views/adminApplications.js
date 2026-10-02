@@ -29,6 +29,7 @@ function renderAdminApplicationsWorkspace() {
           <footer class="appops-actions" data-application-actions>
             <button type="button" data-application-action="start-review">İncelemeyi başlat</button>
             <button type="button" data-application-action="ask-question">Soru sor</button>
+            <button type="button" data-application-action="invite-interview">Mülakata davet et</button>
             <button type="button" data-application-action="schedule-interview">Mülakat planla</button>
             <button type="button" data-application-action="accept-interview" class="is-positive">Adayı onayla</button>
             <button type="button" data-application-action="reject-interview" class="is-danger">Reddet</button>

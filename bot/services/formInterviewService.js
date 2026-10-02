@@ -308,6 +308,12 @@ async function completePreQuestions(client, discordId, submissionId) {
  * Send Consultant Review DM when Admin finishes interview
  */
 async function sendConsultantReviewDM(client, discordId, submissionId) {
+  const { assertInterviewGate } = require("../../server/services/applicationOperationsService");
+  const submission = await FormSubmission.findById(submissionId);
+  if (submission) {
+    assertInterviewGate(submission, "finish-interview");
+  }
+
   const embed = new EmbedBuilder()
     .setColor(0xf59e0b)
     .setTitle("🎉 MÜLAKATINIZ TAMAMLANDI!")

@@ -373,7 +373,9 @@ async function handleAppealDecisionButton(interaction, client) {
 
   // ── Kabul ──────────────────────────────────────────────────────────────────
   if (isAccept) {
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => {});
+    }
     try {
       const guild = await client.guilds.fetch(guildId).catch(() => null);
       if (guild) {
@@ -449,7 +451,9 @@ async function handleAppealModalExtras(interaction, client) {
     const guildId = rest.substring(sepIdx + 1);
 
     const rejectReason = interaction.fields.getTextInputValue('reject_reason');
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => {});
+    }
 
     try {
       const user = await client.users.fetch(userId).catch(() => null);
@@ -498,7 +502,9 @@ async function handleAppealModalExtras(interaction, client) {
     const guildId = rest.substring(sepIdx + 1);
 
     const question = interaction.fields.getTextInputValue('appeal_question');
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => {});
+    }
 
     try {
       const user = await client.users.fetch(userId).catch(() => null);

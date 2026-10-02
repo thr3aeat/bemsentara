@@ -13,20 +13,43 @@ const express = require('express');
 const pagesRouter = require('../server/routes/pages');
 const sponsorAdService = require('../server/services/sponsorAdService');
 
-async function requestPages(pathname) {
-  const app = express();
-  app.use((req, res, next) => { req.user = null; next(); });
-  app.use(pagesRouter);
-  const server = await new Promise((resolve) => {
-    const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
+function requestPages(pathname) {
+  return new Promise((resolve) => {
+    const headers = new Map();
+    const res = {
+      statusCode: 200,
+      status(code) { this.statusCode = code; return this; },
+      redirect(codeOrUrl, maybeUrl) {
+        const status = typeof codeOrUrl === 'number' ? codeOrUrl : 302;
+        const location = typeof codeOrUrl === 'number' ? maybeUrl : codeOrUrl;
+        headers.set('location', location);
+        resolve({
+          status,
+          headers: { get: (k) => headers.get(k.toLowerCase()) },
+          text: async () => ''
+        });
+      },
+      send(body) {
+        resolve({
+          status: this.statusCode || 200,
+          headers: { get: (k) => headers.get(k.toLowerCase()) },
+          text: async () => String(body)
+        });
+      }
+    };
+    const req = {
+      url: pathname,
+      path: pathname,
+      originalUrl: pathname,
+      method: 'GET',
+      user: null,
+      headers: {},
+      params: {}
+    };
+    pagesRouter.handle(req, res, () => {
+      resolve({ status: 404, headers: { get: () => null }, text: async () => 'Not Found' });
+    });
   });
-
-  try {
-    const { port } = server.address();
-    return await fetch(`http://127.0.0.1:${port}${pathname}`, { redirect: 'manual' });
-  } finally {
-    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
-  }
 }
 
 test('forms hub separates staff and other forms without legacy gaming UI', () => {

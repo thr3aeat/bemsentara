@@ -1134,23 +1134,32 @@ function renderFormScript(fields, slug = '', sections = []) {
         const data = await response.json();
         if (!response.ok || !data.success) throw data;
 
-        const subId = String(data.submissionId || '—');
+        const refId = String(data.reference || data.submissionId || '—');
+        const portalUrl = '/applications/' + encodeURIComponent(refId);
         form.innerHTML = \`
-          <section class="form-success-card">
-            <div class="form-success-icon">✓</div>
-            <h2>Başvurunuz Başarıyla Alındı!</h2>
-            <p>Bilgileriniz ilgili yönetim kuruluna ulaştırıldı. Süreç hakkında sistem üzerinden bilgilendirileceksiniz.</p>
-            <div style="margin-bottom: 24px;">
-              <div class="form-id-badge">
-                <span>Takip No:</span>
-                <strong style="color:var(--f-accent);">\${subId}</strong>
-                <button type="button" onclick="navigator.clipboard.writeText('\${subId}');this.textContent='Kopyalandı';" style="background:none;border:none;color:var(--f-muted);cursor:pointer;font-size:0.8rem;text-decoration:underline;">Kopyala</button>
+          <section class="form-success-card" style="text-align:center;padding:2.5rem 2rem;">
+            <div class="form-success-icon" style="margin:0 auto 1.25rem;">✓</div>
+            <h2 style="font-size:1.8rem;font-weight:800;color:#fff;margin-bottom:0.5rem;">Başvurunuz bizde.</h2>
+            <p style="color:#cbd5e1;max-width:540px;margin:0 auto 1.5rem;line-height:1.6;font-size:0.95rem;">
+              Başvurunuz başarıyla oluşturuldu. Süreç boyunca tüm aşamaları ve güncellemeleri aday merkezinizden takip edebilirsiniz.
+            </p>
+            <div style="margin-bottom: 2rem;">
+              <div class="form-id-badge" style="display:inline-flex;align-items:center;gap:0.75rem;padding:0.6rem 1.2rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;">
+                <span style="font-size:0.8rem;color:var(--f-muted);">Referans:</span>
+                <strong style="color:#38bdf8;font-family:monospace;font-size:1.05rem;letter-spacing:0.04em;">\${refId}</strong>
+                <button type="button" onclick="navigator.clipboard.writeText('\${refId}');this.textContent='Kopyalandı!';" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;cursor:pointer;font-size:0.75rem;padding:0.25rem 0.6rem;border-radius:6px;">Kopyala</button>
               </div>
             </div>
-            <div>
-              <a href="/forms" class="forms-submit-btn" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);box-shadow:none;">
-                ← Formlar Listesine Dön
+            <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+              <a href="\${portalUrl}" class="forms-submit-btn" style="text-decoration:none;padding:12px 28px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;border-radius:12px;box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+                Başvurumu Gör (Aday Merkezi) →
               </a>
+              <a href="/forms" class="forms-submit-btn" style="text-decoration:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;padding:12px 24px;border-radius:12px;box-shadow:none;">
+                Tüm Formlar
+              </a>
+            </div>
+            <div style="font-size:0.8rem;color:#94a3b8;font-style:italic;">
+              “Gönder düğmesine ikinci kez basmanıza gerek yok. İlkini aldık. :)”
             </div>
           </section>
         \`;

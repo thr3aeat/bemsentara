@@ -42,6 +42,33 @@ function renderAdminOverviewSkeleton() {
     ${renderAdminMetric(null, 'Aktif Personel', { key: 'activeStaff' })}
   </div>
   <div class="acc-dashboard-grid">
+    <section class="acc-panel" style="grid-column: span 12; background: linear-gradient(135deg, rgba(129,140,248,0.06), rgba(56,189,248,0.03)); border: 1px solid rgba(129,140,248,0.25);">
+      <div class="acc-panel-head" style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <span style="font-size:1.2rem;">👥</span>
+          <h2>People &amp; Community · Recruiting</h2>
+        </div>
+        <a href="#adm-submissions" class="acc-btn acc-btn-sm" style="font-size:0.8rem;text-decoration:none;">Başvuruları Gör →</a>
+      </div>
+      <div class="acc-recruiting-overview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-top:1rem;" id="acc-hiring-overview-stats">
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);padding:0.9rem;border-radius:12px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#38bdf8;" id="acc-stat-active-subs">—</div>
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-top:0.2rem;">Aktif Başvuru</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);padding:0.9rem;border-radius:12px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#fbbf24;" id="acc-stat-review-subs">—</div>
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-top:0.2rem;">İncelemede</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);padding:0.9rem;border-radius:12px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#34d399;" id="acc-stat-interview-subs">—</div>
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-top:0.2rem;">Mülakat</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);padding:0.9rem;border-radius:12px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:#a78bfa;" id="acc-stat-decision-subs">—</div>
+          <div style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;margin-top:0.2rem;">Karar Bekliyor</div>
+        </div>
+      </div>
+    </section>
     <section class="acc-panel">
       <div class="acc-panel-head"><h2>Operasyon kuyruğu</h2><span class="acc-badge" data-queue-count>0</span></div>
       <div data-admin-queue class="acc-state">Yükleniyor…</div>

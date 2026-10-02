@@ -1,0 +1,350 @@
+/* Application Approval & Signature Styles */
+:root {
+  --app-bg: #090a12;
+  --app-card: #121320;
+  --app-card-border: rgba(255, 255, 255, 0.08);
+  --app-text: #f8fafc;
+  --app-text-muted: #94a3b8;
+  --app-primary: #3b82f6;
+  --app-primary-hover: #2563eb;
+  --app-success: #10b981;
+  --app-accent: #6366f1;
+}
+
+.approval-shell {
+  max-width: 760px;
+  margin: 2.5rem auto 4rem;
+  padding: 0 1.25rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--app-text);
+}
+
+.approval-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--app-text-muted);
+}
+
+.approval-ribbon .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-weight: 600;
+}
+
+.approval-card {
+  background: var(--app-card);
+  border: 1px solid var(--app-card-border);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.approval-header {
+  border-bottom: 1px solid var(--app-card-border);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.approval-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.approval-lead {
+  font-size: 0.9375rem;
+  color: var(--app-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Steps progress indicator */
+.steps-nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--app-card-border);
+  padding-bottom: 1rem;
+}
+
+.step-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--app-text-muted);
+  font-weight: 500;
+}
+
+.step-nav-item.active {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.step-nav-item.completed {
+  color: var(--app-success);
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.75rem;
+}
+
+.step-nav-item.active .step-num {
+  background: var(--app-primary);
+  color: #fff;
+}
+
+.step-nav-item.completed .step-num {
+  background: var(--app-success);
+  color: #fff;
+}
+
+/* Step 1: Candidate Overview */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--app-card-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.overview-item .label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--app-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.overview-item .value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+/* Step 2: Agreements & Checklist */
+.agreements-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.agreement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.15rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--app-card-border);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.agreement-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.agreement-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.15rem;
+  accent-color: var(--app-primary);
+  cursor: pointer;
+}
+
+.agreement-text strong {
+  display: block;
+  font-size: 0.9375rem;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+}
+
+.agreement-text p {
+  font-size: 0.8125rem;
+  color: var(--app-text-muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.agreement-links {
+  margin-top: 0.35rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.agreement-links a {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  text-decoration: underline;
+}
+
+/* Step 3: Signature Canvas */
+.signature-box {
+  margin-bottom: 2rem;
+}
+
+.signature-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.signature-label-row h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.signature-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: #ffffff;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  touch-action: none;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.signature-canvas-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.signature-placeholder-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #94a3b8;
+  font-size: 0.875rem;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.6;
+}
+
+.signature-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.btn-clear-sig {
+  background: transparent;
+  border: 1px solid var(--app-card-border);
+  color: var(--app-text-muted);
+  border-radius: 6px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-sig:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--app-text);
+}
+
+/* Submission action */
+.submit-action-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--app-card-border);
+}
+
+.btn-primary-action {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-primary-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.btn-primary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error and Status Views */
+.error-card, .success-card {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.icon-circle.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.icon-circle.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.status-desc {
+  color: var(--app-text-muted);
+  max-width: 480px;
+  margin: 0 auto 2rem;
+  line-height: 1.5;
+}

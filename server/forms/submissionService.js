@@ -54,7 +54,11 @@ async function submitCatalogForm({ definition, body, user, notify = notifySafely
   });
 
   await notify(submission);
-  return { submissionId: submission._id, message: 'Başvurun alındı.' };
+  return {
+    submissionId: submission._id,
+    reference: submission.reference,
+    message: 'Başvurun alındı.'
+  };
 }
 
 module.exports = { formError, notifySafely, submitCatalogForm };

@@ -274,10 +274,15 @@ app.use((req, res, next) => {
   next();
 });
 
+const candidatePortalRoutes = require("./routes/candidatePortal");
+const { router: applicationApprovalRoutes } = require("./routes/applicationApproval");
+
 app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
 app.use(applicationAuthRoutes);
+app.use(candidatePortalRoutes);
+app.use(applicationApprovalRoutes);
 app.use(adminControlCenterRoutes);
 app.use("/api/admin/bot-control", botControlRoutes);
 app.use(adminApplicationsRoutes);

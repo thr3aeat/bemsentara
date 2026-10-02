@@ -211,7 +211,9 @@ async function handleSelectModerator(interaction, selectedUserId, type) {
  */
 async function confirmModeratorSelection(interaction, targetUserId, type) {
   try {
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => {});
+    }
 
     const targetProgress = await StaffProgress.findOne({ userId: targetUserId });
     if (!targetProgress) {

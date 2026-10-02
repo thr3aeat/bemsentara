@@ -869,10 +869,25 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
     components.push(navRow);
   }
 
-  await interaction.editReply({
-    embeds: [embed],
-    components
-  });
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferUpdate().catch(() => { });
+  }
+
+  try {
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({
+        embeds: [embed],
+        components
+      });
+    } else {
+      await interaction.reply({
+        embeds: [embed],
+        components
+      });
+    }
+  } catch (renderErr) {
+    console.error('[renderPanel] editReply/reply hatası:', renderErr.message);
+  }
 }
 
 /**
@@ -947,17 +962,27 @@ async function handlePanelButton(interaction) {
   }
 
   if (customId === "panel_close") {
-    return interaction.update({
-      content: "🔒 Kontrol paneli kapatıldı.",
-      embeds: [],
-      components: []
-    });
+    if (interaction.deferred || interaction.replied) {
+      return interaction.editReply({
+        content: "🔒 Kontrol paneli kapatıldı.",
+        embeds: [],
+        components: []
+      }).catch(() => { });
+    } else {
+      return interaction.update({
+        content: "🔒 Kontrol paneli kapatıldı.",
+        embeds: [],
+        components: []
+      }).catch(() => { });
+    }
   }
 
 
   // Close whistleblower report (user-owned or admin)
   if (customId.startsWith('whistle_close_')) {
-    await interaction.deferUpdate().catch(() => { });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => { });
+    }
     try {
       const reportId = customId.replace('whistle_close_', '');
       const AnonymousReport = require('../../models/AnonymousReport');
@@ -990,13 +1015,21 @@ async function handlePanelButton(interaction) {
   if (customId === "panel_emergency_call") {
     const allowedSpecial = ["1031620522406072350", "1492888195807969510"];
     if (!allowedSpecial.includes(interaction.user.id)) {
-      return interaction.reply({
-        content: "❌ Bu butonu kullanmaya yetkiniz bulunmamaktadır!",
-        ephemeral: true
-      });
+      if (!interaction.replied && !interaction.deferred) {
+        return interaction.reply({
+          content: "❌ Bu butonu kullanmaya yetkiniz bulunmamaktadır!",
+          ephemeral: true
+        }).catch(() => { });
+      } else {
+        return interaction.editReply({
+          content: "❌ Bu butonu kullanmaya yetkiniz bulunmamaktadır!"
+        }).catch(() => { });
+      }
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
 
     try {
       const { callTelegramUser } = require("./telegramService");
@@ -1058,7 +1091,9 @@ async function handlePanelButton(interaction) {
   // Tab navigation
   if (customId.startsWith("panel_tab_")) {
     const tabName = customId.replace("panel_tab_", "");
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => { });
+    }
     return renderPanel(interaction, tabName);
   }
 
@@ -1075,7 +1110,9 @@ async function handlePanelButton(interaction) {
   };
 
   if (subTabs[customId]) {
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => { });
+    }
     return renderPanel(interaction, subTabs[customId]);
   }
 
@@ -1338,7 +1375,9 @@ async function handlePanelButton(interaction) {
   // ── STAFF MANAGEMENT ───────────────────────────────────────────────────────
 
   if (customId === "panel_staff_report") {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const { generateStaffReport } = require("./staffSystem");
       const reportEmbed = await generateStaffReport(client);
@@ -1520,7 +1559,9 @@ async function handlePanelButton(interaction) {
   // ── ATTENDANCE ─────────────────────────────────────────────────────────────
 
   if (customId === "panel_staff_attendance_start") {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const { startRollCall } = require("./rollCallService");
       await startRollCall(client, interaction);
@@ -1531,7 +1572,9 @@ async function handlePanelButton(interaction) {
   }
 
   if (customId === "panel_staff_attendance_stop") {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const { endRollCall } = require("./rollCallService");
       await endRollCall(client, interaction);
@@ -1545,7 +1588,9 @@ async function handlePanelButton(interaction) {
 
   if (customId.startsWith("panel_sys_toggle_")) {
     const toggleName = customId.replace("panel_sys_toggle_", "");
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const ServerConfig = require("../../models/ServerConfig");
       const { TARGET_GUILD_ID } = require("../../config");
@@ -1645,7 +1690,9 @@ async function handlePanelButton(interaction) {
   }
 
   if (customId === "panel_sys_birimtanitim") {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const embed = new EmbedBuilder()
         .setTitle("🛡️ EkoYıldız Birim Tanıtımları")
@@ -1779,7 +1826,9 @@ async function handlePanelButton(interaction) {
   }
 
   if (customId === "panel_sys_abusetest") {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    }
     try {
       const embed = new EmbedBuilder()
         .setTitle("🚨 Olası Abuse Tespit Edildi")
@@ -2028,7 +2077,9 @@ async function handlePanelButton(interaction) {
 async function handlePanelSelect(interaction) {
   if (interaction.customId === "panel_blacklist_select") {
     const option = interaction.values[0];
-    await interaction.deferUpdate();
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferUpdate().catch(() => { });
+    }
     return renderPanel(interaction, "blacklist", option);
   }
 

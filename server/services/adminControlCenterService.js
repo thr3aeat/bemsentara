@@ -48,6 +48,29 @@ function createAdminControlCenterService(deps) {
     const activeIds = logs === null ? null : new Set(logs.filter(item => new Date(item.timestamp || item.iso || 0).getTime() >= sinceMs).map(item => String(item.discordId))).size;
     const open = tickets === null ? null : tickets.filter(item => ['open', 'pending_confirmation'].includes(item.status));
     const pending = submissions === null ? null : submissions.filter(item => item.status === 'PENDING');
+
+    let activeSubs = 0;
+    let reviewSubs = 0;
+    let interviewSubs = 0;
+    let decisionSubs = 0;
+
+    if (Array.isArray(submissions)) {
+      for (const s of submissions) {
+        const stage = s.applicationStage || s.interviewState || 'SUBMITTED';
+        const st = s.status || 'PENDING';
+        if (st !== 'REJECTED' && stage !== 'REJECTED' && stage !== 'FINISHED' && stage !== 'APPLICATION_CLOSED') {
+          activeSubs += 1;
+        }
+        if (['REVIEWING', 'UNDER_REVIEW', 'SUBMITTED', 'APPLICATION_RECEIVED', 'TEAM_EVALUATION', 'PENDING'].includes(stage)) {
+          reviewSubs += 1;
+        } else if (['INTERVIEW_SCHEDULED', 'TIME_APPROVED', 'INVITED_TO_INTERVIEW', 'SCHEDULE_QUESTION'].includes(stage)) {
+          interviewSubs += 1;
+        } else if (['QUESTION_PENDING', 'ACCEPTED_WAITING_VERIFY', 'FINAL_EVALUATION', 'INFO_REQUIRED'].includes(stage)) {
+          decisionSubs += 1;
+        }
+      }
+    }
+
     const queue = [
       ...(open || []).map(item => ({
         id: String(item.ticketId || item._id),
@@ -76,6 +99,12 @@ function createAdminControlCenterService(deps) {
         pendingSubmissions: pending?.length ?? null,
         activeBans: users === null ? null : users.filter(item => item.isBanned).length,
         activeStaff: staff === null ? null : staff.filter(item => !['dismissed', 'resigned', 'paused'].includes(item.status)).length,
+        recruiting: {
+          active: activeSubs,
+          review: reviewSubs,
+          interview: interviewSubs,
+          decision: decisionSubs
+        }
       },
       liveUsers: (liveUsers || []).map(publicLiveUser),
       queue,

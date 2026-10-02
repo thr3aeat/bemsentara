@@ -13,6 +13,8 @@ const formSubmissions = collections.formSubmissions;
 
 const VALID_STATUSES = ["PENDING", "APPROVED", "REJECTED", "AI_DETECTED"];
 
+const { generateApplicationReference, deriveReferenceFromId, STAGES } = require("../server/services/recruitmentStages");
+
 const FormSubmission = {
   STATUSES: {
     PENDING: "PENDING",
@@ -20,20 +22,59 @@ const FormSubmission = {
     REJECTED: "REJECTED",
     AI_DETECTED: "AI_DETECTED",
   },
+  STAGES,
+
+  getReference(record) {
+    if (!record) return null;
+    return record.reference || deriveReferenceFromId(record._id, record.createdAt);
+  },
 
   create(data) {
+    const now = new Date();
+    const reference = data.reference || generateApplicationReference(data.createdAt || now);
     const defaults = {
       status: "PENDING", // PENDING, APPROVED, REJECTED, AI_DETECTED
+      applicationStage: STAGES.APPLICATION_RECEIVED,
+      reference,
       reviewedBy: null,
       reviewNote: null,
       reviewedAt: null,
-      createdAt: new Date(),
+      operationHistory: [
+        {
+          id: `${Date.now()}-created`,
+          action: 'APPLICATION_CREATED',
+          actor: { name: 'Aday' },
+          createdAt: now.toISOString(),
+          description: 'Başvuru başarıyla oluşturuldu.'
+        },
+        {
+          id: `${Date.now()}-received`,
+          action: 'APPLICATION_RECEIVED',
+          actor: { name: 'Sistem' },
+          createdAt: now.toISOString(),
+          description: 'Başvuru ön inceleme kuyruğuna alındı.'
+        }
+      ],
+      createdAt: now,
     };
-    return Promise.resolve(formSubmissions.create({ ...defaults, ...data }));
+    return Promise.resolve(formSubmissions.create({ ...defaults, ...data, reference: data.reference || reference }));
   },
 
   findById(id) {
     return Promise.resolve(formSubmissions.findById(id));
+  },
+
+  findByReference(refOrId) {
+    if (!refOrId) return Promise.resolve(null);
+    const str = String(refOrId).trim();
+    // Try by ID first
+    const byId = formSubmissions.findById(str);
+    if (byId) return Promise.resolve(byId);
+
+    // Try by explicit reference
+    const all = formSubmissions.find({});
+    const byRef = all.find(r => r.reference === str || FormSubmission.getReference(r) === str);
+    return Promise.resolve(byRef || null);
   },
 
   findByUser(userId) {

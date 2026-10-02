@@ -188,7 +188,18 @@
         const metricEl = document.querySelector(`[data-admin-metric="${key}"] .acc-metric-val`);
         if (metricEl) {
           metricEl.textContent = val === null || val === undefined ? 'Veri alınamadı' : String(val);
-        }
+      }
+
+      if (data.summary && data.summary.recruiting) {
+        const r = data.summary.recruiting;
+        const elActive = document.getElementById('acc-stat-active-subs');
+        const elReview = document.getElementById('acc-stat-review-subs');
+        const elInterview = document.getElementById('acc-stat-interview-subs');
+        const elDecision = document.getElementById('acc-stat-decision-subs');
+        if (elActive) elActive.textContent = r.active ?? '0';
+        if (elReview) elReview.textContent = r.review ?? '0';
+        if (elInterview) elInterview.textContent = r.interview ?? '0';
+        if (elDecision) elDecision.textContent = r.decision ?? '0';
       }
     }
 
