@@ -27,3 +27,4 @@ scratch/
 dist/
 build/
 .worktrees/
+.superpowers/
