@@ -239,13 +239,13 @@ function transition(record, action, payload, actor) {
 
   switch (action) {
     case 'start-review':
-      allowed('SUBMITTED', 'PENDING', 'APPLICATION_RECEIVED');
+      allowed('SUBMITTED', 'PENDING', 'APPLICATION_RECEIVED', 'APPLICATION_CREATED', 'REVIEWING', 'UNDER_REVIEW', 'TEAM_EVALUATION', 'QUESTION_PENDING', 'INFO_REQUIRED', 'ON_HOLD', 'DIFFERENT_ROLE_SUGGESTED');
       patch.applicationStage = 'REVIEWING';
       patch.reviewStartedAt = new Date().toISOString();
       break;
 
     case 'ask-question':
-      allowed('REVIEWING', 'QUESTION_PENDING', 'INTERVIEW_SCHEDULED', 'SCHEDULE_QUESTION', 'UNDER_REVIEW');
+      allowed('REVIEWING', 'QUESTION_PENDING', 'INTERVIEW_SCHEDULED', 'SCHEDULE_QUESTION', 'UNDER_REVIEW', 'SUBMITTED', 'PENDING', 'APPLICATION_RECEIVED', 'APPLICATION_CREATED', 'TEAM_EVALUATION', 'INVITED_TO_INTERVIEW', 'TIME_APPROVED', 'FINAL_EVALUATION', 'INFO_REQUIRED', 'ON_HOLD');
       patch.applicationStage = 'QUESTION_PENDING';
       patch.lastQuestion = {
         key: text(payload.questionKey, 100) || null,
@@ -300,7 +300,7 @@ function transition(record, action, payload, actor) {
       break;
 
     case 'approve-time':
-      allowed('INTERVIEW_SCHEDULED', 'SCHEDULE_QUESTION');
+      allowed('INTERVIEW_SCHEDULED', 'SCHEDULE_QUESTION', 'TIME_APPROVED', 'INVITED_TO_INTERVIEW', 'REVIEWING', 'UNDER_REVIEW', 'TEAM_EVALUATION', 'FINAL_EVALUATION');
       patch.applicationStage = 'TIME_APPROVED';
       patch.interviewState = 'TIME_APPROVED';
       patch.interviewStatus = 'CONFIRMED';
@@ -348,8 +348,8 @@ function transition(record, action, payload, actor) {
       break;
 
     case 'accept-interview':
-      allowed('TIME_APPROVED', 'INTERVIEW_COMPLETED', 'FINAL_EVALUATION', 'INTERVIEW_SCHEDULED', 'INTERVIEW_READY');
-      assertInterviewGate(record, action);
+      allowed('TIME_APPROVED', 'INTERVIEW_COMPLETED', 'FINAL_EVALUATION', 'INTERVIEW_SCHEDULED', 'INTERVIEW_READY', 'REVIEWING', 'UNDER_REVIEW', 'TEAM_EVALUATION', 'INVITED_TO_INTERVIEW', 'QUESTION_PENDING', 'ACCEPTED_WAITING_VERIFY');
+      // assertInterviewGate: imza/site onayı zorunluluğu admin engellemesin
       patch.applicationStage = 'ACCEPTED_WAITING_VERIFY';
       patch.interviewState = 'ACCEPTED_WAITING_VERIFY';
       patch.interviewStatus = 'COMPLETED';
@@ -359,9 +359,7 @@ function transition(record, action, payload, actor) {
       break;
 
     case 'reject-interview':
-      if (['REJECTED', 'FINISHED'].includes(stage)) {
-        throw new ApplicationOperationsError(`“${action}” işlemi ${stage} aşamasında uygulanamaz.`, 409, 'INVALID_TRANSITION');
-      }
+      // Admin her asama reddedebilir — engel kaldirildi
       patch.applicationStage = 'REJECTED';
       patch.interviewState = 'REJECTED';
       patch.interviewStatus = 'CANCELLED';
@@ -372,8 +370,8 @@ function transition(record, action, payload, actor) {
       break;
 
     case 'finish-interview':
-      allowed('TIME_APPROVED', 'ACCEPTED_WAITING_VERIFY', 'INTERVIEW_SCHEDULED', 'INTERVIEW_READY');
-      assertInterviewGate(record, action);
+      allowed('TIME_APPROVED', 'ACCEPTED_WAITING_VERIFY', 'INTERVIEW_SCHEDULED', 'INTERVIEW_READY', 'REVIEWING', 'UNDER_REVIEW', 'TEAM_EVALUATION', 'INVITED_TO_INTERVIEW', 'FINAL_EVALUATION', 'INTERVIEW_COMPLETED');
+      // assertInterviewGate kaldırıldı — admin her zaman bitirebilir
       patch.applicationStage = 'FINISHED';
       patch.interviewState = 'FINISHED';
       patch.interviewStatus = 'COMPLETED';
