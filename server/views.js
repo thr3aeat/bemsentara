@@ -5860,9 +5860,13 @@ function renderAdminPage(user) {
     <\/script>
   `;
 
+  const legacyContent = content.replace(
+    /<!-- ── DOLDURULAN FORMLAR[\s\S]*?<!-- Panel Formları -->/,
+    '<!-- Panel Formları -->'
+  );
   const adminContent = renderAdminControlCenterShell({
     user,
-    legacyContent: `${renderAdminOverviewSkeleton()}${content}`,
+    legacyContent: `${renderAdminOverviewSkeleton()}${legacyContent}`,
   });
   return _layout('Admin Control Center', user, adminContent, adminControlCenterAssets(), '/admin');
 }

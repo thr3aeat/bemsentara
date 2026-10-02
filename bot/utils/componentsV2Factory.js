@@ -172,6 +172,20 @@ class ComponentsV2Factory {
     ]);
   }
 
+  /** Accent kullanmayan, yalnızca DM giriş doğrulaması için V2 mesajı. */
+  static buildDmLoginCode(code, portalUrl = process.env.BASE_URL || 'https://ekoyildiz.duckdns.org') {
+    const helpUrl = `${String(portalUrl).replace(/\/$/, '')}/yardim`;
+    return this.buildPayload([
+      ...this.headerBlock('Güvenli giriş kodunuz', '✦'),
+      this.text(`EkoYıldız başvuru portalına giriş için tek kullanımlık kodunuz:\n\n# ${code}`),
+      this.separator(true),
+      this.text('Kod **5 dakika** geçerlidir. Bu kodu EkoYıldız ekibi dahil hiç kimseyle paylaşmayın.'),
+      this.actionRow([{ label: 'Yardım ve güvenlik', style: ButtonStyle.Link, url: helpUrl }]),
+      this.separator(false),
+      this.text('-# EkoYıldız Güvenlik • Bu mesaj size özel olarak gönderildi.')
+    ]);
+  }
+
   /**
    * Dynamic Canvas (Attachment) görsellerini V2 Container MediaGallery içinde yayınlamak için yanıt üretir
    * @param {string} attachmentName - Örn: "attachment://levelup.png"

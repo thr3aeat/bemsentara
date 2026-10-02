@@ -12,6 +12,8 @@ const giveawayRoutes = require("./routes/giveaways");
 const adRoutes = require("./routes/ads");
 const { router: adminControlCenterRoutes } = require("./routes/adminControlCenter");
 const { router: botControlRoutes } = require("./routes/botControl");
+const { router: adminApplicationsRoutes } = require("./routes/adminApplications");
+const { router: applicationAuthRoutes } = require("./routes/applicationAuth");
 
 const logger = require("../utils/logger");
 
@@ -52,7 +54,7 @@ app.use(
   cors({
     origin: BASE_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Webhook-Secret"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Webhook-Secret", "Idempotency-Key"],
     credentials: true,
   })
 );
@@ -275,8 +277,10 @@ app.use((req, res, next) => {
 app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
+app.use(applicationAuthRoutes);
 app.use(adminControlCenterRoutes);
 app.use("/api/admin/bot-control", botControlRoutes);
+app.use(adminApplicationsRoutes);
 app.use(apiRoutes);
 app.use(pagesRoutes);
 
