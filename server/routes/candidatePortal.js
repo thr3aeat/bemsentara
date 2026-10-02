@@ -55,4 +55,27 @@ router.get('/api/applications/:refOrId/status', async (req, res) => {
   }
 });
 
+// Candidate AI Warmup & Simulator Endpoint
+router.post('/api/applications/:refOrId/ai-warmup', async (req, res) => {
+  try {
+    const FormSubmission = require('../../models/FormSubmission');
+    const submission = await FormSubmission.findByReference(req.params.refOrId) || await FormSubmission.findById(req.params.refOrId);
+    if (!submission) {
+      return res.status(404).json({ error: 'Başvuru bulunamadı.' });
+    }
+    const { generateCandidateWarmup, evaluateCandidateWarmup } = require('../services/applicationAiService');
+    const answer = req.body?.answer ? String(req.body.answer).trim() : null;
+
+    if (answer) {
+      const evaluation = await evaluateCandidateWarmup(submission, answer);
+      return res.json({ ok: true, type: 'feedback', data: evaluation });
+    } else {
+      const warmup = await generateCandidateWarmup(submission);
+      return res.json({ ok: true, type: 'scenario', data: warmup });
+    }
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ error: err.message || 'AI simülasyonu başlatılamadı.' });
+  }
+});
+
 module.exports = router;

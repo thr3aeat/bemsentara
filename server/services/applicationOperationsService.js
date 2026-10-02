@@ -15,6 +15,8 @@ const ACTIONS = new Set([
   'ask-question',
   'invite-interview',
   'schedule-interview',
+  'configure-interview-options',
+  'save-ai-guide',
   'approve-time',
   'candidate-checkin',
   'accept-interview',
@@ -107,7 +109,13 @@ function detail(record, normalizer) {
       status: record.interviewStatus || (record.interviewTimeApproved ? 'CONFIRMED' : (record.interviewScheduledTime ? 'SCHEDULED' : 'PLANNING')),
       state: record.interviewState || null,
       internalNotes: Array.isArray(record.internalNotes) ? record.internalNotes : [],
-      evaluationRubric: record.evaluationRubric || null
+      evaluationRubric: record.evaluationRubric || null,
+      interviewTrack: record.interviewTrack || 'SESLI_BIREBIR',
+      interviewTrackLabel: record.interviewTrackLabel || (record.interviewTrack === 'VAKA_KRIZ' ? 'Vaka & Kriz Simülasyonu' : record.interviewTrack === 'TEKNIK_GOREV' ? 'Teknik & Görev Parkuru' : record.interviewTrack === 'PANEL_MULAKAT' ? 'Çoklu Panel Mülakatı' : 'Birebir Sesli Mülakat'),
+      focusAreas: Array.isArray(record.interviewFocusAreas) ? record.interviewFocusAreas : (record.interviewFocusAreas ? String(record.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean) : ['İletişim & Diksiyon', 'Kriz Çözme', 'Rol ve Kural Hakimiyeti']),
+      difficulty: record.interviewDifficulty || 'Standart',
+      candidateInstructions: record.candidateInstructions || null,
+      aiGuide: record.aiInterviewGuide || null
     },
     signature: record.signature ? {
       signedAt: record.signature.signedAt || null,
@@ -124,7 +132,7 @@ function clientView(record, normalizer) {
 
   // Filter out internal sensitive actions
   const userFacingHistory = rawHistory
-    .filter((entry) => !entry.internalOnly && !['add-internal-note', 'record-evaluation'].includes(entry.action))
+    .filter((entry) => !entry.internalOnly && !['add-internal-note', 'record-evaluation', 'save-ai-guide'].includes(entry.action))
     .map((entry) => {
       let desc = entry.description || entry.userDescription;
       if (!desc) {
@@ -132,7 +140,8 @@ function clientView(record, normalizer) {
         else if (entry.action === 'APPLICATION_RECEIVED') desc = 'Başvurunuz ön inceleme kuyruğuna alındı.';
         else if (entry.action === 'start-review') desc = 'Ekibimiz başvurunuzdaki bilgileri incelemeye başladı.';
         else if (entry.action === 'invite-interview') desc = 'Mülakat aşamasına davet edildiniz.';
-        else if (entry.action === 'schedule-interview') desc = `Mülakat saatiniz planlandı: ${entry.payload?.scheduledTime || ''}`;
+        else if (entry.action === 'schedule-interview') desc = `Mülakat saatiniz planlandı: ${entry.payload?.scheduledTime || ''}${entry.payload?.interviewTrackLabel ? ' (' + entry.payload.interviewTrackLabel + ')' : ''}`;
+        else if (entry.action === 'configure-interview-options') desc = 'Mülakat değerlendirme parkuru ve yönergeleri güncellendi.';
         else if (entry.action === 'approve-time') desc = 'Mülakat saatiniz onaylandı.';
         else if (entry.action === 'candidate-checkin') desc = 'Mülakat öncesi hazırlık check-in adımı tamamlandı.';
         else if (entry.action === 'finish-interview') desc = 'Mülakat görüşmeniz tamamlandı.';
@@ -165,7 +174,12 @@ function clientView(record, normalizer) {
       candidateReady: Boolean(record.candidateReady),
       candidateReadyAt: record.candidateReadyAt || null,
       gameLink: record.robloxGameLink || null,
-      status: record.interviewStatus || (record.interviewTimeApproved ? 'CONFIRMED' : (record.interviewScheduledTime ? 'SCHEDULED' : 'PLANNING'))
+      status: record.interviewStatus || (record.interviewTimeApproved ? 'CONFIRMED' : (record.interviewScheduledTime ? 'SCHEDULED' : 'PLANNING')),
+      interviewTrack: record.interviewTrack || 'SESLI_BIREBIR',
+      interviewTrackLabel: record.interviewTrackLabel || (record.interviewTrack === 'VAKA_KRIZ' ? 'Vaka & Kriz Simülasyonu' : record.interviewTrack === 'TEKNIK_GOREV' ? 'Teknik & Görev Parkuru' : record.interviewTrack === 'PANEL_MULAKAT' ? 'Çoklu Panel Mülakatı' : 'Birebir Sesli Mülakat'),
+      focusAreas: Array.isArray(record.interviewFocusAreas) ? record.interviewFocusAreas : (record.interviewFocusAreas ? String(record.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean) : ['İletişim & Diksiyon', 'Kriz Çözme', 'Rol ve Kural Hakimiyeti']),
+      difficulty: record.interviewDifficulty || 'Standart',
+      candidateInstructions: record.candidateInstructions || null
     },
     answers: normalizer(record),
     operationHistory: userFacingHistory
@@ -255,6 +269,34 @@ function transition(record, action, payload, actor) {
       patch.interviewId = record.interviewId || generateInterviewId();
       patch.interviewScheduledTime = text(payload.scheduledTime, 160);
       patch.interviewTimeApproved = false;
+      if (payload.interviewTrack) patch.interviewTrack = text(payload.interviewTrack, 50);
+      if (payload.interviewTrackLabel) patch.interviewTrackLabel = text(payload.interviewTrackLabel, 100);
+      if (payload.interviewFocusAreas) {
+        patch.interviewFocusAreas = Array.isArray(payload.interviewFocusAreas)
+          ? payload.interviewFocusAreas.map(a => text(a, 60)).filter(Boolean)
+          : String(payload.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (payload.interviewDifficulty) patch.interviewDifficulty = text(payload.interviewDifficulty, 50);
+      if (payload.candidateInstructions) patch.candidateInstructions = text(payload.candidateInstructions, 1000);
+      if (payload.gameLink || payload.robloxGameLink) patch.robloxGameLink = text(payload.gameLink || payload.robloxGameLink, 300);
+      break;
+
+    case 'configure-interview-options':
+      if (payload.interviewTrack) patch.interviewTrack = text(payload.interviewTrack, 50);
+      if (payload.interviewTrackLabel) patch.interviewTrackLabel = text(payload.interviewTrackLabel, 100);
+      if (payload.interviewFocusAreas) {
+        patch.interviewFocusAreas = Array.isArray(payload.interviewFocusAreas)
+          ? payload.interviewFocusAreas.map(a => text(a, 60)).filter(Boolean)
+          : String(payload.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean);
+      }
+      if (payload.interviewDifficulty) patch.interviewDifficulty = text(payload.interviewDifficulty, 50);
+      if (payload.candidateInstructions) patch.candidateInstructions = text(payload.candidateInstructions, 1000);
+      if (payload.gameLink || payload.robloxGameLink) patch.robloxGameLink = text(payload.gameLink || payload.robloxGameLink, 300);
+      if (payload.scheduledTime) patch.interviewScheduledTime = text(payload.scheduledTime, 160);
+      break;
+
+    case 'save-ai-guide':
+      if (payload.aiGuide) patch.aiInterviewGuide = payload.aiGuide;
       break;
 
     case 'approve-time':

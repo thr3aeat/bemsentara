@@ -36,7 +36,7 @@ const FORM_CATALOG = Object.freeze([
         title: '1. Temel Bilgiler',
         description: 'Sizi daha yakından tanıyabilmemiz için temel iletişim ve aktiflik bilgilerinizi giriniz.',
         fields: [
-          field('username', 'Adınız veya Kullanıcı Adınız', { maxLength: MAX_SHORT, placeholder: 'Örn. Alp' }),
+          field('username', 'Adınız veya Kullanıcı Adınız', { maxLength: MAX_SHORT, placeholder: 'Örn: ege_dev' }),
           field('discordUsername', 'Discord Kullanıcı Adınız (veya Etiketiniz)', { maxLength: MAX_SHORT, placeholder: 'Örn. kullanici_adi (veya ID)' }),
           field('ageRange', 'Yaşınız veya Yaş Aralığınız', { type: 'select', options: ['13–15', '16–17', '18–20', '21+'] }),
           field('timezone', 'Bulunduğunuz Şehir / Saat Dilimi', { maxLength: MAX_SHORT, placeholder: 'Örn. İstanbul / GMT+3' }),

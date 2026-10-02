@@ -65,6 +65,23 @@ function buildAdminApplicationsHandlers({ service = defaultService, isAdmin = is
       } catch (error) {
         return sendError(res, error);
       }
+    },
+
+    async aiGuide(req, res) {
+      if (!guard(req, res)) return;
+      try {
+        const FormSubmission = require('../../models/FormSubmission');
+        const submission = await FormSubmission.findById(req.params.id) || await FormSubmission.findByReference(req.params.id);
+        if (!submission) {
+          return res.status(404).json({ success: false, error: 'Aday kaydı bulunamadı.' });
+        }
+        const { generateInterviewGuide } = require('../services/applicationAiService');
+        const guide = await generateInterviewGuide(submission);
+        await FormSubmission.update(submission._id, { aiInterviewGuide: guide });
+        return res.json({ success: true, data: guide });
+      } catch (error) {
+        return sendError(res, error);
+      }
     }
   };
 }
@@ -74,5 +91,6 @@ const router = express.Router();
 router.get('/api/admin/applications', handlers.list);
 router.get('/api/admin/applications/:id', handlers.detail);
 router.post('/api/admin/applications/:id/actions/:action', handlers.action);
+router.post('/api/admin/applications/:id/ai-guide', handlers.aiGuide);
 
 module.exports = { router, buildAdminApplicationsHandlers, defaultService };

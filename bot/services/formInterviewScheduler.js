@@ -27,16 +27,23 @@ const RP_ADVICE = {
   ].join("\n"),
 
   "5m": [
-    "• **SON KONTROLLER:** Kulaklık, mikrofon ve Roblox istemcinizin sorunsuz çalıştığından emin olun.",
-    "• **ÖZGÜVEN:** Sorulara açık, net ve kararlı yanıtlar verin.",
-    "• **DISCIPLINES:** Talimat verildiğinde derhal uygulayın.",
-    "• **SES VE RP:** Seste konuşacaksanız sesinizi oturaklı, tok ve kendinden emin tutun!",
+    "• **⚡ SON KONTROLLER:** Kulaklık, mikrofon ve bağlantınızın sorunsuz çalıştığından emin olun.",
+    "• **ÖZGÜVEN VE DURUŞ:** Sorulara açık, net ve kararlı yanıtlar verin.",
+    "• **DİSİPLİN:** Yetkililerin yönergelerine eksiksiz odaklanın.",
+    "• **SES VE TON:** Konuşurken sesinizi oturaklı, tok ve kendinden emin tutun!",
+  ].join("\n"),
+
+  "2m": [
+    "• **🔥 SON 2 DAKİKA!** Mülakat odanız ve yetkilileriniz hazır! Lütfen Discord mülakat bekleme odasında hazır bulunun.",
+    "• **ODAK VE DİKKAT:** Bildirim seslerini kısın, derin bir nefes alın ve tamamen sürece odaklanın.",
+    "• **ÖZGÜVEN:** Rahat olun, yeteneklerinize güvenin ve rolünüze bürünün!",
+    "• **HIZLI ERİŞİM:** Oyun ve ses kanalı bağlantısı 60 saniye sonra doğrudan ekranınıza düşecektir!",
   ].join("\n"),
 
   "1m": [
-    "• **SON 1 DAKİKA:** Oyun linki birkaç saniye içinde iletilecektir!",
-    "• **ODAKLANMA:** Tüm dikkatinizi mülakata verin, resmiyet ve disiplini ilk saniyeden itibaren hissettirin.",
-    "• **BAŞARILAR:** Kendinizi en iyi şekilde yansıtacağınıza inanıyoruz!",
+    "• **🚨 SON 60 SANİYE!** Kapılar açılıyor! Mülakat heyeti odaya giriş yaptı!",
+    "• **ODAKLANMA:** İlk saniyeden itibaren resmiyet, disiplin ve enerjinizi hissettirin.",
+    "• **BAŞARILAR:** Kendinizi en iyi şekilde ifade edeceğinize inanıyoruz, başarılar!",
   ].join("\n"),
 };
 
@@ -175,6 +182,13 @@ async function checkAndSendReminders() {
         await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
       }
 
+      // ── 2 Minutes Reminder ───────────────────────────────────────────────
+      if (diffMin <= 2 && diffMin >= -12 && !sub.remindersSent.includes("2m")) {
+        await sendReminderDM(user, 2, RP_ADVICE["2m"]);
+        sub.remindersSent.push("2m");
+        await FormSubmission.update(sub._id, { remindersSent: sub.remindersSent });
+      }
+
       // ── 1 Minute Reminder ────────────────────────────────────────────────
       if (diffMin <= 1 && diffMin >= -15 && !sub.remindersSent.includes("1m")) {
         await sendReminderDM(user, 1, RP_ADVICE["1m"]);
@@ -199,17 +213,37 @@ async function checkAndSendReminders() {
 
 async function sendReminderDM(user, minutesLeft, adviceText) {
   try {
+    let color = 0x818cf8;
+    let title = `⏳ MÜLAKATINIZ ${minutesLeft} DAKİKA SONRA BAŞLIYOR!`;
+
+    if (minutesLeft === 15) {
+      color = 0x818cf8;
+      title = "⏱️ MÜLAKAT ODA HAZIRLIKLARI BAŞLADI (15 Dakika Kala)";
+    } else if (minutesLeft === 10) {
+      color = 0x38bdf8;
+      title = "🎙️ MİKROFON VE DONANIM TESTİ (Son 10 Dakika)";
+    } else if (minutesLeft === 5) {
+      color = 0xf59e0b;
+      title = "⚡ HEYECAN DORUKTA — SON 5 DAKİKA!";
+    } else if (minutesLeft === 2) {
+      color = 0xf97316;
+      title = "🔥 SON 2 DAKİKA! LÜTFEN BEKLEME ODASINA GEÇİNİZ!";
+    } else if (minutesLeft === 1) {
+      color = 0xef4444;
+      title = "🚨 SON 60 SANİYE! KAPI AÇILIYOR, HAZIR OLUN!";
+    }
+
     const embed = new EmbedBuilder()
-      .setColor(0x818cf8)
-      .setTitle(`⏳ MÜLAKATINIZ ${minutesLeft} DAKİKA SONRA BAŞLAYACAK!`)
+      .setColor(color)
+      .setTitle(title)
       .setDescription(
         `Sayın Aday,\n` +
-        `Mülakat saatinize **${minutesLeft} dakika** kalmıştır.\n\n` +
+        `Mülakat saatinize **${minutesLeft === 1 ? '1 dakika (60 saniye)' : minutesLeft + ' dakika'}** kalmıştır.\n\n` +
         `📌 **BİLMENİZ GEREKENLER & MÜLAKAT TAVSİYELERİ:**\n` +
         `${adviceText}\n\n` +
-        `*Lütfen mülakat saatinizde hazır bulunun.*`
+        `*Lütfen ses kanalında veya oyun sunucusunda hazır bulunun.*`
       )
-      .setFooter({ text: "Sentara Otomatik Mülakat Hatırlatıcısı" });
+      .setFooter({ text: "EkoYıldız Mülakat & Yetenek Operasyonları" });
 
     await user.send({ embeds: [embed] }).then(() => {
       console.log(`[formInterviewScheduler] ✅ ${minutesLeft}m reminder DM sent to ${user.tag} (${user.id})`);
@@ -220,6 +254,7 @@ async function sendReminderDM(user, minutesLeft, adviceText) {
     console.error(`[formInterviewScheduler] Reminder send error to ${user?.id}:`, err.message);
   }
 }
+
 
 async function sendGameLinkAndJoinStatusDM(user, submission) {
   try {

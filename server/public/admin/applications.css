@@ -468,6 +468,137 @@
   border: 0;
 }
 
+/* AI Interview Guide & Options */
+.appops-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.appops-section-head h3 {
+  margin: 0;
+}
+
+.appops-ai-summary {
+  background: rgba(129, 140, 248, 0.08);
+  border: 1px solid rgba(129, 140, 248, 0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #e2e8f0;
+  margin-bottom: 14px;
+}
+
+.appops-ai-summary strong {
+  color: #818cf8;
+}
+
+.appops-ai-pill-block {
+  margin-bottom: 14px;
+}
+
+.appops-ai-pill-block strong {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--app-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.appops-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.appops-chip {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.appops-chip.is-positive {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+.appops-chip.is-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+}
+
+.appops-ai-questions {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appops-ai-questions > strong {
+  font-size: 0.84rem;
+  color: #a78bfa;
+}
+
+.appops-question-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.appops-q-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.appops-q-num {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #818cf8;
+  text-transform: uppercase;
+}
+
+.appops-q-target {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--app-muted);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.appops-q-text {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.45;
+}
+
+.appops-q-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 @media (max-width: 900px) {
   .appops-toolbar {
     grid-template-columns: 1fr 1fr;

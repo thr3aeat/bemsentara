@@ -281,6 +281,206 @@
     return section;
   }
 
+  function renderInterviewOptionsForm() {
+    const section = element('section', 'appops-section appops-interview-options');
+    section.append(element('h3', '', '⚙️ Mülakat Parkuru ve Değerlendirme Seçenekleri'));
+    const subNotice = element('p', 'appops-internal-notice', 'Mülakata almadan önce parkuru, odak kriterlerini ve adaya iletilecek direktifleri belirleyin.');
+    section.append(subNotice);
+
+    const formWrapper = element('div', 'appops-eval-form');
+
+    // 1. Interview Track
+    const trackRow = element('div', 'appops-eval-row');
+    trackRow.append(element('label', '', 'Mülakat Formatı & Parkuru'));
+    const trackSel = element('select', 'appops-eval-select');
+    const tracks = [
+      { id: 'SESLI_BIREBIR', name: '🎙️ Birebir Sesli Mülakat (Discord Voice)' },
+      { id: 'VAKA_KRIZ', name: '🧠 Vaka & Kriz Simülasyonu (Roleplay Senaryo Analizi)' },
+      { id: 'TEKNIK_GOREV', name: '💻 Teknik & Görev Parkuru (Uygulamalı Görev)' },
+      { id: 'PANEL_MULAKAT', name: '👥 Çoklu Kurul & Panel Mülakatı' }
+    ];
+    tracks.forEach((t) => {
+      const opt = element('option', '', t.name);
+      opt.value = t.id;
+      if (selectedDetail.interview?.interviewTrack === t.id) opt.selected = true;
+      trackSel.append(opt);
+    });
+    trackRow.append(trackSel);
+    formWrapper.append(trackRow);
+
+    // 2. Difficulty
+    const diffRow = element('div', 'appops-eval-row');
+    diffRow.append(element('label', '', 'Zorluk & Eşik Seviyesi'));
+    const diffSel = element('select', 'appops-eval-select');
+    ['Standart', 'Zorlayıcı & Dinamik', 'Hızlı Eleme & Yüksek Eşik'].forEach((d) => {
+      const opt = element('option', '', d);
+      opt.value = d;
+      if (selectedDetail.interview?.difficulty === d) opt.selected = true;
+      diffSel.append(opt);
+    });
+    diffRow.append(diffSel);
+    formWrapper.append(diffRow);
+
+    // 3. Focus areas
+    const focusRow = element('div', 'appops-eval-row');
+    focusRow.append(element('label', '', 'Değerlendirme Odak Alanları (Virgülle ayırın)'));
+    const focusInput = element('input', 'appops-note-input');
+    const currentFocus = Array.isArray(selectedDetail.interview?.focusAreas)
+      ? selectedDetail.interview.focusAreas.join(', ')
+      : 'İletişim & Diksiyon, Kriz Çözme, Rol ve Kural Hakimiyeti';
+    focusInput.value = currentFocus;
+    focusRow.append(focusInput);
+    formWrapper.append(focusRow);
+
+    // 4. Scheduled Time
+    const timeRow = element('div', 'appops-eval-row');
+    timeRow.append(element('label', '', 'Planlanan Zaman (Tarih ve Saat)'));
+    const timeInput = element('input', 'appops-note-input');
+    timeInput.value = selectedDetail.interview?.scheduledTime || '';
+    timeInput.placeholder = 'Örn: 4 Ekim 2026, 21:00';
+    timeRow.append(timeInput);
+    formWrapper.append(timeRow);
+
+    // 5. Game Link / Venue
+    const gameRow = element('div', 'appops-eval-row');
+    gameRow.append(element('label', '', 'Roblox / Mülakat Oyun Alanı Linki'));
+    const gameInput = element('input', 'appops-note-input');
+    gameInput.value = selectedDetail.interview?.gameLink || '';
+    gameInput.placeholder = 'https://www.roblox.com/games/...';
+    gameRow.append(gameInput);
+    formWrapper.append(gameRow);
+
+    // 6. Candidate Instructions
+    const instRow = element('div', 'appops-eval-row');
+    instRow.append(element('label', '', 'Adaya İletilecek Özel Talimat & Hazırlık Notu'));
+    const instArea = element('textarea', 'appops-eval-textarea');
+    instArea.value = selectedDetail.interview?.candidateInstructions || '';
+    instArea.placeholder = 'Adayın portalında gösterilecek hazırlık tavsiyeleri ve özel talimatlar…';
+    instRow.append(instArea);
+    formWrapper.append(instRow);
+
+    // Save button
+    const saveBtn = element('button', 'acc-btn is-positive', 'Mülakat Seçeneklerini Kaydet & Güncelle');
+    saveBtn.type = 'button';
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Kaydediliyor…';
+      try {
+        const selectedTrackObj = tracks.find((t) => t.id === trackSel.value) || tracks[0];
+        const payload = {
+          interviewTrack: trackSel.value,
+          interviewTrackLabel: selectedTrackObj.name.replace(/^[^\s]+\s*/, ''),
+          interviewDifficulty: diffSel.value,
+          interviewFocusAreas: focusInput.value.split(',').map((s) => s.trim()).filter(Boolean),
+          scheduledTime: timeInput.value.trim(),
+          gameLink: gameInput.value.trim(),
+          candidateInstructions: instArea.value.trim()
+        };
+        const idempotencyKey = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+        await request(`/api/admin/applications/${encodeURIComponent(selectedId)}/actions/configure-interview-options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+          body: JSON.stringify(payload)
+        });
+        await selectApplication(selectedId);
+        if (window.setGlobalNotice) window.setGlobalNotice('Mülakat seçenekleri başarıyla kaydedildi.', 'success');
+      } catch (err) {
+        if (window.setGlobalNotice) window.setGlobalNotice(err.message, 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Mülakat Seçeneklerini Kaydet & Güncelle';
+      }
+    });
+
+    formWrapper.append(saveBtn);
+    section.append(formWrapper);
+    return section;
+  }
+
+  function renderAiInterviewGuideSection() {
+    const section = element('section', 'appops-section appops-ai-guide');
+    const headerRow = element('div', 'appops-section-head');
+    headerRow.append(element('h3', '', '🤖 Yapay Zeka Mülakat Rehberi & Canlı Soru Jeneratörü'));
+
+    const genBtn = element('button', 'acc-btn', '✦ AI Mülakat Rehberi & Soruları Üret');
+    genBtn.type = 'button';
+    genBtn.addEventListener('click', async () => {
+      genBtn.disabled = true;
+      genBtn.textContent = '🤖 Yapay zeka adayı analiz ediyor…';
+      try {
+        const res = await request(`/api/admin/applications/${encodeURIComponent(selectedId)}/ai-guide`, {
+          method: 'POST'
+        });
+        if (selectedDetail && selectedDetail.interview) {
+          selectedDetail.interview.aiGuide = res;
+        }
+        renderDetailTab();
+        if (window.setGlobalNotice) window.setGlobalNotice('AI Mülakat Rehberi başarıyla hazırlandı!', 'success');
+      } catch (err) {
+        if (window.setGlobalNotice) window.setGlobalNotice('AI Rehber hatası: ' + err.message, 'error');
+        genBtn.disabled = false;
+        genBtn.textContent = '✦ AI Mülakat Rehberi & Soruları Üret';
+      }
+    });
+
+    headerRow.append(genBtn);
+    section.append(headerRow);
+
+    const guide = selectedDetail.interview?.aiGuide;
+    if (guide) {
+      if (guide.candidateSummary) {
+        const sumBox = element('div', 'appops-ai-summary');
+        sumBox.append(
+          element('strong', '', 'Aday Özeti: '),
+          element('span', '', guide.candidateSummary)
+        );
+        section.append(sumBox);
+      }
+
+      if (guide.strengths && guide.strengths.length) {
+        const strBlock = element('div', 'appops-ai-pill-block');
+        strBlock.append(element('strong', '', '✅ Tespit Edilen Güçlü Yönler:'));
+        const chips = element('div', 'appops-chips-row');
+        guide.strengths.forEach((s) => chips.append(element('span', 'appops-chip is-positive', s)));
+        strBlock.append(chips);
+        section.append(strBlock);
+      }
+
+      if (guide.riskFlags && guide.riskFlags.length) {
+        const riskBlock = element('div', 'appops-ai-pill-block');
+        riskBlock.append(element('strong', '', '⚠️ Dikkat Edilmesi / Sorgulanması Gereken Noktalar:'));
+        const chips = element('div', 'appops-chips-row');
+        guide.riskFlags.forEach((r) => chips.append(element('span', 'appops-chip is-warning', r)));
+        riskBlock.append(chips);
+        section.append(riskBlock);
+      }
+
+      if (guide.recommendedQuestions && guide.recommendedQuestions.length) {
+        const qSection = element('div', 'appops-ai-questions');
+        qSection.append(element('strong', '', '🎯 Canlı Mülakatta Sorulması Tavsiye Edilen Özel Sorular:'));
+        guide.recommendedQuestions.forEach((qObj, idx) => {
+          const qCard = element('div', 'appops-question-card');
+          const qHead = element('div', 'appops-q-head');
+          qHead.append(
+            element('span', 'appops-q-num', `Soru ${idx + 1}`),
+            element('span', 'appops-q-target', qObj.target || 'Yetkinlik')
+          );
+          const qText = element('p', 'appops-q-text', qObj.question || '');
+          qCard.append(qHead, qText);
+          if (qObj.idealResponseHint) {
+            const hint = element('p', 'appops-q-hint', `💡 İdeal Yanıt Göstergesi: ${qObj.idealResponseHint}`);
+            qCard.append(hint);
+          }
+          qSection.append(qCard);
+        });
+        section.append(qSection);
+      }
+    } else {
+      section.append(element('p', 'text-muted', 'Henüz yapay zeka mülakat rehberi oluşturulmadı. Yukarıdaki butona tıklayarak adayın form yanıtlarına özel sorular ve analiz üretebilirsiniz.'));
+    }
+
+    return section;
+  }
+
   function renderDetailTab() {
     detailBody.replaceChildren();
     if (!selectedDetail) return;
@@ -304,12 +504,17 @@
         ['Mülakat ID', selectedDetail.interview?.interviewId || 'INT-26-XXXX'],
         ['Mülakat Durumu', selectedDetail.interview?.status || selectedDetail.interview?.state || 'Planlanıyor'],
         ['Aday Hazırlık (Check-in)', selectedDetail.interview?.candidateReady ? '🟢 Aday Görüşmeye Hazır' : '⏳ Aday Check-in Bekleniyor'],
+        ['Mülakat Parkuru', selectedDetail.interview?.interviewTrackLabel || 'Birebir Sesli Mülakat'],
         ['Planlanan Saat', selectedDetail.interview?.scheduledTime || 'Belirlenmedi'],
+        ['Zorluk Seviyesi', selectedDetail.interview?.difficulty || 'Standart'],
+        ['Değerlendirme Odakları', (selectedDetail.interview?.focusAreas || []).join(', ') || 'İletişim & Diksiyon, Kriz Çözme'],
         ['Görüşme Yöntemi', selectedDetail.interview?.method || 'Discord'],
         ['Tahmini Süre', selectedDetail.interview?.estimatedDuration || '20–30 dakika'],
         ['Görüşmeci', selectedDetail.interview?.interviewer || 'People & Community'],
         ['Oyun Bağlantısı', selectedDetail.interview?.gameLink || 'Belirtilmedi']
       ]));
+      detailBody.append(renderAiInterviewGuideSection());
+      detailBody.append(renderInterviewOptionsForm());
       detailBody.append(renderEvaluationForm());
       detailBody.append(renderInternalNotes());
     } else if (activeTab === 3) {
@@ -349,7 +554,15 @@
     }
     if (action === 'schedule-interview') {
       const scheduledTime = window.prompt('Mülakat tarih ve saatini yazın (Örn: 3 Ekim 2026, 20:00):');
-      return scheduledTime ? { scheduledTime } : null;
+      if (!scheduledTime) return null;
+      return {
+        scheduledTime,
+        interviewTrack: selectedDetail?.interview?.interviewTrack || 'SESLI_BIREBIR',
+        interviewTrackLabel: selectedDetail?.interview?.interviewTrackLabel || 'Birebir Sesli Mülakat',
+        interviewDifficulty: selectedDetail?.interview?.difficulty || 'Standart',
+        interviewFocusAreas: selectedDetail?.interview?.focusAreas || ['İletişim & Diksiyon', 'Kriz Çözme', 'Rol ve Kural Hakimiyeti'],
+        gameLink: selectedDetail?.interview?.gameLink || ''
+      };
     }
     if (action === 'reject-interview') {
       const reason = window.prompt('Ret nedenini yazın:');

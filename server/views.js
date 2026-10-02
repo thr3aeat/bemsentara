@@ -5021,13 +5021,21 @@ function renderAdminPage(user) {
 
           // Mülakat Saati Onay & Teklif Section
           '<div style="margin-bottom:1.2rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">' +
-            '<label style="display:block;font-size:0.82rem;font-weight:700;color:#34d399;margin-bottom:0.4rem;">⏰ MÜLAKAT SAATİ İŞLEMLERİ</label>' +
+            '<label style="display:block;font-size:0.82rem;font-weight:700;color:#34d399;margin-bottom:0.4rem;">⏰ MÜLAKAT SAATİ & FORMAT İŞLEMLERİ</label>' +
             '<div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-bottom:0.6rem;">' +
               '<input type="text" id="int-scheduled-time" value="' + subEsc(sub.interviewScheduledTime || '') + '" placeholder="Örn: 2026-08-11 20:00" style="flex:1;min-width:200px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;">' +
+              '<select id="int-track-select" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;">' +
+                '<option value="SESLI_BIREBIR"' + (sub.interviewTrack === 'SESLI_BIREBIR' ? ' selected' : '') + '>🎙️ Birebir Sesli</option>' +
+                '<option value="VAKA_KRIZ"' + (sub.interviewTrack === 'VAKA_KRIZ' ? ' selected' : '') + '>🧠 Vaka & Kriz Simülasyonu</option>' +
+                '<option value="TEKNIK_GOREV"' + (sub.interviewTrack === 'TEKNIK_GOREV' ? ' selected' : '') + '>💻 Teknik & Görev Parkuru</option>' +
+                '<option value="PANEL_MULAKAT"' + (sub.interviewTrack === 'PANEL_MULAKAT' ? ' selected' : '') + '>👥 Panel Mülakatı</option>' +
+              '</select>' +
               '<button type="button" onclick="setTomorrowInterviewTime()" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,0.3);">📅 YARIN</button>' +
-              '<button type="button" onclick="approveInterviewTime()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟢 SAAT ONAYLANDI</button>' +
+              '<button type="button" onclick="approveInterviewTime()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟢 SAATİ ONAYLA</button>' +
               '<button type="button" onclick="proposeInterviewTime()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;">🟡 FARKLI SAAT TEKLİF ET</button>' +
+              '<button type="button" onclick="fetchClassicAiGuide()" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(139,92,246,0.3);">🤖 AI REHBERİ GETİR</button>' +
             '</div>' +
+            '<div id="classic-ai-guide-box" style="margin-top:0.4rem;"></div>' +
             '<div id="time-action-res" style="font-size:0.78rem;min-height:16px;"></div>' +
           '</div>' +
 
@@ -5202,6 +5210,33 @@ function renderAdminPage(user) {
             resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + (d.error || 'Hata');
           }
         } catch (err) { resDiv.style.color = '#fb7185'; resDiv.textContent = '❌ ' + err.message; }
+      }
+
+      window.fetchClassicAiGuide = async function() {
+        if (!_currentSubId) return;
+        const box = document.getElementById('classic-ai-guide-box');
+        if (!box) return;
+        box.innerHTML = '<span style="color:#a78bfa;font-size:0.82rem;">🤖 AI adayın form yanıtlarını inceliyor ve mülakat soruları üretiyor...</span>';
+        try {
+          const res = await fetch('/api/admin/applications/' + encodeURIComponent(_currentSubId) + '/ai-guide', { method: 'POST' });
+          const json = await res.json();
+          if (!json.success || !json.data) throw new Error(json.error || 'AI rehberi alınamadı.');
+          const g = json.data;
+          let qHtml = (g.recommendedQuestions || []).map(function(q, i) {
+            return '<div style="margin-bottom:0.4rem;padding:0.4rem 0.6rem;background:rgba(0,0,0,0.3);border-radius:6px;">' +
+              '<div style="font-weight:700;color:#c7d2fe;font-size:0.8rem;">Soru ' + (i+1) + ' (' + (q.target || '') + '): ' + (q.question || '') + '</div>' +
+              (q.idealResponseHint ? '<div style="color:var(--muted);font-size:0.74rem;font-style:italic;">💡 Beklenen İpucu: ' + q.idealResponseHint + '</div>' : '') +
+            '</div>';
+          }).join('');
+          box.innerHTML =
+            '<div style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:8px;padding:0.8rem;margin-top:0.4rem;">' +
+              '<div style="font-weight:700;color:#a78bfa;font-size:0.82rem;margin-bottom:0.3rem;">🤖 AI MÜLAKAT REHBERİ:</div>' +
+              '<div style="color:#e2e8f0;font-size:0.8rem;margin-bottom:0.5rem;">' + (g.candidateSummary || '') + '</div>' +
+              qHtml +
+            '</div>';
+        } catch(e) {
+          box.innerHTML = '<span style="color:#fb7185;font-size:0.8rem;">❌ AI Hatası: ' + e.message + '</span>';
+        }
       }
 
       window.acceptInterview = async function() {
