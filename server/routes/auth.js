@@ -6,6 +6,7 @@ const { saveStoreNow } = require("../../models/Store");
 const { syncRoleConnectionForUser } = require("../services/discordRoleConnectionService");
 const UserActivityLog = require("../../models/UserActivityLog");
 const { RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY } = require("../../config");
+const { defaultService: applicationDmAuthService } = require('./applicationAuth');
 const {
   getClientIp,
   checkLoginBruteForce,
@@ -425,7 +426,35 @@ router.post("/auth/login-pin", async (req, res) => {
   }
 });
 
-router.post("/auth/send-discord-dm-code", async (req, res) => {
+// Legacy portal endpoints now share the hardened application DM authentication.
+router.post('/auth/send-discord-dm-code', async (req, res, next) => {
+  try {
+    const data = await applicationDmAuthService.requestCode({
+      identifier: req.body?.username,
+      session: req.session,
+      ip: req.ip
+    });
+    return res.json({ success: true, message: 'Doğrulama kodu Discord DM ile gönderildi!', targetId: data.targetId, expiresAt: data.expiresAt });
+  } catch (error) {
+    const status = [400, 403, 409, 429, 503].includes(error?.statusCode) ? error.statusCode : 500;
+    return res.status(status).json({ success: false, error: status === 500 ? 'Kod gönderilemedi.' : error.message, code: error.code });
+  }
+});
+
+router.post('/auth/verify-discord-dm-code', async (req, res, next) => {
+  try {
+    const result = await applicationDmAuthService.verifyCode({ code: req.body?.code, session: req.session, ip: req.ip });
+    return req.login(result.user, (error) => {
+      if (error) return res.status(500).json({ success: false, error: 'Giriş başarısız.' });
+      return res.json({ success: true, redirectUrl: '/dashboard', needsPassword: !result.user.sitePinPassword, user: result.user });
+    });
+  } catch (error) {
+    const status = [400, 403, 409, 429, 503].includes(error?.statusCode) ? error.statusCode : 500;
+    return res.status(status).json({ success: false, error: status === 500 ? 'Giriş tamamlanamadı.' : error.message, code: error.code });
+  }
+});
+
+router.post("/auth/send-discord-dm-code-legacy-disabled", async (req, res) => {
   try {
     const username = String(req.body.username || '').trim();
     if (!username) return res.status(400).json({ error: "Discord kullanıcı adı veya ID gerekli." });
@@ -468,7 +497,7 @@ router.post("/auth/send-discord-dm-code", async (req, res) => {
   }
 });
 
-router.post("/auth/verify-discord-dm-code", async (req, res) => {
+router.post("/auth/verify-discord-dm-code-legacy-disabled", async (req, res) => {
   try {
     const { code } = req.body;
     if (!req.session.dmAuthCode || !req.session.dmAuthTargetId) {

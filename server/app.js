@@ -13,6 +13,7 @@ const adRoutes = require("./routes/ads");
 const { router: adminControlCenterRoutes } = require("./routes/adminControlCenter");
 const { router: botControlRoutes } = require("./routes/botControl");
 const { router: adminApplicationsRoutes } = require("./routes/adminApplications");
+const { router: applicationAuthRoutes } = require("./routes/applicationAuth");
 
 const logger = require("../utils/logger");
 
@@ -276,6 +277,7 @@ app.use((req, res, next) => {
 app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
+app.use(applicationAuthRoutes);
 app.use(adminControlCenterRoutes);
 app.use("/api/admin/bot-control", botControlRoutes);
 app.use(adminApplicationsRoutes);
