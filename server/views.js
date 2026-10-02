@@ -573,7 +573,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
   <div id="toast-container"></div>
 
-  <main class="${isAdminSection ? 'admin-main' : ''}">
+  <main class="${isAdminSection ? 'admin-main' : ''}"${isAdminSection ? ' style="max-width:min(1920px,calc(100vw - 24px));width:calc(100vw - 24px);padding:10px 12px 28px;margin:0 auto;box-sizing:border-box;"' : ''}>
     ${content}
     ${sponsorAdService.renderSponsorAdHtml()}
   </main>

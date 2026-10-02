@@ -1,3 +1,15 @@
+/* Admin Full-Width Override (overrides global 1000px main cap) */
+body.admin-page main,
+main.admin-main,
+main:has(.appops-layout),
+body:has(.appops-layout) main {
+  max-width: min(1920px, calc(100vw - 24px)) !important;
+  width: calc(100vw - 24px) !important;
+  padding: 10px 12px 28px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
 .appops {
   --app-surface: rgba(12, 14, 22, 0.78);
   --app-raised: rgba(255, 255, 255, 0.045);
