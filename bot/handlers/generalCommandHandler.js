@@ -520,6 +520,7 @@ Lütfen ${dateStr} tarihi için:
       const user = await User.findOne({ discordId: interaction.user.id });
       const { BASE_URL } = require("../../config");
 
+      if (user?.robloxId) {
         // İsteği kabul edip Roblox rütbelerini verecek fonksiyonu çağırıyoruz
         await syncStaffRobloxRanks(interaction.client, interaction.user.id);
 

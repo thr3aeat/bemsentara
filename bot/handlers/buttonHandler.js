@@ -2215,6 +2215,90 @@ async function handleButtonInteraction(interaction) {
   }
 
   // ── Soruşturma Sistemi Butonları ───────────────────────────────────────────
+  // ── Resmi Uyarı Toplantısı Butonları ────────────────────────────────────────
+  if (customId === "official_warning_trigger") {
+    const isFounder = interaction.user.id === "1031620522406072350";
+    const hasModRole = interaction.member && interaction.member.roles && (
+      interaction.member.roles.cache.has("1518692386836971610") ||
+      interaction.member.roles.cache.has("1518692389169135666") ||
+      interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)
+    );
+
+    if (!isFounder && !hasModRole) {
+      return interaction.reply({
+        content: "❌ Bu işlemi sadece moderatörler, yetkililer ve Kurucu Eko gerçekleştirebilir.",
+        ephemeral: true
+      });
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId("official_warning_modal")
+      .setTitle("⚖️ Resmi Uyarı Toplantısı");
+
+    const targetInput = new TextInputBuilder()
+      .setCustomId("warning_target_id")
+      .setLabel("Cezayı Yiyecek Kullanıcı ID'si")
+      .setPlaceholder("Örn: 1031620522406072350 veya kullanıcı ID")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    const reasonInput = new TextInputBuilder()
+      .setCustomId("warning_reason")
+      .setLabel("Resmi Uyarı Gerekçesi / İhlal")
+      .setPlaceholder("Örn: Sunucu huzurunu bozma, saygısızlık veya kural ihlali...")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true);
+
+    const articleInput = new TextInputBuilder()
+      .setCustomId("warning_article")
+      .setLabel("İlgili Nizam Maddesi")
+      .setPlaceholder("Madde 14 - Topluluk Huzuru ve Disiplin Hükümleri")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(false);
+
+    const notesInput = new TextInputBuilder()
+      .setCustomId("warning_notes")
+      .setLabel("Ek İhtar / Mahkeme Notu (İsteğe Bağlı)")
+      .setPlaceholder("Duruşma öncesi iletmek istediğiniz özel not veya delil...")
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(targetInput),
+      new ActionRowBuilder().addComponents(reasonInput),
+      new ActionRowBuilder().addComponents(articleInput),
+      new ActionRowBuilder().addComponents(notesInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+
+  if (customId.startsWith("official_warn_accept_")) {
+    const warningId = customId.replace("official_warn_accept_", "");
+    const { handleOfficialWarningAccept } = require("../services/officialWarningService");
+    return handleOfficialWarningAccept(interaction, warningId);
+  }
+
+  if (customId.startsWith("official_warn_page_")) {
+    const parts = customId.replace("official_warn_page_", "").split("_");
+    const warningId = parts[0];
+    const targetPage = parts[1];
+    const { handleOfficialWarningPage } = require("../services/officialWarningService");
+    return handleOfficialWarningPage(interaction, warningId, targetPage);
+  }
+
+  if (customId.startsWith("official_warn_reject_")) {
+    const warningId = customId.replace("official_warn_reject_", "");
+    const { handleOfficialWarningReject } = require("../services/officialWarningService");
+    return handleOfficialWarningReject(interaction, warningId);
+  }
+
+  if (customId.startsWith("official_warn_close_")) {
+    const warningId = customId.replace("official_warn_close_", "");
+    const { handleOfficialWarningClose } = require("../services/officialWarningService");
+    return handleOfficialWarningClose(interaction, warningId);
+  }
+
   if (customId === "investigation_start_trigger") {
     const { getTodayInvestigationCountForUser, canStartInvestigationToday, MAX_INVESTIGATIONS_PER_DAY } = require("../services/investigationService");
     const startedTodayCount = await getTodayInvestigationCountForUser(interaction.user.id);

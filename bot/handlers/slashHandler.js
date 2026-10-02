@@ -55,6 +55,27 @@ async function handleSlashCommand(interaction) {
       return interaction.editReply({ embeds: [embed] });
     }
 
+    if (commandName === "resmi-uyari-olustur") {
+      const targetUserId = interaction.options.getString("kullanici_id")?.trim();
+      const reason = interaction.options.getString("sebep")?.trim();
+      const ruleArticle = interaction.options.getString("madde")?.trim() || "";
+      const customNotes = interaction.options.getString("notlar")?.trim() || "";
+
+      if (!targetUserId || !reason) {
+        return interaction.editReply({ content: "❌ Kullanıcı ID ve Resmi Uyarı Gerekçesi zorunludur." });
+      }
+
+      const { createOfficialWarningMeeting } = require("../services/officialWarningService");
+      return createOfficialWarningMeeting({
+        client: interaction.client,
+        interaction,
+        targetUserId,
+        reason,
+        ruleArticle,
+        customNotes
+      });
+    }
+
     // ────────── DOĞRULAMA KOMUTLARI ──────────────────────────────────────
 
     if (commandName === "dogrula") {

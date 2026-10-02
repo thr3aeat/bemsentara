@@ -10,6 +10,23 @@ const generalCommands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
+    .setName("resmi-uyari-olustur")
+    .setDescription("⚖️ EkoYıldız Mahkemesi resmi uyarı toplantısı kanalı ve taahhütname belgesi oluşturur")
+    .addStringOption((o) =>
+      o.setName("kullanici_id").setDescription("Cezalandırılacak kullanıcının Discord ID'si").setRequired(true)
+    )
+    .addStringOption((o) =>
+      o.setName("sebep").setDescription("Resmi uyarı ve ihlal gerekçesi").setRequired(true)
+    )
+    .addStringOption((o) =>
+      o.setName("madde").setDescription("İlgili kural maddesi (Örn: Madde 14)").setRequired(false)
+    )
+    .addStringOption((o) =>
+      o.setName("notlar").setDescription("Ek mahkeme notu veya delil açıklaması").setRequired(false)
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+
+  new SlashCommandBuilder()
     .setName("topluluk-elcisi")
     .setDescription("🛡️ Topluluk Elçisi denetim, ayın elemanları ve moderatör yönetim paneli")
     .setDMPermission(true),

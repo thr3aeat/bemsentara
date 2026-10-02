@@ -1431,6 +1431,31 @@ async function handleModalSubmit(interaction) {
   }
 
   // ── Soruşturma Sistemi Modalleri ───────────────────────────────────────────
+  // ── Resmi Uyarı Toplantısı Modali ──────────────────────────────────────────
+  if (interaction.customId === 'official_warning_modal') {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    const targetUserId = interaction.fields.getTextInputValue('warning_target_id').trim();
+    const reason = interaction.fields.getTextInputValue('warning_reason').trim();
+    let ruleArticle = '';
+    try {
+      ruleArticle = interaction.fields.getTextInputValue('warning_article') ? interaction.fields.getTextInputValue('warning_article').trim() : '';
+    } catch (_) {}
+    let customNotes = '';
+    try {
+      customNotes = interaction.fields.getTextInputValue('warning_notes') ? interaction.fields.getTextInputValue('warning_notes').trim() : '';
+    } catch (_) {}
+
+    const { createOfficialWarningMeeting } = require('../services/officialWarningService');
+    return createOfficialWarningMeeting({
+      client: interaction.client,
+      interaction,
+      targetUserId,
+      reason,
+      ruleArticle,
+      customNotes
+    });
+  }
+
   if (interaction.customId === 'investigation_start_modal') {
     await interaction.deferReply({ ephemeral: true }).catch(() => { });
     const name = interaction.fields.getTextInputValue('investigation_name');

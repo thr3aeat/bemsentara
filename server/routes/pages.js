@@ -938,4 +938,100 @@ router.get("/ekoyildiz-anayasasi", (req, res) => {
   res.redirect("/anayasasi");
 });
 
+// ── EkoYıldız Mahkemesi Resmi Uyarı E-İmza Portalı ───────────────────────────
+router.get("/resmi-uyari-imza/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const OfficialWarning = require("../../models/OfficialWarning");
+    const { renderOfficialWarningSignPage } = require("../views/officialWarningSignPage");
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient() || req.app.get("client") || null;
+
+    const warning = await OfficialWarning.findOne({ signToken: token });
+    if (!warning) {
+      return res.status(404).send(renderOfficialWarningSignPage({
+        warning: null,
+        targetUser: null,
+        isSigned: false,
+        error: "Geçersiz veya süresi dolmuş resmi uyarı belgesi."
+      }));
+    }
+
+    let targetUser = null;
+    if (client) {
+      targetUser = await client.users.fetch(warning.targetUserId).catch(() => null);
+    }
+
+    const isSigned = warning.status === 'SIGNED';
+    return res.send(renderOfficialWarningSignPage({
+      warning,
+      targetUser,
+      isSigned,
+      error: null
+    }));
+  } catch (err) {
+    console.error("[GET /resmi-uyari-imza] error:", err);
+    return res.status(500).send("Sunucu hatası oluştu.");
+  }
+});
+
+router.get("/resmi-uyari/:token", (req, res) => {
+  res.redirect(`/resmi-uyari-imza/${req.params.token}`);
+});
+
+router.get("/imza/:token", (req, res) => {
+  res.redirect(`/resmi-uyari-imza/${req.params.token}`);
+});
+
+router.post("/api/resmi-uyari/imzala", async (req, res) => {
+  try {
+    const { token, signatureData } = req.body || {};
+    if (!token || !signatureData) {
+      return res.status(400).json({ success: false, error: "İmza verisi veya doğrulama anahtarı eksik." });
+    }
+
+    const OfficialWarning = require("../../models/OfficialWarning");
+    const { handleOfficialWarningSigned } = require("../../bot/services/officialWarningService");
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient() || req.app.get("client") || null;
+
+    const warning = await OfficialWarning.findOne({ signToken: token });
+    if (!warning) {
+      return res.status(404).json({ success: false, error: "Resmi uyarı dosyası bulunamadı." });
+    }
+
+    if (warning.status === 'SIGNED') {
+      return res.json({ success: true, alreadySigned: true, caseNo: warning.caseNo });
+    }
+
+    // Convert data URL to Buffer
+    const matches = signatureData.match(/^data:image\/([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({ success: false, error: "Geçersiz imza görsel formatı." });
+    }
+    const signatureBuffer = Buffer.from(matches[2], 'base64');
+
+    const signerIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const signerUserAgent = req.headers['user-agent'] || '';
+
+    warning.signatureImage = signatureData;
+    await warning.save();
+
+    if (client) {
+      await handleOfficialWarningSigned({
+        client,
+        warning,
+        signatureBuffer,
+        signerIp,
+        signerUserAgent
+      });
+    }
+
+    return res.json({ success: true, caseNo: warning.caseNo });
+  } catch (err) {
+    console.error("[POST /api/resmi-uyari/imzala] error:", err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

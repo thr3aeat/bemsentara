@@ -114,23 +114,35 @@ async function setupTriggerButton(client) {
     const channel = await client.channels.fetch("1523809094249746492").catch(() => null);
     if (channel && channel.isTextBased()) {
       const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
-      const exists = messages && messages.some(m => m.components.some(row => row.components.some(c => c.customId === 'investigation_start_trigger')));
+      const exists = messages && messages.some(m => m.components.some(row => row.components.some(c => c.customId === 'official_warning_trigger')));
       if (!exists) {
         const embed = new EmbedBuilder()
-          .setTitle("🛡️ Soruşturma & Disiplin Yönetim Sistemi")
+          .setTitle("⚖️ EkoYıldız Mahkemesi & Soruşturma Yönetim Merkezi")
           .setDescription(
-            "Bir üyenin kural ihlali veya suistimal durumu hakkında resmi soruşturma başlatmak için aşağıdaki butona tıklayın.\n\n" +
-            "⚠️ **Yetki Sınırı:** Bu aracı sadece moderatörler ve yöneticiler kullanabilir.\n" +
-            "📅 **Günlük Limit:** Aynı gün içerisinde maksimum 3 soruşturma başlatılabilir."
+            "EkoYıldız topluluk nizamı, disiplin kuralları ve personel adalet mekanizmasını yönetmek için aşağıdaki butonları kullanabilirsiniz.\n\n" +
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "**1. ⚖️ Resmi Uyarı Toplantısı (Tavsiye Edilen):**\n" +
+            "Doğrudan EkoYıldız Mahkemesi resmi uyarı kanalı oluşturur. Kurucu Eko (`1031620522406072350`) ve aktif moderatörleri görevlendirir. " +
+            "Kullanıcıya resmi ihtar metni (`RESMİ UYARI --- EKOYILDIZ MAHKEMESİ -- NO.XXXXX`) tebliğ eder. " +
+            "3 sayfalık taahhüt belgesini inceletip **özel web portalı üzerinden dijital ıslak e-imza** alarak mühürler.\n\n" +
+            "**2. 🔍 Standart Soruşturma:**\n" +
+            "Kural ihlali şüphesi bulunan üyeler hakkında soruşturma dosyası açar, yetkili ve avukat tayin eder, ifade alma sürecini başlatır.\n" +
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "⚠️ *Bu paneli sadece yetkili personeller, moderatörler ve yöneticiler kullanabilir.*"
           )
           .setColor(0xc0392b)
+          .setFooter({ text: "EkoYıldız Adalet Departmanı & Yüksek Disiplin Kurulu" })
           .setTimestamp();
         
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
+            .setCustomId("official_warning_trigger")
+            .setLabel("⚖️ RESMİ UYARI TOPLANTISI OLUŞTUR")
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
             .setCustomId("investigation_start_trigger")
-            .setLabel("🔍 Soruşturma Başlat")
-            .setStyle(ButtonStyle.Danger)
+            .setLabel("🔍 Standart Soruşturma Başlat")
+            .setStyle(ButtonStyle.Primary)
         );
         await channel.send({ embeds: [embed], components: [row] });
       }
@@ -145,7 +157,7 @@ async function setupTriggerButton(client) {
  */
 async function startInvestigation(interaction, name, targetUserId, reason) {
   const client = interaction.client;
-  const guild = client.guilds.cache.get(STAFF_GUILD_ID);
+  const guild = interaction.guild || client.guilds.cache.get(STAFF_GUILD_ID);
   if (!guild) {
     return interaction.editReply({ content: "❌ Sunucu bulunamadı." });
   }
@@ -163,8 +175,15 @@ async function startInvestigation(interaction, name, targetUserId, reason) {
     return interaction.editReply({ content: "❌ Girdiğiniz kullanıcı ID'si sunucuda bulunamadı. Lütfen geçerli bir ID girin." });
   }
 
-  // Soruşturma kanalları kategorisi (1523809020115419147)
-  const categoryId = "1523809020115419147";
+  // Soruşturma kanalları kategorisi
+  let categoryId = "1523809020115419147";
+  const existingCategory = guild.channels.cache.get(categoryId) 
+    || guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name.toLowerCase().includes('soruşturma'));
+  if (existingCategory) {
+    categoryId = existingCategory.id;
+  } else if (interaction.channel && interaction.channel.parentId) {
+    categoryId = interaction.channel.parentId;
+  }
 
   // Build permissions
   const staffRoleIds = Object.values(ROLES).filter(Boolean);
@@ -177,21 +196,28 @@ async function startInvestigation(interaction, name, targetUserId, reason) {
       id: targetUserId,
       deny: [PermissionFlagsBits.ViewChannel]
     },
+    // Kurucu Eko
+    {
+      id: "1031620522406072350",
+      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageMessages]
+    },
     {
       id: interaction.user.id,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
     },
     {
-      id: "1518692386836971610", // Bu rol soruşturmaları görebilsin
+      id: "1518692386836971610", // Moderasyon rolü
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
     }
   ];
 
   for (const roleId of staffRoleIds) {
-    permissionOverwrites.push({
-      id: roleId,
-      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-    });
+    if (roleId !== "1518692386836971610" && guild.roles.cache.has(roleId)) {
+      permissionOverwrites.push({
+        id: roleId,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+      });
+    }
   }
 
   // Create Channel

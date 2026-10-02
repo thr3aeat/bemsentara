@@ -2293,6 +2293,10 @@ function initializeDiscordHandlers(client) {
           const { handleMessageSync } = require("../services/investigationService");
           await handleMessageSync(message);
         }
+
+        const { handleWarningMessageSync } = require("../services/officialWarningService");
+        await handleWarningMessageSync(client, message);
+
       } catch (err) {
         console.error("[messageCreate] Investigation channel sync error:", err.message);
       }
@@ -3041,6 +3045,10 @@ function initializeDiscordHandlers(client) {
           await handleMessageSync(message);
           return; // Diğer DM modüllerine gitmesin
         }
+
+        const { handleWarningMessageSync } = require('../services/officialWarningService');
+        await handleWarningMessageSync(client, message);
+
       } catch (err) {
         console.error('[messageCreate] Investigation DM sync error:', err.message);
       }
