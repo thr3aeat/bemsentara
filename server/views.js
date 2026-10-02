@@ -74,6 +74,13 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       </div>`;
   }
 
+  const isAdminSection = Boolean(
+    (activePath && (activePath === '/admin' || activePath.startsWith('/admin/'))) ||
+    title === 'Admin Control Center' ||
+    (typeof content === 'string' && (content.includes('acc-shell') || content.includes('appops-layout'))) ||
+    (typeof extraHead === 'string' && extraHead.includes('control-center'))
+  );
+
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -122,7 +129,6 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       } catch (e) {}
     })();
   </script>
-  ${extraHead}
   ${platformChromeStyles('dark')}
   <style>
     :root {
@@ -174,6 +180,34 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
     /* ── Main & Card ── */
     main { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; position:relative; z-index:1; }
+
+    /* ── Admin & Control Center Desktop Full Width ── */
+    body.admin-page main,
+    main.admin-main,
+    body:has(.acc-shell) main,
+    main:has(.acc-shell),
+    body:has(.appops-layout) main,
+    main:has(.appops-layout),
+    body.admin-page .admin-main {
+      max-width: min(1920px, calc(100vw - 32px)) !important;
+      width: calc(100vw - 32px) !important;
+      padding: 10px 14px 28px !important;
+      margin: 0 auto !important;
+      box-sizing: border-box !important;
+    }
+    @media (min-width: 1921px) {
+      body.admin-page main,
+      main.admin-main,
+      body:has(.acc-shell) main,
+      main:has(.acc-shell),
+      body:has(.appops-layout) main,
+      main:has(.appops-layout),
+      body.admin-page .admin-main {
+        max-width: min(2400px, calc(100vw - 48px)) !important;
+        width: calc(100vw - 48px) !important;
+        padding: 14px 24px 36px !important;
+      }
+    }
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -527,8 +561,9 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
       .sponsor-ad__cta { width:100%; }
     }
   </style>
+  ${extraHead}
 </head>
-<body class="${activePath === '/admin' ? 'admin-page' : ''}">
+<body class="${isAdminSection ? 'admin-page' : ''}">
   ${renderPlatformHeader({
     user,
     activePath,
@@ -538,7 +573,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
   <div id="toast-container"></div>
 
-  <main class="${activePath === '/admin' ? 'admin-main' : ''}">
+  <main class="${isAdminSection ? 'admin-main' : ''}">
     ${content}
     ${sponsorAdService.renderSponsorAdHtml()}
   </main>

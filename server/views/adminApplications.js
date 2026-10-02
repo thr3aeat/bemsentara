@@ -19,7 +19,7 @@ function renderAdminApplicationsWorkspace() {
         <button type="button" class="appops-retry" data-application-retry hidden>Tekrar dene</button>
         <div class="appops-queue" data-application-queue></div>
       </aside>
-      <main class="appops-dossier" data-application-dossier>
+      <section class="appops-dossier" data-application-dossier>
         <button type="button" class="appops-back" data-application-back>← Başvuru kuyruğuna dön</button>
         <div class="appops-empty-detail" data-application-empty-detail><span>◎</span><h2>Bir aday seçin</h2><p>Form yanıtları, mülakat notları, imza ve işlem geçmişi burada görüntülenir.</p></div>
         <article data-application-detail hidden>
@@ -35,7 +35,7 @@ function renderAdminApplicationsWorkspace() {
             <button type="button" data-application-action="reject-interview" class="is-danger">Reddet</button>
           </footer>
         </article>
-      </main>
+      </section>
     </div>
   </section>`;
 }
