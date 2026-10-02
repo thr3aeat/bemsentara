@@ -150,6 +150,10 @@ function getFormDefinition(slug) {
   return FORM_CATALOG.find((definition) => definition.slug === slug) || null;
 }
 
+function getFormDefinitionByType(formType) {
+  return FORM_CATALOG.find((definition) => definition.formType === formType) || null;
+}
+
 function getOpenForms() {
   return FORM_CATALOG.filter((definition) => definition.status === 'open');
 }
@@ -204,6 +208,7 @@ function validateFormPayload(definition, payload = {}) {
 module.exports = {
   FORM_CATALOG,
   getFormDefinition,
+  getFormDefinitionByType,
   getOpenForms,
   getFields,
   validateFormPayload,
