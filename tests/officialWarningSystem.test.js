@@ -137,10 +137,104 @@ function testWebSignPageRender() {
   console.log('✅ Web E-Signature HTML Portal rendering verified.');
 }
 
+// 4. Test Official Warning Close: Channel Archiving & Safe Reply
+async function testOfficialWarningCloseArchive() {
+  console.log('--- Testing handleOfficialWarningClose: Archiving & Safe Reply ---');
+  const { handleOfficialWarningClose } = require('../bot/services/officialWarningService');
+  const OfficialWarning = require('../models/OfficialWarning');
+
+  let editReplyCalled = false;
+  let replyCalled = false;
+  let channelDeleted = false;
+  let overwriteCreated = [];
+  let channelRenamed = null;
+  let parentSet = null;
+  let channelMessageSent = null;
+
+  const fakeWarning = {
+    _id: '507f1f77bcf86cd799439011',
+    caseNo: 'NO.75765',
+    targetUserId: '1031620522406072350',
+    status: 'PAGE_REVIEW',
+    syncEnabled: true,
+    save: async function() { return this; }
+  };
+
+  // Mock OfficialWarning.findById
+  const origFindById = OfficialWarning.findById;
+  OfficialWarning.findById = async () => fakeWarning;
+
+  const fakeChannel = {
+    id: '1555650176281092139',
+    name: '⚖️・resmi-uyarı-75765',
+    delete: async () => { channelDeleted = true; },
+    setName: async (name) => { channelRenamed = name; },
+    setParent: async (parentId) => { parentSet = parentId; },
+    permissionOverwrites: {
+      create: async (userId, perms) => {
+        overwriteCreated.push({ userId, perms });
+      }
+    },
+    send: async (payload) => { channelMessageSent = payload; }
+  };
+
+  const fakeGuild = {
+    id: '1367646464804655104',
+    channels: {
+      cache: {
+        get: (id) => id === '1523040513626865965' ? { id: '1523040513626865965', name: '📁・ARŞİV' } : null,
+        find: () => null
+      }
+    },
+    roles: {
+      cache: {
+        has: () => true
+      }
+    }
+  };
+
+  const fakeInteraction = {
+    user: { id: '1031620522406072350' },
+    guild: fakeGuild,
+    channel: fakeChannel,
+    deferred: true, // Already acknowledged!
+    replied: false,
+    reply: async () => {
+      replyCalled = true;
+      const err = new Error('Interaction has already been acknowledged.');
+      err.code = 40060;
+      throw err;
+    },
+    editReply: async () => {
+      editReplyCalled = true;
+    }
+  };
+
+  try {
+    await handleOfficialWarningClose(fakeInteraction, fakeWarning._id);
+
+    assert(editReplyCalled, 'editReply should be called when interaction is already deferred');
+    assert(!replyCalled, 'reply should NOT be called if already deferred');
+    assert(!channelDeleted, 'CHANNEL MUST NOT BE DELETED (channel.delete was called!)');
+    assert.strictEqual(fakeWarning.status, 'CLOSED', 'Warning status must be CLOSED');
+    assert.strictEqual(parentSet, '1523040513626865965', 'Channel must be moved to archive category');
+    assert(channelRenamed && channelRenamed.includes('arşiv'), 'Channel name must be updated to archive');
+    
+    const targetOverwrite = overwriteCreated.find(o => o.userId === fakeWarning.targetUserId);
+    assert(targetOverwrite, 'Target user overwrite must be updated');
+    assert.strictEqual(targetOverwrite.perms.ViewChannel, false, 'Target user ViewChannel must be set to false');
+
+    console.log('✅ handleOfficialWarningClose correctly archives channel and revokes target user view permission without deleting or throwing 40060.');
+  } finally {
+    OfficialWarning.findById = origFindById;
+  }
+}
+
 async function runAll() {
   await testModelAndCaseNo();
   testWarningPages();
   testWebSignPageRender();
+  await testOfficialWarningCloseArchive();
   console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY!');
 }
 

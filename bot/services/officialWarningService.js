@@ -380,19 +380,54 @@ async function createOfficialWarningMeeting({
 }
 
 /**
+ * Helper to safely respond to interactions without throwing 40060 (already acknowledged)
+ */
+async function safeReply(interaction, payload) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      return await interaction.editReply(payload).catch(() => {});
+    }
+    return await interaction.reply(payload).catch(async (err) => {
+      if (err.code === 40060 || (err.message && err.message.includes('already been acknowledged'))) {
+        return await interaction.editReply(payload).catch(() => {});
+      }
+      throw err;
+    });
+  } catch (err) {
+    console.warn('[officialWarningService safeReply] error:', err.message);
+  }
+}
+
+async function safeUpdate(interaction, payload) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      return await interaction.editReply(payload).catch(() => {});
+    }
+    return await interaction.update(payload).catch(async (err) => {
+      if (err.code === 40060 || (err.message && err.message.includes('already been acknowledged'))) {
+        return await interaction.editReply(payload).catch(() => {});
+      }
+      throw err;
+    });
+  } catch (err) {
+    console.warn('[officialWarningService safeUpdate] error:', err.message);
+  }
+}
+
+/**
  * Handles target user clicking Accept button
  */
 async function handleOfficialWarningAccept(interaction, warningId) {
   const warning = await OfficialWarning.findById(warningId);
   if (!warning) {
-    return interaction.reply({ content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
+    return safeReply(interaction, { content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
   }
 
   // Only target user or authorized staff may accept
   const isTarget = interaction.user.id === warning.targetUserId;
   const isStaff = interaction.user.id === warning.creatorId || interaction.user.id === FOUNDER_ID;
   if (!isTarget && !isStaff) {
-    return interaction.reply({ 
+    return safeReply(interaction, { 
       content: '❌ Bu taahhütü yalnızca soruşturulan kullanıcı veya yetkili onaylayabilir.', 
       ephemeral: true 
     });
@@ -410,12 +445,12 @@ async function handleOfficialWarningAccept(interaction, warningId) {
   if (interaction.isButton()) {
     // If inside DM, update DM
     if (!interaction.guild) {
-      await interaction.update({ embeds: [embed], components: [controls] }).catch(() => {});
+      await safeUpdate(interaction, { embeds: [embed], components: [controls] });
       return;
     }
 
     // Inside channel
-    await interaction.update({ embeds: [embed], components: [controls] }).catch(() => {});
+    await safeUpdate(interaction, { embeds: [embed], components: [controls] });
 
     // Notify channel
     await interaction.channel.send({
@@ -430,7 +465,7 @@ async function handleOfficialWarningAccept(interaction, warningId) {
 async function handleOfficialWarningPage(interaction, warningId, page) {
   const warning = await OfficialWarning.findById(warningId);
   if (!warning) {
-    return interaction.reply({ content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
+    return safeReply(interaction, { content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
   }
 
   const targetPage = Math.max(1, Math.min(3, parseInt(page, 10) || 1));
@@ -443,7 +478,7 @@ async function handleOfficialWarningPage(interaction, warningId, page) {
   const embed = buildOfficialWarningPage(warning, targetPage);
   const controls = buildPageControls(warning, targetPage);
 
-  await interaction.update({ embeds: [embed], components: [controls] }).catch(() => {});
+  await safeUpdate(interaction, { embeds: [embed], components: [controls] });
 }
 
 /**
@@ -452,11 +487,11 @@ async function handleOfficialWarningPage(interaction, warningId, page) {
 async function handleOfficialWarningReject(interaction, warningId) {
   const warning = await OfficialWarning.findById(warningId);
   if (!warning) {
-    return interaction.reply({ content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
+    return safeReply(interaction, { content: '❌ Resmi uyarı dosyası bulunamadı.', ephemeral: true });
   }
 
   if (interaction.user.id !== warning.targetUserId && interaction.user.id !== warning.creatorId) {
-    return interaction.reply({ content: '❌ Bu işlemi sadece soruşturulan kişi yapabilir.', ephemeral: true });
+    return safeReply(interaction, { content: '❌ Bu işlemi sadece soruşturulan kişi yapabilir.', ephemeral: true });
   }
 
   const rejectEmbed = new EmbedBuilder()
@@ -481,7 +516,7 @@ async function handleOfficialWarningReject(interaction, warningId) {
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [rejectEmbed], components: [row] }).catch(() => {});
+  await safeUpdate(interaction, { embeds: [rejectEmbed], components: [row] });
 
   if (interaction.channel) {
     await interaction.channel.send(`⚠️ <@${warning.targetUserId}> resmi uyarı taahhütünü reddetmeye çalıştı. İhtar iletildi.`);
@@ -489,7 +524,8 @@ async function handleOfficialWarningReject(interaction, warningId) {
 }
 
 /**
- * Closes the official warning meeting channel
+ * Closes the official warning meeting:
+ * Archives channel to archive category, revokes target user's view permission, does NOT delete.
  */
 async function handleOfficialWarningClose(interaction, warningId) {
   const warning = await OfficialWarning.findById(warningId);
@@ -499,13 +535,76 @@ async function handleOfficialWarningClose(interaction, warningId) {
     await warning.save();
   }
 
-  await interaction.reply({ content: '🔒 Resmi uyarı dosyası kapatıldı. Kanal 5 saniye içerisinde silinecektir...' });
+  const replyMsg = '📁 **Resmi uyarı dosyası kapatıldı ve arşivlendi.** Kanal arşiv kategorisine taşındı, kullanıcının erişimi kaldırıldı.';
+  await safeReply(interaction, { content: replyMsg, ephemeral: true });
 
-  setTimeout(() => {
-    interaction.channel.delete().catch(err => {
-      console.error('[officialWarningService] Channel delete error:', err.message);
+  const channel = interaction.channel;
+  const guild = interaction.guild;
+  if (!channel || !guild) return;
+
+  try {
+    // 1) Revoke target user's permission to view the channel
+    if (warning && warning.targetUserId) {
+      await channel.permissionOverwrites.create(warning.targetUserId, {
+        ViewChannel: false,
+        SendMessages: false,
+        ReadMessageHistory: false
+      }).catch(err => {
+        console.warn('[handleOfficialWarningClose] Overwrite target user error:', err.message);
+      });
+    }
+
+    // 2) Keep Kurucu Eko (1031620522406072350) and Staff viewing permission
+    await channel.permissionOverwrites.create(FOUNDER_ID, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true,
+      ManageMessages: true
+    }).catch(() => {});
+
+    if (guild.roles.cache.has(MODERATION_ROLE_ID)) {
+      await channel.permissionOverwrites.create(MODERATION_ROLE_ID, {
+        ViewChannel: true,
+        SendMessages: false,
+        ReadMessageHistory: true
+      }).catch(() => {});
+    }
+
+    // 3) Move to Archive Category (1523040513626865965 or category named "arşiv")
+    const ARCHIVE_CATEGORY_ID = '1523040513626865965';
+    let archiveCategory = guild.channels.cache.get(ARCHIVE_CATEGORY_ID)
+      || guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && (c.name.toLowerCase().includes('arşiv') || c.name.toLowerCase().includes('archive')));
+
+    if (archiveCategory) {
+      await channel.setParent(archiveCategory.id, { lockPermissions: false }).catch(err => {
+        console.warn('[handleOfficialWarningClose] setParent error:', err.message);
+      });
+    }
+
+    // 4) Rename channel to archive format: 📁・arşiv-XXXXX
+    const currentDigits = warning ? warning.caseNo.replace(/[^0-9]/g, '') : channel.name.replace(/[^0-9]/g, '');
+    const archiveName = `📁・arşiv-${currentDigits || 'uyari'}`;
+    await channel.setName(archiveName).catch(err => {
+      console.warn('[handleOfficialWarningClose] setName error:', err.message);
     });
-  }, 5000);
+
+    // 5) Post archive summary embed in the channel
+    const archiveEmbed = new EmbedBuilder()
+      .setTitle(`📁 RESMİ UYARI DOSYASI ARŞİVLENDİ -- ${warning ? warning.caseNo : ''}`)
+      .setColor(0x7f8c8d)
+      .setDescription(
+        `İşbu resmi uyarı toplantı dosyası yetkili <@${interaction.user.id}> tarafından karara bağlanarak **arşive kaldırılmıştır**.\n\n` +
+        `🔒 **Kullanıcı Erişimi:** Soruşturulan şahsın kanal görüntüleme yetkisi kapatılmıştır.\n` +
+        `📁 **Arşiv Konumu:** Kanal arşiv kategorisine taşınmıştır.\n` +
+        `👑 **Denetim:** Kurucu Eko (<@${FOUNDER_ID}>) ve yetkili heyet arşivi dilediği zaman inceleyebilir.`
+      )
+      .setFooter({ text: 'EkoYıldız Mahkeme Sicil Arşivi' })
+      .setTimestamp();
+
+    await channel.send({ embeds: [archiveEmbed] }).catch(() => {});
+  } catch (err) {
+    console.error('[handleOfficialWarningClose] Archive error:', err);
+  }
 }
 
 /**
