@@ -69,13 +69,28 @@
     button.addEventListener('click', () => activate(button.dataset.adminNav, true));
   });
 
-  // Mobile sidebar toggle and close
+  // Sidebar toggle (supports mobile drawer and desktop PC collapse)
   const sidebarToggle = document.querySelector('[data-admin-sidebar-toggle]');
   if (sidebarToggle) {
     sidebarToggle.addEventListener('click', () => {
-      shell.dataset.sidebarOpen = shell.dataset.sidebarOpen === 'true' ? 'false' : 'true';
+      if (window.innerWidth <= 900) {
+        shell.dataset.sidebarOpen = shell.dataset.sidebarOpen === 'true' ? 'false' : 'true';
+      } else {
+        const isCollapsed = shell.dataset.sidebarCollapsed === 'true';
+        shell.dataset.sidebarCollapsed = isCollapsed ? 'false' : 'true';
+        try {
+          localStorage.setItem('acc_sidebar_collapsed', isCollapsed ? 'false' : 'true');
+        } catch (_) {}
+      }
     });
   }
+
+  // Restore sidebar collapsed preference on PC
+  try {
+    if (window.innerWidth > 900 && localStorage.getItem('acc_sidebar_collapsed') === 'true') {
+      shell.dataset.sidebarCollapsed = 'true';
+    }
+  } catch (_) {}
 
   const sidebarClose = document.querySelector('[data-admin-sidebar-close]');
   if (sidebarClose) {
@@ -188,6 +203,7 @@
         const metricEl = document.querySelector(`[data-admin-metric="${key}"] .acc-metric-val`);
         if (metricEl) {
           metricEl.textContent = val === null || val === undefined ? 'Veri alınamadı' : String(val);
+        }
       }
 
       if (data.summary && data.summary.recruiting) {

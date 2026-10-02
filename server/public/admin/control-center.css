@@ -18,14 +18,36 @@
   --acc-warning: #f59e0b;
 }
 
+/* Base Layout Expansion for Desktop PC Screens */
+body.admin-page main,
+main.admin-main,
+main:has(.acc-shell),
+body:has(.acc-shell) main {
+  max-width: min(1880px, calc(100vw - 32px)) !important;
+  width: 100% !important;
+  padding: 10px 14px 28px !important;
+  margin: 0 auto !important;
+}
+
+@media (min-width: 1921px) {
+  body.admin-page main,
+  main.admin-main,
+  main:has(.acc-shell),
+  body:has(.acc-shell) main {
+    max-width: 2200px !important;
+    padding: 14px 24px 36px !important;
+  }
+}
+
 /* Base Shell */
 .acc-shell {
-  --acc-sidebar: 252px;
+  --acc-sidebar: 260px;
   display: grid;
   grid-template-columns: var(--acc-sidebar) minmax(0, 1fr);
   min-height: calc(100vh - 84px);
-  width: min(1520px, calc(100% - 32px));
-  margin: 16px auto 32px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
   border: 1px solid var(--acc-border);
   border-radius: 20px;
   background: var(--acc-surface);
@@ -196,7 +218,7 @@
 }
 
 .acc-toggle-btn {
-  display: none;
+  display: inline-flex;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--acc-border);
   color: #fff;
@@ -206,6 +228,34 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.acc-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (min-width: 901px) {
+  .acc-shell[data-sidebar-collapsed="true"] {
+    --acc-sidebar: 72px;
+  }
+  .acc-shell[data-sidebar-collapsed="true"] .acc-brand-text,
+  .acc-shell[data-sidebar-collapsed="true"] .acc-nav-title,
+  .acc-shell[data-sidebar-collapsed="true"] .acc-sidebar-footer {
+    display: none;
+  }
+  .acc-shell[data-sidebar-collapsed="true"] .acc-brand {
+    justify-content: center;
+  }
+  .acc-shell[data-sidebar-collapsed="true"] .acc-nav-btn {
+    text-align: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .acc-command-trigger {
@@ -269,9 +319,21 @@
 /* Workspace Area */
 .acc-workspace {
   min-width: 0;
-  padding: 24px;
+  padding: 24px 28px;
   overflow-y: auto;
   flex: 1;
+}
+
+@media (min-width: 1360px) {
+  .acc-workspace {
+    padding: 28px 36px;
+  }
+}
+
+@media (min-width: 1680px) {
+  .acc-workspace {
+    padding: 32px 44px;
+  }
 }
 
 .acc-workspace-panel {
@@ -371,10 +433,17 @@
   gap: 14px;
 }
 
+@media (min-width: 1360px) {
+  .acc-metrics {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+}
+
 .acc-metric {
   background: var(--acc-surface-card);
   border: 1px solid var(--acc-border);
-  padding: 16px;
+  padding: 16px 18px;
   border-radius: 14px;
   display: flex;
   flex-direction: column;
@@ -407,12 +476,18 @@
   gap: 18px;
 }
 
+@media (min-width: 1440px) {
+  .acc-dashboard-grid {
+    gap: 22px;
+  }
+}
+
 .acc-panel {
   grid-column: span 6;
   background: var(--acc-surface-card);
   border: 1px solid var(--acc-border);
   border-radius: 16px;
-  padding: 18px 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;

@@ -528,7 +528,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
     }
   </style>
 </head>
-<body>
+<body class="${activePath === '/admin' ? 'admin-page' : ''}">
   ${renderPlatformHeader({
     user,
     activePath,
@@ -538,7 +538,7 @@ function _layout(title, user, content, extraHead = '', activePath = '') {
 
   <div id="toast-container"></div>
 
-  <main>
+  <main class="${activePath === '/admin' ? 'admin-main' : ''}">
     ${content}
     ${sponsorAdService.renderSponsorAdHtml()}
   </main>
