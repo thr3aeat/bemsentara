@@ -2,12 +2,13 @@
 
 ## Amaç
 
-Admin panelindeki doldurulan başvuru formlarını güvenilir, düzenli ve site temasıyla uyumlu bir operasyon merkezine dönüştürmek; adaya gönderilen Discord mesajlarını accentsiz Components v2 biçimine taşımak; mülakat öncesi site üzerinden kimlik doğrulamalı onay ve çizim imzası almak.
+Admin panelindeki doldurulan başvuru formlarını güvenilir, düzenli ve site temasıyla uyumlu bir operasyon merkezine dönüştürmek; eski ve yeni tüm form şemalarındaki soru-cevapları eksiksiz göstermek; adaya gönderilen Discord mesajlarını accentsiz Components v2 biçimine taşımak; mülakat öncesi site üzerinden bot-DM koduyla kimlik doğrulamalı onay ve çizim imzası almak.
 
 Başarı ölçütleri:
 
 - Başvurular ekranı sekme açıldığında veriyi yükler ve hiçbir hata durumunda süresiz `Yükleniyor…` göstermez.
 - Admin, adayları soldaki kuyruktan bulup sağdaki tek aday dosyasında inceleyebilir.
+- Düz katalog cevapları ile eski bölümlü cevaplar aynı aday dosyasında gerçek soru etiketleriyle eksiksiz görünür.
 - Onay, ret, soru, zaman planlama ve bildirim işlemleri açık bir süreç sırasına uyar.
 - Aday, Discord hesabı ve kişiye özel bağlantıyla doğrulanmadan başvuru onayı veya imza veremez.
 - Mülakat, gerekli site onayı ve çizim imzası tamamlanmadan ilerletilemez.
@@ -16,6 +17,8 @@ Başarı ölçütleri:
 ## Mevcut Sorun ve Kök Neden
 
 Yeni Admin Control Center kabuğu, başvuru çalışma alanını `server/views.js` içindeki eski inline HTML ve JavaScript bloğundan göstermektedir. Yeni navigasyon çalışma alanını görünür yaparken eski `loadSubmissions()` başlangıcını çağırmadığı için başvuru listesi ilk açılışta `Yükleniyor…` durumunda kalabilmektedir. Başvuru arayüzü, API çağrıları, modal üretimi ve işlem mantığının aynı büyük dosyada bulunması bu hatanın test edilmesini ve yeni akışların güvenli eklenmesini zorlaştırmaktadır.
+
+Yeni katalog formları cevapları `formData` içinde düz anahtar-değer alanları olarak kaydetmektedir. Eski admin `buildFormQA()` fonksiyonu yalnızca `section1`, `personal`, `technical` gibi iç içe nesneleri işler; primitive düz alanları atladığı için yeni formların soru-cevapları görünmemektedir. Yeni sunum katmanı, soru etiketlerini katalog tanımından çözecek ve hem düz hem bölümlü legacy kayıtları normalize edecektir.
 
 ## Seçilen Yaklaşım
 
@@ -27,6 +30,7 @@ Modül sınırları:
 - Admin istemcisi: Liste yükleme, filtreleme, aday seçimi, ayrıntı gösterimi ve işlemler.
 - Admin stili: Control Center temasıyla uyumlu, bağımsız ve duyarlı stil katmanı.
 - Başvuru operasyon servisi: Liste, ayrıntı, durum geçişi, token ve bildirim orkestrasyonu.
+- Cevap normalleştiricisi: Düz katalog form verisini ve eski bölümlü form verisini ortak bölüm/soru/cevap görünüm modeline dönüştürme.
 - Başvuru route modülü: Admin API uçları ile adayın onay/imza sayfası ve API uçları.
 - Mesaj üreticisi: Tüm başvuru ve mülakat Components v2 payload’larının tek kaynağı.
 
@@ -52,6 +56,8 @@ Seçilen masaüstü düzeni “kuyruk + aday dosyası”dır.
 
 Ana eylemler adayın mevcut aşamasına göre gösterilir. Süreç sırasına aykırı eylemler yalnızca görsel olarak kapatılmaz; sunucu tarafında da reddedilir. Mobil ekranda kuyruk ve aday dosyası art arda yerleşir; aday dosyasından kuyruğa dönüş açık bir kontrolle sağlanır.
 
+Form Yanıtları sekmesi cevapları katalogdaki bölüm ve soru sırasıyla gösterir. Katalogda artık bulunmayan eski alanlar kaybolmaz; güvenli biçimde insanlaştırılmış alan adıyla “Eski kayıt” bölümünde gösterilir. Boş cevap ile bulunmayan alan birbirinden ayrılır. Uzun metinler okunabilir paragraf düzeninde, seçimler ve onaylar uygun semantik değerlerle sunulur.
+
 ## Aday Onay ve İmza Deneyimi
 
 Seçilen düzen, mobil öncelikli rehberli üç adımdır:
@@ -62,12 +68,28 @@ Seçilen düzen, mobil öncelikli rehberli üç adımdır:
 
 Sayfada adayın adı, başvurduğu ekip, başvuru referansı ve planlanan mülakat zamanı gösterilir. Dokümantasyon, topluluk kuralları, yardım merkezi ve blog bağlantıları aynı ekranda erişilebilir olur. İmza tamamlandığında kullanıcı açık bir başarı ekranı ve sonraki adımlar bilgisi görür.
 
-## Güvenlik Modeli
+## Bot-DM Kimlik Doğrulama
+
+Personel başvurusu ve aday onay sayfası Discord OAuth yerine bot-DM koduyla kimlik doğrular:
+
+- Kullanıcı Discord kullanıcı adını veya 17–20 haneli ID’sini girer.
+- Çözümleyici yalnızca botun bağlı olduğu yapılandırılmış izinli sunuculardaki üyeleri kabul eder. ID ile doğrudan global kullanıcı getirme, sunucu üyeliği kontrolünü atlayamaz.
+- Kullanıcı adı birden fazla üyeyle eşleşirse kod gönderilmez ve Discord ID istenir.
+- Kullanıcı hiçbir izinli sunucuda değilse genel ve güvenli bir uygunluk hatası gösterilir.
+- Altı haneli kod kriptografik güvenli rastgele üretimle oluşturulur, hash olarak saklanır ve accentsiz Components v2 DM ile gönderilir.
+- Kod beş dakika geçerlidir. Üç yanlış denemede kod ve doğrulama oturumu iptal edilir.
+- Kod isteme ve doğrulama uçları kullanıcı, hedef Discord ID, oturum ve IP düzeyinde rate-limit/cooldown uygular.
+- Yeni kod istemek önceki açık kodu geçersiz kılar.
+- Kod doğrulanmadan kullanıcı hesabı, form taslağı veya başvuru oluşturulmaz.
+- DM kapalı veya bot çevrimdışıysa kullanıcıya OAuth alternatifi sunulmadan açıklayıcı hata gösterilir.
+- Doğrulanan Discord ID, kullanıcı adı ve avatar mevcut kullanıcı kaydıyla güvenli biçimde eşleştirilir veya yeni aday kaydına yazılır.
+
+## Aday Bağlantısı Güvenlik Modeli
 
 - Admin “Site onayı gönder” işlemini başlattığında kriptografik olarak güçlü, tek kullanımlık bir token üretilir.
 - Ham token saklanmaz; SHA-256 hash’i, başvuru kimliği, Discord kullanıcı kimliği, oluşturulma ve sona erme zamanı saklanır.
 - Token 24 saat geçerlidir. Admin, önceki kullanılmamış tokenı geçersiz kılarak yeni bağlantı gönderebilir.
-- Aday Discord oturumu yoksa OAuth girişine gider ve güvenli dönüş adresiyle onay sayfasına döner.
+- Adayın doğrulanmış DM-kodu oturumu yoksa aday onay akışı, dönüş adresini koruyarak bot-DM giriş ekranına gider.
 - Oturumdaki Discord ID, tokenın bağlı olduğu başvuru sahibiyle eşleşmelidir.
 - Kullanılmış, süresi dolmuş, değiştirilmiş veya başka kullanıcıya ait token işlem yapamaz.
 - Durum değiştiren tüm istekler mevcut origin/CSRF korumalarına tabidir.
@@ -100,7 +122,7 @@ Mülakatı kabul etme veya bitirme işlemleri için `SITE_APPROVAL_COMPLETED` ve
 2. Servis yeni token kaydını oluşturur, önceki açık tokenları geçersiz kılar ve işlem geçmişine kayıt düşer.
 3. Mesaj üreticisi accentsiz Components v2 payload’ı oluşturur.
 4. Bot, adaya kişiselleştirilmiş mesajı ve site bağlantısını gönderir.
-5. Aday bağlantıyı açar, Discord OAuth ile doğrulanır ve üç adımlı akışı tamamlar.
+5. Aday bağlantıyı açar, bot-DM koduyla Discord kimliğini doğrular ve üç adımlı akışı tamamlar.
 6. Sunucu taahhütleri, tokenı, kullanıcı kimliğini ve çizimi yeniden doğrular.
 7. İmza PNG olarak üretilir; hash ve audit bilgileri başvuruya bağlanır; token tüketilir.
 8. Başvurunun iş akışı uygun aşamaya ilerletilir ve admin görünümü yenilenir.
@@ -143,7 +165,8 @@ Başvuru ile ilgili yeni veya dönüştürülen kullanıcı mesajları `Componen
 - Admin olmayan kullanıcının tüm admin uçlarından reddedilmesi
 - Liste/ayrıntı response sözleşmeleri
 - Site onay isteği oluşturma ve yeniden gönderme
-- OAuth kullanıcısı ile token sahibinin eşleşmesi
+- Bot-DM ile doğrulanmış kullanıcı ile token sahibinin eşleşmesi
+- Ortak sunucuda bulunmayan kullanıcı, çakışan kullanıcı adı, kod süresi ve üç yanlış deneme
 - İmza tamamlandıktan sonra mülakata hazır geçişi
 - Bot/DM hatasının ana işlemi bozmaması ve yeniden gönderilebilir kayıt oluşturması
 
