@@ -21,7 +21,7 @@ function createDiscordDmAuthService({
   userRepo = User,
   clock = () => Date.now(),
   randomInt = (min, max) => crypto.randomInt(min, max),
-  hashSecret = process.env.SESSION_SECRET || 'ekoyildiz-dm-auth'
+  hashSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')
 } = {}) {
   const hashCode = (code, targetId) => crypto.createHmac('sha256', hashSecret).update(`${targetId}:${code}`).digest('hex');
 
