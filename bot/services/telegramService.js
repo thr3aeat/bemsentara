@@ -61,7 +61,17 @@ function isLockValid() {
     if (lockData.pid === process.pid) {
       return true;
     }
-    
+
+    // Yeniden başlatmada eski (ölmüş) sürecin kilidi kalırsa polling sessizce kapanıyordu.
+    try {
+      process.kill(lockData.pid, 0);
+    } catch (e) {
+      if (e.code === "ESRCH") {
+        console.log(`[Telegram Polling] Kilit sahibi süreç (PID: ${lockData.pid}) çalışmıyor, kilit devralınıyor.`);
+        return false;
+      }
+    }
+
     console.warn(`[Telegram Polling] ⚠️ BAŞKA BİR ÖRNEK ZATEN ÇOK GÜÇLÜDENİCİ! PID: ${lockData.pid}, Örnek: ${lockData.instance}`);
     return true;
   } catch (err) {
@@ -339,7 +349,8 @@ async function buildServerContext(client) {
 }
 
 async function handleTelegramMessage(client, message) {
-  const text = message.text;
+  // Fotoğraf/dosya açıklamaları da mesaj olarak işlensin
+  const text = (message.text || message.caption || "").trim();
   const chatId = message.chat.id;
   
   if (!text) return;
@@ -521,8 +532,13 @@ async function startTelegramPolling(client) {
       const updates = response.data?.result || [];
       for (const update of updates) {
         lastUpdateId = update.update_id;
-        if (update.message) {
-          await handleTelegramMessage(client, update.message);
+        const incoming = update.message || update.edited_message || update.channel_post;
+        if (incoming) {
+          try {
+            await handleTelegramMessage(client, incoming);
+          } catch (handleErr) {
+            console.error("[Telegram Polling] Mesaj işlenemedi:", handleErr.message);
+          }
         }
       }
     } catch (err) {
@@ -547,9 +563,11 @@ async function startTelegramPolling(client) {
             console.error("❌ [Telegram Polling] Üst üste 10 kez çakışma (409) hatası alındı.");
             console.error("❌ Çakışmaları ve log kirliliğini önlemek amacıyla Telegram Polling bu oturum için KAPATILDI.");
             console.error("💡 Botun başka bir yerde çalışıp çalışmadığını kontrol edin. .env'den TELEGRAM_POLLING_ENABLED=false ekleyebilirsiniz.");
-            removeLockFile();
-            isPollingActive = false;
-            return; // Exit polling loop entirely
+            // Kalıcı kapatmak yerine 5 dk sonra tekrar dene (diğer örnek kapanmış olabilir)
+            console.error("⏱️ [Telegram Polling] 5 dakika sonra yeniden denenecek.");
+            consecutive409s = 0;
+            pollingTimeout = setTimeout(poll, 5 * 60 * 1000);
+            return;
           }
 
           // Exponential backoff: 5s, 10s, 15s, 20s, 25s (max 25s)

@@ -53,7 +53,7 @@ const HOMOGLYPHS = {
   'е': 'e', 'ё': 'e', 'є': 'e', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e', 'ē': 'e', 'ę': 'e',
   'г': 'g', 'ğ': 'g',
   'н': 'h',
-  'і': 'i', 'ï': 'i', 'í': 'i', 'ì': 'i', 'î': 'i', 'ı': 'i', '1': 'i', 'l': 'i', 'İ': 'i', 'I': 'i',
+  'і': 'i', 'ï': 'i', 'í': 'i', 'ì': 'i', 'î': 'i', 'ı': 'i', '1': 'i', 'İ': 'i',
   'к': 'k',
   'м': 'm',
   'о': 'o', 'ö': 'o', 'ø': 'o', 'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', '0': 'o',
@@ -91,13 +91,14 @@ const PROFANITY_TIERS = {
     ],
     // Tam eşleşen kritik ifadeler
     phrases: [
-      /allah(ı|i|ini|ina)\s*(sik|sikeyim|sok|yok)/i,
-      /din(i|ini|ine)\s*(sik|sikeyim)/i,
-      /kitab(ı|ini)\s*(sik|sikeyim)/i,
-      /atatürk(e|ün|ü)\s*(sik|küfür|söveyim|piç)/i,
-      /ana(nı|na|nızı)\s*(sik|sikeyim|avradını)/i,
-      /bacı(nı|nızı)\s*(sik|sikeyim)/i,
-      /ecdadını\s*(sik|sikeyim)/i
+      // Kelime sınırları zorunlu: "dinine şikayet", "Atatürk'e küfür edenler", "anana sıkıldı" gibi masum cümleler yakalanmasın.
+      /(?:^|[^a-zğüşıöç])allah(ı|i|ını|ini|ına|ina)\s*(sik|sikeyim|sikerim)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])din(i|ini|ine)\s*(sik|sikeyim|sikerim)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])kitab(ı|i|ını|ini)\s*(sik|sikeyim|sikerim)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])atat(ü|u)rk(e|ün|un|ü|u)\s*(sik|sikeyim|söveyim|soveyim|piç)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])ana(nı|ni|na|nızı|nizi)\s*(sik|sikeyim|sikerim|avradını|avradini)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])bacı(nı|ni|nızı|nizi)\s*(sik|sikeyim|sikerim)(?![a-zğüşıöç])/i,
+      /(?:^|[^a-zğüşıöç])ecdad(ı|i)n(ı|i)\s*(sik|sikeyim|sikerim)(?![a-zğüşıöç])/i
     ]
   },
 
@@ -113,8 +114,8 @@ const PROFANITY_TIERS = {
       "amcık", "amcik", "amcığı", "amcığını", "amcıklar",
       "sikeyim", "siktim", "siktiğimin", "sikerim", "sikiş", "sikis", "sikim", "sikem", "sik kırığı", "sikişmek", "sikismek",
       "amına", "amını", "amina", "amini", "amk", "aq", "amq", "anaskm", "amınakoyim", "amınakoyayım", "amınakodumun", "amkoyim", "aminakoyim",
-      "piç", "pic", "pici", "piçin", "picin", "piçler", "picler", "piçsin",
-      "oç", "oc", "götveren", "gotveren", "gavat", "kaltak", "fahişe", "fahise", "kahpe", "puşt", "pust"
+      "piç", "pici", "piçin", "picin", "piçler", "picler", "piçsin",
+      "oç", "götveren", "gotveren", "gavat", "kaltak", "fahişe", "fahise", "kahpe", "puşt", "pust"
       , "gavatsın", "gavatlar"
     ]
   },
@@ -125,10 +126,10 @@ const PROFANITY_TIERS = {
     severity: "MODERATE",
     points: -2.0,
     words: [
-      "göt", "got", "göte", "gote", "götü", "gotu", "götlek", "gotlek", "göt kafalı",
-      "sik", "siktir", "siktirin", "siktirsin", "siktirgit", "sg", "sktir",
+      "göt", "göte", "götü", "götlek", "gotlek", "göt kafalı",
+      "sik", "siktir", "siktirin", "siktirsin", "siktirgit", "sktir",
       "yavşak", "yavsak", "yavşağın", "ibne", "ibneler", "ibnesin", "ibneyim",
-      "top", "dingil", "dangalak", "pezevenk", "pezevenkler"
+      "dingil", "dangalak", "pezevenk", "pezevenkler"
     ]
   }
 };
@@ -146,23 +147,22 @@ function cleanAndNormalizeText(rawText) {
     return '';
   });
 
-  // B. Homoglyph dönüşümü (Kiril / Latin lookalikes)
-  let homoglyphCleaned = "";
-  for (const ch of text) {
-    homoglyphCleaned += HOMOGLYPHS[ch] || ch;
-  }
-  text = homoglyphCleaned;
-
-  // C. Leet-speak ve rakam/sembol temizliği (Noktalama işaretlerinden ÖNCE yapılmalı)
-  text = text.replace(/@/g, "a")
-             .replace(/4/g, "a")
-             .replace(/[1!|]/g, "i")
-             .replace(/0/g, "o")
-             .replace(/3/g, "e")
-             .replace(/[5$]/g, "s")
-             .replace(/7/g, "t")
-             .replace(/8/g, "b")
-             .replace(/9/g, "g");
+  // B+C. Homoglyph ve leet-speak dönüşümü yalnızca harf içeren kelimelere uygulanır;
+  // "59", "100", "8:30" gibi saf sayılar küfüre dönüşmesin ("59" -> "sg" yanlış pozitifi).
+  text = text.split(/(\s+)/).map(token => {
+    if (!/[a-zğüşıöçЀ-ӿ]/i.test(token)) return token;
+    let converted = "";
+    for (const ch of token) converted += HOMOGLYPHS[ch] || ch;
+    return converted.replace(/@/g, "a")
+                    .replace(/4/g, "a")
+                    .replace(/[1!|]/g, "i")
+                    .replace(/0/g, "o")
+                    .replace(/3/g, "e")
+                    .replace(/[5$]/g, "s")
+                    .replace(/7/g, "t")
+                    .replace(/8/g, "b")
+                    .replace(/9/g, "g");
+  }).join("");
 
   // D. Noktalama işaretleri, emojiler, altçizgi ve ayraçları kaldır
   const noPunctuation = text.replace(/[\.\,\_\-\*\+\~\#\=\|\/\\\'\"\:\;\(\)\[\]\{\}\<\>\`\^\%\!\?]/g, "");
@@ -203,6 +203,12 @@ function maskSafeWords(rawText) {
  */
 function containsNormalizedTerm(norm, term) {
   const normalizedTerm = cleanAndNormalizeText(term).cleaned;
+  // Kısa terimler (göt, piç, oç, sik...) normalize edilince İngilizce/masum kelimelere çöküyor
+  // ("got", "pic", "oc"), bu yüzden yalnızca yazıldığı haliyle aranır.
+  if (normalizedTerm.replace(/\s/g, "").length <= 3) {
+    const rawRegex = new RegExp(`(^|[^a-zğüşıöç])${escapeRegex(term.toLocaleLowerCase("tr-TR"))}($|[^a-zğüşıöç])`, "i");
+    return rawRegex.test(norm.raw);
+  }
   const escapedTerm = escapeRegex(normalizedTerm);
   const boundaryRegex = new RegExp(
     `(^|[^a-zğüşıöç])${escapedTerm}($|[^a-zğüşıöç])`,

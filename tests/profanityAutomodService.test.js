@@ -31,7 +31,10 @@ test('topluluk içindeki top parçasını küfür olarak algılamaz', () => {
 
   assert.equal(detectProfanity(text), null);
   assert.equal(detectProfanity('Komut syntax açıklaması ve Sythonom yapılandırması burada.'), null);
-  assert.equal(detectProfanity('Dönen top kırmızıydı.').matched, 'top');
+  assert.equal(detectProfanity('Dönen top kırmızıydı.'), null);
+  for (const text of ['I got it', 'nice pic', 'saat 59 da', 'dinine şikayet etti', "Atatürk'e küfür edenler cezalandırılsın", 'anana sıkıldı']) {
+    assert.equal(detectProfanity(text), null, `${text} masum kalmalı`);
+  }
 });
 
 test('masum sık kelimesini engellemez, Türkçe ekleri ve ayrılmış kaçınmaları yakalar', () => {
