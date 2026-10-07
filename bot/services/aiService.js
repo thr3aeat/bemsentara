@@ -160,6 +160,8 @@ function requestModel(model, messages, systemContent, options = {}) {
     try {
       request = lib.request(options, (res) => {
         let data = '';
+        // Parça sınırında bölünen çok baytlı karakterler (ç, ş, ğ...) "�" olmasın.
+        res.setEncoding('utf8');
 
         // Handle non-200 status codes
         if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {

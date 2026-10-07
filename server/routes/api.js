@@ -3924,6 +3924,7 @@ router.post("/api/webhook/proxy", async (req, res) => {
 
       const req2 = https.request(options, (r) => {
         let data = "";
+        r.setEncoding("utf8");
         r.on("data", chunk => data += chunk);
         r.on("end", () => resolve({ status: r.statusCode, body: data }));
       });
