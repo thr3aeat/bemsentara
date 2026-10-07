@@ -7,13 +7,7 @@ const {
   StringSelectMenuOptionBuilder
 } = require('discord.js');
 
-const ataturkPhotos = [
-  'https://upload.wikimedia.org/wikipedia/commons/a/a8/Ataturk1930s.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/1/18/Mustafa_Kemal_Atat%C3%BCrk_in_1923.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Ataturk_in_1918.jpg/800px-Ataturk_in_1918.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/a/a0/Mustafa_Kemal_Atat%C3%BCrk_1925.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/2/23/Mustafa_Kemal_Ataturk_1927.jpg'
-];
+const { getDailyPhoto, getRandomPhoto } = require('../../../server/services/ataturkImageService');
 
 const dailyFacts = [
   { title: '🇹🇷 Türk Tarihi', fact: '1071 Malazgirt Meydan Muharebesi ile Anadolu’nun kapıları Türklere açılmıştır.' },
@@ -1296,15 +1290,18 @@ module.exports = [
     name: 'atatürk',
     aliases: ['ataturk'],
     category: 'Eğlence',
-    description: 'Rastgele bir Atatürk fotoğrafı gönderir.',
+    description: "Atatürk fotoğrafı gönderir. `e!atatürk` günün fotoğrafını, `e!atatürk rastgele` rastgele bir fotoğrafı gösterir.",
     userPermissions: [],
     botPermissions: [],
-    async execute(message) {
-      const photo = ataturkPhotos[Math.floor(Math.random() * ataturkPhotos.length)];
+    async execute(message, args = []) {
+      const random = /^(rastgele|random)$/i.test(String(args[0] || ''));
+      const photo = random ? await getRandomPhoto() : await getDailyPhoto();
       const embed = new EmbedBuilder()
-        .setTitle('🇹🇷 Mustafa Kemal Atatürk')
-        .setImage(photo)
-        .setColor(0xef4444);
+        .setTitle(random ? '🇹🇷 Mustafa Kemal Atatürk' : '🇹🇷 Günün Atatürk Fotoğrafı')
+        .setImage(photo.url)
+        .setColor(0xef4444)
+        .setFooter({ text: `Kaynak: ${photo.source}` });
+      if (photo.pageUrl) embed.setURL(photo.pageUrl);
       return message.reply({ embeds: [embed] });
     }
   },

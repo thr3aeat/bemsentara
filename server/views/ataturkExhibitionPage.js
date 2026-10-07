@@ -233,6 +233,11 @@ function renderAtaturkExhibitionPage(user = null) {
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+    .daily-photo-section { max-width: 760px; margin: 0 auto 56px; text-align: center; }
+    .daily-photo-frame { margin: 0; border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); min-height: 120px; }
+    .daily-photo-frame img { display: block; width: 100%; max-height: 640px; object-fit: contain; background: #000; }
+    .daily-photo-frame figcaption { padding: 12px 16px; font-size: 0.85rem; opacity: 0.8; }
+    .daily-photo-frame figcaption a { color: inherit; text-decoration: underline; }
     body.ataturk-page {
       background-color: var(--ata-bg);
       color: var(--ata-text-main);
@@ -944,6 +949,27 @@ function renderAtaturkExhibitionPage(user = null) {
   </header>
 
   <main class="ata-shell">
+    <!-- 0. Günün Fotoğrafı (ataturkImageService) -->
+    <section class="daily-photo-section" id="gunun-fotografi" hidden>
+      <div class="section-header">
+        <span class="section-tag" id="dailyPhotoDate">Günün Fotoğrafı</span>
+        <h2 class="section-title">Bugünün Atatürk Fotoğrafı</h2>
+      </div>
+      <figure class="daily-photo-frame">
+        <img id="dailyPhotoImg" alt="Günün Atatürk fotoğrafı" loading="lazy">
+        <figcaption id="dailyPhotoCaption"></figcaption>
+      </figure>
+    </section>
+    <script>
+      fetch('/api/ataturk/daily').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (p) {
+        document.getElementById('dailyPhotoImg').src = p.url;
+        document.getElementById('dailyPhotoDate').textContent = 'Günün Fotoğrafı • ' + p.date.split('-').reverse().join('.');
+        var cap = document.getElementById('dailyPhotoCaption');
+        cap.textContent = (p.title || '') + ' — ' + p.source + ' ';
+        if (p.pageUrl) { var a = document.createElement('a'); a.href = p.pageUrl; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = '(kaynak)'; cap.appendChild(a); }
+        document.getElementById('gunun-fotografi').hidden = false;
+      }).catch(function () {});
+    </script>
     <!-- 1. İnteraktif Zaman Çizelgesi -->
     <section class="timeline-section" id="tarihce">
       <div class="section-header">

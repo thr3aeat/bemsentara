@@ -39,6 +39,7 @@ const { renderVideoBlogPage } = require("../views/videoBlogPage");
 const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
 const { renderAdvertisingLandingPage } = require("../views/advertisingLandingPage");
 const { renderAtaturkExhibitionPage } = require("../views/ataturkExhibitionPage");
+const { getDailyPhoto } = require("../services/ataturkImageService");
 const { renderItirazMerkeziPage } = require("../views/itirazMerkeziPage");
 const { getDiscordClient } = require("../../bot/discordClient");
 const { renderLinksHubPage } = require("../views/linksHubPage");
@@ -153,6 +154,14 @@ router.get("/reklam", (req, res) => res.redirect("/reklam/ekoyildiz-ortaklik"));
 router.get("/reklam/ekoyildiz-ortaklik", (req, res) => res.send(renderAdvertisingLandingPage(req.user)));
 router.get("/ataturk", (req, res) => res.send(renderAtaturkExhibitionPage(req.user)));
 router.get("/atamiz", (req, res) => res.redirect("/ataturk"));
+router.get("/api/ataturk/daily", async (req, res) => {
+  try {
+    res.set("Cache-Control", "public, max-age=900");
+    res.json(await getDailyPhoto());
+  } catch (err) {
+    res.status(502).json({ error: "Fotoğraf alınamadı" });
+  }
+});
 router.get("/blog/:slug", (req, res) => res.send(renderBlogPostPage(req.params.slug)));
 router.get("/yazar/:slug", (req, res) => res.send(renderAuthorPage(req.params.slug)));
 
