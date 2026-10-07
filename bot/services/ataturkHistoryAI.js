@@ -1,5 +1,14 @@
 const cron = require("node-cron");
-const { EmbedBuilder } = require("discord.js");
+const {
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags
+} = require("discord.js");
+const { getDailyPhoto } = require("../../server/services/ataturkImageService");
 const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
@@ -30,7 +39,13 @@ async function hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr) {
     const messages = await channel.messages.fetch({ limit: 25 }).catch(() => null);
     if (!messages || messages.size === 0) return false;
 
+    const botId = channel.client && channel.client.user && channel.client.user.id;
     const todayEmbed = messages.find(m => {
+      // Components V2 mesajlarında embed yok: botun bugün attığı V2 mesajını tarihten tanı.
+      if (botId && m.author && m.author.id === botId && m.flags && m.flags.has(MessageFlags.IsComponentsV2)) {
+        const msgDate = m.createdAt ? m.createdAt.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }) : "";
+        if (msgDate === trDateStr) return true;
+      }
       if (!m.embeds || m.embeds.length === 0) return false;
       const embed = m.embeds[0];
       const title = embed.title || "";
@@ -213,11 +228,13 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
       }
     }
 
-    if (aiContent && aiContent.length > 4000) {
-      aiContent = aiContent.substring(0, 3990) + "\n\n*(Devamı kesildi...)*";
+    // Components V2'de tüm metin bileşenleri için toplam sınır 4000 karakter.
+    if (aiContent && aiContent.length > 3300) {
+      aiContent = aiContent.substring(0, 3290) + "\n\n*(Devamı kesildi...)*";
     }
 
-    const botAvatar = client.user ? client.user.displayAvatarURL() : undefined;
+    // Günün fotoğrafı (Commons / yedek liste); alınamazsa mesaj fotoğrafsız gider.
+    const photo = await getDailyPhoto().catch(() => null);
 
     for (const channelId of TARGET_CHANNEL_IDS) {
       const channel = await client.channels.fetch(channelId).catch(() => null);
@@ -225,18 +242,44 @@ Lütfen ${dateStr} tarihi için Gazi Mustafa Kemal Atatürk'ün hayatındaki ön
         const isEkoYildiz = (channel.guild && channel.guild.id === "1367646464804655104") || channelId === "1518692463177498674";
         const footerText = isEkoYildiz ? "EkoYıldız Yapay Zeka Tarih Sistemi" : "TMT Yapay Zeka Tarih Sistemi";
 
-        const embed = new EmbedBuilder()
-          .setTitle(title)
-          .setDescription(aiContent)
-          .setColor(embedColor)
-          .setFooter({ text: footerText, iconURL: botAvatar })
-          .setTimestamp();
+        const container = new ContainerBuilder().setAccentColor(embedColor);
 
-        if (specialField) {
-          embed.addFields(specialField);
+        if (photo) {
+          container.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+              new MediaGalleryItemBuilder()
+                .setURL(photo.url)
+                .setDescription(photo.title || "Mustafa Kemal Atatürk")
+            )
+          );
         }
 
-        await channel.send({ embeds: [embed] }).catch(() => {});
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`));
+        container.addSeparatorComponents(
+          new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(aiContent));
+
+        if (specialField) {
+          container.addSeparatorComponents(
+            new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+          );
+          container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`### ${specialField.name}\n${specialField.value}`)
+          );
+        }
+
+        container.addSeparatorComponents(
+          new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
+        );
+        const sourceNote = photo && photo.source ? ` • Fotoğraf: ${photo.source}` : "";
+        container.addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(`-# ${footerText}${sourceNote}`)
+        );
+
+        await channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(err => {
+          console.warn(`⚠️ [AtaturkHistoryAI] Mesaj gönderilemedi (${channelId}): ${err.message}`);
+        });
         console.log(`✅ [AtaturkHistoryAI] ${title} mesajı ${channelId} kanalına başarıyla gönderildi.`);
       } else {
         console.warn(`⚠️ [AtaturkHistoryAI] Hedef kanal bulunamadı veya metin kanalı değil: ${channelId}`);
