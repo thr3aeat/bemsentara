@@ -6,11 +6,21 @@ const {
   CUSTOM_MODULES,
   getDiscordAddonForPackage
 } = require('../services/reklamPricingConfig');
+const { getPriceAccess, applyDiscount } = require('../services/adPriceAccessService');
 
 const DISCORD_URL = 'https://discord.gg/rEu5gvRBdM';
 const YOUTUBE_URL = 'https://www.youtube.com/@eko8yildiz';
 
 function renderAdvertisingLandingPage(user = null) {
+  // Eko'nun DM'den onayladığı kullanıcılar kısa süreliğine indirimli net fiyatları görür
+  const priceAccess = getPriceAccess(user?.discordId);
+  const priceHtml = (price) => {
+    if (!priceAccess) return `${price} TL`;
+    const discounted = applyDiscount(price);
+    return discounted === price
+      ? `${price} TL`
+      : `<s class="price-old">${price}</s> ${discounted} TL`;
+  };
   const accountLink = user
     ? '<a class="quiet-link" href="/dashboard">Paneline dön</a>'
     : '<a class="quiet-link" href="/login">Giriş yap</a>';
@@ -75,7 +85,7 @@ function renderAdvertisingLandingPage(user = null) {
 
           <div class="card-pricing-block">
             <div class="price-figure-wrap">
-              <span class="amount" id="price-amount-${pkg.id}">${pkg.basePrice} TL</span>
+              <span class="amount" id="price-amount-${pkg.id}">${priceHtml(pkg.basePrice)}</span>
               <span class="period">/ başlangıç</span>
             </div>
             <div class="price-caption" id="price-caption-${pkg.id}">Net başlangıç fiyatı</div>
@@ -2326,9 +2336,15 @@ function renderAdvertisingLandingPage(user = null) {
       .top-actions > * { white-space: nowrap; }
       .btn-top-cta { padding: 8px 12px; font-size: 0.8rem; }
     }
-    /* ── Fiyatlar bulanık: net rakam yalnızca teklif/ödeme aşamasında görünür ── */
+${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4px; }
+    .price-access-banner {
+      position: relative; z-index: 80;
+      padding: 10px 16px; text-align: center; font-weight: 700; font-size: 0.9rem;
+      background: linear-gradient(135deg, #f43f5e, #a855f7); color: #fff;
+    }
+` : `    /* ── Fiyatlar bulanık: net rakam yalnızca teklif/ödeme aşamasında görünür ── */
     .price-figure-wrap, .choice-card-price, #builder-subtotal, #builder-total,
-    #builder-items-list strong, #mobile-summary-price {
+    #builder-items-list strong, #mobile-summary-price, .addon-cost {
       filter: blur(7px);
       user-select: none;
       -webkit-user-select: none;
@@ -2348,9 +2364,10 @@ function renderAdvertisingLandingPage(user = null) {
     }
     .card-pricing-block .price-figure-wrap { justify-content: center; opacity: 0.55; }
     .price-caption { visibility: hidden; }
-  </style>
+`}  </style>
 </head>
 <body>
+  ${priceAccess ? `<div class="price-access-banner">🔓 Sana özel fiyatlar açık — indirim <span id="price-access-left"></span> içinde sona eriyor</div>` : ''}
 
   <!-- Topbar -->
   <header class="topbar shell">
@@ -3183,6 +3200,27 @@ function renderAdvertisingLandingPage(user = null) {
 
   <!-- Frontend Client Script (Paket Seçimi, Dinamik Discord Add-on, Custom Builder) -->
   <script>
+    // Eko onaylı fiyat erişimi (sunucudaki adPriceAccessService ile aynı kademeler)
+    const AD_ACCESS_UNTIL = ${priceAccess ? priceAccess.expiresAt : 0};
+    function adDisc(p) {
+      if (Date.now() > AD_ACCESS_UNTIL) return p;
+      const r = p >= 300 ? 0.25 : p >= 150 ? 0.15 : p >= 75 ? 0.08 : 0.03;
+      return Math.max(0, Math.round(p * (1 - r)));
+    }
+    function adPriceHtml(p) {
+      const d = adDisc(p);
+      return d === p ? p + ' TL' : '<s class="price-old">' + p + '</s> ' + d + ' TL';
+    }
+    (function tickPriceAccess() {
+      const el = document.getElementById('price-access-left');
+      if (!el) return;
+      const left = AD_ACCESS_UNTIL - Date.now();
+      if (left <= 0) { location.reload(); return; }
+      const m = Math.floor(left / 60000), sec = Math.floor((left % 60000) / 1000);
+      el.textContent = m + ' dk ' + String(sec).padStart(2, '0') + ' sn';
+      setTimeout(tickPriceAccess, 1000);
+    })();
+
     // State
     const cardAddonStates = {}; // pkgId -> boolean
     const builderState = {
@@ -3211,7 +3249,7 @@ function renderAdvertisingLandingPage(user = null) {
         box.classList.add('is-active');
         check.setAttribute('aria-checked', 'true');
         const total = basePrice + addonPrice;
-        amountEl.textContent = total + ' TL';
+        amountEl.innerHTML = adPriceHtml(total);
         captionEl.textContent = 'Paket (₺' + basePrice + ') + Discord Duyurusu (+₺' + addonPrice + ')';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId + '&withDiscord=true';
         ctaLabel.textContent = 'Paket + Discord Duyurusu ile Devam Et';
@@ -3219,7 +3257,7 @@ function renderAdvertisingLandingPage(user = null) {
       } else {
         box.classList.remove('is-active');
         check.setAttribute('aria-checked', 'false');
-        amountEl.textContent = basePrice + ' TL';
+        amountEl.innerHTML = adPriceHtml(basePrice);
         captionEl.textContent = 'Net başlangıç fiyatı';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId;
         ctaLabel.textContent = 'Bu Paketi Konuşalım';
@@ -3233,7 +3271,7 @@ function renderAdvertisingLandingPage(user = null) {
       const cta = document.getElementById('mobile-sticky-cta');
       if (label && price && cta) {
         label.textContent = name;
-        price.textContent = '₺' + total;
+        price.textContent = '₺' + adDisc(total);
         cta.href = href;
       }
     }
@@ -3403,7 +3441,7 @@ function renderAdvertisingLandingPage(user = null) {
       }
 
       const total = Math.max(0, subtotal - discount);
-      totalEl.textContent = '₺' + total;
+      totalEl.textContent = '₺' + adDisc(total);
       submitBtn.disabled = false;
 
       updateMobileBar('Özel Paket (' + items.length + ' Hizmet)', total, '#kendi-paketini-olustur');
@@ -3655,7 +3693,7 @@ function renderAdvertisingLandingPage(user = null) {
       const bdBasePrice = document.getElementById('bd-base-price');
       const bdTotalPrice = document.getElementById('bd-total-price');
 
-      const base = currentModalPkg.basePrice;
+      const base = adDisc(currentModalPkg.basePrice);
       const fee = selectedPaymentMethod === 'itemsatis' ? 5 : 0;
       const total = base + fee;
 

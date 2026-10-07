@@ -1353,6 +1353,7 @@ function buildPaymentInfoEmbed() {
  * Reklam Başvuru ve Satın Alma Modalı
  * İtemSatış hesabı durumu, TL/Robux seçimi, topluluk linki ve özel notları toplar.
  */
+const { grantPriceAccess, ACCESS_MINUTES } = require('../../server/services/adPriceAccessService');
 const ekoyildiz__ID = '1031620522406072350';
 
 /**
@@ -1643,6 +1644,65 @@ async function handleReklamPriceApproval(interaction, ticketId) {
       await devUser.send({ embeds: [dmNotice], components: [dmRow] }).catch(() => { });
     }
   } catch (_) { }
+}
+
+/**
+ * Müşteri sitede net fiyatları görmek ister → Eko'ya DM ile onay isteği gider.
+ */
+async function handleSitePriceRequest(interaction, ticketId) {
+  const ticket = await Ticket.findOne({ ticketId });
+  if (!ticket) return interaction.reply({ content: '❌ Destek talebi bulunamadı.', ephemeral: true });
+  if (String(ticket.userId) !== String(interaction.user.id)) {
+    return interaction.reply({ content: '❌ Bu isteği yalnızca ticket sahibi oluşturabilir.', ephemeral: true });
+  }
+
+  const ekoUser = await interaction.client.users.fetch(ekoyildiz__ID).catch(() => null);
+  const embed = new EmbedBuilder()
+    .setTitle('🔓 Sitede Fiyat Görüntüleme İsteği')
+    .setDescription(
+      `👤 **Müşteri:** <@${ticket.userId}> (${ticket.userName || interaction.user.username})\n` +
+      `📍 **Kanal:** <#${ticket.channelId}>\n\n` +
+      `Onaylarsan müşteri **${ACCESS_MINUTES} dakika** boyunca sitede net fiyatları kısa süreli indirimle görür.`
+    )
+    .setColor(0xf43f5e)
+    .setTimestamp();
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`reklam_site_price_ok_${ticketId}`).setLabel('İzin Ver').setStyle(ButtonStyle.Success).setEmoji('✅'),
+    new ButtonBuilder().setCustomId(`reklam_site_price_no_${ticketId}`).setLabel('Reddet').setStyle(ButtonStyle.Danger)
+  );
+  const sent = ekoUser ? await ekoUser.send({ embeds: [embed], components: [row] }).catch(() => null) : null;
+  if (!sent) return interaction.reply({ content: '❌ Onay isteği şu an iletilemedi, lütfen daha sonra tekrar dene.', ephemeral: true });
+
+  return interaction.reply({ content: '📨 Fiyat görüntüleme isteğin iletildi. Onaylandığında sana DM ile bağlantı gelecek.', ephemeral: true });
+}
+
+/**
+ * Eko DM'den fiyat görüntüleme isteğini onaylar / reddeder.
+ */
+async function handleSitePriceDecision(interaction, ticketId, approved) {
+  if (interaction.user.id !== ekoyildiz__ID) {
+    return interaction.reply({ content: '❌ Bu işlemi yalnızca Eko yapabilir.', ephemeral: true });
+  }
+  const ticket = await Ticket.findOne({ ticketId });
+  if (!ticket) return interaction.reply({ content: '❌ Destek talebi bulunamadı.', ephemeral: true });
+
+  const customer = await interaction.client.users.fetch(ticket.userId).catch(() => null);
+  let resultText;
+  if (approved) {
+    const unix = Math.floor(grantPriceAccess(ticket.userId, interaction.user.id) / 1000);
+    await customer?.send(
+      `🔓 **Reklam fiyatların açıldı!** Erişim <t:${unix}:R> sona erecek; bu süre boyunca fiyatlara **sana özel indirim** uygulanıyor.\n` +
+      `👉 ${getAdvertisingLandingUrl()} (Discord hesabınla giriş yapmış olmalısın)`
+    ).catch(() => {});
+    resultText = `✅ Fiyat görüntüleme izni verildi — <@${ticket.userId}> erişimi <t:${unix}:R> bitiyor.`;
+  } else {
+    await customer?.send('ℹ️ Sitede fiyat görüntüleme isteğin şu an onaylanmadı. Paket ve fiyat detaylarını ticket üzerinden konuşabilirsin.').catch(() => {});
+    resultText = `❌ Fiyat görüntüleme isteği reddedildi (<@${ticket.userId}>).`;
+  }
+
+  const channel = await interaction.client.channels.fetch(ticket.channelId).catch(() => null);
+  if (channel?.isTextBased()) await channel.send(resultText).catch(() => {});
+  return interaction.update({ content: resultText, embeds: interaction.message.embeds, components: [] });
 }
 
 /**
@@ -2202,6 +2262,7 @@ async function openReklamTicketWithOptions(interaction, commMode = 'guild') {
     const rowButtons1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId(`reklam_prices_${ticketId}`).setLabel("📦 Paket Kataloğu").setStyle(ButtonStyle.Primary).setEmoji("📑"),
       new ButtonBuilder().setCustomId(`reklam_send_payment_${ticketId}`).setLabel("💳 İtemSatış Bilgisini İlet").setStyle(ButtonStyle.Secondary).setEmoji("💰"),
+      new ButtonBuilder().setCustomId(`reklam_site_price_req_${ticketId}`).setLabel("Fiyatları Sitede Gör").setStyle(ButtonStyle.Success).setEmoji("🔓"),
       new ButtonBuilder().setCustomId(`reklam_close_${ticketId}`).setLabel("🔒 Reklam Talebini Kapat").setStyle(ButtonStyle.Danger)
     );
 
@@ -2993,6 +3054,8 @@ async function cleanReklamSalesMessages(channel) {
 }
 
 module.exports = {
+  handleSitePriceRequest,
+  handleSitePriceDecision,
   getAdvertisingLandingUrl,
   buildCorporateAdvertisingPanel,
   buildAdvertisingCommunicationPrompt,

@@ -2085,6 +2085,17 @@ async function handleButtonInteraction(interaction) {
     });
   }
 
+  if (customId.startsWith("reklam_site_price_req_")) {
+    const { handleSitePriceRequest } = require("../services/reklamTicketService");
+    return handleSitePriceRequest(interaction, customId.replace("reklam_site_price_req_", ""));
+  }
+
+  if (customId.startsWith("reklam_site_price_ok_") || customId.startsWith("reklam_site_price_no_")) {
+    const { handleSitePriceDecision } = require("../services/reklamTicketService");
+    const approved = customId.startsWith("reklam_site_price_ok_");
+    return handleSitePriceDecision(interaction, customId.replace(/^reklam_site_price_(ok|no)_/, ""), approved);
+  }
+
   if (customId.startsWith("reklam_approve_price_")) {
     const ticketId = customId.replace("reklam_approve_price_", "");
     const { handleReklamPriceApproval } = require("../services/reklamTicketService");
