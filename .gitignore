@@ -29,3 +29,6 @@ build/
 .worktrees/
 .superpowers/
 data/application-signatures/
+
+# HA: bu makinenin lider işareti (makineye özgü)
+data/.ha_leader_node

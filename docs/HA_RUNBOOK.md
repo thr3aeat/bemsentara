@@ -11,7 +11,7 @@ Bu belge sistemin kendi kendini nasıl onardığını ve **VDS kapanırsa** ne y
 | **Bakım modu** (`server/services/maintenanceService.js`) | Aşırı yük/bellek/disk sorununda site kontrollü bakım ekranına geçer, acil sistemler (durum, destek, itiraz, yardım, giriş) açık kalır. | Hayır | Kodda aktif (main'e alınınca) |
 | **Süreç denetçisi** (`deploy/ecosystem.config.js` veya `deploy/sentara.service`) | Süreç çökerse veya VDS yeniden başlarsa botu otomatik ayağa kaldırır. | Evet, ama yalnızca son çare | Sunucuda **kurulum gerekir** |
 | **Dış izleyici** (`deploy/github-uptime-watchdog.yml`) | VDS tamamen kapansa bile GitHub'ın sunucularından 5 dakikada bir sağlık kontrolü yapar, Discord'a haber verir. | Hayır | **Kurulum gerekir** (aşağıda) |
-| **Başka makinede otomatik devralma** | VDS ölünce ikinci makine kendiliğinden devralır. | — | **Henüz yok**, ikinci makine + paylaşımlı veri gerekir (bölüm 3) |
+| **Başka makinede otomatik devralma** (`haBoot.js`) | VDS ölünce ikinci makine (örn. Render) ~35–45 sn içinde botu ve siteyi devralır, `data/*.json` dosyalarını MongoDB'den geri yükler. | Hayır (yedek makine zaten ayakta bekler) | Kodda hazır, **kurulum gerekir:** `docs/HA_RENDER_KURULUM.md` |
 
 Süreç içinden VDS'yi ayağa kaldırmak mümkün değildir: makine kapalıysa kod da çalışmıyordur.
 Bu yüzden VDS düşmesine karşı çözüm her zaman **makinenin dışında** bir şeydir (dış izleyici, ikinci makine).
@@ -57,8 +57,7 @@ curl "https://www.duckdns.org/update?domains=ekoyildiz&token=<DUCKDNS_TOKEN>"   
 **Önemli:** Eski VDS geri gelirse önce orada botu durdur (`pm2 stop sentara`), yoksa aynı bot token'ı iki yerde
 çalışır ve her şey çift gönderilir.
 
-**Otomatik devralma istersen** ikinci bir makine ve ortak veritabanı gerekir; o zaman "liderlik kirası" (hangi makinenin aktif
-olduğunu ortak veritabanında tutan kilit) eklenebilir. Bu, ek kaynak ve ek karmaşıklık demektir; şu an eklenmedi.
+**Otomatik devralma** için `docs/HA_RENDER_KURULUM.md` içindeki aktif/yedek kurulumunu yap; bu elle adımların çoğunu gereksiz kılar.
 
 ## 4. Sen yokken sistem
 

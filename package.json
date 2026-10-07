@@ -4,7 +4,7 @@
   "description": "Sentara Discord & Roblox Group Management Bot",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node haBoot.js",
     "build": "npm install"
   },
   "dependencies": {

@@ -15,7 +15,7 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/bemsentara
 EnvironmentFile=/home/ubuntu/bemsentara/.env
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node index.js
+ExecStart=/usr/bin/node haBoot.js
 Restart=always
 RestartSec=5
 StartLimitIntervalSec=0

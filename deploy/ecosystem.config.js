@@ -6,7 +6,7 @@
 module.exports = {
   apps: [{
     name: 'sentara',
-    script: 'index.js',
+    script: 'haBoot.js', // HA_ENABLED=1 değilse doğrudan index.js'i çalıştırır,
     cwd: __dirname + '/..',
     // Tek örnek: iki kopya aynı anda çalışırsa bot her komuta/duyuruya iki kez cevap verir.
     instances: 1,
