@@ -2326,6 +2326,28 @@ function renderAdvertisingLandingPage(user = null) {
       .top-actions > * { white-space: nowrap; }
       .btn-top-cta { padding: 8px 12px; font-size: 0.8rem; }
     }
+    /* ── Fiyatlar bulanık: net rakam yalnızca teklif/ödeme aşamasında görünür ── */
+    .price-figure-wrap, .choice-card-price, #builder-subtotal, #builder-total,
+    #builder-items-list strong, #mobile-summary-price {
+      filter: blur(7px);
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+    }
+    .card-pricing-block { position: relative; }
+    .card-pricing-block::after {
+      content: 'Fiyat için teklif alın';
+      position: absolute;
+      left: 0; right: 0; top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+    .card-pricing-block .price-figure-wrap { justify-content: center; opacity: 0.55; }
+    .price-caption { visibility: hidden; }
   </style>
 </head>
 <body>
