@@ -117,6 +117,10 @@ async function checkDomainHealth(url) {
         "User-Agent": "EkoYildiz-Monitor/1.0"
       }
     });
+    // Yönetici planlı bakım açtıysa bu bir kesinti değildir; otomatik koruma modu ise kesinti sayılır.
+    if (res.headers && res.headers["x-maintenance-mode"] === "manual") {
+      return { ok: true, status: res.status, maintenance: true };
+    }
     if (res.status >= 502 && res.status <= 504) {
       return { ok: false, error: `HTTP ${res.status}` };
     }

@@ -41,6 +41,11 @@ app.set("trust proxy", 1);
 app.use(ddosAndExploitGuardMiddleware);
 app.use(globalSiteLimiter);
 
+// ── 🚧 BAKIM / DÜŞÜK PERFORMANS MODU: sorun varsa kontrollü bakım ekranı, kritik sistemler açık ──
+const maintenance = require("./services/maintenanceService");
+maintenance.start();
+app.use(maintenance.maintenanceMiddleware);
+
 app.use(helmet({
   contentSecurityPolicy: false,
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -277,6 +282,7 @@ app.use((req, res, next) => {
 const candidatePortalRoutes = require("./routes/candidatePortal");
 const { router: applicationApprovalRoutes } = require("./routes/applicationApproval");
 
+app.use(maintenance.adminRouter);
 app.use(adRoutes);
 app.use(giveawayRoutes);
 app.use(authRoutes);
@@ -297,5 +303,8 @@ app.use((req, res) => {
   }
   res.status(404).json({ error: 'Sayfa veya kaynak bulunamadı (404)' });
 });
+
+// ── Son çare hata yakalayıcı (ham hata/stack sızdırmadan kontrollü yanıt) ─────────
+app.use(maintenance.errorHandler);
 
 module.exports = app;
