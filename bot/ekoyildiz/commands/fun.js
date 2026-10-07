@@ -1290,14 +1290,14 @@ module.exports = [
     name: 'atatürk',
     aliases: ['ataturk'],
     category: 'Eğlence',
-    description: "Atatürk fotoğrafı gönderir. `e!atatürk` günün fotoğrafını, `e!atatürk rastgele` rastgele bir fotoğrafı gösterir.",
+    description: "Rastgele bir Atatürk fotoğrafı gönderir. `e!atatürk günün` ile günün fotoğrafını gösterir.",
     userPermissions: [],
     botPermissions: [],
     async execute(message, args = []) {
-      const random = /^(rastgele|random)$/i.test(String(args[0] || ''));
-      const photo = random ? await getRandomPhoto() : await getDailyPhoto();
+      const daily = /^(günün|gunun|bugün|bugun|daily)$/i.test(String(args[0] || ''));
+      const photo = daily ? await getDailyPhoto() : await getRandomPhoto();
       const embed = new EmbedBuilder()
-        .setTitle(random ? '🇹🇷 Mustafa Kemal Atatürk' : '🇹🇷 Günün Atatürk Fotoğrafı')
+        .setTitle(daily ? '🇹🇷 Günün Atatürk Fotoğrafı' : '🇹🇷 Mustafa Kemal Atatürk')
         .setImage(photo.url)
         .setColor(0xef4444)
         .setFooter({ text: `Kaynak: ${photo.source}` });
