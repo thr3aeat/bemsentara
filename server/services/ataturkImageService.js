@@ -12,6 +12,7 @@
  *   seçilir; bot ve web aynı günde aynı fotoğrafı gösterir.
  */
 
+const crypto = require('crypto');
 const axios = require('axios');
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
@@ -21,18 +22,25 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const FAILURE_RETRY_MS = 10 * 60 * 1000;
 const MIN_WIDTH = 400;
 
+// Commons dosya yolu: /<md5[0]>/<md5[0..2]>/<dosya adı>. Elle yazılan yollar yanlış çıktığı
+// için adresler dosya adından üretilir.
+function commonsFileUrl(fileName) {
+  const hash = crypto.createHash('md5').update(fileName).digest('hex');
+  return `https://upload.wikimedia.org/wikipedia/commons/${hash[0]}/${hash.slice(0, 2)}/${encodeURIComponent(fileName)}`;
+}
+
 const FALLBACK_PHOTOS = [
-  'https://upload.wikimedia.org/wikipedia/commons/a/a8/Ataturk1930s.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/1/18/Mustafa_Kemal_Atat%C3%BCrk_in_1923.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Ataturk_in_1918.jpg/800px-Ataturk_in_1918.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/a/a0/Mustafa_Kemal_Atat%C3%BCrk_1925.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/2/23/Mustafa_Kemal_Ataturk_1927.jpg'
-].map((url, i) => ({
+  'Ataturk1930s.jpg',
+  'Mustafa_Kemal_Atatürk_in_1923.jpg',
+  'Ataturk_in_1918.jpg',
+  'Mustafa_Kemal_Atatürk_1925.jpg',
+  'Mustafa_Kemal_Ataturk_1927.jpg'
+].map((fileName, i) => ({
   id: `fallback-${i}`,
-  url,
+  url: commonsFileUrl(fileName),
   title: 'Mustafa Kemal Atatürk',
   source: 'Wikimedia Commons',
-  pageUrl: null
+  pageUrl: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(fileName)}`
 }));
 
 let cache = { photos: null, expiresAt: 0 };
@@ -77,7 +85,7 @@ async function fetchCategoryPhotos(category) {
         gcmlimit: 100,
         prop: 'imageinfo',
         iiprop: 'url|mime|size|extmetadata',
-        iiurlwidth: 1200,
+        iiurlwidth: 1280, // Wikimedia yalnızca standart küçük resim boyutlarını sunar
         format: 'json',
         ...cont
       }
@@ -146,17 +154,44 @@ function turkeyDateKey(date = new Date()) {
   return new Date(date.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+// Ölü bağlantı (404/400 vb.) Discord'da bozuk görsel olarak görünür; seçmeden önce kontrol et.
+// 429 / ağ hatası kesin sonuç değildir, görsel çalışıyor sayılır.
+const aliveCache = new Map();
+
+async function isAlive(url) {
+  const hit = aliveCache.get(url);
+  if (hit && Date.now() < hit.expiresAt) return hit.alive;
+  let alive = true;
+  try {
+    const res = await axios.head(url, {
+      timeout: 8000,
+      headers: COMMONS_HEADERS,
+      validateStatus: () => true
+    });
+    if (res.status !== 429 && res.status >= 400) alive = false;
+    else if (res.status < 400 && !/^image\//.test(String(res.headers['content-type'] || ''))) alive = false;
+  } catch (_) { /* kesin değil */ }
+  aliveCache.set(url, { alive, expiresAt: Date.now() + CACHE_TTL_MS });
+  return alive;
+}
+
+async function pickAlive(photos, startIndex) {
+  for (let i = 0; i < photos.length; i++) {
+    const photo = photos[(startIndex + i) % photos.length];
+    if (await isAlive(photo.url)) return photo;
+  }
+  return photos[startIndex % photos.length];
+}
+
 async function getDailyPhoto(date = new Date()) {
   const photos = await getPhotos();
-  return {
-    ...photos[turkeyDayNumber(date) % photos.length],
-    date: turkeyDateKey(date)
-  };
+  const photo = await pickAlive(photos, turkeyDayNumber(date) % photos.length);
+  return { ...photo, date: turkeyDateKey(date) };
 }
 
 async function getRandomPhoto() {
   const photos = await getPhotos();
-  return photos[Math.floor(Math.random() * photos.length)];
+  return pickAlive(photos, Math.floor(Math.random() * photos.length));
 }
 
 module.exports = { getPhotos, getDailyPhoto, getRandomPhoto, turkeyDayNumber };
