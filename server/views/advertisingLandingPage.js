@@ -182,25 +182,25 @@ function renderAdvertisingLandingPage(user = null) {
   <title>EkoYıldız Partner Studio — Reklam ve Sponsorluk</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090a0f;
-      --bg-surface: #0f1118;
-      --bg-surface-elevated: #151822;
-      --bg-subtle: #1a1e2b;
-      --border-subtle: rgba(255, 255, 255, 0.07);
+      --bg: #060813;
+      --bg-surface: rgba(18, 24, 48, 0.72);
+      --bg-surface-elevated: rgba(26, 32, 62, 0.85);
+      --bg-subtle: rgba(255, 255, 255, 0.05);
+      --border-subtle: rgba(255, 255, 255, 0.08);
       --border-medium: rgba(255, 255, 255, 0.12);
       --border-active: rgba(255, 255, 255, 0.28);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-tertiary: #64748b;
       --accent-discord: #5865f2;
-      --accent-green: #10b981;
-      --accent-green-subtle: rgba(16, 185, 129, 0.12);
+      --accent-green: #f43f5e;
+      --accent-green-subtle: rgba(244, 63, 94, 0.12);
       --radius-sm: 8px;
       --radius-md: 14px;
-      --radius-lg: 20px;
+      --radius-lg: 24px;
       --radius-xl: 28px;
       --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -210,7 +210,7 @@ function renderAdvertisingLandingPage(user = null) {
     body {
       background: var(--bg);
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 15px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -2283,6 +2283,48 @@ function renderAdvertisingLandingPage(user = null) {
     }
     .ekoai-table tr:hover td {
       background: rgba(255, 255, 255, 0.03);
+    }
+  /* ── Site teması (ana sayfa ile uyumlu: lacivert + rose cam kartlar) ── */
+    body {
+      background-image:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(244, 63, 94, 0.12) 0%, transparent 60%),
+        radial-gradient(circle 35% 35% at 85% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+        radial-gradient(circle 40% 40% at 15% 65%, rgba(0, 242, 254, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+    .pricing-card, .addon-card, .case-card, .step-card, .hero-summary-card, .custom-choice-card,
+    .ekoai-card, .credit-card, .pay-method-card, .payment-modal-card {
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .pricing-card:hover, .case-card:hover, .custom-choice-card:hover, .pay-method-card:hover {
+      border-color: rgba(244, 63, 94, 0.35);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 24px rgba(244, 63, 94, 0.12);
+    }
+    .pricing-card.is-recommended {
+      border-color: rgba(244, 63, 94, 0.45);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 32px rgba(244, 63, 94, 0.18);
+    }
+    .status-pill { background: linear-gradient(135deg, #f43f5e, #a855f7); }
+    .check-icon { color: #f43f5e; }
+    .btn-primary, .btn-top-cta, .btn-build-package, .btn-direct-pay {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+    }
+    .btn-select-package:hover {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #ffffff;
+      border-color: transparent;
+    }
+    @media (max-width: 640px) {
+      .topbar { gap: 8px; }
+      .brand-sub, .special-ataturk-link { display: none !important; }
+      .top-actions { gap: 6px; flex-wrap: nowrap; }
+      .top-actions > * { white-space: nowrap; }
+      .btn-top-cta { padding: 8px 12px; font-size: 0.8rem; }
     }
   </style>
 </head>
