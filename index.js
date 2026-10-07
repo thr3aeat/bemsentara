@@ -285,6 +285,16 @@ async function start() {
     server.headersTimeout = 66000;
     server.timeout = 30000;
 
+    // ── 🩺 Kendini Onarma Denetçisi: web ve Discord'u süreci yeniden başlatmadan yerinde onarır ──
+    try {
+      const { supervisor } = require("./bot/services/selfHealingService");
+      supervisor.registerWeb(server, { port: PORT });
+      supervisor.registerDiscord(discordBot, { token: TOKEN });
+      supervisor.start();
+    } catch (healErr) {
+      logger.warn(`[SelfHealing] Denetçi başlatılamadı: ${healErr && healErr.message}`);
+    }
+
     logger.section("DISCORD CONNECTION");
 
     const connectDiscord = async () => {

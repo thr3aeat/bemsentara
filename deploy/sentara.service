@@ -1,0 +1,27 @@
+# systemd birimi (PM2 yerine veya ona ek olarak VDS açılışında başlatır).
+# Kurulum:
+#   sudo cp deploy/sentara.service /etc/systemd/system/sentara.service
+#   sudo nano /etc/systemd/system/sentara.service      # User, WorkingDirectory, ExecStart yollarını düzelt
+#   sudo systemctl daemon-reload && sudo systemctl enable --now sentara
+# PM2 kullanıyorsan bu birimi etkinleştirme; ikisi birden çalışırsa bot iki kopya olur.
+[Unit]
+Description=Sentara Bot + Web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bemsentara
+EnvironmentFile=/home/ubuntu/bemsentara/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node index.js
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+TimeoutStopSec=15
+KillSignal=SIGTERM
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,57 @@
+# DIŞ İZLEYİCİ: VDS tamamen kapansa bile çalışır, çünkü GitHub'ın sunucularında koşar.
+# Kullanım: bu dosyayı .github/workflows/uptime-watchdog.yml olarak kopyala.
+# Gerekli repo gizli değişkenleri (Settings → Secrets and variables → Actions):
+#   HEALTH_URL          örn. https://ekoyildiz.duckdns.org/api/health
+#   ALERT_WEBHOOK_URL   Discord kanal webhook adresi (bildirim için)
+name: uptime-watchdog
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Sağlık kontrolü (3 deneme)
+        id: probe
+        run: |
+          ok=0
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -m 15 -w '%{http_code}' "${{ secrets.HEALTH_URL }}" || echo 000)
+            echo "deneme $i -> HTTP $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 20
+          done
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Önceki çalıştırmanın sonucu
+        id: prev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prev=$(gh run list --repo "${{ github.repository }}" --workflow uptime-watchdog --status completed --limit 1 --json conclusion --jq '.[0].conclusion // "success"')
+          echo "prev=$prev" >> "$GITHUB_OUTPUT"
+
+      - name: Bildirim (düştü / hatırlatma / düzeldi)
+        env:
+          HOOK: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          ok="${{ steps.probe.outputs.ok }}"; prev="${{ steps.prev.outputs.prev }}"; code="${{ steps.probe.outputs.code }}"
+          msg=""
+          if [ "$ok" = "0" ] && [ "$prev" = "success" ]; then
+            msg="🔴 **Sistem erişilemiyor** (HTTP $code). Otomatik onarım yetmediyse VDS/servis kontrol edilmeli: docs/HA_RUNBOOK.md"
+          elif [ "$ok" = "0" ] && [ "$(date +%M)" -lt 5 ]; then
+            msg="🔴 Sistem hâlâ erişilemiyor (saatlik hatırlatma, HTTP $code)."
+          elif [ "$ok" = "1" ] && [ "$prev" = "failure" ]; then
+            msg="🟢 Sistem yeniden erişilebilir."
+          fi
+          if [ -n "$msg" ] && [ -n "$HOOK" ]; then
+            curl -s -m 15 -H 'Content-Type: application/json' -d "{\"content\":\"$msg\"}" "$HOOK" >/dev/null || true
+          fi
+          if [ "$ok" = "0" ]; then exit 1; fi
