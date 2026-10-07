@@ -3,6 +3,7 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { EmbedBuilder } = require('discord.js');
 const ComponentsV2Factory = require('../utils/componentsV2Factory');
 const logger = require('../../utils/logger');
@@ -103,6 +104,34 @@ Yalnızca özeti yaz; ekstra selamlama veya gevezelik ekleme.
 }
 
 /**
+ * Aynı commit için yalnızca bir kez duyuru: aynı makinedeki birden fazla süreç (PM2 kopyaları,
+ * deploy sırasında üst üste binen eski/yeni süreç) atomik kilit dosyasıyla elenir; farklı
+ * makine veya silinmiş kilit durumunda kanal geçmişindeki commit etiketine bakılır.
+ */
+function claimAnnouncement(commitHash) {
+  const lockFile = path.join(os.tmpdir(), `sentara-announce-${commitHash}.lock`);
+  try {
+    fs.writeFileSync(lockFile, String(process.pid), { flag: 'wx' });
+    return true;
+  } catch (err) {
+    return err.code !== 'EEXIST'; // kilit dosyası yazılamıyorsa kanal geçmişi kontrolüne güven
+  }
+}
+
+async function alreadyAnnouncedInChannel(channel, commitHash, botId) {
+  try {
+    const messages = await channel.messages.fetch({ limit: 30 });
+    return messages.some(m => {
+      if (!m.author || m.author.id !== botId) return false;
+      if (JSON.stringify(m.components || []).includes(commitHash)) return true; // V2 kısa not
+      return (m.embeds || []).some(e => (e.title || '').includes(`[${commitHash}]`)); // sürüm raporu
+    });
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
  * Bot başladığında hedef kanala versiyon, değişiklikler ve AI analizi gönderir.
  */
 async function announceBotStartup(discordClient) {
@@ -119,6 +148,25 @@ async function announceBotStartup(discordClient) {
     }
 
     const gitMeta = getGitMetadata();
+
+    // Her yeniden başlatmada değil, yalnızca yeni bir commit yayına alındığında duyur.
+    if (gitMeta.commitHash && gitMeta.commitHash !== 'unknown') {
+      await new Promise(r => setTimeout(r, 500 + Math.random() * 4000)); // eşzamanlı süreçleri dağıt
+      if (!claimAnnouncement(gitMeta.commitHash)) {
+        logger.info(`[StartupAnnounce] ${gitMeta.commitHash} başka bir süreç tarafından duyuruldu, atlanıyor.`);
+        return;
+      }
+      const botId = discordClient.user && discordClient.user.id;
+      const [dup1, dup2] = await Promise.all([
+        alreadyAnnouncedInChannel(channel, gitMeta.commitHash, botId),
+        discordClient.channels.fetch(SHORT_ANNOUNCE_CHANNEL_ID).catch(() => null)
+          .then(ch => (ch ? alreadyAnnouncedInChannel(ch, gitMeta.commitHash, botId) : false))
+      ]);
+      if (dup1 && dup2) {
+        logger.info(`[StartupAnnounce] ${gitMeta.commitHash} kanallarda zaten duyurulmuş, atlanıyor.`);
+        return;
+      }
+    }
 
     // Prevent duplicate spam on rapid gateway reconnects without new process start
     const restartTimestamp = new Date().toISOString();
@@ -177,21 +225,23 @@ async function announceBotStartup(discordClient) {
       const shortChannel = await discordClient.channels.fetch(SHORT_ANNOUNCE_CHANNEL_ID).catch(() => null);
       if (shortChannel && typeof shortChannel.send === 'function') {
         const shortNote = await generateShortUpdateNote(gitMeta);
-        const headerTitle = `ℹ️ **Sentara, v.${gitMeta.version}, güncelleme: ${shortNote}**`;
+        const unix = Math.floor(Date.now() / 1000);
 
         const v2MessagePayload = {
           flags: ComponentsV2Factory.FLAGS,
           components: [
             ComponentsV2Factory.container([
-              ComponentsV2Factory.text(headerTitle),
-              ComponentsV2Factory.text('*EkoYıldız Resmî Altyapı Servisi • Tüm sistemler operasyonel.*')
+              ComponentsV2Factory.text('### 🔄 Sentara güncellendi'),
+              ComponentsV2Factory.text(shortNote),
+              ComponentsV2Factory.separator(true),
+              ComponentsV2Factory.text(`-# v${gitMeta.version} • \`${gitMeta.commitHash}\` • <t:${unix}:R> • EkoYıldız Resmî Altyapı Servisi`)
             ])
           ]
         };
 
         await shortChannel.send(v2MessagePayload).catch(async (v2Err) => {
           logger.warn(`[StartupAnnounce] Components V2 gönderilemedi, text fallback deneniyor: ${v2Err.message}`);
-          await shortChannel.send({ content: `${headerTitle}\n*EkoYıldız Resmî Altyapı Servisi • Tüm sistemler operasyonel.*` });
+          await shortChannel.send({ content: `🔄 **Sentara güncellendi**\n${shortNote}\n-# v${gitMeta.version} • \`${gitMeta.commitHash}\`` });
         });
 
         logger.success(`[StartupAnnounce] ✅ Kısa güncelleme notu ${SHORT_ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
@@ -224,8 +274,8 @@ const CORPORATE_SHORT_NOTES = [
 ];
 
 /**
- * Ne eklendiğinden veya teknik commit detaylarından bahsetmeyen;
- * son derece kurumsal, resmî, prestijli ve minimal bir güncelleme başlığı üretir.
+ * Teknik detay içermeyen, commit'e göre sabit seçilen kısa kurumsal güncelleme cümlesi.
+ * (Yapay zeka çıktısı tutarsız ve anlamsız cümleler ürettiği için kullanılmıyor.)
  */
 async function generateShortUpdateNote(gitMeta = {}) {
   // Deterministic selection based on commit hash
@@ -235,30 +285,6 @@ async function generateShortUpdateNote(gitMeta = {}) {
     hashNum = (hashNum + hash.charCodeAt(i)) % CORPORATE_SHORT_NOTES.length;
   }
   let selectedNote = CORPORATE_SHORT_NOTES[hashNum];
-
-  try {
-    const { chatWithAI } = require('./aiService');
-    const prompt =
-      'Sen EkoYıldız Kurumsal İletişim Direktörüsün.\n' +
-      'GÖREV: Sistem güncellemesi sonrasında paylaşılmak üzere son derece resmî, ağırbaşlı ve kurumsal 4-7 kelimelik tek bir Türkçe durum cümlesi yaz.\n' +
-      'KESİNLİKLE YASAKLAR:\n' +
-      '- Asla teknik detaylardan, kodlardan, dosyalardan veya NEYİN EKLENDİĞİNDEN/DEĞİŞTİRİLDİĞİNDEN BAHSETME.\n' +
-      '- Asla özellik isimleri (örn. blog, video, admin, itiraf, bot, fix vb.) kullanma.\n' +
-      '- Asla tırnak, emoji, selamlama veya açıklama ekleme.\n\n' +
-      'İSTENEN FORMAT:\n' +
-      'Yalnızca genel altyapı kararlılığı, operasyonel iyileştirme ve periyodik servis bakımını belirten prestijli kurumsal bir ifade.\n' +
-      'Örnek: "Çekirdek sistem kararlılığı ve altyapı optimizasyonları tamamlandı."';
-
-    const aiRes = await chatWithAI(prompt, 'Sen üst düzey resmî kurumsal iletişim uzmanısın.');
-    if (aiRes && typeof aiRes === 'string') {
-      let cleaned = aiRes.replace(/["'“”«»]/g, '').trim();
-      const forbiddenWords = ['itiraf', 'blog', 'admin', 'video', 'şarkı', 'vds', 'ticket', 'reklam', 'form', 'bot', 'fix', 'feat', 'sanitize'];
-      const hasForbidden = forbiddenWords.some(w => cleaned.toLowerCase().includes(w));
-      if (!hasForbidden && cleaned.length >= 15 && cleaned.length <= 80) {
-        selectedNote = cleaned;
-      }
-    }
-  } catch (_) {}
 
   if (!selectedNote.endsWith('.')) {
     selectedNote += '.';
