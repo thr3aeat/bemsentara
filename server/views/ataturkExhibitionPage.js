@@ -99,8 +99,8 @@ function renderAtaturkExhibitionPage(user = null) {
       id: 'photo-2',
       title: 'Millet Mektepleri Başöğretmeni',
       year: '1928',
-      location: 'Gülhane Parkı, İstanbul',
-      desc: 'Yeni Türk harflerini halka bizzat kara tahta başında öğretirken.',
+      location: 'Kayseri',
+      desc: 'Yeni Türk harflerini halka bizzat kara tahta başında tanıtırken (20 Eylül 1928).',
       source: 'Cumhurbaşkanlığı Millî Arşivleri',
       aspect: 'portrait'
     },
@@ -699,6 +699,9 @@ function renderAtaturkExhibitionPage(user = null) {
       letter-spacing: 0.2em;
       color: rgba(255, 255, 255, 0.6);
     }
+    .gallery-visual img.ata-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+    .modal-image-area img.ata-photo-large { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .modal-image-area img.ata-photo-large[hidden] { display: none; }
     .gallery-overlay {
       position: absolute;
       inset: 0;
@@ -1001,9 +1004,7 @@ function renderAtaturkExhibitionPage(user = null) {
         </div>
 
         <div class="audio-player-box">
-          <audio id="historicalAudio" preload="none">
-            <source src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Atat%C3%BCrk_10th_Year_Speech.ogg" type="audio/ogg">
-          </audio>
+          <audio id="historicalAudio" preload="none"></audio>
 
           <div class="audio-controls-row">
             <button class="btn-audio-play" id="btnAudioToggle" onclick="toggleHistoricalAudio()">
@@ -1077,6 +1078,7 @@ function renderAtaturkExhibitionPage(user = null) {
     <div class="ata-modal-dialog" onclick="event.stopPropagation()">
       <button class="ata-modal-close" onclick="closePhotoModal()" aria-label="Pencereyi Kapat">&times;</button>
       <div class="modal-image-area" id="modalArtArea">
+        <img id="modalImg" class="ata-photo-large" alt="" hidden>
         <svg viewBox="0 0 64 64" fill="none" style="width:72px;height:72px;">
           <circle cx="32" cy="32" r="30" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
           <path d="M32 14L36.5 26.5H49.5L39 34.5L43 47L32 39.5L21 47L25 34.5L14.5 26.5H27.5L32 14Z" fill="rgba(225,29,72,0.6)"/>
@@ -1180,18 +1182,15 @@ function renderAtaturkExhibitionPage(user = null) {
     function activateVideoPlayer() {
       const box = document.getElementById('videoBox');
       if (!box) return;
-      box.innerHTML = \`
-        <iframe 
-          width="100%" 
-          height="100%" 
-          src="https://www.youtube-nocookie.com/embed/g2Jd4o7vD9Y?autoplay=1&rel=0&modestbranding=1" 
-          title="Mustafa Kemal Atatürk Tarihî Görüntüleri" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen
-          style="border:none;"
-        ></iframe>
-      \`;
+      const v = window.__ataMedia && window.__ataMedia.video;
+      if (!v) { box.innerHTML = '<div class="video-cover-caption" style="padding:40px;text-align:center">Video şu anda yüklenemedi. Lütfen daha sonra tekrar dene.</div>'; return; }
+      const el = document.createElement('video');
+      el.controls = true; el.autoplay = true; el.playsInline = true; el.preload = 'metadata';
+      el.style.cssText = 'width:100%;height:100%;background:#000';
+      if (v.poster) el.poster = v.poster;
+      const src = document.createElement('source'); src.src = v.url; src.type = v.mime; el.appendChild(src);
+      el.addEventListener('error', () => { box.innerHTML = '<div class="video-cover-caption" style="padding:40px;text-align:center">Video oynatılamadı.</div>'; }, true);
+      box.innerHTML = ''; box.appendChild(el);
     }
 
     // Lightbox Modal
@@ -1204,6 +1203,16 @@ function renderAtaturkExhibitionPage(user = null) {
       document.getElementById('modalLocation').textContent = photo.location;
       document.getElementById('modalDesc').textContent = photo.desc;
       document.getElementById('modalSource').textContent = 'Kaynak: ' + photo.source;
+      const resolved = (window.__ataMedia && window.__ataMedia.gallery || {})[photoId];
+      const big = document.getElementById('modalImg');
+      if (resolved) {
+        big.src = resolved.full; big.alt = photo.title; big.hidden = false;
+        document.getElementById('modalSource').textContent = 'Kaynak: Wikimedia Commons • ' + resolved.title + (resolved.license ? ' • ' + resolved.license : '');
+        const svg = document.querySelector('#modalArtArea svg'); if (svg) svg.style.display = 'none';
+      } else {
+        big.hidden = true; big.removeAttribute('src');
+        const svg = document.querySelector('#modalArtArea svg'); if (svg) svg.style.display = '';
+      }
 
       const modal = document.getElementById('photoModal');
       modal.classList.add('is-open');
@@ -1222,6 +1231,33 @@ function renderAtaturkExhibitionPage(user = null) {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closePhotoModal();
     });
+
+    // Galeri, ses ve video kaynaklarını sunucudan al (Wikimedia Commons)
+    window.__ataMedia = { gallery: {}, audio: null, video: null };
+    fetch('/api/ataturk/media').then((r) => (r.ok ? r.json() : Promise.reject())).then((m) => {
+      window.__ataMedia = m;
+      Object.keys(m.gallery || {}).forEach((id) => {
+        const art = document.querySelector('.gallery-placeholder-art[data-photo-id="' + id + '"]');
+        if (!art) return;
+        const visual = art.parentNode;
+        const img = new Image();
+        img.className = 'ata-photo'; img.alt = m.gallery[id].title; img.decoding = 'async'; // lazy değil: DOM'a bağlı olmayan lazy görsel hiç yüklenmez
+        img.onload = () => visual.insertBefore(img, visual.querySelector('.gallery-overlay'));
+        img.src = m.gallery[id].thumb;
+      });
+      const au = document.getElementById('historicalAudio');
+      if (au && m.audio) {
+        au.src = m.audio.url; au.preload = 'metadata';
+        au.addEventListener('error', () => {
+          const t = document.getElementById('audioPlayText'); if (t) t.textContent = 'Ses yüklenemedi';
+          const b = document.getElementById('btnAudioToggle'); if (b) b.disabled = true;
+        });
+      } else if (au) {
+        const t = document.getElementById('audioPlayText'); if (t) t.textContent = 'Ses şu anda kullanılamıyor';
+        const b = document.getElementById('btnAudioToggle'); if (b) b.disabled = true;
+      }
+      if (!m.video) { const s = document.getElementById('tarihi-video'); if (s) s.hidden = true; }
+    }).catch(() => {});
   </script>
 </body>
 </html>`;
