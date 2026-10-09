@@ -1,5 +1,7 @@
 const cron = require("node-cron");
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { MessageFlags } = require("discord.js");
+const { buildDailyPayload } = require("./historyV2Messages");
+const { getDailyPhoto } = require("../../server/services/ataturkImageService");
 const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
@@ -38,7 +40,13 @@ async function hasAlreadyPostedToday(channel, dateHeaderStr, trDateStr) {
     const messages = await channel.messages.fetch({ limit: 25 }).catch(() => null);
     if (!messages || messages.size === 0) return false;
 
+    const botId = channel.client && channel.client.user && channel.client.user.id;
     const todayEmbed = messages.find(m => {
+      // Components V2 mesajlarında embed yok: botun bugün attığı V2 mesajını tarihten tanı.
+      if (botId && m.author && m.author.id === botId && m.flags && m.flags.has(MessageFlags.IsComponentsV2)) {
+        const msgDate = m.createdAt ? m.createdAt.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }) : "";
+        if (msgDate === trDateStr) return true;
+      }
       if (!m.embeds || m.embeds.length === 0) return false;
       const embed = m.embeds[0];
       const title = embed.title || "";
@@ -220,46 +228,19 @@ FORMAT:
       aiContent = getHistoricalFallbackEvent(day, month);
     }
 
-    if (aiContent && aiContent.length > 2000) {
-      aiContent = aiContent.substring(0, 1980) + "...";
-    }
+    // Günün fotoğrafı (Commons / yedek liste); alınamazsa mesaj fotoğrafsız gider.
+    const photo = await getDailyPhoto().catch(() => null);
 
-    const botAvatar = client.user ? client.user.displayAvatarURL() : undefined;
-
-    const embed = new EmbedBuilder()
-      .setTitle(embedTitle)
-      .setDescription(
-        `${aiContent}\n\n` +
-        `👇 **Detaylı Atatürk hikayeleri, zaferler ve bilim tarihi için aşağıdaki butonları kullanabilirsiniz:**`
-      )
-      .setColor(embedColor)
-      .setFooter({ text: "EkoYıldız Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde", iconURL: botAvatar })
-      .setTimestamp();
-
-    if (specialField) {
-      embed.addFields(specialField);
-    }
-
-    const historyRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`tb_detail_ataturk_${day}_${month}`)
-        .setLabel("🏛️ Atatürk & Zaferler")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`tb_detail_science_${day}_${month}`)
-        .setLabel("🔬 Bilim & Keşifler")
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId(`tb_detail_trivia_${day}_${month}`)
-        .setLabel("💡 Tarihi Trivia")
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId(`tb_random_quote_${day}_${month}`)
-        .setLabel("📜 Tarihi Vecize")
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await channel.send({ embeds: [embed], components: [historyRow] });
+    // Components V2: accent renkli container, günün fotoğrafı ve butonlu bölümler (tb_* butonları historyButtons.js'e gider)
+    await channel.send(buildDailyPayload({
+      title: embedTitle,
+      color: embedColor,
+      content: aiContent,
+      specialField,
+      photo,
+      day,
+      month
+    }));
     console.log(`✅ [EkoYildizHistoryAI] ${embedTitle} mesajı başarıyla gönderildi.`);
 
     if (specialDay) {
@@ -283,6 +264,7 @@ FORMAT:
 }
 
 module.exports = {
+  hasAlreadyPostedToday,
   startEkoYildizHistoryScheduler,
   postEkoYildizHistory,
   checkAndCatchUpEkoYildizHistory,
