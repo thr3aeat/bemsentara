@@ -1,4 +1,4 @@
-const { AuditLogEvent } = require("discord.js");
+const { AuditLogEvent, ChannelType } = require("discord.js");
 const { updateTrustScore, ensureUserTrustScore, incrementAfProgress, logTrustUserActivity, addModPoints } = require("../services/security/trustScoreService");
 const { processMessageAutomod } = require("../services/profanityAutomodService");
 const UserTrustScore = require("../../models/UserTrustScore");
@@ -105,9 +105,12 @@ function initializeTrustScoreHandlers(client) {
       const now = Date.now();
       const contentLower = message.content.toLowerCase();
       const isTargetCategory = message.channel.parentId === "1521539351031578684" || message.channel.parent?.parentId === "1521539351031578684";
+      // Forum (ve medya) kanallarındaki gönderilerde link/davet paylaşımı serbesttir
+      const isForumPost = [ChannelType.GuildForum, ChannelType.GuildMedia].includes(message.channel.parent?.type);
+      const isLinkExempt = isTargetCategory || isForumPost;
 
       // ── A. Automod Checks: Suspicious Link / Ad ──
-      if (!isTargetCategory && SUSPICIOUS_LINK_REGEX.test(message.content)) {
+      if (!isLinkExempt && SUSPICIOUS_LINK_REGEX.test(message.content)) {
         await message.delete().catch(() => {});
         await updateTrustScore(userId, -25.0, "Automod: Şüpheli Link / Sunucu Tanıtımı Reklamı", "SYSTEM", client);
         
@@ -208,7 +211,7 @@ function initializeTrustScoreHandlers(client) {
       }
 
       // Normal link check
-      if (!isTargetCategory && !hasViolated && LINK_REGEX.test(message.content)) {
+      if (!isLinkExempt && !hasViolated && LINK_REGEX.test(message.content)) {
         if (record.trustScore < 50.0) {
           hasViolated = true;
           await message.delete().catch(() => {});
