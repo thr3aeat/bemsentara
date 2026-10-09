@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
-const SESSION_SECRET = process.env.SESSION_SECRET || "sentara-secret-key";
+const SESSION_SECRET = process.env.SESSION_SECRET || require("crypto").randomBytes(32).toString("hex");
 const BOT_ID = process.env.BOTID || process.env.BOT_ID;
 const TOKEN = process.env.TOKEN;
 const ROWIFI_TOKEN = process.env.ROWIFI_TOKEN || "";

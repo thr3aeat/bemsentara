@@ -80,7 +80,7 @@ test('handleEkoTelegramBridge forwards directive from Eko to Discord ticket with
   const handled = await ekoAITicketService.handleEkoTelegramBridge(
     mockClient,
     'Kullanıcıya iletin, dekontu inceledim ve işlemi onayladım.',
-    { chat: { id: 8683506546 } }
+    { chat: { id: 123456789 } }
   );
 
   assert.equal(handled, true);

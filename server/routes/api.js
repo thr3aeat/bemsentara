@@ -5922,9 +5922,9 @@ const handleSetRobloxRank = async (req, res) => {
       req.headers["x-api-key"] ||
       (req.headers["authorization"] ? req.headers["authorization"].replace(/^Bearer\s+/i, "") : null);
 
-    const REQUIRED_KEY = process.env.ROBLOX_RANK_API_KEY || "ekonqt";
+    const REQUIRED_KEY = process.env.ROBLOX_RANK_API_KEY;
 
-    if (!secret || secret !== REQUIRED_KEY) {
+    if (!REQUIRED_KEY || !secret || secret !== REQUIRED_KEY) {
       return res.status(401).json({
         success: false,
         error: "Yetkisiz erişim: Şifre eksik veya geçersiz."

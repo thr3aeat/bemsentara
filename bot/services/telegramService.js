@@ -4,8 +4,8 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || "8906443471:AAHWNkdq4kMrLsVD-GwySfOXEcLWpKDcUZU";
-let cachedChatId = process.env.TELEGRAM_CHAT_ID || "8683506546";
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || "";
+let cachedChatId = process.env.TELEGRAM_CHAT_ID || "";
 
 const recentMessages = []; // Timestamps of recent messages
 
@@ -601,7 +601,7 @@ function stopTelegramPolling() {
  * Telegram üzerinden sesli arama başlatır (CallMeBot kullanarak)
  */
 async function callTelegramUser(text) {
-  const username = process.env.TELEGRAM_USERNAME || "8683506546"; // Kullanıcının Telegram kullanıcı adı veya ID'si (.env'den okunacak)
+  const username = process.env.TELEGRAM_USERNAME || process.env.TELEGRAM_CHAT_ID || ""; // Kullanıcının Telegram kullanıcı adı veya ID'si (.env'den okunacak)
   if (!username) {
     console.warn("[Telegram Call] Arama başarısız: TELEGRAM_USERNAME tanımlanmamış.");
     return false;

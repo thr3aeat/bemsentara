@@ -6,11 +6,21 @@ const {
   CUSTOM_MODULES,
   getDiscordAddonForPackage
 } = require('../services/reklamPricingConfig');
+const { getPriceAccess, applyDiscount } = require('../services/adPriceAccessService');
 
 const DISCORD_URL = 'https://discord.gg/rEu5gvRBdM';
 const YOUTUBE_URL = 'https://www.youtube.com/@eko8yildiz';
 
 function renderAdvertisingLandingPage(user = null) {
+  // Eko'nun DM'den onayladığı kullanıcılar kısa süreliğine indirimli net fiyatları görür
+  const priceAccess = getPriceAccess(user?.discordId);
+  const priceHtml = (price) => {
+    if (!priceAccess) return `${price} TL`;
+    const discounted = applyDiscount(price);
+    return discounted === price
+      ? `${price} TL`
+      : `<s class="price-old">${price}</s> ${discounted} TL`;
+  };
   const accountLink = user
     ? '<a class="quiet-link" href="/dashboard">Paneline dön</a>'
     : '<a class="quiet-link" href="/login">Giriş yap</a>';
@@ -75,7 +85,7 @@ function renderAdvertisingLandingPage(user = null) {
 
           <div class="card-pricing-block">
             <div class="price-figure-wrap">
-              <span class="amount" id="price-amount-${pkg.id}">${pkg.basePrice} TL</span>
+              <span class="amount" id="price-amount-${pkg.id}">${priceHtml(pkg.basePrice)}</span>
               <span class="period">/ başlangıç</span>
             </div>
             <div class="price-caption" id="price-caption-${pkg.id}">Net başlangıç fiyatı</div>
@@ -182,25 +192,25 @@ function renderAdvertisingLandingPage(user = null) {
   <title>EkoYıldız Partner Studio — Reklam ve Sponsorluk</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090a0f;
-      --bg-surface: #0f1118;
-      --bg-surface-elevated: #151822;
-      --bg-subtle: #1a1e2b;
-      --border-subtle: rgba(255, 255, 255, 0.07);
+      --bg: #060813;
+      --bg-surface: rgba(18, 24, 48, 0.72);
+      --bg-surface-elevated: rgba(26, 32, 62, 0.85);
+      --bg-subtle: rgba(255, 255, 255, 0.05);
+      --border-subtle: rgba(255, 255, 255, 0.08);
       --border-medium: rgba(255, 255, 255, 0.12);
       --border-active: rgba(255, 255, 255, 0.28);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-tertiary: #64748b;
       --accent-discord: #5865f2;
-      --accent-green: #10b981;
-      --accent-green-subtle: rgba(16, 185, 129, 0.12);
+      --accent-green: #f43f5e;
+      --accent-green-subtle: rgba(244, 63, 94, 0.12);
       --radius-sm: 8px;
       --radius-md: 14px;
-      --radius-lg: 20px;
+      --radius-lg: 24px;
       --radius-xl: 28px;
       --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -210,7 +220,7 @@ function renderAdvertisingLandingPage(user = null) {
     body {
       background: var(--bg);
       color: var(--text-primary);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 15px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -2284,9 +2294,80 @@ function renderAdvertisingLandingPage(user = null) {
     .ekoai-table tr:hover td {
       background: rgba(255, 255, 255, 0.03);
     }
-  </style>
+  /* ── Site teması (ana sayfa ile uyumlu: lacivert + rose cam kartlar) ── */
+    body {
+      background-image:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(244, 63, 94, 0.12) 0%, transparent 60%),
+        radial-gradient(circle 35% 35% at 85% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+        radial-gradient(circle 40% 40% at 15% 65%, rgba(0, 242, 254, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+    .pricing-card, .addon-card, .case-card, .step-card, .hero-summary-card, .custom-choice-card,
+    .ekoai-card, .credit-card, .pay-method-card, .payment-modal-card {
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .pricing-card:hover, .case-card:hover, .custom-choice-card:hover, .pay-method-card:hover {
+      border-color: rgba(244, 63, 94, 0.35);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 24px rgba(244, 63, 94, 0.12);
+    }
+    .pricing-card.is-recommended {
+      border-color: rgba(244, 63, 94, 0.45);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 32px rgba(244, 63, 94, 0.18);
+    }
+    .status-pill { background: linear-gradient(135deg, #f43f5e, #a855f7); }
+    .check-icon { color: #f43f5e; }
+    .btn-primary, .btn-top-cta, .btn-build-package, .btn-direct-pay {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.35);
+    }
+    .btn-select-package:hover {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #ffffff;
+      border-color: transparent;
+    }
+    @media (max-width: 640px) {
+      .topbar { gap: 8px; }
+      .brand-sub, .special-ataturk-link { display: none !important; }
+      .top-actions { gap: 6px; flex-wrap: nowrap; }
+      .top-actions > * { white-space: nowrap; }
+      .btn-top-cta { padding: 8px 12px; font-size: 0.8rem; }
+    }
+${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4px; }
+    .price-access-banner {
+      position: relative; z-index: 80;
+      padding: 10px 16px; text-align: center; font-weight: 700; font-size: 0.9rem;
+      background: linear-gradient(135deg, #f43f5e, #a855f7); color: #fff;
+    }
+` : `    /* ── Fiyatlar bulanık: net rakam yalnızca teklif/ödeme aşamasında görünür ── */
+    .price-figure-wrap, .choice-card-price, #builder-subtotal, #builder-total,
+    #builder-items-list strong, #mobile-summary-price, .addon-cost {
+      filter: blur(7px);
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+    }
+    .card-pricing-block { position: relative; }
+    .card-pricing-block::after {
+      content: 'Fiyat için teklif alın';
+      position: absolute;
+      left: 0; right: 0; top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+    .card-pricing-block .price-figure-wrap { justify-content: center; opacity: 0.55; }
+    .price-caption { visibility: hidden; }
+`}  </style>
 </head>
 <body>
+  ${priceAccess ? `<div class="price-access-banner">🔓 Sana özel fiyatlar açık — indirim <span id="price-access-left"></span> içinde sona eriyor</div>` : ''}
 
   <!-- Topbar -->
   <header class="topbar shell">
@@ -3119,6 +3200,27 @@ function renderAdvertisingLandingPage(user = null) {
 
   <!-- Frontend Client Script (Paket Seçimi, Dinamik Discord Add-on, Custom Builder) -->
   <script>
+    // Eko onaylı fiyat erişimi (sunucudaki adPriceAccessService ile aynı kademeler)
+    const AD_ACCESS_UNTIL = ${priceAccess ? priceAccess.expiresAt : 0};
+    function adDisc(p) {
+      if (Date.now() > AD_ACCESS_UNTIL) return p;
+      const r = p >= 300 ? 0.25 : p >= 150 ? 0.15 : p >= 75 ? 0.08 : 0.03;
+      return Math.max(0, Math.round(p * (1 - r)));
+    }
+    function adPriceHtml(p) {
+      const d = adDisc(p);
+      return d === p ? p + ' TL' : '<s class="price-old">' + p + '</s> ' + d + ' TL';
+    }
+    (function tickPriceAccess() {
+      const el = document.getElementById('price-access-left');
+      if (!el) return;
+      const left = AD_ACCESS_UNTIL - Date.now();
+      if (left <= 0) { location.reload(); return; }
+      const m = Math.floor(left / 60000), sec = Math.floor((left % 60000) / 1000);
+      el.textContent = m + ' dk ' + String(sec).padStart(2, '0') + ' sn';
+      setTimeout(tickPriceAccess, 1000);
+    })();
+
     // State
     const cardAddonStates = {}; // pkgId -> boolean
     const builderState = {
@@ -3147,7 +3249,7 @@ function renderAdvertisingLandingPage(user = null) {
         box.classList.add('is-active');
         check.setAttribute('aria-checked', 'true');
         const total = basePrice + addonPrice;
-        amountEl.textContent = total + ' TL';
+        amountEl.innerHTML = adPriceHtml(total);
         captionEl.textContent = 'Paket (₺' + basePrice + ') + Discord Duyurusu (+₺' + addonPrice + ')';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId + '&withDiscord=true';
         ctaLabel.textContent = 'Paket + Discord Duyurusu ile Devam Et';
@@ -3155,7 +3257,7 @@ function renderAdvertisingLandingPage(user = null) {
       } else {
         box.classList.remove('is-active');
         check.setAttribute('aria-checked', 'false');
-        amountEl.textContent = basePrice + ' TL';
+        amountEl.innerHTML = adPriceHtml(basePrice);
         captionEl.textContent = 'Net başlangıç fiyatı';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId;
         ctaLabel.textContent = 'Bu Paketi Konuşalım';
@@ -3169,7 +3271,7 @@ function renderAdvertisingLandingPage(user = null) {
       const cta = document.getElementById('mobile-sticky-cta');
       if (label && price && cta) {
         label.textContent = name;
-        price.textContent = '₺' + total;
+        price.textContent = '₺' + adDisc(total);
         cta.href = href;
       }
     }
@@ -3339,7 +3441,7 @@ function renderAdvertisingLandingPage(user = null) {
       }
 
       const total = Math.max(0, subtotal - discount);
-      totalEl.textContent = '₺' + total;
+      totalEl.textContent = '₺' + adDisc(total);
       submitBtn.disabled = false;
 
       updateMobileBar('Özel Paket (' + items.length + ' Hizmet)', total, '#kendi-paketini-olustur');
@@ -3591,7 +3693,7 @@ function renderAdvertisingLandingPage(user = null) {
       const bdBasePrice = document.getElementById('bd-base-price');
       const bdTotalPrice = document.getElementById('bd-total-price');
 
-      const base = currentModalPkg.basePrice;
+      const base = adDisc(currentModalPkg.basePrice);
       const fee = selectedPaymentMethod === 'itemsatis' ? 5 : 0;
       const total = base + fee;
 
