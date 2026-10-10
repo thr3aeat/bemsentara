@@ -1,7 +1,7 @@
 // ── HA: süreç `node index.js` ile açılsa bile, MONGODB_URI varsa HA başlatıcısına devret ──
 // (liderlik kirası: yedek makine bekler, lider düşünce devralır; bkz. docs/HA_RENDER_KURULUM.md)
 require("dotenv").config();
-if (!process.env.HA_BOOTED && process.env.MONGODB_URI && process.env.HA_ENABLED !== "0") {
+if (!process.env.HA_BOOTED && process.env.MONGODB_URI && process.env.HA_ENABLED === "1") {
   process.env.HA_BOOTED = "1";
   require("./haBoot"); // seçimden sonra bu dosyayı bayrak set edilmiş halde yeniden çalıştırır
   return;

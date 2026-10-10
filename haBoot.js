@@ -25,7 +25,9 @@ const http = require('http');
 const os = require('os');
 const path = require('path');
 
-const HA_ENABLED = !!process.env.MONGODB_URI && process.env.HA_ENABLED !== '0';
+// Yalnızca açıkça istenirse (HA_ENABLED=1). Otomatik açılma, aynı makinede iki süreç varken
+// yedek sürecin portu tutup lideri engellemesine (site kapanması) yol açtı.
+const HA_ENABLED = process.env.HA_ENABLED === '1' && !!process.env.MONGODB_URI;
 
 // index.js giriş modülüyken HA'ya devredip erken döndüyse modül önbellekte durur ve yeniden
 // çalıştırılmaz; bu yüzden önbellekten silip asıl uygulamayı gerçekten çalıştırırız.
@@ -93,8 +95,13 @@ async function runHa() {
     process.exit(0);
   };
 
-  // 1) Yedek modda sağlık ucu: Render gibi platformlar bir port dinlenmesini bekler.
-  const standby = http.createServer((req, res) => {
+  // Yedek süreç de kod güncellemelerini alsın (yoksa eski kodda takılı kalır).
+  try { require('./bot/services/gitAutoDeployWatcher').startGitAutoDeployWatcher(30000); } catch (_) { /* git yoksa önemsiz */ }
+
+  // 1) Yedek modda sağlık ucu YALNIZCA Render'da: Render bir port dinlenmesini bekler. Aynı makinede
+  //    (VDS) portu tutarsa lider süreç siteyi açamaz, bu yüzden orada port tutulmaz.
+  const bindStandbyPort = !!process.env.RENDER || process.env.HA_STANDBY_HTTP === '1';
+  const standby = !bindStandbyPort ? null : http.createServer((req, res) => {
     const isHealth = req.url && req.url.startsWith('/api/health');
     res.statusCode = isHealth ? 200 : 503;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -103,11 +110,18 @@ async function runHa() {
       ? { status: 'standby', mode: 'standby', node }
       : { error: 'Bu düğüm yedek modda; aktif düğüm başka makinede çalışıyor.' }));
   });
-  await new Promise((resolve) => standby.listen(port, resolve));
-  log(`Yedek sağlık ucu :${port} üzerinde dinleniyor (rol: ${role}).`);
+  if (standby) {
+    await new Promise((resolve) => {
+      standby.once('error', (err) => { log(`Yedek sağlık ucu açılamadı (${err.code || err.message}), portsuz bekleniyor.`); resolve(); });
+      standby.listen(port, () => { log(`Yedek sağlık ucu :${port} üzerinde dinleniyor (rol: ${role}).`); resolve(); });
+    });
+  } else {
+    log(`Yedek modda portsuz bekleniyor (rol: ${role}).`);
+  }
   const closeStandby = () => new Promise((resolve) => {
+    if (!standby || !standby.listening) return resolve();
     if (typeof standby.closeAllConnections === 'function') standby.closeAllConnections();
-    standby.close(resolve);
+    standby.close(() => resolve());
   });
 
   const connect = () => mongoose.createConnection(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 8000 }).asPromise();
