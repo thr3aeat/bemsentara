@@ -64,7 +64,7 @@ async function triggerMonthlyPromotionCycle(client) {
         if (!user) continue;
 
         // Orta derece ödül gönder (terfi yok, sadece motivasyon ve ödül)
-        await sendMonthlyMediumReward(user, member, client);
+        await sendMotivationFromCoach(user, member, client);
 
         // Gönderildiğini kaydet
         member.lastCoachMotivationMonth = currentMonthStr;
@@ -312,7 +312,7 @@ async function notifyPromotionResult(userId, birimKey, score, promotion, client)
 
 module.exports = {
   triggerMonthlyPromotionCycle,
-  sendMonthlyMediumReward,
+  sendMonthlyMediumReward: sendMotivationFromCoach,
   getCoachForUnit,
   startMonthlyPromotionScheduler
 };
