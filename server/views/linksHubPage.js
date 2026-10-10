@@ -802,12 +802,20 @@ function renderLinksHubPage(user = null) {
     @media (max-width: 680px) {
       .bio-shell { margin-top: 14px; width: calc(100% - 24px); }
       .bio-profile-card { padding: 26px 18px; border-radius: 24px; }
-      .bio-card-inner { flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 16px; }
-      .bio-card-actions { justify-content: stretch; width: 100%; }
-      .bio-btn-copy, .bio-btn-visit { flex: 1 1 0; justify-content: center; }
-      .bio-card-left { gap: 12px; }
-      .bio-card-icon { width: 46px; height: 46px; border-radius: 13px; }
-      .bio-card-desc { font-size: 0.82rem; }
+      /* Kompakt yatay kart: simge+metin solda, düğmeler sağda dikey (44px dokunma hedefi) */
+      .bio-card-inner { flex-direction: row; align-items: center; gap: 10px; padding: 12px; }
+      .bio-card-left { gap: 10px; align-items: flex-start; }
+      .bio-card-actions { flex: 0 0 44px; flex-direction: column; justify-content: center; width: 44px; gap: 8px; }
+      .bio-btn-visit, .bio-btn-copy { width: 44px; min-height: 44px; padding: 0; justify-content: center; flex: 0 0 auto; }
+      .bio-btn-visit span, .bio-btn-copy-text { display: none; }
+      .bio-btn-copy.copied .bio-btn-copy-icon { color: #4ade80; }
+      .bio-card-icon { width: 40px; height: 40px; border-radius: 12px; }
+      .bio-category-label { display: none; }
+      .bio-card-title { font-size: 1.02rem; }
+      .bio-card-desc { font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .bio-filter-pill { min-height: 40px; scroll-snap-align: start; }
+      .bio-filters { scroll-snap-type: x proximity; padding-right: 16px; }
+      #btnShareProfile, .bio-profile-actions a, .bio-profile-actions button { min-height: 44px; }
     }
   </style>
 </head>
