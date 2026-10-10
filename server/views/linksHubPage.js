@@ -161,907 +161,258 @@ const LINKS_DATA = [
   },
 ];
 
+const GROUPS = [
+  { key: 'stream', label: 'Canlı yayın' },
+  { key: 'video', label: 'Video' },
+  { key: 'community', label: 'Topluluk' },
+  { key: 'support', label: 'Destek ol' },
+  { key: 'instagram', label: 'Instagram' }
+];
+
+// Sayfada çalan şarkı: Spotify'ın resmi gömme oynatıcısı (telifli dosya barındırılmaz).
+const NOW_PLAYING = {
+  title: 'TRALALA',
+  artist: 'manifest',
+  uri: 'spotify:track:6hPPwiXH4Y4kmc121v9Fdg',
+  embedUrl: 'https://open.spotify.com/embed/track/6hPPwiXH4Y4kmc121v9Fdg?theme=0',
+  cover: 'https://i.scdn.co/image/ab67616d00004851dae056def422ee617c5ad0d8'
+};
+
+const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function renderRow(item, index) {
+  return `
+        <li class="row" style="--i:${index};--brand:${esc(item.brandColor)}">
+          <a class="row-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" data-id="${esc(item.id)}">
+            <span class="row-icon" aria-hidden="true">${item.iconSvg}</span>
+            <span class="row-text">
+              <span class="row-title">${esc(item.title)}</span>
+              <span class="row-handle">${esc(item.handle)}</span>
+            </span>
+            <svg class="row-arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <button type="button" class="row-copy" data-copy="${esc(item.url)}" aria-label="${esc(item.title)} bağlantısını kopyala" title="Bağlantıyı kopyala">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </li>`;
+}
+
 function renderLinksHubPage(user = null) {
   const headerHtml = renderPlatformHeader({ user, activePath: '/linkler' });
   const footerHtml = renderPlatformFooter();
   const searchDialogHtml = renderSearchDialog();
 
-  const cardsHtml = LINKS_DATA.map((item, index) => `
-    <article
-      class="bio-link-card"
-      data-category="${item.category}"
-      data-title="${item.title.toLowerCase()}"
-      data-handle="${item.handle.toLowerCase()}"
-      data-url="${item.url}"
-      style="--item-color:${item.brandColor};--item-glow:${item.glowColor};--item-bg:${item.bgGradient};"
-    >
-      <div class="bio-card-spotlight" aria-hidden="true"></div>
-      <div class="bio-card-glow" aria-hidden="true"></div>
-      <div class="bio-card-inner">
-        <div class="bio-card-left">
-          <div class="bio-card-icon-wrap" aria-hidden="true">
-            <div class="bio-card-icon" style="color:${item.brandColor}">
-              ${item.iconSvg}
-            </div>
-          </div>
-          <div class="bio-card-details">
-            <div class="bio-card-tags">
-              <span class="bio-badge" style="border-color:${item.brandColor}55;color:${item.brandColor};background:${item.brandColor}14">
-                ${item.badge}
-              </span>
-              <span class="bio-category-label">${item.categoryLabel}</span>
-            </div>
-            <h3 class="bio-card-title">${item.title}</h3>
-            <div class="bio-card-handle">${item.handle}</div>
-            <p class="bio-card-desc">${item.description}</p>
-          </div>
-        </div>
-        <div class="bio-card-actions">
-          <button
-            type="button"
-            class="bio-btn-copy"
-            data-copy-url="${item.url}"
-            aria-label="${item.title} bağlantısını kopyala"
-            title="Bağlantıyı Kopyala"
-          >
-            <svg class="bio-btn-copy-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.242a2 2 0 0 0-.602-1.43L16.083 2.57A2 2 0 0 0 14.685 2H10a2 2 0 0 0-2 2z"/><path d="M16 18v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2"/></svg>
-            <span class="bio-btn-copy-text">Kopyala</span>
-          </button>
-          <a
-            href="${item.url}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="bio-btn-visit"
-            aria-label="${item.title} sayfasına git"
-          >
-            <span>Ziyaret Et</span>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
-          </a>
-        </div>
-      </div>
-    </article>
-  `).join('');
+  let index = 0;
+  const groupsHtml = GROUPS.map((g) => {
+    const items = LINKS_DATA.filter((l) => l.category === g.key);
+    if (!items.length) return '';
+    return `
+      <section class="group" aria-labelledby="g-${g.key}">
+        <h2 class="group-title" id="g-${g.key}">${g.label}</h2>
+        <ul class="rows">${items.map((it) => renderRow(it, index++)).join('')}
+        </ul>
+      </section>`;
+  }).join('');
 
   return `<!doctype html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#090a12">
-  <meta name="description" content="EkoYıldız resmi bağlantılar: Kick ve Twitch canlı yayınları, YouTube ana ve yan kanalları, Discord topluluğu, İtemsatış ve Instagram profilleri.">
-  <meta property="og:title" content="EkoYıldız Resmi Bağlantılar & Linkler">
-  <meta property="og:description" content="Canlı yayınlar, YouTube kanalları, Discord topluluğu ve sosyal medya hesapları tek bir yerde.">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="description" content="EkoYıldız resmi bağlantılar: Kick ve Twitch yayınları, YouTube kanalları, TikTok, Discord topluluğu ve Instagram.">
+  <meta property="og:title" content="EkoYıldız — Bağlantılar">
+  <meta property="og:description" content="Yayınlar, videolar ve topluluk tek sayfada.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://ekoyildiz.com/linkler">
   <meta property="og:image" content="https://i.imgur.com/PFcAc6q.png">
-  <title>EkoYıldız — Resmi Bağlantılar & Linkler</title>
+  <title>EkoYıldız — Bağlantılar</title>
   ${platformChromeStyles('dark')}
   <style>
-    :root {
-      --bio-bg: #07080f;
-      --bio-card-bg: rgba(16, 18, 30, 0.72);
-      --bio-line: rgba(255, 255, 255, 0.15);
-      --bio-text: #f8fafc;
-      --bio-muted: #94a3b8;
-      --bio-accent: #7c6af7;
-      --bio-radius: 22px;
+    .lh {
+      --bg: #0a0a0b; --surface: #111113; --surface-2: #17171a; --line: #222226; --line-2: #2e2e33;
+      --text: #ededef; --muted: #8c8c95; --accent: #f43f5e;
+      --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
     }
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bio-bg);
-      color: var(--bio-text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    body.lh { background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    .lh-main { width: 100%; max-width: 560px; margin: 0 auto; padding: 40px 16px 64px; }
 
-    /* Ambient Optical Caustic Mesh - GPU Accelerated */
-    .bio-ambient {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: -1;
-      overflow: hidden;
-      transform: translate3d(0, 0, 0);
-    }
-    .bio-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(110px);
-      opacity: 0.22;
-      transform: translate3d(0, 0, 0);
-      will-change: transform;
-      animation: floatBreath 14s ease-in-out infinite alternate;
-    }
-    .bio-orb-1 { width: 560px; height: 560px; background: #6366f1; left: -140px; top: -100px; }
-    .bio-orb-2 { width: 500px; height: 500px; background: #ec4899; right: -120px; top: 220px; animation-duration: 17s; }
-    .bio-orb-3 { width: 460px; height: 460px; background: #10b981; left: 35%; bottom: -80px; animation-duration: 20s; }
-    @keyframes floatBreath {
-      0% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(24px, -20px, 0) scale(1.06); }
-      100% { transform: translate3d(-18px, 28px, 0) scale(0.96); }
-    }
+    /* Profil */
+    .profile { display: flex; align-items: center; gap: 16px; }
+    .avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--surface-2); flex: 0 0 auto; outline: 1px solid var(--line-2); outline-offset: 3px; }
+    .profile h1 { margin: 0; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 6px; }
+    .verified { width: 16px; height: 16px; color: var(--accent); }
+    .profile p { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.45; }
+    .profile-actions { display: flex; gap: 8px; margin-top: 20px; }
+    .btn { appearance: none; border: 1px solid var(--line-2); background: var(--surface); color: var(--text); font: 600 0.875rem/1 var(--sans);
+      height: 40px; padding: 0 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; text-decoration: none;
+      transition: background .15s ease, border-color .15s ease, transform .1s ease; }
+    .btn:hover { background: var(--surface-2); border-color: #3a3a40; }
+    .btn:active { transform: scale(.98); }
+    .btn svg { width: 16px; height: 16px; }
 
-    /* Container Shell */
-    .bio-shell {
-      width: min(860px, calc(100% - 32px));
-      margin: 24px auto 70px;
-      position: relative;
-      z-index: 10;
-    }
+    /* Şu an çalıyor */
+    .np { margin-top: 28px; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; overflow: hidden; }
+    .np-bar { display: flex; align-items: center; gap: 12px; padding: 10px; }
+    .np-cover { width: 44px; height: 44px; border-radius: 8px; flex: 0 0 auto; background: var(--surface-2); }
+    .np-meta { min-width: 0; flex: 1 1 auto; }
+    .np-label { font: 600 0.7rem/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 6px; }
+    .np-title { margin-top: 5px; font-weight: 600; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .np-title span { color: var(--muted); font-weight: 500; }
+    .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+    .eq i { width: 2px; height: 6px; background: var(--muted); border-radius: 1px; }
+    .eq i:nth-child(2) { height: 10px; } .eq i:nth-child(3) { height: 4px; }
+    .np.is-playing .eq i { background: var(--accent); animation: eq 0.9s ease-in-out infinite; }
+    .np.is-playing .eq i:nth-child(2) { animation-delay: -.3s; } .np.is-playing .eq i:nth-child(3) { animation-delay: -.6s; }
+    @keyframes eq { 0%, 100% { height: 3px; } 50% { height: 10px; } }
+    .np-toggle { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--text); color: var(--bg); display: grid; place-items: center; cursor: pointer; flex: 0 0 auto; transition: transform .12s ease; }
+    .np-toggle:hover { transform: scale(1.05); } .np-toggle:active { transform: scale(.95); }
+    .np-toggle svg { width: 16px; height: 16px; }
+    .np-embed { height: 0; transition: height .25s ease; }
+    .np.is-open .np-embed { height: 80px; border-top: 1px solid var(--line); }
+    .np-embed iframe { display: block; width: 100%; height: 80px; border: 0; }
 
-    /* Profile Hero Card - Dark Liquid Glass */
-    .bio-profile-card {
-      position: relative;
-      background: radial-gradient(130% 120% at 50% -15%, rgba(124,106,247,0.12) 0%, rgba(255,255,255,0.03) 30%, rgba(10,12,22,0.92) 100%), linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(12,14,24,0.90) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 30px;
-      padding: 38px 30px;
-      text-align: center;
-      box-shadow: 0 32px 70px -16px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(124,106,247,0.2);
-      backdrop-filter: blur(28px) saturate(210%);
-      -webkit-backdrop-filter: blur(28px) saturate(210%);
-      overflow: hidden;
-      margin-bottom: 22px;
-      transform: translate3d(0,0,0);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
+    /* Bağlantılar */
+    .group { margin-top: 32px; }
+    .group-title { margin: 0 0 10px 2px; font: 600 0.72rem/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .rows { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+    .row { position: relative; display: flex; align-items: center; border-top: 1px solid var(--line);
+      opacity: 0; transform: translateY(6px); animation: rowIn .4s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: calc(var(--i) * 35ms + 80ms); }
+    .row:first-child { border-top: 0; }
+    @keyframes rowIn { to { opacity: 1; transform: none; } }
+    .row-link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 12px 8px 12px 14px; min-height: 64px; color: inherit; text-decoration: none; outline: none; transition: background .15s ease; }
+    .row-link:hover, .row-link:focus-visible { background: var(--surface-2); }
+    .row-link:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+    .row-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; flex: 0 0 auto; color: var(--muted); background: var(--bg); border: 1px solid var(--line); transition: color .2s ease, border-color .2s ease; }
+    .row-icon svg { width: 20px; height: 20px; }
+    .row-link:hover .row-icon, .row-link:focus-visible .row-icon { color: var(--brand); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+    .row-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .row-title { font-weight: 600; font-size: .98rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-handle { font: 0.8rem/1.2 var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-arrow { margin-left: auto; color: var(--muted); flex: 0 0 auto; transition: transform .18s ease, color .18s ease; }
+    .row-link:hover .row-arrow { transform: translate(2px, -2px); color: var(--text); }
+    .row-copy { flex: 0 0 auto; width: 44px; height: 44px; margin-right: 8px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; transition: background .15s ease, color .15s ease; }
+    .row-copy:hover { background: var(--surface-2); color: var(--text); }
+    .row-copy.done { color: #4ade80; }
+    .row-copy { opacity: .6; } .row:hover .row-copy, .row-copy:focus-visible, .row-copy.done { opacity: 1; }
 
-    .bio-avatar-wrap {
-      position: relative;
-      width: 108px;
-      height: 108px;
-      margin: 0 auto 16px;
-    }
-    .bio-avatar-ring {
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #7c6af7, #ec4899, #10b981);
-      animation: rotateRing 8s linear infinite;
-      filter: blur(3px);
-      opacity: 0.85;
-      will-change: transform;
-    }
-    @keyframes rotateRing {
-      to { transform: rotate(360deg); }
-    }
-    .bio-avatar {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3.5px solid #0a0c16;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.6);
-      background: #141626;
-      display: block;
-    }
-    .bio-verified-badge {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-      color: #fff;
-      display: grid;
-      place-items: center;
-      border: 2.5px solid #0a0c16;
-      box-shadow: 0 2px 10px rgba(59,130,246,0.6);
-    }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+      background: var(--text); color: var(--bg); font: 600 .85rem/1 var(--sans); padding: 10px 14px; border-radius: 10px; transition: opacity .2s ease, transform .2s ease; z-index: 50; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .lh-foot { margin-top: 40px; color: var(--muted); font-size: .8rem; text-align: center; }
+    .lh-foot kbd { font: 0.75rem var(--mono); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; }
 
-    .bio-title-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .bio-name {
-      margin: 0;
-      font-size: clamp(1.8rem, 4vw, 2.4rem);
-      font-weight: 850;
-      letter-spacing: -0.04em;
-      background: linear-gradient(110deg, #ffffff 25%, #c7d2fe 65%, #f472b6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .bio-live-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 5px 14px;
-      border-radius: 999px;
-      background: rgba(16, 185, 129, 0.16);
-      border: 1px solid rgba(16, 185, 129, 0.42);
-      color: #34d399;
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      backdrop-filter: blur(10px);
-    }
-    .bio-live-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 12px #10b981;
-      animation: pulseDot 2s ease-in-out infinite;
-    }
-    @keyframes pulseDot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.35; transform: scale(0.8); }
-    }
-
-    .bio-desc {
-      margin: 0 auto 22px;
-      max-width: 600px;
-      color: var(--bio-muted);
-      font-size: clamp(0.9rem, 1.4vw, 1rem);
-      line-height: 1.6;
-    }
-
-    .bio-profile-actions {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .bio-action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.20);
-      color: var(--bio-text);
-      font-size: 0.84rem;
-      font-weight: 800;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 4px 14px rgba(0,0,0,0.25);
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      user-select: none;
-    }
-    .bio-action-btn:hover {
-      background: rgba(255, 255, 255, 0.16);
-      border-color: rgba(255, 255, 255, 0.36);
-      transform: translateY(-2px);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 20px rgba(0,0,0,0.35);
-    }
-    .bio-action-btn:active {
-      transform: translateY(0) scale(0.96);
-    }
-
-    /* Live Search & Filter Bar */
-    .bio-controls-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .bio-search-box {
-      position: relative;
-      width: 100%;
-    }
-    .bio-search-input {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 16px;
-      padding: 12px 18px 12px 44px;
-      color: #fff;
-      font-size: 0.88rem;
-      font-family: inherit;
-      outline: none;
-      backdrop-filter: blur(14px);
-      transition: all 0.22s ease;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.15);
-    }
-    .bio-search-input::placeholder {
-      color: var(--bio-muted);
-    }
-    .bio-search-input:focus {
-      background: rgba(255, 255, 255, 0.09);
-      border-color: rgba(124, 106, 247, 0.6);
-      box-shadow: 0 0 20px rgba(124, 106, 247, 0.25), inset 0 1px 1px rgba(255,255,255,0.3);
-    }
-    .bio-search-icon {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--bio-muted);
-      pointer-events: none;
-    }
-
-    /* Filter Pills Nav */
-    .bio-filters {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 4px 2px 8px;
-      scrollbar-width: none;
-    }
-    .bio-filters::-webkit-scrollbar { display: none; }
-    .bio-filter-pill {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: var(--bio-muted);
-      font-size: 0.82rem;
-      font-weight: 750;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .bio-filter-pill:hover {
-      background: rgba(255, 255, 255, 0.13);
-      color: var(--bio-text);
-      border-color: rgba(255, 255, 255, 0.3);
-      transform: translateY(-1px);
-    }
-    .bio-filter-pill.active {
-      background: linear-gradient(135deg, rgba(124,106,247,0.4) 0%, rgba(168,85,247,0.25) 100%);
-      color: #ffffff;
-      border-color: rgba(168,85,247,0.65);
-      box-shadow: 0 4px 18px rgba(124, 106, 247, 0.35), inset 0 1px 1px rgba(255,255,255,0.7);
-    }
-    .bio-filter-pill:active {
-      transform: translateY(0) scale(0.96);
-    }
-    .bio-filter-count {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-
-    /* Link Cards List */
-    .bio-cards-grid {
-      display: grid;
-      gap: 13px;
-      margin-top: 4px;
-    }
-
-    /* Individual Bento Card - Dark Obsidian Liquid Glass */
-    .bio-link-card {
-      position: relative;
-      border-radius: var(--bio-radius);
-      background: radial-gradient(120% 110% at 50% -20%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 45%, rgba(11,13,24,0.92) 100%), var(--item-bg);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 16px 36px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.03);
-      backdrop-filter: blur(24px) saturate(200%);
-      -webkit-backdrop-filter: blur(24px) saturate(200%);
-      overflow: hidden;
-      cursor: pointer;
-      user-select: none;
-      transform: translate3d(0, 0, 0);
-      will-change: transform, box-shadow, border-color;
-      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.26s ease, border-color 0.26s ease;
-    }
-    .bio-link-card.is-hidden {
-      display: none !important;
-    }
-    .bio-card-spotlight {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06), transparent 40%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 1;
-    }
-    .bio-link-card:hover .bio-card-spotlight {
-      opacity: 1;
-    }
-    .bio-card-glow {
-      position: absolute;
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      background: var(--item-color, #7c6af7);
-      filter: blur(65px);
-      opacity: 0.08;
-      top: -60px;
-      right: -50px;
-      pointer-events: none;
-      transform: translate3d(0, 0, 0);
-      transition: opacity 0.35s ease, transform 0.35s ease;
-      z-index: 0;
-    }
-    .bio-link-card:hover {
-      transform: translate3d(0, -3px, 0);
-      border-color: rgba(255, 255, 255, 0.38);
-      box-shadow: 0 24px 50px -12px rgba(0,0,0,0.72), 0 0 30px var(--item-glow), inset 0 1.5px 1px rgba(255,255,255,0.9);
-    }
-    .bio-link-card:hover .bio-card-glow {
-      opacity: 0.28;
-      transform: scale(1.15) translate3d(0, 0, 0);
-    }
-    .bio-link-card:active {
-      transform: translate3d(0, -1px, 0) scale(0.992);
-    }
-
-    /* Card Inner Content */
-    .bio-card-inner {
-      position: relative;
-      z-index: 2;
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-    .bio-card-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-    .bio-card-icon-wrap {
-      flex: 0 0 auto;
-    }
-    .bio-card-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      display: grid;
-      place-items: center;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 6px 16px rgba(0,0,0,0.3);
-      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .bio-link-card:hover .bio-card-icon {
-      transform: scale(1.08) rotate(-2deg);
-    }
-    .bio-card-details {
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-    .bio-card-tags {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-    .bio-badge {
-      font-size: 0.65rem;
-      font-weight: 850;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 6px;
-      border: 1px solid;
-    }
-    .bio-category-label {
-      font-size: 0.72rem;
-      color: var(--bio-muted);
-      font-weight: 600;
-    }
-    .bio-card-title {
-      margin: 0;
-      font-size: 1.15rem;
-      font-weight: 850;
-      letter-spacing: -0.025em;
-      color: var(--bio-text);
-      line-height: 1.25;
-    }
-    .bio-card-handle {
-      font-size: 0.8rem;
-      color: var(--bio-muted);
-      margin-top: 2px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    .bio-card-desc {
-      margin: 4px 0 0;
-      font-size: 0.85rem;
-      color: #94a3b8;
-      line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Card Actions (Buttons) */
-    .bio-card-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-    .bio-btn-copy {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      color: var(--bio-muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.25);
-      user-select: none;
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    }
-    .bio-btn-copy:hover {
-      background: rgba(255, 255, 255, 0.14);
-      color: var(--bio-text);
-      border-color: rgba(255, 255, 255, 0.32);
-      transform: translateY(-1.5px);
-    }
-    .bio-btn-copy:active {
-      transform: translateY(0) scale(0.95);
-    }
-    .bio-btn-copy.copied {
-      background: rgba(16, 185, 129, 0.2) !important;
-      border-color: rgba(16, 185, 129, 0.6) !important;
-      color: #34d399 !important;
-    }
-
-    .bio-btn-visit {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
-      color: #f8fafc;
-      font-size: 0.82rem;
-      font-weight: 850;
-      text-decoration: none;
-      border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
-      user-select: none;
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
-    }
-    .bio-btn-visit:hover {
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 8px 24px rgba(124,106,247,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
-      background: linear-gradient(135deg, rgba(124,106,247,0.85) 0%, rgba(99,102,241,0.85) 100%);
-      border-color: rgba(167,139,250,0.6);
-      color: #ffffff;
-    }
-    .bio-btn-visit:active {
-      transform: translateY(0) scale(0.96);
-    }
-
-    /* Toast Notification */
-    .bio-toast {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translate3d(-50%, 40px, 0);
-      opacity: 0;
-      visibility: hidden;
-      background: rgba(14, 16, 26, 0.94);
-      border: 1px solid rgba(255, 255, 255, 0.28);
-      border-radius: 999px;
-      padding: 11px 24px;
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 800;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.6);
-      backdrop-filter: blur(20px);
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      z-index: 2000;
-      will-change: transform, opacity;
-      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, visibility 0.28s ease;
-      pointer-events: none;
-    }
-    .bio-toast.show {
-      opacity: 1;
-      visibility: visible;
-      transform: translate3d(-50%, 0, 0);
-    }
-    .bio-toast-icon {
-      color: #10b981;
-      font-size: 1.1rem;
-    }
-
-    /* No results state */
-    .bio-empty-state {
-      display: none;
-      text-align: center;
-      padding: 3rem 1rem;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px dashed rgba(255, 255, 255, 0.15);
-      border-radius: 22px;
-      color: var(--bio-muted);
-    }
-    .bio-empty-state.show {
-      display: block;
-    }
-
-    /* Responsive */
-    @media (max-width: 680px) {
-      .bio-shell { margin-top: 14px; width: calc(100% - 24px); }
-      .bio-profile-card { padding: 26px 18px; border-radius: 24px; }
-      /* Kompakt yatay kart: simge+metin solda, düğmeler sağda dikey (44px dokunma hedefi) */
-      .bio-card-inner { flex-direction: row; align-items: center; gap: 10px; padding: 12px; }
-      .bio-card-left { gap: 10px; align-items: flex-start; }
-      .bio-card-actions { flex: 0 0 44px; flex-direction: column; justify-content: center; width: 44px; gap: 8px; }
-      .bio-btn-visit, .bio-btn-copy { width: 44px; min-height: 44px; padding: 0; justify-content: center; flex: 0 0 auto; }
-      .bio-btn-visit span, .bio-btn-copy-text { display: none; }
-      .bio-btn-copy.copied .bio-btn-copy-icon { color: #4ade80; }
-      .bio-card-icon { width: 40px; height: 40px; border-radius: 12px; }
-      .bio-category-label { display: none; }
-      .bio-card-title { font-size: 1.02rem; }
-      .bio-card-desc { font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      .bio-filter-pill { min-height: 40px; scroll-snap-align: start; }
-      .bio-filters { scroll-snap-type: x proximity; padding-right: 16px; }
-      #btnShareProfile, .bio-profile-actions a, .bio-profile-actions button { min-height: 44px; }
-    }
+    @media (max-width: 480px) { .lh-main { padding-top: 24px; } .profile h1 { font-size: 1.3rem; } }
+    @media (prefers-reduced-motion: reduce) { .row { animation: none; opacity: 1; transform: none; } .np.is-playing .eq i { animation: none; height: 8px; } * { transition: none !important; } }
   </style>
 </head>
-<body class="platform-chrome" data-theme="dark">
-  <div class="bio-ambient" aria-hidden="true">
-    <div class="bio-orb bio-orb-1"></div>
-    <div class="bio-orb bio-orb-2"></div>
-    <div class="bio-orb bio-orb-3"></div>
-  </div>
-
+<body class="platform-chrome lh" data-theme="dark">
   ${headerHtml}
 
-  <main class="bio-shell" id="main-content">
-    <!-- Profile Hero Card -->
-    <section class="bio-profile-card">
-      <div class="bio-avatar-wrap">
-        <div class="bio-avatar-ring" aria-hidden="true"></div>
-        <img class="bio-avatar" src="https://i.imgur.com/PFcAc6q.png" alt="EkoYıldız Avatar" width="108" height="108">
-        <div class="bio-verified-badge" title="Doğrulanmış Resmi Hesap" aria-label="Doğrulanmış Hesap">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3.2"><path d="M5 13l4 4L19 7"/></svg>
-        </div>
-      </div>
-
-      <div class="bio-title-wrap">
-        <h1 class="bio-name">EkoYıldız</h1>
-      </div>
-
+  <main class="lh-main" id="main-content">
+    <header class="profile">
+      <img class="avatar" src="https://i.imgur.com/PFcAc6q.png" alt="" width="64" height="64">
       <div>
-        <span class="bio-live-pill">
-          <span class="bio-live-dot" aria-hidden="true"></span>
-          Resmi Bağlantı &amp; Sosyal Hub
-        </span>
+        <h1>EkoYıldız <svg class="verified" viewBox="0 0 24 24" aria-label="Resmi hesap" role="img"><path fill="currentColor" d="M12 1.5l2.6 2 3.3-.2.9 3.2 2.8 1.8-1.2 3.1 1.2 3.1-2.8 1.8-.9 3.2-3.3-.2-2.6 2-2.6-2-3.3.2-.9-3.2-2.8-1.8 1.2-3.1-1.2-3.1 2.8-1.8.9-3.2 3.3.2z"/><path d="M8 12.2l2.6 2.6L16.2 9" fill="none" stroke="#0a0a0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></h1>
+        <p>Yayınlar, videolar ve topluluk. Hepsi burada.</p>
       </div>
+    </header>
+    <div class="profile-actions">
+      <button type="button" class="btn" id="shareBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Paylaş</button>
+      <a class="btn" href="/yardim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Destek</a>
+    </div>
 
-      <p class="bio-desc">
-        EkoYıldız canlı yayınları (Kick, Twitch), YouTube kanalları, TikTok, Discord topluluğu, üyelik &amp; destek mağazası ve Instagram hesaplarının tamamına buradan hızlıca ulaşabilirsiniz.
-      </p>
-
-      <div class="bio-profile-actions">
-        <button type="button" class="bio-action-btn" id="btnShareProfile">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          <span>Sayfa Linkini Paylaş</span>
+    <section class="np" id="np" aria-label="Şu an çalıyor">
+      <div class="np-bar">
+        <img class="np-cover" src="${NOW_PLAYING.cover}" alt="" width="44" height="44" loading="lazy">
+        <div class="np-meta">
+          <div class="np-label"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span id="npState">Şarkı</span></div>
+          <div class="np-title">${esc(NOW_PLAYING.title)} <span>· ${esc(NOW_PLAYING.artist)}</span></div>
+        </div>
+        <button type="button" class="np-toggle" id="npToggle" aria-label="Şarkıyı çal" aria-pressed="false">
+          <svg viewBox="0 0 24 24" id="npIcon" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
         </button>
-        <a href="/yardim" class="bio-action-btn">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <span>Yardım &amp; Destek</span>
-        </a>
       </div>
+      <div class="np-embed" id="npEmbed"></div>
     </section>
 
-    <!-- Controls Bar: Search & Category Filter Pills -->
-    <div class="bio-controls-bar">
-      <div class="bio-search-box">
-        <svg class="bio-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="bio-search-input" id="bioSearchInput" placeholder="Bağlantı veya platform ara... (örn. Kick, YouTube, Instagram)">
-      </div>
+    ${groupsHtml}
 
-      <nav class="bio-filters" aria-label="Kategori filtreleri">
-        <button type="button" class="bio-filter-pill active" data-filter="all">Tümü <span class="bio-filter-count">10</span></button>
-        <button type="button" class="bio-filter-pill" data-filter="stream">🎮 Canlı Yayın <span class="bio-filter-count">2</span></button>
-        <button type="button" class="bio-filter-pill" data-filter="video">📺 Videolar &amp; Shorts <span class="bio-filter-count">3</span></button>
-        <button type="button" class="bio-filter-pill" data-filter="community">💬 Discord &amp; Topluluk <span class="bio-filter-count">1</span></button>
-        <button type="button" class="bio-filter-pill" data-filter="support">💎 Destek &amp; Katıl <span class="bio-filter-count">2</span></button>
-        <button type="button" class="bio-filter-pill" data-filter="instagram">📸 Instagram <span class="bio-filter-count">2</span></button>
-      </nav>
-    </div>
-
-    <!-- Empty State -->
-    <div class="bio-empty-state" id="bioEmptyState">
-      <p style="font-size:1.1rem;font-weight:750;color:#fff;margin:0 0 6px;">Eşleşen bağlantı bulunamadı</p>
-      <p style="font-size:0.85rem;margin:0;">Farklı bir anahtar kelime arayabilir veya filtreleri sıfırlayabilirsiniz.</p>
-    </div>
-
-    <!-- Links Bento Grid -->
-    <div class="bio-cards-grid" id="bioCardsContainer">
-      ${cardsHtml}
-    </div>
+    <p class="lh-foot">Bağlantıyı kopyalamak için satırın sağındaki simgeye dokun · Arama <kbd>Ctrl</kbd> <kbd>K</kbd></p>
   </main>
 
-  <div class="bio-toast" id="bioToast" role="status" aria-live="polite">
-    <span class="bio-toast-icon">✓</span>
-    <span id="bioToastMsg">Bağlantı kopyalandı!</span>
-  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  ${footerHtml}
   ${searchDialogHtml}
+  ${footerHtml}
   ${platformChromeScript()}
-
   <script>
-    (function() {
-      // Toast notification helper
-      var toast = document.getElementById('bioToast');
-      var toastMsg = document.getElementById('bioToastMsg');
-      var toastTimeout = null;
-      function showToast(msg) {
-        if (!toast || !toastMsg) return;
-        toastMsg.textContent = msg || 'Bağlantı kopyalandı!';
-        toast.classList.add('show');
-        if (toastTimeout) clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(function() {
-          toast.classList.remove('show');
-        }, 2200);
+    (function () {
+      var toastEl = document.getElementById('toast'); var toastTimer;
+      function toast(msg) {
+        toastEl.textContent = msg; toastEl.classList.add('show');
+        clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1600);
       }
-
-      function fallbackCopy(text) {
-        var temp = document.createElement('textarea');
-        temp.value = text;
-        temp.style.position = 'fixed';
-        temp.style.opacity = '0';
-        document.body.appendChild(temp);
-        temp.focus();
-        temp.select();
-        try {
-          document.execCommand('copy');
-          showToast('Bağlantı panoya kopyalandı!');
-        } catch (_) {
-          showToast('Kopyalanamadı.');
-        }
-        document.body.removeChild(temp);
+      function copy(text) {
+        if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+        return new Promise(function (resolve, reject) {
+          var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy') ? resolve() : reject(); } catch (e) { reject(e); } finally { document.body.removeChild(ta); }
+        });
       }
-
-      // Copy buttons handler
-      document.querySelectorAll('[data-copy-url]').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          e.preventDefault();
-          var url = btn.getAttribute('data-copy-url');
-          var textSpan = btn.querySelector('.bio-btn-copy-text');
-          var origText = textSpan ? textSpan.textContent : 'Kopyala';
-
-          function onCopiedSuccess() {
-            btn.classList.add('copied');
-            if (textSpan) textSpan.textContent = 'Kopyalandı!';
-            showToast('Bağlantı panoya kopyalandı: ' + url);
-            setTimeout(function() {
-              btn.classList.remove('copied');
-              if (textSpan) textSpan.textContent = origText;
-            }, 1800);
-          }
-
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(onCopiedSuccess).catch(function() {
-              fallbackCopy(url);
-            });
-          } else {
-            fallbackCopy(url);
-          }
+      document.querySelectorAll('.row-copy').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          copy(btn.getAttribute('data-copy')).then(function () {
+            btn.classList.add('done'); toast('Bağlantı kopyalandı');
+            setTimeout(function () { btn.classList.remove('done'); }, 1400);
+          }).catch(function () { toast('Kopyalanamadı'); });
         });
       });
 
-      // Card clicking: clicking anywhere on card opens the url
-      document.querySelectorAll('.bio-link-card').forEach(function(card) {
-        card.addEventListener('click', function(e) {
-          if (e.target.closest('.bio-btn-copy') || e.target.closest('.bio-btn-visit')) {
-            return;
-          }
-          var targetUrl = card.getAttribute('data-url');
-          if (targetUrl) {
-            window.open(targetUrl, '_blank', 'noopener,noreferrer');
-          }
-        });
-
-        // Dynamic Spotlight Refraction on mouse move
-        card.addEventListener('mousemove', function(e) {
-          var rect = card.getBoundingClientRect();
-          var x = e.clientX - rect.left;
-          var y = e.clientY - rect.top;
-          card.style.setProperty('--mouse-x', x + 'px');
-          card.style.setProperty('--mouse-y', y + 'px');
-        });
+      var shareBtn = document.getElementById('shareBtn');
+      shareBtn.addEventListener('click', function () {
+        var url = location.origin + '/linkler';
+        if (navigator.share) { navigator.share({ title: 'EkoYıldız', url: url }).catch(function () {}); return; }
+        copy(url).then(function () { toast('Sayfa bağlantısı kopyalandı'); });
       });
 
-      // Share profile button
-      var btnShare = document.getElementById('btnShareProfile');
-      if (btnShare) {
-        btnShare.addEventListener('click', function() {
-          var shareUrl = window.location.origin + '/linkler';
-          if (navigator.share) {
-            navigator.share({
-              title: 'EkoYıldız Resmi Bağlantılar',
-              text: 'EkoYıldız resmi canlı yayınlar, YouTube, Discord ve sosyal medya bağlantıları',
-              url: shareUrl
-            }).catch(function() {});
-          } else if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareUrl).then(function() {
-              showToast('Profil sayfası bağlantısı kopyalandı!');
-            });
-          } else {
-            fallbackCopy(shareUrl);
-          }
+      // Şu an çalıyor: oynatıcı yalnızca dokununca yüklenir (Spotify Embed API; olmazsa düz gömme)
+      var np = document.getElementById('np'), embed = document.getElementById('npEmbed'), toggle = document.getElementById('npToggle');
+      var icon = document.getElementById('npIcon'), stateEl = document.getElementById('npState');
+      var URI = '${NOW_PLAYING.uri}', EMBED = '${NOW_PLAYING.embedUrl}';
+      var controller = null, loading = false, fallback = false;
+      var PLAY = '<path d="M8 5v14l11-7z" fill="currentColor"/>', PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/>';
+      function setPlaying(on) {
+        np.classList.toggle('is-playing', on); icon.innerHTML = on ? PAUSE : PLAY;
+        toggle.setAttribute('aria-pressed', on ? 'true' : 'false'); toggle.setAttribute('aria-label', on ? 'Duraklat' : 'Şarkıyı çal');
+        stateEl.textContent = on ? 'Çalıyor' : 'Şarkı';
+      }
+      function useFallback() {
+        if (fallback) return; fallback = true; loading = false;
+        embed.innerHTML = '<iframe src="' + EMBED + '" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify oynatıcı"></iframe>';
+        np.classList.add('is-open'); stateEl.textContent = 'Oynatıcıdan başlat';
+      }
+      function create(api) {
+        var host = document.createElement('div'); embed.appendChild(host); np.classList.add('is-open');
+        api.createController(host, { uri: URI, width: '100%', height: 80, theme: 'dark' }, function (c) {
+          controller = c; loading = false;
+          c.addListener('ready', function () { c.play(); });
+          c.addListener('playback_update', function (e) { setPlaying(!!(e && e.data && !e.data.isPaused)); });
         });
       }
-
-      // Filter and Search logic
-      var currentFilter = 'all';
-      var currentSearch = '';
-      var filterPills = document.querySelectorAll('.bio-filter-pill');
-      var searchInput = document.getElementById('bioSearchInput');
-      var cards = document.querySelectorAll('.bio-link-card');
-      var emptyState = document.getElementById('bioEmptyState');
-
-      function applyFilterAndSearch() {
-        var visibleCount = 0;
-        cards.forEach(function(card) {
-          var cat = card.getAttribute('data-category') || '';
-          var title = card.getAttribute('data-title') || '';
-          var handle = card.getAttribute('data-handle') || '';
-
-          var matchesCat = (currentFilter === 'all' || cat === currentFilter);
-          var matchesSearch = true;
-          if (currentSearch) {
-            matchesSearch = (title.indexOf(currentSearch) !== -1 || handle.indexOf(currentSearch) !== -1 || cat.indexOf(currentSearch) !== -1);
-          }
-
-          if (matchesCat && matchesSearch) {
-            card.classList.remove('is-hidden');
-            visibleCount++;
-          } else {
-            card.classList.add('is-hidden');
-          }
-        });
-
-        if (emptyState) {
-          if (visibleCount === 0) {
-            emptyState.classList.add('show');
-          } else {
-            emptyState.classList.remove('show');
-          }
-        }
-      }
-
-      filterPills.forEach(function(pill) {
-        pill.addEventListener('click', function() {
-          currentFilter = pill.getAttribute('data-filter') || 'all';
-          filterPills.forEach(function(p) { p.classList.remove('active'); });
-          pill.classList.add('active');
-          applyFilterAndSearch();
-        });
+      toggle.addEventListener('click', function () {
+        if (controller) { controller.togglePlay(); return; }
+        if (fallback) { np.classList.toggle('is-open'); return; }
+        if (loading) return;
+        loading = true; stateEl.textContent = 'Yükleniyor…';
+        var timer = setTimeout(useFallback, 6000);
+        window.onSpotifyIframeApiReady = function (api) { clearTimeout(timer); if (!fallback) create(api); };
+        var s = document.createElement('script'); s.src = 'https://open.spotify.com/embed/iframe-api/v1'; s.async = true;
+        s.onerror = function () { clearTimeout(timer); useFallback(); };
+        document.head.appendChild(s);
       });
-
-      if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
-          currentSearch = (e.target.value || '').trim().toLowerCase();
-          applyFilterAndSearch();
-        });
-      }
     })();
   </script>
 </body>
