@@ -16,6 +16,8 @@
  */
 
 const http = require('http');
+const fs = require('fs');
+const { execFileSync } = require('child_process');
 const axios = require('axios');
 const logger = require('../../utils/logger');
 
@@ -35,6 +37,59 @@ const withTimeout = (promise, ms, label) => Promise.race([
   promise,
   new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} zaman aşımı (${ms}ms)`)), ms).unref())
 ]);
+
+/**
+ * Portu tutan eski bir HA yedek sürecini (haBoot "standby") bulur ve kapatır.
+ * Aynı makinede yedek süreç portu tutunca asıl uygulama siteyi açamıyor, nginx 503 veriyordu.
+ * Yalnızca /api/health'e `mode: "standby"` diyen VE komut satırında haBoot/index.js geçen
+ * node süreçlerine dokunur; başka hiçbir süreç öldürülmez.
+ */
+async function evictStaleStandby(port, deps = {}) {
+  const getHealth = deps.getHealth || (() => new Promise((resolve) => {
+    const req = http.get({ host: '127.0.0.1', port, path: '/api/health', timeout: 5000 }, (res) => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => { if (body.length < 4096) body += c; });
+      res.on('end', () => resolve(body));
+    });
+    req.on('timeout', () => { req.destroy(); resolve(''); });
+    req.on('error', () => resolve(''));
+  }));
+  const findPids = deps.findPids || (() => {
+    try {
+      return execFileSync('lsof', ['-t', `-iTCP:${port}`, '-sTCP:LISTEN'], { encoding: 'utf8', timeout: 5000 })
+        .split(/\s+/).filter(Boolean).map(Number);
+    } catch (_) { /* lsof yoksa ss ile dene */ }
+    try {
+      const out = execFileSync('ss', ['-ltnpH', `sport = :${port}`], { encoding: 'utf8', timeout: 5000 });
+      return [...new Set([...out.matchAll(/pid=(\d+)/g)].map((m) => Number(m[1])))];
+    } catch (_) { return []; }
+  });
+  const readCmdline = deps.readCmdline || ((pid) => {
+    try { return fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').replace(/\0/g, ' '); } catch (_) { return ''; }
+  });
+  const kill = deps.kill || ((pid) => process.kill(pid, 'SIGTERM'));
+
+  let health;
+  try { health = JSON.parse(await getHealth()); } catch (_) { return []; }
+  if (!health || health.mode !== 'standby') return [];
+
+  const evicted = [];
+  for (const pid of findPids()) {
+    if (!pid || pid === process.pid) continue;
+    const cmd = readCmdline(pid);
+    if (!/node/.test(cmd) || !/(haBoot|index)\.js/.test(cmd)) continue;
+    try {
+      kill(pid);
+      evicted.push(pid);
+      logger.warn(`[SelfHealing] Portu ${port} tutan eski HA yedek süreci kapatıldı (pid ${pid}).`);
+    } catch (err) {
+      logger.warn(`[SelfHealing] Eski HA yedek süreci kapatılamadı (pid ${pid}): ${err.code || err.message}`);
+    }
+  }
+  if (evicted.length) await new Promise((r) => setTimeout(r, deps.waitMs ?? 2000));
+  return evicted;
+}
 
 function createSupervisor(options = {}) {
   const cfg = { ...DEFAULTS, ...options };
@@ -190,7 +245,7 @@ function createSupervisor(options = {}) {
    * Web sunucusu: dinlemiyorsa yeniden dinletir; dinliyor ama yanıt vermiyorsa takılı
    * bağlantıları temizler. Bakım sayfası (503) yanıt sayılır, yani sunucu ayaktadır.
    */
-  function registerWeb(server, { port, name = 'Web Sunucusu' }) {
+  function registerWeb(server, { port, name = 'Web Sunucusu', evictDeps } = {}) {
     const probe = () => new Promise((resolve) => {
       const req = http.get({ host: '127.0.0.1', port, path: '/api/health', timeout: 5000, headers: { Accept: 'application/json' } }, (res) => {
         res.resume();
@@ -208,6 +263,7 @@ function createSupervisor(options = {}) {
       },
       heal: async () => {
         if (!server.listening) {
+          await evictStaleStandby(port, evictDeps);
           await new Promise((resolve, reject) => {
             server.once('error', reject);
             server.listen(port, () => { server.removeListener('error', reject); resolve(); });
@@ -224,4 +280,4 @@ function createSupervisor(options = {}) {
 
 const defaultSupervisor = createSupervisor();
 
-module.exports = { createSupervisor, supervisor: defaultSupervisor };
+module.exports = { createSupervisor, evictStaleStandby, supervisor: defaultSupervisor };

@@ -135,8 +135,8 @@ test('Yoksay / Affet silinen mesajı ve ekini geri yükler, özür diler ve Auto
     };
   }
 
-  await processMessageAutomod(makeMessage('message-1', 'Dönen top kırmızıydı.'), client);
-  const originalContent = 'Bu top için hazırladığım ayrıntılı açıklama ve görsel burada.';
+  await processMessageAutomod(makeMessage('message-1', 'Sen tam bir ibnesin.'), client);
+  const originalContent = 'Siktir, bu görsel için hazırladığım ayrıntılı açıklama burada.';
   const attachment = {
     url: 'https://cdn.example/original.png',
     name: 'original.png',
@@ -179,7 +179,7 @@ test('Yoksay / Affet silinen mesajı ve ekini geri yükler, özür diler ve Auto
   assert.match(timeoutCalls.at(-1).reason, /yanlış pozitif/i);
   assert.match(updatedModerationPayload.embeds[0].data.title, /Geri Yüklendi/i);
 
-  await processMessageAutomod(makeMessage('message-3', 'Dönen top yeniden kırmızıydı.'), client);
+  await processMessageAutomod(makeMessage('message-3', 'Sen yine ibnesin.'), client);
   assert.match(moderationLogPayload.embeds[0].data.description, /15 Dk İhlal Sayısı:\*\* \*\*2\*\*/);
 });
 
@@ -216,7 +216,7 @@ test('başarısız AutoMod timeoutunu sahiplenmez ve benzer süreli başka timeo
   const author = { id: 'u2', bot: false };
   const makeMessage = id => ({
     id,
-    content: 'Dönen top kırmızıydı.',
+    content: 'Sen tam bir ibnesin.',
     author,
     guild,
     channel,
@@ -267,7 +267,7 @@ test('AutoMod timeoutundan sonra verilen farklı moderatör timeoutunu kaldırma
   const author = { id: 'u3', bot: false };
   const makeMessage = id => ({
     id,
-    content: 'Dönen top kırmızıydı.',
+    content: 'Sen tam bir ibnesin.',
     author,
     guild,
     channel,
