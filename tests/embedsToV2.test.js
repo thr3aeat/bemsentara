@@ -126,10 +126,17 @@ describe('install (gerçek discord.js sınıfları)', () => {
     await i.editReply({ embeds: [{ description: 'b' }] });
     assert.equal(calls.at(-1)[1].flags & V2, V2);
 
-    const deferredI = Object.create(discord.MessageComponentInteraction.prototype);
-    deferredI.deferred = true; deferredI.replied = false;
-    await deferredI.editReply({ embeds: [{ description: 'c' }] });
-    assert.ok(calls.at(-1)[1].embeds, 'ertelenmiş cevap bilinmediği için embed kalır');
+    const d = Object.create(discord.MessageComponentInteraction.prototype);
+    d.deferred = true; d.replied = false; d.ephemeral = true;
+    const ops = [];
+    d.followUp = async (o) => { ops.push(['followUp', o]); return { id: 'f1', flags: { has: () => true } }; };
+    d.deleteReply = async () => { ops.push(['deleteReply']); };
+    d.webhook = { editMessage: async (id, o) => { ops.push(['editMessage', id, o]); return { id, flags: { has: () => true } }; } };
+    await d.editReply({ embeds: [{ description: 'c' }] });
+    assert.deepEqual(ops.map((o) => o[0]), ['followUp', 'deleteReply'], 'ertelenmiş cevap: V2 yeni mesaj + bekleme mesajı silinir');
+    assert.equal(ops[0][1].flags, V2 | MessageFlags.Ephemeral);
+    await d.editReply({ embeds: [{ description: 'c2' }] });
+    assert.deepEqual(ops.at(-1).slice(0, 2), ['editMessage', 'f1'], 'sonraki düzenleme yeni mesaja gider');
 
     const u = Object.create(discord.MessageComponentInteraction.prototype);
     u.message = { id: 'old', flags: { has: () => false } };

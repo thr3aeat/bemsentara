@@ -249,8 +249,42 @@ function install(discord = require('discord.js'), { log = (m) => console.warn(`[
     });
     wrap(ownerOf(proto, 'followUp'), 'followUp', () => true, (_i, res, embeds) => attachEmbeds(res, embeds));
     wrap(ownerOf(proto, 'update'), 'update', (i) => isV2(i.message), (i, _res, embeds) => attachEmbeds(i.message, embeds));
-    wrap(ownerOf(proto, 'editReply'), 'editReply', (i, opts) => i.__v2Reply === true && !(opts && opts.message && opts.message !== '@original'),
-      (_i, res, embeds) => attachEmbeds(res, embeds));
+    // editReply: ertelenmiş ("düşünüyor") cevap V2'ye düzenlenemez; V2 cevabı yeni mesaj olarak gönderip
+    // bekleme mesajını sileriz, sonraki editReply çağrıları o yeni mesajı düzenler.
+    const erOwner = ownerOf(proto, 'editReply');
+    if (erOwner && !erOwner.editReply.__v2wrapped) {
+      const origER = erOwner.editReply;
+      const er = async function (options, ...rest) {
+        try { options = stripAccent(options); } catch (_) { /* yoksay */ }
+        const target = options && typeof options === 'object' ? options.message : undefined;
+        const conv = (!target || target === '@original') ? convertPayload(options, discord) : null;
+        if (!conv) return origER.call(this, options, ...rest);
+        try {
+          if (this.__v2MsgId) {
+            const res = await this.webhook.editMessage(this.__v2MsgId, conv.payload);
+            attachEmbeds(res, conv.embeds); return res;
+          }
+          if (this.__v2Reply) {
+            const res = await origER.call(this, conv.payload, ...rest);
+            attachEmbeds(res, conv.embeds); return res;
+          }
+          if (this.deferred) {
+            const flags = conv.payload.flags | (this.ephemeral ? EPHEMERAL : 0);
+            const res = await this.followUp({ ...conv.payload, flags });
+            this.__v2MsgId = res && res.id; this.__v2Reply = true;
+            await this.deleteReply().catch(() => {});
+            attachEmbeds(res, conv.embeds); return res;
+          }
+        } catch (err) {
+          if (!isPayloadError(err)) throw err;
+          log(`V2 editReply reddedildi (${err.code || err.status}), orijinal gönderiliyor.`);
+        }
+        return origER.call(this, options, ...rest);
+      };
+      er.__v2wrapped = true;
+      erOwner.editReply = er;
+      restores.push(() => { erOwner.editReply = origER; });
+    }
   }
 
   // Okuma uyumluluğu: V2 mesaj alınınca gölge embed'i geri koy
