@@ -869,7 +869,8 @@ async function renderPanel(interaction, tabName, blacklistOption = '1') {
     components.push(navRow);
   }
 
-  if (!interaction.deferred && !interaction.replied) {
+  // deferUpdate yalnızca buton/menü etkileşimlerinde var; /panel gibi slash komutlarında yok.
+  if (!interaction.deferred && !interaction.replied && typeof interaction.deferUpdate === 'function') {
     await interaction.deferUpdate().catch(() => { });
   }
 
