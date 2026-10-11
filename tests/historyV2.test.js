@@ -43,7 +43,7 @@ describe('parseHistoryButtonId', () => {
 describe('günlük mesaj (Components V2)', () => {
   const base = { title: '📅 Tarihte Bugün – 9 Ekim', color: 0xdc143c, content: 'Metin', day: 9, month: 9 };
 
-  it('V2 bayrağı, accent renk, fotoğraf ve 4 buton bölümü içerir; embed kullanmaz', () => {
+  it('V2 bayrağı, accent renk, fotoğraf ve tek satırda 4 kompakt düğme içerir; embed kullanmaz', () => {
     const p = buildDailyPayload({ ...base, photo: { url: 'https://x.test/a.jpg', title: 'Atatürk', source: 'Wikimedia Commons' } });
     assert.equal(p.flags, V2);
     assert.equal(p.embeds, undefined);
@@ -53,7 +53,8 @@ describe('günlük mesaj (Components V2)', () => {
     assert.equal(json.accent_color, 0xdc143c);
     const nodes = flat(p);
     assert.equal(nodes.filter((n) => n.type === 12).length, 1, 'fotoğraf galerisi');
-    assert.equal(nodes.filter((n) => n.type === 9).length, 4, '4 bölüm');
+    assert.equal(nodes.filter((n) => n.type === 9).length, 0, 'bölüm yok');
+    assert.equal(nodes.filter((n) => n.type === 1).length, 1, 'tek satır');
     const buttons = nodes.filter((n) => n.type === 2).map((b) => b.custom_id);
     assert.deepEqual(buttons, ['tb_detail_ataturk_9_9', 'tb_detail_science_9_9', 'tb_detail_trivia_9_9', 'tb_random_quote_9_9']);
     for (const id of buttons) assert.ok(parseHistoryButtonId(id), `${id} çözülebilmeli`);
