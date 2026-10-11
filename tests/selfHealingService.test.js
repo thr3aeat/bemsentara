@@ -151,3 +151,73 @@ describe('selfHealingService', () => {
     assert.equal(sup.getStatus()[0].status, 'ok');
   });
 });
+
+// ── Portu tutan eski HA yedek süreci ──
+const { evictStaleStandby } = require('../bot/services/selfHealingService');
+
+describe('evictStaleStandby', () => {
+  const standbyBody = JSON.stringify({ status: 'standby', mode: 'standby', node: 'vds' });
+  const base = (over = {}) => {
+    const killed = [];
+    return {
+      killed,
+      deps: {
+        getHealth: async () => standbyBody,
+        findPids: () => [4242],
+        readCmdline: () => 'node /home/ubuntu/bemsentara/haBoot.js',
+        kill: (pid) => killed.push(pid),
+        waitMs: 0,
+        ...over
+      }
+    };
+  };
+
+  it('kills only a node haBoot/index.js process that reports standby', async () => {
+    const { deps, killed } = base();
+    assert.deepEqual(await evictStaleStandby(3000, deps), [4242]);
+    assert.deepEqual(killed, [4242]);
+  });
+
+  it('leaves the port holder alone when it is not a standby', async () => {
+    for (const body of ['{"status":"ok"}', '<html>nginx</html>', '']) {
+      const { deps, killed } = base({ getHealth: async () => body });
+      assert.deepEqual(await evictStaleStandby(3000, deps), []);
+      assert.deepEqual(killed, []);
+    }
+  });
+
+  it('never kills unrelated processes or itself', async () => {
+    const { deps, killed } = base({
+      findPids: () => [process.pid, 1, 77],
+      readCmdline: (pid) => (pid === 77 ? 'python3 server.py' : 'node haBoot.js')
+    });
+    assert.deepEqual(await evictStaleStandby(3000, deps), [1]);
+    assert.deepEqual(killed, [1]);
+  });
+
+  it('end-to-end: supervisor evicts a real stale standby and takes the port', async () => {
+    const { spawn } = require('child_process');
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'standby-'));
+    const script = path.join(dir, 'haBoot.js');
+    fs.writeFileSync(script, `require('http').createServer((q, r) => { r.statusCode = q.url.startsWith('/api/health') ? 200 : 503; r.end(JSON.stringify({ status: 'standby', mode: 'standby', node: 't' })); }).listen(+process.argv[2], () => console.log('up'));`);
+    const port = 39000 + Math.floor(Math.random() * 500);
+    const child = spawn(process.execPath, [script, String(port)], { stdio: ['ignore', 'pipe', 'ignore'] });
+    await new Promise((r) => child.stdout.once('data', r));
+
+    const server = http.createServer((req, res) => res.end('app'));
+    const sup = createSupervisor(FAST);
+    sup.registerWeb(server, { port, evictDeps: { waitMs: 300 } });
+    try {
+      for (let i = 0; i < 40 && !server.listening; i++) { await sup.tick(); await new Promise((r) => setTimeout(r, 50)); }
+      assert.ok(server.listening, 'uygulama portu devralmalı');
+      assert.ok(child.exitCode !== null || child.signalCode !== null, 'eski yedek süreç kapanmalı');
+    } finally {
+      sup.stop();
+      server.close();
+      if (child.exitCode === null) child.kill('SIGKILL');
+    }
+  });
+});
