@@ -24,7 +24,7 @@ describe('convertPayload', () => {
     const [first, container, buttons] = payload.components;
     assert.deepEqual([first.type, container.type, buttons.type], [10, 17, 1]);
     assert.equal(first.content, 'Merhaba');
-    assert.equal(container.accent_color, 0xff0000);
+    assert.equal(container.accent_color, undefined, 'accent rengi yok');
     const t = texts(container.components).join('\n');
     for (const s of ['-# Yazar', '### [Başlık](https://x.test)', 'Açıklama', '**A**\n1', '**B**\n2', '-# Altbilgi • <t:1767225600:f>']) assert.ok(t.includes(s), s);
     assert.ok(types(container.components).includes(12), 'görsel galerisi');
@@ -147,6 +147,13 @@ describe('install (gerçek discord.js sınıfları)', () => {
     assert.equal(msg.embeds[0].title, 'Kayıtlı');
     assert.equal(msg.embeds[0].fields[0].value, '42');
     client.destroy();
+  });
+
+  it('kodun kendi V2 mesajındaki accent rengi gönderimde silinir', async () => {
+    const ch = Object.create(discord.DMChannel.prototype);
+    await ch.send({ flags: V2, components: [new discord.ContainerBuilder().setAccentColor(0xdc143c).addTextDisplayComponents(new discord.TextDisplayBuilder().setContent('x'))] });
+    const c = calls.at(-1)[1].components[0];
+    assert.equal((c.toJSON ? c.toJSON() : c).accent_color, undefined);
   });
 
   it('EMBED_V2=0 ile hiçbir şey kurulmaz', () => {

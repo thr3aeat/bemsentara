@@ -94,7 +94,6 @@ function embedToContainer(e, budget) {
 
   if (!comps.length) return null;
   const container = { type: 17, components: comps };
-  if (typeof e.color === 'number') container.accent_color = e.color;
   return container;
 }
 
@@ -132,6 +131,24 @@ function convertPayload(opts, discord = require('discord.js')) {
   delete payload.content;
   delete payload.ephemeral;
   return { payload, embeds };
+}
+
+// Tüm V2 container'lardan accent rengini kaldır (tasarım kararı: accent'siz).
+function stripAccent(opts) {
+  if (!opts || typeof opts !== 'object' || !Array.isArray(opts.components)) return opts;
+  let changed = false;
+  const clean = (c) => {
+    const j = toJSON(c);
+    if (!j || typeof j !== 'object') return c;
+    if (j.type === 17 && j.accent_color !== undefined && j.accent_color !== null) {
+      changed = true;
+      const { accent_color, ...rest } = j; // eslint-disable-line no-unused-vars
+      return rest;
+    }
+    return c;
+  };
+  const components = opts.components.map(clean);
+  return changed ? { ...opts, components } : opts;
 }
 
 // ── Gölge embed deposu (eski kodun message.embeds okuyabilmesi için) ─────────────────────────
@@ -187,6 +204,7 @@ function install(discord = require('discord.js'), { log = (m) => console.warn(`[
     if (!owner || typeof owner[name] !== 'function' || owner[name].__v2wrapped) return;
     const orig = owner[name];
     const wrapped = async function (options, ...rest) {
+      try { options = stripAccent(options); } catch (_) { /* yoksay */ }
       let conv = null;
       try { if (shouldConvert(this, options)) conv = convertPayload(options, discord); } catch (_) { conv = null; }
       if (!conv) return orig.call(this, options, ...rest);
@@ -258,4 +276,4 @@ function install(discord = require('discord.js'), { log = (m) => console.warn(`[
   return () => { while (restores.length) restores.pop()(); };
 }
 
-module.exports = { install, convertPayload, embedToContainer, shadow, V2 };
+module.exports = { install, convertPayload, embedToContainer, stripAccent, shadow, V2 };
