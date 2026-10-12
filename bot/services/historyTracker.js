@@ -39,7 +39,22 @@ function recordPostedDate(key, dateStr) {
   writeTracker(tracker);
 }
 
+// Süreçler arası tekil kilit: aynı gün için yalnızca ilk talep eden süreç paylaşır
+// (çift PM2 süreci / yeniden başlatma yarışında iki mesaj gitmesini önler).
+function claimDate(key, dateStr) {
+  if (!dateStr) return false;
+  const lock = path.join(path.dirname(TRACKER_PATH), `history_claim_${key}_${dateStr}.lock`);
+  try {
+    fs.mkdirSync(path.dirname(lock), { recursive: true });
+    fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });
+    return () => { try { fs.unlinkSync(lock); } catch (_) {} };
+  } catch (_) {
+    return false;
+  }
+}
+
 module.exports = {
+  claimDate,
   hasPostedDate,
   recordPostedDate
 };

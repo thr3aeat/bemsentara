@@ -89,7 +89,7 @@ const divider = (container, spacing = SeparatorSpacingSize.Small) =>
  *          photo?:{url:string,title?:string,source?:string}|null, day:number, month:number}} o
  */
 function buildDailyPayload({ title, color, content, specialField = null, photo = null, day, month }) {
-  const container = new ContainerBuilder().setAccentColor(color);
+  const container = new ContainerBuilder();
 
   if (photo && photo.url) {
     container.addMediaGalleryComponents(
@@ -145,7 +145,7 @@ function navRow(activeKey, day, month, { disableAll = false } = {}) {
 /** Buton cevabı: içerik + aynı mesajda gezinme butonları. */
 function buildDetailPayload({ viewKey, day, month, body }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(v.color);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, capText(body, 3400));
   divider(container);
@@ -157,7 +157,7 @@ function buildDetailPayload({ viewKey, day, month, body }) {
 /** Yapay zeka yanıtı beklenirken gösterilen geçici durum. */
 function buildLoadingPayload({ viewKey, day, month }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(v.color);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, '⏳ Hazırlanıyor, birkaç saniye sürebilir…');
   container.addActionRowComponents(navRow(viewKey, day, month, { disableAll: true }));
@@ -167,7 +167,7 @@ function buildLoadingPayload({ viewKey, day, month }) {
 /** Yapay zeka alınamadığında: hata + başka başlıklara geçiş / yeniden deneme. */
 function buildErrorPayload({ viewKey, day, month }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(0xef4444);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, 'Bu bilgi şu anda hazırlanamadı. Birkaç saniye sonra aşağıdan yeniden deneyebilirsin.');
   container.addActionRowComponents(

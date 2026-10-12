@@ -6,7 +6,7 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
-const { hasPostedDate, recordPostedDate } = require("./historyTracker");
+const { hasPostedDate, recordPostedDate, claimDate } = require("./historyTracker");
 
 const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1518692463177498674";
 
@@ -108,8 +108,14 @@ async function checkAndCatchUpEkoYildizHistory(client) {
         return;
       }
 
+      const release = claimDate('ekoYildiz', trDateStr);
+      if (!release) {
+        lastPostedDateTR = trDateStr;
+        return;
+      }
       console.log(`🕒 [EkoYildizHistoryAI] ${dateHeaderStr} için Tarihte Bugün paylaşımı başlatılıyor...`);
       const success = await postEkoYildizHistory(client);
+      if (!success) release();
       if (success) {
         lastPostedDateTR = trDateStr;
         recordPostedDate('ekoYildiz', trDateStr);
