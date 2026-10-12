@@ -1,4 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { hasStaffRoleInGuild } = require('../utils/staffRoleGate');
 const StaffProgress = require('../../models/StaffProgress');
 
 async function sendPush(userId, client, { emoji = '🔔', title = 'Sentara OS', body = '', actionLabel = null, actionCustomId = null, ephemeral = false }) {
@@ -37,6 +38,7 @@ async function broadcastToActiveStaff(client, payloadFactory) {
     let sent = 0;
     for (const s of staff) {
       if (s.settings && s.settings.notificationsEnabled === false) continue;
+      if (!(await hasStaffRoleInGuild(client, s.userId))) continue; // yetkili rolü alınmışsa DM yok
       const payload = await payloadFactory(s);
       if (!payload) continue;
       const ok = await sendPush(s.userId, client, payload);

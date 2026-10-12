@@ -43,14 +43,7 @@ const CHOSEN_TASKS = {
   'task_chat_with_people': '💬 Sohbet Dostu: Sohbette insanlarla aktif olarak 20 mesaj yazış.'
 };
 
-const ROLES = {
-  1: process.env.ROLE_STAJYER || '1518692395774906648', // Stajyer Personel
-  2: process.env.ROLE_PERSONEL || '1518692394495643830', // Personel
-  3: process.env.ROLE_GELISMIS || '1518692393660973186', // Kıdemli Personel
-  4: process.env.ROLE_SEKRETER || '1518692392415395971', // Sekreter
-  5: '1518709348506013706',                             // Kıdemli Sekreter
-  6: '1518692391312298045',                             // Genel Koordinatör
-};
+const { STAFF_RANK_ROLES: ROLES, hasStaffRoleInGuild } = require('../utils/staffRoleGate');
 
 const ROLE_NAMES = {
   1: '🎓 Stajyer Personel',
@@ -426,6 +419,9 @@ async function syncAndFilterActiveStaff(allProgress, client) {
     if (u && (u.isStaff === false || u.isLeft === true || u.modStatus === 'dismissed' || u.modStatus === 'resigned')) {
       continue;
     }
+
+    // Discord'da yetkili rolü alınmışsa (veritabanı hâlâ 'active' olsa bile) moderatör DM'i gönderme
+    if (client && !(await hasStaffRoleInGuild(client, p.userId))) continue;
 
     filtered.push(p);
   }
@@ -6956,6 +6952,7 @@ async function claimV7VersionReward(userId) {
 }
 
 module.exports = {
+  syncAndFilterActiveStaff,
   getOrCreate,
   isPromotionEligible,
 

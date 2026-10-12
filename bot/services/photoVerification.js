@@ -27,7 +27,7 @@ async function getActiveModerators(guild) {
     const activeMods = [];
     for (const staffId of activeStaffIds) {
       const member = guild.members.cache.get(staffId);
-      if (member) {
+      if (member && require('../utils/staffRoleGate').memberHasStaffRole(member)) {
         const presence = member.presence;
         const isOnline = presence && ['online', 'idle', 'dnd'].includes(presence.status);
         if (isOnline) {
