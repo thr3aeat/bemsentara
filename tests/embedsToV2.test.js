@@ -168,3 +168,10 @@ describe('install (gerçek discord.js sınıfları)', () => {
     try { assert.equal(typeof install(discord), 'function'); } finally { delete process.env.EMBED_V2; }
   });
 });
+
+it('V2 metnine dönen embed etiketleri kimseyi bildirmez; content etiketleri korunur', () => {
+  const r = convertPayload({ content: '<@111111111111111111>', embeds: [{ description: '<@222222222222222222> <@&333333333333333333> @everyone' }] });
+  assert.deepEqual(r.payload.allowedMentions, { parse: [], users: ['111111111111111111'], roles: [], repliedUser: true });
+  const q = convertPayload({ content: '<@111111111111111111>', allowedMentions: { parse: [] }, embeds: [{ description: 'x' }] });
+  assert.deepEqual(q.payload.allowedMentions.users, []);
+});

@@ -100,6 +100,24 @@ function embedToContainer(e, budget) {
 /**
  * @returns {{payload: object, embeds: object[]} | null} çevrilemiyorsa/gerekmiyorsa null
  */
+// Embed içindeki etiketler kimseyi bildirmez; V2 metninde bildirir. Bu yüzden
+// yalnızca orijinal `content` içinde zaten bildirim alacak olanlara izin verilir.
+function contentMentions(opts) {
+  const content = typeof opts.content === 'string' ? opts.content : '';
+  const am = opts.allowedMentions || {};
+  const parse = Array.isArray(am.parse) ? am.parse : (opts.allowedMentions ? [] : ['users', 'roles']);
+  const pick = (re, list, kind) => {
+    const ids = [...new Set([...content.matchAll(re)].map((m) => m[1]))];
+    return ids.filter((id) => (Array.isArray(list) ? list.includes(id) : parse.includes(kind)));
+  };
+  return {
+    parse: [],
+    users: pick(/<@!?(\d{15,21})>/g, am.users, 'users'),
+    roles: pick(/<@&(\d{15,21})>/g, am.roles, 'roles'),
+    repliedUser: am.repliedUser !== false
+  };
+}
+
 function convertPayload(opts, discord = require('discord.js')) {
   if (!opts || typeof opts !== 'object' || Array.isArray(opts)) return null;
   if (discord.MessagePayload && opts instanceof discord.MessagePayload) return null;
@@ -130,6 +148,7 @@ function convertPayload(opts, discord = require('discord.js')) {
   delete payload.embeds;
   delete payload.content;
   delete payload.ephemeral;
+  payload.allowedMentions = contentMentions(opts);
   return { payload, embeds };
 }
 
