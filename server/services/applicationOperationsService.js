@@ -99,6 +99,7 @@ function detail(record, normalizer) {
       id: interviewId,
       interviewId: interviewId,
       interviewer: record.interviewer || 'EkoYıldız People & Community',
+      interviewerDiscordId: record.interviewerDiscordId || null,
       scheduledTime: record.interviewScheduledTime || null,
       timeApproved: Boolean(record.interviewTimeApproved),
       estimatedDuration: record.estimatedDuration || '20–30 dakika',
@@ -114,6 +115,9 @@ function detail(record, normalizer) {
       interviewTrackLabel: record.interviewTrackLabel || (record.interviewTrack === 'VAKA_KRIZ' ? 'Vaka & Kriz Simülasyonu' : record.interviewTrack === 'TEKNIK_GOREV' ? 'Teknik & Görev Parkuru' : record.interviewTrack === 'PANEL_MULAKAT' ? 'Çoklu Panel Mülakatı' : 'Birebir Sesli Mülakat'),
       focusAreas: Array.isArray(record.interviewFocusAreas) ? record.interviewFocusAreas : (record.interviewFocusAreas ? String(record.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean) : ['İletişim & Diksiyon', 'Kriz Çözme', 'Rol ve Kural Hakimiyeti']),
       difficulty: record.interviewDifficulty || 'Standart',
+      interviewLanguage: record.interviewLanguage || 'Türkçe',
+      interviewerCount: record.interviewerCount || '1 — Tekli Görüşmeci',
+      prepMaterialUrl: record.prepMaterialUrl || null,
       candidateInstructions: record.candidateInstructions || null,
       aiGuide: record.aiInterviewGuide || null
     },
@@ -290,8 +294,21 @@ function transition(record, action, payload, actor) {
           : String(payload.interviewFocusAreas).split(',').map(s => s.trim()).filter(Boolean);
       }
       if (payload.interviewDifficulty) patch.interviewDifficulty = text(payload.interviewDifficulty, 50);
-      if (payload.candidateInstructions) patch.candidateInstructions = text(payload.candidateInstructions, 1000);
-      if (payload.gameLink || payload.robloxGameLink) patch.robloxGameLink = text(payload.gameLink || payload.robloxGameLink, 300);
+      if (payload.interviewMethod || payload.interviewMethod === '') patch.interviewMethod = text(payload.interviewMethod, 100);
+      if (payload.estimatedDuration) patch.estimatedDuration = text(payload.estimatedDuration, 60);
+      if (payload.interviewLanguage) patch.interviewLanguage = text(payload.interviewLanguage, 60);
+      if (payload.interviewerCount) patch.interviewerCount = text(payload.interviewerCount, 60);
+      if (payload.interviewerDiscordId !== undefined) patch.interviewerDiscordId = text(payload.interviewerDiscordId || '', 30);
+      if (payload.candidateDiscordId !== undefined && text(payload.candidateDiscordId, 30)) {
+        patch.targetDiscordId = text(payload.candidateDiscordId, 30);
+        patch.discordId = text(payload.candidateDiscordId, 30);
+      }
+      // gameLink: boş string olsa bile kaydet
+      if (payload.gameLink !== undefined) patch.robloxGameLink = text(payload.gameLink || '', 300);
+      if (payload.robloxGameLink !== undefined) patch.robloxGameLink = text(payload.robloxGameLink || '', 300);
+      if (payload.prepMaterialUrl !== undefined) patch.prepMaterialUrl = text(payload.prepMaterialUrl || '', 500);
+      // candidateInstructions: boş string da kaydet
+      if (payload.candidateInstructions !== undefined) patch.candidateInstructions = text(payload.candidateInstructions || '', 1000);
       if (payload.scheduledTime) patch.interviewScheduledTime = text(payload.scheduledTime, 160);
       break;
 

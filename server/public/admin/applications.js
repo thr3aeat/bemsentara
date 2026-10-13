@@ -283,24 +283,30 @@
 
   function renderInterviewOptionsForm() {
     const section = element('section', 'appops-section appops-interview-options');
-    section.append(element('h3', '', '⚙️ Mülakat Parkuru ve Değerlendirme Seçenekleri'));
-    const subNotice = element('p', 'appops-internal-notice', 'Mülakata almadan önce parkuru, odak kriterlerini ve adaya iletilecek direktifleri belirleyin.');
+    const sHead = element('div', 'appops-section-head');
+    sHead.append(element('h3', '', '⚙️ Mülakat Ayarları ve Değerlendirme Seçenekleri'));
+    section.append(sHead);
+    const subNotice = element('p', 'appops-internal-notice', 'Adayı mülakata almadan önce tüm alanları doldurun. Değişiklikler aday portalına yansır.');
     section.append(subNotice);
 
     const formWrapper = element('div', 'appops-eval-form');
 
-    // 1. Interview Track
+    // 1. Interview Track (genişletildi)
     const trackRow = element('div', 'appops-eval-row');
     trackRow.append(element('label', '', 'Mülakat Formatı & Parkuru'));
     const trackSel = element('select', 'appops-eval-select');
     const tracks = [
-      { id: 'SESLI_BIREBIR', name: '🎙️ Birebir Sesli Mülakat (Discord Voice)' },
-      { id: 'VAKA_KRIZ', name: '🧠 Vaka & Kriz Simülasyonu (Roleplay Senaryo Analizi)' },
-      { id: 'TEKNIK_GOREV', name: '💻 Teknik & Görev Parkuru (Uygulamalı Görev)' },
-      { id: 'PANEL_MULAKAT', name: '👥 Çoklu Kurul & Panel Mülakatı' }
+      { id: 'SESLI_BIREBIR', label: 'Birebir Sesli Mülakat (Discord Voice)' },
+      { id: 'VAKA_KRIZ', label: 'Vaka & Kriz Simülasyonu (Senaryo Analizi)' },
+      { id: 'TEKNIK_GOREV', label: 'Teknik & Görev Parkuru (Uygulamalı)' },
+      { id: 'PANEL_MULAKAT', label: 'Çoklu Kurul & Panel Mülakatı' },
+      { id: 'ASYNC_VIDEO', label: 'Asenkron Video Mülakat (Kayıt Gönder)' },
+      { id: 'YAZILI_SINAV', label: 'Yazılı Sınav & Essay Değerlendirmesi' },
+      { id: 'PROJE_ODEVI', label: 'Proje Ödevi & Portfolio İncelemesi' },
+      { id: 'HIZLI_ELEME', label: 'Hızlı Eleme (5 Dakika Kısa Değerlendirme)' }
     ];
     tracks.forEach((t) => {
-      const opt = element('option', '', t.name);
+      const opt = element('option', '', `${t.label}`);
       opt.value = t.id;
       if (selectedDetail.interview?.interviewTrack === t.id) opt.selected = true;
       trackSel.append(opt);
@@ -308,20 +314,90 @@
     trackRow.append(trackSel);
     formWrapper.append(trackRow);
 
-    // 2. Difficulty
+    // 2. Platform/Method
+    const platformRow = element('div', 'appops-eval-row');
+    platformRow.append(element('label', '', 'Mülakat Platformu & Yöntemi'));
+    const platformSel = element('select', 'appops-eval-select');
+    const platforms = [
+      'Discord (Sesli Kanal)',
+      'Discord (Video + Ses)',
+      'Roblox In-Game',
+      'Google Meet',
+      'Zoom',
+      'WhatsApp Sesli Arama',
+      'Metin Tabanlı (Discord DM / Forum)',
+      'E-posta ile Asenkron'
+    ];
+    platforms.forEach((p) => {
+      const opt = element('option', '', p);
+      opt.value = p;
+      if ((selectedDetail.interview?.method || 'Discord') === p) opt.selected = true;
+      platformSel.append(opt);
+    });
+    platformRow.append(platformSel);
+    formWrapper.append(platformRow);
+
+    // 3. Duration
+    const durRow = element('div', 'appops-eval-row');
+    durRow.append(element('label', '', 'Tahmini Süre'));
+    const durSel = element('select', 'appops-eval-select');
+    const durations = ['5–10 dakika', '10–15 dakika', '15–20 dakika', '20–30 dakika', '30–45 dakika', '45–60 dakika', '1 saatten fazla'];
+    durations.forEach((d) => {
+      const opt = element('option', '', d);
+      opt.value = d;
+      if ((selectedDetail.interview?.estimatedDuration || '20–30 dakika') === d) opt.selected = true;
+      durSel.append(opt);
+    });
+    durRow.append(durSel);
+    formWrapper.append(durRow);
+
+    // 4. Difficulty
     const diffRow = element('div', 'appops-eval-row');
     diffRow.append(element('label', '', 'Zorluk & Eşik Seviyesi'));
     const diffSel = element('select', 'appops-eval-select');
-    ['Standart', 'Zorlayıcı & Dinamik', 'Hızlı Eleme & Yüksek Eşik'].forEach((d) => {
+    const difficulties = [
+      'Açılış (Yumuşak Başlangıç)',
+      'Standart',
+      'Zorlayıcı & Dinamik',
+      'Hızlı Eleme & Yüksek Eşik',
+      'Stres Testi (Baskı Altında Değerlendirme)'
+    ];
+    difficulties.forEach((d) => {
       const opt = element('option', '', d);
       opt.value = d;
-      if (selectedDetail.interview?.difficulty === d) opt.selected = true;
+      if ((selectedDetail.interview?.difficulty || 'Standart') === d) opt.selected = true;
       diffSel.append(opt);
     });
     diffRow.append(diffSel);
     formWrapper.append(diffRow);
 
-    // 3. Focus areas
+    // 5. Language
+    const langRow = element('div', 'appops-eval-row');
+    langRow.append(element('label', '', 'Mülakat Dili'));
+    const langSel = element('select', 'appops-eval-select');
+    ['Türkçe', 'İngilizce', 'Türkçe + İngilizce (İkidilli)', 'Diğer'].forEach((l) => {
+      const opt = element('option', '', l);
+      opt.value = l;
+      if ((selectedDetail.interview?.interviewLanguage || 'Türkçe') === l) opt.selected = true;
+      langSel.append(opt);
+    });
+    langRow.append(langSel);
+    formWrapper.append(langRow);
+
+    // 6. Interviewer count
+    const countRow = element('div', 'appops-eval-row');
+    countRow.append(element('label', '', 'Görüşmeci Sayısı'));
+    const countSel = element('select', 'appops-eval-select');
+    ['1 — Tekli Görüşmeci', '2 — İkili Panel', '3 — Üçlü Kurul', '4+ — Tam Kurul'].forEach((c) => {
+      const opt = element('option', '', c);
+      opt.value = c;
+      if ((selectedDetail.interview?.interviewerCount || '1 — Tekli Görüşmeci') === c) opt.selected = true;
+      countSel.append(opt);
+    });
+    countRow.append(countSel);
+    formWrapper.append(countRow);
+
+    // 7. Focus areas
     const focusRow = element('div', 'appops-eval-row');
     focusRow.append(element('label', '', 'Değerlendirme Odak Alanları (Virgülle ayırın)'));
     const focusInput = element('input', 'appops-note-input');
@@ -329,51 +405,68 @@
       ? selectedDetail.interview.focusAreas.join(', ')
       : 'İletişim & Diksiyon, Kriz Çözme, Rol ve Kural Hakimiyeti';
     focusInput.value = currentFocus;
+    focusInput.placeholder = 'İletişim, Kriz Çözme, Rol Bilgisi, Teknik Yeterlilik…';
     focusRow.append(focusInput);
     formWrapper.append(focusRow);
 
-    // 4. Scheduled Time
+    // 8. Scheduled Time
     const timeRow = element('div', 'appops-eval-row');
-    timeRow.append(element('label', '', 'Planlanan Zaman (Tarih ve Saat)'));
+    timeRow.append(element('label', '', 'Planlanan Tarih ve Saat'));
     const timeInput = element('input', 'appops-note-input');
     timeInput.value = selectedDetail.interview?.scheduledTime || '';
     timeInput.placeholder = 'Örn: 4 Ekim 2026, 21:00';
     timeRow.append(timeInput);
     formWrapper.append(timeRow);
 
-    // 5. Game Link / Venue
+    // 9. Game Link
     const gameRow = element('div', 'appops-eval-row');
-    gameRow.append(element('label', '', 'Roblox / Mülakat Oyun Alanı Linki'));
+    gameRow.append(element('label', '', 'Roblox / Mülakat Ortamı Linki (opsiyonel)'));
     const gameInput = element('input', 'appops-note-input');
     gameInput.value = selectedDetail.interview?.gameLink || '';
-    gameInput.placeholder = 'https://www.roblox.com/games/...';
+    gameInput.placeholder = 'https://www.roblox.com/games/... veya Discord kanal linki';
     gameRow.append(gameInput);
     formWrapper.append(gameRow);
 
-    // 6. Candidate Instructions
+    // 10. Prep materials
+    const prepRow = element('div', 'appops-eval-row');
+    prepRow.append(element('label', '', 'Adaya Hazırlık Materyali / Link (opsiyonel)'));
+    const prepInput = element('input', 'appops-note-input');
+    prepInput.value = selectedDetail.interview?.prepMaterialUrl || '';
+    prepInput.placeholder = 'docs.google.com/... veya Notion/Discord mesaj linki';
+    prepRow.append(prepInput);
+    formWrapper.append(prepRow);
+
+    // 11. Candidate Instructions
     const instRow = element('div', 'appops-eval-row');
     instRow.append(element('label', '', 'Adaya İletilecek Özel Talimat & Hazırlık Notu'));
     const instArea = element('textarea', 'appops-eval-textarea');
+    instArea.style.minHeight = '110px';
     instArea.value = selectedDetail.interview?.candidateInstructions || '';
-    instArea.placeholder = 'Adayın portalında gösterilecek hazırlık tavsiyeleri ve özel talimatlar…';
+    instArea.placeholder = 'Adayın portalında gösterilecek hazırlık tavsiyeleri ve yönlendirmeler. Örn: "Lütfen mülakattan 5 dakika önce Discord Voice kanalına girin."';
     instRow.append(instArea);
     formWrapper.append(instRow);
 
     // Save button
-    const saveBtn = element('button', 'acc-btn is-positive', 'Mülakat Seçeneklerini Kaydet & Güncelle');
+    const saveBtn = element('button', 'acc-btn is-positive', '💾 Mülakat Ayarlarını Kaydet & Güncelle');
     saveBtn.type = 'button';
+    saveBtn.style.cssText = 'margin-top:8px;padding:12px 24px;font-size:0.9rem;width:100%;';
     saveBtn.addEventListener('click', async () => {
       saveBtn.disabled = true;
-      saveBtn.textContent = 'Kaydediliyor…';
+      saveBtn.textContent = '⏳ Kaydediliyor…';
       try {
-        const selectedTrackObj = tracks.find((t) => t.id === trackSel.value) || tracks[0];
+        const selectedTrack = tracks.find((t) => t.id === trackSel.value) || tracks[0];
         const payload = {
-          interviewTrack: trackSel.value,
-          interviewTrackLabel: selectedTrackObj.name.replace(/^[^\s]+\s*/, ''),
+          interviewTrack: selectedTrack.id,
+          interviewTrackLabel: selectedTrack.label,
+          interviewMethod: platformSel.value,
+          estimatedDuration: durSel.value,
           interviewDifficulty: diffSel.value,
+          interviewLanguage: langSel.value,
+          interviewerCount: countSel.value,
           interviewFocusAreas: focusInput.value.split(',').map((s) => s.trim()).filter(Boolean),
           scheduledTime: timeInput.value.trim(),
           gameLink: gameInput.value.trim(),
+          prepMaterialUrl: prepInput.value.trim(),
           candidateInstructions: instArea.value.trim()
         };
         const idempotencyKey = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -383,11 +476,11 @@
           body: JSON.stringify(payload)
         });
         await selectApplication(selectedId);
-        if (window.setGlobalNotice) window.setGlobalNotice('Mülakat seçenekleri başarıyla kaydedildi.', 'success');
+        if (window.setGlobalNotice) window.setGlobalNotice('✅ Mülakat ayarları başarıyla kaydedildi.', 'success');
       } catch (err) {
-        if (window.setGlobalNotice) window.setGlobalNotice(err.message, 'error');
+        if (window.setGlobalNotice) window.setGlobalNotice('❌ ' + err.message, 'error');
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Mülakat Seçeneklerini Kaydet & Güncelle';
+        saveBtn.textContent = '💾 Mülakat Ayarlarını Kaydet & Güncelle';
       }
     });
 
