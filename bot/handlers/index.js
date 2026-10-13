@@ -257,6 +257,7 @@ function initializeDiscordHandlers(client) {
     notifyAllStaffAboutV7(client).catch(() => { });
     startAtaturkHistoryScheduler(client);
     startEkoYildizHistoryScheduler(client);
+    require("../services/staleInstanceGuard").startStaleInstanceGuard(client);
     startYouTubeMilestoneScheduler(client);
 
     try {

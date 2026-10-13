@@ -13,7 +13,8 @@ test('platform chrome exposes Help and Safety as separate destinations', () => {
   const html = renderPlatformHeader({ user: null, activePath: '/safety', theme: 'dark' });
 
   assert.match(html, /href="\/help"/);
-  assert.match(html, /href="\/safety"/);
+  // Üst çubuk sade tutulur; Safety Center alt bilgide.
+  assert.match(require('../server/views/platformChrome').renderPlatformFooter(), /href="\/safety"/);
   assert.match(html, /aria-expanded="false"/);
   assert.match(html, /data-global-search-trigger/);
 });

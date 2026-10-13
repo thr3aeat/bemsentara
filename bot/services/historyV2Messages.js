@@ -15,7 +15,6 @@ const {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  SectionBuilder,
   MediaGalleryBuilder,
   MediaGalleryItemBuilder,
   ActionRowBuilder,
@@ -29,22 +28,22 @@ const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz'
 // Mevcut butonların customId'leriyle uyumlu kalır (eski mesajlardaki butonlar da çalışır).
 const VIEWS = {
   ataturk: {
-    action: 'detail_ataturk', emoji: '🏛️', label: 'Atatürk & Zaferler', hint: 'Bugünün askerî ve siyasi hikâyesi', color: 0xdc143c, style: ButtonStyle.Primary,
+    action: 'detail_ataturk', short: 'Atatürk', emoji: '🏛️', label: 'Atatürk & Zaferler', hint: 'Bugünün askerî ve siyasi hikâyesi', color: 0xdc143c, style: ButtonStyle.Primary,
     title: (d) => `🏛️ Gazi Mustafa Kemal Atatürk & Zaferler — ${d}`,
     prompt: (d) => `Tarih: ${d}. Gazi Mustafa Kemal Atatürk'ün bu tarihte (veya o dönemin bu günlerinde) aldığı askeri, siyasi kararlar, vizyoner stratejisi ve Türk milletine kazandırdığı devrimci mirası anlatan çok detaylı, akıcı, zengin 2 paragraf üret.`
   },
   science: {
-    action: 'detail_science', emoji: '🔬', label: 'Bilim & Keşifler', hint: 'Bilim, uzay ve teknoloji tarihi', color: 0x3b82f6, style: ButtonStyle.Secondary,
+    action: 'detail_science', short: 'Bilim', emoji: '🔬', label: 'Bilim & Keşifler', hint: 'Bilim, uzay ve teknoloji tarihi', color: 0x3b82f6, style: ButtonStyle.Secondary,
     title: (d) => `🔬 Bilim, Uzay & Keşif Tarihi — ${d}`,
     prompt: (d) => `Tarih: ${d}. Tarihte bugün dünya çapında gerçekleşmiş bilimsel buluşlar, uzay keşifleri, teknolojik icatlar ve tıp/sanat alanındaki çığır açan gelişmeleri detaylı ve akıcı bir şekilde anlatan zengin 2 paragraf yaz.`
   },
   trivia: {
-    action: 'detail_trivia', emoji: '💡', label: 'Tarihi Trivia', hint: 'Az bilinen şaşırtıcı anekdotlar', color: 0xf59e0b, style: ButtonStyle.Secondary,
+    action: 'detail_trivia', short: 'Trivia', emoji: '💡', label: 'Tarihi Trivia', hint: 'Az bilinen şaşırtıcı anekdotlar', color: 0xf59e0b, style: ButtonStyle.Secondary,
     title: (d) => `💡 Şaşırtıcı Tarihi Trivia & Anekdotlar — ${d}`,
     prompt: (d) => `Tarih: ${d}. Tarihte bugün yaşanmış veya bu döneme ait, çok az kişinin bildiği, son derece ilginç, şaşırtıcı ve merak uyandıran 3 adet tarihi anekdot/trivia bilgisi paylaş.`
   },
   quote: {
-    action: 'random_quote', emoji: '📜', label: 'Tarihi Vecize', hint: 'Günün ilham veren sözü', color: 0x8b5cf6, style: ButtonStyle.Secondary,
+    action: 'random_quote', short: 'Vecize', emoji: '📜', label: 'Tarihi Vecize', hint: 'Günün ilham veren sözü', color: 0x8b5cf6, style: ButtonStyle.Secondary,
     title: (d) => `📜 Tarihi Vecize ve Günün İlhamı — ${d}`,
     prompt: (d) => `Tarih: ${d}. Gazi Mustafa Kemal Atatürk ve tarihe yön vermiş büyük düşünürlerden, bugünün tarihsel anlamına ve milli mücadeleye uygun, derin anlamlı tarihi sözler ve kısa bir felsefi analiz paylaş.`
   }
@@ -90,7 +89,7 @@ const divider = (container, spacing = SeparatorSpacingSize.Small) =>
  *          photo?:{url:string,title?:string,source?:string}|null, day:number, month:number}} o
  */
 function buildDailyPayload({ title, color, content, specialField = null, photo = null, day, month }) {
-  const container = new ContainerBuilder().setAccentColor(color);
+  const container = new ContainerBuilder();
 
   if (photo && photo.url) {
     container.addMediaGalleryComponents(
@@ -109,17 +108,19 @@ function buildDailyPayload({ title, color, content, specialField = null, photo =
   }
 
   divider(container);
-  text(container, '**Daha fazlası için bir başlık seç**');
-  for (const key of VIEW_ORDER) {
-    const v = VIEWS[key];
-    container.addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${v.emoji} ${v.label}**\n${v.hint}`))
-        .setButtonAccessory(
-          new ButtonBuilder().setCustomId(`tb_${v.action}_${day}_${month}`).setLabel('Aç').setStyle(v.style)
-        )
-    );
-  }
+  // Tek satır kompakt düğmeler: telefonda bölüm düğmeleri metnin altına düşüp çok yer kaplıyordu.
+  container.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+      VIEW_ORDER.map((key) => {
+        const v = VIEWS[key];
+        return new ButtonBuilder()
+          .setCustomId(`tb_${v.action}_${day}_${month}`)
+          .setLabel(v.short)
+          .setEmoji(v.emoji)
+          .setStyle(ButtonStyle.Secondary);
+      })
+    )
+  );
 
   const source = photo && photo.source ? ` • Fotoğraf: ${photo.source}` : '';
   text(container, `-# ${DAILY_FOOTER}${source}`);
@@ -144,7 +145,7 @@ function navRow(activeKey, day, month, { disableAll = false } = {}) {
 /** Buton cevabı: içerik + aynı mesajda gezinme butonları. */
 function buildDetailPayload({ viewKey, day, month, body }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(v.color);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, capText(body, 3400));
   divider(container);
@@ -156,7 +157,7 @@ function buildDetailPayload({ viewKey, day, month, body }) {
 /** Yapay zeka yanıtı beklenirken gösterilen geçici durum. */
 function buildLoadingPayload({ viewKey, day, month }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(v.color);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, '⏳ Hazırlanıyor, birkaç saniye sürebilir…');
   container.addActionRowComponents(navRow(viewKey, day, month, { disableAll: true }));
@@ -166,7 +167,7 @@ function buildLoadingPayload({ viewKey, day, month }) {
 /** Yapay zeka alınamadığında: hata + başka başlıklara geçiş / yeniden deneme. */
 function buildErrorPayload({ viewKey, day, month }) {
   const v = VIEWS[viewKey];
-  const container = new ContainerBuilder().setAccentColor(0xef4444);
+  const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, 'Bu bilgi şu anda hazırlanamadı. Birkaç saniye sonra aşağıdan yeniden deneyebilirsin.');
   container.addActionRowComponents(

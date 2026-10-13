@@ -13,7 +13,7 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
-const { hasPostedDate, recordPostedDate } = require("./historyTracker");
+const { hasPostedDate, recordPostedDate, claimDate } = require("./historyTracker");
 
 const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
@@ -99,7 +99,13 @@ async function checkAndCatchUpAtaturkHistory(client) {
       return;
     }
 
+    const release = claimDate('ataturk', trDateStr);
+    if (!release) {
+      lastPostedDateTR = trDateStr;
+      return;
+    }
     const success = await postAtaturkHistory(client);
+    if (!success) release();
     if (success) {
       lastPostedDateTR = trDateStr;
       recordPostedDate('ataturk', trDateStr);

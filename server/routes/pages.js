@@ -40,6 +40,7 @@ const { renderStaffAcademyPage } = require("../views/staffAcademyPage");
 const { renderAdvertisingLandingPage } = require("../views/advertisingLandingPage");
 const { renderAtaturkExhibitionPage } = require("../views/ataturkExhibitionPage");
 const { getDailyPhoto } = require("../services/ataturkImageService");
+const { mediaService } = require("../services/ataturkMediaService");
 const { renderItirazMerkeziPage } = require("../views/itirazMerkeziPage");
 const { getDiscordClient } = require("../../bot/discordClient");
 const { renderLinksHubPage } = require("../views/linksHubPage");
@@ -91,9 +92,18 @@ router.post("/api/automod/appeal", async (req, res) => {
   }
 });
 
-router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
-
-router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
+router.get("/linkler", async (req, res) => {
+  const avatarUrl = await require("../services/linksAvatarService").getLinksAvatar().catch(() => null);
+  res.send(renderLinksHubPage(req.user, { avatarUrl }));
+});
+router.get("/ekip", async (req, res) => {
+  const { renderTeamPage, TEAM } = require("../views/teamPage");
+  const avatars = await require("../services/memberAvatarService").getAvatars(TEAM.map((m) => m.discord)).catch(() => ({}));
+  res.send(renderTeamPage(req.user, { avatars }));
+});
+router.get("/team", (req, res) => res.redirect("/ekip"));
+router.get("/harita", (req, res) => res.send(require("../views/siteMapPage").renderSiteMapPage(req.user)));
+router.get(["/sitemap", "/icindekiler"], (req, res) => res.redirect("/harita"));
 router.get("/links", (req, res) => res.redirect("/linkler"));
 router.get("/bio", (req, res) => res.redirect("/linkler"));
 router.get("/eko", (req, res) => res.redirect("/linkler"));
@@ -154,6 +164,14 @@ router.get("/reklam", (req, res) => res.redirect("/reklam/ekoyildiz-ortaklik"));
 router.get("/reklam/ekoyildiz-ortaklik", (req, res) => res.send(renderAdvertisingLandingPage(req.user)));
 router.get("/ataturk", (req, res) => res.send(renderAtaturkExhibitionPage(req.user)));
 router.get("/atamiz", (req, res) => res.redirect("/ataturk"));
+router.get("/api/ataturk/media", async (req, res) => {
+  try {
+    res.set("Cache-Control", "public, max-age=900");
+    res.json(await mediaService.getMedia());
+  } catch (err) {
+    res.status(502).json({ error: "Medya alınamadı" });
+  }
+});
 router.get("/api/ataturk/daily", async (req, res) => {
   try {
     res.set("Cache-Control", "public, max-age=900");

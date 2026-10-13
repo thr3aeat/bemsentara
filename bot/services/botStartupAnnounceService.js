@@ -5,8 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { EmbedBuilder } = require('discord.js');
-const ComponentsV2Factory = require('../utils/componentsV2Factory');
 const logger = require('../../utils/logger');
+const { postDailyFriendlyNote } = require('./dailyUpdateNoteService');
 
 const ANNOUNCE_CHANNEL_ID = '1553530701926629539';
 const SHORT_ANNOUNCE_CHANNEL_ID = '1518705723184386198';
@@ -132,6 +132,61 @@ async function alreadyAnnouncedInChannel(channel, commitHash, botId) {
 }
 
 /**
+ * Teknik sürüm raporu (yalnızca yeni bir commit yayına alındığında, ayrı duyuru kanalına).
+ */
+async function sendTechnicalReport({ discordClient, channel, gitMeta }) {
+  const pid = process.pid;
+
+  logger.info(`[StartupAnnounce] Sürüm analizi yapılıyor (v${gitMeta.version} - ${gitMeta.commitHash})...`);
+  const aiAnalysis = await generateAiChangelog(gitMeta);
+
+  const changedFilesText = gitMeta.changedFiles.length > 0
+    ? '```diff\n' + gitMeta.changedFiles.slice(0, 10).map(f => {
+        if (f.startsWith('A')) return '+ ' + f.slice(2);
+        if (f.startsWith('M')) return '! ' + f.slice(2);
+        if (f.startsWith('D')) return '- ' + f.slice(2);
+        return '• ' + f;
+      }).join('\n') + (gitMeta.changedFiles.length > 10 ? `\n... (+${gitMeta.changedFiles.length - 10} dosya daha)` : '') + '\n```'
+    : '`Değişiklik listesi derlenemedi`';
+
+  const memoryMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
+  const nodeVer = process.version;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x8b5cf6)
+    .setAuthor({
+      name: 'EkoYıldız Bot · Canlıya Alma & Sürüm Raporu',
+      iconURL: discordClient.user.displayAvatarURL()
+    })
+    .setTitle(`🚀 Bot Yeniden Başlatıldı · v${gitMeta.version} [${gitMeta.commitHash}]`)
+    .setDescription(aiAnalysis.length > 4000 ? aiAnalysis.slice(0, 3950) + '...' : aiAnalysis)
+    .addFields(
+      {
+        name: '📌 Son Değişiklik / Commit (Neden Yapıldı)',
+        value: `**${gitMeta.commitMessage}**\n*Geliştirici:* ${gitMeta.author} • *Zaman:* ${gitMeta.date}`,
+        inline: false
+      },
+      {
+        name: `📂 Etkilenen Dosyalar (${gitMeta.changedFiles.length})`,
+        value: changedFilesText,
+        inline: false
+      },
+      {
+        name: '⚙️ Çalışma Ortamı & Sistem Durumu',
+        value: `🟢 **PID:** \`${pid}\` • 🧠 **Bellek (RAM):** \`${memoryMb} MB\` • ⚡ **Node:** \`${nodeVer}\` • 🖥️ **Platform:** \`${process.platform}\``,
+        inline: false
+      }
+    )
+    .setFooter({
+      text: `EkoYıldız Otomatik Sürüm Denetleyicisi & AI Service • ${new Date().toLocaleTimeString('tr-TR')}`
+    })
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] });
+  logger.success(`[StartupAnnounce] ✅ Başlatma sürüm raporu ${ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
+}
+
+/**
  * Bot başladığında hedef kanala versiyon, değişiklikler ve AI analizi gönderir.
  */
 async function announceBotStartup(discordClient) {
@@ -149,105 +204,30 @@ async function announceBotStartup(discordClient) {
 
     const gitMeta = getGitMetadata();
 
-    // Her yeniden başlatmada değil, yalnızca yeni bir commit yayına alındığında duyur.
-    if (gitMeta.commitHash && gitMeta.commitHash !== 'unknown') {
-      await new Promise(r => setTimeout(r, 500 + Math.random() * 4000)); // eşzamanlı süreçleri dağıt
-      if (!claimAnnouncement(gitMeta.commitHash)) {
-        logger.info(`[StartupAnnounce] ${gitMeta.commitHash} başka bir süreç tarafından duyuruldu, atlanıyor.`);
-        return;
-      }
-      const botId = discordClient.user && discordClient.user.id;
-      const [dup1, dup2] = await Promise.all([
-        alreadyAnnouncedInChannel(channel, gitMeta.commitHash, botId),
-        discordClient.channels.fetch(SHORT_ANNOUNCE_CHANNEL_ID).catch(() => null)
-          .then(ch => (ch ? alreadyAnnouncedInChannel(ch, gitMeta.commitHash, botId) : false))
-      ]);
-      if (dup1 && dup2) {
-        logger.info(`[StartupAnnounce] ${gitMeta.commitHash} kanallarda zaten duyurulmuş, atlanıyor.`);
-        return;
-      }
+    const botId = discordClient.user && discordClient.user.id;
+    const known = gitMeta.commitHash && gitMeta.commitHash !== 'unknown';
+    if (known) await new Promise(r => setTimeout(r, 500 + Math.random() * 4000)); // eşzamanlı süreçleri dağıt
+    const restartTimestamp = new Date().toISOString();
+
+    // 1. Teknik sürüm raporu: yeniden başlatmada değil, yalnızca yeni bir commit yayına alındığında.
+    const reportAlreadySent = known && (!claimAnnouncement(gitMeta.commitHash)
+      || await alreadyAnnouncedInChannel(channel, gitMeta.commitHash, botId));
+    if (reportAlreadySent) {
+      logger.info(`[StartupAnnounce] ${gitMeta.commitHash} için sürüm raporu zaten gönderilmiş, atlanıyor.`);
+    } else {
+      await sendTechnicalReport({ discordClient, channel, gitMeta });
     }
 
-    // Prevent duplicate spam on rapid gateway reconnects without new process start
-    const restartTimestamp = new Date().toISOString();
-    const pid = process.pid;
-
-    logger.info(`[StartupAnnounce] Sürüm analizi yapılıyor (v${gitMeta.version} - ${gitMeta.commitHash})...`);
-    const aiAnalysis = await generateAiChangelog(gitMeta);
-
-    const changedFilesText = gitMeta.changedFiles.length > 0
-      ? '```diff\n' + gitMeta.changedFiles.slice(0, 10).map(f => {
-          if (f.startsWith('A')) return '+ ' + f.slice(2);
-          if (f.startsWith('M')) return '! ' + f.slice(2);
-          if (f.startsWith('D')) return '- ' + f.slice(2);
-          return '• ' + f;
-        }).join('\n') + (gitMeta.changedFiles.length > 10 ? `\n... (+${gitMeta.changedFiles.length - 10} dosya daha)` : '') + '\n```'
-      : '`Değişiklik listesi derlenemedi`';
-
-    const memoryMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
-    const nodeVer = process.version;
-
-    const embed = new EmbedBuilder()
-      .setColor(0x8b5cf6)
-      .setAuthor({
-        name: 'EkoYıldız Bot · Canlıya Alma & Sürüm Raporu',
-        iconURL: discordClient.user.displayAvatarURL()
-      })
-      .setTitle(`🚀 Bot Yeniden Başlatıldı · v${gitMeta.version} [${gitMeta.commitHash}]`)
-      .setDescription(aiAnalysis.length > 4000 ? aiAnalysis.slice(0, 3950) + '...' : aiAnalysis)
-      .addFields(
-        {
-          name: '📌 Son Değişiklik / Commit (Neden Yapıldı)',
-          value: `**${gitMeta.commitMessage}**\n*Geliştirici:* ${gitMeta.author} • *Zaman:* ${gitMeta.date}`,
-          inline: false
-        },
-        {
-          name: `📂 Etkilenen Dosyalar (${gitMeta.changedFiles.length})`,
-          value: changedFilesText,
-          inline: false
-        },
-        {
-          name: '⚙️ Çalışma Ortamı & Sistem Durumu',
-          value: `🟢 **PID:** \`${pid}\` • 🧠 **Bellek (RAM):** \`${memoryMb} MB\` • ⚡ **Node:** \`${nodeVer}\` • 🖥️ **Platform:** \`${process.platform}\``,
-          inline: false
-        }
-      )
-      .setFooter({
-        text: `EkoYıldız Otomatik Sürüm Denetleyicisi & AI Service • ${new Date().toLocaleTimeString('tr-TR')}`
-      })
-      .setTimestamp();
-
-    await channel.send({ embeds: [embed] });
-    logger.success(`[StartupAnnounce] ✅ Başlatma sürüm raporu ${ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
-
-    // ── 2. KANAL (1518705723184386198): Çok kısa, zarif, Components V2 (accent colorsuz) güncelleme notu ──
+    // 2. KANAL (1518705723184386198): Günde en fazla bir kez, yapay zekayla yazılan kısa ve samimi not.
+    //    Güncellemeyi anlatmaz; yalnızca çok büyük bir güncellemede küçük bir "sneak peek" ipucu verir.
     try {
       const shortChannel = await discordClient.channels.fetch(SHORT_ANNOUNCE_CHANNEL_ID).catch(() => null);
       if (shortChannel && typeof shortChannel.send === 'function') {
-        const shortNote = await generateShortUpdateNote(gitMeta);
-        const unix = Math.floor(Date.now() / 1000);
-
-        const v2MessagePayload = {
-          flags: ComponentsV2Factory.FLAGS,
-          components: [
-            ComponentsV2Factory.container([
-              ComponentsV2Factory.text('### 🔄 Sentara güncellendi'),
-              ComponentsV2Factory.text(shortNote),
-              ComponentsV2Factory.separator(true),
-              ComponentsV2Factory.text(`-# v${gitMeta.version} • \`${gitMeta.commitHash}\` • <t:${unix}:R> • EkoYıldız Resmî Altyapı Servisi`)
-            ])
-          ]
-        };
-
-        await shortChannel.send(v2MessagePayload).catch(async (v2Err) => {
-          logger.warn(`[StartupAnnounce] Components V2 gönderilemedi, text fallback deneniyor: ${v2Err.message}`);
-          await shortChannel.send({ content: `🔄 **Sentara güncellendi**\n${shortNote}\n-# v${gitMeta.version} • \`${gitMeta.commitHash}\`` });
-        });
-
-        logger.success(`[StartupAnnounce] ✅ Kısa güncelleme notu ${SHORT_ANNOUNCE_CHANNEL_ID} kanalına başarıyla gönderildi.`);
+        const res = await postDailyFriendlyNote({ channel: shortChannel, botId, gitMeta });
+        if (!res.posted) logger.info(`[StartupAnnounce] Günün notu atlandı: ${res.reason}`);
       }
     } catch (shortErr) {
-      logger.warn(`[StartupAnnounce] Kısa güncelleme kanalı gönderim hatası: ${shortErr.message}`);
+      logger.warn(`[StartupAnnounce] Günün notu gönderim hatası: ${shortErr.message}`);
     }
 
     try {
@@ -255,7 +235,7 @@ async function announceBotStartup(discordClient) {
         lastReportedAt: restartTimestamp,
         commit: gitMeta.commitHash,
         version: gitMeta.version,
-        pid
+        pid: process.pid
       }, null, 2), 'utf8');
     } catch (_) {}
 

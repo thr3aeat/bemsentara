@@ -119,6 +119,21 @@ app.get("/favicon.ico", (req, res) => {
   res.redirect(302, "/public/assets/mascot.png");
 });
 
+// Bağlantı önizlemeleri (Discord vb.): sayfaya özel OG etiketleri ve kart görseli
+const { ogMiddleware, isKnownPath } = require("./services/ogMeta");
+app.get("/og/card.png", async (req, res) => {
+  try {
+    const p = typeof req.query.p === "string" && isKnownPath(req.query.p) ? req.query.p : "/";
+    const host = String(req.get("host") || "ekoyildiz").replace(/:\d+$/, "");
+    const buf = await require("./services/ogImage").renderOgCard(p, { host });
+    res.set({ "Content-Type": "image/png", "Cache-Control": "public, max-age=21600" });
+    res.end(buf);
+  } catch (err) {
+    res.status(500).end();
+  }
+});
+app.use(ogMiddleware);
+
 app.use("/public", express.static(path.join(__dirname, "public"), {
   dotfiles: "ignore",
   index: false,

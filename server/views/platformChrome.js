@@ -79,6 +79,15 @@ function platformChromeStyles(theme = 'dark') {
     @media(max-width:1120px){.platform-header{grid-template-columns:minmax(0,1fr) max-content;gap:8px}.platform-header[data-menu-open="true"]{max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}.platform-menu-toggle{display:inline-grid;place-items:center}.platform-nav,.platform-actions{display:none;grid-column:1/-1;width:100%;min-width:0;flex-direction:column;align-items:stretch;justify-content:flex-start;overflow:visible;white-space:normal}.platform-header[data-menu-open="true"] .platform-nav,.platform-header[data-menu-open="true"] .platform-actions{display:flex}.platform-nav{padding-top:6px;border-top:1px solid var(--pc-line)}.platform-nav a,.platform-nav button,.platform-search-trigger{width:100%;justify-content:flex-start;box-sizing:border-box;padding:0 11px}.platform-dropdown{width:100%;flex-direction:column;align-items:stretch}.platform-dropdown-btn{width:100%;justify-content:space-between;box-sizing:border-box;padding:0 11px}.platform-dropdown-menu{position:static;transform:none!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;box-shadow:none;background:transparent;border:none;border-left:2px solid var(--pc-line);border-radius:0;margin-left:12px;padding:4px 0 4px 8px;max-width:none}.platform-actions{gap:7px}.platform-account{width:100%;flex-wrap:wrap;gap:4px}.platform-account a{flex:0 0 auto}.platform-account .platform-account-name{max-width:min(50vw,260px)}.platform-footer{grid-template-columns:1fr}.platform-footer nav{justify-content:flex-start}}
     @media(max-width:480px){.platform-header{width:calc(100% - 20px);margin-top:10px;padding:7px 8px;border-radius:15px;top:8px}.platform-brand img{width:32px;height:32px}.platform-brand{font-size:.94rem}.platform-account{flex-direction:column;align-items:stretch}.platform-account a{width:100%;box-sizing:border-box;justify-content:flex-start}.platform-account .platform-account-name{max-width:none}.platform-search-trigger kbd{margin-left:auto}.platform-footer{width:calc(100% - 24px)}}
     @media(prefers-reduced-motion:reduce){.platform-chrome *, .platform-chrome *::before,.platform-chrome *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    /* Koyu sayfalarda sade, siyah üst çubuk: parıltı, prizma kenar ve gölge yok */
+    .platform-header[data-theme="dark"]{background:rgba(10,10,11,.82);border:1px solid #1d1d21;box-shadow:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .platform-header[data-theme="dark"]::before,.platform-header[data-theme="dark"]::after{display:none}
+    .platform-header[data-theme="dark"] .platform-nav a,.platform-header[data-theme="dark"] .platform-dropdown-btn{background:transparent;box-shadow:none;border-color:transparent;color:#8c8c95}
+    .platform-header[data-theme="dark"] .platform-nav a:hover,.platform-header[data-theme="dark"] .platform-dropdown-btn:hover{color:#ededef;background:#151518}
+    .platform-header[data-theme="dark"] .platform-nav a[aria-current="page"]{color:#ededef;background:#17171a;border-color:#26262b}
+    .platform-header[data-theme="dark"] .platform-search-trigger{background:#111113;border-color:#232327;color:#8c8c95;box-shadow:none}
+    .platform-header[data-theme="dark"] .platform-primary{background:#ededef;color:#0a0a0b;box-shadow:none;border-color:transparent}
+    .platform-header[data-theme="dark"] .platform-brand i{color:inherit}
     ${connectionRecoveryStyles()}
   </style>`;
 }
@@ -146,11 +155,10 @@ function renderPlatformHeader({ user = null, activePath = '', theme = 'dark', au
     <button class="platform-menu-toggle" type="button" aria-label="Navigasyonu aç" aria-expanded="false" aria-controls="platform-navigation">☰</button>
     <nav class="platform-nav" id="platform-navigation" aria-label="Ana navigasyon">
       <a href="/"${active('/')}>Ana Sayfa</a>
-      <a href="/help"${active('/help')}>Help Center</a>
-      <a href="/safety"${active('/safety')}>Safety Center</a>
+      <a href="/video-blog"${active('/video-blog')}>Videolar</a>
       <a href="/blog"${active('/blog')}>Blog</a>
-      <a href="/video-blog"${active('/video-blog')}>Video Blog</a>
       <a href="/cekilisler"${active('/cekilisler')}>Çekilişler</a>
+      <a href="/help"${active('/help')}>Yardım</a>
       ${mgtLinksHtml || ''}
     </nav>
     <div class="platform-actions">
@@ -161,7 +169,7 @@ function renderPlatformHeader({ user = null, activePath = '', theme = 'dark', au
 }
 
 function renderPlatformFooter({ theme = 'dark' } = {}) {
-  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a></nav></footer>
+  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a><a href="/ekip">Ekip</a><a href="/harita">Site Haritası</a></nav></footer>
   ${renderConnectionRecoveryMarkup()}`;
 }
 
