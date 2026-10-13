@@ -17,7 +17,7 @@ test('linksHubPage - Resmi Bağlantılar Sayfası', async (t) => {
 
   await t.test('her bağlantı tam bir kez, yeni sekmede ve güvenli rel ile render edilir', () => {
     for (const l of LINKS_DATA) {
-      assert.equal(html.split(`href="${l.url}"`).length - 1, 1, l.id);
+      assert.equal(html.split(`href="${l.url}" target="_blank" rel="noopener noreferrer" data-id=`).length - 1, 1, l.id);
       assert.ok(html.includes(`data-copy="${l.url}"`), `${l.id} kopyalama`);
     }
     assert.equal((html.match(/target="_blank" rel="noopener noreferrer" data-id=/g) || []).length, 10);
@@ -51,4 +51,16 @@ test('linksHubPage - Resmi Bağlantılar Sayfası', async (t) => {
     assert.ok(blocks.length >= 1);
     for (const b of blocks) assert.doesNotThrow(() => new Function(b));
   });
+});
+
+test('linkler: üst menü yok; nohello, ticket notu, geliştirici bölümü ve mp3 oynatıcı', () => {
+  const { renderLinksHubPage } = require('../server/views/linksHubPage');
+  const out = renderLinksHubPage(null, { avatarUrl: 'https://cdn.discordapp.com/avatars/1/a.png', audioSrc: '/public/audio/linkler.mp3' });
+  assert.ok(!out.includes('<header class="platform-header'));
+  assert.ok(out.includes('href="https://nohello.net/tr"'));
+  assert.ok(out.includes('ticket aç'));
+  for (const k of ['JavaScript', 'Roblox Studio', 'Discord bot', 'Vibecoding']) assert.ok(out.includes(k), k);
+  assert.ok(out.includes('<link rel="icon" type="image/png" href="https://cdn.discordapp.com/avatars/1/a.png">'));
+  assert.ok(out.includes('id="npAudio" src="/public/audio/linkler.mp3" loop'));
+  assert.ok(!renderLinksHubPage(null, { audioSrc: null }).includes('id="npAudio"'));
 });

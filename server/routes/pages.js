@@ -92,7 +92,10 @@ router.post("/api/automod/appeal", async (req, res) => {
   }
 });
 
-router.get("/linkler", (req, res) => res.send(renderLinksHubPage(req.user)));
+router.get("/linkler", async (req, res) => {
+  const avatarUrl = await require("../services/linksAvatarService").getLinksAvatar().catch(() => null);
+  res.send(renderLinksHubPage(req.user, { avatarUrl }));
+});
 router.get("/links", (req, res) => res.redirect("/linkler"));
 router.get("/bio", (req, res) => res.redirect("/linkler"));
 router.get("/eko", (req, res) => res.redirect("/linkler"));

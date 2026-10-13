@@ -1,7 +1,9 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const {
-  renderPlatformHeader,
   renderPlatformFooter,
   renderSearchDialog,
   platformChromeStyles,
@@ -178,6 +180,14 @@ const NOW_PLAYING = {
   cover: 'https://i.scdn.co/image/ab67616d00004851dae056def422ee617c5ad0d8'
 };
 
+// Arka plan müziği: server/public/audio/linkler.mp3 varsa sayfa açılınca kendiliğinden çalar.
+// Dosya yoksa Spotify oynatıcısına düşülür.
+const AUDIO_FILE = path.join(__dirname, '..', 'public', 'audio', 'linkler.mp3');
+const AUDIO_SRC = '/public/audio/linkler.mp3';
+const DEFAULT_AVATAR = 'https://i.imgur.com/PFcAc6q.png';
+const DISCORD_INVITE = 'https://discord.gg/XJWnqx9DQC';
+const SKILLS = ['JavaScript', 'UI tasarım', 'Roblox Studio', 'Discord bot', 'Web sitesi', 'Vibecoding'];
+
 const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function renderRow(item, index) {
@@ -197,8 +207,9 @@ function renderRow(item, index) {
         </li>`;
 }
 
-function renderLinksHubPage(user = null) {
-  const headerHtml = renderPlatformHeader({ user, activePath: '/linkler' });
+function renderLinksHubPage(user = null, { avatarUrl = null, audioSrc } = {}) {
+  const avatar = avatarUrl || DEFAULT_AVATAR;
+  const audio = audioSrc !== undefined ? audioSrc : (fs.existsSync(AUDIO_FILE) ? AUDIO_SRC : null);
   const footerHtml = renderPlatformFooter();
   const searchDialogHtml = renderSearchDialog();
 
@@ -227,6 +238,8 @@ function renderLinksHubPage(user = null) {
   <meta property="og:url" content="https://ekoyildiz.com/linkler">
   <meta property="og:image" content="https://i.imgur.com/PFcAc6q.png">
   <title>EkoYıldız — Bağlantılar</title>
+  <link rel="icon" type="image/png" href="${esc(avatar)}">
+  <link rel="apple-touch-icon" href="${esc(avatar)}">
   ${platformChromeStyles('dark')}
   <style>
     .lh {
@@ -273,6 +286,25 @@ function renderLinksHubPage(user = null) {
     .np.is-open .np-embed { height: 80px; border-top: 1px solid var(--line); }
     .np-embed iframe { display: block; width: 100%; height: 80px; border: 0; }
 
+    /* Bilgi kartları */
+    .notes { margin-top: 20px; display: grid; gap: 8px; }
+    .note { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: .9rem; line-height: 1.45; color: var(--muted); }
+    .note b { color: var(--text); font-weight: 600; }
+    .note a { color: var(--text); text-underline-offset: 3px; }
+    .note-ic { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); font-size: 14px; }
+
+    /* Geliştirici */
+    .dev { margin-top: 32px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background:
+      radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%), var(--surface); }
+    .dev-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .dev h2 { margin: 0; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+    .dev-prompt { font: .75rem/1 var(--mono); color: var(--muted); }
+    .dev p { margin: 6px 0 12px; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .chip { font: 600 .8rem/1 var(--mono); padding: 8px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text);
+      opacity: 0; transform: translateY(4px); animation: rowIn .35s ease forwards; animation-delay: calc(var(--i) * 45ms + 200ms); }
+    .chip:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line-2)); }
+
     /* Bağlantılar */
     .group { margin-top: 32px; }
     .group-title { margin: 0 0 10px 2px; font: 600 0.72rem/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
@@ -304,15 +336,13 @@ function renderLinksHubPage(user = null) {
     .lh-foot kbd { font: 0.75rem var(--mono); border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; }
 
     @media (max-width: 480px) { .lh-main { padding-top: 24px; } .profile h1 { font-size: 1.3rem; } }
-    @media (prefers-reduced-motion: reduce) { .row { animation: none; opacity: 1; transform: none; } .np.is-playing .eq i { animation: none; height: 8px; } * { transition: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .chip { animation: none; opacity: 1; transform: none; } .row { animation: none; opacity: 1; transform: none; } .np.is-playing .eq i { animation: none; height: 8px; } * { transition: none !important; } }
   </style>
 </head>
 <body class="platform-chrome lh" data-theme="dark">
-  ${headerHtml}
-
   <main class="lh-main" id="main-content">
     <header class="profile">
-      <img class="avatar" src="https://i.imgur.com/PFcAc6q.png" alt="" width="64" height="64">
+      <img class="avatar" src="${esc(avatar)}" alt="" width="64" height="64" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'">
       <div>
         <h1>EkoYıldız <svg class="verified" viewBox="0 0 24 24" aria-label="Resmi hesap" role="img"><path fill="currentColor" d="M12 1.5l2.6 2 3.3-.2.9 3.2 2.8 1.8-1.2 3.1 1.2 3.1-2.8 1.8-.9 3.2-3.3-.2-2.6 2-2.6-2-3.3.2-.9-3.2-2.8-1.8 1.2-3.1-1.2-3.1 2.8-1.8.9-3.2 3.3.2z"/><path d="M8 12.2l2.6 2.6L16.2 9" fill="none" stroke="#0a0a0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></h1>
         <p>Yayınlar, videolar ve topluluk. Hepsi burada.</p>
@@ -321,6 +351,11 @@ function renderLinksHubPage(user = null) {
     <div class="profile-actions">
       <button type="button" class="btn" id="shareBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Paylaş</button>
       <a class="btn" href="/yardim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Destek</a>
+    </div>
+
+    <div class="notes">
+      <div class="note"><span class="note-ic" aria-hidden="true">👋</span><span><b>DM atmadan önce</b> lütfen <a href="https://nohello.net/tr" target="_blank" rel="noopener noreferrer">nohello.net/tr</a> sayfasını oku: sadece “selam” yazıp bekleme, derdini ilk mesajda anlat.</span></div>
+      <div class="note"><span class="note-ic" aria-hidden="true">🤝</span><span><b>İşbirliği ve sponsorluk</b> için DM yerine <a href="${DISCORD_INVITE}" target="_blank" rel="noopener noreferrer">Discord sunucumuzdan</a> ticket aç.</span></div>
     </div>
 
     <section class="np" id="np" aria-label="Şu an çalıyor">
@@ -335,9 +370,16 @@ function renderLinksHubPage(user = null) {
         </button>
       </div>
       <div class="np-embed" id="npEmbed"></div>
+      ${audio ? `<audio id="npAudio" src="${esc(audio)}" loop preload="auto" autoplay></audio>` : ''}
     </section>
 
     ${groupsHtml}
+
+    <section class="dev" aria-labelledby="dev-title">
+      <div class="dev-head"><h2 id="dev-title">Geliştirici</h2><span class="dev-prompt">~/ekoyildiz $ whoami</span></div>
+      <p>Yayınların dışında kod da yazıyorum: botlar, oyunlar ve web.</p>
+      <ul class="chips">${SKILLS.map((k, i) => `<li class="chip" style="--i:${i}">${esc(k)}</li>`).join('')}</ul>
+    </section>
 
     <p class="lh-foot">Bağlantıyı kopyalamak için satırın sağındaki simgeye dokun · Arama <kbd>Ctrl</kbd> <kbd>K</kbd></p>
   </main>
@@ -402,6 +444,27 @@ function renderLinksHubPage(user = null) {
           c.addListener('playback_update', function (e) { setPlaying(!!(e && e.data && !e.data.isPaused)); });
         });
       }
+      // MP3 varsa: sayfa açılınca çalar; tarayıcı engellerse ilk dokunuş/tuşta başlar. Duraklatma hatırlanır.
+      var audio = document.getElementById('npAudio');
+      if (audio) {
+        var KEY = 'lh-music-paused', paused = false;
+        try { paused = localStorage.getItem(KEY) === '1'; } catch (e) {}
+        audio.volume = 0.35;
+        audio.addEventListener('play', function () { setPlaying(true); });
+        audio.addEventListener('pause', function () { setPlaying(false); });
+        var start = function () { if (!paused && audio.paused) audio.play().catch(function () {}); };
+        var kick = function (e) { if (e && e.target && e.target.closest && e.target.closest('#npToggle')) return; start(); off(); };
+        var off = function () { ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.removeEventListener(t, kick, true); }); };
+        ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (t) { window.addEventListener(t, kick, { capture: true, passive: true }); });
+        if (paused) { audio.removeAttribute('autoplay'); audio.pause(); } else { start(); }
+        toggle.addEventListener('click', function () {
+          paused = !audio.paused;
+          try { localStorage.setItem(KEY, paused ? '1' : '0'); } catch (e) {}
+          if (paused) audio.pause(); else audio.play().catch(function () {});
+        });
+        return;
+      }
+
       toggle.addEventListener('click', function () {
         if (controller) { controller.togglePlay(); return; }
         if (fallback) { np.classList.toggle('is-open'); return; }
