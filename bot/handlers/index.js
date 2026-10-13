@@ -114,6 +114,10 @@ function initializeDiscordHandlers(client) {
   // Çift Yönlü Güven ve Performans Puanı Sistemi
   const { initializeTrustScoreHandlers } = require("./trustScoreHandler");
   initializeTrustScoreHandlers(client);
+
+  // Eko Yıldız forum/reklam gönderileri: kural denetimi, DM teşekkür, öne çıkarma ve çark
+  const { initEkoForumAdService } = require("../services/ekoForumAdService");
+  initEkoForumAdService(client);
   // Yeni Kategori Oluşturulduğunda Otomatik Büyük Harf + Arrow Biçimlendirme
   client.on("channelCreate", async (channel) => {
     try {
@@ -4008,6 +4012,11 @@ function initializeDiscordHandlers(client) {
 
   client.on("interactionCreate", async (interaction) => {
     global.lastInteraction = interaction;
+
+    if (interaction.isButton() && interaction.customId.startsWith("ekoforum_")) {
+      const { handleInteraction } = require("../services/ekoForumAdService");
+      return handleInteraction(interaction).catch(err => console.error("[EkoForumAd] interaction:", err.message));
+    }
 
     // ── 1.8s AUTO-DEFERRAL SAFETY NET (DISCORD TIMEOUT ENGELLEYİCİ) ──
     let deferTimer = null;
