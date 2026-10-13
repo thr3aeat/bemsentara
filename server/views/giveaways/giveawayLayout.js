@@ -31,8 +31,8 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
 
   const isAdmin = user && isSiteAdmin(user);
   const username = user ? (user.discordUsername || user.username || 'Kullanıcı') : '';
-  const avatarUrl = user && user.avatar 
-    ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` 
+  const avatarUrl = user && user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png`
     : 'https://i.imgur.com/PFcAc6q.png';
 
   return `<!DOCTYPE html>
@@ -40,29 +40,32 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${_esc(title)} — EkoYıldız Çekilişler Platformu</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <title>${_esc(title)} — EkoYıldız Çekilişler</title>
+  ${description ? `<meta name="description" content="${_esc(description)}">` : ''}
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Confetti kütüphanesi -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <style>
     :root {
-      --gw-bg: #060713;
-      --gw-surface: rgba(18, 19, 38, 0.75);
-      --gw-surface-hover: rgba(28, 30, 58, 0.85);
-      --gw-border: rgba(139, 92, 246, 0.18);
-      --gw-border-glow: rgba(139, 92, 246, 0.4);
-      --gw-accent: #8b5cf6;
-      --gw-accent-light: #a78bfa;
-      --gw-accent-pink: #ec4899;
-      --gw-accent-emerald: #10b981;
-      --gw-accent-amber: #f59e0b;
-      --gw-accent-cyan: #06b6d4;
-      --gw-text: #f8fafc;
-      --gw-muted: #94a3b8;
-      --gw-text-muted: #94a3b8;
-      --gw-primary: #8b5cf6;
+      --gw-bg: #0a0a0c;
+      --gw-surface: #121215;
+      --gw-surface-hover: #17171b;
+      --gw-border: rgba(255, 255, 255, 0.08);
+      --gw-border-glow: rgba(255, 255, 255, 0.16);
+      --gw-accent: #8b85ff;
+      --gw-accent-light: #a9a5ff;
+      /* Eski sayfalar için korunan değişkenler — hepsi sakin tonlara eşlendi */
+      --gw-accent-pink: #a9a5ff;
+      --gw-accent-emerald: #4ade80;
+      --gw-accent-amber: #fbbf24;
+      --gw-accent-cyan: #a9a5ff;
+      --gw-text: #ededef;
+      --gw-muted: #8b8b94;
+      --gw-text-muted: #8b8b94;
+      --gw-primary: #8b85ff;
     }
 
     *, *::before, *::after {
@@ -72,366 +75,272 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
     }
 
     body {
-      background-color: var(--gw-bg);
-      background-image: 
-        radial-gradient(ellipse 90% 70% at 20% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 70% 60% at 80% 100%, rgba(236, 72, 153, 0.08) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6, 182, 212, 0.04) 0%, transparent 60%);
+      background: var(--gw-bg);
       color: var(--gw-text);
-      font-family: 'Outfit', sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-feature-settings: 'cv11', 'ss01';
+      -webkit-font-smoothing: antialiased;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
     }
 
-    /* ── Liquid Glass Çekiliş Topbar ── */
+    ::selection { background: rgba(139, 133, 255, 0.35); }
+
+    /* ── ÜST BAR ── */
     .gw-header {
       position: sticky;
-      top: 1rem;
+      top: 0;
       z-index: 1000;
-      max-width: 1280px;
-      width: calc(100% - 2rem);
-      margin: 1rem auto 0;
-      background: radial-gradient(130% 120% at 50% -15%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(139, 92, 246, 0.12) 70%, rgba(10, 11, 24, 0.82) 100%), linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(16, 18, 36, 0.8) 100%);
-      backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
-      -webkit-backdrop-filter: blur(28px) saturate(220%) brightness(106%) contrast(104%);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 24px;
-      padding: 0.75rem 1.75rem;
+      width: 100%;
+      background: rgba(10, 10, 12, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gw-border);
+    }
+    .gw-header-inner {
+      position: relative;
+      max-width: 1180px;
+      margin: 0 auto;
+      height: 60px;
+      padding: 0 1.25rem;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 28px 64px -16px rgba(0,0,0,0.55), 0 12px 26px -8px rgba(0,0,0,0.35), inset 0 1.5px 1px rgba(255,255,255,0.85), inset 0 3px 6px rgba(255,255,255,0.25), inset 0 -1.5px 2px rgba(129,140,248,0.38), inset 0 -3px 8px rgba(236,72,153,0.18), 0 0 0 1px rgba(255,255,255,0.18);
-      overflow: visible;
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .gw-header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      padding: 1px;
-      background: linear-gradient(90deg, rgba(255,255,255,.7) 0%, rgba(168,85,247,.65) 35%, rgba(56,189,248,.65) 65%, rgba(255,255,255,.5) 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-      opacity: .85;
-      z-index: 1;
-    }
-    .gw-header::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: radial-gradient(460px circle at var(--liquid-mouse-x, 50%) var(--liquid-mouse-y, 50%), rgba(255,255,255,.22) 0%, rgba(139,92,246,.12) 35%, transparent 70%);
-      pointer-events: none;
-      opacity: var(--liquid-light-opacity, 0);
-      transition: opacity .35s ease;
-      mix-blend-mode: overlay;
-      z-index: 2;
-    }
-    .gw-header:hover::after {
-      --liquid-light-opacity: 1;
+      gap: 2rem;
     }
 
     .gw-brand {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
+      gap: 0.6rem;
       text-decoration: none;
-      color: inherit;
+      color: var(--gw-text);
+      flex-shrink: 0;
     }
     .gw-brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--gw-surface);
+      border: 1px solid var(--gw-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.35rem;
-      box-shadow: 0 0 16px rgba(236, 72, 153, 0.4);
-      flex-shrink: 0;
-    }
-    .gw-brand-text {
-      display: flex;
-      flex-direction: column;
+      font-size: 0.9rem;
     }
     .gw-brand-title {
-      font-size: 1.25rem;
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #ffffff 30%, #c4b5fd 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .gw-brand-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: var(--gw-accent-pink);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
 
     .gw-nav-menu {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.25rem;
+      flex: 1;
     }
     .gw-nav-link {
       color: var(--gw-muted);
       text-decoration: none;
-      font-weight: 600;
-      font-size: 0.92rem;
-      padding: 0.55rem 1.1rem;
-      border-radius: 14px;
-      transition: all 0.22s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
     }
-    .gw-nav-link:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.12);
-      transform: translateY(-1px) scale(1.02);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(129,140,248,0.3), 0 4px 14px rgba(0,0,0,0.25);
+    .gw-nav-link:hover { color: var(--gw-text); }
+    .gw-nav-link.active { color: var(--gw-text); background: rgba(255, 255, 255, 0.06); }
+
+    .btn-return-main {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--gw-muted);
+      text-decoration: none;
+      padding: 0.45rem 0.75rem;
+      transition: color 0.15s;
     }
-    .gw-nav-link.active {
-      color: #ffffff;
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.28) 0%, rgba(236, 72, 153, 0.22) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: inset 0 1.5px 1px rgba(255,255,255,0.9), 0 0 18px rgba(139, 92, 246, 0.35);
-    }
-    .gw-nav-link:active, .gw-brand:active, .btn-gw-admin:active, .gw-user-card:active, .btn-return-main:active {
-      transform: scale(0.935) translateY(2px) !important;
-      transition: transform 0.06s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
-      box-shadow: inset 0 2.5px 6px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.4), 0 0 18px rgba(139,92,246,0.55) !important;
-    }
+    .btn-return-main:hover { color: var(--gw-text); }
 
     .gw-nav-actions {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-    }
-
-    .btn-return-main {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--gw-muted);
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.02);
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .btn-return-main:hover {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.05);
+      gap: 0.6rem;
+      flex-shrink: 0;
     }
 
     .gw-user-card {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.5rem;
       text-decoration: none;
-      color: inherit;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 5px 12px 5px 6px;
-      border-radius: 30px;
-      transition: all 0.2s;
+      color: var(--gw-text);
+      padding: 4px 10px 4px 4px;
+      border-radius: 999px;
+      border: 1px solid var(--gw-border);
+      transition: border-color 0.15s;
     }
-    .gw-user-card:hover {
-      border-color: var(--gw-accent-light);
-      background: rgba(139, 92, 246, 0.12);
-    }
+    .gw-user-card:hover { border-color: var(--gw-border-glow); }
     .gw-user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       object-fit: cover;
-      border: 1px solid var(--gw-accent-light);
     }
     .gw-user-name {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #f1f5f9;
+      font-size: 0.85rem;
+      font-weight: 500;
     }
 
     .btn-gw-login {
-      padding: 0.55rem 1.35rem;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.9rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      background: var(--gw-text);
+      color: #0a0a0c;
+      font-weight: 600;
+      font-size: 0.85rem;
       text-decoration: none;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 18px rgba(236, 72, 153, 0.35);
-      transition: all 0.22s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      white-space: nowrap;
+      transition: opacity 0.15s;
     }
-    .btn-gw-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(236, 72, 153, 0.5);
-    }
+    .btn-gw-login:hover { opacity: 0.88; }
 
     .btn-gw-admin {
-      background: rgba(245, 158, 11, 0.18);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      color: #fbbf24;
-      padding: 0.5rem 0.9rem;
-      border-radius: 12px;
+      color: var(--gw-muted);
       font-size: 0.85rem;
-      font-weight: 700;
+      font-weight: 500;
       text-decoration: none;
-      transition: all 0.2s;
+      padding: 0.45rem 0.75rem;
+      border: 1px solid var(--gw-border);
+      border-radius: 8px;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
     }
-    .btn-gw-admin:hover {
-      background: rgba(245, 158, 11, 0.3);
-      color: #fff;
-    }
+    .btn-gw-admin:hover { color: var(--gw-text); border-color: var(--gw-border-glow); }
 
-    /* ── MOBİL MENÜ ── */
     .gw-mobile-toggle {
       display: none;
       background: transparent;
       border: none;
-      color: #fff;
-      font-size: 1.5rem;
+      color: var(--gw-text);
+      font-size: 1.25rem;
       cursor: pointer;
+      padding: 0.25rem 0.5rem;
     }
 
     /* ── ANA İÇERİK ALANI ── */
     .gw-main {
       flex: 1;
-      max-width: 1280px;
-      width: calc(100% - 2rem);
-      margin: 2.5rem auto 4rem;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
     }
 
     /* ── PAYLAŞILAN ÇEKİLİŞ BİLEŞENLERİ ── */
-    .gw-container { width: min(100%, 1180px); margin: 0 auto; }
-    .gw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
-    .gw-card { overflow: hidden; background: linear-gradient(145deg, rgba(25, 27, 54, .88), rgba(12, 14, 31, .94)); border: 1px solid var(--gw-border); border-radius: 18px; box-shadow: 0 18px 40px rgba(0, 0, 0, .18); transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
-    .gw-card:hover { border-color: var(--gw-border-glow); box-shadow: 0 23px 46px rgba(0, 0, 0, .28), 0 0 0 1px rgba(139, 92, 246, .08); transform: translateY(-3px); }
-    .gw-btn { min-height: 42px; border: 1px solid transparent; border-radius: 12px; padding: .65rem 1rem; text-decoration: none; font: 800 .88rem 'Outfit', sans-serif; cursor: pointer; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
-    .gw-btn:hover:not([disabled]) { transform: translateY(-2px); }
-    .gw-btn[disabled] { cursor: not-allowed; opacity: .5; }
-    .gw-btn-primary { background: linear-gradient(135deg, var(--gw-primary), var(--gw-accent-pink)); box-shadow: 0 8px 22px rgba(139, 92, 246, .27); }
-    .gw-btn-primary:hover:not([disabled]) { box-shadow: 0 12px 28px rgba(236, 72, 153, .34); }
-    .gw-btn-secondary { color: #e9e6ff; border-color: rgba(167, 139, 250, .34); background: rgba(139, 92, 246, .09); }
-    .gw-btn-secondary:hover:not([disabled]) { background: rgba(139, 92, 246, .19); }
-    .gw-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .32rem .62rem; border-radius: 999px; font: 800 .72rem 'Outfit', sans-serif; letter-spacing: .03em; }
-    .gw-badge-active { color: #9df2bf; background: rgba(16, 185, 129, .13); border: 1px solid rgba(16, 185, 129, .35); }
-    .gw-badge-scheduled { color: #fbd887; background: rgba(245, 158, 11, .13); border: 1px solid rgba(245, 158, 11, .35); }
-    .gw-badge-ended { color: #c5cad7; background: rgba(148, 163, 184, .12); border: 1px solid rgba(148, 163, 184, .25); }
+    .gw-container { width: 100%; margin: 0 auto; }
+    .gw-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .gw-card { overflow: hidden; background: var(--gw-surface); border: 1px solid var(--gw-border); border-radius: 14px; transition: border-color .15s ease, background .15s ease; }
+    .gw-card:hover { border-color: var(--gw-border-glow); background: var(--gw-surface-hover); }
+    .gw-btn { min-height: 38px; border: 1px solid transparent; border-radius: 9px; padding: .55rem 1rem; text-decoration: none; font: 600 .875rem 'Inter', system-ui, sans-serif; cursor: pointer; color: var(--gw-text); display: inline-flex; align-items: center; justify-content: center; gap: .45rem; transition: opacity .15s ease, background .15s ease, border-color .15s ease; }
+    .gw-btn[disabled] { cursor: not-allowed; opacity: .45; }
+    .gw-btn-primary { background: var(--gw-text); color: #0a0a0c; }
+    .gw-btn-primary:hover:not([disabled]) { opacity: .88; }
+    .gw-btn-secondary { background: transparent; border-color: var(--gw-border-glow); }
+    .gw-btn-secondary:hover:not([disabled]) { background: rgba(255, 255, 255, .05); }
+    .gw-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .6rem; border-radius: 999px; font: 500 .75rem 'Inter', system-ui, sans-serif; color: var(--gw-text); background: rgba(10, 10, 12, .75); border: 1px solid var(--gw-border); }
+    .gw-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .gw-badge-active::before { background: #4ade80; }
+    .gw-badge-scheduled::before { background: #fbbf24; }
+    .gw-badge-ended { color: var(--gw-muted); }
 
     /* ── FOOTER ── */
     .gw-footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(6, 7, 19, 0.9);
-      padding: 3rem 1.5rem 2rem;
+      border-top: 1px solid var(--gw-border);
+      padding: 2rem 1.25rem;
       margin-top: auto;
-      text-align: center;
     }
     .gw-footer-inner {
-      max-width: 1200px;
+      max-width: 1180px;
       margin: 0 auto;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      gap: 1.25rem;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
     .gw-footer-links {
       display: flex;
-      gap: 1.5rem;
+      gap: 1.25rem;
       flex-wrap: wrap;
-      justify-content: center;
     }
     .gw-footer-link {
       color: var(--gw-muted);
       text-decoration: none;
-      font-size: 0.88rem;
-      transition: color 0.2s;
+      font-size: 0.85rem;
+      transition: color 0.15s;
     }
-    .gw-footer-link:hover {
-      color: #ffffff;
-    }
+    .gw-footer-link:hover { color: var(--gw-text); }
     .gw-footer-copy {
-      font-size: 0.82rem;
-      color: #64748b;
+      font-size: 0.8rem;
+      color: #5c5c66;
     }
 
     /* Toast Bildirim */
     .gw-toast-container {
       position: fixed;
-      bottom: 25px;
-      right: 25px;
+      bottom: 24px;
+      right: 24px;
       z-index: 99999;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
     .gw-toast {
-      background: rgba(15, 16, 35, 0.95);
-      border: 1px solid var(--gw-accent-light);
-      border-radius: 14px;
-      padding: 12px 20px;
-      color: #ffffff;
-      font-size: 0.92rem;
-      font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      background: var(--gw-surface);
+      border: 1px solid var(--gw-border-glow);
+      border-radius: 10px;
+      padding: 11px 16px;
+      color: var(--gw-text);
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       gap: 10px;
-      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: toastIn 0.25s ease-out;
     }
     @keyframes toastIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from { transform: translateY(8px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
 
     @media (max-width: 900px) {
       .gw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .gw-header-inner { gap: 1rem; }
       .gw-nav-menu {
         display: none;
         position: absolute;
         top: 100%;
         left: 0;
         right: 0;
-        background: #0d0e22;
-        border: 1px solid var(--gw-border);
-        border-radius: 18px;
-        padding: 1rem;
+        background: var(--gw-bg);
+        border-bottom: 1px solid var(--gw-border);
+        padding: 0.5rem 1.25rem 1rem;
         flex-direction: column;
-        margin-top: 10px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+        align-items: stretch;
       }
-      .gw-nav-menu.open {
-        display: flex;
-      }
-      .gw-mobile-toggle {
-        display: block;
-      }
+      .gw-nav-menu.open { display: flex; }
+      .btn-return-main { margin-left: 0; }
+      .gw-nav-actions { margin-left: auto; }
+      .gw-mobile-toggle { display: block; }
     }
     @media (max-width: 620px) {
       .gw-grid { grid-template-columns: 1fr; }
-      .gw-header { padding: .65rem .9rem; border-radius: 18px; }
-      .gw-brand-badge, .gw-user-name { display: none; }
-      .gw-main { width: calc(100% - 1.25rem); margin-top: 1.4rem; }
-      .btn-return-main { display: none; }
+      .gw-user-name { display: none; }
+      .gw-main { padding-top: 1.75rem; }
+      .gw-footer-inner { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -439,38 +348,32 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
 
   <!-- ÇEKİLİŞ NAVBAR -->
   <header class="gw-header">
-    <a href="/cekilisler" class="gw-brand">
-      <div class="gw-brand-icon">🎁</div>
-      <div class="gw-brand-text">
+    <div class="gw-header-inner">
+      <a href="/cekilisler" class="gw-brand">
+        <span class="gw-brand-icon">🎁</span>
         <span class="gw-brand-title">EkoYıldız Çekiliş</span>
-        <span class="gw-brand-badge">GIVEAWAY PLATFORM</span>
+      </a>
+
+      <nav class="gw-nav-menu">
+        <a href="/cekilisler" class="gw-nav-link ${activeTab === 'feed' ? 'active' : ''}">Çekilişler</a>
+        <a href="/cekilisler/kazananlar" class="gw-nav-link ${activeTab === 'winners' ? 'active' : ''}">Kazananlar</a>
+        <a href="/cekilisler/seffaflik" class="gw-nav-link ${activeTab === 'transparency' ? 'active' : ''}">Şeffaflık</a>
+        ${user ? `<a href="/cekilisler/profil" class="gw-nav-link ${activeTab === 'profile' ? 'active' : ''}">Profilim</a>` : ''}
+        <a href="/" class="btn-return-main">Ana siteye dön ↗</a>
+      </nav>
+
+      <div class="gw-nav-actions">
+        ${isAdmin ? `<a href="/admin/giveaways" class="btn-gw-admin">Panel</a>` : ''}
+        ${user ? `
+          <a href="/cekilisler/profil" class="gw-user-card" title="Profilim">
+            <img src="${avatarUrl}" alt="${_esc(username)}" class="gw-user-avatar">
+            <span class="gw-user-name">${_esc(username)}</span>
+          </a>
+        ` : `
+          <a href="/login" class="btn-gw-login">Giriş yap</a>
+        `}
+        <button class="gw-mobile-toggle" onclick="document.querySelector('.gw-nav-menu').classList.toggle('open')" aria-label="Menüyü Aç/Kapat">☰</button>
       </div>
-    </a>
-
-    <button class="gw-mobile-toggle" onclick="document.querySelector('.gw-nav-menu').classList.toggle('open')" aria-label="Menüyü Aç/Kapat">
-      ☰
-    </button>
-
-    <nav class="gw-nav-menu">
-      <a href="/cekilisler" class="gw-nav-link ${activeTab === 'feed' ? 'active' : ''}">🎁 Çekilişler</a>
-      <a href="/cekilisler/kazananlar" class="gw-nav-link ${activeTab === 'winners' ? 'active' : ''}">🏆 Kazananlar</a>
-      <a href="/cekilisler/seffaflik" class="gw-nav-link ${activeTab === 'transparency' ? 'active' : ''}">🛡️ Şeffaflık</a>
-      ${user ? `<a href="/cekilisler/profil" class="gw-nav-link ${activeTab === 'profile' ? 'active' : ''}">👤 Profilim</a>` : ''}
-      <a href="/" class="btn-return-main">🌐 Ana Siteye Dön</a>
-    </nav>
-
-    <div class="gw-nav-actions">
-      ${isAdmin ? `<a href="/admin/giveaways" class="btn-gw-admin">⚙️ Çekiliş Paneli</a>` : ''}
-      ${user ? `
-        <a href="/cekilisler/profil" class="gw-user-card" title="Profilim">
-          <img src="${avatarUrl}" alt="${_esc(username)}" class="gw-user-avatar">
-          <span class="gw-user-name">${_esc(username)}</span>
-        </a>
-      ` : `
-        <a href="/login" class="btn-gw-login">
-          🚀 Giriş Yap
-        </a>
-      `}
     </div>
   </header>
 
@@ -483,15 +386,13 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
   <footer class="gw-footer">
     <div class="gw-footer-inner">
       <div class="gw-footer-links">
-        <a href="/cekilisler" class="gw-footer-link">Aktif Çekilişler</a>
-        <a href="/cekilisler/kazananlar" class="gw-footer-link">Geçmiş Kazananlar</a>
-        <a href="/cekilisler/seffaflik" class="gw-footer-link">Çekiliş Şeffaflığı & Adil Oyun</a>
+        <a href="/cekilisler" class="gw-footer-link">Çekilişler</a>
+        <a href="/cekilisler/kazananlar" class="gw-footer-link">Kazananlar</a>
+        <a href="/cekilisler/seffaflik" class="gw-footer-link">Şeffaflık</a>
         <a href="/anayasasi" class="gw-footer-link">Topluluk Anayasası</a>
-        <a href="/" class="gw-footer-link">EkoYıldız Ana Sayfa</a>
+        <a href="/" class="gw-footer-link">Ana Sayfa</a>
       </div>
-      <div class="gw-footer-copy">
-        © 2026 EkoYıldız & Sentara Ekosistemi. Tüm çekilişler bağımsız güvenli randomizasyon ile yürütülmektedir.
-      </div>
+      <div class="gw-footer-copy">© 2026 EkoYıldız</div>
     </div>
   </footer>
 
@@ -508,7 +409,7 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
       setTimeout(() => {
         toast.style.transition = 'opacity 0.3s, transform 0.3s';
         toast.style.opacity = '0';
-        toast.style.transform = 'translateY(20px)';
+        toast.style.transform = 'translateY(8px)';
         setTimeout(() => toast.remove(), 300);
       }, 3500);
     }

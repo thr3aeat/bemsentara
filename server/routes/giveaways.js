@@ -143,24 +143,6 @@ router.get('/cekilisler', async (req, res) => {
   try {
     const category = req.query.kategori || 'all';
     const giveaways = await giveawayService.getAllGiveaways();
-    const activities = await Store.giveawayAuditLogs.find({});
-    activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    // Format activities for ticker (Privacy: mask usernames)
-    const tickerActs = activities.slice(0, 10).map(act => {
-      let text = '⚡ Çekiliş platformunda hareketlilik var.';
-      const rawUser = act.details?.username || act.performedBy || 'Kullanıcı';
-      const maskedUser = rawUser.length > 3 ? rawUser.substring(0, 3) + '***' : rawUser;
-      
-      if (act.action === 'TASK_VERIFY' || act.action === 'TASK_COMPLETED') {
-        text = `🎟️ @${maskedUser} görev tamamlayarak bilet kazandı!`;
-      } else if (act.action === 'WINNER_SELECT') {
-        text = `🏆 Büyük çekiliş kazananı belirlendi!`;
-      } else if (act.action === 'GIVEAWAY_CREATE') {
-        text = `🎉 Yeni bir resmi çekiliş yayınlandı!`;
-      }
-      return { text, timestamp: act.timestamp };
-    });
 
     let notificationCount = 0;
     if (req.user) {
@@ -171,7 +153,6 @@ router.get('/cekilisler', async (req, res) => {
     const html = renderGiveawaysFeedPage({
       user: req.user,
       giveaways,
-      activities: tickerActs,
       activeCategory: category,
       notificationCount
     });
