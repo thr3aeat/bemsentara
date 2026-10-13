@@ -12,6 +12,19 @@ function _esc(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Discord avatarı: kayıtta tam URL, yalnızca hash veya hiç olmayabilir
+function discordAvatarUrl(user) {
+  if (!user) return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  const av = String(user.avatar || user.avatarUrl || '');
+  if (/^https?:\/\//.test(av)) return av;
+  if (av && user.discordId) {
+    return `https://cdn.discordapp.com/avatars/${user.discordId}/${av}.${av.startsWith('a_') ? 'gif' : 'png'}?size=128`;
+  }
+  let idx = 0;
+  try { idx = Number((BigInt(user.discordId || 0) >> 22n) % 6n); } catch (e) { idx = 0; }
+  return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+}
+
 function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = 'feed') {
   let title, user, content, activeTab, description, notificationCount;
   if (typeof titleOrOpts === 'object' && titleOrOpts !== null && !userParam && !contentParam) {
@@ -31,9 +44,7 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
 
   const isAdmin = user && isSiteAdmin(user);
   const username = user ? (user.discordUsername || user.username || 'Kullanıcı') : '';
-  const avatarUrl = user && user.avatar
-    ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png`
-    : 'https://i.imgur.com/PFcAc6q.png';
+  const avatarUrl = discordAvatarUrl(user);
 
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -366,7 +377,7 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
         ${isAdmin ? `<a href="/admin/giveaways" class="btn-gw-admin">Panel</a>` : ''}
         ${user ? `
           <a href="/cekilisler/profil" class="gw-user-card" title="Profilim">
-            <img src="${avatarUrl}" alt="${_esc(username)}" class="gw-user-avatar">
+            <img src="${_esc(avatarUrl)}" alt="" class="gw-user-avatar" onerror="this.onerror=null;this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
             <span class="gw-user-name">${_esc(username)}</span>
           </a>
         ` : `
@@ -422,5 +433,6 @@ function giveawayLayout(titleOrOpts, userParam, contentParam, activeTabParam = '
 
 module.exports = {
   giveawayLayout,
+  discordAvatarUrl,
   _esc
 };

@@ -1,5 +1,6 @@
 // server/views/giveaways/giveawayProfilePage.js
-const { giveawayLayout } = require('./giveawayLayout');
+const { giveawayLayout, discordAvatarUrl, _esc } = require('./giveawayLayout');
+const { BASE_URL } = require('../../../config');
 
 function renderGiveawayProfilePage({ user, stats = {}, entries = [], wonGiveaways = [], badges = [], referralCode = '', notificationCount = 0 }) {
   const content = `
@@ -15,7 +16,7 @@ function renderGiveawayProfilePage({ user, stats = {}, entries = [], wonGiveaway
           <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: -50px; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; align-items: flex-end; gap: 1.25rem;">
               <div style="width: 100px; height: 100px; border-radius: 1.5rem; border: 4px solid #1e293b; background: #0f172a; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                <img src="${user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="${user.username}" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="${_esc(discordAvatarUrl(user))}" alt="" onerror="this.onerror=null;this.src='https://cdn.discordapp.com/embed/avatars/0.png'" style="width: 100%; height: 100%; object-fit: cover;">
               </div>
               <div style="margin-bottom: 0.5rem;">
                 <h1 style="font-size: 1.6rem; font-weight: 900; margin: 0; color: #fff;">
@@ -97,7 +98,7 @@ function renderGiveawayProfilePage({ user, stats = {}, entries = [], wonGiveaway
           Bu bağlantıyı arkadaşlarına gönder. Katılan her kişi için hesabına +2 bilet tanımlanır!
         </p>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <input type="text" id="userRefLink" readonly value="http://localhost:3000/r/${referralCode || user._id}" style="flex: 1; min-width: 250px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--gw-border); color: #fff; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; font-family: monospace;">
+          <input type="text" id="userRefLink" readonly value="${_esc(String(BASE_URL).replace(/\/+$/, ''))}/r/${encodeURIComponent(referralCode || user._id)}" style="flex: 1; min-width: 250px; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--gw-border); color: #fff; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; font-family: monospace;">
           <button onclick="copyProfileRef()" class="gw-btn gw-btn-primary" style="padding: 0.75rem 1.5rem;">
             📋 Kopyala
           </button>
