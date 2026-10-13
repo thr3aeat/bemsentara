@@ -2843,6 +2843,7 @@ async function findActiveOnlineStaff(guild, client) {
 
     const member = await guild.members.fetch(doc.userId).catch(() => null);
     if (!member || member.user.bot) continue;
+    if (!require('../utils/staffRoleGate').memberHasStaffRole(member)) continue; // yetkili rolü yoksa atama/DM yok
 
     // Check inactivity roles
     const inactive = await hasInactivityRole(member.id, client).catch(() => false);

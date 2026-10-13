@@ -85,6 +85,8 @@ async function runModCheckCycle(client) {
         if (typeof record.save === 'function') await record.save();
         continue;
       }
+      // Discord'da yetkili rolü yoksa bu tur DM gönderme (kayıt kapatılmaz; rol geri gelirse devam eder)
+      if (!(await require('../utils/staffRoleGate').hasStaffRoleInGuild(client, userId))) continue;
 
       // Daha önce mesaj gönderilmiş ve 2 gün (48 saat) geçmiş mi kontrol et
       const lastSent = record.lastSentAt ? new Date(record.lastSentAt).getTime() : 0;
