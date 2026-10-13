@@ -1,1395 +1,1030 @@
 // server/views/giveaways/giveawayAdminPage.js
-// Advanced administrative interface for Giveaways, Anti-Cheat, Participants, and Sponsor Ads
-function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], tasks = [], participants = [], fraudFlags = [], ads = [], socialAds = [], socialAnalytics = {}, auditLogs = [], liveUsers = [] }) {
-  const pb = socialAnalytics.platformBreakdown || {};
-  let topPlatform = 'YouTube Ana Kanal';
-  let maxComp = -1;
-  Object.keys(pb).forEach(k => {
-    if ((pb[k].completed || 0) > maxComp) {
-      maxComp = pb[k].completed;
-      topPlatform = pb[k].accountName || pb[k].platform;
-    }
+// Çekiliş yönetim paneli — çekilişler, katılımcılar, şüpheli kayıtlar, reklamlar, denetim logları
+const { _esc: esc } = require('./giveawayLayout');
+
+const STATUS_META = {
+  DRAFT: { label: 'Taslak', tone: 'muted' },
+  SCHEDULED: { label: 'Planlandı', tone: 'warn' },
+  ACTIVE: { label: 'Aktif', tone: 'ok' },
+  ENDED: { label: 'Süre doldu', tone: 'warn' },
+  WINNER_SELECTING: { label: 'Kazanan seçiliyor', tone: 'warn' },
+  COMPLETED: { label: 'Tamamlandı', tone: 'muted' },
+  CANCELLED: { label: 'İptal', tone: 'bad' }
+};
+
+// Durum makinesine (giveawayService ALLOWED_STATUS_TRANSITIONS) uygun menü geçişleri
+const STATUS_ACTIONS = {
+  DRAFT: [['ACTIVE', 'Yayınla'], ['SCHEDULED', 'Planlandı olarak işaretle'], ['CANCELLED', 'İptal et']],
+  SCHEDULED: [['ACTIVE', 'Şimdi başlat'], ['CANCELLED', 'İptal et']],
+  ACTIVE: [['ENDED', 'Erken bitir'], ['CANCELLED', 'İptal et']],
+  ENDED: [['ACTIVE', 'Yeniden aç'], ['CANCELLED', 'İptal et']],
+  CANCELLED: [['DRAFT', 'Taslağa geri al']]
+};
+
+const fmt = n => (Number(n) || 0).toLocaleString('tr-TR');
+const fmtDate = d => (d ? new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const fmtDateTime = d => (d ? new Date(d).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+const pct = (a, b) => (b ? ((a / b) * 100).toFixed(1) : '0');
+
+function badge(text, tone) {
+  return `<span class="badge badge-${tone}">${esc(text)}</span>`;
+}
+
+function statusBadge(status) {
+  const meta = STATUS_META[status] || { label: status || '—', tone: 'muted' };
+  return badge(meta.label, meta.tone);
+}
+
+function primaryAction(g) {
+  const id = esc(g._id);
+  const title = esc(g.title);
+  switch (g.status) {
+    case 'DRAFT':
+      return `<button class="btn btn-sm btn-primary" data-act="status" data-id="${id}" data-status="ACTIVE" data-title="${title}">Yayınla</button>`;
+    case 'SCHEDULED':
+      return `<button class="btn btn-sm" data-act="status" data-id="${id}" data-status="ACTIVE" data-title="${title}">Şimdi başlat</button>`;
+    case 'ACTIVE':
+    case 'ENDED':
+      return `<button class="btn btn-sm btn-primary" data-act="draw" data-id="${id}" data-title="${title}">Kazanan seç</button>`;
+    case 'COMPLETED':
+      return `<a class="btn btn-sm" href="/cekilisler/canli/${encodeURIComponent(g._id)}" target="_blank">Canlı ekran</a>`;
+    default:
+      return '';
+  }
+}
+
+function rowMenu(g) {
+  const id = esc(g._id);
+  const title = esc(g.title);
+  const items = [
+    `<a href="/cekilisler/${encodeURIComponent(g.slug || g._id)}" target="_blank">Sitede görüntüle</a>`,
+    `<button data-act="recalc" data-id="${id}">Sayaçları yeniden hesapla</button>`
+  ];
+  if (g.status === 'COMPLETED') {
+    items.push(`<button data-act="redraw" data-id="${id}" data-title="${title}">Yeniden çek</button>`);
+  }
+  (STATUS_ACTIONS[g.status] || []).forEach(([to, label]) => {
+    // Birincil buton zaten bu geçişi yapıyorsa menüde tekrarlama
+    if ((g.status === 'DRAFT' || g.status === 'SCHEDULED') && to === 'ACTIVE') return;
+    items.push(`<button data-act="status" data-id="${id}" data-status="${to}" data-title="${title}">${label}</button>`);
   });
+  items.push(`<hr><button class="danger" data-act="delete" data-id="${id}" data-title="${title}">Sil</button>`);
 
   return `
-<!DOCTYPE html>
+    <details class="menu">
+      <summary class="btn btn-sm btn-ghost" aria-label="Diğer işlemler">⋯</summary>
+      <div class="menu-list">${items.join('')}</div>
+    </details>`;
+}
+
+function emptyRow(cols, text) {
+  return `<tr><td colspan="${cols}" class="empty">${text}</td></tr>`;
+}
+
+function taskRowHtml(task = {}) {
+  const t = { title: '', platform: 'youtube', link: '', strategy: 'VISIT_ONLY', tickets: 1, required: false, ...task };
+  const opt = (value, label, current) => `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
+  return `
+    <div class="task-row">
+      <div class="task-main">
+        <input type="text" class="input task-title" placeholder="Görev başlığı" value="${esc(t.title)}" required>
+        <input type="text" class="input task-link" placeholder="Bağlantı (https://...)" value="${esc(t.link)}">
+      </div>
+      <div class="task-opts">
+        <select class="input task-platform" aria-label="Platform">
+          ${[['youtube', 'YouTube'], ['discord', 'Discord'], ['instagram', 'Instagram'], ['tiktok', 'TikTok'], ['kick', 'Kick'], ['twitch', 'Twitch'], ['website', 'Web sitesi']].map(([v, l]) => opt(v, l, t.platform)).join('')}
+        </select>
+        <select class="input task-strategy" aria-label="Doğrulama">
+          ${[['VISIT_ONLY', 'Ziyaret yeterli'], ['AUTO', 'Otomatik onay'], ['API', 'API kontrolü'], ['PROOF_REQUIRED', 'Kanıt iste'], ['MANUAL', 'Admin onayı']].map(([v, l]) => opt(v, l, t.strategy)).join('')}
+        </select>
+        <label class="inline-field">Bilet <input type="number" class="input task-reward" value="${Number(t.tickets) || 1}" min="1"></label>
+        <label class="check"><input type="checkbox" class="task-mandatory"${t.required ? ' checked' : ''}> Zorunlu</label>
+        <button type="button" class="icon-btn" data-act="remove-task" title="Görevi kaldır">✕</button>
+      </div>
+    </div>`;
+}
+
+function renderGiveawayAdminPage({ user, stats = {}, giveaways = [], participants = [], fraudFlags = [], ads = [], socialAds = [], socialAnalytics = {}, auditLogs = [], liveUsers = [] }) {
+  const titleById = new Map(giveaways.map(g => [String(g._id), g.title]));
+  const activeCount = giveaways.filter(g => g.status === 'ACTIVE').length;
+  const needsAttention = giveaways.filter(g => g.status === 'ENDED' || g.status === 'DRAFT');
+
+  // ── Çekilişler ──
+  const giveawayRows = giveaways.map(g => `
+    <tr>
+      <td>
+        <div class="cell-title">${esc(g.title)}</div>
+        <div class="cell-sub">${esc(g.prize)}</div>
+      </td>
+      <td>${statusBadge(g.status)}</td>
+      <td class="num">${fmt(g.totalParticipants || g.totalEntries)}</td>
+      <td class="num">${fmt(g.totalTickets)}</td>
+      <td class="muted nowrap">${fmtDate(g.endDate)}</td>
+      <td>
+        <div class="row-actions">
+          ${primaryAction(g)}
+          ${rowMenu(g)}
+        </div>
+      </td>
+    </tr>`).join('');
+
+  // ── Katılımcılar ──
+  const participantRows = participants.map(p => {
+    const valid = (p.status || 'VALID') === 'VALID' && !p.isDisqualified;
+    const gTitle = p.giveawayTitle || titleById.get(String(p.giveawayId)) || p.giveawayId;
+    return `
+      <tr data-search="${esc(`${p.username || ''} ${p.ip || ''} ${p.referralCode || ''}`.toLowerCase())}" data-giveaway="${esc(p.giveawayId)}">
+        <td><div class="cell-title">${esc(p.username || '—')}</div></td>
+        <td class="muted">${esc(gTitle)}</td>
+        <td class="num">${fmt(p.tickets ?? p.ticketCount ?? 1)}</td>
+        <td class="mono muted">${esc(p.ip || '—')}</td>
+        <td>${valid ? badge('Geçerli', 'ok') : badge('Diskalifiye', 'bad')}</td>
+        <td>
+          ${valid
+            ? `<button class="btn btn-sm btn-ghost danger-text" data-act="disqualify" data-id="${esc(p._id)}">Diskalifiye et</button>`
+            : `<button class="btn btn-sm btn-ghost" data-act="restore" data-id="${esc(p._id)}">Geri al</button>`}
+        </td>
+      </tr>`;
+  }).join('');
+
+  // ── Şüpheli ──
+  const fraudRows = fraudFlags.map(f => `
+    <tr>
+      <td>
+        <div class="cell-title">${esc(f.username || '—')}</div>
+        <div class="cell-sub">${esc(f.giveawayTitle || titleById.get(String(f.giveawayId)) || f.giveawayId || '')}</div>
+      </td>
+      <td>${esc(f.reason || '—')}</td>
+      <td class="mono muted">${esc(f.ip || '—')}</td>
+      <td class="muted nowrap">${fmtDateTime(f.timestamp)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-ghost danger-text" data-act="fraud-ban" data-id="${esc(f._id)}">Diskalifiye et</button>
+          <button class="btn btn-sm btn-ghost" data-act="fraud-ignore" data-id="${esc(f._id)}">Yoksay</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  // ── Reklamlar ──
+  const adRows = ads.map(ad => `
+    <tr>
+      <td>
+        <div class="cell-title">${esc(ad.title)}</div>
+        <div class="cell-sub">${esc(ad.sponsorName || '')} · <a href="${esc(ad.targetUrl)}" target="_blank" rel="noopener">${esc(ad.targetUrl)}</a></div>
+      </td>
+      <td class="num">${fmt(ad.impressions)}</td>
+      <td class="num">${fmt(ad.clicks)}</td>
+      <td class="num">%${pct(ad.clicks || 0, ad.impressions)}</td>
+      <td>${ad.isActive ? badge('Aktif', 'ok') : badge('Pasif', 'muted')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-ghost" data-act="ad-toggle" data-id="${esc(ad._id)}">${ad.isActive ? 'Durdur' : 'Başlat'}</button>
+          <button class="btn btn-sm btn-ghost danger-text" data-act="ad-delete" data-id="${esc(ad._id)}">Sil</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  const socialRows = socialAds.map(s => `
+    <tr>
+      <td>
+        <div class="cell-title">${esc(s.accountName || s.title)}${s.isFeatured ? ' <span class="star" title="Öne çıkan">★</span>' : ''}</div>
+        <div class="cell-sub">${esc(s.platform || '')}${s.seasonalTag ? ' · ' + esc(s.seasonalTag) : ''}</div>
+      </td>
+      <td class="num">${fmt(s.views)}</td>
+      <td class="num">${fmt(s.interactionsCompleted)}</td>
+      <td class="num">${fmt(s.clicks)} <span class="muted">(%${pct(s.clicks || 0, s.views)})</span></td>
+      <td>${s.isActive !== false ? badge('Aktif', 'ok') : badge('Pasif', 'muted')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-ghost" data-act="social-edit" data-key="${esc(s.key)}">Düzenle</button>
+          <button class="btn btn-sm btn-ghost" data-act="social-toggle" data-key="${esc(s.key)}">${s.isActive !== false ? 'Durdur' : 'Başlat'}</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  // ── Kayıtlar ──
+  const auditRows = auditLogs.map(log => {
+    const details = log.details || {};
+    const summary = Object.entries(details)
+      .filter(([, v]) => v !== null && v !== undefined && typeof v !== 'object')
+      .slice(0, 4)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+    return `
+      <tr>
+        <td><code class="tag">${esc(log.action)}</code></td>
+        <td>${esc(log.adminUsername || log.performedBy || 'Sistem')}</td>
+        <td class="muted small" title="${esc(JSON.stringify(details))}">${esc(summary || '—')}</td>
+        <td class="muted nowrap">${fmtDateTime(log.timestamp)}</td>
+      </tr>`;
+  }).join('');
+
+  const liveRows = liveUsers.slice(0, 15).map(u => `
+    <tr>
+      <td>${esc(u.username)}</td>
+      <td class="mono muted">${esc(u.ip)}</td>
+      <td class="muted nowrap">${fmtDateTime(u.time)}</td>
+    </tr>`).join('');
+
+  const giveawayOptions = giveaways.map(g => `<option value="${esc(g._id)}">${esc(g.title)}</option>`).join('');
+  // </script> kırılmasını engellemek için < karakterini kaçır
+  const socialAdsJson = JSON.stringify(socialAds).replace(/</g, '\\u003c');
+  const defaultTask = taskRowHtml({ title: 'Eko Yıldız YouTube kanalına abone ol', link: 'https://www.youtube.com/@eko8yildiz', required: true });
+
+  return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin & Yönetim — Eko Yıldız Çekilişler & Sponsorlar</title>
+  <title>Çekiliş Paneli — EkoYıldız</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #131b2e;
-      --border: #1e293b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #a855f7;
-      --primary-hover: #9333ea;
-      --accent: #38bdf8;
-      --success: #22c55e;
-      --warning: #eab308;
-      --danger: #ef4444;
+      color-scheme: dark;
+      --bg: #0a0a0c;
+      --surface: #121215;
+      --surface-2: #18181c;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #ededef;
+      --muted: #8b8b94;
+      --accent: #a9a5ff;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --bad: #f87171;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-      display: flex;
-      min-height: 100vh;
-    }
-    /* Sidebar */
-    .admin-sidebar {
-      width: 280px;
-      background: #0f172a;
-      border-right: 1px solid var(--border);
-      padding: 2rem 1.25rem;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
-    .admin-main {
-      flex: 1;
-      padding: 2.5rem;
-      overflow-y: auto;
-      max-width: 1400px;
-    }
-    @media (max-width: 900px) {
-      body { flex-direction: column; }
-      .admin-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); height: auto; position: static; }
-      .admin-main { max-width: 100%; padding: 1.25rem; }
-    }
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      border-radius: 0.75rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 600;
-      margin-bottom: 0.35rem;
-      transition: all 0.2s ease;
-      cursor: pointer;
-      background: none;
-      border: none;
-      width: 100%;
-      text-align: left;
-      font-family: inherit;
-      font-size: 0.95rem;
-    }
-    .nav-item:hover, .nav-item.active {
-      background: rgba(168, 85, 247, 0.15);
-      color: #fff;
-    }
-    .nav-item.active {
-      color: var(--primary);
-      border-left: 4px solid var(--primary);
-    }
-    .stat-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 1.5rem;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.65rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 700;
-      font-size: 0.85rem;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      font-family: inherit;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-secondary { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--border); }
-    .btn-secondary:hover { background: rgba(255,255,255,0.12); }
-    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-success { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.4); }
-    .btn-success:hover { background: var(--success); color: #fff; }
-    
-    .table-container {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      overflow: hidden;
-      margin-top: 1.5rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-    th {
-      background: rgba(15, 23, 42, 0.8);
-      color: var(--text-muted);
-      padding: 1rem 1.25rem;
-      font-weight: 700;
-      border-bottom: 1px solid var(--border);
-      text-transform: uppercase;
-      font-size: 0.8rem;
-      letter-spacing: 0.05em;
-    }
-    td {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      font-size: 0.9rem;
-      vertical-align: middle;
-    }
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-    .input-field {
-      width: 100%;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      font-family: inherit;
-      margin-top: 0.4rem;
-    }
-    .input-field:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-    .form-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.35rem;
-    }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+    body { background: var(--bg); color: var(--text); font: 400 14px/1.5 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    button { font: inherit; color: inherit; }
+
+    /* Üst bar */
+    .topbar { position: sticky; top: 0; z-index: 50; background: rgba(10,10,12,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topbar-inner { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; height: 56px; display: flex; align-items: center; gap: 1rem; }
+    .brand { font-weight: 700; font-size: .95rem; text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+    .brand-icon { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: .85rem; }
+    .topbar-links { margin-left: auto; display: flex; gap: .25rem; }
+    .topbar-links a { color: var(--muted); text-decoration: none; font-size: .85rem; padding: .4rem .65rem; border-radius: 7px; }
+    .topbar-links a:hover { color: var(--text); }
+
+    .tabs-wrap { border-bottom: 1px solid var(--border); }
+    .tabs { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; display: flex; gap: 1.5rem; overflow-x: auto; scrollbar-width: none; }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: .8rem 0; margin-bottom: -1px; color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap; display: inline-flex; gap: .4rem; align-items: center; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--text); }
+    .count { font-size: .72rem; padding: 0 .4rem; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--muted); line-height: 1.5; }
+    .count.alert { background: rgba(248,113,113,.15); color: var(--bad); }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .head h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; }
+    .head p { color: var(--muted); margin-top: .2rem; }
+    h2 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .75rem; }
+
+    /* Butonlar */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: 34px; padding: 0 .9rem; border-radius: 8px; border: 1px solid var(--border-strong); background: transparent; font-weight: 500; font-size: .85rem; text-decoration: none; cursor: pointer; white-space: nowrap; transition: background .12s, opacity .12s; }
+    .btn:hover { background: rgba(255,255,255,.05); }
+    .btn:disabled { opacity: .5; cursor: wait; }
+    .btn-primary { background: var(--text); color: #0a0a0c; border-color: var(--text); }
+    .btn-primary:hover { background: var(--text); opacity: .88; }
+    .btn-danger { background: var(--bad); color: #0a0a0c; border-color: var(--bad); }
+    .btn-danger:hover { background: var(--bad); opacity: .88; }
+    .btn-ghost { border-color: transparent; color: var(--muted); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-sm { height: 28px; padding: 0 .6rem; font-size: .8rem; }
+    .danger-text { color: var(--bad); }
+    .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: .25rem .4rem; border-radius: 6px; }
+    .icon-btn:hover { color: var(--bad); background: rgba(248,113,113,.08); }
+
+    /* İstatistikler */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-bottom: 1.5rem; }
+    .stat { padding: 1rem 1.25rem; }
+    .stat + .stat { border-left: 1px solid var(--border); }
+    .stat-label { color: var(--muted); font-size: .8rem; }
+    .stat-value { font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; margin-top: .15rem; }
+
+    .notice { display: flex; gap: .75rem; align-items: center; padding: .75rem 1rem; border: 1px solid rgba(251,191,36,.25); background: rgba(251,191,36,.06); border-radius: 10px; margin-bottom: 1.25rem; font-size: .85rem; }
+
+    /* Tablolar */
+    .table-wrap { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-weight: 500; font-size: .78rem; color: var(--muted); padding: .65rem 1rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: .7rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.015); }
+    .cell-title { font-weight: 500; }
+    .cell-sub { color: var(--muted); font-size: .8rem; margin-top: .1rem; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cell-sub a { color: var(--muted); }
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .muted { color: var(--muted); }
+    .small { font-size: .8rem; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nowrap { white-space: nowrap; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8rem; }
+    .tag { font-family: ui-monospace, Consolas, monospace; font-size: .75rem; padding: .1rem .4rem; border-radius: 5px; background: rgba(255,255,255,.06); }
+    .empty { text-align: center; color: var(--muted); padding: 2.5rem 1rem; }
+    .star { color: var(--warn); }
+    .row-actions { display: flex; gap: .35rem; align-items: center; justify-content: flex-end; }
+    th:last-child { text-align: right; }
+
+    .badge { display: inline-flex; align-items: center; gap: .35rem; font-size: .75rem; font-weight: 500; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .badge-ok { color: var(--ok); }
+    .badge-warn { color: var(--warn); }
+    .badge-bad { color: var(--bad); }
+    .badge-muted { color: var(--muted); }
+
+    /* Satır menüsü */
+    .menu { position: relative; }
+    .menu summary { list-style: none; }
+    .menu summary::-webkit-details-marker { display: none; }
+    .menu-list { position: fixed; z-index: 60; min-width: 210px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: .3rem; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+    .menu-list a, .menu-list button { display: block; width: 100%; text-align: left; background: none; border: none; padding: .45rem .65rem; border-radius: 6px; text-decoration: none; font-size: .85rem; cursor: pointer; }
+    .menu-list a:hover, .menu-list button:hover { background: rgba(255,255,255,.06); }
+    .menu-list .danger { color: var(--bad); }
+    .menu-list hr { border: none; border-top: 1px solid var(--border); margin: .3rem 0; }
+
+    /* Filtre */
+    .filters { display: flex; gap: .5rem; margin-bottom: .75rem; flex-wrap: wrap; }
+    .filters .input { width: auto; min-width: 220px; }
+
+    /* Formlar */
+    .form-card { max-width: 760px; }
+    .section { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 1.25rem; margin-bottom: 1rem; }
+    .section-title { font-weight: 600; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .section-hint { color: var(--muted); font-size: .8rem; font-weight: 400; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .field { margin-bottom: 1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .grid-2 .field, .grid-3 .field { margin-bottom: 0; }
+    .grid-2 + .field, .grid-2 + .grid-2, .field + .grid-2, .grid-3 + .grid-2 { margin-top: 1rem; }
+    label.lbl { display: block; font-size: .8rem; font-weight: 500; color: var(--muted); margin-bottom: .35rem; }
+    .input { width: 100%; height: 36px; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); padding: 0 .7rem; font: inherit; font-size: .875rem; }
+    textarea.input { height: auto; padding: .55rem .7rem; resize: vertical; }
+    .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(169,165,255,.15); }
+    input[type="color"].input { padding: 3px; cursor: pointer; }
+    .check { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem; cursor: pointer; white-space: nowrap; }
+    .check input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .inline-field { display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--muted); }
+    .inline-field .input { width: 64px; }
+    details.advanced > summary { cursor: pointer; color: var(--muted); font-weight: 500; list-style: none; }
+    details.advanced > summary::before { content: '▸ '; }
+    details.advanced[open] > summary::before { content: '▾ '; }
+    details.advanced[open] > summary { margin-bottom: 1rem; }
+    .form-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }
+
+    .task-list { display: flex; flex-direction: column; gap: .6rem; }
+    .task-row { border: 1px solid var(--border); border-radius: 10px; padding: .75rem; background: var(--bg); display: flex; flex-direction: column; gap: .5rem; }
+    .task-main { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+    .task-opts { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    .task-opts select.input { width: auto; }
+    .task-opts .icon-btn { margin-left: auto; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem; }
+    .modal.open { display: flex; }
+    .modal-box { width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 1.5rem; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .modal-head h3 { font-size: 1.05rem; font-weight: 600; }
+    .modal-text { color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 200; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: .65rem 1rem; font-size: .85rem; transition: opacity .2s, transform .2s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.error { border-color: rgba(248,113,113,.5); color: var(--bad); }
+
+    @media (max-width: 760px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat:nth-child(3) { border-left: none; }
+      .stat:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .grid-2, .grid-3, .task-main { grid-template-columns: 1fr; }
+      .topbar-links a:first-child { display: none; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <aside class="admin-sidebar">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
-      <div style="width: 40px; height: 40px; border-radius: 0.75rem; background: linear-gradient(135deg, #a855f7, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-        ⚡
-      </div>
-      <div>
-        <div style="font-weight: 900; font-size: 1.05rem; color: #fff;">EKO YILDIZ</div>
-        <div style="font-size: 0.75rem; color: var(--primary); font-weight: 800;">ADMIN PANELİ</div>
-      </div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/admin/giveaways" class="brand"><span class="brand-icon">🎁</span>Çekiliş Paneli</a>
+      <nav class="topbar-links">
+        <a href="/cekilisler" target="_blank">Siteyi gör ↗</a>
+        <a href="/admin">Ana admin</a>
+      </nav>
     </div>
+  </header>
 
-    <nav style="flex: 1;">
-      <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard', this)">
-        <span>📊</span> Dashboard
-      </button>
-      <button class="nav-item" data-tab="giveaways" onclick="switchTab('giveaways', this)">
-        <span>🎁</span> Çekilişler
-      </button>
-      <button class="nav-item" data-tab="wizard" onclick="switchTab('wizard', this)">
-        <span>✨</span> Yeni Çekiliş Sihirbazı
-      </button>
-      <button class="nav-item" data-tab="participants" onclick="switchTab('participants', this)">
-        <span>👥</span> Katılımcı Yönetimi
-      </button>
-      <button class="nav-item" data-tab="fraud" onclick="switchTab('fraud', this)">
-        <span>🛡️</span> Şüpheli / Anti-Cheat (${fraudFlags.length})
-      </button>
-      <button class="nav-item" data-tab="ads" onclick="switchTab('ads', this)">
-        <span>📢</span> Sponsor & Reklamlar (${ads.length})
-      </button>
-      <button class="nav-item" data-tab="social-ads" onclick="switchTab('social-ads', this)">
-        <span>🌟</span> Sosyal Medya Kampanyaları (${socialAds.length})
-      </button>
-      <button class="nav-item" data-tab="audit" onclick="switchTab('audit', this)">
-        <span>📜</span> Audit Denetim Logları
-      </button>
+  <div class="tabs-wrap">
+    <nav class="tabs">
+      <button class="tab active" data-tab="giveaways">Çekilişler <span class="count">${giveaways.length}</span></button>
+      <button class="tab" data-tab="participants">Katılımcılar <span class="count">${participants.length}</span></button>
+      <button class="tab" data-tab="fraud">Şüpheli <span class="count${fraudFlags.length ? ' alert' : ''}">${fraudFlags.length}</span></button>
+      <button class="tab" data-tab="ads">Reklamlar</button>
+      <button class="tab" data-tab="logs">Kayıtlar</button>
     </nav>
+  </div>
 
-    <div style="padding-top: 1.5rem; border-top: 1px solid var(--border);">
-      <a href="/cekilisler" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.5rem;">
-        🌐 Platforma Git
-      </a>
-      <a href="/admin" class="btn btn-secondary" style="width: 100%;">
-        ⚙️ Ana Site Admin
-      </a>
-    </div>
-  </aside>
+  <main>
 
-  <!-- Main Content -->
-  <main class="admin-main">
-    
-    <!-- Top Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-      <div>
-        <h1 id="pageTitle" style="font-size: 1.75rem; font-weight: 900;">Çekiliş & Sponsor Yönetim Paneli</h1>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Platform durumunu takip et, yeni çekilişler başlat ve kazananları belirle.</p>
-      </div>
-      <div style="display: flex; gap: 0.75rem;">
-        <button onclick="switchTab('wizard')" class="btn btn-primary">
-          ➕ Yeni Çekiliş Başlat
-        </button>
-      </div>
-
-      <div style="margin:1.5rem 0;padding:1.25rem;border:1px solid rgba(56,189,248,.25);border-radius:16px;background:rgba(14,165,233,.06)"><div style="display:flex;justify-content:space-between;gap:1rem;align-items:center"><div><b style="color:#fff">Canlı kullanıcı görünümü</b><div style="color:var(--text-muted);font-size:.8rem">Son 24 saat içindeki son etkinlikler · yönetici görünümü</div></div><span style="color:#38bdf8;font-weight:800">${liveUsers.length} etkin kullanıcı</span></div><div style="display:grid;gap:.5rem;margin-top:1rem">${liveUsers.slice(0,8).map(u=>`<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;padding:.6rem .75rem;background:rgba(0,0,0,.18);border-radius:9px;font-size:.8rem"><span>🟢 ${u.username}</span><code style="color:#94a3b8">${u.ip}</code><span style="color:var(--text-muted)">${new Date(u.time).toLocaleString('tr-TR')}</span></div>`).join('') || '<span style="color:var(--text-muted);font-size:.85rem">Son 24 saatte kayıtlı etkinlik yok.</span>'}</div></div>
-    </div>
-
-    <!-- TAB 1: DASHBOARD -->
-    <div id="tab-dashboard" class="tab-content active">
-      <!-- Stats Overview -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Aktif Çekilişler</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #22c55e;">${stats.activeGiveaways || 0}</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Katılımcılar</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #fff;">${(stats.totalParticipants || 0).toLocaleString('tr-TR')}</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Bilet (Hak)</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #a855f7;">${(stats.totalTickets || 0).toLocaleString('tr-TR')}</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tamamlanan Görevler</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #38bdf8;">${(stats.completedTasks || 0).toLocaleString('tr-TR')}</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Şüpheli Girişler</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #ef4444;">${stats.fraudCount || 0}</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Aktif Sponsor Reklamları</div>
-          <div style="font-size: 2rem; font-weight: 900; color: #fbbf24;">${ads.filter(a => a.isActive).length}</div>
-        </div>
-      </div>
-
-      <!-- Quick Action Cards -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-        <div class="stat-card">
-          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">🎁 Aktif Çekiliş Durumları</h3>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            ${giveaways.filter(g => g.status === 'ACTIVE').map(g => `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 0.5rem; border: 1px solid var(--border);">
-                <div>
-                  <div style="font-weight: 800;">${g.title}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted);">👥 ${g.totalEntries || 0} katılımcı &bull; 🎟️ ${g.totalTickets || 0} bilet</div>
-                </div>
-                <button onclick="openDrawWinnerModal('${g._id}', '${g.title.replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                  🎲 Kazananı Seç
-                </button>
-              </div>
-            `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem;">Şu anda aktif çekiliş yok.</div>'}
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1rem;">📢 Sponsor Reklam Performansları</h3>
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            ${ads.map(ad => `
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 0.5rem; border: 1px solid var(--border);">
-                <div>
-                  <div style="font-weight: 800; color: #fff;">${ad.title}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted);">👁️ ${ad.impressions || 0} gösterim &bull; 🖱️ ${ad.clicks || 0} tık &bull; CTR: %${ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : 0}</div>
-                </div>
-                <span style="font-size: 0.75rem; font-weight: 800; color: ${ad.isActive ? '#22c55e' : '#94a3b8'};">
-                  ${ad.isActive ? 'AKTİF' : 'PASİF'}
-                </span>
-              </div>
-            `).join('') || '<div style="color:var(--text-muted); font-size:0.85rem;">Kayıtlı reklam bulunmuyor.</div>'}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: GIVEAWAYS LIST -->
-    <div id="tab-giveaways" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+    <!-- ÇEKİLİŞLER -->
+    <section id="view-giveaways" class="view active">
+      <div class="head">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800;">Tüm Çekilişler</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Platformdaki tüm aktif, planlanmış ve tamamlanmış çekilişler.</p>
+          <h1>Çekilişler</h1>
+          <p>Çekiliş oluştur, yayınla ve kazananları seç.</p>
         </div>
-        <button onclick="switchTab('wizard')" class="btn btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">
-          ➕ Yeni Çekiliş Başlat
-        </button>
+        <button class="btn btn-primary" data-tab-link="new">+ Yeni çekiliş</button>
       </div>
 
-      <div class="table-container">
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Aktif çekiliş</div><div class="stat-value">${fmt(stats.activeGiveaways ?? activeCount)}</div></div>
+        <div class="stat"><div class="stat-label">Katılımcı</div><div class="stat-value">${fmt(stats.totalParticipants)}</div></div>
+        <div class="stat"><div class="stat-label">Dağıtılan bilet</div><div class="stat-value">${fmt(stats.totalTickets)}</div></div>
+        <div class="stat"><div class="stat-label">Şüpheli kayıt</div><div class="stat-value">${fmt(stats.fraudCount ?? fraudFlags.length)}</div></div>
+      </div>
+
+      ${needsAttention.length ? `
+        <div class="notice">
+          <span>⚠️</span>
+          <span>${needsAttention.map(g => `<strong>${esc(g.title)}</strong> — ${g.status === 'DRAFT' ? 'taslak, sitede görünmüyor' : 'süresi doldu, kazanan seçilmeyi bekliyor'}`).join('<br>')}</span>
+        </div>` : ''}
+
+      <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>Çekiliş Adı</th>
-              <th>Ödül</th>
-              <th>Durum</th>
-              <th>Katılımcı / Bilet</th>
-              <th>Bitiş Tarihi</th>
-              <th>İşlemler</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${giveaways && giveaways.length > 0 ? giveaways.map(g => `
-              <tr>
-                <td>
-                  <strong style="color: #fff;">${g.title}</strong>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Sponsor: ${g.sponsor || 'Eko Yıldız'}</div>
-                </td>
-                <td style="color: #38bdf8; font-weight: 700;">${g.prize}</td>
-                <td>
-                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${g.status === 'ACTIVE' ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : (g.status === 'SCHEDULED' ? 'rgba(234, 179, 8, 0.2); color: #eab308' : 'rgba(148, 163, 184, 0.2); color: #94a3b8')};">
-                    ${g.status}
-                  </span>
-                </td>
-                <td>👥 ${g.totalParticipants || g.totalEntries || 0} / 🎟️ ${g.totalTickets || 0}</td>
-                <td style="color: var(--text-muted);">${g.endDate ? new Date(g.endDate).toLocaleDateString('tr-TR') : '-'}</td>
-                <td>
-                  <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                    <a href="/cekilisler/${g.slug || g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görüntüle</a>
-                    <button onclick="recalculateGiveawayStats('${g._id}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;" title="Sayaçları yeniden hesapla">🔄 Sayaçlar</button>
-                    ${g.status === 'ACTIVE' ? `
-                      <button onclick="openDrawWinnerModal('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">🎲 Kazanan Seç</button>
-                    ` : (g.status === 'COMPLETED' ? `
-                      <button onclick="openDrawWinnerModal('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}', true)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #fbbf24;">🔁 Yeniden Çek</button>
-                      <a href="/cekilisler/canli/${g._id}" target="_blank" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; color: #38bdf8;">📺 Canlı Ekran</a>
-                    ` : '')}
-                    <button onclick="deleteGiveaway('${g._id}', '${(g.title || '').replace(/'/g, "\\'")}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444;" title="Çekilişi ve Bağlı Görevleri Sil">🗑️ Sil</button>
-                  </div>
-                </td>
-              </tr>
-            `).join('') : `
-              <tr>
-                <td colspan="6" style="text-align:center; padding:3.5rem 1rem; color:var(--text-muted);">
-                  <div style="font-size: 3rem; margin-bottom: 0.75rem;">🎁</div>
-                  <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">Kayıtlı Çekiliş Bulunmuyor</h3>
-                  <p style="font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.5rem;">Şu anda sistemde herhangi bir çekiliş yok. Yeni bir çekiliş oluşturup hemen yayınlayabilirsiniz.</p>
-                  <button onclick="switchTab('wizard')" class="btn btn-primary" style="padding: 0.7rem 1.75rem;">
-                    ➕ Yeni Çekiliş Oluştur
-                  </button>
-                </td>
-              </tr>
-            `}
-          </tbody>
+          <thead><tr><th>Çekiliş</th><th>Durum</th><th>Katılımcı</th><th>Bilet</th><th>Bitiş</th><th></th></tr></thead>
+          <tbody>${giveawayRows || emptyRow(6, 'Henüz çekiliş yok. <a href="#new" data-tab-link="new">İlk çekilişi oluştur</a>.')}</tbody>
         </table>
       </div>
-    </div>
+    </section>
 
-    <!-- TAB 3: MULTI-STEP GIVEAWAY CREATION WIZARD -->
-    <div id="tab-wizard" class="tab-content">
-      <div class="stat-card" style="max-width: 860px; margin: 0 auto; padding: 2.25rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem;">✨ Yeni Çekiliş Oluşturma Sihirbazı</h2>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">
-          Tüm alanları doldurarak çekilişinizi oluşturun. Oluşturduğunuz çekiliş anında kalıcı olarak kaydedilecek ve sitede aktifleşecektir.
-        </p>
-
-        <form id="wizardForm" onsubmit="handleCreateGiveaway(event)">
-          <!-- STEP 1: General Info -->
-          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 1 — Genel Bilgiler & Ödül
-            </h3>
-            <div class="form-group">
-              <label class="form-label">Çekiliş Başlığı *</label>
-              <input type="text" name="title" class="input-field" placeholder="Örn: 10.000 Robux Büyük Topluluk Çekilişi" required minlength="3">
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Ödül Tanımı *</label>
-                <input type="text" name="prize" class="input-field" placeholder="Örn: 10.000 Robux veya Discord Nitro" required minlength="2">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Sponsor Marka / Adı</label>
-                <input type="text" name="sponsor" class="input-field" placeholder="Örn: Eko Yıldız" value="Eko Yıldız">
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Açıklama</label>
-              <textarea name="description" class="input-field" rows="3" placeholder="Çekiliş kuralları, ödül teslim detayları ve katılım şartları..."></textarea>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Başlangıç Tarihi</label>
-                <input type="datetime-local" name="startDate" class="input-field">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Bitiş Tarihi *</label>
-                <input type="datetime-local" name="endDate" class="input-field" required>
-              </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Kapak Görseli URL</label>
-                <input type="url" name="coverImage" class="input-field" placeholder="https://images.unsplash.com/... veya resim bağlantısı">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Vurgu Rengi</label>
-                <input type="color" name="accentColor" class="input-field" value="#8b5cf6" style="height: 42px; padding: 2px 6px; cursor: pointer;">
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 2: Parameters -->
-          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 2 — Kurallar & Kazanan Ayarları
-            </h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Asil Kazanan Sayısı</label>
-                <input type="number" name="winnerCount" class="input-field" value="1" min="1" max="50">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Yedek Kazanan Sayısı</label>
-                <input type="number" name="backupWinnerCount" class="input-field" value="1" min="0" max="20">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Kişi Başı Max Bilet</label>
-                <input type="number" name="maxEntriesPerUser" class="input-field" value="50" min="1" max="500">
-              </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Arkadaş Daveti (Referral) Aktif mi?</label>
-                <select name="referralEnabled" class="input-field">
-                  <option value="true">Evet, Davet Linki Verilsin</option>
-                  <option value="false">Hayır, Sadece Görevler</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Davet Başına Bilet Ödülü</label>
-                <input type="number" name="referralTickets" class="input-field" value="2" min="1" max="20">
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 3: Tasks Setup -->
-          <div style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin: 0;">
-                ADIM 3 — Çekiliş Görevleri (Opsiyonel / Özelleştirilebilir)
-              </h3>
-              <button type="button" onclick="addTaskRow()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                ➕ Görev Ekle
-              </button>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">
-              Katılımcıların bilet kazanmak için tamamlaması gereken görevleri ekleyin. Link girdiğinizde görev doğrudan ilgili sayfayı açar.
-            </p>
-            <div id="tasksContainer" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
-              <!-- Default task 1 -->
-              <div class="task-row" style="background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 2fr 1.2fr 80px 100px 36px; gap: 0.5rem; align-items: center;">
-                <input type="text" placeholder="Görev Başlığı *" class="input-field task-title" value="Eko Yıldız YouTube Kanalına Abone Ol" required style="margin-top:0;">
-                <select class="input-field task-platform" style="margin-top:0;">
-                  <option value="youtube" selected>YouTube</option>
-                  <option value="discord">Discord</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="tiktok">TikTok</option>
-                  <option value="kick">Kick</option>
-                  <option value="twitch">Twitch</option>
-                  <option value="website">Web Sitesi</option>
-                </select>
-                <input type="text" placeholder="Bağlantı URL (https://...)" class="input-field task-link" value="https://www.youtube.com/@eko8yildiz" style="margin-top:0;">
-                <select class="input-field task-strategy" title="Doğrulama Yöntemi" style="margin-top:0;">
-                  <option value="VISIT_ONLY" selected>Ziyaret (Hızlı)</option>
-                  <option value="AUTO">Otomatik Onay</option>
-                  <option value="API">API Entegrasyon</option>
-                  <option value="PROOF_REQUIRED">Kanıt İste</option>
-                  <option value="MANUAL">Admin Onayı</option>
-                </select>
-                <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1" style="margin-top:0;" title="Bilet Ödülü">
-                <select class="input-field task-mandatory" style="margin-top:0;">
-                  <option value="true" selected>Zorunlu</option>
-                  <option value="false">Opsiyonel</option>
-                </select>
-                <button type="button" onclick="this.closest('.task-row').remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; padding:4px;" title="Görevi Kaldır">✕</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- STEP 4: Status & Visibility -->
-          <div style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;">
-              ADIM 4 — Yayın Durumu
-            </h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div class="form-group">
-                <label class="form-label">Yayınlama Durumu</label>
-                <select name="status" class="input-field">
-                  <option value="ACTIVE" selected>🟢 Hemen Aktif Et (Yayına Al)</option>
-                  <option value="SCHEDULED">⏳ Planlanmış (Tarihi Gelince Başlat)</option>
-                  <option value="DRAFT">📝 Taslak Olarak Sakla</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Öne Çıkarılsın mı?</label>
-                <select name="isFeatured" class="input-field">
-                  <option value="true" selected>Evet, Ana Sayfada Öne Çıkar</option>
-                  <option value="false">Hayır, Standart Liste</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
-            <button type="button" onclick="switchTab('giveaways')" class="btn btn-secondary">
-              İptal
-            </button>
-            <button type="submit" id="btnSubmitGiveaway" class="btn btn-primary" style="padding: 0.85rem 2.5rem; font-size: 1rem; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
-              🚀 Çekilişi Kaydet & Yayınla
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- TAB 4: PARTICIPANTS & VERIFICATION -->
-    <div id="tab-participants" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 800;">Katılımcı & Bilet İnceleme</h2>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Kullanıcı Adı</th>
-              <th>Çekiliş</th>
-              <th>Bilet Sayısı</th>
-              <th>IP Adresi</th>
-              <th>Referral Kodu</th>
-              <th>Durum</th>
-              <th>İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${participants.map(p => `
-              <tr>
-                <td><strong style="color: #fff;">@${p.username}</strong></td>
-                <td>${p.giveawayTitle || p.giveawayId}</td>
-                <td style="color: #a855f7; font-weight: 800;">🎟️ ${p.ticketCount || 1}</td>
-                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${p.ip || '127.0.0.1'}</td>
-                <td style="font-family: monospace; font-size: 0.8rem;">${p.referralCode || '-'}</td>
-                <td>
-                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${p.status === 'VALID' ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
-                    ${p.status || 'VALID'}
-                  </span>
-                </td>
-                <td>
-                  ${p.status === 'VALID' ? `
-                    <button onclick="disqualifyParticipant('${p._id}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">İptal Et</button>
-                  ` : `
-                    <button onclick="restoreParticipant('${p._id}')" class="btn btn-success" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Onayla</button>
-                  `}
-                </td>
-              </tr>
-            `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Kayıtlı katılımcı bulunmuyor.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 5: FRAUD & ANTI-CHEAT -->
-    <div id="tab-fraud" class="tab-content">
-      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">🛡️ Anti-Cheat & Şüpheli Katılımlar</h2>
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-        Sistem aynı IP'den çoklu hesap, kendi referansıyla kaydolma veya anormal hızda görev tamamlama durumlarını otomatik olarak şüpheli olarak işaretler. Admin kararıyla engellenir veya serbest bırakılır.
-      </p>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Kullanıcı / Çekiliş</th>
-              <th>İhlal Nedeni</th>
-              <th>IP / Sinyal</th>
-              <th>Tarih</th>
-              <th>İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${fraudFlags.map(f => `
-              <tr>
-                <td>
-                  <strong>@${f.username}</strong>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">${f.giveawayTitle || f.giveawayId}</div>
-                </td>
-                <td style="color: #ef4444; font-weight: 700;">${f.reason}</td>
-                <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${f.ip || '-'}</td>
-                <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(f.timestamp).toLocaleString('tr-TR')}</td>
-                <td>
-                  <button onclick="resolveFraud('${f._id}', 'BAN')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Diskalifiye Et</button>
-                  <button onclick="resolveFraud('${f._id}', 'IGNORE')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">Görmezden Gel</button>
-                </td>
-              </tr>
-            `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Harika! Şu anda herhangi bir şüpheli katılım bulunmuyor.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 6: SPONSOR ADS MANAGEMENT -->
-    <div id="tab-ads" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <!-- YENİ ÇEKİLİŞ -->
+    <section id="view-new" class="view">
+      <div class="head">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800;">Sponsorlu Bağlantılar & Reklamlar</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Sitede gösterilen sponsor kartlarını yönet, gösterim/tıklama oranlarını izle.</p>
+          <h1>Yeni çekiliş</h1>
+          <p>Zorunlu alanlar: başlık, ödül ve bitiş tarihi.</p>
         </div>
-        <button onclick="document.getElementById('newAdModal').style.display='flex'" class="btn btn-primary">
-          ➕ Yeni Sponsor Reklamı Ekle
-        </button>
+        <button class="btn btn-ghost" data-tab-link="giveaways">← Çekilişlere dön</button>
       </div>
 
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Reklam & Sponsor</th>
-              <th>Hedef URL</th>
-              <th>Öncelik</th>
-              <th>Gösterim</th>
-              <th>Tıklama</th>
-              <th>CTR (%)</th>
-              <th>Durum</th>
-              <th>İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${ads.map(ad => `
-              <tr>
-                <td>
-                  <strong style="color: #fff;">${ad.title}</strong>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Sponsor: ${ad.sponsorName}</div>
-                </td>
-                <td style="font-size: 0.8rem; color: var(--accent); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  <a href="${ad.targetUrl}" target="_blank" style="color: var(--accent);">${ad.targetUrl}</a>
-                </td>
-                <td style="font-weight: 800;">${ad.priority || 1}</td>
-                <td>${ad.impressions || 0}</td>
-                <td style="color: #38bdf8; font-weight: 700;">${ad.clicks || 0}</td>
-                <td style="color: #a855f7; font-weight: 700;">
-                  %${ad.impressions ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : 0}
-                </td>
-                <td>
-                  <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${ad.isActive ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
-                    ${ad.isActive ? 'AKTİF' : 'PASİF'}
-                  </span>
-                </td>
-                <td>
-                  <button onclick="toggleAdStatus('${ad._id}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
-                    ${ad.isActive ? 'Pasife Al' : 'Aktif Et'}
-                  </button>
-                  <button onclick="deleteAd('${ad._id}')" class="btn btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
-                    Sil
-                  </button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB: SOCIAL ADS & INTERACTIVE CAMPAIGNS -->
-    <div id="tab-social-ads" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800;">🌟 Eko Yıldız Sosyal Medya Kampanyaları & Social Ads Hub</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">7 Resmi hesabın interaktif micro-ad deneyimlerini, anlık etkileşim metriklerini ve sezonluk kampanya modlarını yönetin.</p>
-        </div>
-        <div style="display: flex; gap: 0.75rem;">
-          <a href="/#social-hub" target="_blank" class="btn btn-secondary">
-            👁️ Sitede Önizle
-          </a>
-        </div>
-      </div>
-
-      <!-- Social Ads Metrics Row -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Toplam Görüntülenme</div>
-          <div style="font-size: 1.6rem; font-weight: 900; color: #fff; margin: 0.35rem 0;">${socialAnalytics.totalViews || 0}</div>
-          <div style="font-size: 0.75rem; color: var(--accent);">Tüm kartların toplam impression'ı</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Başlatılan Etkileşim</div>
-          <div style="font-size: 1.6rem; font-weight: 900; color: #38bdf8; margin: 0.35rem 0;">
-            ${socialAds.reduce((s, a) => s + (Number(a.interactionsStarted) || 0), 0)}
+      <form id="createForm" class="form-card">
+        <div class="section">
+          <div class="section-title">Temel bilgiler</div>
+          <div class="field">
+            <label class="lbl" for="f-title">Başlık</label>
+            <input id="f-title" class="input" name="title" placeholder="Örn: 10.000 Robux topluluk çekilişi" required minlength="3">
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">Oyuna / deneyime katılım</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tamamlanan Deneyim</div>
-          <div style="font-size: 1.6rem; font-weight: 900; color: #22c55e; margin: 0.35rem 0;">${socialAnalytics.totalCompleted || 0}</div>
-          <div style="font-size: 0.75rem; color: #22c55e;">Başarıyla sonlandırılanlar</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Sosyal Medyaya Tıklama</div>
-          <div style="font-size: 1.6rem; font-weight: 900; color: #a855f7; margin: 0.35rem 0;">${socialAnalytics.totalClicks || 0}</div>
-          <div style="font-size: 0.75rem; color: #a855f7;">Resmi hesaba gidenler</div>
-        </div>
-        <div class="stat-card">
-          <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">En Popüler Platform</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #fef08a; margin: 0.35rem 0;">${topPlatform}</div>
-          <div style="font-size: 0.75rem; color: var(--text-muted);">En yüksek tamamlanma sayısı</div>
-        </div>
-      </div>
-
-      <!-- Social Ads Table -->
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Platform & Hesap</th>
-              <th>İnteraktif Deneyim</th>
-              <th>Sezonluk Kampanya</th>
-              <th>Görüntülenme / Başlatma / Tamamlama</th>
-              <th>Tıklama / CTR</th>
-              <th>Öne Çıkarılmış</th>
-              <th>Durum</th>
-              <th>İşlemler</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${socialAds.map(s => {
-              const ctr = s.views ? ((s.clicks / s.views) * 100).toFixed(1) : 0;
-              const comp = s.interactionsStarted ? ((s.interactionsCompleted / s.interactionsStarted) * 100).toFixed(1) : 0;
-              return `
-                <tr>
-                  <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span style="font-size: 1.25rem;">
-                        ${s.platform === 'youtube' ? '▶' : (s.platform === 'instagram' ? '📸' : (s.platform === 'tiktok' ? '🎵' : (s.platform === 'kick' ? '🟢' : '💜')))}
-                      </span>
-                      <div>
-                        <strong style="color: #fff;">${s.accountName || s.title}</strong>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">${s.badgeText || s.platform}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 0.2rem 0.5rem; border-radius: 4px;">
-                      ${s.interactionType || 'standard'}
-                    </span>
-                  </td>
-                  <td>
-                    ${s.seasonalTag ? `
-                      <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(234, 179, 8, 0.2); color: #fef08a;">
-                        ${s.seasonalTag}
-                      </span>
-                    ` : '<span style="color: var(--text-muted); font-size: 0.8rem;">Standart</span>'}
-                  </td>
-                  <td>
-                    <div style="font-size: 0.85rem; font-weight: 700; color: #fff;">
-                      ${s.views || 0} / <span style="color:#38bdf8;">${s.interactionsStarted || 0}</span> / <span style="color:#22c55e;">${s.interactionsCompleted || 0}</span>
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Tamamlama: %${comp}</div>
-                  </td>
-                  <td>
-                    <div style="font-size: 0.85rem; font-weight: 800; color: #a855f7;">
-                      ${s.clicks || 0} tık
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">CTR: %${ctr}</div>
-                  </td>
-                  <td>
-                    ${s.isFeatured ? '<span style="color:#fbbf24; font-weight:800;">⭐ EVET</span>' : '<span style="color:var(--text-muted);">Hayır</span>'}
-                  </td>
-                  <td>
-                    <span style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 0.25rem; background: ${s.isActive !== false ? 'rgba(34, 197, 94, 0.2); color: #22c55e' : 'rgba(239, 68, 68, 0.2); color: #ef4444'};">
-                      ${s.isActive !== false ? 'AKTİF' : 'PASİF'}
-                    </span>
-                  </td>
-                  <td>
-                    <div style="display: flex; gap: 0.35rem; align-items: center;">
-                      <button onclick="toggleSocialAd('${s.key}')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
-                        ${s.isActive !== false ? 'Pasife Al' : 'Aktif Et'}
-                      </button>
-                      <button onclick="openEditSocialAdModal('${s.key}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
-                        ✏️ Düzenle
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 7: AUDIT LOGS -->
-    <div id="tab-audit" class="tab-content">
-      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem;">📜 Platform Denetim (Audit) Logları</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>İşlem (Action)</th>
-              <th>Yapan Yetkili</th>
-              <th>Detaylar</th>
-              <th>Tarih</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${auditLogs.map(log => `
-              <tr>
-                <td style="color: #a855f7; font-weight: 800;">[${log.action}]</td>
-                <td><strong>@${log.adminUsername || 'Sistem'}</strong></td>
-                <td style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">${JSON.stringify(log.details || {})}</td>
-                <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(log.timestamp).toLocaleString('tr-TR')}</td>
-              </tr>
-            `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;">Henüz kayıt bulunmuyor.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- NEW SPONSOR AD MODAL -->
-  <div id="newAdModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div class="stat-card" style="width: 100%; max-width: 550px; padding: 2rem;">
-      <h2 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 1rem;">➕ Yeni Sponsor Reklamı Ekle</h2>
-      <form onsubmit="handleCreateAd(event)">
-        <div class="form-group">
-          <label class="form-label">Başlık *</label>
-          <input type="text" name="title" class="input-field" placeholder="Örn: Eko Yıldız Resmi Discord Sunucusu" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Sponsor Marka / Adı *</label>
-          <input type="text" name="sponsorName" class="input-field" placeholder="Örn: Eko Yıldız" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Kısa Açıklama</label>
-          <input type="text" name="description" class="input-field" placeholder="Topluluğumuza katıl, sohbet et ve ödüller kazan!">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hedef URL (Bağlantı) *</label>
-          <input type="url" name="targetUrl" class="input-field" placeholder="https://discord.gg/..." required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Görsel URL</label>
-          <input type="url" name="imageUrl" class="input-field" placeholder="https://...">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">CTA Buton Yazısı</label>
-            <input type="text" name="ctaText" class="input-field" value="Hemen Katıl">
+          <div class="grid-2">
+            <div class="field">
+              <label class="lbl" for="f-prize">Ödül</label>
+              <input id="f-prize" class="input" name="prize" placeholder="Örn: 3 kişiye 3000 Robux" required minlength="2">
+            </div>
+            <div class="field">
+              <label class="lbl" for="f-winners">Kazanan sayısı</label>
+              <input id="f-winners" class="input" type="number" name="winnerCount" value="1" min="1" max="50">
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Öncelik (1-10)</label>
-            <input type="number" name="priority" class="input-field" value="5" min="1" max="10">
+          <div class="field">
+            <label class="lbl" for="f-desc">Açıklama</label>
+            <textarea id="f-desc" class="input" name="description" rows="3" placeholder="Kurallar, ödül teslimi, katılım şartları..."></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="lbl" for="f-start">Başlangıç <span class="section-hint">(boş = hemen)</span></label>
+              <input id="f-start" class="input" type="datetime-local" name="startDate">
+            </div>
+            <div class="field">
+              <label class="lbl" for="f-end">Bitiş</label>
+              <input id="f-end" class="input" type="datetime-local" name="endDate" required>
+            </div>
+          </div>
+          <div class="field" style="margin-top:1rem">
+            <label class="lbl" for="f-cover">Kapak görseli URL <span class="section-hint">(isteğe bağlı)</span></label>
+            <input id="f-cover" class="input" type="url" name="coverImage" placeholder="https://...">
           </div>
         </div>
-        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
-          <button type="button" onclick="document.getElementById('newAdModal').style.display='none'" class="btn btn-secondary">
-            İptal
-          </button>
-          <button type="submit" class="btn btn-primary">
-            Kaydet & Yayınla
-          </button>
+
+        <div class="section">
+          <div class="section-title">
+            <span>Görevler <span class="section-hint">— katılımcılar bunları yaparak bilet kazanır</span></span>
+            <button type="button" class="btn btn-sm" data-act="add-task">+ Görev ekle</button>
+          </div>
+          <div id="taskList" class="task-list">${defaultTask}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Yayın</div>
+          <div class="grid-2">
+            <div class="field">
+              <label class="lbl" for="f-status">Durum</label>
+              <select id="f-status" class="input" name="status">
+                <option value="ACTIVE" selected>Hemen yayınla</option>
+                <option value="SCHEDULED">Başlangıç tarihinde yayınla</option>
+                <option value="DRAFT">Taslak olarak kaydet</option>
+              </select>
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end;padding-bottom:.5rem">
+              <label class="check"><input type="checkbox" name="isFeatured" checked> Çekilişler sayfasında öne çıkar</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <details class="advanced">
+            <summary>Gelişmiş ayarlar</summary>
+            <div class="grid-3">
+              <div class="field">
+                <label class="lbl" for="f-backup">Yedek kazanan</label>
+                <input id="f-backup" class="input" type="number" name="backupWinnerCount" value="1" min="0" max="20">
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-max">Kişi başı maks. bilet</label>
+                <input id="f-max" class="input" type="number" name="maxEntriesPerUser" value="50" min="1" max="500">
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-sponsor">Sponsor</label>
+                <input id="f-sponsor" class="input" name="sponsor" value="Eko Yıldız">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="lbl" for="f-refticket">Davet başına bilet</label>
+                <input id="f-refticket" class="input" type="number" name="referralTickets" value="2" min="1" max="20">
+              </div>
+              <div class="field">
+                <label class="lbl" for="f-color">Vurgu rengi</label>
+                <input id="f-color" class="input" type="color" name="accentColor" value="#8b85ff">
+              </div>
+            </div>
+            <div class="field" style="margin-top:1rem">
+              <label class="check"><input type="checkbox" name="referralEnabled" checked> Arkadaş davetiyle bilet kazanılabilsin</label>
+            </div>
+          </details>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn" data-tab-link="giveaways">Vazgeç</button>
+          <button type="submit" id="createSubmit" class="btn btn-primary">Çekilişi oluştur</button>
         </div>
       </form>
+    </section>
+
+    <!-- KATILIMCILAR -->
+    <section id="view-participants" class="view">
+      <div class="head">
+        <div>
+          <h1>Katılımcılar</h1>
+          <p>Tüm çekilişlerdeki katılımlar.</p>
+        </div>
+      </div>
+      <div class="filters">
+        <input id="pSearch" class="input" type="search" placeholder="Kullanıcı, IP veya davet kodu ara">
+        <select id="pGiveaway" class="input"><option value="">Tüm çekilişler</option>${giveawayOptions}</select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kullanıcı</th><th>Çekiliş</th><th>Bilet</th><th>IP</th><th>Durum</th><th></th></tr></thead>
+          <tbody id="pBody">${participantRows || emptyRow(6, 'Henüz katılımcı yok.')}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ŞÜPHELİ -->
+    <section id="view-fraud" class="view">
+      <div class="head">
+        <div>
+          <h1>Şüpheli katılımlar</h1>
+          <p>Aynı IP'den çoklu hesap, kendi davetini kullanma veya anormal hızlı görev tamamlama otomatik işaretlenir.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kullanıcı</th><th>Neden</th><th>IP</th><th>Tarih</th><th></th></tr></thead>
+          <tbody>${fraudRows || emptyRow(5, 'Şüpheli katılım yok.')}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REKLAMLAR -->
+    <section id="view-ads" class="view">
+      <div class="head">
+        <div>
+          <h1>Reklamlar</h1>
+          <p>Sponsor kartları ve sosyal medya kampanyaları.</p>
+        </div>
+        <button class="btn btn-primary" data-act="ad-new">+ Sponsor reklamı</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sponsor reklamı</th><th>Gösterim</th><th>Tıklama</th><th>CTR</th><th>Durum</th><th></th></tr></thead>
+          <tbody>${adRows || emptyRow(6, 'Henüz sponsor reklamı yok.')}</tbody>
+        </table>
+      </div>
+
+      <h2>Sosyal medya kampanyaları <span class="muted" style="font-weight:400;font-size:.85rem">— ${fmt(socialAnalytics.totalViews)} görüntülenme · ${fmt(socialAnalytics.totalClicks)} tıklama</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hesap</th><th>Görüntülenme</th><th>Tamamlanan</th><th>Tıklama</th><th>Durum</th><th></th></tr></thead>
+          <tbody>${socialRows || emptyRow(6, 'Kampanya yok.')}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- KAYITLAR -->
+    <section id="view-logs" class="view">
+      <div class="head">
+        <div>
+          <h1>Kayıtlar</h1>
+          <p>Son 30 yönetim işlemi ve son 24 saatte etkin kullanıcılar.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>İşlem</th><th>Yapan</th><th>Detay</th><th>Tarih</th></tr></thead>
+          <tbody>${auditRows || emptyRow(4, 'Henüz kayıt yok.')}</tbody>
+        </table>
+      </div>
+
+      <h2>Son 24 saatte etkin kullanıcılar <span class="muted" style="font-weight:400;font-size:.85rem">— ${liveUsers.length}</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Kullanıcı</th><th>IP</th><th>Son etkinlik</th></tr></thead>
+          <tbody>${liveRows || emptyRow(3, 'Son 24 saatte etkinlik yok.')}</tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- KAZANAN SEÇ -->
+  <div id="drawModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="drawTitle">Kazanan seç</h3>
+        <button class="icon-btn" data-close>✕</button>
+      </div>
+      <p class="modal-text" id="drawText"></p>
+      <div id="redrawGroup" class="field" style="display:none">
+        <label class="lbl" for="redrawReason">Yeniden çekme gerekçesi</label>
+        <input id="redrawReason" class="input" placeholder="Örn: Kazanan 24 saat içinde dönüş yapmadı">
+      </div>
+      <div class="form-actions">
+        <button class="btn" data-close>Vazgeç</button>
+        <button class="btn btn-primary" id="drawConfirm">Kazananı seç</button>
+      </div>
     </div>
   </div>
 
-  <script>
-    const _socialAdsList = ${JSON.stringify(socialAds)};
+  <!-- YENİ SPONSOR REKLAMI -->
+  <div id="adModal" class="modal">
+    <form class="modal-box" id="adForm">
+      <div class="modal-head">
+        <h3>Yeni sponsor reklamı</h3>
+        <button type="button" class="icon-btn" data-close>✕</button>
+      </div>
+      <div class="field"><label class="lbl">Başlık</label><input class="input" name="title" required placeholder="Örn: Eko Yıldız Discord sunucusu"></div>
+      <div class="grid-2">
+        <div class="field"><label class="lbl">Sponsor</label><input class="input" name="sponsorName" required placeholder="Örn: Eko Yıldız"></div>
+        <div class="field"><label class="lbl">Buton yazısı</label><input class="input" name="ctaText" value="Hemen katıl"></div>
+      </div>
+      <div class="field" style="margin-top:1rem"><label class="lbl">Kısa açıklama</label><input class="input" name="description"></div>
+      <div class="field"><label class="lbl">Hedef URL</label><input class="input" type="url" name="targetUrl" required placeholder="https://"></div>
+      <div class="grid-2">
+        <div class="field"><label class="lbl">Görsel URL</label><input class="input" type="url" name="imageUrl" placeholder="https://"></div>
+        <div class="field"><label class="lbl">Öncelik (1–10)</label><input class="input" type="number" name="priority" value="5" min="1" max="10"></div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
 
-    function switchTab(tabId, el) {
-      if (!tabId) return;
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const targetTab = document.getElementById('tab-' + tabId);
-      if (targetTab) {
-        targetTab.classList.add('active');
-      }
-      const targetNav = el || document.querySelector('.nav-item[data-tab="' + tabId + '"]');
-      if (targetNav) {
-        targetNav.classList.add('active');
-      }
-      try {
-        history.replaceState(null, '', '#' + tabId);
-      } catch (e) {}
+  <!-- SOSYAL KAMPANYA DÜZENLE -->
+  <div id="socialModal" class="modal">
+    <form class="modal-box" id="socialForm">
+      <div class="modal-head">
+        <h3>Kampanyayı düzenle</h3>
+        <button type="button" class="icon-btn" data-close>✕</button>
+      </div>
+      <input type="hidden" id="sKey">
+      <div class="field"><label class="lbl">Başlık</label><input class="input" id="sTitle" required></div>
+      <div class="field"><label class="lbl">Alt başlık</label><input class="input" id="sSubtitle"></div>
+      <div class="grid-2">
+        <div class="field"><label class="lbl">Buton yazısı</label><input class="input" id="sCta" required></div>
+        <div class="field"><label class="lbl">Rozet metni</label><input class="input" id="sBadge"></div>
+      </div>
+      <div class="field" style="margin-top:1rem"><label class="lbl">Esprili metin</label><input class="input" id="sQuote"></div>
+      <div class="field"><label class="lbl">Hedef URL</label><input class="input" type="url" id="sUrl" required></div>
+      <div class="grid-2">
+        <div class="field">
+          <label class="lbl">Sezonluk etiket</label>
+          <select class="input" id="sSeasonal">
+            <option value="">Yok</option>
+            <option value="🔥 Yeni Video Düştü">🔥 Yeni Video Düştü</option>
+            <option value="🟢 Bu Akşam Canlı Yayın">🟢 Bu Akşam Canlı Yayın</option>
+            <option value="🎁 Çekiliş Görevi Aktif">🎁 Çekiliş Görevi Aktif</option>
+            <option value="✨ Özel Gün Kampanyası">✨ Özel Gün Kampanyası</option>
+          </select>
+        </div>
+        <div class="field"><label class="lbl">Sıra</label><input class="input" type="number" id="sOrder" min="1" max="50"></div>
+      </div>
+      <div class="field" style="margin-top:1rem"><label class="check"><input type="checkbox" id="sFeatured"> Öne çıkar</label></div>
+      <div class="form-actions">
+        <button type="button" class="btn" data-close>Vazgeç</button>
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+      </div>
+    </form>
+  </div>
+
+  <template id="taskTemplate">${taskRowHtml()}</template>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    var SOCIAL_ADS = ${socialAdsJson};
+    var STATUS_LABELS = { ACTIVE: 'yayına alınacak', SCHEDULED: 'planlandı olarak işaretlenecek', ENDED: 'erken bitirilecek', CANCELLED: 'iptal edilecek', DRAFT: 'taslağa alınacak' };
+
+    // ── Yardımcılar ──
+    function $(sel, root) { return (root || document).querySelector(sel); }
+    function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+    function toast(msg, isError) {
+      var t = $('#toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (isError ? ' error' : '');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(function () { t.className = 'toast' + (isError ? ' error' : ''); }, 3200);
     }
 
-    window.addEventListener('DOMContentLoaded', function() {
-      const hash = (window.location.hash || '').replace('#', '').replace('tab-', '');
-      if (hash && document.getElementById('tab-' + hash)) {
-        switchTab(hash);
+    function reloadTo(tab) {
+      try { history.replaceState(null, '', '#' + tab); } catch (e) {}
+      setTimeout(function () { location.reload(); }, 600);
+    }
+
+    async function api(url, method, body) {
+      var opts = { method: method || 'POST', headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      try {
+        var res = await fetch(url, opts);
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok || data.success === false) {
+          toast(data.message || 'İşlem başarısız.', true);
+          return null;
+        }
+        return data;
+      } catch (err) {
+        toast('Sunucuya ulaşılamadı: ' + err.message, true);
+        return null;
+      }
+    }
+
+    // ── Sekmeler ──
+    function showTab(tab) {
+      if (!document.getElementById('view-' + tab)) tab = 'giveaways';
+      $all('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + tab); });
+      var navTab = tab === 'new' ? 'giveaways' : tab;
+      $all('.tab').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === navTab); });
+      try { history.replaceState(null, '', '#' + tab); } catch (e) {}
+      window.scrollTo(0, 0);
+    }
+    $all('.tab').forEach(function (b) { b.addEventListener('click', function () { showTab(b.dataset.tab); }); });
+    showTab((location.hash || '').replace('#', '') || 'giveaways');
+
+    // ── Modallar ──
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModals() { $all('.modal').forEach(function (m) { m.classList.remove('open'); }); }
+    $all('.modal').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-close]')) closeModals(); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModals(); });
+
+    // Satır menüleri: tablo kaydırma alanında kesilmesin diye ekrana sabitlenir
+    $all('details.menu').forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        if (!d.open) return;
+        $all('details.menu[open]').forEach(function (o) { if (o !== d) o.open = false; });
+        var r = d.querySelector('summary').getBoundingClientRect();
+        var list = d.querySelector('.menu-list');
+        list.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+        var h = list.offsetHeight;
+        var below = window.innerHeight - r.bottom;
+        if (below < h + 12 && r.top < h + 12) {
+          // İki yöne de sığmıyor: ekran içinde kalacak şekilde sıkıştır
+          list.style.bottom = '';
+          list.style.top = Math.max(8, window.innerHeight - h - 8) + 'px';
+        } else if (below < h + 12) {
+          list.style.top = '';
+          list.style.bottom = (window.innerHeight - r.top + 4) + 'px';
+        } else {
+          list.style.bottom = '';
+          list.style.top = (r.bottom + 4) + 'px';
+        }
+      });
+    });
+    function closeMenus(except) {
+      $all('details.menu[open]').forEach(function (d) { if (d !== except) d.open = false; });
+    }
+    document.addEventListener('click', function (e) { closeMenus(e.target.closest('details.menu')); });
+    window.addEventListener('scroll', function () { closeMenus(); }, true);
+
+    // ── Kazanan seçimi ──
+    var drawState = null;
+    function openDraw(id, title, isRedraw) {
+      drawState = { id: id, isRedraw: isRedraw };
+      $('#drawTitle').textContent = isRedraw ? 'Yeniden çek' : 'Kazanan seç';
+      $('#drawText').textContent = '"' + title + '" için geçerli biletlere göre ağırlıklı rastgele seçim yapılacak. ' +
+        (isRedraw ? 'Önceki kazanan geçersiz sayılıp arşivlenir.' : 'Sonuç kalıcı olarak kaydedilir.');
+      $('#redrawGroup').style.display = isRedraw ? 'block' : 'none';
+      $('#redrawReason').value = '';
+      $('#drawConfirm').disabled = false;
+      openModal('drawModal');
+    }
+    $('#drawConfirm').addEventListener('click', async function () {
+      if (!drawState) return;
+      var reason = $('#redrawReason').value.trim();
+      if (drawState.isRedraw && reason.length < 5) { toast('Gerekçe en az 5 karakter olmalı.', true); return; }
+      this.disabled = true;
+      var url = '/api/admin/giveaways/' + drawState.id + (drawState.isRedraw ? '/redraw' : '/draw');
+      var data = await api(url, 'POST', { isRedraw: drawState.isRedraw, reason: reason });
+      if (data) {
+        location.href = '/cekilisler/canli/' + drawState.id;
+      } else {
+        this.disabled = false;
       }
     });
 
-    function addTaskRow() {
-      const container = document.getElementById('tasksContainer');
-      const div = document.createElement('div');
-      div.className = 'task-row';
-      div.style = "background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: 0.5rem; border: 1px solid var(--border); display: grid; grid-template-columns: 2fr 1fr 2fr 1.2fr 80px 100px 36px; gap: 0.5rem; align-items: center;";
-      div.innerHTML = \`
-        <input type="text" placeholder="Görev Başlığı *" class="input-field task-title" required style="margin-top:0;">
-        <select class="input-field task-platform" style="margin-top:0;">
-          <option value="youtube">YouTube</option>
-          <option value="discord">Discord</option>
-          <option value="instagram">Instagram</option>
-          <option value="tiktok">TikTok</option>
-          <option value="kick">Kick</option>
-          <option value="twitch">Twitch</option>
-          <option value="website">Web Sitesi</option>
-        </select>
-        <input type="text" placeholder="Bağlantı URL (https://...)" class="input-field task-link" style="margin-top:0;">
-        <select class="input-field task-strategy" title="Doğrulama Yöntemi" style="margin-top:0;">
-          <option value="VISIT_ONLY">Ziyaret (Hızlı)</option>
-          <option value="AUTO">Otomatik Onay</option>
-          <option value="API">API Entegrasyon</option>
-          <option value="PROOF_REQUIRED">Kanıt İste</option>
-          <option value="MANUAL">Admin Onayı</option>
-        </select>
-        <input type="number" placeholder="Bilet" class="input-field task-reward" value="1" min="1" style="margin-top:0;">
-        <select class="input-field task-mandatory" style="margin-top:0;">
-          <option value="true">Zorunlu</option>
-          <option value="false" selected>Opsiyonel</option>
-        </select>
-        <button type="button" onclick="this.closest('.task-row').remove()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; padding:4px;" title="Görevi Kaldır">✕</button>
-      \`;
-      container.appendChild(div);
+    // ── Görev satırları ──
+    function addTask() {
+      var tpl = document.getElementById('taskTemplate');
+      $('#taskList').appendChild(tpl.content.cloneNode(true));
     }
 
-    async function handleCreateGiveaway(e) {
+    // ── Tek bir tıklama yöneticisi ──
+    document.addEventListener('click', async function (e) {
+      var link = e.target.closest('[data-tab-link]');
+      if (link) { e.preventDefault(); showTab(link.dataset.tabLink); return; }
+
+      var el = e.target.closest('[data-act]');
+      if (!el) return;
+      var act = el.dataset.act, id = el.dataset.id, title = el.dataset.title || '';
+      var menu = el.closest('details.menu');
+      if (menu) menu.open = false;
+
+      switch (act) {
+        case 'draw': openDraw(id, title, false); break;
+        case 'redraw': openDraw(id, title, true); break;
+
+        case 'status': {
+          var to = el.dataset.status;
+          if (!confirm('"' + title + '" ' + (STATUS_LABELS[to] || to) + '. Devam edilsin mi?')) return;
+          if (await api('/api/admin/giveaways/' + id + '/status', 'POST', { status: to })) { toast('Durum güncellendi.'); reloadTo('giveaways'); }
+          break;
+        }
+        case 'recalc': {
+          var r = await api('/api/admin/giveaways/' + id + '/recalculate-stats', 'POST');
+          if (r) { toast('Sayaçlar güncellendi: ' + (r.totalParticipants || 0) + ' katılımcı, ' + (r.totalTickets || 0) + ' bilet.'); reloadTo('giveaways'); }
+          break;
+        }
+        case 'delete': {
+          if (!confirm('"' + title + '" ve bağlı görevleri kalıcı olarak silinecek. Bu geri alınamaz. Emin misin?')) return;
+          if (await api('/api/admin/giveaways/' + id, 'DELETE')) { toast('Çekiliş silindi.'); reloadTo('giveaways'); }
+          break;
+        }
+
+        case 'add-task': addTask(); break;
+        case 'remove-task': el.closest('.task-row').remove(); break;
+
+        case 'disqualify': {
+          var reason = prompt('Diskalifiye gerekçesi:', 'Şüpheli katılım / çift hesap');
+          if (!reason || reason.trim().length < 4) return;
+          if (await api('/api/admin/participants/' + id + '/disqualify', 'POST', { reason: reason.trim() })) { toast('Katılımcı diskalifiye edildi.'); reloadTo('participants'); }
+          break;
+        }
+        case 'restore': {
+          if (!confirm('Katılımcının engeli kaldırılıp biletleri geri verilsin mi?')) return;
+          if (await api('/api/admin/participants/' + id + '/restore', 'POST')) { toast('Katılımcı geri alındı.'); reloadTo('participants'); }
+          break;
+        }
+
+        case 'fraud-ban': {
+          var why = prompt('Diskalifiye gerekçesi:', 'Davet ve çoklu hesap suistimali');
+          if (!why) return;
+          if (await api('/api/admin/fraud/' + id + '/action', 'POST', { action: 'DISQUALIFY', reason: why })) { toast('Diskalifiye edildi.'); reloadTo('fraud'); }
+          break;
+        }
+        case 'fraud-ignore': {
+          if (await api('/api/admin/fraud/' + id + '/action', 'POST', { action: 'IGNORE', reason: '' })) { toast('Kayıt yoksayıldı.'); reloadTo('fraud'); }
+          break;
+        }
+
+        case 'ad-new': openModal('adModal'); break;
+        case 'ad-toggle': {
+          if (await api('/api/admin/ads/' + id + '/toggle', 'POST')) reloadTo('ads');
+          break;
+        }
+        case 'ad-delete': {
+          if (!confirm('Bu sponsor reklamı kalıcı olarak silinsin mi?')) return;
+          if (await api('/api/admin/ads/' + id, 'DELETE')) { toast('Reklam silindi.'); reloadTo('ads'); }
+          break;
+        }
+
+        case 'social-toggle': {
+          if (await api('/api/admin/social-ads/' + el.dataset.key + '/toggle', 'POST')) reloadTo('ads');
+          break;
+        }
+        case 'social-edit': {
+          var ad = SOCIAL_ADS.find(function (a) { return a.key === el.dataset.key; }) || {};
+          $('#sKey').value = ad.key || '';
+          $('#sTitle').value = ad.title || '';
+          $('#sSubtitle').value = ad.subtitle || '';
+          $('#sCta').value = ad.ctaText || '';
+          $('#sQuote').value = ad.wittyQuote || '';
+          $('#sUrl').value = ad.targetUrl || '';
+          $('#sBadge').value = ad.badgeText || '';
+          $('#sSeasonal').value = ad.seasonalTag || '';
+          $('#sOrder').value = ad.order || 1;
+          $('#sFeatured').checked = Boolean(ad.isFeatured);
+          openModal('socialModal');
+          break;
+        }
+      }
+    });
+
+    // ── Yeni çekiliş formu ──
+    $('#createForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const form = e.target;
-      const submitBtn = document.getElementById('btnSubmitGiveaway') || form.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = '⏳ Kaydediliyor...';
-      }
+      var form = e.target;
+      var data = Object.fromEntries(new FormData(form).entries());
+      // Checkbox'lar işaretsizken FormData'da yer almaz; eski API string 'true'/'false' bekliyor
+      data.isFeatured = form.isFeatured.checked ? 'true' : 'false';
+      data.referralEnabled = form.referralEnabled.checked ? 'true' : 'false';
+      data.tasks = $all('#taskList .task-row').map(function (row) {
+        return {
+          title: $('.task-title', row).value.trim(),
+          platform: $('.task-platform', row).value,
+          link: $('.task-link', row).value.trim(),
+          strategy: $('.task-strategy', row).value,
+          tickets: parseInt($('.task-reward', row).value, 10) || 1,
+          isRequired: $('.task-mandatory', row).checked
+        };
+      }).filter(function (t) { return t.title; });
 
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-
-      // Collect tasks
-      const taskRows = document.querySelectorAll('#tasksContainer .task-row');
-      const tasks = [];
-      taskRows.forEach(row => {
-        const title = row.querySelector('.task-title')?.value?.trim();
-        const platform = row.querySelector('.task-platform')?.value || 'website';
-        const link = row.querySelector('.task-link')?.value?.trim() || '';
-        const strategy = row.querySelector('.task-strategy')?.value || 'VISIT_ONLY';
-        const reward = parseInt(row.querySelector('.task-reward')?.value, 10) || 1;
-        const isMandatory = row.querySelector('.task-mandatory')?.value === 'true';
-        if (title) {
-          tasks.push({ title, platform, link, strategy, tickets: reward, isRequired: isMandatory });
-        }
-      });
-      data.tasks = tasks;
-
-      try {
-        const res = await fetch('/api/admin/giveaways', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert('✅ Çekiliş başarıyla oluşturuldu ve kaydedildi!');
-          window.location.hash = 'giveaways';
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (result.message || 'Oluşturulamadı'));
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = '🚀 Çekilişi Kaydet & Yayınla';
-          }
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerText = '🚀 Çekilişi Kaydet & Yayınla';
-        }
+      var btn = $('#createSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Kaydediliyor…';
+      var result = await api('/api/admin/giveaways', 'POST', data);
+      if (result) {
+        toast('Çekiliş oluşturuldu.');
+        reloadTo('giveaways');
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Çekilişi oluştur';
       }
-    }
+    });
 
-    function openDrawWinnerModal(giveawayId, title, isRedraw = false) {
-      document.getElementById('modalGiveawayId').value = giveawayId;
-      document.getElementById('modalGiveawayTitle').innerText = title + (isRedraw ? ' (Yeniden Çekiliş — Redraw)' : '');
-      document.getElementById('modalIsRedraw').value = isRedraw ? '1' : '0';
-      
-      const reasonGroup = document.getElementById('modalRedrawReasonGroup');
-      if (reasonGroup) {
-        reasonGroup.style.display = isRedraw ? 'block' : 'none';
-        document.getElementById('modalRedrawReason').value = isRedraw ? '24 saat içinde dönüş yapmadı' : '';
-      }
-      document.getElementById('drawWinnerModal').style.display = 'flex';
-    }
-
-    async function executeDrawWinner() {
-      const giveawayId = document.getElementById('modalGiveawayId').value;
-      const isRedraw = document.getElementById('modalIsRedraw').value === '1';
-      const reason = document.getElementById('modalRedrawReason')?.value?.trim() || '';
-
-      if (isRedraw && (!reason || reason.length < 5)) {
-        alert('Yeniden çekiliş için zorunlu bir sebep belirtmelisiniz (min 5 karakter).');
-        return;
-      }
-
-      if (!confirm(isRedraw ? 'Yeniden çekiliş yapılarak eski kazanan arşivlenecek ve yeni kazanan seçilecek. Onaylıyor musunuz?' : 'Kriptografik ağırlıklı rastgele çekiliş başlatılacak ve kazanan kalıcı olarak kaydedilecektir. Onaylıyor musunuz?')) {
-        return;
-      }
-
-      try {
-        const endpoint = isRedraw ? ('/api/admin/giveaways/' + giveawayId + '/redraw') : ('/api/admin/giveaways/' + giveawayId + '/draw');
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isRedraw, reason })
-        });
-        const data = await res.json();
-        if (data.success) {
-          const winnerName = data.mainWinner?.username || data.winner?.username || 'Kazanan';
-          alert('🎉 Kazanan başarıyla seçildi: @' + winnerName);
-          window.location.href = '/cekilisler/canli/' + giveawayId;
-        } else {
-          alert('Hata: ' + (data.message || 'Kazanan seçilemedi.'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function recalculateGiveawayStats(giveawayId) {
-      if (!confirm('Bu çekilişin sayaçlarını gerçek entry verileri üzerinden yeniden hesaplamak istiyor musunuz?')) return;
-      try {
-        const res = await fetch('/api/admin/giveaways/' + giveawayId + '/recalculate-stats', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          alert('✅ Sayaçlar güncellendi!\\nKatılımcı: ' + data.totalParticipants + '\\nBilet: ' + data.totalTickets);
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (data.message || 'Hesaplanamadı'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function deleteGiveaway(giveawayId, title) {
-      if (!confirm('"' + (title || 'Bu çekilişi') + '" silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve çekilişe ait görevleri de temizler.')) {
-        return;
-      }
-      try {
-        const res = await fetch('/api/admin/giveaways/' + giveawayId, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('✅ Çekiliş başarıyla silindi.');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (data.message || 'Çekiliş silinemedi.'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function disqualifyParticipant(id) {
-      const reason = prompt('Katılımcıyı diskalifiye etme gerekçesini giriniz:', 'Şüpheli katılım / Çift hesap');
-      if (!reason || reason.trim().length < 4) {
-        alert('İşlem iptal edildi. Geçerli bir gerekçe girmelisiniz.');
-        return;
-      }
-      try {
-        const res = await fetch('/api/admin/participants/' + id + '/disqualify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason })
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('✅ Katılımcı diskalifiye edildi.');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (data.message || 'İşlem başarısız'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function restoreParticipant(id) {
-      if (!confirm('Katılımcının engelini kaldırmak ve biletlerini geri iade etmek istiyor musunuz?')) return;
-      try {
-        const res = await fetch('/api/admin/participants/' + id + '/restore', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          alert('✅ Katılımcı hakları iade edildi.');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (data.message || 'İşlem başarısız'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function resolveFraud(id, action) {
-      let reason = '';
-      if (action === 'BAN' || action === 'DISQUALIFY') {
-        reason = prompt('Diskalifiye gerekçesi:', 'Referral ve çoklu hesap suistimali');
-        if (!reason) return;
-        action = 'DISQUALIFY';
-      }
-      try {
-        const res = await fetch('/api/admin/fraud/' + id + '/action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, reason })
-        });
-        const data = await res.json();
-        if (data.success) {
-          alert('✅ İşlem uygulandı.');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (data.message || 'İşlem başarısız'));
-        }
-      } catch (err) {
-        alert('Hata: ' + err.message);
-      }
-    }
-
-    async function handleCreateAd(e) {
+    // ── Sponsor reklamı formu ──
+    $('#adForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const form = e.target;
-      const data = Object.fromEntries(new FormData(form).entries());
-      try {
-        const res = await fetch('/api/admin/ads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert('✅ Reklam başarıyla kaydedildi!');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (result.message || 'Eklenemedi'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
+      var data = Object.fromEntries(new FormData(e.target).entries());
+      if (await api('/api/admin/ads', 'POST', data)) { toast('Reklam eklendi.'); reloadTo('ads'); }
+    });
 
-    async function toggleAdStatus(adId) {
-      try {
-        const res = await fetch('/api/admin/ads/' + adId + '/toggle', { method: 'POST' });
-        const result = await res.json();
-        if (result.success) window.location.reload();
-      } catch (err) {
-        alert('Hata: ' + err.message);
-      }
-    }
-
-    async function deleteAd(adId) {
-      if (!confirm('Bu sponsor reklamını kalıcı olarak silmek istediğinize emin misiniz?')) return;
-      try {
-        const res = await fetch('/api/admin/ads/' + adId, { method: 'DELETE' });
-        const result = await res.json();
-        if (result.success) window.location.reload();
-        else alert('Hata: ' + (result.message || 'Reklam silinemedi.'));
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
-    }
-
-    async function toggleSocialAd(key) {
-      try {
-        const res = await fetch('/api/admin/social-ads/' + key + '/toggle', { method: 'POST' });
-        const result = await res.json();
-        if (result.success) window.location.reload();
-        else alert('Hata: ' + (result.message || 'İşlem başarısız'));
-      } catch (err) {
-        alert('Hata: ' + err.message);
-      }
-    }
-
-    function openEditSocialAdModal(adOrKey) {
-      const ad = (typeof adOrKey === 'object' && adOrKey) ? adOrKey : ((window._socialAdsList || []).find(a => a.key === adOrKey) || {});
-      document.getElementById('editAdKey').value = ad.key || '';
-      document.getElementById('editAdTitle').value = ad.title || '';
-      document.getElementById('editAdSubtitle').value = ad.subtitle || '';
-      document.getElementById('editAdCta').value = ad.ctaText || '';
-      document.getElementById('editAdQuote').value = ad.wittyQuote || '';
-      document.getElementById('editAdUrl').value = ad.targetUrl || '';
-      document.getElementById('editAdBadge').value = ad.badgeText || '';
-      document.getElementById('editAdSeasonal').value = ad.seasonalTag || '';
-      document.getElementById('editAdOrder').value = ad.order || 1;
-      document.getElementById('editAdFeatured').checked = Boolean(ad.isFeatured);
-      document.getElementById('editSocialAdModal').style.display = 'flex';
-    }
-
-    async function handleUpdateSocialAd(e) {
+    // ── Sosyal kampanya formu ──
+    $('#socialForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const form = e.target;
-      const key = document.getElementById('editAdKey').value;
-      const data = {
-        title: document.getElementById('editAdTitle').value,
-        subtitle: document.getElementById('editAdSubtitle').value,
-        ctaText: document.getElementById('editAdCta').value,
-        wittyQuote: document.getElementById('editAdQuote').value,
-        targetUrl: document.getElementById('editAdUrl').value,
-        badgeText: document.getElementById('editAdBadge').value,
-        seasonalTag: document.getElementById('editAdSeasonal').value,
-        order: parseInt(document.getElementById('editAdOrder').value, 10) || 1,
-        isFeatured: document.getElementById('editAdFeatured').checked
+      var key = $('#sKey').value;
+      var data = {
+        title: $('#sTitle').value,
+        subtitle: $('#sSubtitle').value,
+        ctaText: $('#sCta').value,
+        wittyQuote: $('#sQuote').value,
+        targetUrl: $('#sUrl').value,
+        badgeText: $('#sBadge').value,
+        seasonalTag: $('#sSeasonal').value,
+        order: parseInt($('#sOrder').value, 10) || 1,
+        isFeatured: $('#sFeatured').checked
       };
+      if (await api('/api/admin/social-ads/' + key + '/update', 'POST', data)) { toast('Kampanya güncellendi.'); reloadTo('ads'); }
+    });
 
-      try {
-        const res = await fetch('/api/admin/social-ads/' + key + '/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert('✅ Sosyal Reklam başarıyla güncellendi!');
-          window.location.reload();
-        } else {
-          alert('Hata: ' + (result.message || 'Güncellenemedi'));
-        }
-      } catch (err) {
-        alert('Sunucu hatası: ' + err.message);
-      }
+    // ── Katılımcı filtresi ──
+    function filterParticipants() {
+      var q = $('#pSearch').value.trim().toLowerCase();
+      var gid = $('#pGiveaway').value;
+      $all('#pBody tr[data-search]').forEach(function (tr) {
+        var ok = (!q || tr.dataset.search.indexOf(q) !== -1) && (!gid || tr.dataset.giveaway === gid);
+        tr.style.display = ok ? '' : 'none';
+      });
     }
+    $('#pSearch').addEventListener('input', filterParticipants);
+    $('#pGiveaway').addEventListener('change', filterParticipants);
   </script>
-
-  <!-- EDIT SOCIAL AD MODAL -->
-  <div id="editSocialAdModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div class="stat-card" style="width: 100%; max-width: 600px; padding: 2rem; max-height: 90vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h2 style="font-size: 1.3rem; font-weight: 900;">✏️ Sosyal Kampanya Kartını Düzenle</h2>
-        <button onclick="document.getElementById('editSocialAdModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">✕</button>
-      </div>
-      <form onsubmit="handleUpdateSocialAd(event)">
-        <input type="hidden" id="editAdKey">
-        <div class="form-group">
-          <label class="form-label">Başlık *</label>
-          <input type="text" id="editAdTitle" class="input-field" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Açıklama / Alt Başlık</label>
-          <input type="text" id="editAdSubtitle" class="input-field">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">CTA Buton Yazısı</label>
-            <input type="text" id="editAdCta" class="input-field" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Rozet / Badge Metni</label>
-            <input type="text" id="editAdBadge" class="input-field">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Mizahi Metin / İpucu</label>
-          <input type="text" id="editAdQuote" class="input-field">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Hedef URL *</label>
-          <input type="url" id="editAdUrl" class="input-field" required>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label class="form-label">Sezonluk Kampanya Modu</label>
-            <select id="editAdSeasonal" class="input-field">
-              <option value="">Standart (Normal)</option>
-              <option value="🔥 Yeni Video Düştü">🔥 Yeni Video Düştü</option>
-              <option value="🟢 Bu Akşam Canlı Yayın">🟢 Bu Akşam Canlı Yayın</option>
-              <option value="🎁 Çekiliş Görevi Aktif">🎁 Çekiliş Görevi Aktif</option>
-              <option value="✨ Özel Gün Kampanyası">✨ Özel Gün Kampanyası</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Sıralama (Order)</label>
-            <input type="number" id="editAdOrder" class="input-field" min="1" max="50">
-          </div>
-        </div>
-        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-          <input type="checkbox" id="editAdFeatured" style="width: 18px; height: 18px;">
-          <label for="editAdFeatured" style="font-size: 0.9rem; font-weight: 700; color: #fff; cursor: pointer;">
-            ⭐ Bu kartı öne çıkar (Featured / Highlight)
-          </label>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" onclick="document.getElementById('editSocialAdModal').style.display='none'" class="btn btn-secondary">
-            İptal
-          </button>
-          <button type="submit" class="btn btn-primary">
-            💾 Değişiklikleri Kaydet
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- DRAW WINNER MODAL -->
-  <div id="drawWinnerModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div class="stat-card" style="width: 100%; max-width: 540px; padding: 2rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h2 style="font-size: 1.3rem; font-weight: 900; color: #fef08a;">🎲 Kazanan Seçimi & Onay</h2>
-        <button onclick="document.getElementById('drawWinnerModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">✕</button>
-      </div>
-      <input type="hidden" id="modalGiveawayId">
-      <input type="hidden" id="modalIsRedraw" value="0">
-      
-      <p id="modalGiveawayTitle" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;"></p>
-      
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-        ⚖️ <strong>Kriptografik Ağırlıklı Rastgele Seçim:</strong> Katılımcıların geçerli bilet sayılarına göre orantılı şans hesaplanır. İşlem transactional kilide alınır ve sonuç audit log'a kaydedilir.
-      </div>
-
-      <div id="modalRedrawReasonGroup" style="display: none; margin-bottom: 1.25rem;">
-        <label class="form-label" style="color: #fef08a; font-weight: 700;">Yeniden Çekiliş Gerekçesi (Zorunlu) *</label>
-        <input type="text" id="modalRedrawReason" class="input-field" placeholder="Örn: Asil kazanan 24 saat içinde dönüş yapmadı">
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">Eski kazanan kaydı silinmez, 'INVALIDATED' durumuyla şeffaflık loglarında arşivlenir.</div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
-        <button type="button" onclick="document.getElementById('drawWinnerModal').style.display='none'" class="btn btn-secondary">
-          Vazgeç
-        </button>
-        <button type="button" onclick="executeDrawWinner()" class="btn btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
-          🎰 Seçimi Başlat
-        </button>
-      </div>
-    </div>
-  </div>
 </body>
-</html>
-  `;
+</html>`;
 }
 
 module.exports = { renderGiveawayAdminPage };
