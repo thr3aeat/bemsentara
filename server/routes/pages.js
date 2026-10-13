@@ -96,6 +96,14 @@ router.get("/linkler", async (req, res) => {
   const avatarUrl = await require("../services/linksAvatarService").getLinksAvatar().catch(() => null);
   res.send(renderLinksHubPage(req.user, { avatarUrl }));
 });
+router.get("/ekip", async (req, res) => {
+  const { renderTeamPage, TEAM } = require("../views/teamPage");
+  const avatars = await require("../services/memberAvatarService").getAvatars(TEAM.map((m) => m.discord)).catch(() => ({}));
+  res.send(renderTeamPage(req.user, { avatars }));
+});
+router.get("/team", (req, res) => res.redirect("/ekip"));
+router.get("/harita", (req, res) => res.send(require("../views/siteMapPage").renderSiteMapPage(req.user)));
+router.get(["/sitemap", "/icindekiler"], (req, res) => res.redirect("/harita"));
 router.get("/links", (req, res) => res.redirect("/linkler"));
 router.get("/bio", (req, res) => res.redirect("/linkler"));
 router.get("/eko", (req, res) => res.redirect("/linkler"));

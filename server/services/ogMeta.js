@@ -23,12 +23,15 @@ const PAGES = {
   '/anayasa': ['KURALLAR', 'EkoYıldız Anayasası', 'Topluluğun temel kuralları ve ilkeleri.', '#eab308'],
   '/video-blog': ['VİDEO', 'Video Blog', 'Son videolar ve yayın arşivi.', '#ef4444'],
   '/tumodlar': ['EKİP', 'Tüm Modlar', 'EkoYıldız moderasyon ekibi.', '#14b8a6'],
+  '/ekip': ['VİDEO EKİBİ', 'Videoların arkasındaki ekip', 'Kurucu eko, ekip danışmanı Zyrox ve EkoYıldız video ekibi.', '#eab308'],
+  '/harita': ['İÇİNDEKİLER', 'Site haritası', 'EkoYıldız sitesindeki herkese açık tüm sayfalar tek yerde.', '#14b8a6'],
   '/cark': ['ÖDÜLLER', 'Şans Çarkı', 'Çarkı çevir, ödülünü kap.', '#ec4899']
 };
 const ALIASES = {
   '/links': '/linkler', '/bio': '/linkler', '/eko': '/linkler', '/atamiz': '/ataturk', '/help': '/yardim', '/faq': '/yardim',
   '/itiraz': '/itiraz-merkezi', '/appeal': '/itiraz-merkezi', '/appeals': '/itiraz-merkezi', '/careers': '/ekoyildizda-calis',
   '/anayasasi': '/anayasa', '/ekoyildiz/anayasasi': '/anayasa', '/ekoyildiz-anayasasi': '/anayasa', '/rules': '/anayasa',
+  '/team': '/ekip', '/sitemap': '/harita', '/icindekiler': '/harita',
   '/kutu-ac': '/cark', '/rewards': '/cark'
 };
 

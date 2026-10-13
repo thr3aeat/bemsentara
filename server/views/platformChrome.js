@@ -150,6 +150,7 @@ function renderPlatformHeader({ user = null, activePath = '', theme = 'dark', au
       <a href="/safety"${active('/safety')}>Safety Center</a>
       <a href="/blog"${active('/blog')}>Blog</a>
       <a href="/video-blog"${active('/video-blog')}>Video Blog</a>
+      <a href="/ekip"${active('/ekip')}>Ekip</a>
       <a href="/cekilisler"${active('/cekilisler')}>Çekilişler</a>
       ${mgtLinksHtml || ''}
     </nav>
@@ -161,7 +162,7 @@ function renderPlatformHeader({ user = null, activePath = '', theme = 'dark', au
 }
 
 function renderPlatformFooter({ theme = 'dark' } = {}) {
-  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a></nav></footer>
+  return `<footer class="platform-footer platform-chrome" data-theme="${theme}"><div><strong>EkoYıldız</strong><span>Topluluk, içerik, güvenlik ve destek tek ekosistemde.</span></div><nav aria-label="Alt navigasyon"><a href="/help">Help Center</a><a href="/safety">Safety Center</a><a href="/blog">Blog</a><a href="/status">Durum</a><a href="/anayasasi">Politikalar</a><a href="/appeals">İtirazlar</a><a href="/ekip">Ekip</a><a href="/harita">Site Haritası</a></nav></footer>
   ${renderConnectionRecoveryMarkup()}`;
 }
 
