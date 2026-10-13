@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const { renderLinksHubPage, LINKS_DATA } = require('../server/views/linksHubPage');
 
 test('linksHubPage - Resmi Bağlantılar Sayfası', async (t) => {
-  const html = renderLinksHubPage(null);
+  const html = renderLinksHubPage(null, { audioSrc: null }); // mp3 yokken Spotify yedeği
 
   await t.test('LINKS_DATA tam 10 resmi bağlantıyı içermeli', () => {
     assert.equal(LINKS_DATA.length, 10);
