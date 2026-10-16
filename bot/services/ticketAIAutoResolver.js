@@ -158,7 +158,11 @@ async function processTicketMessageForAutoResolution(ticket, message, client) {
  */
 async function handleSmartResolveButton(interaction) {
   const { customId, client } = interaction;
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  // Defer başarısızsa (etkileşim zaten yanıtlanmış) editReply InteractionNotReplied fırlatır; dur
+  if (!interaction.deferred && !interaction.replied) {
+    const ok = await interaction.deferReply({ ephemeral: true }).then(() => true, () => false);
+    if (!ok) return true;
+  }
   try {
     const ticketId = customId.replace('btn_ticket_smart_resolve_', '').replace('btn_ticket_smart_need_staff_', '');
     const ticket = await Ticket.findOne({ ticketId });

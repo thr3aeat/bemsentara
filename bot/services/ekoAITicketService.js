@@ -644,7 +644,11 @@ async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
   if (!customId.startsWith('ekoai_')) return false;
 
-  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  // Defer başarısızsa (etkileşim zaten yanıtlanmış) editReply InteractionNotReplied fırlatır; dur
+  if (!interaction.deferred && !interaction.replied) {
+    const ok = await interaction.deferReply({ ephemeral: true }).then(() => true, () => false);
+    if (!ok) return true;
+  }
 
   if (customId.startsWith('ekoai_connect_telegram_')) {
     const ticketId = customId.replace('ekoai_connect_telegram_', '');

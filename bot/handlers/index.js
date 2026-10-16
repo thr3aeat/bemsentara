@@ -4012,6 +4012,10 @@ function initializeDiscordHandlers(client) {
   });
 
   client.on("interactionCreate", async (interaction) => {
+    // Aynı token'la ikinci bir süreç (VDS + Render) açıksa etkileşimi yalnızca biri işlesin
+    const { claimInteraction } = require("../services/interactionClaimService");
+    if (!(await claimInteraction(interaction))) return;
+
     global.lastInteraction = interaction;
 
     if (interaction.isButton() && interaction.customId.startsWith("ekoforum_")) {
