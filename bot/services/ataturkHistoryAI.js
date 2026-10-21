@@ -13,7 +13,7 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
-const { hasPostedDate, recordPostedDate, claimDate } = require("./historyTracker");
+const { hasPostedDate, recordPostedDate, claimDateShared, removeDuplicateDailyPosts } = require("./historyTracker");
 
 const TARGET_CHANNEL_IDS = [process.env.TMT_HISTORY_CHANNEL_ID || "1514583020680777760"];
 
@@ -99,16 +99,28 @@ async function checkAndCatchUpAtaturkHistory(client) {
       return;
     }
 
-    const release = claimDate('ataturk', trDateStr);
-    if (!release) {
-      lastPostedDateTR = trDateStr;
-      return;
+    // Kilit kanal+gün ile: aynı kanala atan her süreç/servis aynı kaydı paylaşır
+    const releases = [];
+    for (const channelId of TARGET_CHANNEL_IDS) {
+      const release = await claimDateShared(`channel_${channelId}`, trDateStr);
+      if (!release) {
+        releases.forEach((r) => r());
+        lastPostedDateTR = trDateStr;
+        return;
+      }
+      releases.push(release);
     }
     const success = await postAtaturkHistory(client);
-    if (!success) release();
+    if (!success) releases.forEach((r) => r());
     if (success) {
       lastPostedDateTR = trDateStr;
       recordPostedDate('ataturk', trDateStr);
+      // Yine de iki mesaj düştüyse ilk geleni bırak, sonrakini sil
+      for (const channelId of TARGET_CHANNEL_IDS) {
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+        const removed = channel ? await removeDuplicateDailyPosts(channel, trDateStr) : 0;
+        if (removed) console.log(`🧹 [AtaturkHistoryAI] ${removed} çift mesaj silindi (${channelId}), ilk mesaj bırakıldı.`);
+      }
     }
   } catch (err) {
     console.error("❌ [AtaturkHistoryAI] Catch-up hatası:", err.message);

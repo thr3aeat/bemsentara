@@ -6,7 +6,7 @@ const { chatWithAI } = require("./aiService");
 const { getSpecialDayInfo } = require("./specialDaysHelper");
 const { getHistoricalFallbackEvent } = require("./historyDataset");
 
-const { hasPostedDate, recordPostedDate, claimDate } = require("./historyTracker");
+const { hasPostedDate, recordPostedDate, claimDateShared, removeDuplicateDailyPosts } = require("./historyTracker");
 
 const TARGET_CHANNEL_ID = process.env.EKO_YILDIZ_HISTORY_CHANNEL_ID || "1518692463177498674";
 
@@ -104,11 +104,13 @@ async function checkAndCatchUpEkoYildizHistory(client) {
       if (alreadySent) {
         lastPostedDateTR = trDateStr;
         recordPostedDate('ekoYildiz', trDateStr);
+        await removeDuplicateDailyPosts(channel, trDateStr);
         console.log(`ℹ️ [EkoYildizHistoryAI] ${dateHeaderStr} Tarihte Bugün mesajı kanalda zaten mevcut, tekrar atılmadı.`);
         return;
       }
 
-      const release = claimDate('ekoYildiz', trDateStr);
+      // Kilit kanal+gün ile: aynı kanala atan her süreç/servis aynı kaydı paylaşır
+      const release = await claimDateShared(`channel_${TARGET_CHANNEL_ID}`, trDateStr);
       if (!release) {
         lastPostedDateTR = trDateStr;
         return;
@@ -119,6 +121,9 @@ async function checkAndCatchUpEkoYildizHistory(client) {
       if (success) {
         lastPostedDateTR = trDateStr;
         recordPostedDate('ekoYildiz', trDateStr);
+        // Yine de iki mesaj düştüyse ilk geleni bırak, sonrakini sil
+        const removed = await removeDuplicateDailyPosts(channel, trDateStr);
+        if (removed) console.log(`🧹 [EkoYildizHistoryAI] ${removed} çift Tarihte Bugün mesajı silindi, ilk mesaj bırakıldı.`);
       }
     }
   } catch (err) {
