@@ -53,6 +53,7 @@ async function setupHapisRoleOverwrites(guild, hapisRole) {
  */
 async function jailUser(client, guild, userId, reason, durationMinutes, moderatorId) {
   try {
+    if (require("./profanityAutomodService").isProtectedUser(userId)) return false;
     let dbUser = await User.findOne({ discordId: userId });
     if (!dbUser) {
       dbUser = new User({ discordId: userId, discordUsername: "Bilinmiyor" });
@@ -218,7 +219,13 @@ function startJailScheduler(client) {
       if (!guild) return;
 
       const now = new Date();
+      const { isProtectedUser } = require("./profanityAutomodService");
       for (const dbUser of jailedUsers) {
+        if (isProtectedUser(dbUser.discordId)) {
+          console.log(`[JailScheduler] 🔓 Korumalı kullanıcı ${dbUser.discordId} hapisten çıkarılıyor...`);
+          await unjailUser(client, guild, dbUser.discordId);
+          continue;
+        }
         if (dbUser.jailedUntil && now >= new Date(dbUser.jailedUntil)) {
           console.log(`[JailScheduler] 🔓 Jailed user ${dbUser.discordId} has expired. Unjailing...`);
           await unjailUser(client, guild, dbUser.discordId);

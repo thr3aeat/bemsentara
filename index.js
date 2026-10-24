@@ -26,6 +26,13 @@ try {
   console.error('[startup] disableEveryone patch failed:', err && err.message);
 }
 
+// Korumalı kullanıcılara (eko) timeout / kick / ban isteklerini global olarak engelle
+try {
+  require('./bot/patches/protectUsers')();
+} catch (err) {
+  console.error('[startup] protectUsers patch failed:', err && err.message);
+}
+
 const mongoose = require("mongoose");
 mongoose.set("bufferCommands", false);
 

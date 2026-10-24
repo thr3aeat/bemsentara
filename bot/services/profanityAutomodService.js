@@ -226,10 +226,21 @@ function stripNonTextTokens(rawText) {
     .replace(/(?:discord\.gg|discord(?:app)?\.com\/invite)\/\S+/gi, " ");
 }
 
+// Asla ceza / hapis almayacak kullanıcılar (eko)
+const PROTECTED_USER_IDS = new Set([
+  "1031620522406072350",
+  ...(process.env.PROTECTED_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean)
+]);
+
+function isProtectedUser(userId) {
+  return PROTECTED_USER_IDS.has(String(userId));
+}
+
 /**
- * Yönetici / moderasyon yetkisi olanlar automod cezası almaz.
+ * Yönetici / moderasyon yetkisi olanlar ve korumalı kullanıcılar automod cezası almaz.
  */
 function isAutomodExempt(member) {
+  if (member?.id && isProtectedUser(member.id)) return true;
   if (!member?.permissions) return false;
   return member.permissions.has(PermissionFlagsBits.Administrator) ||
     member.permissions.has(PermissionFlagsBits.ManageGuild) ||
@@ -300,7 +311,7 @@ function detectProfanity(rawText) {
 async function processMessageAutomod(message, client) {
   try {
     if (!message || message.author.bot || !message.guild || !message.content) return false;
-    if (isAutomodExempt(message.member)) return false;
+    if (isProtectedUser(message.author.id) || isAutomodExempt(message.member)) return false;
 
     const detection = detectProfanity(message.content);
     if (!detection) return false;
@@ -594,6 +605,7 @@ function recordAutomodIncident(messageId, data) {
 
 module.exports = {
   isAutomodExempt,
+  isProtectedUser,
   getAutomodIncident,
   recordAutomodIncident,
   detectProfanity,

@@ -14,7 +14,7 @@ const { chatWithAI } = require("./aiService");
 const { jailUser } = require("./jailService");
 const { issueWarning } = require("./punishmentService");
 const { logTrustUserActivity, updateTrustScore } = require("./security/trustScoreService");
-const { forgiveAutomodIncident } = require("./profanityAutomodService");
+const { forgiveAutomodIncident, isAutomodExempt, isProtectedUser } = require("./profanityAutomodService");
 const MOD_CEZA_LOG_CHANNEL_ID = process.env.EKOYILDIZ_MOD_CEZA_LOG_CHANNEL_ID || "1518693023934844959";
 
 async function sendCezaLog(client, embed) {
@@ -81,6 +81,9 @@ async function handleAutomodPunishmentButton(interaction) {
     }
 
     const member = await guild.members.fetch(userId).catch(() => null);
+    if (isProtectedUser(userId) || isAutomodExempt(member)) {
+      return interaction.reply({ content: "🛡️ Bu kullanıcı yetkili/korumalı olduğu için ceza uygulanamaz.", ephemeral: true }).catch(() => {});
+    }
     const dbUser = await User.findOne({ discordId: userId }) || {};
     const trustRecord = await UserTrustScore.findOne({ userId }) || {};
 
