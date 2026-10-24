@@ -46,6 +46,49 @@ module.exports = function applyProtectUsers() {
     return origRoleAdd.call(this, roleOrRoles, reason);
   };
 
+  // Korumalı kullanıcıdan toplu rol alma ve yetkili rol alma engellenir (hapis rolü temizliği serbest)
+  const { PermissionFlagsBits } = require('discord.js');
+  const STAFF_PERMS = [
+    PermissionFlagsBits.Administrator, PermissionFlagsBits.ManageGuild, PermissionFlagsBits.ManageRoles,
+    PermissionFlagsBits.ManageChannels, PermissionFlagsBits.BanMembers, PermissionFlagsBits.KickMembers,
+    PermissionFlagsBits.ModerateMembers, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.MentionEveryone
+  ];
+  const resolveRoles = (mgr, roleOrRoles) => {
+    const list = roleOrRoles && typeof roleOrRoles.values === 'function' && !Array.isArray(roleOrRoles)
+      ? [...roleOrRoles.values()] : (Array.isArray(roleOrRoles) ? roleOrRoles : [roleOrRoles]);
+    return list.map(r => mgr.guild.roles.cache.get(typeof r === 'string' ? r : r?.id) || r).filter(Boolean);
+  };
+  const isHapisRole = (r) => typeof r === 'object' && r.name && r.name.toLowerCase().includes('hapis');
+
+  const origRoleRemove = GuildMemberRoleManager.prototype.remove;
+  GuildMemberRoleManager.prototype.remove = function (roleOrRoles, reason) {
+    if (_isProtected(this.member)) {
+      const roles = resolveRoles(this, roleOrRoles);
+      const bulk = roles.filter(r => !isHapisRole(r)).length > 1;
+      const allowed = roles.filter(r => isHapisRole(r) ||
+        (!bulk && !(r.permissions && STAFF_PERMS.some(p => r.permissions.has(p)))));
+      if (allowed.length !== roles.length) {
+        console.warn(`[protectUsers] 🛡️ Korumalı kullanıcıdan (${this.member.id}) rol alma engellendi.`);
+      }
+      if (allowed.length === 0) return Promise.resolve(this.member);
+      return origRoleRemove.call(this, allowed, reason);
+    }
+    return origRoleRemove.call(this, roleOrRoles, reason);
+  };
+
+  const origRoleSet = GuildMemberRoleManager.prototype.set;
+  GuildMemberRoleManager.prototype.set = function (roles, reason) {
+    if (_isProtected(this.member)) {
+      const keep = new Set(resolveRoles(this, roles).map(r => r.id));
+      const lost = [...this.cache.values()].filter(r => r.id !== this.guild.id && !keep.has(r.id) && !isHapisRole(r));
+      if (lost.length > 0) {
+        console.warn(`[protectUsers] 🛡️ Korumalı kullanıcının (${this.member.id}) rolleri toplu değiştirilmesi engellendi.`);
+        return Promise.resolve(this.member);
+      }
+    }
+    return origRoleSet.call(this, roles, reason);
+  };
+
   const origTimeout = GuildMember.prototype.timeout;
   GuildMember.prototype.timeout = function (timeout, ...rest) {
     if (timeout != null && _isProtected(this)) return _blocked('timeout', this);

@@ -160,6 +160,7 @@ async function handleTMTGames(message, client) {
 
   // 1. Honeypot (Tuzak Kanalı)
   if (channelId === TMT_HONEYPOT_CHANNEL_ID) {
+    if (require('./profanityAutomodService').isProtectedUser(message.author.id)) return true;
     try {
       // Mesajı sil
       await message.delete().catch(() => {});

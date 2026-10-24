@@ -798,6 +798,9 @@ async function handleMessageCreateAbuse(client, message) {
   if (!message.guild || !await isMonitoredGuild(message.guild.id)) return;
   if (message.author.bot) return;
 
+  // Korumalı kullanıcı (eko) member bilgisi gelmese de muaf
+  if (require("./profanityAutomodService").isProtectedUser(message.author.id)) return;
+
   // Yetkililer (sunucu sahibi, Yönetici, Sunucuyu/Mesajları Yönet) mesaj otomodundan muaf
   const member = message.member;
   if (member && (
