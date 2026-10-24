@@ -13,6 +13,29 @@ const ROBLOX_GROUP_ID = 11517908;
 
 // ========== HELPER FUNCTIONS ==========
 
+// Gruptaki rütbeler yeniden numaralandırıldı ve "OR-1" gibi kodlar kaldırıldı; eşleştirme rütbe ADINA göre yapılır.
+// Yeni grup adı -> TMT_ROLE_MAPPINGS anahtarı
+const RANK_NAME_ALIASES = {
+  "acemi er": 5, "er": 6, "onbaşı": 20, "çavuş": 25, "uzman onbaşı": 30, "uzman çavuş": 35,
+  "astsubay çavuş": 40, "astsubay kıdemli çavuş": 40, "astsubay üstçavuş": 50, "astsubay kıdemli üstçavuş": 50,
+  "astsubay başçavuş": 60, "astsubay kıdemli başçavuş": 65, "emekli subay": 75, "emekli personel": 75,
+  "asteğmen": 80, "teğmen": 85, "üsteğmen": 90, "yüzbaşı": 95, "binbaşı": 100, "yarbay": 105, "albay": 110,
+  "tuğgeneral": 115, "tümgeneral": 120, "korgeneral": 125, "orgeneral": 135, "paşa": 150,
+  "genelkurmay başkan yardımcısı": 230, "genelkurmay": 230, "genelkurmay başkanı": 235, "yüksek askerî şûra": 240,
+  "yönetim kurulu": 250, "yönetim kurulu başkan yrd.": 251, "yönetim kurulu başkan y.": 251, "yönetim kurulu başkanı": 252,
+  "geliştirici ekibi": 253, "geliştirme ofisi": 253, "mareşal": 255,
+};
+
+const normalizeRankName = (name) => String(name || "").toLocaleLowerCase("tr").replace(/^o[rf]-\d+(\/[a-z])?\s+/i, "").replace(/\s+/g, " ").trim();
+
+function resolveRankMapping(userRank) {
+  if (!userRank) return null;
+  const name = normalizeRankName(userRank.roleName);
+  const key = RANK_NAME_ALIASES[name] ??
+    Object.keys(TMT_ROLE_MAPPINGS).find(k => normalizeRankName(TMT_ROLE_MAPPINGS[k].name) === name);
+  return key !== undefined ? TMT_ROLE_MAPPINGS[key] || null : null;
+}
+
 /**
  * Find nearest ranks that have role mappings (one below, one above)
  */
@@ -405,15 +428,8 @@ async function computeTMTRoles(guild, userRank, branches, unresolved = []) {
 
   // 1. Process Main Group Rank and separators
   if (userRank) {
-    let roleConfig = TMT_ROLE_MAPPINGS[userRank.rank];
-    if (!roleConfig) {
-      // Auto-create rank role if mapping doesn't exist
-      const nearestRoles = findNearestRanks(userRank.rank);
-      const createdRole = await createRoleForRank(guild, userRank, nearestRoles);
-      if (createdRole) {
-        roleConfig = TMT_ROLE_MAPPINGS[userRank.rank];
-      }
-    }
+    const roleConfig = resolveRankMapping(userRank);
+    if (!roleConfig) unresolved.push(`rütbe:${userRank.roleName}`);
 
     if (roleConfig && roleConfig.discordRoleIds) {
       // Process ALL roles in the mapping (including separator)
@@ -835,7 +851,7 @@ async function syncTMTRoles(client, discordUserId, robloxUserId, discordMember =
     // Find if user has a category/tier role
     let tierRoleName = null;
     if (userRank) {
-      const roleConfig = TMT_ROLE_MAPPINGS[userRank.rank];
+      const roleConfig = resolveRankMapping(userRank);
       if (roleConfig && roleConfig.discordRoleIds) {
         const catRoleId = roleConfig.discordRoleIds.find(id => Object.values(CATEGORY_ROLES).includes(id));
         if (catRoleId) {
