@@ -451,7 +451,11 @@ async function postTMTRules(client, { clear = false } = {}) {
 
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
+// Kanallarda olması gereken mesaj sayıları (başlık + kurallar + kapanış)
+const RULES_MESSAGE_COUNTS = { rules: SERVER_RULES.length + 2, automod: AUTOMOD_RULES.length + 1 };
+
 module.exports = {
+  RULES_MESSAGE_COUNTS,
   postTMTRules,
   postServerRules,
   postAutomodRules,

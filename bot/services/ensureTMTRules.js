@@ -20,20 +20,22 @@ async function ensureTMTRules(client) {
     if (TMT_RULES_CHANNEL_ID && TMT_AUTOMOD_RULES_CHANNEL_ID) {
       const rulesChannel = await guild.channels.fetch(TMT_RULES_CHANNEL_ID).catch(() => null);
       if (rulesChannel) {
-        // Kanal boşsa veya kurallar henüz Components V2 tasarımıyla gönderilmediyse (bir kez) yeniden gönder
-        const { appMeta, saveStoreNow } = require("../../models/Store");
-        const RULES_VERSION_KEY = "tmtRulesDesign";
-        const meta = appMeta ? appMeta.findOne({ key: RULES_VERSION_KEY }) : null;
-        const messages = await rulesChannel.messages.fetch({ limit: 5 }).catch(() => null);
-        const needsV2 = meta?.messageId !== "v2";
-        if ((messages && messages.size === 0) || needsV2) {
-          console.log("[TMT Rules] Kurallar Components V2 olarak gönderiliyor...");
-          const ok = await postTMTRules(client, { clear: needsV2 });
-          if (ok && needsV2 && appMeta) {
-            if (meta) { meta.messageId = "v2"; meta.save(); }
-            else appMeta.create({ key: RULES_VERSION_KEY, messageId: "v2" });
-            saveStoreNow();
-          }
+        // Kanal içeriğine bakılır (yerel kayda değil): botun V2 kural mesajları beklenen sayıda değilse
+        // (boş, eski tasarım veya başka bir kopyanın gönderdiği çift mesajlar) kanallar temizlenip bir kez gönderilir.
+        const { RULES_MESSAGE_COUNTS } = require("./tmtRulesService");
+        const automodChannel = await guild.channels.fetch(TMT_AUTOMOD_RULES_CHANNEL_ID).catch(() => null);
+        const countV2 = async (ch) => {
+          const msgs = ch && await ch.messages.fetch({ limit: 50 }).catch(() => null);
+          if (!msgs) return -1;
+          if (msgs.some(m => m.author.id !== client.user.id || !m.flags?.has?.(32768))) return -2;
+          return msgs.size;
+        };
+        const rulesCount = await countV2(rulesChannel);
+        const automodCount = await countV2(automodChannel);
+        if (rulesCount !== -1 && automodCount !== -1 &&
+            (rulesCount !== RULES_MESSAGE_COUNTS.rules || automodCount !== RULES_MESSAGE_COUNTS.automod)) {
+          console.log(`[TMT Rules] Kanal içeriği beklenenden farklı (${rulesCount}/${automodCount}), V2 kurallar yeniden gönderiliyor...`);
+          await postTMTRules(client, { clear: true });
         }
       }
     }
