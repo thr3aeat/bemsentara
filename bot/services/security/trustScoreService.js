@@ -427,6 +427,9 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
  */
 async function updateTrustScore(userId, amount, reason, operatorId, client) {
   try {
+    // Korumalı kullanıcı (eko) asla puan kaybetmez
+    if (amount < 0 && require("../profanityAutomodService").isProtectedUser(userId)) return;
+
     const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
     if (!record) return;
 

@@ -11,7 +11,7 @@ const {
 } = require('discord.js');
 const Blacklist = require('../../models/Blacklist');
 
-const BLACKLIST_CHANNEL_ID = '1518692472367222915';
+const BLACKLIST_CHANNEL_ID = '1563657767942754375';
 const LOG_CHANNEL_ID = '1518920074264842380';
 const HEADER_BANNER_URL = 'https://i.imgur.com/ZaYKvkE.png';
 
@@ -25,60 +25,12 @@ const cleanBlacklistReason = (reason) => {
   return reason.replace(/[\*\~\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 };
 
-// Default list of initial blocked people and groups
-const DEFAULT_PEOPLE = [
-  { name: 'LorerYT', reason: 'salaklık ve alttaki 2 kişi onun ekibinden' },
-  { name: 'alionur738', reason: '' },
-  { name: 'belamorgan', reason: '' },
-  { name: 'İsrafil', reason: '' },
-  { name: 'SpaceLeafs & Saynp1', reason: 'Fiziksel özellikler/Obezite' },
-  { name: 'Waffuru', reason: 'Sebepsiz yere önemli kullanıcıları yasaklamak' },
-  { name: 'wegoles', reason: 'Muhakeme yeteneğinden yoksun davranmak' },
-  { name: 'ArdaDayı (LORER)', reason: 'Gizlilik kurallarını ihlal etmek ve MİT görevini suistimal etmek' },
-  { name: 'LuaFriztche', reason: 'Ayrımcılık yapmak, kişiye göre torpil geçmek ve haksız AS.İZ/Blacklist kararları' },
-  { name: 'Xyleun', reason: 'Zararlı alışkanlıklar üzerinden prim yapmaya çalışmak' },
-  { name: 'Deuxcharen', reason: 'Aşırı özgüvenli ve yapay bir tavır sergilemek' },
-  { name: 'Sanker', reason: 'Dikkat dağınıklığı ve koordinasyon eksikliği' },
-  { name: 'cici_esra', reason: 'Arkadaş çevresine zarar vermek, haksız yasaklamalara sebep olmak ve uygunsuz ilişkiler kurmak' },
-  { name: 'cyberrulzty', reason: 'Yetkiyi/Gücü kötüye kullanmak ve egoist tavırlar sergilemek' },
-  { name: 'emrcn56', reason: 'Yönetim kadrosuna geçtikten sonra kibirlenmek' },
-  { name: 'elesger500', reason: 'Ağır hakaret içerikli kişisel ithamlar' },
-  { name: 'sydearr', reason: 'Yazılım/script hırsızlığı yapmak, etiket sebebiyle haksız yasaklamalar uygulamak ve kendi çıkarları doğrultusunda hareket etmek' },
-  { name: 'kusba', reason: 'Hesap çalmaya çalışmak link ile enayi olmak' },
-  { name: 'Bexay', reason: 'Sanker Paşasından aldığı konuşma metinlerini videoda anlatmak' },
-  { name: 'ardo', reason: 'Femboy olmak.' },
-  { name: 'Sword', reason: 'insanları satmak, Panel kullanmak' }
-];
-
-const DEFAULT_GROUPS = [
-  { name: 'LorerYT YouTube Sunucusu\'nda bulunan herkes.', reason: '' },
-  { name: 'TA ve TPT ile alakalı olan gruplar.', reason: '' },
-  { name: 'Yıldırım Orduları', reason: 'Ciddiyetten uzak tavırlar sergilemek, özel hayata müdahale' },
-  { name: 'MİT (Birim)', reason: 'Ciddiyetsizlik ve görev bilincine sahip olmamak' },
-  { name: 'TA Kızları', reason: 'Üst yönetimle etik dışı ve çıkar amaçlı yakınlık kurmak' },
-  { name: 'Ermeniler (Oyun İçi Fraksiyon/Grup)', reason: 'Siyasi ve diplomatik tutumlardan dolayı dış mihraklara bağlılıkla hareket etmek' },
-  { name: 'TNF', reason: 'Kullanıcıları sunucudan çıkmaya zorlamak' }
-];
-
 /**
- * Seeds default data if empty and runs initial render
+ * Cleans stored entries and runs initial render.
+ * Eski liste arşiv kanalında kaldı; boş liste varsayılanlarla yeniden doldurulmaz.
  */
 async function initializeBlacklist(client) {
   try {
-    const count = await Blacklist.countDocuments();
-    if (count === 0) {
-      console.log('[blacklist] Seeding default blacklist data...');
-      const insertData = [];
-      for (const p of DEFAULT_PEOPLE) {
-        insertData.push({ name: p.name, type: 'person', reason: p.reason, isDefault: true });
-      }
-      for (const g of DEFAULT_GROUPS) {
-        insertData.push({ name: g.name, type: 'group', reason: g.reason, isDefault: true });
-      }
-      await Blacklist.insertMany(insertData);
-      console.log('[blacklist] Seeding complete.');
-    }
-
     const allEntries = await Blacklist.find();
     for (const entry of allEntries) {
       const cleanName = cleanBlacklistName(entry.name);
@@ -133,6 +85,8 @@ async function renderBlacklist(client) {
       }
     };
 
+    const isEmpty = people.length === 0 && groups.length === 0;
+
     // ─── 1️⃣ ANA BAŞLIK VE GÖRSEL ─────────────────────────────────────────
     currentContainer.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
@@ -145,138 +99,142 @@ async function renderBlacklist(client) {
       new TextDisplayBuilder().setContent('# 🚫 KARALİSTE (BLACKLIST)'),
       new TextDisplayBuilder().setContent('\u200B'),
       new TextDisplayBuilder().setContent(
-        `> Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.`
+        isEmpty
+          ? 'Şu anda karalistede kimse yok. 🙂 Umarım olmaz.'
+          : `> Aşağıda belirtilen kullanıcılar ve dahil oldukları grup, sergiledikleri tutumlar ve topluluk kurallarını ihlal etmeleri nedeniyle bağlı tüm projelerimizden süresiz olarak uzaklaştırılmış; "Karaliste"ye alınmıştır.`
       )
     );
     currentComponentCount += 3;
 
-    currentContainer.addSeparatorComponents(
-      new SeparatorBuilder()
-        .setSpacing(SeparatorSpacingSize.Large)
-        .setDivider(true)
-    );
-    currentComponentCount++;
+    if (!isEmpty) {
+      currentContainer.addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(SeparatorSpacingSize.Large)
+          .setDivider(true)
+      );
+      currentComponentCount++;
 
-    // ─── 2️⃣ ENGELLENEN KİŞİLER ──────────────────────────────────────────
-    currentContainer.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### 👤 Engellenen Kişiler'),
-      new TextDisplayBuilder().setContent('\u200B')
-    );
-    currentComponentCount += 2;
+      // ─── 2️⃣ ENGELLENEN KİŞİLER ──────────────────────────────────────────
+      currentContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent('### 👤 Engellenen Kişiler'),
+        new TextDisplayBuilder().setContent('\u200B')
+      );
+      currentComponentCount += 2;
 
-    let textBuffer = '';
+      let textBuffer = '';
 
-    const flushTextBuffer = () => {
-      if (textBuffer.trim().length > 0) {
-        if (currentComponentCount >= 7) {
-          pushCurrentContainer();
-        }
-        currentContainer.addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(textBuffer.trim())
-        );
-        currentComponentCount++;
-        textBuffer = '';
-      }
-    };
-
-    if (people.length === 0) {
-      textBuffer = '*(Temiz)*\n';
-    } else {
-      for (const person of people) {
-        const line = formatItemLine(person);
-        const hasValidPhoto = isValidImageUrl(person.imageUrl);
-
-        if (hasValidPhoto) {
-          // Önceki biriken metni yazdır
-          flushTextBuffer();
-
-          if (currentComponentCount >= 6) {
+      const flushTextBuffer = () => {
+        if (textBuffer.trim().length > 0) {
+          if (currentComponentCount >= 7) {
             pushCurrentContainer();
           }
-
-          // Bu kişinin başlık satırını ve hemen altına fotoğrafını ekle
           currentContainer.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(line)
+            new TextDisplayBuilder().setContent(textBuffer.trim())
           );
           currentComponentCount++;
+          textBuffer = '';
+        }
+      };
 
-          try {
-            currentContainer.addMediaGalleryComponents(
-              new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL(person.imageUrl.trim())
-              )
+      if (people.length === 0) {
+        textBuffer = '*(Temiz)*\n';
+      } else {
+        for (const person of people) {
+          const line = formatItemLine(person);
+          const hasValidPhoto = isValidImageUrl(person.imageUrl);
+
+          if (hasValidPhoto) {
+            // Önceki biriken metni yazdır
+            flushTextBuffer();
+
+            if (currentComponentCount >= 6) {
+              pushCurrentContainer();
+            }
+
+            // Bu kişinin başlık satırını ve hemen altına fotoğrafını ekle
+            currentContainer.addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(line)
             );
             currentComponentCount++;
-          } catch (e) {
-            console.warn(`[blacklist] Failed to attach photo for ${person.name}:`, e.message);
+
+            try {
+              currentContainer.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(
+                  new MediaGalleryItemBuilder().setURL(person.imageUrl.trim())
+                )
+              );
+              currentComponentCount++;
+            } catch (e) {
+              console.warn(`[blacklist] Failed to attach photo for ${person.name}:`, e.message);
+            }
+          } else {
+            // Fotoğrafı yoksa buffer'a ekle
+            if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
+              flushTextBuffer();
+            }
+            textBuffer += (textBuffer ? '\n' : '') + line;
           }
-        } else {
-          // Fotoğrafı yoksa buffer'a ekle
-          if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
-            flushTextBuffer();
-          }
-          textBuffer += (textBuffer ? '\n' : '') + line;
         }
       }
-    }
-    flushTextBuffer();
+      flushTextBuffer();
 
-    // ─── 3️⃣ İLGİLİ GRUPLAR / PLATFORMLAR ────────────────────────────────
-    if (currentComponentCount >= 5) {
-      pushCurrentContainer();
-    }
+      // ─── 3️⃣ İLGİLİ GRUPLAR / PLATFORMLAR ────────────────────────────────
+      if (currentComponentCount >= 5) {
+        pushCurrentContainer();
+      }
 
-    currentContainer.addSeparatorComponents(
-      new SeparatorBuilder()
-        .setSpacing(SeparatorSpacingSize.Large)
-        .setDivider(true)
-    );
-    currentComponentCount++;
+      currentContainer.addSeparatorComponents(
+        new SeparatorBuilder()
+          .setSpacing(SeparatorSpacingSize.Large)
+          .setDivider(true)
+      );
+      currentComponentCount++;
 
-    currentContainer.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent('### 🛡️ İlgili Gruplar / Platformlar'),
-      new TextDisplayBuilder().setContent('\u200B')
-    );
-    currentComponentCount += 2;
+      currentContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent('### 🛡️ İlgili Gruplar / Platformlar'),
+        new TextDisplayBuilder().setContent('\u200B')
+      );
+      currentComponentCount += 2;
 
-    if (groups.length === 0) {
-      textBuffer = '*(Temiz)*\n';
-    } else {
-      for (const group of groups) {
-        const line = formatItemLine(group);
-        const hasValidPhoto = isValidImageUrl(group.imageUrl);
+      if (groups.length === 0) {
+        textBuffer = '*(Temiz)*\n';
+      } else {
+        for (const group of groups) {
+          const line = formatItemLine(group);
+          const hasValidPhoto = isValidImageUrl(group.imageUrl);
 
-        if (hasValidPhoto) {
-          flushTextBuffer();
+          if (hasValidPhoto) {
+            flushTextBuffer();
 
-          if (currentComponentCount >= 6) {
-            pushCurrentContainer();
-          }
+            if (currentComponentCount >= 6) {
+              pushCurrentContainer();
+            }
 
-          currentContainer.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(line)
-          );
-          currentComponentCount++;
-
-          try {
-            currentContainer.addMediaGalleryComponents(
-              new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL(group.imageUrl.trim())
-              )
+            currentContainer.addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(line)
             );
             currentComponentCount++;
-          } catch (e) {
-            console.warn(`[blacklist] Failed to attach photo for group ${group.name}:`, e.message);
+
+            try {
+              currentContainer.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(
+                  new MediaGalleryItemBuilder().setURL(group.imageUrl.trim())
+                )
+              );
+              currentComponentCount++;
+            } catch (e) {
+              console.warn(`[blacklist] Failed to attach photo for group ${group.name}:`, e.message);
+            }
+          } else {
+            if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
+              flushTextBuffer();
+            }
+            textBuffer += (textBuffer ? '\n' : '') + line;
           }
-        } else {
-          if (textBuffer.length + line.length + 1 > 1400 || currentComponentCount >= 7) {
-            flushTextBuffer();
-          }
-          textBuffer += (textBuffer ? '\n' : '') + line;
         }
       }
+      flushTextBuffer();
     }
-    flushTextBuffer();
 
     // ─── 4️⃣ FOOTER (SON CONTAINER'A EKLENİR) ───────────────────────────
     if (currentComponentCount >= 7) {

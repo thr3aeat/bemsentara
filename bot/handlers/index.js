@@ -2837,7 +2837,7 @@ function initializeDiscordHandlers(client) {
     }
 
     // ── Karaliste Mesaj Kontrolü (EkoYıldız) ──────────────────────────────────
-    if (message.channel && message.channel.id === '1518692472367222915') {
+    if (message.channel && message.channel.id === '1563657767942754375') {
       try {
         const { handleBlacklistMessage } = require('../services/blacklistService');
         await handleBlacklistMessage(message, client);

@@ -1,6 +1,6 @@
 const { AuditLogEvent, ChannelType } = require("discord.js");
 const { updateTrustScore, ensureUserTrustScore, incrementAfProgress, logTrustUserActivity, addModPoints } = require("../services/security/trustScoreService");
-const { processMessageAutomod, isAutomodExempt } = require("../services/profanityAutomodService");
+const { processMessageAutomod, isAutomodExempt, isProtectedUser } = require("../services/profanityAutomodService");
 const UserTrustScore = require("../../models/UserTrustScore");
 
 const ACTIVE_GUILD_ID = "1367646464804655104"; // EKO YILDIZ
@@ -111,7 +111,7 @@ function initializeTrustScoreHandlers(client) {
       // Forum (ve medya) kanallarındaki gönderilerde link/davet paylaşımı serbesttir
       const isForumPost = [ChannelType.GuildForum, ChannelType.GuildMedia].includes(message.channel.parent?.type);
       // Yetkililer link/flood/caps/spam automod cezalarından muaf
-      const isStaffExempt = isAutomodExempt(message.member);
+      const isStaffExempt = isProtectedUser(userId) || isAutomodExempt(message.member);
       const isLinkExempt = isTargetCategory || isForumPost || isStaffExempt;
 
       // ── A. Automod Checks: Suspicious Link / Ad ──
