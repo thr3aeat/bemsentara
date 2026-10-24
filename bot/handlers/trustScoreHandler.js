@@ -1,6 +1,6 @@
 const { AuditLogEvent, ChannelType } = require("discord.js");
 const { updateTrustScore, ensureUserTrustScore, incrementAfProgress, logTrustUserActivity, addModPoints } = require("../services/security/trustScoreService");
-const { processMessageAutomod } = require("../services/profanityAutomodService");
+const { processMessageAutomod, isAutomodExempt } = require("../services/profanityAutomodService");
 const UserTrustScore = require("../../models/UserTrustScore");
 
 const ACTIVE_GUILD_ID = "1367646464804655104"; // EKO YILDIZ
@@ -110,7 +110,9 @@ function initializeTrustScoreHandlers(client) {
       const isTargetCategory = message.channel.parentId === "1521539351031578684" || message.channel.parent?.parentId === "1521539351031578684";
       // Forum (ve medya) kanallarındaki gönderilerde link/davet paylaşımı serbesttir
       const isForumPost = [ChannelType.GuildForum, ChannelType.GuildMedia].includes(message.channel.parent?.type);
-      const isLinkExempt = isTargetCategory || isForumPost;
+      // Yetkililer link/flood/caps/spam automod cezalarından muaf
+      const isStaffExempt = isAutomodExempt(message.member);
+      const isLinkExempt = isTargetCategory || isForumPost || isStaffExempt;
 
       // ── A. Automod Checks: Suspicious Link / Ad ──
       if (!isLinkExempt && SUSPICIOUS_LINK_REGEX.test(message.content)) {
@@ -145,7 +147,7 @@ function initializeTrustScoreHandlers(client) {
       const recentDuplicates = userHistory.filter(m => now - m.timestamp < 10000 && m.content === currentContent);
       userLastMessages.set(userId, userHistory.filter(m => now - m.timestamp < 10000));
 
-      if (recentDuplicates.length >= 3) {
+      if (!isStaffExempt && recentDuplicates.length >= 3) {
         await message.delete().catch(() => {});
         await updateTrustScore(userId, -3.0, "Automod: Tekrarlanan Mesaj Spamı (Duplicate Spam)", "SYSTEM", client);
         await message.channel.send(`⚠️ <@${userId}> Aynı mesajı 10 saniye içinde tekrarladığınız için **-3.0** TS cezası aldınız.`).then(msg => {
@@ -163,7 +165,7 @@ function initializeTrustScoreHandlers(client) {
       const recentTimestamps = timestamps.filter(t => now - t < 3000);
       userTimestamps.set(userId, recentTimestamps);
 
-      if (recentTimestamps.length > maxFloodLimit) {
+      if (!isStaffExempt && recentTimestamps.length > maxFloodLimit) {
         userTimestamps.set(userId, []); // Reset timestamps
         await updateTrustScore(userId, -2.0, "Automod: Hızlı Mesaj / Flood İhlali", "SYSTEM", client);
         await message.reply({ content: "⚠️ **[Güvenlik]** Lütfen bu kadar hızlı mesaj yazmayın! Flood ihlali nedeniyle puan kaybettiniz." }).then(msg => {
@@ -174,7 +176,7 @@ function initializeTrustScoreHandlers(client) {
 
       // ── C. Automod Checks: Caps Lock / Büyük Harf Spamı ──
       const letters = message.content.replace(/[^a-zA-ZğüşıöçĞÜŞİÖÇ]/g, "");
-      if (letters.length > 10) {
+      if (!isStaffExempt && letters.length > 10) {
         const uppercaseCount = letters.split("").filter(c => c === c.toUpperCase()).length;
         const uppercaseRatio = uppercaseCount / letters.length;
         

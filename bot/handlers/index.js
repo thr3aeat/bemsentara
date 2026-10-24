@@ -2388,8 +2388,9 @@ function initializeDiscordHandlers(client) {
         }
 
         const hasHapisRole = message.member?.roles.cache.some(r => r.name.toLowerCase() === "hapis");
-        let isUserJailed = hasHapisRole;
-        if (!isUserJailed) {
+        const isJailExempt = require("../services/profanityAutomodService").isAutomodExempt(message.member);
+        let isUserJailed = hasHapisRole && !isJailExempt;
+        if (!isUserJailed && !isJailExempt) {
           const User = require("../../models/User");
           const dbUser = await User.findOne({ discordId: message.author.id });
           if (dbUser && dbUser.isJailed) {

@@ -60,6 +60,8 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
 
     const member = await guild.members.fetch(userId).catch(() => null);
     if (!member) return false;
+    // Yönetici / sunucu sahibi hapse atılamaz
+    if (require("./profanityAutomodService").isAutomodExempt(member)) return false;
 
     // Find existing Hapis role on EkoYıldız server
     let hapisRole = guild.roles.cache.find(r => r.name.toLowerCase() === "hapis" || r.name.toLowerCase().includes("hapis"));
@@ -157,7 +159,7 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
 async function unjailUser(client, guild, userId) {
   try {
     const dbUser = await User.findOne({ discordId: userId });
-    if (!dbUser || !dbUser.isJailed) return;
+    if (!dbUser || !dbUser.isJailed) return false;
 
     const member = await guild.members.fetch(userId).catch(() => null);
     if (member) {
@@ -195,8 +197,10 @@ async function unjailUser(client, guild, userId) {
         .setTimestamp();
       await logChannel.send({ embeds: [logEmbed] }).catch(() => {});
     }
+    return true;
   } catch (err) {
     console.error("[JailService] unjailUser error:", err);
+    return false;
   }
 }
 

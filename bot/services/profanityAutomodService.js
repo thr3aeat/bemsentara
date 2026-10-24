@@ -218,13 +218,37 @@ function containsNormalizedTerm(norm, term) {
     .some(value => boundaryRegex.test(value));
 }
 
+function stripNonTextTokens(rawText) {
+  return rawText
+    .replace(/<a?:\w+:\d+>/g, " ")
+    .replace(/<(?:@[!&]?|#)\d+>/g, " ")
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, " ")
+    .replace(/(?:discord\.gg|discord(?:app)?\.com\/invite)\/\S+/gi, " ");
+}
+
+/**
+ * Yönetici / moderasyon yetkisi olanlar automod cezası almaz.
+ */
+function isAutomodExempt(member) {
+  if (!member?.permissions) return false;
+  return member.permissions.has(PermissionFlagsBits.Administrator) ||
+    member.permissions.has(PermissionFlagsBits.ManageGuild) ||
+    member.permissions.has(PermissionFlagsBits.ManageMessages) ||
+    member.guild?.ownerId === member.id;
+}
+
 /**
  * 3. Akıllı Küfür & Bypass Tespiti
  */
 function detectProfanity(rawText) {
   if (!rawText || typeof rawText !== "string") return null;
 
-  const norm = cleanAndNormalizeText(maskSafeWords(rawText));
+  // Linkler, etiketler ve özel emojiler küfür taramasına girmesin
+  // (YouTube ID'si "vi-z1aq7Eug" içindeki "aq" yanlış pozitifi).
+  const textToScan = stripNonTextTokens(rawText);
+  if (!textToScan.trim()) return null;
+
+  const norm = cleanAndNormalizeText(maskSafeWords(textToScan));
 
   // Güvenli kelime kontrolü: Eğer metin tamamen safe word ise atla
   const rawWords = norm.raw.split(/\s+/);
@@ -276,6 +300,7 @@ function detectProfanity(rawText) {
 async function processMessageAutomod(message, client) {
   try {
     if (!message || message.author.bot || !message.guild || !message.content) return false;
+    if (isAutomodExempt(message.member)) return false;
 
     const detection = detectProfanity(message.content);
     if (!detection) return false;
@@ -568,6 +593,7 @@ function recordAutomodIncident(messageId, data) {
 }
 
 module.exports = {
+  isAutomodExempt,
   getAutomodIncident,
   recordAutomodIncident,
   detectProfanity,
