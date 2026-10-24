@@ -330,22 +330,28 @@ function initializeVoiceAndBanHandlers(client) {
 
       // ── Hapis Ses Kanalı Engelleme Kontrolü ─────────────────────────────────
       if (newState.channelId && newState.member && !newState.member.user.bot) {
-        const hasHapisRole = newState.member.roles.cache.some(r => r.name.toLowerCase() === "hapis");
-        let isUserJailed = hasHapisRole;
-        if (!isUserJailed) {
-          const User = require("../../models/User");
-          const dbUser = await User.findOne({ discordId: newState.member.id });
-          if (dbUser && dbUser.isJailed) {
-            isUserJailed = true;
+        const { isProtectedUser, isAutomodExempt } = require("../services/profanityAutomodService");
+        if (isProtectedUser(newState.member.id) || isAutomodExempt(newState.member)) {
+          const hRole = newState.member.roles.cache.find(r => r.name.toLowerCase().includes("hapis"));
+          if (hRole) newState.member.roles.remove(hRole, "Korumalı/yetkili kullanıcı hapis rolü temizlendi").catch(() => {});
+        } else {
+          const hasHapisRole = newState.member.roles.cache.some(r => r.name.toLowerCase().includes("hapis"));
+          let isUserJailed = hasHapisRole;
+          if (!isUserJailed) {
+            const User = require("../../models/User");
+            const dbUser = await User.findOne({ discordId: newState.member.id });
+            if (dbUser && dbUser.isJailed) {
+              isUserJailed = true;
+            }
           }
-        }
 
-        if (isUserJailed) {
-          const isJailCategory = newState.channel && newState.channel.parentId === "1521501154339586078";
-          if (!isJailCategory) {
-            await newState.disconnect("Hapiste olan kullanıcı ses kanalına katılamaz.").catch(() => {});
-            await newState.member.send("❌ Hapiste olduğunuz için bu ses kanalına katılamazsınız!").catch(() => {});
-            return;
+          if (isUserJailed) {
+            const isJailCategory = newState.channel && newState.channel.parentId === "1521501154339586078";
+            if (!isJailCategory) {
+              await newState.disconnect("Hapiste olan kullanıcı ses kanalına katılamaz.").catch(() => {});
+              await newState.member.send("❌ Hapiste olduğunuz için bu ses kanalına katılamazsınız!").catch(() => {});
+              return;
+            }
           }
         }
       }

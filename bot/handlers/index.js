@@ -930,6 +930,13 @@ function initializeDiscordHandlers(client) {
   client.on("guildMemberUpdate", async (oldMember, newMember) => {
     try {
       // ── HAPİS & YAVRU DİNAZOR ROL KONTROLÜ (Otomatik Çıkarma) ──
+      const { isProtectedUser: isProtMember, isAutomodExempt: isExemptMember } = require("../services/profanityAutomodService");
+      if (isProtMember(newMember.id) || isExemptMember(newMember)) {
+        const hapisRole = newMember.roles.cache.find(r => r.name.toLowerCase().includes('hapis'));
+        if (hapisRole) {
+          await newMember.roles.remove(hapisRole, 'Korumalı/yetkili kullanıcıya Hapis rolü verilemez (otomatik kaldırıldı)').catch(() => { });
+        }
+      }
       const YAVRU_DINAZOR_ROLE_ID = '1518692402884378825';
       const hasHapisRole = newMember.roles.cache.some(r => r.name.toLowerCase().includes('hapis'));
       if (hasHapisRole && newMember.roles.cache.has(YAVRU_DINAZOR_ROLE_ID)) {
@@ -2383,41 +2390,60 @@ function initializeDiscordHandlers(client) {
 
       // ── Hapis Engelleme Kontrolü ───────────────────────────────────────────
       if (!message.author.bot) {
-        if (!message.member && message.author) {
-          await message.guild.members.fetch(message.author.id).catch(() => { });
-        }
-
-        const hasHapisRole = message.member?.roles.cache.some(r => r.name.toLowerCase() === "hapis");
-        const isJailExempt = require("../services/profanityAutomodService").isAutomodExempt(message.member);
-        let isUserJailed = hasHapisRole && !isJailExempt;
-        if (!isUserJailed && !isJailExempt) {
+        const { isProtectedUser, isAutomodExempt } = require("../services/profanityAutomodService");
+        if (isProtectedUser(message.author.id)) {
+          const member = message.member || (message.guild ? await message.guild.members.fetch(message.author.id).catch(() => null) : null);
+          if (member?.roles.cache.some(r => r.name.toLowerCase().includes("hapis"))) {
+            const hRole = member.roles.cache.find(r => r.name.toLowerCase().includes("hapis"));
+            if (hRole) await member.roles.remove(hRole, "Korumalı kullanıcı hapis rolü temizlendi").catch(() => {});
+          }
           const User = require("../../models/User");
           const dbUser = await User.findOne({ discordId: message.author.id });
           if (dbUser && dbUser.isJailed) {
-            isUserJailed = true;
+            dbUser.isJailed = false;
+            dbUser.jailedRoles = undefined;
+            dbUser.jailedUntil = undefined;
+            dbUser.jailReason = undefined;
+            dbUser.jailedBy = undefined;
+            if (typeof dbUser.save === "function") await dbUser.save();
           }
-        }
-
-        if (isUserJailed) {
-          const isJailCategory = message.channel.parentId === "1521501154339586078" || message.channel.parent?.parentId === "1521501154339586078";
-          const isCayOcagi = message.channel.name && (
-            (message.channel.name.toLowerCase().includes("çay") || message.channel.name.toLowerCase().includes("cay")) &&
-            (message.channel.name.toLowerCase().includes("ocak") || message.channel.name.toLowerCase().includes("ocağ") || message.channel.name.toLowerCase().includes("ocag"))
-          );
-
-          if (!isJailCategory && !isCayOcagi) {
-            await message.delete().catch(() => { });
-            const reply = await message.channel.send(`❌ <@${message.author.id}>, hapiste olduğunuz için bu kanalda konuşamazsınız!`).catch(() => null);
-            if (reply) {
-              setTimeout(() => reply.delete().catch(() => { }), 5000);
+        } else {
+          let member = message.member;
+          if (!member && message.guild && message.author) {
+            member = await message.guild.members.fetch(message.author.id).catch(() => null);
+          }
+          const hasHapisRole = member?.roles.cache.some(r => r.name.toLowerCase().includes("hapis"));
+          const isJailExempt = isAutomodExempt(member);
+          let isUserJailed = hasHapisRole && !isJailExempt;
+          if (!isUserJailed && !isJailExempt) {
+            const User = require("../../models/User");
+            const dbUser = await User.findOne({ discordId: message.author.id });
+            if (dbUser && dbUser.isJailed) {
+              isUserJailed = true;
             }
-            return;
-          } else {
-            try {
-              const { handleJailSpeech } = require("../services/jailService");
-              await handleJailSpeech(message);
-            } catch (err) {
-              console.error("[JailSpeechTrigger] Hata:", err.message);
+          }
+
+          if (isUserJailed) {
+            const isJailCategory = message.channel.parentId === "1521501154339586078" || message.channel.parent?.parentId === "1521501154339586078";
+            const isCayOcagi = message.channel.name && (
+              (message.channel.name.toLowerCase().includes("çay") || message.channel.name.toLowerCase().includes("cay")) &&
+              (message.channel.name.toLowerCase().includes("ocak") || message.channel.name.toLowerCase().includes("ocağ") || message.channel.name.toLowerCase().includes("ocag"))
+            );
+
+            if (!isJailCategory && !isCayOcagi) {
+              await message.delete().catch(() => { });
+              const reply = await message.channel.send(`❌ <@${message.author.id}>, hapiste olduğunuz için bu kanalda konuşamazsınız!`).catch(() => null);
+              if (reply) {
+                setTimeout(() => reply.delete().catch(() => { }), 5000);
+              }
+              return;
+            } else {
+              try {
+                const { handleJailSpeech } = require("../services/jailService");
+                await handleJailSpeech(message);
+              } catch (err) {
+                console.error("[JailSpeechTrigger] Hata:", err.message);
+              }
             }
           }
         }

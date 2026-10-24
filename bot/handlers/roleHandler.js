@@ -108,7 +108,8 @@ async function runSyncForMember(interaction, { ephemeral = true, commandName = "
 
   const dbUser = await findUserByDiscordId(user.id);
 
-  if (dbUser && dbUser.isJailed) {
+  const { isProtectedUser } = require("../services/profanityAutomodService");
+  if (dbUser && dbUser.isJailed && !isProtectedUser(user.id)) {
     return interaction.reply(
       replyEphemeral("❌ Hapiste olduğunuz için rollerinizi güncelleyemezsiniz veya senkronize edemezsiniz!")
     );

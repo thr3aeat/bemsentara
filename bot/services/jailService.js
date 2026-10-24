@@ -160,26 +160,24 @@ async function jailUser(client, guild, userId, reason, durationMinutes, moderato
 async function unjailUser(client, guild, userId) {
   try {
     const dbUser = await User.findOne({ discordId: userId });
-    if (!dbUser || !dbUser.isJailed) return false;
-
     const member = await guild.members.fetch(userId).catch(() => null);
     if (member) {
-      const hapisRole = guild.roles.cache.find(r => r.name.toLowerCase() === "hapis");
-      if (hapisRole) {
+      const hapisRole = guild.roles.cache.find(r => r.name.toLowerCase().includes("hapis"));
+      if (hapisRole && member.roles.cache.has(hapisRole.id)) {
         await member.roles.remove(hapisRole, "Hapis Süresi Bitti").catch(() => {});
       }
-
-      const restoredRoles = dbUser.jailedRoles || [];
+      const restoredRoles = dbUser?.jailedRoles || [];
       if (restoredRoles.length > 0) {
-        // Re-add their old roles
         await member.roles.add(restoredRoles, "Hapis Süresi Bitti (Roller İade Edildi)").catch(() => {});
       }
-
       await member.send(
         `🔓 **Hapis Cezanız Sona Erdi!**\n\n` +
         `Rolleriniz iade edildi. Lütfen kurallara uymaya özen gösterin.`
       ).catch(() => {});
     }
+    if (!dbUser || !dbUser.isJailed) return true;
+
+    // Roller yukarida iade edildi
 
     dbUser.isJailed = false;
     dbUser.jailedRoles = undefined;
@@ -212,6 +210,20 @@ function startJailScheduler(client) {
   console.log("[JailScheduler] Hapis süresi takip zamanlayıcısı başlatıldı.");
   setInterval(async () => {
     try {
+      const { isProtectedUser } = require("./profanityAutomodService");
+      for (const g of client.guilds.cache.values()) {
+        try {
+          const hRole = g.roles.cache.find(r => r.name.toLowerCase().includes("hapis"));
+          if (hRole) {
+            for (const m of hRole.members.values()) {
+              if (isProtectedUser(m.id)) {
+                console.log(`[JailScheduler] 🔓 Korumalı ${m.user.tag} (${m.id}) hapis rolünden çıkarılıyor...`);
+                await m.roles.remove(hRole, "Korumalı kullanıcı hapis rolü temizlendi").catch(() => {});
+              }
+            }
+          }
+        } catch (_) {}
+      }
       const jailedUsers = await User.find({ isJailed: true });
       if (jailedUsers.length === 0) return;
 
@@ -219,7 +231,6 @@ function startJailScheduler(client) {
       if (!guild) return;
 
       const now = new Date();
-      const { isProtectedUser } = require("./profanityAutomodService");
       for (const dbUser of jailedUsers) {
         if (isProtectedUser(dbUser.discordId)) {
           console.log(`[JailScheduler] 🔓 Korumalı kullanıcı ${dbUser.discordId} hapisten çıkarılıyor...`);

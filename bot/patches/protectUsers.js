@@ -19,7 +19,32 @@ function _blocked(action, userLike) {
 }
 
 module.exports = function applyProtectUsers() {
-  const { GuildMember, GuildMemberManager, GuildBanManager } = require('discord.js');
+  const { GuildMember, GuildMemberManager, GuildBanManager, GuildMemberRoleManager } = require('discord.js');
+
+  const origRoleAdd = GuildMemberRoleManager.prototype.add;
+  GuildMemberRoleManager.prototype.add = function (roleOrRoles, reason) {
+    if (_isProtected(this.member)) {
+      const isHapis = (r) => {
+        if (!r) return false;
+        if (typeof r === 'object' && r.name && r.name.toLowerCase().includes('hapis')) return true;
+        const roleObj = this.guild.roles.cache.get(typeof r === 'string' ? r : r.id);
+        return roleObj && roleObj.name.toLowerCase().includes('hapis');
+      };
+
+      if (Array.isArray(roleOrRoles)) {
+        const filtered = roleOrRoles.filter(r => !isHapis(r));
+        if (filtered.length === 0) {
+          console.warn(`[protectUsers] 🛡️ Korumalı kullanıcıya (${this.member.id}) Hapis rolü eklenmesi engellendi.`);
+          return Promise.resolve(this.member);
+        }
+        return origRoleAdd.call(this, filtered, reason);
+      } else if (isHapis(roleOrRoles)) {
+        console.warn(`[protectUsers] 🛡️ Korumalı kullanıcıya (${this.member.id}) Hapis rolü eklenmesi engellendi.`);
+        return Promise.resolve(this.member);
+      }
+    }
+    return origRoleAdd.call(this, roleOrRoles, reason);
+  };
 
   const origTimeout = GuildMember.prototype.timeout;
   GuildMember.prototype.timeout = function (timeout, ...rest) {
