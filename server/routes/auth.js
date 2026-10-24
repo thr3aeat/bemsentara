@@ -167,7 +167,7 @@ router.get("/auth/discord", (req, res, next) => {
   next();
 }, passport.authenticate("discord"));
 
-router.get("/auth/discord/callback", passport.authenticate("discord", { failureRedirect: "/login?error=discord" }), async (req, res) => {
+router.get("/auth/discord/callback", passport.authenticate("discord", { failureRedirect: "/login?error=discord", keepSessionInfo: true }), async (req, res) => {
   if (req.session.rememberMe) {
     req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
   }
@@ -175,6 +175,7 @@ router.get("/auth/discord/callback", passport.authenticate("discord", { failureR
     if (String(req.user.discordId) !== req.session.linkDiscordId) {
       return res.redirect("/dashboard?wrongDiscord=1");
     }
+    delete req.session.linkDiscordId;
     return res.redirect("/auth/roblox");
   }
   tryAutoSyncRoles(req.user).catch(() => { });
@@ -946,7 +947,10 @@ router.post('/api/auth/roblox/profile-code/verify', async (req, res) => {
     user.robloxUsername = pending.username;
     user.robloxVerifiedAt = new Date();
     user.robloxVerificationMethod = 'profile_code';
+    user.isAuthorized = true;
     await user.save();
+    saveStoreNow();
+    tryAutoSyncRoles(user).catch(() => { });
     delete req.session.robloxProfileVerification;
     res.json({ success: true, message: 'Roblox hesabın doğrulandı.' });
   } catch (err) {
@@ -954,45 +958,13 @@ router.post('/api/auth/roblox/profile-code/verify', async (req, res) => {
   }
 });
 
-// Friend verification is deliberately enabled only when a dedicated verification
-// bot account is configured. Without it the site never claims a fake verification.
-router.post('/api/auth/roblox/friend-request', async (req, res) => {
-  if (!requirePortalLogin(req, res)) return;
-  const botId = String(process.env.ROBLOX_VERIFICATION_BOT_USER_ID || '').trim();
-  if (!/^\d+$/.test(botId)) return res.status(503).json({ error: 'Arkadaş isteği doğrulaması henüz yapılandırılmadı. Profil kodu veya Roblox ile giriş yöntemini kullanın.' });
-  try {
-    const account = await resolveRobloxAccount(req.body.username);
-    req.session.robloxFriendVerification = { ...account, botId, expiresAt: Date.now() + 15 * 60 * 1000 };
-    res.json({ success: true, robloxId: account.id, botProfileUrl: `https://www.roblox.com/users/${botId}/profile` });
-  } catch (err) {
-    res.status(400).json({ error: err.message || 'Roblox hesabı doğrulanamadı.' });
-  }
-});
+// Arkadaş isteği doğrulaması server/routes/api.js içinde (bot hesabının çerezi ile) yapılır.
 
-router.post('/api/auth/roblox/friend-verify', async (req, res) => {
-  if (!requirePortalLogin(req, res)) return;
-  const pending = req.session.robloxFriendVerification;
-  if (!pending || pending.expiresAt < Date.now()) return res.status(400).json({ error: 'Arkadaş isteği doğrulamasının süresi doldu.' });
-  try {
-    const noblox = require('noblox.js');
-    const friends = await noblox.getFriends(Number(pending.id));
-    if (!friends.some((friend) => String(friend.id) === pending.botId)) {
-      return res.status(400).json({ error: 'Arkadaşlık henüz doğrulanmadı. Bot profilinden isteği kabul edin ve tekrar deneyin.' });
-    }
-    const user = await User.findById(req.user._id);
-    user.robloxId = pending.id;
-    user.robloxUsername = pending.username;
-    user.robloxVerifiedAt = new Date();
-    user.robloxVerificationMethod = 'friend_request';
-    await user.save();
-    delete req.session.robloxFriendVerification;
-    res.json({ success: true, message: 'Roblox arkadaşlık doğrulaması tamamlandı.' });
-  } catch (_) {
-    res.status(502).json({ error: 'Arkadaşlık durumu şu an kontrol edilemedi. Lütfen tekrar deneyin.' });
-  }
+// Roblox bağlama Discord oturumu ister; yoksa önce Discord girişine yönlendir
+router.get("/auth/roblox", (req, res, next) => {
+  if (!req.user) return res.redirect("/auth/discord");
+  return passport.authenticate("roblox")(req, res, next);
 });
-
-router.get("/auth/roblox", passport.authenticate("roblox"));
 
 router.get(
   "/auth/roblox/callback",

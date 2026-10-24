@@ -183,6 +183,8 @@ passport.use(
     {
       clientID: ROBLOX_CLIENT_ID || "dummy",
       clientSecret: ROBLOX_CLIENT_SECRET || "dummy",
+      authorizationURL: "https://apis.roblox.com/oauth/v1/authorize",
+      tokenURL: "https://apis.roblox.com/oauth/v1/token",
       callbackURL: `${BASE_URL}/auth/roblox/callback`,
       scope: ["openid", "profile"],
       pkce: true,
