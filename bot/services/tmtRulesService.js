@@ -43,13 +43,16 @@ const BANNER_URL =
 async function clearChannel(channel) {
   let deleted = 0;
   try {
-    let fetched;
-    do {
-      fetched = await channel.messages.fetch({ limit: 100 });
+    for (;;) {
+      const fetched = await channel.messages.fetch({ limit: 100 });
       if (fetched.size === 0) break;
-      await channel.bulkDelete(fetched, true); // filterOld: true → 14 günden eski mesajları atlar
+      const removed = await channel.bulkDelete(fetched, true); // 14 günden eski mesajları atlar
+      // Toplu silinemeyen eski mesajları tek tek sil; ilerleme yoksa döngüden çık (sonsuz döngü olmasın)
+      const old = fetched.filter(m => !removed.has(m.id));
+      for (const m of old.values()) await m.delete().catch(() => {});
       deleted += fetched.size;
-    } while (fetched.size >= 2);
+      if (removed.size === 0 && old.size === 0) break;
+    }
   } catch (err) {
     console.warn(`⚠️ Kanal temizlenirken hata (${channel.name}):`, err.message);
   }
