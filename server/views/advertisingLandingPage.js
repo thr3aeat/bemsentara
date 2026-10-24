@@ -945,7 +945,7 @@ function renderAdvertisingLandingPage(user = null) {
 
     /* Final CTA */
     .final-cta {
-      margin: 80px 0 40px;
+      margin: 80px auto 40px;
       padding: 72px 36px;
       border: 1px solid var(--border-medium);
       border-radius: var(--radius-xl);
@@ -1005,6 +1005,8 @@ function renderAdvertisingLandingPage(user = null) {
       .brand-sub { display: none; }
       .hero-actions { flex-direction: column; width: 100%; }
       .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+    }
+
     /* ── EKOai Reklam Danışmanı Stilleri ── */
     .ekoai-section {
       margin: 80px auto;
