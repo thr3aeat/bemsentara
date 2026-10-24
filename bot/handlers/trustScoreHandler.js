@@ -88,6 +88,9 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 function initializeTrustScoreHandlers(client) {
+  // Tüm sunuculardaki katılma/ayrılma/ban/mesaj aktivitesi kişinin profil kanalına yazılır
+  require("../services/security/profileActivityLog").initProfileActivityLog(client);
+
   // ── 1. Message Event Handler (Sohbet, Automod, Streaks, Flood, Caps Lock) ──
   client.on("messageCreate", async (message) => {
     try {
@@ -502,7 +505,7 @@ function initializeTrustScoreHandlers(client) {
   client.on("guildMemberAdd", async (member) => {
     try {
       if (member.user.bot) return;
-      const record = await ensureUserTrustScore(member.id, member.guild.id, client);
+      const record = await ensureUserTrustScore(member.id, member.guild.id, client, true);
       if (!record) return;
 
       if (!record.altAccountChecked) {

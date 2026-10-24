@@ -208,6 +208,9 @@ function initializeDiscordHandlers(client) {
       console.error("[TrustScore] Ses tarayıcı/decay başlatılamadı:", trustErr.message);
     }
 
+    // TMT destek paneli tek mesajı düzenler (yeni mesaj atmaz), bu yüzden her açılışta güncel tutulur
+    ensureTMTSupportMessage(client).catch(err => console.error("[TMTSupport] panel:", err.message));
+
     // Startup panel sync (Her başlatmada gereksiz mesaj güncellemesi yapılmaması için varsayılan olarak kapalıdır)
     if (process.env.SYNC_PANELS_ON_STARTUP === "true") {
       try {

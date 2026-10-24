@@ -98,6 +98,18 @@ function pushScoreLog(record, logEntry) {
 /**
  * Ensures user has a trust score record and a dynamic log channel.
  */
+// Profil kanallarının konusu kullanıcı id'sini taşır; kanal adı değişse de kanal kullanıcıya bağlı kalır
+const profileTopic = (userId, username) => `uid:${userId} · ${username || ""} · Güvenlik & Aktivite Profili`;
+let profileChannelsLoadedAt = 0;
+
+async function findProfileChannelByUser(recordGuild, userId) {
+  if (Date.now() - profileChannelsLoadedAt > 10 * 60 * 1000) {
+    await recordGuild.channels.fetch().catch(() => null);
+    profileChannelsLoadedAt = Date.now();
+  }
+  return recordGuild.channels.cache.find(c => c.type === ChannelType.GuildText && c.topic?.startsWith(`uid:${userId} `)) || null;
+}
+
 async function ensureUserTrustScore(userId, guildId, client, forceCreate = false) {
   try {
     let record = await UserTrustScore.findOne({ userId });
@@ -214,8 +226,14 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
     const recordGuild = await getRecordGuild(client, guildId);
     if (recordGuild) {
       let channel = null;
+      let fetchFailed = false;
       if (record.profileChannelId) {
-        channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);
+        channel = await recordGuild.channels.fetch(record.profileChannelId).catch((err) => {
+          // Yalnızca kanal gerçekten silindiyse (10003) kapalı say; geçici hatalarda yeni kanal açma
+          if (err?.code !== 10003) fetchFailed = true;
+          return null;
+        });
+        if (fetchFailed) return record;
         if (channel) {
           const cleanName = (record.username || 'kullanici').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 100);
           if (channel.name && typeof channel.name === 'string' && channel.name.startsWith('g-')) {
@@ -230,8 +248,17 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         }
       }
 
-      // Profil kanalı yalnızca gerçek bir olayda (ceza / puan düşüşü) açılır; her üyeye kanal açılmaz
-      const shouldCreate = forceCreate && !record.profileChannelClosed;
+      // Kayıttaki id kaybolmuş olsa bile kullanıcının mevcut kanalını konu (topic) etiketinden bul: bir kullanıcı = tek kanal
+      if (!channel) {
+        channel = await findProfileChannelByUser(recordGuild, userId);
+        if (channel) {
+          record.profileChannelId = channel.id;
+          record.profileChannelClosed = false;
+          await record.save();
+        }
+      }
+
+      const shouldCreate = forceCreate || isNew || (!record.profileChannelClosed && !record.profileChannelId);
 
       if (!channel && shouldCreate) {
         // Prevent race condition duplicate channel creation via in-memory lock
@@ -309,6 +336,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
           channel = await recordGuild.channels.create({
             name: cleanName,
             type: ChannelType.GuildText,
+            topic: profileTopic(userId, record.username),
             parent: parentId,
             permissionOverwrites,
             reason: `Güvenlik & Kişisel Log Profili: ${record.username}`
@@ -342,6 +370,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
             channel = await recordGuild.channels.create({
               name: cleanName,
               type: ChannelType.GuildText,
+              topic: profileTopic(userId, record.username),
               parent: overflowParentId,
               permissionOverwrites,
               reason: `Güvenlik Profili (${catCount + 1}. Kısım Taşma): ${record.username}`
@@ -356,6 +385,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
             channel = await recordGuild.channels.create({
               name: cleanName,
               type: ChannelType.GuildText,
+              topic: profileTopic(userId, record.username),
               permissionOverwrites,
               reason: `Güvenlik Profili (Kategorisiz Son Çare): ${record.username}`
             }).catch((err3) => {
@@ -397,7 +427,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
  */
 async function updateTrustScore(userId, amount, reason, operatorId, client) {
   try {
-    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client, amount < 0);
+    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
     if (!record) return;
 
     // Reset daily points if day changed
@@ -1404,6 +1434,13 @@ async function fixAndMergeTrustChannels(client) {
 
         primaryRecord.profileChannelId = primaryItem.channel.id;
         await primaryRecord.save();
+      }
+
+      // Eski kanallara kullanıcı etiketini yaz: sonraki açılışlarda kanal id'den değil etiketten bulunur
+      const record = recordByUserId.get(userId);
+      const keepChannel = record && items.find(i => i.channel.id === record.profileChannelId)?.channel;
+      if (keepChannel && !keepChannel.topic?.startsWith(`uid:${userId} `)) {
+        await keepChannel.setTopic(profileTopic(userId, record.username)).catch(() => {});
       }
     }
   } catch (err) {
