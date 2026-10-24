@@ -1615,7 +1615,7 @@ function renderFocusedLoginPage(errorMsg = null) {
   document.getElementById('dm-request').addEventListener('click',async()=>{const username=document.getElementById('dm-username').value.trim();if(!username)return showError('Discord kullanıcı adı, görünen ad veya ID gerekli.');const btn=document.getElementById('dm-request');btn.disabled=true;btn.textContent='Kod gönderiliyor…';try{const r=await fetch('/auth/send-discord-dm-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username})});const d=await r.json();if(d.success){document.getElementById('dm-start').style.display='none';document.getElementById('dm-verify').style.display='block'}else showError(d.error||'Kod gönderilemedi.')}catch(e){showError('Bağlantı kurulamadı.')}btn.disabled=false;btn.textContent='Kodu gönder'});
   document.getElementById('dm-confirm').addEventListener('click',async()=>{const code=document.getElementById('dm-code').value.trim();if(code.length!==6)return showError('DM’deki 6 haneli kodu yaz.');try{const r=await fetch('/auth/verify-discord-dm-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});const d=await r.json();if(d.success)location.href=d.redirectUrl||'/dashboard';else showError(d.error||'Kod doğrulanamadı.')}catch(e){showError('Bağlantı kurulamadı.') }});
   document.getElementById('site-login').addEventListener('click',async()=>{const username=document.getElementById('site-user').value.trim(),password=document.getElementById('site-password-value').value;if(!username||!password)return showError('Kullanıcı adı ve şifre gerekli.');try{const r=await fetch('/api/auth/site-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,rememberMe:true})});const d=await r.json();if(d.success)location.href='/dashboard';else showError(d.error||'Giriş yapılamadı.')}catch(e){showError('Bağlantı kurulamadı.') }});
-  document.getElementById('register-next').addEventListener('click',()=>{const username=document.getElementById('new-user').value.trim();if(!/^[a-zA-Z0-9_.-]{3,32}$/.test(username))return showError('Kullanıcı adı 3–32 karakter olmalı; yalnızca harf, rakam, _, . ve - kullanabilirsin.');state.username=username;setView('register-two')});document.getElementById('register-password-next').addEventListener('click',()=>{const p=document.getElementById('new-password').value,a=document.getElementById('new-password-again').value;if(p.length<10||!/[a-z]/i.test(p)||!/\d/.test(p))return showError('Şifre en az 10 karakter olmalı; harf ve rakam içermeli.');if(p!==a)return showError('Şifreler aynı değil.');state.password=p;setView('register-three')});document.getElementById('register-finish').addEventListener('click',async()=>{if(!document.getElementById('register-consent').checked)return showError('Devam etmek için veri işleme bilgilendirmesini onayla.');const btn=document.getElementById('register-finish');btn.disabled=true;btn.textContent='Hesap oluşturuluyor…';try{const r=await fetch('/api/auth/register-interactive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:state.username,password:state.password,enable2FA:false,consentVersion:'portal-data-v1'})});const d=await r.json();if(d.success)location.href=d.redirectUrl||'/dashboard';else showError(d.error||'Hesap oluşturulamadı.')}catch(e){showError('Bağlantı kurulamadı.')}btn.disabled=false;btn.textContent='Hesabı oluştur'});try{const p=new URLSearchParams(location.search),suggested=p.get('username');if(suggested)document.getElementById('new-user').value=suggested;if(p.get('register')==='1'||suggested)setView('register-one')}catch(e){}
+  document.getElementById('register-next').addEventListener('click',()=>{const username=document.getElementById('new-user').value.trim();if(!/^[a-zA-Z0-9_.-]{3,32}$/.test(username))return showError('Kullanıcı adı 3–32 karakter olmalı; yalnızca harf, rakam, _, . ve - kullanabilirsin.');state.username=username;setView('register-two')});document.getElementById('register-password-next').addEventListener('click',()=>{const p=document.getElementById('new-password').value,a=document.getElementById('new-password-again').value;if(p.length<10||!/[a-z]/i.test(p)||!/[0-9]/.test(p))return showError('Şifre en az 10 karakter olmalı; harf ve rakam içermeli.');if(p!==a)return showError('Şifreler aynı değil.');state.password=p;setView('register-three')});document.getElementById('register-finish').addEventListener('click',async()=>{if(!document.getElementById('register-consent').checked)return showError('Devam etmek için veri işleme bilgilendirmesini onayla.');const btn=document.getElementById('register-finish');btn.disabled=true;btn.textContent='Hesap oluşturuluyor…';try{const r=await fetch('/api/auth/register-interactive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:state.username,password:state.password,enable2FA:false,consentVersion:'portal-data-v1'})});const d=await r.json();if(d.success)location.href=d.redirectUrl||'/dashboard';else showError(d.error||'Hesap oluşturulamadı.')}catch(e){showError('Bağlantı kurulamadı.')}btn.disabled=false;btn.textContent='Hesabı oluştur'});try{const p=new URLSearchParams(location.search),suggested=p.get('username');if(suggested)document.getElementById('new-user').value=suggested;if(p.get('register')==='1'||suggested)setView('register-one')}catch(e){}
   </script></body></html>`;
 }
 
@@ -1949,7 +1949,7 @@ function renderLoginPage(errorMsg = null) {
           const indicator = document.getElementById('pwd-strength');
           if (!indicator) return;
           if (!val) { indicator.innerText = ''; return; }
-          if (val.length < 10 || !/[a-z]/i.test(val) || !/\d/.test(val)) { indicator.innerText = '🔴 En az 10 karakter, harf ve rakam gerekli'; indicator.style.color = '#fb7185'; }
+          if (val.length < 10 || !/[a-z]/i.test(val) || !/[0-9]/.test(val)) { indicator.innerText = '🔴 En az 10 karakter, harf ve rakam gerekli'; indicator.style.color = '#fb7185'; }
           else if (val.length < 14) { indicator.innerText = '🟡 Şifre gücü: Orta'; indicator.style.color = '#fbbf24'; }
           else { indicator.innerText = '🟢 Şifre gücü: Güçlü'; indicator.style.color = '#34d399'; }
         }
@@ -1965,7 +1965,7 @@ function renderLoginPage(errorMsg = null) {
           } else if (fromStep === 2) {
             const p1 = document.getElementById('reg-pwd-1').value;
             const p2 = document.getElementById('reg-pwd-2').value;
-            if (!p1 || p1.length < 10 || !/[a-z]/i.test(p1) || !/\d/.test(p1)) return showError("Şifreniz en az 10 karakter olmalı, harf ve rakam içermelidir.");
+            if (!p1 || p1.length < 10 || !/[a-z]/i.test(p1) || !/[0-9]/.test(p1)) return showError("Şifreniz en az 10 karakter olmalı, harf ve rakam içermelidir.");
             if (p1 !== p2) return showError("Girilen şifreler eşleşmiyor!");
             regState.password = p1;
             showWizardStep(3);
@@ -2680,314 +2680,25 @@ function renderDashboard(user, staffProgress) {
           const res = await fetch('/api/auth/roblox/friend-verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body    <!-- Kapatma sebebi modal -->
-    <div id="close-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-      <div style="background:rgba(14,14,26,0.9);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:2rem;max-width:480px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.4);">
-        <h3 style="margin-bottom:1rem;">🔒 Ticket'ı Kapat</h3>
-        <textarea id="close-reason-input" rows="4" placeholder="Kapatma sebebi..." style="width:100%;margin-bottom:1rem;"></textarea>
-        <div style="display:flex;gap:0.75rem;">
-          <button class="btn btn-danger" onclick="confirmClose()" style="flex:1;">Kapat</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('close-modal').style.display='none'" style="flex:1;">İptal</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ⭐ Yıldız ve Yorum Değerlendirme Modalı -->
-    <div id="rate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
-      <div style="background:rgba(15,23,42,0.95);backdrop-filter:blur(24px);border:1px solid rgba(251,191,36,0.3);border-radius:20px;padding:2rem;max-width:500px;width:90%;box-shadow:0 16px 40px rgba(0,0,0,0.5);">
-        <h3 style="margin-bottom:0.5rem;color:#fbbf24;display:flex;align-items:center;gap:0.5rem;">⭐ Destek Talebini Değerlendir</h3>
-        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">Aldığınız destek hizmeti hakkındaki düşüncelerinizi ve puanınızı paylaşın.</p>
-        
-        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;color:#e2e8f0;">Puanınız (1-5 Yıldız):</label>
-        <div style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
-          <button type="button" class="star-btn" onclick="selectStar(1)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">1 ⭐</button>
-          <button type="button" class="star-btn" onclick="selectStar(2)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">2 ⭐</button>
-          <button type="button" class="star-btn" onclick="selectStar(3)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">3 ⭐</button>
-          <button type="button" class="star-btn" onclick="selectStar(4)" style="flex:1;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-weight:800;cursor:pointer;">4 ⭐</button>
-          <button type="button" class="star-btn star-active" onclick="selectStar(5)" style="flex:1;padding:0.6rem;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.5);border-radius:10px;color:#fbbf24;font-weight:800;cursor:pointer;">5 ⭐</button>
-        </div>
-        <input type="hidden" id="rate-score-input" value="5">
-
-        <label style="display:block;font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;color:#e2e8f0;">Değerlendirme Notu / Görüşünüz (İsteğe Bağlı):</label>
-        <textarea id="rate-note-input" rows="3" placeholder="Destek hakkında düşüncelerinizi yazın..." style="width:100%;margin-bottom:1.5rem;"></textarea>
-
-        <div style="display:flex;gap:0.75rem;">
-          <button class="btn" onclick="confirmRate()" style="flex:1;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:800;border:none;">⭐ Gönder</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('rate-modal').style.display='none'" style="flex:1;">İptal</button>
-        </div>
-      </div>
-    </div>
-
-    <style>
-      .ticket-item {
-        background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06);
-        border-radius:14px; padding:1.25rem 1.5rem;
-        transition:border-color 0.3s, transform 0.3s, background 0.3s;
-        margin-bottom:0.75rem;
-        backdrop-filter:blur(8px);
-      }
-      .ticket-item:hover { border-color:rgba(167,139,250,0.2); transform:translateX(4px); background:rgba(255,255,255,0.04); }
-      .ticket-item:last-child { margin-bottom:0; }
-      .ticket-header { display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.5rem; }
-      .ticket-meta { display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;font-size:0.8rem;color:var(--muted); }
-      .ticket-actions { display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;align-items:center; }
-    </style>
-
-    <script>
-      let allTickets = [];
-      let pendingCloseId = null;
-      let pendingRateId = null;
-
-      async function loadTickets() {
-        try {
-          const res  = await fetch('/api/tickets');
+            body: JSON.stringify({ robloxId: pendingRobloxId, username: pendingUsername })
+          });
           const data = await res.json();
-          if (!data.success) throw new Error(data.error);
-          allTickets = data.tickets || [];
-
-          const cats = [...new Set(allTickets.map(t => t.category).filter(Boolean))];
-          const catSel = document.getElementById('filter-cat');
-          cats.forEach(c => {
-            const o = document.createElement('option');
-            o.value = o.textContent = c;
-            catSel.appendChild(o);
-          });
-
-          renderTickets();
+          if (res.ok && data.success) {
+            showToast('Doğrulama başarılı! Sayfa yenileniyor...', 'success');
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            showToast(data.error || 'Arkadaşlık isteği henüz kabul edilmemiş.', 'error');
+          }
         } catch (err) {
-          document.getElementById('tickets-container').innerHTML =
-            \`<div style="color:var(--danger);padding:1rem;">❌ \${err.message}</div>\`;
-        }
-      }
-
-      function timeAgo(dateStr) {
-        if (!dateStr) return '';
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const m = Math.floor(diff / 60000);
-        if (m < 1)  return 'az önce';
-        if (m < 60) return m + 'dk önce';
-        const h = Math.floor(m / 60);
-        if (h < 24) return h + 'sa önce';
-        const d = Math.floor(h / 24);
-        if (d < 30) return d + 'g önce';
-        return Math.floor(d / 30) + 'ay önce';
-      }
-
-      function renderTickets() {
-        const q      = (document.getElementById('search-input').value || '').toLowerCase();
-        const status = document.getElementById('filter-status').value;
-        const cat    = document.getElementById('filter-cat').value;
-        const c      = document.getElementById('tickets-container');
-        const countEl = document.getElementById('ticket-count');
-
-        let tickets = allTickets;
-        if (status) tickets = tickets.filter(t => t.status === status);
-        if (cat)    tickets = tickets.filter(t => t.category === cat);
-        if (q)      tickets = tickets.filter(t =>
-          (t.ticketId || '').toLowerCase().includes(q) ||
-          (t.subject  || '').toLowerCase().includes(q) ||
-          (t.category || '').toLowerCase().includes(q)
-        );
-
-        countEl.textContent = tickets.length + ' ticket bulundu';
-
-        if (!tickets.length) {
-          c.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);">Eşleşen ticket bulunamadı.</div>';
-          return;
-        }
-
-        c.innerHTML = tickets.map(t => {
-          const isOpen = t.status === 'open';
-          const ago = timeAgo(t.createdAt);
-          const closedAgo = t.closedAt ? timeAgo(t.closedAt) : null;
-          const hasChannel = t.channelId && !t.channelDeleted;
-          const source = t.source === 'web' ? '🌐 Web' : '💬 Discord';
-
-          let rateButton = '';
-          if (!isOpen) {
-            if (t.rated) {
-              rateButton = \`<span style="font-size:0.8rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;padding:0.3rem 0.7rem;border-radius:12px;font-weight:700;" title="\${t.ratingNote || 'Not yok'}">⭐ \${t.ratingScore}/5 Yıldız Verildi</span>\`;
-            } else {
-              rateButton = \`<button class="btn btn-sm" onclick="openRateModal('\${t.ticketId}')" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;font-weight:700;">⭐ Değerlendir</button>\`;
-            }
-          }
-
-          const actions = isOpen
-            ? \`<button class="btn btn-sm btn-danger" onclick="openCloseModal('\${t.ticketId}')">🔒 Kapat</button>
-               \${hasChannel ? \`<a href="https://discord.com/channels/\${t.guildId || ''}/\${t.channelId}" target="_blank" class="btn btn-sm btn-ghost">💬 Kanala Git</a>\` : ''}
-               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`
-            : \`\${rateButton}
-               <button class="btn btn-sm btn-success" onclick="reopenTicket('\${t.ticketId}')">🔓 Tekrar Aç</button>
-               <button class="btn btn-sm btn-danger btn-ghost" onclick="deleteTicket('\${t.ticketId}')">🗑️ Sil</button>\`;
-
-          return \`<div class="ticket-item" id="ticket-\${t.ticketId}">
-            <div class="ticket-header">
-              <div>
-                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem;">
-                  <span style="font-weight:800;color:var(--accent);">\${t.ticketId}</span>
-                  \${t.category ? \`<span style="font-size:0.75rem;background:rgba(124,106,247,0.1);border:1px solid rgba(124,106,247,0.2);padding:0.1rem 0.5rem;border-radius:20px;color:var(--muted);">\${t.category}</span>\` : ''}
-                  <span style="font-size:0.72rem;color:var(--muted);">\${source}</span>
-                </div>
-                <div style="font-weight:600;margin-bottom:0.2rem;">\${t.subject || 'Konu belirtilmedi'}</div>
-              </div>
-              <span class="badge badge-\${isOpen ? 'open' : 'closed'}">\${isOpen ? 'AÇIK' : 'KAPALI'}</span>
-            </div>
-            <div class="ticket-meta">
-              \${ago ? \`<span>🕐 \${ago}</span>\` : ''}
-              \${!isOpen && closedAgo ? \`<span>🔒 \${closedAgo} kapatıldı</span>\` : ''}
-              \${t.closeReason ? \`<span title="\${t.closeReason}">💬 \${t.closeReason.slice(0,40)}\${t.closeReason.length>40?'…':''}</span>\` : ''}
-            </div>
-            <div class="ticket-actions">\${actions}</div>
-          </div>\`;
-        }).join('');
-      }
-
-      // ── Kapatma ──
-      function openCloseModal(ticketId) {
-        pendingCloseId = ticketId;
-        document.getElementById('close-reason-input').value = '';
-        document.getElementById('close-modal').style.display = 'flex';
-      }
-
-      async function confirmClose() {
-        if (!pendingCloseId) return;
-        const reason = document.getElementById('close-reason-input').value.trim() || 'Web üzerinden kapatıldı';
-        document.getElementById('close-modal').style.display = 'none';
-        try {
-          const res = await fetch('/api/tickets/' + pendingCloseId + '/close', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason })
-          });
-          if (res.ok) { showToast('Ticket kapatıldı.', 'success'); await loadTickets(); }
-          else { const d = await res.json().catch(()=>({})); showToast(d.error || 'Hata', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-        pendingCloseId = null;
-      }
-
-      // ── ⭐ Yıldız Değerlendirme ──
-      function selectStar(score) {
-        document.getElementById('rate-score-input').value = score;
-        document.querySelectorAll('.star-btn').forEach((btn, idx) => {
-          if (idx + 1 === score) {
-            btn.style.background = 'rgba(251,191,36,0.2)';
-            btn.style.borderColor = 'rgba(251,191,36,0.5)';
-            btn.style.color = '#fbbf24';
-          } else {
-            btn.style.background = 'rgba(255,255,255,0.05)';
-            btn.style.borderColor = 'rgba(255,255,255,0.1)';
-            btn.style.color = '#fff';
-          }
-        });
-      }
-
-      function openRateModal(ticketId) {
-        pendingRateId = ticketId;
-        selectStar(5);
-        document.getElementById('rate-note-input').value = '';
-        document.getElementById('rate-modal').style.display = 'flex';
-      }
-
-      async function confirmRate() {
-        if (!pendingRateId) return;
-        const score = document.getElementById('rate-score-input').value;
-        const note = document.getElementById('rate-note-input').value.trim();
-        document.getElementById('rate-modal').style.display = 'none';
-
-        try {
-          const res = await fetch('/api/tickets/' + pendingRateId + '/rate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ score, note })
-          });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok) {
-            showToast(d.message || 'Değerlendirmeniz alındı!', 'success');
-            await loadTickets();
-          } else {
-            showToast(d.error || 'Değerlendirme gönderilemedi.', 'error');
-          }
-        } catch {
           showToast('Bağlantı hatası.', 'error');
+        } finally {
+          btn.textContent = '✅ Doğrulamayı Tamamla';
+          btn.disabled = false;
         }
-        pendingRateId = null;
       }
-
-      // ── Tekrar Aç ──
-      async function reopenTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı yeniden açmak istiyor musun?')) return;
-        try {
-          const res = await fetch('/api/tickets/' + ticketId + '/reopen', { method: 'POST' });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket yeniden açıldı.', 'success'); await loadTickets(); }
-          else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-      }
-
-      // ── Sil ──
-      async function deleteTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
-        try {
-          const res = await fetch('/api/tickets/' + ticketId, { method: 'DELETE' });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket başarıyla tamamen silindi.', 'success'); await loadTickets(); }
-          else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-      }
-
-      document.getElementById('filter-status').addEventListener('change', renderTickets);
-      document.getElementById('filter-cat').addEventListener('change', renderTickets);
-      document.getElementById('search-input').addEventListener('input', renderTickets);
-      loadTickets();      pendingCloseId = ticketId;
-        document.getElementById('close-reason-input').value = '';
-        document.getElementById('close-modal').style.display = 'flex';
-      }
-
-      async function confirmClose() {
-        if (!pendingCloseId) return;
-        const reason = document.getElementById('close-reason-input').value.trim() || 'Web üzerinden kapatıldı';
-        document.getElementById('close-modal').style.display = 'none';
-        try {
-          const res = await fetch('/api/tickets/' + pendingCloseId + '/close', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason })
-          });
-          if (res.ok) { showToast('Ticket kapatıldı.', 'success'); await loadTickets(); }
-          else { const d = await res.json().catch(()=>({})); showToast(d.error || 'Hata', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-        pendingCloseId = null;
-      }
-
-      // ── Tekrar Aç ──
-      async function reopenTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı yeniden açmak istiyor musun?')) return;
-        try {
-          const res = await fetch('/api/tickets/' + ticketId + '/reopen', { method: 'POST' });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket yeniden açıldı.', 'success'); await loadTickets(); }
-          else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-      }
-
-      // ── Sil ──
-      async function deleteTicket(ticketId) {
-        if (!confirm('Bu ticket\\'ı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) return;
-        try {
-          const res = await fetch('/api/tickets/' + ticketId, { method: 'DELETE' });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok) { showToast(d.message || 'Ticket başarıyla tamamen silindi.', 'success'); await loadTickets(); }
-          else showToast(d.error || 'Hata', 'error');
-        } catch { showToast('Bağlantı hatası.', 'error'); }
-      }
-
-      document.getElementById('filter-status').addEventListener('change', renderTickets);
-      document.getElementById('filter-cat').addEventListener('change', renderTickets);
-      document.getElementById('search-input').addEventListener('input', renderTickets);
-      loadTickets();
     </script>
   `;
-  return _layout("Ticket'larım", user, content, '', '/tickets');
+  return _layout('Dashboard', user, content, '', '/dashboard');
 }
 
 
