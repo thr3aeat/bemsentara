@@ -288,10 +288,13 @@ function install(discord = require('discord.js'), { log = (m) => console.warn(`[
             attachEmbeds(res, conv.embeds); return res;
           }
           if (this.deferred) {
+            const original = await this.fetchReply().catch(() => null);
             const flags = conv.payload.flags | (this.ephemeral ? EPHEMERAL : 0);
             const res = await this.followUp({ ...conv.payload, flags });
             this.__v2MsgId = res && res.id; this.__v2Reply = true;
-            await this.deleteReply().catch(() => {});
+            // Ertelenmiş cevaptan sonraki ilk followUp çoğu zaman orijinal cevabın kendisi olur;
+            // yalnızca ayrı bir "düşünüyor" mesajı kaldıysa onu sil (aksi halde yeni cevap da silinir)
+            if (original && res && original.id !== res.id) await this.deleteReply(original.id).catch(() => {});
             attachEmbeds(res, conv.embeds); return res;
           }
         } catch (err) {
