@@ -2346,9 +2346,9 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
         return interaction.editReply({ content: "❌ Bunu yapmaya yetkili değilsiniz" });
       }
 
-      const embed = getSupportMenuEmbed();
-      const button = getSupportButton();
-      await interaction.channel.send({ embeds: [embed], components: [button] });
+      const { ensureSupportPanel } = require("../services/guildSupportPanel");
+      const { TMT_GUILD_ID } = require("../../config");
+      await ensureSupportPanel(interaction.channel, String(interaction.guild.id) === String(TMT_GUILD_ID) ? "tmt" : "bem");
       return interaction.editReply({ content: "✅ Destek menüsü gönderildi" });
     }
 

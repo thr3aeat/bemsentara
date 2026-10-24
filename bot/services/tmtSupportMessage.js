@@ -67,17 +67,10 @@ async function postTMTSupportMessage(client) {
  */
 async function ensureTMTSupportMessage(client) {
   try {
-    const guild = await client.guilds.fetch(TMT_GUILD_ID);
-    const channel = await guild.channels.fetch(TMT_SUPPORT_CHANNEL_ID);
-    
-    const messages = await channel.messages.fetch({ limit: 10 });
-    const existingMessage = messages.find(m => m.author.id === client.user.id && m.embeds.length > 0);
-    
-    if (!existingMessage) {
-      await postTMTSupportMessage(client);
-    }
+    // Yeni Components V2 panel (EkoYıldız destek paneliyle aynı düzen)
+    return await require("./guildSupportPanel").ensureTMTSupportPanel(client);
   } catch (error) {
-    console.error("❌ TMT destek mesajı kontrol edilirken hata:", error);
+    console.error("❌ TMT destek paneli hatası:", error.message);
   }
 }
 

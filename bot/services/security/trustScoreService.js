@@ -230,8 +230,8 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
         }
       }
 
-      // Create channel if forceCreate or isNew or if profile channel does not exist and isn't closed
-      const shouldCreate = forceCreate || isNew || (!record.profileChannelClosed && !record.profileChannelId);
+      // Profil kanalı yalnızca gerçek bir olayda (ceza / puan düşüşü) açılır; her üyeye kanal açılmaz
+      const shouldCreate = forceCreate && !record.profileChannelClosed;
 
       if (!channel && shouldCreate) {
         // Prevent race condition duplicate channel creation via in-memory lock
@@ -397,7 +397,7 @@ async function ensureUserTrustScore(userId, guildId, client, forceCreate = false
  */
 async function updateTrustScore(userId, amount, reason, operatorId, client) {
   try {
-    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client);
+    const record = await ensureUserTrustScore(userId, ACTIVE_GUILD_ID, client, amount < 0);
     if (!record) return;
 
     // Reset daily points if day changed
@@ -497,8 +497,9 @@ async function updateTrustScore(userId, amount, reason, operatorId, client) {
       logTrustUserActivity(client, userId, "🏅 Güven Seviyesi (Tier) Güncellendi", `Güven Seviyesi **${tierNames[oldTier]}** ➔ **${tierNames[newTier]}** olarak güncellendi.`, newTier > oldTier ? "🎉" : "⚠️", newTier > oldTier ? 0x2ecc71 : 0xef4444);
     }
 
-    // Log to their profile channel
-    if (record.profileChannelId) {
+    // Log to their profile channel (sistemin küçük aktivite artışları kanalı doldurmasın diye sessiz geçilir)
+    const isMinorSystemGain = operatorId === "SYSTEM" && amount > 0 && amount < 1;
+    if (record.profileChannelId && !isMinorSystemGain) {
       const recordGuild = await getRecordGuild(client).catch(() => null);
       if (recordGuild) {
         const channel = await recordGuild.channels.fetch(record.profileChannelId).catch(() => null);

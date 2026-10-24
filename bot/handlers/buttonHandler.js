@@ -98,6 +98,12 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // TMT/BEM destek paneli: Hesap Durumum
+  if (customId.startsWith("guild_support_account_status")) {
+    const { handleAccountStatusButton } = require("../services/guildSupportPanel");
+    return handleAccountStatusButton(interaction);
+  }
+
   // ── Automod İtiraz Yetkili Butonları (Kabul Et / Reddet) ─────────────────
   if (customId.startsWith('automod_appeal_')) {
     const { handleModeratorDecision } = require('../services/automodAppealService');

@@ -156,7 +156,20 @@ async function resolveDiscordUser(username) {
 }
 
 // --- Discord Auth Routes ---
+// Girişten sonra dönülecek site içi adres (yalnızca "/..." kabul edilir)
+function rememberReturnTo(req) {
+  const next = String(req.query.next || "");
+  if (next.startsWith("/") && !next.startsWith("//")) req.session.returnTo = next;
+}
+
+function takeReturnTo(req, fallback) {
+  const target = req.session?.returnTo;
+  if (req.session) delete req.session.returnTo;
+  return target || fallback;
+}
+
 router.get("/auth/discord", (req, res, next) => {
+  rememberReturnTo(req);
   const rememberMe = req.query.remember === 'true';
   if (rememberMe) {
     req.session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000;
@@ -182,7 +195,7 @@ router.get("/auth/discord/callback", passport.authenticate("discord", { failureR
   syncLinkedRoleMetadata(req.user, req.session).catch(() => { });
   logger.log("[AUTH] " + (req.user.username || req.user.discordUsername) + " (" + req.user.discordId + ") Discord OAuth ile giriş yaptı.", "auth");
   logWebLogin(req.user, req);
-  res.redirect("/dashboard");
+  res.redirect(takeReturnTo(req, "/dashboard"));
 });
 
 async function tryGroupAdminLogin(req, res, usernameInput, passwordInput) {
@@ -962,6 +975,7 @@ router.post('/api/auth/roblox/profile-code/verify', async (req, res) => {
 
 // Roblox bağlama Discord oturumu ister; yoksa önce Discord girişine yönlendir
 router.get("/auth/roblox", (req, res, next) => {
+  rememberReturnTo(req);
   if (!req.user) return res.redirect("/auth/discord");
   return passport.authenticate("roblox")(req, res, next);
 });
@@ -988,6 +1002,7 @@ router.get(
   },
   async (req, res) => {
     try {
+      const returnTo = takeReturnTo(req, null);
       // Regenerate session to ensure updated user data is persisted
       req.session.regenerate((err) => {
         if (err) {
@@ -1016,7 +1031,7 @@ router.get(
               console.warn("[auth] Roblox role connection sync failed:", err.message);
             }
 
-            res.redirect("/dashboard?robloxLinked=true");
+            res.redirect(returnTo || "/dashboard?robloxLinked=true");
           });
         } else {
           res.redirect("/dashboard?robloxError=true");

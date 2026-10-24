@@ -162,8 +162,21 @@ async function ensureAnnouncement(client) {
     return;
   }
 
-  const existing = store.announceMsgId && await channel.messages.fetch(store.announceMsgId).catch(() => null);
-  if (existing) return existing.edit(payload).catch(() => {});
+  // Kayıtlı id kaybolsa bile kanaldaki mevcut duyuruyu bul; kopyaları temizle, yalnızca hiç yoksa gönder.
+  const recent = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+  if (!recent) return; // Kanal okunamadıysa yeni mesaj atma (her açılışta kopya oluşmasın)
+  const ours = [...recent.filter(m =>
+    m.author?.id === client.user.id &&
+    (m.id === store.announceMsgId || JSON.stringify(m.toJSON()).includes('Reklam & Forum Sistemi'))
+  ).values()].sort((a, b) => a.createdTimestamp - b.createdTimestamp);
+
+  if (ours.length > 0) {
+    const [keep, ...duplicates] = ours;
+    for (const dup of duplicates) await dup.delete().catch(() => {});
+    if (store.announceMsgId !== keep.id) { store.announceMsgId = keep.id; saveStore(); }
+    return;
+  }
+
   const msg = await channel.send(payload).catch(() => null);
   if (msg) { store.announceMsgId = msg.id; saveStore(); }
 }

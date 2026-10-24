@@ -300,6 +300,7 @@ const { router: applicationApprovalRoutes } = require("./routes/applicationAppro
 app.use(maintenance.adminRouter);
 app.use(adRoutes);
 app.use(giveawayRoutes);
+app.use(require("./routes/guildLink"));
 app.use(authRoutes);
 app.use(applicationAuthRoutes);
 app.use(candidatePortalRoutes);

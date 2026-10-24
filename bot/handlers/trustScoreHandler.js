@@ -502,7 +502,7 @@ function initializeTrustScoreHandlers(client) {
   client.on("guildMemberAdd", async (member) => {
     try {
       if (member.user.bot) return;
-      const record = await ensureUserTrustScore(member.id, member.guild.id, client, true);
+      const record = await ensureUserTrustScore(member.id, member.guild.id, client);
       if (!record) return;
 
       if (!record.altAccountChecked) {

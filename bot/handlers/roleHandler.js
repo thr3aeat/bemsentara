@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require("discord.js");
+const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const User = require("../../models/User");
 const { BASE_URL, ADMIN_IDS } = require("../../config");
 const { findUserByDiscordId, hasRobloxLink } = require("../../utils/userLink");
@@ -115,17 +115,22 @@ async function runSyncForMember(interaction, { ephemeral = true, commandName = "
   }
 
   if (!hasRobloxLink(dbUser)) {
-    const authUrl = `${BASE_URL}/auth/authorize?discordId=${user.id}`;
+    // TMT/BEM için tek sayfalık akış: Discord → Roblox bağla → roller otomatik güncellenir
+    const { TMT_GUILD_ID } = require("../../config");
+    const linkUrl = `${BASE_URL}/baglan/${String(guild.id) === String(TMT_GUILD_ID) ? "tmt" : "bem"}`;
     logUpdate(interaction, { commandName, dbUser, notLinked: true });
-    return interaction.reply(
-      replyEphemeral(
-        `❌ Roblox hesabınız sisteme kayıtlı görünmüyor.\n\n` +
-          `1. \`/authorize\` → bağlantıya tıkla\n` +
-          `2. **Aynı Discord hesabıyla** siteye giriş yap\n` +
-          `3. Roblox'u bağla, sonra \`/verify\` veya \`/update\`\n\n` +
-          `🔗 [Bağlantı](${authUrl})`
-      )
-    );
+    return interaction.reply({
+      ...replyEphemeral(
+        `❌ Roblox hesabın bağlı değil.\n\n` +
+          `Aşağıdaki butona tıkla; sayfa sana özel açılır. Roblox ile giriş, arkadaşlık isteği veya profil kodu ile ` +
+          `hesabını bağla, rollerin otomatik verilir.`
+      ),
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Hesabımı Bağla").setURL(linkUrl)
+        )
+      ]
+    });
   }
 
   // Sunucu kontrolleri
