@@ -69,6 +69,21 @@ function ensureStaffProgressShape(progress) {
 }
 
 async function handleModalSubmit(interaction) {
+  // ── TMT Ordu Transfer Başvurusu: destek ticket akışını "transfer" kategorisiyle kullanır ──
+  if (interaction.customId === "tmt_transfer_modal") {
+    const { buildTicketFields } = require("../services/tmtTransferService");
+    const values = buildTicketFields(interaction);
+    const proxy = new Proxy(interaction, {
+      get(target, prop) {
+        if (prop === "customId") return "tmt_support_modal_transfer";
+        if (prop === "fields") return { getTextInputValue: (id) => values[id] ?? "" };
+        const val = target[prop];
+        return typeof val === "function" ? val.bind(target) : val;
+      }
+    });
+    return handleSupportModal(proxy);
+  }
+
   // ── Gelişmiş Kullanıcı İnceleme & Denetim Modalları ───────────────────────
   if (interaction.customId.startsWith('incele_modal_')) {
     const { handleInceleModal } = require('../services/userManagementService');
@@ -2976,19 +2991,16 @@ async function handleCloseReasonModal(interaction) {
         .setTitle("🔒 Ticket Kapatıldı")
         .setDescription(
           `**Kapatan:** ${interaction.user.username}\n**Sebep:** ${reason}\n\n` +
-          `Bu kanal erişilebilir kalır; ticket sahibi geçmişi görmeye ve yazmaya devam edebilir.`
+          `Kanal **Kapatılan Ticketler** kategorisine taşındı. 30 gün içinde yeniden açılmazsa otomatik silinir.`
         )
         .setColor(0xed4245)
         .setTimestamp();
 
       await channel.send({ embeds: [closeEmbed] });
-      const { ensureTicketOwnerAccess } = require("../services/ticketOwnerPermissions");
-      await ensureTicketOwnerAccess(channel, ticket.userId);
+      // Kapalı kategorisine taşı ve sahibinden gizle (30 gün sonra otomatik silinir)
+      const { archiveClosedTicket } = require("../services/closedTicketArchive");
+      await archiveClosedTicket(channel, ticket);
     }
-
-    // 5) 5 dakika sonra kanal silinmek üzere kuyruğa al
-    const { scheduleTicketDeletion } = require("../services/ticketCleanup");
-    scheduleTicketDeletion(ticket.ticketId);
 
   } catch (err) {
     console.error("[closeTicket] Hata:", err);

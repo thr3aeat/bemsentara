@@ -25,7 +25,8 @@ async function reconcileTicketOwnerPermissions(client, dependencies = {}) {
   const result = { checked: 0, repaired: 0, failed: 0 };
 
   for (const ticket of tickets) {
-    if (ticket?.channelDeleted || !ticket?.channelId || !ticket?.userId) continue;
+    // Kapalı ticketler sahibinden gizli kalır
+    if (ticket?.channelDeleted || ticket?.status === 'closed' || !ticket?.channelId || !ticket?.userId) continue;
     result.checked += 1;
 
     try {

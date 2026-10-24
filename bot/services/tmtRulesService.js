@@ -4,6 +4,11 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MessageFlags,
 } = require("discord.js");
 const {
   TMT_GUILD_ID,
@@ -342,76 +347,64 @@ function buildAutomodEmbed(rule) {
 
 // ─── Ana Gönderim Fonksiyonları ───────────────────────────────────────────────
 
+// Components V2 kartı (accent rengi yok): başlık, açıklama ve ayraçlı bölümler
+function buildV2Card(title, description, sections = [], footer = null) {
+  const container = new ContainerBuilder();
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## ${title}`));
+  if (description) container.addTextDisplayComponents(new TextDisplayBuilder().setContent(description));
+  for (const section of sections) {
+    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${section.name}**\n${section.value}`));
+  }
+  if (footer) container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${footer}`));
+  return { components: [container], flags: MessageFlags.IsComponentsV2 };
+}
+
 /**
- * Sunucu genel kurallarını kanalına gönderir.
+ * Sunucu genel kurallarını kanalına gönderir (Components V2).
  * @param {import("discord.js").TextChannel} channel
  */
 async function postServerRules(channel) {
-  const payloads = [];
-
-  // Başlık embed'i
-  payloads.push({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle("| TMT | Turkish Armed Forces'e Hoş Geldin 👋")
-        .setDescription(
-          "Seni burada gördüğümüz için mutluyuz!\n\n" +
-          "Aşağıdaki kuralları dikkatlice oku. Sunucumuza giren her üye kuralları okumuş sayılır. " +
-          "Moderatörler tarafından susturulur veya yasaklanırsan kurallara uymamışsındır."
-        )
-        .setColor(COLORS.RED)
-        .setImage(BANNER_URL),
-    ],
-  });
-
-  // Kural embed'leri
-  for (const rule of SERVER_RULES) {
-    payloads.push({ embeds: [buildRuleEmbed(rule)] });
-  }
-
-  // Son uyarı embed'i
-  payloads.push({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle("⚠️ Kuralları Aşmaya Çalışmayın")
-        .setDescription(
-          "Her yasaklı davranış kurallarda açıkça yazılı olmayabilir. " +
-          "Yasak olabilecek şeyleri düşünerek hareket edin.\n\n" +
-          "Moderatörler sizi susturduysa veya yasakladıysa bunun kesinlikle bir gerekçesi vardır. " +
-          '"Böyle bir kural yok." şeklinde itiraz etmek cezanızın artmasına yol açabilir.\n\n' +
-          "Moderatörler sizi susturan kişinin bilgilerini açıklamakla yükümlü değildir."
-        )
-        .setColor(COLORS.ORANGE),
-    ],
-  });
-
+  const payloads = [
+    buildV2Card(
+      "TMT | Turkish Armed Forces'e Hoş Geldin 👋",
+      "> Aşağıdaki kuralları dikkatlice oku. Sunucumuza giren her üye kuralları okumuş sayılır. " +
+        "Moderatörler tarafından susturulur veya yasaklanırsan kurallara uymamışsındır."
+    ),
+    ...SERVER_RULES.map((rule) => buildV2Card(`${rule.number}. ${rule.title}`, null, rule.fields, `Kural ${rule.number}`)),
+    buildV2Card(
+      "⚠️ Kuralları Aşmaya Çalışmayın",
+      "Her yasaklı davranış kurallarda açıkça yazılı olmayabilir. Yasak olabilecek şeyleri düşünerek hareket edin.\n\n" +
+        "Moderatörler sizi susturduysa veya yasakladıysa bunun bir gerekçesi vardır. " +
+        '"Böyle bir kural yok." şeklinde itiraz etmek cezanızın artmasına yol açabilir.\n\n' +
+        "-# Moderatörler sizi susturan kişinin bilgilerini açıklamakla yükümlü değildir."
+    ),
+  ];
   await sendSequential(channel, payloads);
 }
 
 /**
- * Otomod kurallarını kanalına gönderir.
+ * Otomod kurallarını kanalına gönderir (Components V2).
  * @param {import("discord.js").TextChannel} channel
  */
 async function postAutomodRules(channel) {
-  const payloads = [];
-
-  // Başlık
-  payloads.push({
-    embeds: [
-      new EmbedBuilder()
-        .setTitle("🤖 Otomod Kuralları")
-        .setDescription(
-          "Bu kanaldaki kurallar sunucumuzda aktif olan otomatik moderasyon modüllerini açıklamaktadır.\n" +
-          "Her modülün hangi davranışı engellediğini, hangi rollerin muaf olduğunu ve ihlal durumundaki cezayı bulabilirsiniz."
-        )
-        .setColor(COLORS.INFO),
-    ],
-  });
-
-  for (const rule of AUTOMOD_RULES) {
-    payloads.push({ embeds: [buildAutomodEmbed(rule)] });
-  }
-
+  const payloads = [
+    buildV2Card(
+      "🤖 Otomod Kuralları",
+      "> Sunucumuzda aktif olan otomatik moderasyon modülleri. Her modülün neyi engellediğini, " +
+        "hangi rollerin muaf olduğunu ve ihlal durumundaki cezayı aşağıda bulabilirsin."
+    ),
+    ...AUTOMOD_RULES.map((rule) => buildV2Card(
+      `${rule.emoji} ${rule.id} · ${rule.title}`,
+      rule.description,
+      [
+        ...(rule.exempt ? [{ name: "✅ Etkilenmeyen Roller", value: rule.exempt }] : []),
+        ...(rule.extra ? [rule.extra] : []),
+        { name: "⚖️ Ceza", value: rule.penalty },
+      ],
+      `Otomod Modülü ${rule.id}`
+    )),
+  ];
   await sendSequential(channel, payloads);
 }
 

@@ -10,7 +10,7 @@
 const { EmbedBuilder } = require("discord.js");
 const { TARGET_GUILD_ID, TICKET_LOG_CHANNEL_ID } = require("../../config");
 const { getDiscordClient } = require("../discordClient");
-const CLEANUP_DELAY_MS    = 2 * 60 * 1000;   // 2 dakika (eski: 5 dakika) — Kapalı ticketler hızlı silinsin
+const CLEANUP_DELAY_MS    = 30 * 24 * 60 * 60 * 1000; // Kapalı ticketler 30 gün saklanır, yeniden açılmazsa silinir
 const CHECK_INTERVAL_MS   = 30 * 1000;        // 30 saniyede bir kontrol
 const INACTIVITY_CHECK_MS = 5 * 60 * 1000;   // İnaktivite 5 dk'da bir kontrol
 const INACTIVITY_WARN_MS  = 60 * 60 * 1000;  // 1 saat cevap yok → uyar
@@ -254,15 +254,11 @@ async function processInactivityCheck(ticket, client, warnCutoff) {
       try {
         const ch = await guild.channels.fetch(ticket.channelId).catch(() => null);
         if (ch) {
-          await ch.send("🔒 Ticket inaktivite nedeniyle kapatıldı. Kanal erişilebilir kalacaktır.").catch(() => {});
-          const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
-          await ensureTicketOwnerAccess(ch, ticket.userId).catch(err => {
-            console.warn(`[ticketCleanup] ${ticket.ticketId} sahibi erişimi korunamadı:`, err.message);
-          });
+          await ch.send("🔒 Ticket inaktivite nedeniyle kapatıldı ve Kapatılan Ticketler kategorisine taşındı.").catch(() => {});
+          await require('./closedTicketArchive').archiveClosedTicket(ch, fresh);
         }
       } catch (_) {}
 
-      scheduleTicketDeletion(ticket.ticketId);
       console.log(`[ticketCleanup] ${ticket.ticketId} → inaktivite ile kapatıldı`);
 
     }, INACTIVITY_CLOSE_MS);

@@ -98,6 +98,11 @@ const GUILD_SYNC_MAP = {
 async function handleButtonInteraction(interaction) {
   const { customId } = interaction;
 
+  // TMT ordu transfer başvurusu
+  if (customId === "tmt_transfer_open") {
+    return require("../services/tmtTransferService").showTransferModal(interaction);
+  }
+
   // TMT/BEM destek paneli: Hesap Durumum
   if (customId.startsWith("guild_support_account_status")) {
     const { handleAccountStatusButton } = require("../services/guildSupportPanel");
@@ -6357,6 +6362,7 @@ async function handleButtonInteraction(interaction) {
 
       if (existingChannel) {
         await ensureTicketOwnerAccess(existingChannel, ticket.userId);
+        await require("../services/closedTicketArchive").restoreReopenedTicket(existingChannel, ticket);
         await existingChannel.send({
           embeds: [
             new EmbedBuilder()

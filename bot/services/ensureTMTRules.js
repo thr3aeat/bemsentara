@@ -20,11 +20,20 @@ async function ensureTMTRules(client) {
     if (TMT_RULES_CHANNEL_ID && TMT_AUTOMOD_RULES_CHANNEL_ID) {
       const rulesChannel = await guild.channels.fetch(TMT_RULES_CHANNEL_ID).catch(() => null);
       if (rulesChannel) {
-        // Kanalda mesaj var mı kontrol et
+        // Kanal boşsa veya kurallar henüz Components V2 tasarımıyla gönderilmediyse (bir kez) yeniden gönder
+        const { appMeta, saveStoreNow } = require("../../models/Store");
+        const RULES_VERSION_KEY = "tmtRulesDesign";
+        const meta = appMeta ? appMeta.findOne({ key: RULES_VERSION_KEY }) : null;
         const messages = await rulesChannel.messages.fetch({ limit: 5 }).catch(() => null);
-        if (messages && messages.size === 0) {
-          console.log("[TMT Rules] Kurallar kanalı boş, kurallar gönderiliyor...");
-          await postTMTRules(client);
+        const needsV2 = meta?.messageId !== "v2";
+        if ((messages && messages.size === 0) || needsV2) {
+          console.log("[TMT Rules] Kurallar Components V2 olarak gönderiliyor...");
+          const ok = await postTMTRules(client, { clear: needsV2 });
+          if (ok && needsV2 && appMeta) {
+            if (meta) { meta.messageId = "v2"; meta.save(); }
+            else appMeta.create({ key: RULES_VERSION_KEY, messageId: "v2" });
+            saveStoreNow();
+          }
         }
       }
     }

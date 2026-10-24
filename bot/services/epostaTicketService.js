@@ -225,8 +225,8 @@ async function archiveEkoYildizTicket(ticket, interaction, reason) {
   const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
   if (channel) {
     await channel.setParent(archiveCategoryId, { lockPermissions: false }).catch(() => {});
-    const { ensureTicketOwnerAccess } = require('./ticketOwnerPermissions');
-    await ensureTicketOwnerAccess(channel, ticket.userId);
+    // Kapalı talebi kullanıcı görmez; yeniden açılınca erişimi geri verilir
+    await channel.permissionOverwrites.edit(ticket.userId, { ViewChannel: false }).catch(() => {});
 
     const closedEmbed = new EmbedBuilder()
       .setTitle("🔒 Destek Talebi Kapatıldı")

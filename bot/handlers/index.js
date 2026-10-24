@@ -210,6 +210,10 @@ function initializeDiscordHandlers(client) {
 
     // TMT destek paneli tek mesajı düzenler (yeni mesaj atmaz), bu yüzden her açılışta güncel tutulur
     ensureTMTSupportMessage(client).catch(err => console.error("[TMTSupport] panel:", err.message));
+    // TMT transfer başvuru paneli (tek mesajı düzenler)
+    require("../services/tmtTransferService").ensureTransferPanel(client).catch(err => console.error("[TMTTransfer] panel:", err.message));
+    // TMT kuralları yalnızca boşsa veya V2 tasarımı henüz gönderilmediyse yeniden gönderilir
+    ensureTMTRules(client).catch(err => console.error("[TMT Rules] ensure:", err.message));
 
     // Startup panel sync (Her başlatmada gereksiz mesaj güncellemesi yapılmaması için varsayılan olarak kapalıdır)
     if (process.env.SYNC_PANELS_ON_STARTUP === "true") {
