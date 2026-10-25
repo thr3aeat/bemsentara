@@ -61,6 +61,16 @@ test('escalateToEkoTelegram records active escalation and sends V2 accent-colors
 });
 
 test('handleEkoTelegramBridge forwards directive from Eko to Discord ticket with Components V2', async () => {
+  const Ticket = require('../models/Ticket');
+  const ticketDoc = new Ticket({
+    ticketId: 'TK-TEST-002',
+    channelId: '123456789012345678',
+    userId: '1031620522406072350',
+    status: 'open',
+    subject: 'Robux ödemesi ile ilgili uyuşmazlık'
+  });
+  await ticketDoc.save();
+
   let channelMessage = null;
   const mockClient = {
     channels: {
@@ -80,7 +90,7 @@ test('handleEkoTelegramBridge forwards directive from Eko to Discord ticket with
   const handled = await ekoAITicketService.handleEkoTelegramBridge(
     mockClient,
     'Kullanıcıya iletin, dekontu inceledim ve işlemi onayladım.',
-    { chat: { id: 123456789 } }
+    { chat: { id: 123456789 }, reply_to_message: { text: '👑 EKOai — Destek Bileti\n• Bilet ID: #TK-TEST-002' } }
   );
 
   assert.equal(handled, true);
@@ -88,6 +98,9 @@ test('handleEkoTelegramBridge forwards directive from Eko to Discord ticket with
   assert.equal(channelMessage.flags, ComponentsV2Factory.FLAGS);
   assert.equal(channelMessage.components[0].type, 17);
   assert.equal(channelMessage.components[0].accent_color, undefined, 'Must be accent colorsuz');
+
+  const { tickets } = require('../models/Store');
+  tickets.deleteOne({ ticketId: 'TK-TEST-002' });
 });
 
 test('processOpenTickets does not spam when ticket already offered escalation or intervened', async () => {

@@ -163,12 +163,13 @@ async function escalateToEkoTelegram(ticket, channel, client, userNote = '') {
   const telegramHtml =
     `👑 <b>EKOai — Destek Bileti Yönetici Bildirimi</b>\n\n` +
     `Sayın Yönetim Kurulu Başkanım (Eko), Discord destek biletinde sizi bekleyen bir kullanıcı var.\n\n` +
-    `• <b>Bilet ID:</b> <code>#${ticketId}</code>\n` +
-    `• <b>Kullanıcı:</b> ${userName} (ID: <code>${ticket.userId}</code>)\n` +
-    `• <b>Konu:</b> ${subject}\n` +
-    `• <b>Kanal:</b> #${channelName}\n` +
-    (userNote ? `• <b>Kullanıcı Notu:</b> ${userNote}\n\n` : `\n`) +
-    `<i>💡 Bu mesaja Telegram'dan doğrudan yanıt verirseniz veya mesaj yazarsanız, EKOai yanıtınızı Discord biletine otomatik olarak aktaracaktır.</i>`;
+    `• <b>Bilet ID:</b> <code>#${escapeHtml(ticketId)}</code>\n` +
+    `• <b>Kullanıcı:</b> ${escapeHtml(userName)} (ID: <code>${escapeHtml(ticket.userId)}</code>)\n` +
+    `• <b>Konu:</b> ${escapeHtml(subject)}\n` +
+    `• <b>Kanal:</b> #${escapeHtml(channelName)}\n` +
+    (userNote ? `• <b>Kullanıcı Notu:</b> ${escapeHtml(userNote)}\n\n` : `\n`) +
+    `<i>💡 Bu mesajı yanıtlarsanız (reply) veya mesajınıza <code>#${escapeHtml(ticketId)}</code> yazarsanız, yanıtınız olduğu gibi Discord biletine aktarılır.\n` +
+    `Komutlar: /durum (bilet durumu) • /biletler (bekleyen biletler)</i>`;
 
   await sendTelegramAlert(telegramHtml);
 
@@ -197,161 +198,222 @@ async function escalateToEkoTelegram(ticket, channel, client, userNote = '') {
   logger.success(`[EKOai] Bilet #${ticketId} Eko'ya (Telegram) eskalasyon yapıldı.`);
 }
 
+const TICKET_ID_PATTERN = /#?\b(TK-[A-Z0-9]+(?:-[A-Z0-9]+)*)/i;
+const MAX_FORWARD_LENGTH = 3500;
+const ESCALATION_COOLDOWN_MS = 60 * 60 * 1000; // Aynı bilet için en fazla saatte bir Telegram çağrısı
+
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function extractTicketId(text) {
+  const match = (text || '').match(TICKET_ID_PATTERN);
+  return match ? match[1].toUpperCase() : null;
+}
+
 /**
- * Eko Telegram'dan yanıt yazdığında çağrılır.
- * Mesajı analiz edip bilet kanalına iletir veya Eko'ya AI yanıtı döner.
+ * Bilet kapandığında Telegram köprüsündeki aktif eskalasyonu temizler.
+ */
+function clearEscalation(ticketId) {
+  if (!ticketId || !activeEscalations.has(ticketId)) return false;
+  activeEscalations.delete(ticketId);
+  saveState();
+  return true;
+}
+
+async function findTicketChannel(client, ticket) {
+  let channel = ticket.channelId
+    ? await client.channels.fetch(ticket.channelId).catch(() => null)
+    : null;
+  if (!channel && client.guilds?.cache) {
+    const nameNeedle = String(ticket.ticketId).toLowerCase();
+    for (const guild of client.guilds.cache.values()) {
+      channel = guild.channels.cache.find(c => c.name && c.name.toLowerCase().includes(nameNeedle));
+      if (channel) break;
+    }
+  }
+  return channel && typeof channel.send === 'function' ? channel : null;
+}
+
+/**
+ * /biletler — Eko'yu bekleyen (hâlâ açık) eskalasyonları listeler, kapananları temizler.
+ */
+async function sendEscalationList() {
+  const waiting = [];
+  for (const esc of Array.from(activeEscalations.values())) {
+    const dbTicket = await Ticket.findOne({ ticketId: esc.ticketId });
+    if (!dbTicket || dbTicket.status !== 'open') {
+      activeEscalations.delete(esc.ticketId);
+      continue;
+    }
+    waiting.push({ esc, dbTicket });
+  }
+  saveState();
+
+  if (waiting.length === 0) {
+    await sendTelegramAlert('✅ <b>Sizi bekleyen açık destek bileti yok.</b>');
+    return;
+  }
+
+  waiting.sort((a, b) => new Date(a.esc.escalatedAt).getTime() - new Date(b.esc.escalatedAt).getTime());
+  const lines = waiting.map(({ esc, dbTicket }) => {
+    const minutes = Math.max(0, Math.floor((Date.now() - new Date(esc.escalatedAt).getTime()) / 60000));
+    return `• <code>#${escapeHtml(esc.ticketId)}</code> — ${escapeHtml(dbTicket.userName || esc.userName || 'Kullanıcı')}: ` +
+      `${escapeHtml(dbTicket.subject || esc.subject || 'Destek')} <i>(${minutes} dk önce)</i>`;
+  });
+
+  await sendTelegramAlert(
+    `📋 <b>Sizi Bekleyen Biletler (${waiting.length})</b>\n\n${lines.join('\n')}\n\n` +
+    `<i>Yanıtlamak için bilet bildirimini yanıtlayın (reply) veya mesajınıza bilet numarasını yazın.</i>`
+  );
+}
+
+/**
+ * /durum TK-... — Biletin durumunu ve son mesajlarını Eko'ya gönderir.
+ */
+async function sendTicketStatus(client, ticket) {
+  const channel = await findTicketChannel(client, ticket);
+  let recent = '';
+  if (channel && typeof channel.messages?.fetch === 'function') {
+    const fetched = await channel.messages.fetch({ limit: 6 }).catch(() => null);
+    const list = fetched ? (typeof fetched.values === 'function' ? Array.from(fetched.values()) : Array.from(fetched)) : [];
+    recent = list
+      .filter(m => m.content)
+      .sort((a, b) => (a.createdTimestamp || 0) - (b.createdTimestamp || 0))
+      .map(m => {
+        const author = m.author?.bot ? '🤖 Bot' : (m.author?.username || 'Kullanıcı');
+        const text = m.content.length > 160 ? `${m.content.slice(0, 160)}…` : m.content;
+        return `• <b>${escapeHtml(author)}:</b> ${escapeHtml(text)}`;
+      })
+      .join('\n');
+  }
+
+  const statusText = ticket.status === 'open' ? '🟢 Açık' : `🔒 ${escapeHtml(ticket.status)}`;
+  await sendTelegramAlert(
+    `📄 <b>Bilet Durumu — <code>#${escapeHtml(ticket.ticketId)}</code></b>\n\n` +
+    `• <b>Durum:</b> ${statusText}\n` +
+    `• <b>Kullanıcı:</b> ${escapeHtml(ticket.userName || 'Bilinmiyor')} (ID: <code>${escapeHtml(ticket.userId)}</code>)\n` +
+    `• <b>Konu:</b> ${escapeHtml(ticket.subject || 'Destek')}\n` +
+    `• <b>Üstlenen:</b> ${escapeHtml(ticket.claimedByName || 'Yok')}\n` +
+    (channel ? `• <b>Kanal:</b> #${escapeHtml(channel.name)}\n` : `• <b>Kanal:</b> bulunamadı\n`) +
+    (recent ? `\n<b>Son mesajlar:</b>\n${recent}` : '')
+  );
+}
+
+/**
+ * Eko Telegram'dan yazdığında çağrılır.
+ * Yalnızca bilet bildirimine yanıt (reply) verilmişse veya mesajda bilet numarası varsa
+ * mesajı olduğu gibi Discord bilet kanalına aktarır. Diğer mesajlar normal EKOai sohbetine gider.
  */
 async function handleEkoTelegramBridge(client, telegramText, rawMessage) {
   if (!telegramText || typeof telegramText !== 'string') return false;
 
-  // 1. Reply edilen mesajdan bilet ID'sini çıkar (Örn: #TK-MU5WLFQ1-STEMU veya Bilet ID: #TK-...)
-  let targetTicketId = null;
-  const replyText = rawMessage?.reply_to_message?.text || '';
-  const matchReply = replyText.match(/#?(TK-[A-Z0-9-]+)/i);
-  if (matchReply) {
-    targetTicketId = matchReply[1].toUpperCase();
+  const trimmed = telegramText.trim();
+  const command = (trimmed.match(/^\/(\w+)/) || [])[1]?.toLowerCase() || null;
+
+  if (command === 'biletler') {
+    await sendEscalationList();
+    return true;
   }
 
-  // 2. Mesaj metninden bilet ID'sini çıkar
+  // Bilet numarası: önce mesajın kendisinden, yoksa yanıtlanan bildirimden
+  const replyText = rawMessage?.reply_to_message?.text || rawMessage?.reply_to_message?.caption || '';
+  const targetTicketId = extractTicketId(trimmed) || extractTicketId(replyText);
   if (!targetTicketId) {
-    const matchMsg = telegramText.match(/#?(TK-[A-Z0-9-]+)/i);
-    if (matchMsg) {
-      targetTicketId = matchMsg[1].toUpperCase();
-    }
-  }
-
-  // 3. Hedef bileti bul
-  let targetEscalation = null;
-  if (targetTicketId) {
-    if (activeEscalations.has(targetTicketId)) {
-      targetEscalation = activeEscalations.get(targetTicketId);
-    } else {
-      const dbTicket = await Ticket.findOne({ ticketId: targetTicketId });
-      if (dbTicket) {
-        targetEscalation = {
-          ticketId: dbTicket.ticketId,
-          channelId: dbTicket.channelId,
-          guildId: dbTicket.guildId,
-          userId: dbTicket.userId,
-          userName: dbTicket.userName || 'Kullanıcı',
-          subject: dbTicket.subject || 'Destek'
-        };
-      }
-    }
-  }
-
-  if (!targetEscalation) {
-    targetEscalation = getLatestEscalatedTicket();
-  }
-
-  if (!targetEscalation) {
-    const openTickets = await Ticket.find({ status: 'open' });
-    if (openTickets && openTickets.length > 0) {
-      const sorted = openTickets.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      const latestOpen = sorted[0];
-      targetEscalation = {
-        ticketId: latestOpen.ticketId,
-        channelId: latestOpen.channelId,
-        guildId: latestOpen.guildId,
-        userId: latestOpen.userId,
-        userName: latestOpen.userName || 'Kullanıcı',
-        subject: latestOpen.subject || 'Destek'
-      };
-    }
-  }
-
-  if (!targetEscalation) {
-    return false; // Aktif bilet yoksa normal telegram akışı devam etsin
-  }
-
-  logger.info(`[EKOai] Telegram köprü mesajı alındı: "${telegramText}" -> Hedef Bilet: #${targetEscalation.ticketId}`);
-
-  const prompt =
-    `Sen EKOai Telegram Yönetim Köprüsüsün.\n` +
-    `EkoYıldız Yönetim Kurulu Başkanı (Eko) Telegram'dan bir mesaj yazdı: "${telegramText}"\n\n` +
-    `Aktif Discord Destek Bileti Bilgileri:\n` +
-    `- Bilet No: #${targetEscalation.ticketId}\n` +
-    `- Konu: ${targetEscalation.subject}\n` +
-    `- Kullanıcı: ${targetEscalation.userName}\n\n` +
-    `GÖREV:\n` +
-    `1. Bu mesaj Discord biletindeki kullanıcıya iletilecek bir yanıt/talimat mı? ` +
-    `(Örn: "Yetkili arkadaşlar ilgilenecektir", "Dekontu kanala atmasını söyleyin", "Kontrol ettim hallediyorum", "test" vb.)\n` +
-    `2. Yoksa Başkan bot'a (sana) bir soru mu soruyor? (Örn: "kim bekliyor", "durum ne", "konu nedir" vb.)\n\n` +
-    `YALNIZCA GEÇERLİ JSON DÖN:\n` +
-    `{\n` +
-    `  "intent": "forward_to_ticket" | "reply_to_eko",\n` +
-    `  "messageForUser": "Discord kanalına yazılacak temiz, net mesaj",\n` +
-    `  "replyForEko": "Eko'ya Telegram'dan verilecek AI cevabı"\n` +
-    `}`;
-
-  try {
-    const aiRes = await chatWithAI(prompt, 'Sen EKOai Telegram köprüsüsün. Yalnızca JSON üret.');
-    let parsed = null;
-    if (aiRes) {
-      const match = aiRes.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-    }
-
-    // Kanalı ID ile veya isim ile bul
-    let channel = await client.channels.fetch(targetEscalation.channelId).catch(() => null);
-    if (!channel) {
-      for (const guild of client.guilds.cache.values()) {
-        channel = guild.channels.cache.find(c =>
-          c.id === targetEscalation.channelId ||
-          (c.name && c.name.toLowerCase().includes(targetEscalation.ticketId.toLowerCase()))
-        );
-        if (channel) break;
-      }
-    }
-
-    if (parsed && parsed.intent === 'reply_to_eko' && parsed.replyForEko) {
-      await sendTelegramAlert(`🤖 <b>EKOai Yanıtı:</b>\n${parsed.replyForEko}`);
+    if (command === 'durum') {
+      await sendTelegramAlert('ℹ️ Kullanım: <code>/durum TK-XXXX</code> veya bir bilet bildirimini yanıtlayarak <code>/durum</code> yazın.');
       return true;
     }
-
-    // Varsayılan veya forward_to_ticket: Discord bilet kanalına Components V2 (accent colorsuz) gönder
-    const messageForUser = (parsed && parsed.messageForUser) ? parsed.messageForUser : telegramText.trim();
-
-    if (channel && typeof channel.send === 'function') {
-      const discordPayload = {
-        flags: ComponentsV2Factory.FLAGS,
-        components: [
-          ComponentsV2Factory.container([
-            ComponentsV2Factory.text(
-              `### 👑 EkoYıldız Yönetim Kurulu Başkanı'ndan Mesaj\n\n` +
-              `> ${messageForUser}\n\n` +
-              `*Mesaj EKOai Telegram Yönetim Köprüsü aracılığıyla aktarılmıştır.*`
-            )
-          ])
-        ]
-      };
-
-      await channel.send(discordPayload).catch(async () => {
-        await channel.send({
-          content:
-            `👑 **EkoYıldız Yönetim Kurulu Başkanı'ndan Mesaj:**\n\n> ${messageForUser}\n\n*EKOai Telegram Köprüsü üzerinden iletildi.*`
-        });
-      });
-
-      await sendTelegramAlert(
-        `✅ <b>İletildi:</b> Sayın Başkanım, yanıtınız <b>#${channel.name}</b> (<code>#${targetEscalation.ticketId}</code>) biletine başarıyla aktarıldı.`
-      );
-      return true;
-    } else {
-      logger.warn(`[EKOai] Hedef kanal bulunamadı (${targetEscalation.channelId}).`);
-      await sendTelegramAlert(
-        `⚠️ Sayın Başkanım, <code>#${targetEscalation.ticketId}</code> biletinin Discord kanalı bulunamadı veya kapatılmış.`
-      );
-      return true;
-    }
-  } catch (err) {
-    logger.error(`[EKOai] handleEkoTelegramBridge hata: ${err.message}`);
+    return false; // Bilet hedeflenmedi → normal EKOai Telegram sohbeti
   }
 
-  return false;
+  const ticket = await Ticket.findOne({ ticketId: targetTicketId });
+  if (!ticket) {
+    await sendTelegramAlert(`⚠️ <code>#${escapeHtml(targetTicketId)}</code> numaralı bilet bulunamadı.`);
+    return true;
+  }
+
+  if (command === 'durum') {
+    await sendTicketStatus(client, ticket);
+    return true;
+  }
+
+  if (ticket.status !== 'open') {
+    clearEscalation(ticket.ticketId);
+    await sendTelegramAlert(
+      `⚠️ Sayın Başkanım, <code>#${escapeHtml(ticket.ticketId)}</code> bileti kapatılmış; mesajınız iletilmedi.`
+    );
+    return true;
+  }
+
+  // Bilet numarasını ve baştaki ayraçları mesajdan temizle; metni AI ile değiştirmeden aktar
+  let messageForUser = trimmed
+    .replace(new RegExp(TICKET_ID_PATTERN.source, 'gi'), '')
+    .replace(/^[\s:,.\-–—]+/, '')
+    .trim();
+  if (!messageForUser) {
+    await sendTelegramAlert(
+      `ℹ️ <code>#${escapeHtml(ticket.ticketId)}</code> için iletilecek bir mesaj yazmadınız.`
+    );
+    return true;
+  }
+  if (messageForUser.length > MAX_FORWARD_LENGTH) {
+    messageForUser = `${messageForUser.slice(0, MAX_FORWARD_LENGTH)}…`;
+  }
+
+  logger.info(`[EKOai] Telegram köprü mesajı alındı -> Hedef Bilet: #${ticket.ticketId}`);
+
+  const channel = await findTicketChannel(client, ticket);
+  if (!channel) {
+    logger.warn(`[EKOai] Hedef kanal bulunamadı (${ticket.channelId}).`);
+    await sendTelegramAlert(
+      `⚠️ Sayın Başkanım, <code>#${escapeHtml(ticket.ticketId)}</code> biletinin Discord kanalı bulunamadı.`
+    );
+    return true;
+  }
+
+  const quoted = messageForUser.split(/\r?\n/).map(line => `> ${line}`).join('\n');
+  const allowedMentions = { users: ticket.userId ? [ticket.userId] : [] };
+  const discordPayload = {
+    flags: ComponentsV2Factory.FLAGS,
+    allowedMentions,
+    components: [
+      ComponentsV2Factory.container([
+        ComponentsV2Factory.text(
+          `### 👑 EkoYıldız Yönetim Kurulu Başkanı'ndan Mesaj\n` +
+          (ticket.userId ? `<@${ticket.userId}>\n\n` : '\n') +
+          `${quoted}\n\n` +
+          `*Mesaj EKOai Telegram Yönetim Köprüsü aracılığıyla aktarılmıştır. Yanıtınızı bu kanala yazabilirsiniz.*`
+        )
+      ])
+    ]
+  };
+
+  const sent = await channel.send(discordPayload).then(() => true, async () => {
+    return channel.send({
+      allowedMentions,
+      content:
+        `👑 **EkoYıldız Yönetim Kurulu Başkanı'ndan Mesaj** ${ticket.userId ? `<@${ticket.userId}>` : ''}\n\n${quoted}\n\n` +
+        `*EKOai Telegram Köprüsü üzerinden iletildi.*`
+    }).then(() => true, () => false);
+  });
+
+  if (!sent) {
+    await sendTelegramAlert(
+      `❌ <code>#${escapeHtml(ticket.ticketId)}</code> biletine mesaj gönderilemedi (Discord izin/bağlantı hatası).`
+    );
+    return true;
+  }
+
+  await sendTelegramAlert(
+    `✅ <b>İletildi:</b> Yanıtınız <b>#${escapeHtml(channel.name)}</b> (<code>#${escapeHtml(ticket.ticketId)}</code>) biletine aktarıldı.`
+  );
+  return true;
 }
 
-/**
 /**
  * Bir mesajın EKOai asistanına ait olup olmadığını tespit eder (V1 & V2 uyumlu).
  */
@@ -615,6 +677,8 @@ async function processOpenTickets(client) {
   }
 }
 
+const ESCALATION_REQUEST_PATTERN = /(^|[^\p{L}\p{N}])(eko|başkan\p{L}*|telegram\p{L}*|yönetim kurulu\p{L}*)(?=$|[^\p{L}\p{N}])/iu;
+
 /**
  * Kullanıcı bilet kanalında mesaj yazdığında EKOai tetikleyicisi
  */
@@ -628,13 +692,14 @@ async function handleTicketChannelMessage(message, client) {
   const ticket = await Ticket.findOne({ channelId: channel.id, status: 'open' });
   if (!ticket || ticket.claimedBy) return;
 
-  const text = (message.content || '').toLowerCase();
+  // Kullanıcı başkanı veya telegram'ı özellikle talep ediyorsa ("ekonomi" gibi kelimeler tetiklemez)
+  if (!ESCALATION_REQUEST_PATTERN.test(message.content || '')) return;
 
-  // Kullanıcı başkanı veya telegram'ı özellikle talep ediyorsa
-  if (text.includes('eko') || text.includes('başkan') || text.includes('telegram') || text.includes('yönetim kurulu')) {
-    await escalateToEkoTelegram(ticket, channel, client, message.content);
-    return;
-  }
+  // Aynı bilet için Telegram'a saatte en fazla bir çağrı gönder (spam önleme)
+  const previous = activeEscalations.get(ticket.ticketId);
+  if (previous && Date.now() - new Date(previous.escalatedAt).getTime() < ESCALATION_COOLDOWN_MS) return;
+
+  await escalateToEkoTelegram(ticket, channel, client, message.content);
 }
 
 /**
@@ -718,6 +783,9 @@ module.exports = {
   handleTicketChannelMessage,
   handleButtonInteraction,
   getLatestEscalatedTicket,
+  clearEscalation,
+  extractTicketId,
+  escapeHtml,
   ticketInterventions,
   activeEscalations,
   loadState,
