@@ -116,6 +116,8 @@ function csrfOriginGuardMiddleware(req, res, next) {
 
   const allowedOrigins = [
     BASE_URL,
+    req.get("host") ? `http://${req.get("host")}` : null,
+    req.get("host") ? `https://${req.get("host")}` : null,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://ekoyildiz.duckdns.org",

@@ -242,6 +242,7 @@ const socialAds       = collections.socialAds;
 const socialAdMetrics = collections.socialAdMetrics;
 const homepageConfig  = collections.homepageConfig;
 const userActivityLogs = collections.userActivityLogs;
+const contracts        = collections.contracts;
 /** @deprecated eski importlar için */
 const wikis = wikiArticles;
 
@@ -258,7 +259,7 @@ const ALL_COLLECTION_NAMES = [
   "sponsorAds", "giveaways", "giveawayTasks", "giveawayEntries",
   "giveawayEntryTasks", "giveawayWinners", "giveawayAuditLogs",
   "giveawayFraudFlags", "giveawayNotifications", "socialAds", "socialAdMetrics",
-  "homepageConfig", "userActivityLogs"
+  "homepageConfig", "userActivityLogs", "contracts"
 ];
 
 /**
@@ -399,6 +400,7 @@ module.exports = {
   socialAdMetrics,
   homepageConfig,
   userActivityLogs,
+  contracts,
   wikis,
   InMemoryCollection,
   initStore,

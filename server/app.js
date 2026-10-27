@@ -308,6 +308,7 @@ app.use(applicationApprovalRoutes);
 app.use(adminControlCenterRoutes);
 app.use("/api/admin/bot-control", botControlRoutes);
 app.use(adminApplicationsRoutes);
+app.use(require("./routes/contracts"));
 app.use(apiRoutes);
 app.use(pagesRoutes);
 
