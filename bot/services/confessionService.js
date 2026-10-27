@@ -442,18 +442,23 @@ async function handleConfessionModalSubmit(interaction) {
 function buildConfessionV2Payload(confession) {
   const isPublic = confession.type === 'public';
 
-  const authorDisplay = isPublic
+  const anonTag = (confession.anonymousName && !confession.anonymousName.toLowerCase().includes('ekoai'))
+    ? confession.anonymousName
+    : generateAnonymousName();
+
+  const authorDisplay = isPublic && !confession.isAutomated
     ? `👤 **Paylaşan:** <@${confession.authorId}>`
-    : `🕵️ **Paylaşan:** ${confession.anonymousName}`;
+    : `🕵️ **Paylaşan:** ${anonTag}`;
 
   const contentDisplay = `> ${confession.content.replace(/\n/g, '\n> ')}`;
   const dmStatus = confession.allowDm ? 'Açık 💬' : 'Kapalı 🔒';
   const timestamp = Math.floor(new Date(confession.createdAt || Date.now()).getTime() / 1000);
 
-  const shockCount = confession.reactions?.shock || 0;
-  const laughCount = confession.reactions?.laugh || 0;
-  const redflagCount = confession.reactions?.redflag || 0;
-  const supportCount = confession.reactions?.support || 0;
+  const ai = confession.automatedReactions || {};
+  const shockCount = (confession.reactions?.shock || 0) + (ai.shock || 0);
+  const laughCount = (confession.reactions?.laugh || 0) + (ai.laugh || 0);
+  const redflagCount = (confession.reactions?.redflag || 0) + (ai.redflag || 0);
+  const supportCount = (confession.reactions?.support || 0) + (ai.support || 0);
 
   const reactionSummary = `🔥 ${shockCount} • 😂 ${laughCount} • 🚩 ${redflagCount} • ❤️ ${supportCount}`;
 
@@ -573,10 +578,11 @@ async function openConfessionActions(interaction, confessionId) {
       return interaction.reply({ content: '❌ İtiraf bulunamadı.', flags: 64 });
     }
 
-    const shockCount = confession.reactions?.shock || 0;
-    const laughCount = confession.reactions?.laugh || 0;
-    const redflagCount = confession.reactions?.redflag || 0;
-    const supportCount = confession.reactions?.support || 0;
+    const ai = confession.automatedReactions || {};
+    const shockCount = (confession.reactions?.shock || 0) + (ai.shock || 0);
+    const laughCount = (confession.reactions?.laugh || 0) + (ai.laugh || 0);
+    const redflagCount = (confession.reactions?.redflag || 0) + (ai.redflag || 0);
+    const supportCount = (confession.reactions?.support || 0) + (ai.support || 0);
 
     const reactionRow = {
       type: 1,
@@ -1517,51 +1523,60 @@ const SEED_CONFESSIONS = [
 // Gerçekçi & Bağlama Uygun Doğal Fallback Yorum Havuzları
 const REALISTIC_COMMENTS = {
   eko: [
-    'harbiden çok içten yazmış helal olsun kardeşim',
-    'eko abi duysun sesini inşallah, samimi olmuş',
-    'oyy çok tatlı yaa helal valla',
-    'valla kral adam, yayında kesin denk gelir',
-    'çok masum ve samimi olmuş eline sağlık'
+    'çok içten yazılmış ya, eko abi okusa sevinir bence',
+    'Samimi olmuş, yayında denk gelirse güzel olur.',
+    'oyy tatlı 🥹',
+    'Bu tarz mesajlar yayına gerçekten moral katıyor, eline sağlık.',
+    'ahaha takla kısmı çok iyi, değmiş ama'
   ],
   humor: [
-    'kanka rezil olmuşsun geçmiş olsun ahahaha 💀',
-    'gece gece sesli güldüm evdekiler uyandı yapma şöyle şeyler ahahaha',
-    'puhaha nasıl becerdin onu ya koptum resmen',
-    'büyük talihsizlik valla geçmiş olsun kral ahaha',
-    'aşırı rezillik ahahahah geçmiş olsun ama çok iyi anı',
-    'sesli kahkaha attım odadakiler bana bakıyor dskjghsdkfg',
-    'kim bu çabuk itiraf etsin meraktan uyuyamam şimdi ben 👀'
+    'ahahah çok rezil ama çok iyi anı 💀',
+    'Geçmiş olsun, bu tarz anlar sonradan en çok güldüren anılar oluyor.',
+    'nasıl becerdin bunu ya 😭',
+    'mik açık kalması klasik ama yine de acı',
+    'Okurken sesli güldüm, hikaye anlatımın çok iyi.',
+    'kim bu kişi şimdi çok merak ettim 👀'
   ],
   support: [
-    'Cidden çok anlamlı ve güzel yazmışsın, yalnız değilsin dostum.',
-    'Reis aynı dönemlerden ben de geçtim, hiç kafana takma zamanla her şey rayına oturuyor.',
-    'Çok haklı bir sitem bu arada. Kendine çok yüklenme, geçecek emin ol.',
-    'İçini ferah tut kral, her zaman dertleşebilirsin buradayız.',
-    'Okurken içim burkuldu resmen, umarım her şey en kısa sürede gönlünce olur.',
-    'Zaman her şeyin ilacı derler ya, harbiden öyle. Sabırlı ol ve güçlü kal dostum.'
+    'Yalnız değilsin, bu dönemler gerçekten geçiyor.',
+    'çok anlıyorum ya, kendine yüklenme',
+    'Okurken içim burkuldu. Umarım kısa sürede biraz rahatlarsın, burada konuşabileceğin insanlar var.',
+    'aynı şeyleri ben de yaşadım, zamanla hafifliyor 🫂',
+    'Bunu yazabilmen bile güzel bir adım bence.',
+    'sabır, geçecek. kendine iyi bak'
   ],
   romance: [
-    'Bence kesinlikle git konuş kanka, içinde kalacağına bilsin ne kaybedersin ki.',
-    'Hislerini saklama bence, hayat ertelemek için çok kısa.',
-    'Umarım bahsettiğin o kişi bu itirafı okuyordur da anlar...',
-    'Bence cesaretini topla ve bir adım at, arkandayız kral.',
-    'Aşırı tatlı bir his, umarım karşılığını alırsın dostum.'
+    'bence yaz, içinde kalmasından iyidir',
+    'Hislerini saklamak yorucu oluyor, küçük bir adım atmayı deneyebilirsin.',
+    'çok tatlı ya 🥹 umarım okuyordur',
+    'Belki direkt itiraf yerine önce biraz daha sohbeti ilerletmek iyi olur.',
+    'storyye alev atmak bence masum, at gitsin'
   ],
   gaming: [
-    'Ahaha roblox sunucularında her an her şey olabiliyor ya klasik.',
-    'Oyun zevkini tryhardlar bozuyor cidden, takma kafana chill takıl kral.',
-    'Komutanın tepkisini hayal edebiliyorum ahahah harika anıymış.',
-    'Kral beraber oynayalım istersen, sese gel takılırız.',
-    'Tekmil verirken mikrofon kazası yaşamayan asker yoktur zaten ahaha.'
+    'roblox sunucularında her şey olabiliyor ahaha',
+    'Tryhardlar oyunun keyfini kaçırabiliyor, chill takılmak en iyisi.',
+    'komutanın tepkisini merak ettim şimdi 😂',
+    'Hesap meselesi sinir bozucu, şifreyi bir an önce geri almanı dilerim.',
+    'beraber oynayacak birini bulursun kesin, sese gel'
   ],
   casual: [
-    'Harbiden ben de öyleyim ya yalnız değilmişim sevindim.',
-    'Aşırı relatable bu arada, yüzde yüz katılıyorum.',
-    'Valla büyük cesaret tebrik ederim.',
-    'Bu itirafın sahibi kimse bilsin ki harbi haklı...',
-    'Bunu yaşayan tek kişi sen değilsin emin ol, içini rahat tut.'
+    'aynen ya',
+    'Bunu yaşayan tek kişi sen değilsin bence.',
+    'çok relatable 😭',
+    'Büyük cesaret, paylaşman güzel.',
+    'hmm haklısın aslında'
   ]
 };
+
+// Yorumların hepsi aynı kalıptan çıkmasın diye her seferinde farklı bir üslup seçilir
+const COMMENT_STYLES = [
+  'Çok kısa yaz (2-6 kelime), tamamen küçük harf, noktalama yok, günlük konuşma dili.',
+  'Tek düzgün cümle yaz, büyük harfle başla, noktayla bitir, sakin ve olgun bir ton.',
+  'Kısa yaz, sonuna konuya uygun 1 emoji ekle (😭, 💀, 🥹, 👀, 🫂 gibi), küçük harf olabilir.',
+  'İki kısa cümle yaz: önce tepki, sonra küçük bir öneri ya da soru.',
+  '"ya", "valla", "aynen", "bence" gibi günlük kelimelerle rahat bir tonda tek cümle yaz.',
+  'Sadece itirafın bir detayına değinen kısa bir yorum yaz, genel laflar etme.'
+];
 
 /**
  * İtiraf içeriğine ve duygusuna göre bağlamlı fallback yorum seçer
@@ -1591,28 +1606,29 @@ function pickRealisticComment(content, category) {
 /**
  * AI ve akıllı bağlam motoru ile itirafa doğrudan uyan, asla saçmalamayan organik yorum üretir
  */
-async function generateRealisticComment(content, category) {
+async function generateRealisticComment(content, category, excludeText = null) {
   const text = (content || '').trim();
   const cat = (category || 'Genel').trim();
+  const style = COMMENT_STYLES[Math.floor(Math.random() * COMMENT_STYLES.length)];
 
   try {
-    const systemPrompt = 'Sen popüler bir Türk Discord topluluğunun samimi, esprili ve doğal bir üyesisin.\n' +
-      'GÖREV: Aşağıdaki anonim itirafa doğrudan İÇERİĞİYLE İLGİLİ, 1 cümlelik, doğal bir Discord sohbeti yorumu yaz.\n' +
+    const systemPrompt = 'Türk Discord topluluğunun itiraf kanalında rastgele anonim rumuzla yorum bırakan bir topluluk üyesisin.\n' +
+      'GÖREV: Aşağıdaki anonim itirafa doğrudan İÇERİĞİYLE İLGİLİ, doğal ve samimi bir Discord yorumu yaz.\n' +
       'İTİRAF: "' + text.replace(/"/g, '\"') + '"\n' +
       'KATEGORİ: "' + cat + '"\n\n' +
+      'ÜSLUP: ' + style + '\n\n' +
       'KURALLAR:\n' +
-      '- ASLA bot gibi konuşma. "Ben yapay zekayım", "İtirafınız kaydedildi" vb. ifadeler KESİNLİKLE YASAKTIR.\n' +
-      '- ASLA konuyla alakasız saçma veya rastgele telif esprileri yapma. Sadece itirafın anlattığı duruma odaklan.\n' +
-      '- İtiraf hüzünlü/dertleşmeyse destek ver ("yalnız değilsin kral, hepimizin böyle dönemleri oluyor").\n' +
-      '- İtiraf komik/rezillik ise güler yüzlü tepki ver ("kanka mik açık nasıl unuttun ya geçmiş olsun ahaha").\n' +
-      '- İtiraf aşk/platonik ise tatlı arkadaş tavsiyesi ver ("içinde kalacağına söyle ne kaybedersin").\n' +
-      '- İtiraf oyun/Roblox ise oyuncu tepkisi ver.\n' +
-      '- Maksimum 1 cümle, en fazla 120 karakter, saf doğal Türkçe.';
+      '- Günlük, rahat Türkçe ve yaygın kısaltmalar kullanabilirsin ama kasıtlı yazım hatası yapma.\n' +
+      '- "İtirafınız kaydedildi" gibi resmi bot cümleleri kurma.\n' +
+      '- Konuyla alakasız espri yapma, sadece itirafın anlattığı duruma odaklan.\n' +
+      '- Hüzünlü/dertleşmeyse destek ver, komik/rezillikse güler yüzlü tepki ver, aşk/platonikse nazik tavsiye ver, oyunsa oyuncu tepkisi ver.\n' +
+      (excludeText ? '- Şu yoruma benzemeyen farklı bir şey söyle: "' + excludeText.replace(/"/g, '\"') + '"\n' : '') +
+      '- En fazla 120 karakter.';
 
-    const aiRes = await chatWithAI(text, systemPrompt, 'confession', { max_tokens: 60, temperature: 0.8 });
+    const aiRes = await chatWithAI(text, systemPrompt, 'confession', { max_tokens: 60, temperature: 0.95 });
     if (aiRes && typeof aiRes === 'string') {
       let cleaned = aiRes.replace(/^["'“”«»]+|["'“”«»]+$/g, '').trim();
-      if (cleaned.length >= 8 && cleaned.length <= 160 && !cleaned.toLowerCase().includes('yapay zeka') && !cleaned.toLowerCase().includes('assistant')) {
+      if (cleaned.length >= 2 && cleaned.length <= 160 && cleaned !== excludeText && !cleaned.toLowerCase().includes('assistant') && !cleaned.toLowerCase().includes('ekoai')) {
         return cleaned;
       }
     }
@@ -1621,6 +1637,12 @@ async function generateRealisticComment(content, category) {
   }
 
   return pickRealisticComment(text, cat);
+}
+
+// Otomatik yorumlar rastgele bir anonim rumuz (tag) ile gönderilir
+function formatAutomatedComment(commentText) {
+  const alias = generateAnonymousName();
+  return `🕵️ **${alias}:**\n> ${String(commentText || '').replace(/\n/g, '\n> ')}`;
 }
 
 function scheduleOrganicEngagement(client, confessionId) {
@@ -1638,26 +1660,27 @@ function scheduleOrganicEngagement(client, confessionId) {
         if (!conf.reactions) {
           conf.reactions = { shock: 0, laugh: 0, redflag: 0, support: 0 };
         }
+        const rx = conf.reactions;
 
         if (cat.includes('komik') || text.includes('haha') || text.includes('rezil') || text.includes('troll')) {
-          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 5) + 3; // +3..7
-          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 3) + 1; // +1..3
-          if (Math.random() > 0.6) conf.reactions.redflag = (conf.reactions.redflag || 0) + 1;
+          rx.laugh = (rx.laugh || 0) + Math.floor(Math.random() * 5) + 3; // +3..7
+          rx.shock = (rx.shock || 0) + Math.floor(Math.random() * 3) + 1; // +1..3
+          if (Math.random() > 0.6) rx.redflag = (rx.redflag || 0) + 1;
         } else if (cat.includes('dert') || cat.includes('tavsiye') || text.includes('yalnız') || text.includes('hissediyorum')) {
-          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 5) + 4; // +4..8
-          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 2) + 1;
+          rx.support = (rx.support || 0) + Math.floor(Math.random() * 5) + 4; // +4..8
+          rx.shock = (rx.shock || 0) + Math.floor(Math.random() * 2) + 1;
         } else if (text.includes('eko') || text.includes('robux') || text.includes('abi')) {
-          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 4) + 4; // +4..7
-          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 3) + 2; // +2..4
+          rx.support = (rx.support || 0) + Math.floor(Math.random() * 4) + 4; // +4..7
+          rx.laugh = (rx.laugh || 0) + Math.floor(Math.random() * 3) + 2; // +2..4
         } else {
-          conf.reactions.support = (conf.reactions.support || 0) + Math.floor(Math.random() * 3) + 2;
-          conf.reactions.laugh = (conf.reactions.laugh || 0) + Math.floor(Math.random() * 3) + 1;
-          conf.reactions.shock = (conf.reactions.shock || 0) + Math.floor(Math.random() * 2) + 1;
+          rx.support = (rx.support || 0) + Math.floor(Math.random() * 3) + 2;
+          rx.laugh = (rx.laugh || 0) + Math.floor(Math.random() * 3) + 1;
+          rx.shock = (rx.shock || 0) + Math.floor(Math.random() * 2) + 1;
         }
 
         await conf.save();
         await refreshConfessionMessage(client, conf);
-        logger.info(`[ConfessionOrganic] #${confessionId} itirafına organik sahte tepkiler uygulandı.`);
+        logger.info(`[ConfessionOrganic] #${confessionId} itirafına organik tepkiler uygulandı.`);
       } catch (err) {
         logger.warn('[ConfessionOrganic] Tepki ekleme hatası:', err.message);
       }
@@ -1674,9 +1697,7 @@ function scheduleOrganicEngagement(client, confessionId) {
         if (!thread || !thread.isTextBased()) return;
 
         const commentText = await generateRealisticComment(conf.content, conf.category);
-        const commentAlias = generateAnonymousName();
-
-        await thread.send({ content: `🕵️ **${commentAlias}:**\n> ${commentText}` });
+        await thread.send({ content: formatAutomatedComment(commentText) });
         logger.info(`[ConfessionOrganic] #${confessionId} thread'ine 1. anonim yorum gönderildi.`);
 
         // ⏳ 3. Adım: %70 ihtimalle 3 - 7 dakika sonra 2. farklı anonim yorum
@@ -1690,13 +1711,12 @@ function scheduleOrganicEngagement(client, confessionId) {
               const thread2 = await client.channels.fetch(conf2.threadId).catch(() => null);
               if (!thread2 || !thread2.isTextBased()) return;
 
-              let secondCommentText = await generateRealisticComment(conf2.content, conf2.category);
+              let secondCommentText = await generateRealisticComment(conf2.content, conf2.category, commentText);
               if (secondCommentText === commentText) {
                 secondCommentText = REALISTIC_COMMENTS.casual[Math.floor(Math.random() * REALISTIC_COMMENTS.casual.length)];
               }
-              const secondAlias = generateAnonymousName();
 
-              await thread2.send({ content: `🕵️ **${secondAlias}:**\n> ${secondCommentText}` });
+              await thread2.send({ content: formatAutomatedComment(secondCommentText) });
               logger.info(`[ConfessionOrganic] #${confessionId} thread'ine 2. anonim yorum gönderildi.`);
             } catch (e2) {
               logger.warn('[ConfessionOrganic] 2. yorum hatası:', e2.message);
@@ -1752,7 +1772,9 @@ async function triggerSeedActivity(client) {
       type: 'anonymous',
       content: seedItem.content,
       anonymousName,
-      allowDm: true,
+      isAutomated: true,
+      // Seed itirafın gerçek bir sahibi yok, anonim DM köprüsü kapalı
+      allowDm: false,
       poll: poll || undefined,
       status: 'approved',
       reactions: { shock: 0, laugh: 0, redflag: 0, support: 0 },
@@ -1816,6 +1838,44 @@ async function checkInactivityAndTriggerSeed(client) {
  * 13. Her Pazar 07:00 Haftanın İtirafı & İmha & Inactivity Seed Schedulers
  */
 function initConfessionSchedulers(client) {
+  // Mevcut itiraf kartlarındaki ve thread yorumlarındaki eski "EKOai destekli" etiketlerini rastgele anonim rumuzlarla güncelle
+  setTimeout(async () => {
+    try {
+      const recentConfessions = await Confession.find({
+        status: 'approved',
+        isExpired: { $ne: true }
+      }).sort({ confessionId: -1 }).limit(30);
+
+      for (const conf of recentConfessions) {
+        if (!conf.anonymousName || conf.anonymousName.toLowerCase().includes('ekoai')) {
+          conf.anonymousName = generateAnonymousName();
+          await conf.save().catch(() => {});
+        }
+        await refreshConfessionMessage(client, conf);
+
+        if (conf.threadId) {
+          const thread = await client.channels.fetch(conf.threadId).catch(() => null);
+          if (thread && thread.isTextBased()) {
+            const msgs = await thread.messages.fetch({ limit: 30 }).catch(() => null);
+            if (msgs) {
+              for (const [, m] of msgs) {
+                if (m.author?.id === client.user.id && typeof m.content === 'string' && m.content.includes('EKOai destekli')) {
+                  const alias = generateAnonymousName();
+                  const updatedContent = m.content.replace(/🤖\s*\*\*EKOai destekli[^*]*\*\*/gi, `🕵️ **${alias}:**`);
+                  if (updatedContent !== m.content) {
+                    await m.edit({ content: updatedContent }).catch(() => {});
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('[ConfessionService] Eski EKOai etiketlerini anonimleştirme hatası:', err.message);
+    }
+  }, 8000);
+
   // Pazar 07:00 Haftanın İtirafı
   cron.schedule('0 7 * * 0', async () => {
     logger.info('[ConfessionService] Pazar 07:00 haftalık itiraf değerlendirmesi başlatılıyor...');
@@ -1863,7 +1923,10 @@ async function selectTopConfessions(client) {
 
     const weeklyConfessions = await Confession.find({
       createdAt: { $gte: oneWeekAgo },
-      status: 'approved'
+      status: 'approved',
+      // EKOai seed itirafları topluluk sıralamasına girmez
+      isAutomated: { $ne: true },
+      authorId: { $ne: client.user.id }
     }).lean();
 
     if (weeklyConfessions.length === 0) return;

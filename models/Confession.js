@@ -51,6 +51,16 @@ const confessionSchema = new mongoose.Schema({
     type: Map,
     of: String,
     default: {}
+  },
+
+  // EKOai destekli otomatik içerik (seed itiraf) işareti
+  isAutomated: { type: Boolean, default: false },
+  // EKOai tepkileri topluluk tepkilerinden ayrı tutulur
+  automatedReactions: {
+    shock: { type: Number, default: 0 },
+    laugh: { type: Number, default: 0 },
+    redflag: { type: Number, default: 0 },
+    support: { type: Number, default: 0 }
   }
 }, { timestamps: true });
 
