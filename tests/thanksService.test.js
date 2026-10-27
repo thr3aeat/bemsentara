@@ -20,6 +20,7 @@ test('thanksService: exports and structure test', async () => {
   assert.ok(SUPPORTERS_LIST.includes('Ceasar İmpreius ve Order of İmperius'));
   assert.ok(SUPPORTERS_LIST.includes('funter'));
   assert.ok(SUPPORTERS_LIST.includes('lejyon'));
+  assert.ok(SUPPORTERS_LIST.includes('tahman / yaneyane'));
 });
 
 test('thanksService: getDynamicThanksMembers handles empty/mock guild without crashing', async () => {

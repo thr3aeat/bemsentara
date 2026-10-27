@@ -29,7 +29,8 @@ const SUPPORTERS_LIST = [
   'askasaf ve TSK ordusu',
   'swoxy',
   'funter',
-  'lejyon'
+  'lejyon',
+  'tahman / yaneyane'
 ];
 
 /**
