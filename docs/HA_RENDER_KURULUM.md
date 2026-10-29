@@ -8,7 +8,7 @@ zamanlayıcıları çalıştırır. Diğeri yedek bekler. Lider düşünce yedek
 
 ## Nasıl çalışır
 
-- **HA, `MONGODB_URI` tanımlıysa kendiliğinden açılır** (kapatmak için `HA_ENABLED=0`). Süreç `npm start`, `node index.js` ya da PM2
+- **HA, `HA_ENABLED=1` ve `MONGODB_URI` birlikte tanımlıysa açılır.** Süreç `npm start`, `node index.js` ya da PM2
   ile açılsa da `index.js` başlangıçta HA başlatıcısına (`haBoot.js`) devreder; sunucudaki başlatma komutunu değiştirmek gerekmez.
   `MONGODB_URI` yoksa hiçbir şey değişmez, doğrudan eski gibi çalışır.
 - **Roller:** Render üzerinde çalışan düğüm **yedek** (`HA_ROLE=standby`), diğer her yer (VDS) **birincil**dir. MongoDB'ye ulaşılamayan bir
@@ -29,9 +29,10 @@ zamanlayıcıları çalıştırır. Diğeri yedek bekler. Lider düşünce yedek
 
 | Değişken | Değer |
 |---|---|
-| `MONGODB_URI` | **İkisinde aynı** MongoDB bağlantı adresi (HA'yı bu açar) |
+| `MONGODB_URI` | **İkisinde aynı** MongoDB bağlantı adresi |
+| `HA_ENABLED` | **`1`** (zorunlu). Yazılmazsa HA kapalıdır ve iki makine aynı anda bot çalıştırır (çift cevap). |
 | `HA_NODE_NAME` | İsteğe bağlı. Varsayılan: Render'da `render`, VDS'de makine adı. Her makinede farklı olmalı. |
-| `HA_ENABLED` | İsteğe bağlı. `0` yazarsan HA tamamen kapanır. |
+| `DUCKDNS_TOKEN` | duckdns.org hesabındaki token. Lider alan adını kendine yönlendirir (aşağıya bak). |
 
 VDS'deki `.env` dosyasının **tamamını** Render ortam değişkenlerine de kopyala (`TOKEN`, `SESSION_SECRET`, Roblox/Groq anahtarları,
 kanal ve rol kimlikleri vb.). Bot token'ı ve `SESSION_SECRET` iki makinede **aynı** olmalı; böylece devralmada oturumlar geçerli kalır.
@@ -40,7 +41,8 @@ kanal ve rol kimlikleri vb.). Bot token'ı ve `SESSION_SECRET` iki makinede **ay
 
 | Değişken | Değer |
 |---|---|
-| `BASE_URL` | Render adresin, örn. `https://sentara.onrender.com` (özel alan adı bağlarsan onu yaz) |
+| `BASE_URL` | `https://ekoyildiz.duckdns.org` (alan adı devri bu adresten çalışır) |
+| `RENDER_API_KEY` | Servisin **sahibi olan** Render hesabının API anahtarı. Alan adını servise özel alan adı olarak kendisi ekler. |
 | `RENDER_EXTERNAL_URL` | Aynı adres |
 | `NODE_ENV` | `production` |
 | `PORT` | **Ekleme**; Render kendisi verir |
@@ -65,9 +67,13 @@ MongoDB'ye otomatik taşınır (`Store` bunu zaten yapıyor). Render'da kulland�
 
 ## Bilmen gerekenler
 
-- **Web alan adı:** `ekoyildiz.duckdns.org` VDS'nin IP'sine bağlıdır. VDS ölünce **bot ve zamanlayıcılar otomatik devralınır**, ama
-  alan adı Render'a otomatik yönlenmez; site Render adresinden (`*.onrender.com`) erişilebilir olur. Alan adının da otomatik
-  geçmesini istiyorsan DNS'i (örn. Cloudflare) Render'a yönlendirecek şekilde taşımak gerekir.
+- **Web alan adı (otomatik):** `DUCKDNS_TOKEN` tanımlıysa lider olan düğüm `ekoyildiz.duckdns.org` kaydını kendine yazar
+  (`bot/services/domainFailoverService.js`, 5 dakikada bir): Render lider olursa Render'ın A kaydı `216.24.57.1`, VDS lider olursa
+  VDS'nin kendi IP'si. VDS ölünce ~1 dk içinde alan adı Render'a geçer, VDS geri gelip lider olunca geri döner. DuckDNS'te TTL
+  60 sn'dir; önbellekler birkaç dakika eski adresi gösterebilir. Render'da `RENDER_API_KEY` varsa alan adı servise özel alan adı
+  olarak kendiliğinden eklenir (yoksa panelden bir kez elle ekle: Settings → Custom Domains).
+- **Render uyku:** Render'da süreç kendi dış adresine 10 dakikada bir istek atar, böylece ücretsiz planda da yedek uyumaz
+  (`HA_KEEPALIVE=0` ile kapatılır). Render bunu yine de kısıtlayabilir; güvence için Starter plan önerilir.
 - **MongoDB kesintisi:** Lider MongoDB'ye ulaşamazsa çalışmaya devam eder ama devralma mekanizması çalışmaz. MongoDB kapalıyken VDS
   yeniden başlarsa 2 dakika sonra kirasız (tek başına) açılır; Render ise MongoDB'yi göremediği sürece bekler. Çok nadir bir durumda
   (VDS MongoDB'yi göremiyor ama Render görüyor) kısa süre iki bot çalışabilir; VDS MongoDB'yi görür görmez kendini kapatır.

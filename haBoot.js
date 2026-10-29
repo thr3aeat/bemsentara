@@ -98,6 +98,18 @@ async function runHa() {
   // Yedek süreç de kod güncellemelerini alsın (yoksa eski kodda takılı kalır).
   try { require('./bot/services/gitAutoDeployWatcher').startGitAutoDeployWatcher(30000); } catch (_) { /* git yoksa önemsiz */ }
 
+  // Render ücretsiz planı 15 dk istek gelmezse servisi uyutur; uyuyan yedek devralamaz. Kendi dış
+  // adresimize düzenli istek atarak uyanık kalırız (istek Render'ın vekil sunucusundan geçmeli).
+  if (process.env.RENDER && process.env.RENDER_EXTERNAL_URL && process.env.HA_KEEPALIVE !== '0') {
+    const pingUrl = `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '')}/api/health`;
+    setInterval(() => { fetch(pingUrl, { signal: AbortSignal.timeout(20000) }).catch(() => {}); }, 10 * 60 * 1000).unref();
+  }
+
+  // Lider alan adını (DuckDNS + Render özel alan adı) kendine yönlendirir.
+  const claimDomain = () => {
+    try { require('./bot/services/domainFailoverService').startDomainFailover({ log }); } catch (err) { log(`Alan adı devri başlatılamadı: ${err.message}`); }
+  };
+
   // 1) Yedek modda sağlık ucu YALNIZCA Render'da: Render bir port dinlenmesini bekler. Aynı makinede
   //    (VDS) portu tutarsa lider süreç siteyi açamaz, bu yüzden orada port tutulmaz.
   const bindStandbyPort = !!process.env.RENDER || process.env.HA_STANDBY_HTTP === '1';
@@ -143,6 +155,7 @@ async function runHa() {
     log(`MongoDB ${Math.round(failOpenMs / 1000)} sn'dir yok: birincil düğüm kirasız başlatılıyor (MongoDB gelince kira kontrol edilecek).`);
     await closeStandby();
     installExitHook();
+    claimDomain();
     loadApp();
     (async () => {
       let c;
@@ -184,6 +197,7 @@ async function runHa() {
   ctx.pusher = startSnapshotPusher({ collection: snapshots, dir: dataDir, intervalMs: snapshotMs, log });
   ctx.renewal = startRenewal({ backend, node, holder, ttlMs, intervalMs: renewMs, log, onLost: fence });
   installExitHook();
+  claimDomain();
 
   // 6) Asıl uygulama
   loadApp();
