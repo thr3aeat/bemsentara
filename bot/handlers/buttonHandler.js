@@ -6182,38 +6182,9 @@ async function handleButtonInteraction(interaction) {
   if (customId === "authorize_button") {
     const User = require("../../models/User");
     try {
+      const { buildVerifyMethodPanel } = require("./robloxInteractionHandler");
       const user = await User.findOne({ discordId: interaction.user.id });
-      const isLinked = !!user?.robloxId;
-
-      const embed = new EmbedBuilder()
-        .setColor(0x4169e1)
-        .setTitle("🔐 Roblox Hesap Bağlama")
-        .setDescription(
-          isLinked
-            ? `✅ **Zaten Bağlı!**\n\nRoblox ID: \`${user.robloxId}\`\n\nRollerinizi güncellemek için aşağıdaki butona tıklayın.`
-            : `🔗 **Roblox Hesabını Bağlamak İçin Yöntem Seçin:**\n\n` +
-            `**1. Yöntem (Web):** [Buraya Tıklayarak Yetkilendir](${BASE_URL}/auth/roblox) ve ardından \`/verify\` komutunu çalıştırın.\n\n` +
-            `**2. Yöntem (Arkadaş İsteği):** Aşağıdaki **Arkadaş İsteği ile Doğrula** butonuna tıklayarak Roblox kullanıcı adınızı girin. Bot size arkadaşlık isteği göndererek hesabınızı doğrular.`
-        )
-        .setFooter({ text: "TMT Yetkilendirme Sistemi" })
-        .setTimestamp();
-
-      if (isLinked) {
-        return interaction.reply({ embeds: [embed], ephemeral: true });
-      }
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel("🌐 Web ile Yetkilendir")
-          .setStyle(ButtonStyle.Link)
-          .setURL(`${BASE_URL}/auth/roblox`),
-        new ButtonBuilder()
-          .setCustomId("rbx_btn_verify_friend_start")
-          .setLabel("🤖 Arkadaş İsteği ile Doğrula")
-          .setStyle(ButtonStyle.Primary)
-      );
-
-      return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+      return interaction.reply(buildVerifyMethodPanel(user?.robloxId ? user : null));
     } catch (err) {
       console.error("[authorize_button] Hata:", err.message);
       return interaction.reply({ content: "❌ Bir hata oluştu.", ephemeral: true });

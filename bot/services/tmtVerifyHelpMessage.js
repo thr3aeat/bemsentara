@@ -3,7 +3,10 @@
  * Posts verification instructions to TMT server
  */
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, TextDisplayBuilder,
+  SeparatorBuilder, SeparatorSpacingSize, MessageFlags,
+} = require("discord.js");
 const { TMT_GUILD_ID, TMT_VERIFY_HELP_CHANNEL_ID } = require("../../config");
 
 /**
@@ -14,46 +17,51 @@ async function postTMTVerifyHelpMessage(client) {
     const guild = await client.guilds.fetch(TMT_GUILD_ID);
     const channel = await guild.channels.fetch(TMT_VERIFY_HELP_CHANNEL_ID);
 
-    const embed = new EmbedBuilder()
-      .setTitle("🎖️ Doğrulama Yardımı")
-      .setDescription(
-        "Roblox hesabınızı Discord hesabınıza bağlayarak sunucudaki rollerinizi senkronize edebilirsiniz.\n\n"
+    const container = new ContainerBuilder()
+      .setAccentColor(0xDC143C)
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          "# 🎖️ Doğrulama Yardımı\n" +
+          "Roblox hesabını Discord hesabına bağlayarak sunucudaki rollerini otomatik senkronize et."
+        )
       )
-      .setColor(0xDC143C)
-      .addFields(
-        {
-          name: "📋 Doğrulama Adımları",
-          value:
-            "1. `/authorize` komutunu çalıştırın\n" +
-            "2. Açılan linke tıklayın\n" +
-            "3. **Aynı Discord hesabıyla** giriş yapın\n" +
-            "4. Roblox hesabınızı bağlayın\n" +
-            "5. `/verify` komutunu çalıştırarak rollerinizi senkronize edin",
-          inline: false,
-        },
-        {
-          name: "🔄 Roller Nasıl Senkronize Edilir?",
-          value:
-            "**Ana Grup:** TMT'deki rütbenize göre Discord rolleri atanır\n\n" +
-            "Her branşda bulunursanız o branşın rolü alırsınız. Rütbe 100+ ise branş yetkilisi rolü de eklenir.",
-          inline: false,
-        }
+      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          "### 📋 Nasıl Doğrulanırım?\n" +
+          "**1.** Aşağıdaki **Yetkilendirmek İçin Tıkla** butonuna bas\n" +
+          "**2.** Sana uygun doğrulama yöntemini seç:\n" +
+          "> 🌐 **Roblox OAuth2** — Resmi Roblox girişi ile\n" +
+          "> 🤝 **Roblox Arkadaşlık** — Botun isteğini kabul ederek\n" +
+          "> 📝 **Roblox Açıklama** — Profil açıklamana kod yazarak\n" +
+          "> ✉️ **Discord DM** — Doğrulama bağlantısı DM'ine gelsin\n" +
+          "**3.** Rollerin otomatik senkronize edilir"
+        )
       )
-      .setFooter({ text: "TMT Doğrulama Sistemi" })
-      .setTimestamp();
+      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+          "### 🔄 Roller Nasıl Senkronize Edilir?\n" +
+          "TMT'deki rütbene göre Discord rolleri atanır. Bulunduğun her branşın rolünü alırsın; rütbe 100+ ise branş yetkilisi rolü de eklenir."
+        )
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("authorize_button")
+            .setLabel("Yetkilendirmek İçin Tıkla")
+            .setEmoji("🔐")
+            .setStyle(ButtonStyle.Primary),
+          new ButtonBuilder()
+            .setCustomId("verify_button")
+            .setLabel("Rollerimi Senkronize Et")
+            .setEmoji("✅")
+            .setStyle(ButtonStyle.Success)
+        )
+      )
+      .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# TMT Doğrulama Sistemi"));
 
-    const authorizeButton = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("authorize_button")
-        .setLabel("🔐 Yetkilendirmek İçin Tıkla")
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId("verify_button")
-        .setLabel("✅ Rollerimi Senkronize Et")
-        .setStyle(ButtonStyle.Success)
-    );
-
-    await channel.send({ embeds: [embed], components: [authorizeButton] });
+    await channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
     console.log("✅ TMT doğrulama yardım mesajı gönderildi");
     return true;
   } catch (error) {
@@ -71,7 +79,7 @@ async function ensureTMTVerifyHelpMessage(client) {
     const channel = await guild.channels.fetch(TMT_VERIFY_HELP_CHANNEL_ID);
 
     const messages = await channel.messages.fetch({ limit: 10 });
-    const existingMessage = messages.find(m => m.author.id === client.user.id && m.embeds.length > 0);
+    const existingMessage = messages.find(m => m.author.id === client.user.id && (m.embeds.length > 0 || m.components.length > 0));
 
     if (!existingMessage) {
       await postTMTVerifyHelpMessage(client);

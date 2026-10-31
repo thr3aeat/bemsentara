@@ -7,7 +7,12 @@ const {
   TextInputStyle,
   EmbedBuilder,
   PermissionsBitField,
-  StringSelectMenuBuilder
+  StringSelectMenuBuilder,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MessageFlags
 } = require("discord.js");
 const noblox = require("noblox.js");
 const { ROBLOX_GROUPS } = require("../services/robloxGroupManager");
@@ -86,7 +91,214 @@ function getDetailedRobloxError(err) {
 }
 
 
+// Roblox açıklama doğrulaması için bekleyen kodlar: discordId -> { robloxId, username, code }
+const pendingBioCodes = new Map();
+
+function v2Reply(container, ephemeral = true) {
+  const flags = MessageFlags.IsComponentsV2 | (ephemeral ? MessageFlags.Ephemeral : 0);
+  return { components: [container], flags };
+}
+
+/**
+ * Yetkilendirme butonuna basınca açılan Components V2 yöntem seçim paneli.
+ */
+function buildVerifyMethodPanel(linkedUser) {
+  const container = new ContainerBuilder().setAccentColor(0x4169e1);
+
+  if (linkedUser) {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      `## ✅ Hesabın Zaten Bağlı\nRoblox: **${linkedUser.robloxUsername || "Bilinmiyor"}** (\`${linkedUser.robloxId}\`)\n\n` +
+      "Rollerini güncellemek için **Rollerimi Senkronize Et** butonunu kullan. Farklı bir hesap bağlamak istersen aşağıdan yeni yöntem seçebilirsin."
+    ));
+  } else {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
+      "## 🔐 Roblox Hesap Bağlama\nAşağıdaki menüden sana uygun **doğrulama yöntemini** seç."
+    ));
+  }
+
+  container
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("rbx_sel_verify_method")
+        .setPlaceholder("Doğrulama yöntemi seç...")
+        .addOptions(
+          { label: "Roblox OAuth2", value: "oauth", emoji: "🌐", description: "Resmi Roblox girişi ile bağla (önerilen)" },
+          { label: "Roblox Arkadaşlık", value: "friend", emoji: "🤝", description: "Botun arkadaşlık isteğini kabul et" },
+          { label: "Roblox Açıklama", value: "bio", emoji: "📝", description: "Profil açıklamana doğrulama kodu yaz" },
+          { label: "Discord DM", value: "dm", emoji: "✉️", description: "Doğrulama bağlantısı DM ile gelsin" }
+        )
+    ))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# TMT Yetkilendirme Sistemi"));
+
+  return v2Reply(container);
+}
+
+function buildUsernameModal(customId, title) {
+  return new ModalBuilder()
+    .setCustomId(customId)
+    .setTitle(title)
+    .addComponents(new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("rbx_username_input")
+        .setLabel("Roblox Kullanıcı Adınız")
+        .setStyle(TextInputStyle.Short)
+        .setPlaceholder("örn: RobloxUser")
+        .setRequired(true)
+        .setMaxLength(50)
+    ));
+}
+
+/**
+ * Doğrulanmış Roblox hesabını kaydeder ve bulunulan sunucuya göre rolleri senkronize eder.
+ */
+async function linkAndSyncRoblox(interaction, robloxId, username) {
+  const User = require("../../models/User");
+  const { saveStoreNow } = require("../../models/Store");
+  let dbUser = await User.findOne({ discordId: interaction.user.id });
+  if (!dbUser) {
+    const { ensureDiscordUser } = require("../../utils/userLink");
+    dbUser = await ensureDiscordUser(interaction.user);
+  }
+
+  dbUser.robloxId = String(robloxId);
+  dbUser.robloxUsername = username;
+  dbUser.isAuthorized = true;
+  await dbUser.save();
+  saveStoreNow();
+
+  const { TARGET_GUILD_ID, TMT_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
+  const guild = interaction.guild;
+  if (!guild) return false;
+
+  const guildId = String(guild.id).trim();
+  const member = await guild.members.fetch(interaction.user.id).catch(() => null);
+  if (!member) return false;
+
+  const rid = parseInt(robloxId, 10);
+  if (guildId === String(ALLIED_GUILD_ID).trim() || guildId === String(GUILD2_ID).trim()) {
+    const { syncAlliedRoles } = require("../services/alliedRoleSyncService");
+    const result = await syncAlliedRoles(interaction.client, interaction.user.id, rid, guild);
+    return result?.success || false;
+  }
+  if (guildId === String(TMT_GUILD_ID).trim()) {
+    const { syncTMTRoles } = require("../services/tmtRoleSyncService");
+    const result = await syncTMTRoles(interaction.client, interaction.user.id, rid, member);
+    return result?.success || false;
+  }
+  if (guildId === String(TARGET_GUILD_ID).trim()) {
+    const { syncMemberRoles } = require("../services/roleSyncService");
+    const result = await syncMemberRoles(guild, member, rid, username);
+    return result?.success || false;
+  }
+  return false;
+}
+
+function linkResultText(username, syncSuccess) {
+  return syncSuccess
+    ? `✅ **Doğrulama Başarılı!**\nRoblox hesabınız (**${username}**) bağlandı ve rolleriniz senkronize edildi.`
+    : `✅ **Hesap Doğrulandı!**\nRoblox hesabınız (**${username}**) bağlandı fakat roller senkronize edilemedi. Lütfen \`/verify\` ile tekrar deneyin.`;
+}
+
 async function handleRobloxInteractions(interaction) {
+  // ─── 0a. DOĞRULAMA YÖNTEMİ SEÇİMİ ───────────────────────────────────────────
+  if (interaction.isStringSelectMenu() && interaction.customId === "rbx_sel_verify_method") {
+    const { BASE_URL } = require("../../config");
+    const oauthUrl = `${BASE_URL}/auth/roblox`;
+    const method = interaction.values[0];
+
+    if (method === "friend") {
+      return interaction.showModal(buildUsernameModal("rbx_mod_verify_friend_username", "Roblox Arkadaş Doğrulaması"));
+    }
+    if (method === "bio") {
+      return interaction.showModal(buildUsernameModal("rbx_mod_verify_bio_username", "Roblox Açıklama Doğrulaması"));
+    }
+
+    const oauthRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setLabel("Roblox ile Giriş Yap").setEmoji("🌐").setStyle(ButtonStyle.Link).setURL(oauthUrl)
+    );
+
+    if (method === "dm") {
+      const dmContainer = new ContainerBuilder()
+        .setAccentColor(0x5865f2)
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+          "## ✉️ Roblox Doğrulama Bağlantın\n" +
+          "Aşağıdaki butona tıklayarak **aynı Discord hesabınla** giriş yap ve Roblox hesabını bağla.\n" +
+          "Bağladıktan sonra sunucudaki **Rollerimi Senkronize Et** butonuna bas veya `/verify` komutunu kullan.\n\n" +
+          "-# Bu bağlantıyı kimseyle paylaşma."
+        ))
+        .addActionRowComponents(oauthRow);
+      const sent = await interaction.user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 }).then(() => true).catch(() => false);
+      return interaction.reply({
+        content: sent
+          ? "✉️ Doğrulama bağlantısı **DM kutuna** gönderildi!"
+          : "❌ DM gönderilemedi. Gizlilik ayarlarından **sunucu üyelerinden DM**'e izin verip tekrar dene.",
+        ephemeral: true,
+      });
+    }
+
+    // oauth
+    const container = new ContainerBuilder()
+      .setAccentColor(0x00a2ff)
+      .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+        "## 🌐 Roblox OAuth2 ile Doğrulama\n" +
+        "**1.** Aşağıdaki butona tıkla\n**2.** Aynı Discord hesabınla giriş yap\n**3.** Roblox hesabına izin ver\n" +
+        "**4.** Sunucuya dönüp **Rollerimi Senkronize Et** butonuna bas"
+      ))
+      .addActionRowComponents(oauthRow);
+    return interaction.reply(v2Reply(container));
+  }
+
+  // ─── 0b. ROBLOX AÇIKLAMA (BIO) İLE DOĞRULAMA ────────────────────────────────
+  if (interaction.isModalSubmit() && interaction.customId === "rbx_mod_verify_bio_username") {
+    await interaction.deferReply({ ephemeral: true });
+    const username = interaction.fields.getTextInputValue("rbx_username_input").trim();
+    try {
+      const robloxId = await noblox.getIdFromUsername(username).catch(() => null);
+      if (!robloxId) {
+        return interaction.editReply({ content: "❌ Roblox kullanıcı adı bulunamadı. Lütfen doğru yazdığınızdan emin olun." });
+      }
+      const code = `EKO-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      pendingBioCodes.set(interaction.user.id, { robloxId: String(robloxId), username, code });
+
+      const container = new ContainerBuilder()
+        .setAccentColor(0xf1c40f)
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(
+          `## 📝 Roblox Açıklama Doğrulaması\nHesap: **${username}** (\`${robloxId}\`)\n\n` +
+          `**1.** [Roblox profil ayarlarını aç](https://www.roblox.com/my/account#!/info)\n` +
+          `**2.** **Açıklama (About)** kısmına şu kodu ekle ve kaydet:\n\`\`\`${code}\`\`\`` +
+          `**3.** Aşağıdaki **Doğrulamayı Tamamla** butonuna bas\n\n-# Doğrulama sonrası kodu açıklamandan silebilirsin.`
+        ))
+        .addActionRowComponents(new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId("rbx_btn_verify_bio_confirm").setLabel("Doğrulamayı Tamamla").setEmoji("✅").setStyle(ButtonStyle.Success)
+        ));
+      return interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+    } catch (err) {
+      console.error("Bio verification start error:", err);
+      return interaction.editReply({ content: `❌ Bir hata oluştu: \`${err.message}\`` });
+    }
+  }
+
+  if (interaction.isButton() && interaction.customId === "rbx_btn_verify_bio_confirm") {
+    await interaction.deferReply({ ephemeral: true });
+    const pending = pendingBioCodes.get(interaction.user.id);
+    if (!pending) {
+      return interaction.editReply({ content: "❌ Bekleyen doğrulama bulunamadı. Lütfen yöntemi baştan seçin." });
+    }
+    try {
+      const info = await noblox.getUserInfo(parseInt(pending.robloxId, 10));
+      if (!info?.description || !info.description.includes(pending.code)) {
+        return interaction.editReply({ content: `❌ Kod açıklamanda bulunamadı. \`${pending.code}\` kodunu ekleyip kaydettiğinden emin ol ve tekrar dene.` });
+      }
+      pendingBioCodes.delete(interaction.user.id);
+      const syncSuccess = await linkAndSyncRoblox(interaction, pending.robloxId, pending.username);
+      return interaction.editReply({ content: linkResultText(pending.username, syncSuccess) });
+    } catch (err) {
+      console.error("Bio verification confirm error:", err);
+      return interaction.editReply({ content: `❌ Bir hata oluştu: \`${err.message}\`` });
+    }
+  }
+
   // ─── 0. ARKADAŞ İSTEĞİ İLE HESAP DOĞRULAMA (2. YÖNTEM) ──────────────────────
   if (interaction.customId === "rbx_btn_verify_friend_start") {
     const modal = new ModalBuilder()
@@ -201,54 +413,7 @@ async function handleRobloxInteractions(interaction) {
         });
       }
 
-      // Veritabanına kaydet
-      const User = require("../../models/User");
-      const { saveStoreNow } = require("../../models/Store");
-      let dbUser = await User.findOne({ discordId: interaction.user.id });
-      if (!dbUser) {
-        const { ensureDiscordUser } = require("../../utils/userLink");
-        dbUser = await ensureDiscordUser(interaction.user);
-      }
-
-      dbUser.robloxId = String(robloxId);
-      dbUser.robloxUsername = username;
-      dbUser.isAuthorized = true;
-      await dbUser.save();
-      saveStoreNow();
-
-      // Sunucuya göre rolleri senkronize et
-      const { TARGET_GUILD_ID, TMT_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
-      const guild = interaction.guild;
-      let syncSuccess = false;
-
-      if (guild) {
-        const guildId = String(guild.id).trim();
-        const normalizedTMT = String(TMT_GUILD_ID).trim();
-        const normalizedBEM = String(TARGET_GUILD_ID).trim();
-        const normalizedEKO = String(GUILD2_ID).trim();
-        const normalizedAllied = String(ALLIED_GUILD_ID).trim();
-        const member = await guild.members.fetch(interaction.user.id).catch(() => null);
-
-        if (member) {
-          if (guildId === normalizedAllied) {
-            const { syncAlliedRoles } = require("../services/alliedRoleSyncService");
-            const result = await syncAlliedRoles(interaction.client, interaction.user.id, parseInt(robloxId, 10), guild);
-            syncSuccess = result.success;
-          } else if (guildId === normalizedTMT) {
-            const { syncTMTRoles } = require("../services/tmtRoleSyncService");
-            const result = await syncTMTRoles(interaction.client, interaction.user.id, parseInt(robloxId, 10), member);
-            syncSuccess = result?.success || false;
-          } else if (guildId === normalizedBEM) {
-            const { syncMemberRoles } = require("../services/roleSyncService");
-            const result = await syncMemberRoles(guild, member, parseInt(robloxId, 10), username);
-            syncSuccess = result?.success || false;
-          } else if (guildId === normalizedEKO) {
-            const { syncAlliedRoles } = require("../services/alliedRoleSyncService");
-            const result = await syncAlliedRoles(interaction.client, interaction.user.id, parseInt(robloxId, 10), guild);
-            syncSuccess = result?.success || false;
-          }
-        }
-      }
+      const syncSuccess = await linkAndSyncRoblox(interaction, robloxId, username);
 
       // Arkadaşlıktan çıkar
       const { unfriendUser } = require("../services/robloxGroupManager");
@@ -838,4 +1003,4 @@ async function handleAbuseButton(interaction) {
   }
 }
 
-module.exports = { handleRobloxInteractions, handleAbuseButton };
+module.exports = { handleRobloxInteractions, handleAbuseButton, buildVerifyMethodPanel };

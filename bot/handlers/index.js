@@ -4667,7 +4667,7 @@ function initializeDiscordHandlers(client) {
       }
       // ── Roblox Etkileşimleri ──────────────────────────────────────────────
       if (
-        (interaction.isStringSelectMenu() && (interaction.customId === "roblox_group_select" || interaction.customId.startsWith("roblox_rank_select"))) ||
+        (interaction.isStringSelectMenu() && (interaction.customId === "roblox_group_select" || interaction.customId === "rbx_sel_verify_method" || interaction.customId.startsWith("roblox_rank_select"))) ||
         (interaction.isButton() && interaction.customId?.startsWith("rbx_btn_")) ||
         (interaction.isModalSubmit() && interaction.customId?.startsWith("rbx_mod_"))
       ) {

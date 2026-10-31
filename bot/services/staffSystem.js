@@ -43,7 +43,7 @@ const CHOSEN_TASKS = {
   'task_chat_with_people': '💬 Sohbet Dostu: Sohbette insanlarla aktif olarak 20 mesaj yazış.'
 };
 
-const { STAFF_RANK_ROLES: ROLES, hasStaffRoleInGuild } = require('../utils/staffRoleGate');
+const { STAFF_RANK_ROLES: ROLES, MOD_ROLE_ID, hasStaffRoleInGuild } = require('../utils/staffRoleGate');
 
 const ROLE_NAMES = {
   1: '🎓 Stajyer Personel',
@@ -1123,7 +1123,8 @@ async function recordGreet(userId, client, guildId = null) {
 
       // DM Bildirimi gönder
       try {
-        const discordUser = await client.users.fetch(userId).catch(() => null);
+        const isStaff = await hasStaffRoleInGuild(client, userId);
+        const discordUser = isStaff ? await client.users.fetch(userId).catch(() => null) : null;
         if (discordUser) {
           const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
           const embed = new EmbedBuilder()
@@ -1255,7 +1256,8 @@ async function addVoiceMinutes(userId, minutes, client) {
 
     if (!wasVoiceDoneBefore && isVoiceDoneNow) {
       try {
-        const discordUser = await client.users.fetch(userId).catch(() => null);
+        const isStaff = await hasStaffRoleInGuild(client, userId);
+        const discordUser = isStaff ? await client.users.fetch(userId).catch(() => null) : null;
         if (discordUser) {
           const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
           const embed = new EmbedBuilder()
@@ -1353,7 +1355,7 @@ async function addEkoCoin(progress, amount, client, reason) {
     reasonLabel = reason || 'Görev Ödülü';
   }
 
-  if (client) {
+  if (client && await hasStaffRoleInGuild(client, progress.userId)) {
     try {
       const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
       const user = await client.users.fetch(progress.userId);
@@ -1774,7 +1776,7 @@ async function checkChosenTaskCompletion(progress, client) {
       }
 
       // DM tebrik mesajı gönder
-      if (client) {
+      if (client && await hasStaffRoleInGuild(client, progress.userId)) {
         const discordUser = await client.users.fetch(progress.userId).catch(() => null);
         if (discordUser) {
           const taskLabel = CHOSEN_TASKS[task] || task;
@@ -4209,8 +4211,12 @@ async function syncInvalidPromotionsOnStartup(client) {
             continue;
           }
 
+          // Sadece hiç rütbe rolü olmayan ama Mod rolü taşıyan personele rol ver;
+          // rütbe rolü olan veya yetkili olmayan kimseye durduk yere Stajyer verilmesin.
+          const hasAnyRank = Object.values(ROLES).some(rId => rId && member.roles.cache.has(rId));
+          const hasModRole = member.roles.cache.has(MOD_ROLE_ID);
           const targetRoleId = ROLES[currentLvl];
-          if (targetRoleId && !member.roles.cache.has(targetRoleId)) {
+          if (targetRoleId && !hasAnyRank && hasModRole && !member.roles.cache.has(targetRoleId)) {
             console.log(`[staffSystem] 👑 Rütbe Koruması: ${p.userId} kullanıcısına Level ${currentLvl} rolü veriliyor...`);
             await member.roles.add(targetRoleId, 'Bot Başlatma Koruması: Yönetici Rütbe Rolü Senkronizasyonu').catch(() => {});
           }
@@ -4245,37 +4251,22 @@ async function checkAndRewardStaffSpecialDay(client) {
       if (!p.claimedSpecialDayBonuses) p.claimedSpecialDayBonuses = [];
       if (p.claimedSpecialDayBonuses.includes(dayKey)) continue;
 
-      const bonusXP = 500;
-      const bonusCoins = 250;
-      const bonusDiamonds = 10;
-      const bonusPerf = 100;
-
-      p.xp = (p.xp || 0) + bonusXP;
-      p.coins = (p.coins || 0) + bonusCoins;
-      p.diamonds = (p.diamonds || 0) + bonusDiamonds;
-      if (!p.stats) p.stats = {};
-      p.stats.performancePoints = (p.stats.performancePoints || 0) + bonusPerf;
       p.claimedSpecialDayBonuses.push(dayKey);
-
       await p.save().catch(() => {});
 
       try {
+        if (!(await hasStaffRoleInGuild(client, p.userId))) continue;
         const user = await client.users.fetch(p.userId).catch(() => null);
         if (user) {
           const embed = new EmbedBuilder()
             .setColor(specialDay.color || 0xdc143c)
             .setTitle(`${specialDay.emoji || '🎉'} ${specialDay.name} Kutlu Olsun!`)
             .setDescription(
-              `Değerli **${ROLE_NAMES[p.level] || 'Yetkilimiz'}**,\n\n` +
-              `Bugün **${specialDay.name}**! Eko Yıldız ailesi olarak bu anlamlı günde topluluğumuza ve sunucumuza sunduğun değerli katkılardan dolayı sana minnettarız.\n\n` +
-              `🎁 **Özel Gün Personel İkramiyeniz Tanımlandı:**\n` +
-              `• ⚡ **+${bonusXP} XP** (Rütbe Gelişimi)\n` +
-              `• 🪙 **+${bonusCoins} EkoCoin** (Cüzdan Bakiyesi)\n` +
-              `• 💎 **+${bonusDiamonds} Elmas** (Özel Fon)\n` +
-              `• 🏆 **+${bonusPerf} Performans Puanı**\n\n` +
+              `Değerli Yetkilimiz,\n\n` +
+              `Bugün **${specialDay.name}**! Eko Yıldız ailesi olarak bu anlamlı günü kutlar, topluluğumuza sunduğun katkılar için teşekkür ederiz.\n\n` +
               `*Sevgi, sağlık ve başarı dolu nice güzel günlere! İyi ki aramızdasın!* ✨`
             )
-            .setFooter({ text: 'Eko Yıldız • Özel Gün & İkramiye Sistemi' })
+            .setFooter({ text: 'Eko Yıldız • Özel Gün' })
             .setTimestamp();
 
           await user.send({ embeds: [embed] }).catch(() => {});
