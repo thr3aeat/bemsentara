@@ -178,6 +178,10 @@ if (!ROBLOX_CLIENT_ID || !ROBLOX_CLIENT_SECRET) {
   );
 }
 
+const ROBLOX_REDIRECT_URI =
+  process.env.ROBLOX_REDIRECT_URI || `${BASE_URL}/auth/roblox/callback`;
+console.log(`[passport] Roblox OAuth redirect URI: ${ROBLOX_REDIRECT_URI}`);
+
 passport.use(
   new RobloxStrategy(
     {
@@ -185,7 +189,8 @@ passport.use(
       clientSecret: ROBLOX_CLIENT_SECRET || "dummy",
       authorizationURL: "https://apis.roblox.com/oauth/v1/authorize",
       tokenURL: "https://apis.roblox.com/oauth/v1/token",
-      callbackURL: `${BASE_URL}/auth/roblox/callback`,
+      // Roblox Creator Dashboard > OAuth uygulaması > Redirect URLs listesindekiyle BİREBİR aynı olmalı.
+      callbackURL: ROBLOX_REDIRECT_URI,
       scope: ["openid", "profile"],
       pkce: true,
       state: true,
