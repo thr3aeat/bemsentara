@@ -150,6 +150,40 @@ async function getOrFetchFriendBotId() {
 }
 
 /**
+ * Bot hesabı ile hedef kullanıcının Roblox'ta arkadaş olup olmadığını kontrol eder.
+ * Önce /friends/statuses (sayfalama gerektirmez, tek kullanıcıyı sorgular), başarısız olursa
+ * botun arkadaş listesine (getFriends) bakar.
+ */
+async function isFriendWithBot(targetUserId) {
+  if (!friendCookie) return false;
+  const botId = await getOrFetchFriendBotId();
+  if (!botId) return false;
+  const target = String(targetUserId);
+  const formattedCookie = friendCookie.includes(".ROBLOSECURITY=")
+    ? friendCookie
+    : `.ROBLOSECURITY=${friendCookie};`;
+
+  try {
+    const res = await axios.get(
+      `https://friends.roblox.com/v1/users/${botId}/friends/statuses`,
+      { params: { userIds: target }, headers: { Cookie: formattedCookie }, timeout: 10000 }
+    );
+    const entry = (res.data?.data || []).find(d => String(d.id) === target);
+    if (entry) return String(entry.status).toLowerCase() === "friends";
+  } catch (err) {
+    console.warn("[isFriendWithBot] statuses endpoint başarısız:", err.response?.status || err.message);
+  }
+
+  try {
+    const friends = await noblox.getFriends({ userId: botId, jar: getFriendJar() });
+    return !!friends?.data?.some(f => String(f.id) === target);
+  } catch (err) {
+    console.error("[isFriendWithBot] getFriends başarısız:", err.message || err);
+    return false;
+  }
+}
+
+/**
  * Initializes Roblox connection using TMTCOOKIE
  */
 async function initializeRoblox() {
@@ -437,6 +471,7 @@ module.exports = {
   getFriendCookie,
   getFriendJar,
   getOrFetchFriendBotId,
+  isFriendWithBot,
   unfriendUser
 };
 

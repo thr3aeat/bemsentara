@@ -204,7 +204,9 @@ async function handleRobloxInteractions(interaction) {
   // ─── 0a. DOĞRULAMA YÖNTEMİ SEÇİMİ ───────────────────────────────────────────
   if (interaction.isStringSelectMenu() && interaction.customId === "rbx_sel_verify_method") {
     const { BASE_URL } = require("../../config");
-    const oauthUrl = `${BASE_URL}/auth/roblox`;
+    // /auth/authorize: önce bu Discord hesabıyla girişi zorunlu kılar, ardından Roblox OAuth'a yönlendirir.
+    // (Düz /auth/roblox, sitede oturum yoksa Discord girişinden sonra panele düşüp Roblox adımını kaybediyordu.)
+    const oauthUrl = `${BASE_URL}/auth/authorize?discordId=${interaction.user.id}`;
     const method = interaction.values[0];
 
     if (method === "friend") {
@@ -228,12 +230,12 @@ async function handleRobloxInteractions(interaction) {
           "-# Bu bağlantıyı kimseyle paylaşma."
         ))
         .addActionRowComponents(oauthRow);
+      await interaction.deferReply({ ephemeral: true });
       const sent = await interaction.user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 }).then(() => true).catch(() => false);
-      return interaction.reply({
+      return interaction.editReply({
         content: sent
           ? "✉️ Doğrulama bağlantısı **DM kutuna** gönderildi!"
           : "❌ DM gönderilemedi. Gizlilik ayarlarından **sunucu üyelerinden DM**'e izin verip tekrar dene.",
-        ephemeral: true,
       });
     }
 
@@ -321,7 +323,7 @@ async function handleRobloxInteractions(interaction) {
     await interaction.deferReply({ ephemeral: true });
     const username = interaction.fields.getTextInputValue("rbx_username_input").trim();
     try {
-      const robloxId = await noblox.getIdFromUsername(username);
+      const robloxId = await noblox.getIdFromUsername(username).catch(() => null);
       if (!robloxId) {
         return interaction.editReply({ content: "❌ Roblox kullanıcı adı bulunamadı. Lütfen doğru yazdığınızdan emin olun." });
       }
@@ -396,16 +398,15 @@ async function handleRobloxInteractions(interaction) {
     const username = parts.slice(6).join("_");
 
     try {
-      const { getFriendJar, getOrFetchFriendBotId } = require("../services/robloxGroupManager");
+      const { getFriendJar, getOrFetchFriendBotId, isFriendWithBot } = require("../services/robloxGroupManager");
       const botRobloxId = await getOrFetchFriendBotId();
       const friendJar = getFriendJar();
       if (!botRobloxId || !friendJar) {
         return interaction.editReply({ content: "❌ Botun Roblox bağlantısı şu an aktif değil. Lütfen daha sonra tekrar deneyin." });
       }
 
-      // Arkadaşlık listesini kontrol et
-      const friends = await noblox.getFriends({ userId: botRobloxId, jar: friendJar });
-      const isFriend = friends && friends.data && friends.data.some(f => String(f.id) === String(robloxId));
+      // Arkadaşlık durumunu kontrol et
+      const isFriend = await isFriendWithBot(robloxId);
 
       if (!isFriend) {
         return interaction.editReply({ 

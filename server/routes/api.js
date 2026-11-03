@@ -4031,9 +4031,8 @@ router.post("/api/auth/roblox/friend-verify", async (req, res) => {
       return res.status(503).json({ error: "Botun Roblox bağlantısı aktif değil. Daha sonra tekrar deneyin." });
     }
 
-    const noblox = require("noblox.js");
-    const friends = await noblox.getFriends({ userId: botRobloxId, jar: friendJar });
-    const isFriend = friends && friends.data && friends.data.some(f => String(f.id) === String(robloxId));
+    const { isFriendWithBot } = require("../../bot/services/robloxGroupManager");
+    const isFriend = await isFriendWithBot(robloxId);
 
     if (!isFriend) {
       return res.status(400).json({ error: "Arkadaşlık isteği henüz kabul edilmemiş." });
