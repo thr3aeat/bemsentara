@@ -1,7 +1,8 @@
 require("dotenv").config();
 
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
+// Boşluk / satır sonu / sondaki "/" temizlenir: OAuth redirect URI'leri birebir eşleşmeli.
+const BASE_URL = String(process.env.BASE_URL || "http://localhost:3000").trim().replace(/\/+$/, "");
 const SESSION_SECRET = process.env.SESSION_SECRET || require("crypto").randomBytes(32).toString("hex");
 const BOT_ID = process.env.BOTID || process.env.BOT_ID;
 const TOKEN = process.env.TOKEN;

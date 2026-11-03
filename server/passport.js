@@ -163,13 +163,15 @@ passport.use(
 
 // ⚠️ UYARI: Client ID ve Secret'ı environment variable olarak tanımlayın!
 // Bu değerleri asla kod içine yazmayın.
-const ROBLOX_CLIENT_ID =
+const ROBLOX_CLIENT_ID = String(
   process.env.ROBLOX_OAUTH_CLIENT_ID ||
-  process.env.ROBLOX_CLIENT_ID;
+  process.env.ROBLOX_CLIENT_ID || ""
+).trim();
 
-const ROBLOX_CLIENT_SECRET =
+const ROBLOX_CLIENT_SECRET = String(
   process.env.ROBLOX_OAUTH_CLIENT_SECRET ||
-  process.env.ROBLOX_CLIENT_SECRET;
+  process.env.ROBLOX_CLIENT_SECRET || ""
+).trim();
 
 if (!ROBLOX_CLIENT_ID || !ROBLOX_CLIENT_SECRET) {
   console.error(
@@ -178,9 +180,10 @@ if (!ROBLOX_CLIENT_ID || !ROBLOX_CLIENT_SECRET) {
   );
 }
 
-const ROBLOX_REDIRECT_URI =
-  process.env.ROBLOX_REDIRECT_URI || `${BASE_URL}/auth/roblox/callback`;
-console.log(`[passport] Roblox OAuth redirect URI: ${ROBLOX_REDIRECT_URI}`);
+const ROBLOX_REDIRECT_URI = String(
+  process.env.ROBLOX_REDIRECT_URI || `${BASE_URL}/auth/roblox/callback`
+).trim();
+console.log(`[passport] Roblox OAuth client_id=${ROBLOX_CLIENT_ID || "(yok)"} redirect_uri=${JSON.stringify(ROBLOX_REDIRECT_URI)}`);
 
 passport.use(
   new RobloxStrategy(
