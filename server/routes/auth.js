@@ -977,13 +977,27 @@ router.post('/api/auth/roblox/profile-code/verify', async (req, res) => {
 router.get("/auth/roblox", (req, res, next) => {
   rememberReturnTo(req);
   if (!req.user) return res.redirect("/auth/discord");
-  return passport.authenticate("roblox")(req, res, next);
+  const callbackURL =
+    typeof passport.resolveRobloxCallbackUrl === "function"
+      ? passport.resolveRobloxCallbackUrl(req)
+      : undefined;
+  return passport.authenticate(
+    "roblox",
+    callbackURL ? { callbackURL } : undefined
+  )(req, res, next);
 });
 
 router.get(
   "/auth/roblox/callback",
   (req, res, next) => {
-    passport.authenticate("roblox", (err, user, info) => {
+    const callbackURL =
+      typeof passport.resolveRobloxCallbackUrl === "function"
+        ? passport.resolveRobloxCallbackUrl(req)
+        : undefined;
+    passport.authenticate(
+      "roblox",
+      callbackURL ? { callbackURL } : {},
+      (err, user, info) => {
       if (err) {
         console.warn("[auth] Roblox authentication failed:", err.message || err);
         return res.redirect("/dashboard?robloxError=true");

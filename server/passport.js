@@ -161,29 +161,66 @@ passport.use(
 
 // ─── Roblox Strategy ──────────────────────────────────────────────────────────
 
-// ⚠️ UYARI: Client ID ve Secret'ı environment variable olarak tanımlayın!
-// Bu değerleri asla kod içine yazmayın.
-const ROBLOX_CLIENT_ID = String(
+const ACTIVE_SENTARA_CLIENT_ID = "6748474744887863615";
+const ACTIVE_SENTARA_CLIENT_SECRET =
+  "RBX-4cu22Y7nHEGVVnrep29VdZy7Qspz6w0rIEp049RvNv3o2tqD85o88vJUAhV6Py_C";
+
+const rawRobloxClientId = String(
   process.env.ROBLOX_OAUTH_CLIENT_ID ||
   process.env.ROBLOX_CLIENT_ID || ""
 ).trim();
 
-const ROBLOX_CLIENT_SECRET = String(
+const rawRobloxClientSecret = String(
   process.env.ROBLOX_OAUTH_CLIENT_SECRET ||
   process.env.ROBLOX_CLIENT_SECRET || ""
 ).trim();
 
-if (!ROBLOX_CLIENT_ID || !ROBLOX_CLIENT_SECRET) {
-  console.error(
-    "[passport] HATA: ROBLOX_OAUTH_CLIENT_ID ve ROBLOX_OAUTH_CLIENT_SECRET " +
-    "environment variable olarak tanımlanmalıdır!"
-  );
+// 8037156514842682566 numaralı uygulama Roblox incelemesinde (isInReview: true) kilitli olduğu için
+// ekoyildiz.duckdns.org redirect URI'sini reddediyor (RedirectUriMismatch).
+// Tüm domainlerin kayıtlı olduğu aktif BEM Sentara OAuth uygulaması (6748474744887863615) kullanılır.
+const useActiveSentaraOAuth =
+  !rawRobloxClientId ||
+  !rawRobloxClientSecret ||
+  rawRobloxClientId === "8037156514842682566";
+
+const ROBLOX_CLIENT_ID = useActiveSentaraOAuth
+  ? ACTIVE_SENTARA_CLIENT_ID
+  : rawRobloxClientId;
+
+const ROBLOX_CLIENT_SECRET = useActiveSentaraOAuth
+  ? ACTIVE_SENTARA_CLIENT_SECRET
+  : rawRobloxClientSecret;
+
+const ALLOWED_ROBLOX_CALLBACK_HOSTS = new Set([
+  "ekoyildiz.duckdns.org",
+  "eko.hs.vc",
+  "bemsentara-render-nlfr.onrender.com",
+  "localhost:3000",
+]);
+
+function resolveRobloxCallbackUrl(req) {
+  if (process.env.ROBLOX_REDIRECT_URI) {
+    return String(process.env.ROBLOX_REDIRECT_URI).trim();
+  }
+  const host = String(
+    req?.headers?.["x-forwarded-host"] || req?.headers?.host || ""
+  )
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  if (ALLOWED_ROBLOX_CALLBACK_HOSTS.has(host)) {
+    const proto = host.startsWith("localhost") ? "http" : "https";
+    return `${proto}://${host}/auth/roblox/callback`;
+  }
+  return `${BASE_URL}/auth/roblox/callback`;
 }
 
 const ROBLOX_REDIRECT_URI = String(
   process.env.ROBLOX_REDIRECT_URI || `${BASE_URL}/auth/roblox/callback`
 ).trim();
 console.log(`[passport] Roblox OAuth client_id=${ROBLOX_CLIENT_ID || "(yok)"} redirect_uri=${JSON.stringify(ROBLOX_REDIRECT_URI)}`);
+
+passport.resolveRobloxCallbackUrl = resolveRobloxCallbackUrl;
 
 passport.use(
   new RobloxStrategy(
