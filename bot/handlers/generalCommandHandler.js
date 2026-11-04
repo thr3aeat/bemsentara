@@ -2518,7 +2518,14 @@ Bu personelin bugünkü görevleri henüz başlatmadığını belirten çok kıs
     }
 
     if (commandName === "authorize") {
-      const authUrl = `${BASE_URL}/auth/authorize?discordId=${interaction.user.id}`;
+      // TMT/BEM sunucularında doğrulama sayfasına yönlendir: hesap bağlanınca roller otomatik verilir
+      const { TMT_GUILD_ID: tmtGuildId, TARGET_GUILD_ID: bemGuildId } = require("../../config");
+      const gid = interaction.guildId ? String(interaction.guildId) : null;
+      const authUrl = gid && gid === String(tmtGuildId)
+        ? `${BASE_URL}/baglan/tmt`
+        : gid && gid === String(bemGuildId)
+          ? `${BASE_URL}/baglan/bem`
+          : `${BASE_URL}/auth/authorize?discordId=${interaction.user.id}`;
       const embed = new EmbedBuilder()
         .setTitle("🔐 Hesabınızı Yetkilendirin")
         .setDescription(

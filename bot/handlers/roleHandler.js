@@ -99,27 +99,104 @@ async function syncBranchServerRoles(guild, member, robloxUserId) {
   };
 }
 
-async function runSyncForMember(interaction, { ephemeral = true, commandName = "update" } = {}) {
-  const { guild, member, user } = interaction;
+/**
+ * Sunucu tipine göre (Branch / TMT / Allied-EKO / BEM) tek bir üyenin rollerini senkronize eder.
+ * Interaction'dan bağımsızdır; /update kullanici, /update all ve /verify ortak kullanır.
+ */
+async function syncMemberInGuild(client, guild, member, dbUser) {
+  const { TMT_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
+  const guildId = String(guild.id).trim();
+
+  // Branch Sunucu (ServerSetup ile kurulmuş)
+  const db = require("../../models/db");
+  if (db.isMongoActive()) {
+    const ServerSetup = require("../../models/ServerSetup");
+    const setupDoc = await ServerSetup.findOne({ guildId, status: "active" });
+    if (setupDoc) return syncBranchServerRoles(guild, member, dbUser.robloxId);
+  }
+
+  // TMT Sunucusu
+  if (guildId === String(TMT_GUILD_ID).trim()) {
+    const { syncTMTRoles } = require("../services/tmtRoleSyncService");
+    const result = await syncTMTRoles(client, member.id, dbUser.robloxId, member);
+    if (result && !result.success && !result.message) {
+      result.message = "Roller senkronize edilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+    }
+    return result;
+  }
+
+  // Allied veya EKOYILDIZ Sunucusu
+  if (guildId === String(ALLIED_GUILD_ID).trim() || guildId === String(GUILD2_ID).trim()) {
+    const { syncAlliedRoles } = require("../services/alliedRoleSyncService");
+    const result = await syncAlliedRoles(client, member.id, parseInt(dbUser.robloxId, 10), member);
+    if (result && !result.success && !result.message) {
+      result.message = "Roller senkronize edilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
+    }
+    return result;
+  }
+
+  // BEM Sunucusu (varsayılan)
+  const result = await syncMemberRoles(guild, member, parseInt(dbUser.robloxId, 10), dbUser.robloxUsername);
+  if (result?.success && dbUser.groupRole !== result.rankName) {
+    dbUser.groupRole = result.rankName;
+    await dbUser.save();
+  }
+  return result;
+}
+
+function addResultFields(embed, result) {
+  if (result.tier) {
+    embed.addFields({ name: "🎖️ Seviye Rolü", value: result.tier, inline: true });
+  }
+  if (result.unresolved?.length) {
+    embed.addFields({
+      name: "⚠️ Eşleşmeyen Roller",
+      value: result.unresolved.map((n) => `\`${n}\``).join(", ").slice(0, 1024),
+      inline: false,
+    });
+  }
+  return embed;
+}
+
+function linkUrlForGuild(guild) {
+  const { TMT_GUILD_ID } = require("../../config");
+  return `${BASE_URL}/baglan/${String(guild.id) === String(TMT_GUILD_ID) ? "tmt" : "bem"}`;
+}
+
+function canManageOthers(interaction) {
+  return (
+    ADMIN_IDS.includes(interaction.user.id) ||
+    interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
+    interaction.memberPermissions?.has(PermissionFlagsBits.ManageRoles)
+  );
+}
+
+async function runSyncForMember(interaction, { ephemeral = true, commandName = "update", targetUser = null } = {}) {
+  const { guild, user } = interaction;
 
   if (!guild) {
     return interaction.reply(replyEphemeral("❌ Bu komut yalnızca sunucuda kullanılabilir."));
   }
 
-  const dbUser = await findUserByDiscordId(user.id);
+  const target = targetUser || user;
+  const isSelf = target.id === user.id;
+  const dbUser = await findUserByDiscordId(target.id);
 
   const { isProtectedUser } = require("../services/profanityAutomodService");
-  if (dbUser && dbUser.isJailed && !isProtectedUser(user.id)) {
+  if (isSelf && dbUser && dbUser.isJailed && !isProtectedUser(user.id)) {
     return interaction.reply(
       replyEphemeral("❌ Hapiste olduğunuz için rollerinizi güncelleyemezsiniz veya senkronize edemezsiniz!")
     );
   }
 
   if (!hasRobloxLink(dbUser)) {
-    // TMT/BEM için tek sayfalık akış: Discord → Roblox bağla → roller otomatik güncellenir
-    const { TMT_GUILD_ID } = require("../../config");
-    const linkUrl = `${BASE_URL}/baglan/${String(guild.id) === String(TMT_GUILD_ID) ? "tmt" : "bem"}`;
     logUpdate(interaction, { commandName, dbUser, notLinked: true });
+    if (!isSelf) {
+      return interaction.reply(
+        replyEphemeral(`❌ <@${target.id}> kullanıcısının Roblox hesabı bağlı değil. \`/verify\` ile bağlaması gerekiyor.`)
+      );
+    }
+    // TMT/BEM için tek sayfalık akış: Discord → Roblox bağla → roller otomatik güncellenir
     return interaction.reply({
       ...replyEphemeral(
         `❌ Roblox hesabın bağlı değil.\n\n` +
@@ -128,196 +205,54 @@ async function runSyncForMember(interaction, { ephemeral = true, commandName = "
       ),
       components: [
         new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Hesabımı Bağla").setURL(linkUrl)
+          new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Hesabımı Bağla").setURL(linkUrlForGuild(guild))
         )
       ]
     });
   }
 
-  // Sunucu kontrolleri
-  const { TMT_GUILD_ID, TARGET_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
-  const normalizedGuildId = String(guild.id).trim();
-  const normalizedTMT = String(TMT_GUILD_ID).trim();
-  const normalizedBEM = String(TARGET_GUILD_ID).trim();
-  const normalizedAllied = String(ALLIED_GUILD_ID).trim();
-  const normalizedEKO = String(GUILD2_ID).trim();
-
-  // Branch Sunucu Kontrolü (ServerSetup ile kurulmuş)
-  const db = require("../../models/db");
-  let setupDoc = null;
-  if (db.isMongoActive()) {
-    const ServerSetup = require("../../models/ServerSetup");
-    setupDoc = await ServerSetup.findOne({ guildId: normalizedGuildId, status: "active" });
-  }
-
-  if (setupDoc) {
-    await interaction.deferReply(ephemeral ? deferEphemeral() : {});
-    try {
-      const fullMember = member.partial ? await member.fetch() : member;
-      const result = await syncBranchServerRoles(guild, fullMember, dbUser.robloxId);
-      if (result && result.success) {
-        const embed = buildUpdateEmbed(fullMember, result);
-        return interaction.editReply({ embeds: [embed] });
-      } else {
-        return interaction.editReply({
-          content: `❌ Roller senkronize edilemedi: ${result.message || 'Bilinmeyen hata'}`
-        });
-      }
-    } catch (err) {
-      console.error("[BranchSync] error:", err);
-      return interaction.editReply({
-        content: `❌ Bir hata oluştu: ${err.message}`,
-      });
-    }
-  }
-
-  // TMT Sunucusu
-  if (normalizedGuildId === normalizedTMT) {
-    await interaction.deferReply(ephemeral ? deferEphemeral() : {});
-    try {
-      const { syncTMTRoles } = require("../services/tmtRoleSyncService");
-      const fullMember = member.partial ? await member.fetch() : member;
-      const result = await syncTMTRoles(
-        interaction.client,
-        user.id,
-        dbUser.robloxId,
-        fullMember
-      );
-
-      if (result && result.success) {
-        const embed = buildUpdateEmbed(fullMember, result);
-        
-        if (result.tier) {
-          embed.addFields({
-            name: "🎖️ Seviye Rolü",
-            value: result.tier,
-            inline: true,
-          });
-        }
-
-        if (result.unresolved && result.unresolved.length > 0) {
-          embed.addFields({
-            name: "⚠️ Eşleşmeyen Roller",
-            value: result.unresolved.map((n) => `\`${n}\``).join(", ").slice(0, 1024),
-            inline: false,
-          });
-        }
-        
-        return interaction.editReply({ embeds: [embed] });
-      } else {
-        return interaction.editReply({
-          content: "❌ Roller senkronize edilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        });
-      }
-    } catch (err) {
-      console.error("[TMT] Role sync error:", err);
-      return interaction.editReply({
-        content: `❌ Bir hata oluştu: ${err.message}`,
-      });
-    }
-  }
-
-  // Allied veya EKOYILDIZ Sunucusu
-  if (normalizedGuildId === normalizedAllied || normalizedGuildId === normalizedEKO) {
-    await interaction.deferReply(ephemeral ? deferEphemeral() : {});
-    try {
-      const { syncAlliedRoles } = require("../services/alliedRoleSyncService");
-      const fullMember = member.partial ? await member.fetch() : member;
-      const result = await syncAlliedRoles(
-        interaction.client,
-        user.id,
-        parseInt(dbUser.robloxId, 10),
-        fullMember
-      );
-
-      if (result && result.success) {
-        const embed = buildUpdateEmbed(fullMember, result);
-        
-        if (result.tier) {
-          embed.addFields({
-            name: "🎖️ Tier Rolü",
-            value: result.tier,
-            inline: true,
-          });
-        }
-
-        if (result.unresolved && result.unresolved.length > 0) {
-          embed.addFields({
-            name: "⚠️ Eşleşmeyen Roller",
-            value: result.unresolved.map((n) => `\`${n}\``).join(", ").slice(0, 1024),
-            inline: false,
-          });
-        }
-        
-        return interaction.editReply({ embeds: [embed] });
-      } else {
-        return interaction.editReply({
-          content: "❌ Roller senkronize edilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        });
-      }
-    } catch (err) {
-      console.error("[Allied/EKO] Role sync error:", err);
-      return interaction.editReply({
-        content: `❌ Bir hata oluştu: ${err.message}`,
-      });
-    }
-  }
-
-  // BEM Sunucusu (varsayılan)
   await interaction.deferReply(ephemeral ? deferEphemeral() : {});
 
   try {
-    const fullMember = member.partial ? await member.fetch() : member;
-    const result = await syncMemberRoles(
-      guild,
-      fullMember,
-      parseInt(dbUser.robloxId, 10),
-      dbUser.robloxUsername
-    );
-
-    if (!result.success) {
-      logUpdate(interaction, { commandName, dbUser, result });
-      return interaction.editReply({
-        content: result.message,
-      });
+    const member = isSelf && interaction.member && !interaction.member.partial
+      ? interaction.member
+      : await guild.members.fetch(target.id).catch(() => null);
+    if (!member) {
+      return interaction.editReply({ content: `❌ <@${target.id}> bu sunucuda bulunmuyor.` });
     }
 
+    const result = await syncMemberInGuild(interaction.client, guild, member, dbUser);
     logUpdate(interaction, { commandName, dbUser, result });
 
-    if (dbUser.groupRole !== result.rankName) {
-      dbUser.groupRole = result.rankName;
-      await dbUser.save();
-    }
-
-    const embed = buildUpdateEmbed(fullMember, result);
-
-    if (result.tier) {
-      embed.addFields({
-        name: "🎖️ Seviye Rolü",
-        value: result.tier,
-        inline: true,
+    if (!result || !result.success) {
+      return interaction.editReply({
+        content: `❌ Roller senkronize edilemedi: ${result?.message || result?.error || "Bilinmeyen hata"}`,
       });
     }
 
-    if (result.unresolved?.length) {
-      embed.addFields({
-        name: "⚠️ Eşleşmeyen Roller",
-        value: result.unresolved.map((n) => `\`${n}\``).join(", ").slice(0, 1024),
-        inline: false,
+    const embed = addResultFields(buildUpdateEmbed(member, result), result);
+    if (commandName === "verify") {
+      embed
+        .setTitle("✅ Doğrulandı")
+        .setDescription(
+          `Roblox hesabın: **${dbUser.robloxUsername || dbUser.robloxId}**\n` +
+            `Rütben değişirse rollerin otomatik güncellenir. Elle güncellemek için \`/update kullanici\`.`
+        );
+      return interaction.editReply({
+        embeds: [embed],
+        components: [
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel("Hesabı Değiştir").setURL(linkUrlForGuild(guild))
+          )
+        ]
       });
     }
-
+    if (!isSelf) embed.setDescription(`<@${target.id}> kullanıcısının rolleri güncellendi.`);
     return interaction.editReply({ embeds: [embed] });
   } catch (err) {
-    console.error("[BEM] Role sync error:", err);
-    logUpdate(interaction, {
-      commandName,
-      dbUser: await findUserByDiscordId(user.id),
-      error: err.message,
-    });
-    return interaction.editReply({
-      content: `❌ Bir hata oluştu: ${err.message}`,
-    });
+    console.error("[RoleSync] error:", err);
+    logUpdate(interaction, { commandName, dbUser, error: err.message });
+    return interaction.editReply({ content: `❌ Bir hata oluştu: ${err.message}` });
   }
 }
 
@@ -325,8 +260,97 @@ async function handleVerify(interaction) {
   return runSyncForMember(interaction, { ephemeral: true, commandName: "verify" });
 }
 
+const runningUpdateAll = new Set();
+
+async function handleUpdateAll(interaction) {
+  const { guild } = interaction;
+  if (!guild) {
+    return interaction.reply(replyEphemeral("❌ Bu komut yalnızca sunucuda kullanılabilir."));
+  }
+  if (!canManageOthers(interaction)) {
+    return interaction.reply(replyEphemeral("❌ `/update all` için **Rolleri Yönet** yetkisi gerekiyor."));
+  }
+  if (runningUpdateAll.has(guild.id)) {
+    return interaction.reply(replyEphemeral("⏳ Bu sunucuda zaten bir `/update all` işlemi sürüyor."));
+  }
+
+  runningUpdateAll.add(guild.id);
+  await interaction.deferReply();
+
+  try {
+    const members = await guild.members.fetch();
+    const allUsers = await User.find({});
+    const byDiscordId = new Map();
+    for (const u of allUsers) {
+      if (u?.discordId && hasRobloxLink(u)) byDiscordId.set(String(u.discordId), u);
+    }
+
+    const targets = [...members.values()].filter((m) => !m.user.bot && byDiscordId.has(m.id));
+    const notLinked = members.filter((m) => !m.user.bot).size - targets.length;
+    const stats = { done: 0, changed: 0, unchanged: 0, failed: 0 };
+
+    const progress = () =>
+      `🔄 Roller güncelleniyor... **${stats.done}/${targets.length}**\n` +
+      `✅ Değişen: ${stats.changed} • ➖ Aynı: ${stats.unchanged} • ❌ Hata: ${stats.failed}`;
+
+    await interaction.editReply({ content: progress() });
+
+    let lastEdit = Date.now();
+    for (const member of targets) {
+      try {
+        const result = await syncMemberInGuild(interaction.client, guild, member, byDiscordId.get(member.id));
+        if (!result?.success) stats.failed++;
+        else if ((result.added?.length || 0) + (result.removed?.length || 0) > 0) stats.changed++;
+        else stats.unchanged++;
+      } catch (err) {
+        stats.failed++;
+        console.error(`[UpdateAll] ${member.id} hata:`, err.message);
+      }
+      stats.done++;
+
+      if (Date.now() - lastEdit > 5000) {
+        lastEdit = Date.now();
+        await interaction.editReply({ content: progress() }).catch(() => {});
+      }
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor(0x5865f2)
+      .setTitle("✅ Update All tamamlandı")
+      .addFields(
+        { name: "Taranan (bağlı)", value: String(targets.length), inline: true },
+        { name: "Rolü değişen", value: String(stats.changed), inline: true },
+        { name: "Değişmeyen", value: String(stats.unchanged), inline: true },
+        { name: "Hata", value: String(stats.failed), inline: true },
+        { name: "Roblox bağlı değil", value: String(notLinked), inline: true }
+      )
+      .setFooter({ text: "Sentara • Rol Senkronizasyonu" })
+      .setTimestamp();
+
+    return interaction.editReply({ content: "", embeds: [embed] });
+  } catch (err) {
+    console.error("[UpdateAll] error:", err);
+    return interaction.editReply({ content: `❌ Toplu güncelleme hatası: ${err.message}` }).catch(() => {});
+  } finally {
+    runningUpdateAll.delete(guild.id);
+  }
+}
+
 async function handleUpdate(interaction) {
-  return runSyncForMember(interaction, { ephemeral: false, commandName: "update" });
+  const sub = interaction.options?.getSubcommand?.(false);
+  if (sub === "all") return handleUpdateAll(interaction);
+
+  const targetUser = interaction.options?.getUser?.("kullanici") || interaction.user;
+  if (targetUser.id !== interaction.user.id && !canManageOthers(interaction)) {
+    return interaction.reply(
+      replyEphemeral("❌ Başkasının rollerini güncellemek için **Rolleri Yönet** yetkisi gerekiyor.")
+    );
+  }
+  if (targetUser.bot) {
+    return interaction.reply(replyEphemeral("❌ Botların rolleri güncellenemez."));
+  }
+  return runSyncForMember(interaction, { ephemeral: false, commandName: "update", targetUser });
 }
 
 function formatDebugList(items, empty = "—") {
@@ -520,6 +544,8 @@ async function handleDebugUpdate(interaction) {
 module.exports = {
   handleVerify,
   handleUpdate,
+  handleUpdateAll,
+  syncMemberInGuild,
   handleDebugUpdate,
   runSyncForMember,
   buildUpdateEmbed,

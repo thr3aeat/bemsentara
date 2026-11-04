@@ -715,6 +715,16 @@ async function pollGroup(client, groupId, groupName, logChannel) {
     lastSeenTime[groupId] = new Date(newEntries[0].created);
     console.log(`[AuditLogPoller] ${groupName} — ${newEntries.length} yeni kayıt bulundu.`);
 
+    // ── TMT rütbe değişikliği → Discord rollerini otomatik güncelle ──────
+    try {
+      const { handleAuditEntries } = require("./tmtRankAutoSync");
+      handleAuditEntries(client, groupId, [...newEntries]).catch(err =>
+        console.error(`[AuditLogPoller] TMT otomatik rol senkron hatası:`, err.message)
+      );
+    } catch (err) {
+      console.error(`[AuditLogPoller] TMT otomatik rol senkron başlatılamadı:`, err.message);
+    }
+
     // Eski → yeni sırayla işle
     for (const entry of newEntries.reverse()) {
       const actionType = entry.actionType || "Bilinmeyen";
@@ -757,9 +767,11 @@ async function pollGroup(client, groupId, groupName, logChannel) {
 
       applyActionFields(embed, entry, actionType);
 
-      await logChannel.send({ embeds: [embed] }).catch(err =>
-        console.error(`[AuditLogPoller] Gönderim hatası (${AUDIT_LOG_CHANNEL_ID}):`, err.message)
-      );
+      if (logChannel) {
+        await logChannel.send({ embeds: [embed] }).catch(err =>
+          console.error(`[AuditLogPoller] Gönderim hatası (${AUDIT_LOG_CHANNEL_ID}):`, err.message)
+        );
+      }
 
       // ── Abuse tespiti ──────────────────────────────────────────────────
       const reasons = checkForAbuse(entry, groupId, actionType);
@@ -790,17 +802,17 @@ async function pollAllGroups(client) {
   try {
     const guild = client.guilds.cache.get(AUDIT_LOG_GUILD_ID);
     if (!guild) {
-      console.error(`[AuditLogPoller] ❌ Müttefik sunucusu (${AUDIT_LOG_GUILD_ID}) cache'de bulunamadı. Bot bu sunucuda mı?`);
-      return;
-    }
-    logChannel = guild.channels.cache.get(AUDIT_LOG_CHANNEL_ID);
-    if (!logChannel || !logChannel.isTextBased()) {
-      console.error(`[AuditLogPoller] ❌ Log kanalı (${AUDIT_LOG_CHANNEL_ID}) sunucuda bulunamadı veya text-based değil.`);
-      return;
+      console.error(`[AuditLogPoller] ❌ Müttefik sunucusu (${AUDIT_LOG_GUILD_ID}) cache'de bulunamadı. Log gönderilmeyecek, otomatik rol senkronu devam edecek.`);
+    } else {
+      logChannel = guild.channels.cache.get(AUDIT_LOG_CHANNEL_ID) || null;
+      if (!logChannel || !logChannel.isTextBased()) {
+        console.error(`[AuditLogPoller] ❌ Log kanalı (${AUDIT_LOG_CHANNEL_ID}) sunucuda bulunamadı veya text-based değil. Log gönderilmeyecek.`);
+        logChannel = null;
+      }
     }
   } catch (err) {
     console.error("[AuditLogPoller] Log kanalı alınamadı:", err.message);
-    return;
+    logChannel = null;
   }
 
   // Botun (Token) Roblox ID'sini ve üye olduğu grupları çekelim

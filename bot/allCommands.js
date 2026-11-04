@@ -184,7 +184,7 @@ const generalCommands = [
 
   new SlashCommandBuilder()
     .setName("verify")
-    .setDescription("Roblox hesabınıza göre Discord rollerinizi senkronize eder")
+    .setDescription("Roblox hesabını doğrula / bağla ve doğrulanmış rolünü al")
     .setDMPermission(false),
 
   new SlashCommandBuilder()
@@ -214,7 +214,18 @@ const generalCommands = [
 
   new SlashCommandBuilder()
     .setName("update")
-    .setDescription("Ana gruba (EkoYıldız'a bağlı) ve branş gruplarına göre rollerinizi günceller")
+    .setDescription("Roblox grup rütbesine göre Discord rollerini günceller")
+    .addSubcommand((sub) =>
+      sub
+        .setName("kullanici")
+        .setDescription("Bir kullanıcının rollerini güncelle (boş = kendin)")
+        .addUserOption((o) =>
+          o.setName("kullanici").setDescription("Güncellenecek kullanıcı (boş bırakırsan kendin)").setRequired(false)
+        )
+    )
+    .addSubcommand((sub) =>
+      sub.setName("all").setDescription("Sunucudaki tüm bağlı üyelerin rollerini güncelle (Yetkili)")
+    )
     .setDMPermission(false),
 
   new SlashCommandBuilder()
