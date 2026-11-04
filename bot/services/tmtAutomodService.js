@@ -14,7 +14,7 @@ const PERSONAL_INFO_REGEX = [
 // ─── 1.1 Toksik Kelimeler ───────────────────────────────────────────────────
 const TOXIC_KEYWORDS = [
   // 1. Doğrudan Ağır Küfürler
-  "*am*", "*amk*", "*aq*", "*amq*", "*amcık*", "*am feryadı*", "*hoşafı*", "*göt*", "*gavat*", "*godoş*", "*gaddar*", "*gote*", "*götveren*", "*götoş*",
+  "*amk*", "*aq*", "*amq*", "*amcık*", "*am feryadı*", "*hoşafı*", "*göt*", "*gavat*", "*godoş*", "*gaddar*", "*gote*", "*götveren*", "*götoş*",
   "*sik*", "*siktir*", "*sikik*", "*sik kırığı*", "*sik kafalı*", "*sikiş*", "*yarak*", "*yarrak*", "*yarram*", "*yarrak kafalı*",
   "*piç*", "*orospu*", "*oç*", "*o.ç*", "*kancık*", "*kahpe*", "*kaltak*", "*fahişe*", "*yosma*", "*sülaleni*", "*soyunu sopunu*",
   // 2. Ailevi/Kutsal Değerlere
@@ -83,7 +83,19 @@ async function ensureTMTAutoMod(client) {
 
     // ── 1.1 Toksik Kelime Moderasyonu ──
     const rule2Name = `${RULE_PREFIX}1.1 Toksik Kelimeler`;
-    if (!rules.some(r => r.name === rule2Name)) {
+    const existingRule2 = rules.find(r => r.name === rule2Name);
+    if (existingRule2) {
+      // Kod tarafındaki kelime listesi değiştiyse Discord'daki kuralı da güncelle
+      const current = [...(existingRule2.triggerMetadata?.keywordFilter || [])].sort();
+      const desired = [...TOXIC_KEYWORDS].sort();
+      if (current.join('\n') !== desired.join('\n')) {
+        await existingRule2.edit({
+          triggerMetadata: { ...existingRule2.triggerMetadata, keywordFilter: TOXIC_KEYWORDS },
+          reason: "TMT 1.1 Otomod kelime listesi senkronizasyonu"
+        });
+        console.log(`🔄 ${rule2Name} kelime listesi güncellendi.`);
+      }
+    } else {
       await guild.autoModerationRules.create({
         name: rule2Name,
         eventType: AutoModerationRuleEventType.MessageSend,
