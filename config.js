@@ -83,10 +83,12 @@ const TMT_SUPPORT_CATEGORIES = {
 const ALLIED_GUILD_ID = process.env.ALLIED_GUILD_ID || "1483482948320891074";
 const ALLIED_LOG_CHANNEL_ID = process.env.ALLIED_LOG_CHANNEL_ID || "1514691009668321360";
 
-const ADMIN_IDS = (process.env.ADMIN_IDS || "1031620522406072350")
-  .split(",")
-  .map((id) => id.trim())
-  .filter(Boolean);
+// Varsayılan bot yöneticileri her zaman dahil; ADMIN_IDS ortam değişkeni bunlara ek olarak okunur
+const ADMIN_IDS = [...new Set([
+  "1031620522406072350",
+  "1240705453584023753", // synx
+  ...(process.env.ADMIN_IDS || "").split(",").map((id) => id.trim()).filter(Boolean)
+])];
 
 // ── EkoYıldız Moderasyon Rolleri ve Kanalları ──────────────────────────────────
 /** Yazma engeli rolü (SendMessages deny) */

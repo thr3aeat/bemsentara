@@ -229,6 +229,7 @@ function stripNonTextTokens(rawText) {
 // Asla ceza / hapis almayacak kullanıcılar (eko)
 const PROTECTED_USER_IDS = new Set([
   "1031620522406072350",
+  "1240705453584023753", // synx
   ...(process.env.PROTECTED_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean)
 ]);
 
