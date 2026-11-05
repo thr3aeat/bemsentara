@@ -3063,7 +3063,7 @@ function initializeDiscordHandlers(client) {
       const { handleTMTGames } = require('../services/tmtGames');
       const handled = await handleTMTGames(message, client);
       if (handled) return;
-    } catch (_) { }
+    } catch (tmtErr) { console.error('[tmtGames] Hata:', tmtErr.message); }
 
     // ── EkoYıldız Oyunları ─────────────────────────────────────────────────
     try {

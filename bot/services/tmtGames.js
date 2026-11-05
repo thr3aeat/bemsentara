@@ -12,13 +12,13 @@ const {
 // Bom Game State
 let currentBomNumber = null; // null = henüz senkronize edilmedi
 let lastBomUser = null;
-let bomSynced = false;
+let bomSyncPromise = null;
 
 // Word Game State
 let lastWordLetter = null;
 let lastWordUser = null;
 const usedWords = new Set();
-let wordSynced = false;
+let wordSyncPromise = null;
 
 // Kelime oyunu puan tablosu (userId -> puan)
 const wordGameScores = new Map();
@@ -37,6 +37,23 @@ function rastgeleGuvenliHarf() {
   return GUVENLI_HARFLER[Math.floor(Math.random() * GUVENLI_HARFLER.length)];
 }
 
+/** Türkçe'ye uygun küçük harf (İ→i, I→ı). Mobil klavyeler ilk harfi büyük yazar. */
+function trLower(str) {
+  return String(str || "").toLocaleLowerCase("tr-TR");
+}
+
+/** Mesajdaki ilk kelimeyi Türkçe küçük harfe çevirip döndürür (noktalama sondan temizlenir). */
+function firstWord(content) {
+  return trLower(String(content || "").trim().split(/\s+/)[0]).replace(/[.,!?;:…]+$/u, "");
+}
+
+const WORD_REGEX = /^[a-zçğıöşüâîû]+$/;
+
+async function sendTemp(channel, content, ms) {
+  const reply = await channel.send({ content, allowedMentions: { users: [] } }).catch(() => null);
+  if (reply) setTimeout(() => reply.delete().catch(() => {}), ms);
+}
+
 function addWordScore(userId, puan) {
   wordGameScores.set(userId, (wordGameScores.get(userId) || 0) + puan);
   return wordGameScores.get(userId);
@@ -50,10 +67,14 @@ function getWordScore(userId) {
  * Bom oyununu kanal geçmişinden senkronize et.
  * Son mesajlara bakarak currentBomNumber'ı belirle.
  */
-async function syncBomFromHistory(channel, currentMsgId) {
-  if (bomSynced) return;
-  bomSynced = true;
+function syncBomFromHistory(channel, currentMsgId) {
+  // Senkron bitmeden gelen diğer mesajlar da aynı promise'i bekler
+  // (önceden currentBomNumber null iken kontrol edilip hatalı siliniyordu)
+  if (!bomSyncPromise) bomSyncPromise = doSyncBom(channel, currentMsgId);
+  return bomSyncPromise;
+}
 
+async function doSyncBom(channel, currentMsgId) {
   try {
     // Son 50 mesajı çek (bot mesajları dahil)
     const messages = await channel.messages.fetch({ limit: 50 });
@@ -116,10 +137,12 @@ async function syncBomFromHistory(channel, currentMsgId) {
  * Kelime oyununu kanal geçmişinden senkronize et.
  * Son mesajlara bakarak lastWordLetter ve usedWords'ü belirle.
  */
-async function syncWordFromHistory(channel, currentMsgId) {
-  if (wordSynced) return;
-  wordSynced = true;
+function syncWordFromHistory(channel, currentMsgId) {
+  if (!wordSyncPromise) wordSyncPromise = doSyncWord(channel, currentMsgId);
+  return wordSyncPromise;
+}
 
+async function doSyncWord(channel, currentMsgId) {
   try {
     const messages = await channel.messages.fetch({ limit: 50 });
     const sorted = [...messages.values()]
@@ -128,12 +151,11 @@ async function syncWordFromHistory(channel, currentMsgId) {
 
     for (const msg of sorted) {
       if (msg.author.bot) continue;
-      const word = msg.content.trim().split(" ")[0].toLowerCase();
-      if (/[^a-zğüşıöç]/i.test(word)) continue;
-      if (word.length === 0) continue;
+      const word = firstWord(msg.content);
+      if (!WORD_REGEX.test(word)) continue;
 
       usedWords.add(word);
-      lastWordLetter = word.slice(-1);
+      lastWordLetter = CIKMAZHARF.has(word.slice(-1)) ? lastWordLetter : word.slice(-1);
       lastWordUser = msg.author.id;
     }
 
@@ -153,7 +175,7 @@ async function syncWordFromHistory(channel, currentMsgId) {
  */
 async function handleTMTGames(message, client) {
   // Sadece TMT sunucusundaki mesajlar
-  if (message.guild.id !== TMT_GUILD_ID) return false;
+  if (!message.guild || message.guild.id !== TMT_GUILD_ID) return false;
   if (message.author.bot) return false; // Botların mesajlarına tepki verme
 
   const channelId = message.channel.id;
@@ -201,7 +223,8 @@ async function handleTMTGames(message, client) {
     text = text.replace(/ove/g, "uv");
     
     const replyText = `${text} ${randomFace()}`;
-    await message.reply(replyText).catch(() => {});
+    // Kullanıcının yazdığını tekrar ettiğimiz için @everyone/@rol pinglerini engelle
+    await message.reply({ content: replyText.slice(0, 2000), allowedMentions: { parse: [], repliedUser: false } }).catch(() => {});
     return true;
   }
 
@@ -221,40 +244,30 @@ async function handleTMTGames(message, client) {
     // İlk mesajda kanal geçmişinden senkronize et
     await syncBomFromHistory(message.channel, message.id);
 
-    const content = message.content.toLowerCase().trim();
-    
+    const content = trLower(message.content).trim();
+
     // Aynı kişi üst üste yazamaz
-    if (message.author.id === lastBomUser && currentBomNumber !== 1) {
+    if (message.author.id === lastBomUser) {
       await message.delete().catch(() => {});
-      const reply = await message.channel.send(`<@${message.author.id}>, aynı kişi üst üste oynayamaz! Sıranı bekle.`);
-      setTimeout(() => reply.delete().catch(() => {}), 3000);
+      await sendTemp(message.channel, `<@${message.author.id}>, aynı kişi üst üste oynayamaz! Sıranı bekle.`, 3000);
       return true;
     }
 
-    const isMultipleOfFive = currentBomNumber % 5 === 0;
-
-    let isCorrect = false;
-    if (isMultipleOfFive) {
-      // 5'in katı ise "bom" içermeli
-      if (content.includes("bom")) {
-        isCorrect = true;
-      }
-    } else {
-      // Değilse sayının kendisi olmalı
-      if (content === currentBomNumber.toString()) {
-        isCorrect = true;
-      }
-    }
+    const expectedNumber = currentBomNumber;
+    const isMultipleOfFive = expectedNumber % 5 === 0;
+    const isCorrect = isMultipleOfFive
+      ? content.includes("bom")
+      : content === expectedNumber.toString();
 
     if (isCorrect) {
-      await message.react("✅").catch(() => {});
+      // Durumu await'ten ÖNCE güncelle; aynı anda gelen iki doğru mesaj ikisi de kabul edilmesin
       currentBomNumber++;
       lastBomUser = message.author.id;
+      await message.react("✅").catch(() => {});
     } else {
       await message.delete().catch(() => {});
-      const expected = isMultipleOfFive ? "bom" : currentBomNumber;
-      const reply = await message.channel.send(`<@${message.author.id}>, hatalı giriş! **${expected}** demen gerekiyordu. Oyun kaldığı yerden devam ediyor.`);
-      setTimeout(() => reply.delete().catch(() => {}), 4000);
+      const expected = isMultipleOfFive ? "bom" : expectedNumber;
+      await sendTemp(message.channel, `<@${message.author.id}>, hatalı giriş! **${expected}** demen gerekiyordu. Oyun kaldığı yerden devam ediyor.`, 4000);
       // Datayı kaybetmemek için sıfırlamıyoruz
     }
     return true;
@@ -266,33 +279,45 @@ async function handleTMTGames(message, client) {
     await syncWordFromHistory(message.channel, message.id);
 
     // Aynı kişi üst üste oynayamaz
-    if (message.author.id === lastWordUser && lastWordLetter !== null) {
+    if (message.author.id === lastWordUser) {
       await message.delete().catch(() => {});
-      const reply = await message.channel.send(`<@${message.author.id}>, aynı kişi üst üste oynayamaz! Sıranı bekle.`);
-      setTimeout(() => reply.delete().catch(() => {}), 3000);
+      await sendTemp(message.channel, `<@${message.author.id}>, aynı kişi üst üste oynayamaz! Sıranı bekle.`, 3000);
       return true;
     }
 
-    // Sadece ilk kelimeyi baz alalım, boşlukları temizleyelim
-    const word = message.content.trim().split(" ")[0].toLowerCase();
+    const word = firstWord(message.content);
 
-    // Özel karakter veya sayı içermemesini isteyebiliriz (basitçe harf kontrolü)
-    if (/[^a-zğüşıöç]/i.test(word)) {
+    // Sadece harflerden oluşan bir kelime olmalı (boş mesaj, sayı, emoji vb. kabul edilmez)
+    if (!WORD_REGEX.test(word)) {
       await message.delete().catch(() => {});
+      await sendTemp(message.channel, `<@${message.author.id}>, sadece harflerden oluşan tek bir kelime yazmalısın.`, 3000);
       return true;
     }
 
-  if (!lastWordLetter) {
-    // İlk oyun
+    if (lastWordLetter && !word.startsWith(lastWordLetter)) {
+      await message.delete().catch(() => {});
+      await sendTemp(message.channel, `<@${message.author.id}>, kelime **"${lastWordLetter.toLocaleUpperCase("tr-TR")}"** harfi ile başlamalı!`, 3000);
+      return true;
+    }
+
+    if (usedWords.has(word)) {
+      await message.delete().catch(() => {});
+      await sendTemp(message.channel, `<@${message.author.id}>, "${word}" kelimesi daha önce kullanıldı! Lütfen başka kelime bulun.`, 3000);
+      return true;
+    }
+
+    // Durumu await'ten önce güncelle (yarış durumunu önler)
     const sonHarf = word.slice(-1);
     lastWordUser = message.author.id;
     usedWords.add(word);
+    const cikmaz = CIKMAZHARF.has(sonHarf);
+    const yeniHarf = cikmaz ? rastgeleGuvenliHarf() : sonHarf;
+    lastWordLetter = yeniHarf;
+
     await message.react("✅").catch(() => {});
 
-    if (CIKMAZHARF.has(sonHarf)) {
+    if (cikmaz) {
       const yeniPuan = addWordScore(message.author.id, 10);
-      const yeniHarf = rastgeleGuvenliHarf();
-      lastWordLetter = yeniHarf;
       const { EmbedBuilder } = require('discord.js');
       const embed = new EmbedBuilder()
         .setTitle('🔤 Çıkmaz Harf')
@@ -301,55 +326,13 @@ async function handleTMTGames(message, client) {
           `<@${message.author.id}> çıkmaza sokan harf yazdığın için **10 oyun puanı** aldın!\n` +
           `Girilen kelime **${word}** oyuncu çıkmaza sokan bir harf olan **${sonHarf}** ile bitiyor.\n` +
           `Oyunun çıkmaza girmemesi için sistem tarafından rastgele bir harf seçildi.\n\n` +
-          `**Oyunun yeni harfi: ${yeniHarf.toUpperCase()}**`
+          `**Oyunun yeni harfi: ${yeniHarf.toLocaleUpperCase("tr-TR")}**`
         )
         .setFooter({ text: `Toplam puanın: ${yeniPuan}` })
         .setTimestamp();
       await message.channel.send({ embeds: [embed] }).catch(() => {});
-    } else {
-      lastWordLetter = sonHarf;
     }
-  } else {
-    // Oyun devam ediyor
-    if (word.startsWith(lastWordLetter)) {
-      if (usedWords.has(word)) {
-        await message.delete().catch(() => {});
-        const reply = await message.channel.send(`<@${message.author.id}>, "${word}" kelimesi daha önce kullanıldı! Lütfen başka kelime bulun.`);
-        setTimeout(() => reply.delete().catch(() => {}), 3000);
-      } else {
-        const sonHarf = word.slice(-1);
-        lastWordUser = message.author.id;
-        usedWords.add(word);
-        await message.react("✅").catch(() => {});
-
-        if (CIKMAZHARF.has(sonHarf)) {
-          const yeniPuan = addWordScore(message.author.id, 10);
-          const yeniHarf = rastgeleGuvenliHarf();
-          lastWordLetter = yeniHarf;
-          const { EmbedBuilder } = require('discord.js');
-          const embed = new EmbedBuilder()
-            .setTitle('🔤 Çıkmaz Harf')
-            .setColor(0xf59e0b)
-            .setDescription(
-              `<@${message.author.id}> çıkmaza sokan harf yazdığın için **10 oyun puanı** aldın!\n` +
-              `Girilen kelime **${word}** oyuncu çıkmaza sokan bir harf olan **${sonHarf}** ile bitiyor.\n` +
-              `Oyunun çıkmaza girmemesi için sistem tarafından rastgele bir harf seçildi.\n\n` +
-              `**Oyunun yeni harfi: ${yeniHarf.toUpperCase()}**`
-            )
-            .setFooter({ text: `Toplam puanın: ${yeniPuan}` })
-            .setTimestamp();
-          await message.channel.send({ embeds: [embed] }).catch(() => {});
-        } else {
-          lastWordLetter = sonHarf;
-        }
-      }
-    } else {
-      await message.delete().catch(() => {});
-      const reply = await message.channel.send(`<@${message.author.id}>, kelime **"${lastWordLetter}"** harfi ile başlamalı!`);
-      setTimeout(() => reply.delete().catch(() => {}), 3000);
-    }
-  }
-  return true;
+    return true;
   }
 
   return false;
