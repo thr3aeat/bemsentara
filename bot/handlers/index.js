@@ -785,9 +785,19 @@ function initializeDiscordHandlers(client) {
         logTMTMemberLeave(member);
 
         // ── GİZLİ BAŞARIM: Sadık Yıldız ──
-        // Kullanıcı TMT'den (rakip/honeypot) çıktıysa/atıldıysa ve EkoYıldız ana sunucusunda varsa ona başarım ver
+        // Kullanıcı TMT'den kendi isteğiyle çıktıysa ve EkoYıldız ana sunucusunda varsa ona başarım ver
         try {
-          const mainGuild = await client.guilds.fetch('1367646464804655104').catch(() => null);
+          // Sadece kendi isteğiyle ayrılanlar: atılan/banlanan kişiye "sadakat" ödülü verilmez
+          const { AuditLogEvent } = require("discord.js");
+          let wasRemovedByStaff = false;
+          for (const type of [AuditLogEvent.MemberKick, AuditLogEvent.MemberBanAdd]) {
+            const logs = await member.guild.fetchAuditLogs({ type, limit: 5 }).catch(() => null);
+            if (logs?.entries.some(e => e.target?.id === member.id && Date.now() - e.createdTimestamp < 30_000)) {
+              wasRemovedByStaff = true;
+              break;
+            }
+          }
+          const mainGuild = wasRemovedByStaff ? null : await client.guilds.fetch('1367646464804655104').catch(() => null);
           if (mainGuild) {
             const memberToReward = await mainGuild.members.fetch(member.id).catch(() => null);
             if (memberToReward) {
@@ -948,7 +958,9 @@ function initializeDiscordHandlers(client) {
       const newTimeout = newMember.communicationDisabledUntil;
       if (newTimeout && (!oldTimeout || newTimeout.getTime() !== oldTimeout.getTime())) {
         const now = Date.now();
-        if (newTimeout.getTime() > now) {
+        // Zaten susturulmuş birinin süresinin uzatılması/değişmesi yeni bir susturma sayılmaz
+        const wasAlreadyMuted = oldTimeout && oldTimeout.getTime() > now;
+        if (newTimeout.getTime() > now && !wasAlreadyMuted) {
           const User = require("../../models/User");
           let dbUser = await User.findOne({ discordId: newMember.id });
           if (!dbUser) {
@@ -956,6 +968,11 @@ function initializeDiscordHandlers(client) {
           }
 
           if (!dbUser.lastMuteCountedAt || (now - new Date(dbUser.lastMuteCountedAt).getTime()) > 5000) {
+            // Son susturmanın üzerinden 30 gün geçtiyse sayaç sıfırlanır (eski cezalar ömür boyu birikmesin)
+            const MUTE_RESET_MS = 30 * 24 * 60 * 60 * 1000;
+            if (dbUser.lastMuteCountedAt && (now - new Date(dbUser.lastMuteCountedAt).getTime()) > MUTE_RESET_MS) {
+              dbUser.muteCount = 0;
+            }
             dbUser.muteCount = (dbUser.muteCount || 0) + 1;
             dbUser.lastMuteCountedAt = new Date();
             await dbUser.save();
@@ -975,7 +992,7 @@ function initializeDiscordHandlers(client) {
                 .setColor(0xe67e22)
                 .addFields(
                   { name: "👤 Cezalandırılan Üye", value: `${newMember.toString()} (\`${newMember.user.tag}\`)`, inline: true },
-                  { name: "📊 Susturma Sayısı", value: `**${dbUser.muteCount} / 3 (Kick) / 6 (Ban)**`, inline: true },
+                  { name: "📊 Susturma Sayısı (30 gün)", value: `**${dbUser.muteCount} / 3 (Kick) / 6 (Ban)**`, inline: true },
                   { name: "🕒 Bitiş", value: `<t:${Math.floor(newTimeout.getTime() / 1000)}:R>`, inline: true }
                 )
                 .setTimestamp();

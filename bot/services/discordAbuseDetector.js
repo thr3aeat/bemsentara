@@ -638,8 +638,9 @@ Lütfen cevabına sadece 'EVET' veya 'HAYIR' ile başla ve kısa bir açıklama 
       });
 
       console.log(`[NightMode] ⏳ ${guild.name} — ${executor.tag} için 1 dakika bekleme başlandı`);
-    } else {
+    } else if (!isLightViolation) {
       // ─── GÜNDÜZ MODU: 5 Dakikalık otonom yedek zamanlayıcı başlat ───────────
+      // Sadece yıkıcı eylemlerde; reklam/ping/rol-kanal oluşturma gibi hafif olaylar otomatik banlanmaz.
       const timeoutId = setTimeout(async () => {
         const pending = daytimePendingActions.get(key);
         if (!pending) return;
