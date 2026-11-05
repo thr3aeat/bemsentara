@@ -87,6 +87,10 @@ const MIN_15 = 15 * 60_000;
 const DAY_1  = 24 * 60 * 60_000;
 // Tek mesajda bu sayıdan fazla kullanıcı etiketlenirse ihlal sayılır
 const MENTION_LIMIT = 3;
+// Bu kadar (veya sunucunun %10'u kadar) üyesi olan rol "kalabalık rol" sayılır; pingi @everyone gibi işlenir
+const BIG_ROLE_MIN_MEMBERS = 25;
+const BIG_ROLE_GUILD_RATIO = 0.10;
+const MASS_PING_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 const THRESHOLDS = {
   BAN:             { count: 5, windowMs: MIN_10, label: "🔨 Ban Limiti (5 / 10 Dakika)",           color: 0xFF0000 },
   KICK:            { count: 5, windowMs: MIN_10, label: "👢 Kick Limiti (5 / 10 Dakika)",          color: 0xFF4500 },
@@ -100,7 +104,7 @@ const THRESHOLDS = {
   ROLE_GIVE:       { count: 1, windowMs: 0,      label: "🏷️ Tehlikeli Rol Verme Koruması",        color: 0xFF0000 },
   BOT_ADD:         { count: 1, windowMs: 0,      label: "🤖 Tehlikeli Bot Ekleme Koruması",        color: 0xFF0000 },
   MASS_MENTION:    { count: 1, windowMs: 0,      label: `📣 Etiket Limiti (${MENTION_LIMIT})`,     color: 0xFF2200 },
-  EVERYONE_PING:   { count: 5, windowMs: 60_000, label: "📣 Everyone Limiti",                      color: 0xFF2200 },
+  EVERYONE_PING:   { count: 3, windowMs: MIN_10, label: "📣 Toplu Ping Spamı (@everyone/@here/kalabalık rol, 3 / 10 Dakika)", color: 0xFF2200 },
   REKLAM:          { count: 3, windowMs: 20_000, label: "📢 Reklam / Davet Spami",                 color: 0xFF5500 },
 };
 
@@ -829,6 +833,66 @@ async function handleMemberRemove(client, member) {
   });
 }
 
+/**
+ * Mesajdaki toplu pingleri (@everyone, @here, kalabalık roller) döndürür.
+ */
+function getMassPingTargets(message) {
+  const targets = [];
+  const content = message.content || "";
+  // mentions.everyone sadece ping gerçekten gittiyse true olur; denemeleri de yakalamak için içeriğe bak
+  if (/@everyone\b/.test(content)) targets.push("@everyone");
+  if (/@here\b/.test(content)) targets.push("@here");
+  if (targets.length === 0 && message.mentions.everyone) targets.push("@everyone/@here");
+
+  const guildSize = message.guild.memberCount || 0;
+  const bigLimit = Math.max(BIG_ROLE_MIN_MEMBERS, Math.ceil(guildSize * BIG_ROLE_GUILD_RATIO));
+  for (const role of message.mentions.roles.values()) {
+    if (role.members.size >= bigLimit) targets.push(`@${role.name} (${role.members.size} üye)`);
+  }
+  return targets;
+}
+
+async function checkMassPingSpam(client, message, member) {
+  const targets = getMassPingTargets(message);
+  if (targets.length === 0) return false;
+
+  const guild = message.guild;
+  if (isTrustedExecutor(client, guild, message.author, member)) return false;
+
+  const exceeded = trackAction(guild.id, message.author.id, "EVERYONE_PING");
+  if (!exceeded) return false;
+
+  const count = recentCount(guild.id, message.author.id, "EVERYONE_PING");
+  await message.delete().catch(() => {});
+
+  let action = "Mesaj silindi";
+  if (member && member.moderatable) {
+    const ok = await member.timeout(MASS_PING_TIMEOUT_MS, "Otomod: Toplu ping spamı (@everyone/@here/kalabalık rol)")
+      .then(() => true).catch(() => false);
+    if (ok) {
+      action = "Mesaj silindi, 24 saat susturuldu";
+      await message.author.send(
+        "⚠️ **UYARI:** Kısa sürede birden fazla kez `@everyone` / `@here` veya kalabalık rol etiketlediğin için " +
+        "mesajın silindi ve **24 saat** susturuldun."
+      ).catch(() => {});
+    }
+  }
+
+  await sendDiscordAbuseAlert(client, {
+    guild,
+    executor: message.author,
+    type: "EVERYONE_PING",
+    detailLines: [
+      `• Son 10 dakikada **${count}** toplu ping`,
+      `• Etiketlenen: ${targets.join(", ").slice(0, 300)}`,
+      `• Uygulanan: ${action}`,
+      `• Kanal: <#${message.channel.id}>`,
+      `• Mesaj: ${(message.content || "").slice(0, 200)}`
+    ]
+  });
+  return true;
+}
+
 async function handleMessageCreateAbuse(client, message) {
   if (!message.guild || !await isMonitoredGuild(message.guild.id)) return;
   if (message.author.bot) return;
@@ -836,8 +900,14 @@ async function handleMessageCreateAbuse(client, message) {
   // Korumalı kullanıcı (eko) member bilgisi gelmese de muaf
   if (require("./profanityAutomodService").isProtectedUser(message.author.id)) return;
 
-  // Yetkililer (sunucu sahibi, Yönetici, Sunucuyu/Mesajları Yönet) mesaj otomodundan muaf
   const member = message.member;
+
+  // 0. Toplu Ping Spamı: aynı kişi kısa sürede birkaç kez @everyone / @here / kalabalık rol
+  // pinglerse hemen müdahale. Sadece sunucu sahibi, Yönetici ve ADMIN_IDS muaf
+  // (Mesajları Yönet yetkisi olan yetkililer de dahil; ele geçirilmiş hesaplar böyle spam yapar).
+  if (await checkMassPingSpam(client, message, member)) return;
+
+  // Yetkililer (sunucu sahibi, Yönetici, Sunucuyu/Mesajları Yönet) mesaj otomodundan muaf
   if (member && (
     message.guild.ownerId === member.id ||
     member.permissions.has(PermissionFlagsBits.Administrator) ||
@@ -849,23 +919,13 @@ async function handleMessageCreateAbuse(client, message) {
   let type = null;
   const detailLines = [];
 
-  // 1. Mass Mention Check
-  // @everyone/@here yetkisi olan kişinin pingi meşrudur, sayılmaz
-  const canMentionEveryone = member?.permissionsIn(message.channel).has(PermissionFlagsBits.MentionEveryone) || false;
-  const hasEveryonePing = message.mentions.everyone && !canMentionEveryone;
+  // 1. Mass Mention Check (tek mesajda çok kullanıcı)
   const userMentions    = message.mentions.users.size;
 
   if (userMentions > MENTION_LIMIT) {
     isAbuse = true;
     type = "MASS_MENTION";
     detailLines.push(`• **${userMentions}** farklı kullanıcı tek mesajda etiketlendi (limit: ${MENTION_LIMIT})`);
-  } else if (hasEveryonePing) {
-    const exceeded = trackAction(message.guild.id, message.author.id, "EVERYONE_PING");
-    if (exceeded) {
-      isAbuse = true;
-      type = "MASS_MENTION";
-      detailLines.push("• `@everyone` veya `@here` etiketlendi (Son 60 saniyede 5 veya daha fazla)");
-    }
   }
 
   // 2. Reklam/Invite Link Check
