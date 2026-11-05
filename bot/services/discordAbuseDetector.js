@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AuditLogEvent, PermissionFlagsBits } = require("discord.js");
-const { SERVER_INVITE_LINKS } = require("../../config");
+const { SERVER_INVITE_LINKS, ADMIN_IDS } = require("../../config");
 
 // ─── İzlenen sunucular ────────────────────────────────────────────────────────
 const MONITORED_GUILDS = {
@@ -82,19 +82,20 @@ function cancelPendingNightBan(guildId, userId) {
 const BAN_LOG_CHANNEL_ID = "1504201531551907941";
 
 // ─── Tespit eşikleri ──────────────────────────────────────────────────────────
+const MIN_10 = 10 * 60_000;
 const MIN_15 = 15 * 60_000;
 const DAY_1  = 24 * 60 * 60_000;
 // Tek mesajda bu sayıdan fazla kullanıcı etiketlenirse ihlal sayılır
 const MENTION_LIMIT = 3;
 const THRESHOLDS = {
-  BAN:             { count: 5, windowMs: DAY_1,  label: "🔨 Ban Limiti (5 / 1 Gün)",               color: 0xFF0000 },
-  KICK:            { count: 3, windowMs: MIN_15, label: "👢 Kick Limiti (3 / 15 Dakika)",          color: 0xFF4500 },
+  BAN:             { count: 5, windowMs: MIN_10, label: "🔨 Ban Limiti (5 / 10 Dakika)",           color: 0xFF0000 },
+  KICK:            { count: 5, windowMs: MIN_10, label: "👢 Kick Limiti (5 / 10 Dakika)",          color: 0xFF4500 },
   CHANNEL_DELETE:  { enabled: false, count: 3, windowMs: MIN_15, label: "🗑️ Kanal Silme Limiti", color: 0xFF6600 },
   ROLE_DELETE:     { count: 3, windowMs: MIN_15, label: "🗑️ Rol Silme Limiti (3 / 15 Dakika)",    color: 0xFF8800 },
-  ROLE_CREATE:     { count: 3, windowMs: MIN_15, label: "➕ Rol Oluşturma Limiti (3 / 15 Dakika)", color: 0x3498DB },
-  CHANNEL_CREATE:  { count: 3, windowMs: MIN_15, label: "➕ Kanal Oluşturma Limiti (3 / 15 Dakika)", color: 0x3498DB },
+  ROLE_CREATE:     { count: 10, windowMs: MIN_15, label: "➕ Rol Oluşturma Limiti (10 / 15 Dakika)", color: 0x3498DB },
+  CHANNEL_CREATE:  { count: 10, windowMs: MIN_15, label: "➕ Kanal Oluşturma Limiti (10 / 15 Dakika)", color: 0x3498DB },
   WEBHOOK_CREATE:  { count: 3, windowMs: MIN_15, label: "🪝 Webhook Oluşturma Limiti (3 / 15 Dakika)", color: 0xFFAA00 },
-  EMOJI_DELETE:    { count: 3, windowMs: MIN_15, label: "😶 Emoji Silme Limiti (3 / 15 Dakika)",  color: 0xFFAA00 },
+  EMOJI_DELETE:    { count: 5, windowMs: MIN_15, label: "😶 Emoji Silme Limiti (5 / 15 Dakika)",  color: 0xFFAA00 },
   ROLE_PERMISSION: { count: 1, windowMs: 0,      label: "🔑 Role Tehlikeli İzin Verme Koruması",   color: 0xFF0000 },
   ROLE_GIVE:       { count: 1, windowMs: 0,      label: "🏷️ Tehlikeli Rol Verme Koruması",        color: 0xFF0000 },
   BOT_ADD:         { count: 1, windowMs: 0,      label: "🤖 Tehlikeli Bot Ekleme Koruması",        color: 0xFF0000 },
@@ -112,7 +113,7 @@ const DANGEROUS_PERMISSIONS = [
   PermissionFlagsBits.ManageWebhooks,
   PermissionFlagsBits.BanMembers,
   PermissionFlagsBits.KickMembers,
-  PermissionFlagsBits.MentionEveryone,
+  // MentionEveryone bilinçli olarak yok: sıradan rollerde de bulunur, her rol vermede alarm üretiyordu
 ];
 const hasDangerousPerm = (perms) => DANGEROUS_PERMISSIONS.some(p => perms.has(p));
 
@@ -200,19 +201,46 @@ async function fetchExecutor(guild, auditLogEvent, targetId = null, maxAgeSec = 
  * @param {string} opts.type
  * @param {string[]} opts.detailLines
  */
-const LIGHT_VIOLATION_TYPES = new Set(["REKLAM", "MASS_MENTION"]);
+// Sadece bu yıkıcı eylemler eşiği aşınca otomatik ceza (rol alma + timeout / ban) ve gece modu
+// otomatik banı tetikler. Diğerleri (rol/kanal oluşturma, geri alınmış izin/rol/bot, reklam,
+// etiket) yalnızca moderatörlere uyarı olarak gider.
+const SEVERE_TYPES = new Set(["BAN", "KICK", "CHANNEL_DELETE", "ROLE_DELETE", "EMOJI_DELETE", "WEBHOOK_CREATE"]);
+
+/** Sunucu sahibi, bot, ADMIN_IDS, Yönetici izni olanlar ve korumalı kullanıcılar abuse sayılmaz. */
+function isTrustedExecutor(client, guild, executor, member) {
+  if (!executor) return true;
+  if (executor.id === guild.ownerId || executor.id === client.user?.id) return true;
+  if (ADMIN_IDS.includes(executor.id)) return true;
+  try {
+    if (require("./profanityAutomodService").isProtectedUser(executor.id)) return true;
+  } catch (_) {}
+  if (member && member.permissions?.has(PermissionFlagsBits.Administrator)) return true;
+  return false;
+}
+
+/** AI cevabındaki "Risk Seviyesi:" satırını okur (şablondaki "DÜŞÜK / ORTA / YÜKSEK" yazısına kanmaz). */
+function parseRiskLevel(aiResponse) {
+  const text = String(aiResponse || "").toLocaleUpperCase("tr-TR");
+  const m = text.match(/R[İI]SK SEV[İI]YES[İI][*:\s\[]*([^\n]*)/);
+  if (!m) return "BİLİNMİYOR";
+  const value = m[1].replace(/[*\]]/g, "").trim();
+  if (value.includes("/")) return "BİLİNMİYOR";
+  if (value.startsWith("ÇOK YÜKSEK") || value.startsWith("YÜKSEK")) return "YÜKSEK";
+  if (value.startsWith("ORTA")) return "ORTA";
+  if (value.startsWith("DÜŞÜK")) return "DÜŞÜK";
+  return "BİLİNMİYOR";
+}
 
 async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLines = [] }) {
-  // Sunucu sahibi ve botun kendisi korumalardan muaf
-  if (executor.id === guild.ownerId || executor.id === client.user?.id) return;
-
   const member = await guild.members.fetch(executor.id).catch(() => null);
+  // Sunucu sahibi, bot, adminler ve Yönetici izni olanlar korumalardan muaf
+  if (isTrustedExecutor(client, guild, executor, member)) return;
+
   const hasRoles = member && member.roles.cache.filter(r => r.id !== guild.id).size > 0;
 
-  // Mesaj bazlı hafif ihlaller (reklam linki, etiket spamı) zaten yerinde cezalandırılıyor
-  // (mesaj silme + timeout). Bunlar için ağır abuse müdahalesi (rol alma, 28 gün timeout, ban)
-  // ve gece modu otomatik banı uygulanmaz; sadece moderatörlere bilgi gider.
-  const isLightViolation = LIGHT_VIOLATION_TYPES.has(type);
+  // Hafif ihlallerde ağır abuse müdahalesi (rol alma, 28 gün timeout, ban) ve gece modu
+  // otomatik banı uygulanmaz; sadece moderatörlere bilgi gider.
+  const isLightViolation = !SEVERE_TYPES.has(type);
 
   if (hasRoles && !isLightViolation) {
     // Sunucuda any role'e sahip yetkili/üye ise direkt otomatik cezalandırma işlemini uygula!
@@ -441,8 +469,8 @@ Lütfen şu formatta kısa bir analiz yap (maksimum 3 cümle, Türkçe olsun):
         }
 
         // ─── AI OTONOM MÜDAHALE (Normal saatlerde Yüksek Risk ise) ───────────────
-        const riskUpper = aiResponse.toUpperCase();
-        const isHighRisk = riskUpper.includes("YÜKSEK") || riskUpper.includes("ÇOK YÜKSEK");
+        // Otonom müdahale sadece yıkıcı eylemlerde ve AI açıkça YÜKSEK dediğinde
+        const isHighRisk = SEVERE_TYPES.has(type) && parseRiskLevel(aiResponse) === "YÜKSEK";
 
         if (isHighRisk) {
           const { sendTelegramAlert, callTelegramUser } = require("./telegramService");
@@ -944,7 +972,9 @@ async function handleRoleUpdate(client, oldRole, newRole) {
   if (!await isMonitoredGuild(newRole.guild.id)) return;
   if (hasDangerousPerm(oldRole.permissions) || !hasDangerousPerm(newRole.permissions)) return;
   const executor = await fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
-  if (!executor || executor.id === newRole.guild.ownerId || executor.id === client.user.id) return;
+  if (!executor) return;
+  const execMember = await newRole.guild.members.fetch(executor.id).catch(() => null);
+  if (isTrustedExecutor(client, newRole.guild, executor, execMember)) return;
 
   await newRole.setPermissions(oldRole.permissions, "Koruma: Role tehlikeli izin verildi").catch(() => {});
   await sendDiscordAbuseAlert(client, {
@@ -961,7 +991,9 @@ async function handleMemberRoleGive(client, oldMember, newMember) {
   const added = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id) && hasDangerousPerm(r.permissions));
   if (added.size === 0) return;
   const executor = await fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
-  if (!executor || executor.bot || executor.id === newMember.guild.ownerId || executor.id === client.user.id) return;
+  if (!executor || executor.bot) return;
+  const execMember = await newMember.guild.members.fetch(executor.id).catch(() => null);
+  if (isTrustedExecutor(client, newMember.guild, executor, execMember)) return;
 
   await newMember.roles.remove(added, "Koruma: Tehlikeli rol verildi").catch(() => {});
   await sendDiscordAbuseAlert(client, {
@@ -977,7 +1009,9 @@ async function handleBotAdd(client, member) {
   if (!member.user.bot || !await isMonitoredGuild(member.guild.id)) return;
   if (!hasDangerousPerm(member.permissions)) return;
   const executor = await fetchExecutor(member.guild, AuditLogEvent.BotAdd, member.id);
-  if (!executor || executor.id === member.guild.ownerId) return;
+  if (!executor) return;
+  const execMember = await member.guild.members.fetch(executor.id).catch(() => null);
+  if (isTrustedExecutor(client, member.guild, executor, execMember)) return;
 
   await member.kick("Koruma: Tehlikeli izinli bot eklendi").catch(() => {});
   await sendDiscordAbuseAlert(client, {
