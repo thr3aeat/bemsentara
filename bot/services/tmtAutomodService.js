@@ -14,24 +14,24 @@ const PERSONAL_INFO_REGEX = [
 // ─── 1.1 Toksik Kelimeler ───────────────────────────────────────────────────
 const TOXIC_KEYWORDS = [
   // 1. Doğrudan Ağır Küfürler
-  "*amk*", "*aq*", "*amq*", "*amcık*", "*am feryadı*", "*hoşafı*", "*göt*", "*gavat*", "*godoş*", "*gaddar*", "*gote*", "*götveren*", "*götoş*",
-  "*sik*", "*siktir*", "*sikik*", "*sik kırığı*", "*sik kafalı*", "*sikiş*", "*yarak*", "*yarrak*", "*yarram*", "*yarrak kafalı*",
-  "*piç*", "*orospu*", "*oç*", "*o.ç*", "*kancık*", "*kahpe*", "*kaltak*", "*fahişe*", "*yosma*", "*sülaleni*", "*soyunu sopunu*",
+  "amk", "aq", "amq", "amcık", "am feryadı", "hoşafı", "göt", "gavat", "godoş", "gaddar", "gote", "götveren", "götoş",
+  "sik", "siktir", "sikik", "sik kırığı", "sik kafalı", "sikiş", "yarak", "yarrak", "yarram", "yarrak kafalı",
+  "piç", "orospu", "oç", "o.ç", "kancık", "kahpe", "kaltak", "fahişe", "yosma", "sülaleni", "soyunu sopunu",
   // 2. Ailevi/Kutsal Değerlere
-  "*ananı*", "*anancı*", "*ana bacı*", "*babanı*", "*bacını*", "*kız kardeşini*", "*ceddin*", "*gelmişini*", "*geçmişini*",
-  "*allahını*", "*kitabını*", "*dinini*", "*kutsalını*", "*muhammedini*",
+  "ananı", "anancı", "ana bacı", "babanı", "bacını", "kız kardeşini", "ceddin", "gelmişini", "geçmişini",
+  "allahını", "kitabını", "dinini", "kutsalını", "muhammedini",
   // 3. Hakaretler/Argo
-  "*geri zekalı*", "*gerizekalı*", "*salak*", "*aptal*", "*mal*", "*mal herif*", "*ibne*", "*top*", "*puşt*", "*nonoş*"
-].map(w => w.toLowerCase()); // Discord expects lowercase
+  "geri zekalı", "gerizekalı", "salak", "aptal", "mal", "mal herif", "ibne", "top", "puşt", "nonoş"
+].map(w => w.toLowerCase()); // Discord expects lowercase — joker (*) yok, sadece tam kelime eşleşir
 
 // ─── 1.2 Siyasi Parti ve Liderler ───────────────────────────────────────────
 const POLITICAL_KEYWORDS = [
   // Partiler
-  "*akp*", "*ak parti*", "*akparti*", "*chp*", "*cehape*", "*mhp*", "*mehape*", "*dem parti*", "*demparti*", "*hdp*", "*hedape*",
-  "*iyi parti*", "*iyiparti*", "*zafer partisi*", "*yeniden refah*", "*yrp*", "*tip*", "*tipçiler*", "*hüda par*", "*hudapar*",
+  "akp", "ak parti", "akparti", "chp", "cehape", "mhp", "mehape", "dem parti", "demparti", "hdp", "hedape",
+  "iyi parti", "iyiparti", "zafer partisi", "yeniden refah", "yrp", "tip", "tipçiler", "hüda par", "hudapar",
   // Liderler
-  "*erdoğan*", "*tayyip*", "*rte*", "*reis*", "*cb*", "*özgür özel*", "*imamoğlu*", "*ekrem imamoğlu*", "*mansur yavaş*",
-  "*devlet bahçeli*", "*bahçeli*", "*ümit özdağ*", "*özdağ*", "*fatih erbakan*", "*selahattin demirtaş*", "*demirtaş*", "*selo*", "*kemal kılıçdaroğlu*"
+  "erdoğan", "tayyip", "rte", "reis", "cb", "özgür özel", "imamoğlu", "ekrem imamoğlu", "mansur yavaş",
+  "devlet bahçeli", "bahçeli", "ümit özdağ", "özdağ", "fatih erbakan", "selahattin demirtaş", "demirtaş", "selo", "kemal kılıçdaroğlu"
 ].map(w => w.toLowerCase());
 
 // ─── 1.3 Discord Bağlantıları ───────────────────────────────────────────────
@@ -116,7 +116,18 @@ async function ensureTMTAutoMod(client) {
 
     // ── 1.2 Siyasi Parti Moderasyonu ──
     const rule3Name = `${RULE_PREFIX}1.2 Siyaset`;
-    if (!rules.some(r => r.name === rule3Name)) {
+    const existingRule3 = rules.find(r => r.name === rule3Name);
+    if (existingRule3) {
+      const current = [...(existingRule3.triggerMetadata?.keywordFilter || [])].sort();
+      const desired = [...POLITICAL_KEYWORDS].sort();
+      if (current.join('\n') !== desired.join('\n')) {
+        await existingRule3.edit({
+          triggerMetadata: { ...existingRule3.triggerMetadata, keywordFilter: POLITICAL_KEYWORDS },
+          reason: "TMT 1.2 Otomod kelime listesi senkronizasyonu"
+        });
+        console.log(`🔄 ${rule3Name} kelime listesi güncellendi.`);
+      }
+    } else {
       await guild.autoModerationRules.create({
         name: rule3Name,
         eventType: AutoModerationRuleEventType.MessageSend,
