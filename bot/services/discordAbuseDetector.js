@@ -200,6 +200,8 @@ async function fetchExecutor(guild, auditLogEvent, targetId = null, maxAgeSec = 
  * @param {string} opts.type
  * @param {string[]} opts.detailLines
  */
+const LIGHT_VIOLATION_TYPES = new Set(["REKLAM", "MASS_MENTION"]);
+
 async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLines = [] }) {
   // Sunucu sahibi ve botun kendisi korumalardan muaf
   if (executor.id === guild.ownerId || executor.id === client.user?.id) return;
@@ -207,7 +209,12 @@ async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLine
   const member = await guild.members.fetch(executor.id).catch(() => null);
   const hasRoles = member && member.roles.cache.filter(r => r.id !== guild.id).size > 0;
 
-  if (hasRoles) {
+  // Mesaj bazlı hafif ihlaller (reklam linki, etiket spamı) zaten yerinde cezalandırılıyor
+  // (mesaj silme + timeout). Bunlar için ağır abuse müdahalesi (rol alma, 28 gün timeout, ban)
+  // ve gece modu otomatik banı uygulanmaz; sadece moderatörlere bilgi gider.
+  const isLightViolation = LIGHT_VIOLATION_TYPES.has(type);
+
+  if (hasRoles && !isLightViolation) {
     // Sunucuda any role'e sahip yetkili/üye ise direkt otomatik cezalandırma işlemini uygula!
     await executeImmediateAbuseAction(client, guild, member, type, detailLines);
     return;
@@ -215,7 +222,7 @@ async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLine
 
   if (!canSendAlert(guild.id, executor.id, type)) return;
 
-  const isNight = isNightHours();
+  const isNight = !isLightViolation && isNightHours();
   const key = `${guild.id}_${executor.id}`;
 
   if (isNight && nightModePendingBans.has(key)) {
