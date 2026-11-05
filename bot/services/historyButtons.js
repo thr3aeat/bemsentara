@@ -16,7 +16,8 @@ const {
   dateLabel,
   buildDetailPayload,
   buildLoadingPayload,
-  buildErrorPayload
+  buildErrorPayload,
+  detailFooterForGuild
 } = require('./historyV2Messages');
 
 const COOLDOWN_MS = 3000;
@@ -59,7 +60,7 @@ async function handleHistoryButton(interaction, { chat, now = Date.now } = {}) {
     const prompt = VIEWS[viewKey].prompt(dateLabel(day, month));
     const body = await ask([{ role: 'user', content: prompt }], SYSTEM_PROMPT, 'ticket', { max_tokens: 1200, temperature: 0.65 });
     if (!body || String(body).trim().length < 20) throw new Error('yapay zeka yanıtı boş veya çok kısa');
-    payload = buildDetailPayload({ viewKey, day, month, body });
+    payload = buildDetailPayload({ viewKey, day, month, body, footer: detailFooterForGuild(interaction.guildId) });
   } catch (err) {
     console.warn(`[HistoryButtons] ${VIEWS[viewKey].action} için içerik alınamadı: ${err && err.message}`);
     payload = buildErrorPayload({ viewKey, day, month });

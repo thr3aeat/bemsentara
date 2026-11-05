@@ -172,16 +172,10 @@ function startEkoYildizHistoryScheduler(client) {
 }
 
 /**
- * AI'dan kompakt bilgi alıp kanala gönderir.
+ * Günlük "Tarihte Bugün" içeriğini üretir (AI + yedek veritabanı + günün fotoğrafı).
+ * EkoYıldız ve TMT aynı içeriği/formatı kullanır.
  */
-async function postEkoYildizHistory(client, customDate = null) {
-  try {
-    const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
-    if (!channel || !channel.isTextBased()) {
-      console.warn("⚠️ [EkoYildizHistoryAI] Hedef kanal bulunamadı veya metin kanalı değil:", TARGET_CHANNEL_ID);
-      return false;
-    }
-
+async function generateDailyHistoryContent(customDate = null) {
     const { day, month, now } = customDate ? {
       day: customDate.getDate(),
       month: customDate.getMonth(),
@@ -242,16 +236,25 @@ FORMAT:
     // Günün fotoğrafı (Commons / yedek liste); alınamazsa mesaj fotoğrafsız gider.
     const photo = await getDailyPhoto().catch(() => null);
 
+    return { title: embedTitle, color: embedColor, content: aiContent, specialField, photo, day, month, specialDay };
+}
+
+/**
+ * AI'dan kompakt bilgi alıp kanala gönderir.
+ */
+async function postEkoYildizHistory(client, customDate = null) {
+  try {
+    const channel = await client.channels.fetch(TARGET_CHANNEL_ID).catch(() => null);
+    if (!channel || !channel.isTextBased()) {
+      console.warn("⚠️ [EkoYildizHistoryAI] Hedef kanal bulunamadı veya metin kanalı değil:", TARGET_CHANNEL_ID);
+      return false;
+    }
+
+    const daily = await generateDailyHistoryContent(customDate);
+    const { title: embedTitle, specialDay } = daily;
+
     // Components V2: accent renkli container, günün fotoğrafı ve butonlu bölümler (tb_* butonları historyButtons.js'e gider)
-    await channel.send(buildDailyPayload({
-      title: embedTitle,
-      color: embedColor,
-      content: aiContent,
-      specialField,
-      photo,
-      day,
-      month
-    }));
+    await channel.send(buildDailyPayload(daily));
     console.log(`✅ [EkoYildizHistoryAI] ${embedTitle} mesajı başarıyla gönderildi.`);
 
     if (specialDay) {
@@ -275,6 +278,7 @@ FORMAT:
 }
 
 module.exports = {
+  generateDailyHistoryContent,
   hasAlreadyPostedToday,
   startEkoYildizHistoryScheduler,
   postEkoYildizHistory,

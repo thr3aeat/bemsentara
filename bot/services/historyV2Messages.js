@@ -53,6 +53,16 @@ const VIEW_ORDER = ['ataturk', 'science', 'trivia', 'quote'];
 const DAILY_FOOTER = "EkoYıldız Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde";
 const DETAIL_FOOTER = 'EkoYıldız Tarihte Bugün İnteraktif Rehberi';
 
+// TMT sunucusu için aynı sistem, kendi alt yazılarıyla
+const TMT_DAILY_FOOTER = "TMT Tarih & Kültür Sistemi • Gazi Mustafa Kemal Atatürk'ün İzinde";
+const TMT_DETAIL_FOOTER = 'TMT Tarihte Bugün İnteraktif Rehberi';
+
+/** Sunucuya göre detay alt yazısı (TMT ise TMT, değilse EkoYıldız). */
+function detailFooterForGuild(guildId) {
+  const { TMT_GUILD_ID } = require('../../config');
+  return guildId && String(guildId) === String(TMT_GUILD_ID) ? TMT_DETAIL_FOOTER : DETAIL_FOOTER;
+}
+
 const ID_PATTERN = /^(tb|tbn)_(detail_ataturk|detail_science|detail_trivia|random_quote)_(\d{1,2})_(\d{1,2})$/;
 
 /**
@@ -88,7 +98,7 @@ const divider = (container, spacing = SeparatorSpacingSize.Small) =>
  * @param {{title:string, color:number, content:string, specialField?:{name:string,value:string}|null,
  *          photo?:{url:string,title?:string,source?:string}|null, day:number, month:number}} o
  */
-function buildDailyPayload({ title, color, content, specialField = null, photo = null, day, month }) {
+function buildDailyPayload({ title, color, content, specialField = null, photo = null, day, month, footer = DAILY_FOOTER }) {
   const container = new ContainerBuilder();
 
   if (photo && photo.url) {
@@ -123,7 +133,7 @@ function buildDailyPayload({ title, color, content, specialField = null, photo =
   );
 
   const source = photo && photo.source ? ` • Fotoğraf: ${photo.source}` : '';
-  text(container, `-# ${DAILY_FOOTER}${source}`);
+  text(container, `-# ${footer}${source}`);
   return v2(container);
 }
 
@@ -143,14 +153,14 @@ function navRow(activeKey, day, month, { disableAll = false } = {}) {
 }
 
 /** Buton cevabı: içerik + aynı mesajda gezinme butonları. */
-function buildDetailPayload({ viewKey, day, month, body }) {
+function buildDetailPayload({ viewKey, day, month, body, footer = DETAIL_FOOTER }) {
   const v = VIEWS[viewKey];
   const container = new ContainerBuilder();
   text(container, `## ${v.title(dateLabel(day, month))}`);
   text(container, capText(body, 3400));
   divider(container);
   container.addActionRowComponents(navRow(viewKey, day, month));
-  text(container, `-# ${DETAIL_FOOTER}`);
+  text(container, `-# ${footer}`);
   return v2(container);
 }
 
@@ -187,5 +197,6 @@ function buildErrorPayload({ viewKey, day, month }) {
 
 module.exports = {
   MONTHS, VIEWS, VIEW_ORDER, parseHistoryButtonId, dateLabel, capText,
-  buildDailyPayload, buildDetailPayload, buildLoadingPayload, buildErrorPayload
+  buildDailyPayload, buildDetailPayload, buildLoadingPayload, buildErrorPayload,
+  TMT_DAILY_FOOTER, detailFooterForGuild
 };
