@@ -215,16 +215,11 @@ const generalCommands = [
   new SlashCommandBuilder()
     .setName("update")
     .setDescription("Roblox grup rütbesine göre Discord rollerini günceller")
-    .addSubcommand((sub) =>
-      sub
-        .setName("kullanici")
-        .setDescription("Bir kullanıcının rollerini güncelle (boş = kendin)")
-        .addUserOption((o) =>
-          o.setName("kullanici").setDescription("Güncellenecek kullanıcı (boş bırakırsan kendin)").setRequired(false)
-        )
+    .addUserOption((o) =>
+      o.setName("kullanici").setDescription("Güncellenecek kullanıcı (boş bırakırsan kendin)").setRequired(false)
     )
-    .addSubcommand((sub) =>
-      sub.setName("all").setDescription("Sunucudaki tüm bağlı üyelerin rollerini güncelle (Yetkili)")
+    .addBooleanOption((o) =>
+      o.setName("all").setDescription("Sunucudaki tüm bağlı üyelerin rollerini güncelle (Yetkili)").setRequired(false)
     )
     .setDMPermission(false),
 

@@ -6,9 +6,30 @@ const { syncMemberRoles, buildSyncPlan, MAIN_GROUP_ID } = require("../services/r
 const { logUpdate } = require("../services/commandLog");
 const { deferEphemeral, replyEphemeral } = require("../utils/interaction");
 
+// Embed alanı en fazla 1024 karakter olabilir ve boş olamaz; aksi halde discord.js
+// "Received one or more errors" doğrulama hatası fırlatır.
+function fitField(text, fallback = "—") {
+  const str = text == null ? "" : String(text);
+  if (!str.trim()) return fallback;
+  return str.length > 1024 ? str.slice(0, 1021) + "..." : str;
+}
+
 function formatRoleList(roles) {
-  if (!roles.length) return "None";
-  return roles.map((r) => `<@&${r.id}>`).join("\n");
+  if (!roles?.length) return "None";
+  const lines = [];
+  let len = 0;
+  for (let i = 0; i < roles.length; i++) {
+    const r = roles[i];
+    const line = typeof r === "string" ? (/^\d+$/.test(r) ? `<@&${r}>` : r) : `<@&${r.id}>`;
+    const rest = roles.length - i;
+    if (len + line.length + 1 > 1000) {
+      lines.push(`… +${rest} rol daha`);
+      break;
+    }
+    lines.push(line);
+    len += line.length + 1;
+  }
+  return fitField(lines.join("\n"), "None");
 }
 
 function buildUpdateEmbed(member, result) {
@@ -16,7 +37,7 @@ function buildUpdateEmbed(member, result) {
     .setColor(result.success ? 0x5865f2 : 0xed4245)
     .setTitle("Update")
     .addFields(
-      { name: "Nickname", value: result.nickname || member.user.username, inline: false },
+      { name: "Nickname", value: fitField(result.nickname || member.displayName || member.user.username), inline: false },
       { name: "Added Roles", value: formatRoleList(result.added || []), inline: false },
       { name: "Removed Roles", value: formatRoleList(result.removed || []), inline: false }
     )
@@ -101,7 +122,7 @@ async function syncBranchServerRoles(guild, member, robloxUserId) {
 
 /**
  * Sunucu tipine göre (Branch / TMT / Allied-EKO / BEM) tek bir üyenin rollerini senkronize eder.
- * Interaction'dan bağımsızdır; /update kullanici, /update all ve /verify ortak kullanır.
+ * Interaction'dan bağımsızdır; /update, /update all:True ve /verify ortak kullanır.
  */
 async function syncMemberInGuild(client, guild, member, dbUser) {
   const { TMT_GUILD_ID, ALLIED_GUILD_ID, GUILD2_ID } = require("../../config");
@@ -146,12 +167,12 @@ async function syncMemberInGuild(client, guild, member, dbUser) {
 
 function addResultFields(embed, result) {
   if (result.tier) {
-    embed.addFields({ name: "🎖️ Seviye Rolü", value: result.tier, inline: true });
+    embed.addFields({ name: "🎖️ Seviye Rolü", value: fitField(result.tier), inline: true });
   }
   if (result.unresolved?.length) {
     embed.addFields({
       name: "⚠️ Eşleşmeyen Roller",
-      value: result.unresolved.map((n) => `\`${n}\``).join(", ").slice(0, 1024),
+      value: fitField(result.unresolved.map((n) => `\`${n}\``).join(", ")),
       inline: false,
     });
   }
@@ -236,7 +257,7 @@ async function runSyncForMember(interaction, { ephemeral = true, commandName = "
         .setTitle("✅ Doğrulandı")
         .setDescription(
           `Roblox hesabın: **${dbUser.robloxUsername || dbUser.robloxId}**\n` +
-            `Rütben değişirse rollerin otomatik güncellenir. Elle güncellemek için \`/update kullanici\`.`
+            `Rütben değişirse rollerin otomatik güncellenir. Elle güncellemek için \`/update\`.`
         );
       return interaction.editReply({
         embeds: [embed],
@@ -268,7 +289,7 @@ async function handleUpdateAll(interaction) {
     return interaction.reply(replyEphemeral("❌ Bu komut yalnızca sunucuda kullanılabilir."));
   }
   if (!canManageOthers(interaction)) {
-    return interaction.reply(replyEphemeral("❌ `/update all` için **Rolleri Yönet** yetkisi gerekiyor."));
+    return interaction.reply(replyEphemeral("❌ `/update all:True` için **Rolleri Yönet** yetkisi gerekiyor."));
   }
   if (runningUpdateAll.has(guild.id)) {
     return interaction.reply(replyEphemeral("⏳ Bu sunucuda zaten bir `/update all` işlemi sürüyor."));
@@ -338,8 +359,7 @@ async function handleUpdateAll(interaction) {
 }
 
 async function handleUpdate(interaction) {
-  const sub = interaction.options?.getSubcommand?.(false);
-  if (sub === "all") return handleUpdateAll(interaction);
+  if (interaction.options?.getBoolean?.("all")) return handleUpdateAll(interaction);
 
   const targetUser = interaction.options?.getUser?.("kullanici") || interaction.user;
   if (targetUser.id !== interaction.user.id && !canManageOthers(interaction)) {
