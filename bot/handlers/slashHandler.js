@@ -21,12 +21,30 @@ async function handleSlashCommand(interaction) {
     return sendGrafiklerMenu(interaction, 'trend');
   }
 
+  if (commandName === "kurallar-kabul" && !RulesAcceptance.hasAccepted(interaction.user.id)) {
+    const modal = new ModalBuilder()
+      .setCustomId("rules_acceptance_modal")
+      .setTitle("Kurallari Oku ve Kabul Et");
+    const rulesInput = new TextInputBuilder()
+      .setCustomId("rules_confirm")
+      .setLabel("Kurallari okuyup kabul ediyorum (evet yaz)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setPlaceholder("Kurallari kabul ediyorum");
+    modal.addComponents(new ActionRowBuilder().addComponents(rulesInput));
+    return interaction.showModal(modal);
+  }
+
+  if (interaction._deferPromise) {
+    await interaction._deferPromise.catch(() => {});
+  }
   if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply({ ephemeral: true }).catch(() => { });
+    interaction._deferPromise = interaction.deferReply({ ephemeral: true }).catch(() => {});
+    await interaction._deferPromise;
   }
 
   try {
-    const user = await User.findOne({ discordId: interaction.user.id }).catch(err => {
+    let user = await User.findOne({ discordId: interaction.user.id }).catch(err => {
       console.warn('[slashHandler] User lookup error:', err.message);
       return null;
     });

@@ -274,10 +274,24 @@ function install(discord = require('discord.js'), { log = (m) => console.warn(`[
     if (erOwner && !erOwner.editReply.__v2wrapped) {
       const origER = erOwner.editReply;
       const er = async function (options, ...rest) {
+        if (this._deferPromise) {
+          try { await this._deferPromise; } catch (_) {}
+        }
+        if (!this.deferred && !this.replied && typeof this.deferReply === 'function') {
+          try {
+            this._deferPromise = this.deferReply({ ephemeral: true });
+            await this._deferPromise;
+          } catch (_) {}
+        }
         try { options = stripAccent(options); } catch (_) { /* yoksay */ }
         const target = options && typeof options === 'object' ? options.message : undefined;
         const conv = (!target || target === '@original') ? convertPayload(options, discord) : null;
-        if (!conv) return origER.call(this, options, ...rest);
+        if (!conv) {
+          if (!this.deferred && !this.replied && typeof this.reply === 'function') {
+            return this.reply(options);
+          }
+          return origER.call(this, options, ...rest);
+        }
         try {
           if (this.__v2MsgId) {
             const res = await this.webhook.editMessage(this.__v2MsgId, conv.payload);

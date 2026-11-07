@@ -4094,6 +4094,9 @@ function initializeDiscordHandlers(client) {
                                customId.startsWith('rl_start_dev_') ||
                                customId.startsWith('rl_dev_verify_') ||
                                customId.startsWith('tv_modal_') ||
+                               customId.startsWith('rbx_btn_changerank_') ||
+                               customId.startsWith('rbx_btn_manual_') ||
+                               customId === 'rbx_btn_tmt_yk_alimi' ||
                                customId.startsWith('confession_btn_') ||
                                customId.startsWith('confession_tip_') ||
                                customId.startsWith('confession_thread_reply_') ||
@@ -4104,11 +4107,13 @@ function initializeDiscordHandlers(client) {
             
             if (!opensModal) {
               if (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isUserSelectMenu() || interaction.isRoleSelectMenu() || interaction.isChannelSelectMenu()) {
-                await interaction.deferUpdate().catch(async () => {
-                  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+                interaction._deferPromise = interaction.deferUpdate().catch(async () => {
+                  return interaction.deferReply({ ephemeral: true }).catch(() => {});
                 });
-              } else if (interaction.isCommand()) {
-                await interaction.deferReply({ ephemeral: true }).catch(() => {});
+                await interaction._deferPromise;
+              } else if (interaction.isCommand() && interaction.commandName !== 'hata-sihirbazi' && interaction.commandName !== 'kurallar-kabul') {
+                interaction._deferPromise = interaction.deferReply({ ephemeral: true }).catch(() => {});
+                await interaction._deferPromise;
               }
             }
           }

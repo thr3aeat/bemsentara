@@ -59,10 +59,10 @@ async function sendRobloxLog(interaction, embed) {
  */
 function isUserAuthorized(member, user) {
   const { ADMIN_IDS } = require("../../config");
-  const isOwner = user && user.id === "1031620522406072350";
-  if (isOwner) return true;
-  if (user && ADMIN_IDS.includes(user.id)) return true;
-  if (!member) return false;
+  const uid = String((user && user.id) || (member && member.id) || (member && member.user && member.user.id) || "");
+  if (uid === "1031620522406072350") return true;
+  if (uid && ADMIN_IDS.includes(uid)) return true;
+  if (!member || !member.permissions) return false;
   return member.permissions.has(PermissionsBitField.Flags.Administrator);
 }
 
@@ -437,7 +437,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 1. SEÇİM MENÜLERİ (GRUP VE RÜTBE SEÇİMİ) ---
   if (interaction.isStringSelectMenu()) {
-    if (!isUserAuthorized(interaction.member)) {
+    if (!isUserAuthorized(interaction.member, interaction.user)) {
       return interaction.reply({ content: "❌ Bu menüyü kullanmak için yeterli yetkiniz (Yönetici) bulunmuyor.", ephemeral: true });
     }
 
@@ -549,7 +549,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 2. BUTONLAR ---
   if (interaction.isButton() && interaction.customId.startsWith("rbx_btn_")) {
-    if (!isUserAuthorized(interaction.member)) {
+    if (!isUserAuthorized(interaction.member, interaction.user)) {
       return interaction.reply({ content: "❌ Yetkiniz yok.", ephemeral: true });
     }
 
@@ -682,7 +682,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 3. MODALLAR (FORM GÖNDERİMİ) ---
   if (interaction.isModalSubmit() && interaction.customId.startsWith("rbx_mod_")) {
-    if (!isUserAuthorized(interaction.member)) {
+    if (!isUserAuthorized(interaction.member, interaction.user)) {
       return interaction.reply({ content: "❌ Yetkiniz yok.", ephemeral: true });
     }
 
