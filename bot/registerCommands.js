@@ -17,25 +17,32 @@ async function registerAllCommands(clientId = BOT_ID) {
       await rest.put(Routes.applicationCommands(cid), { body: allCommands });
       logger.success(`${allCommands.length} slash komut (global) kaydedildi.`);
     } else {
-      // Discord global command limiti 100. Kaydetme stratejisi:
-      // - İlk 100 komutu global olarak kaydet
-      // - Kalanları sunucuya özel (guild) komut olarak TARGET_GUILD_ID ve GUILD2_ID'ye eklemeyi dene
       const firstBatch = allCommands.slice(0, 100);
       const remainder = allCommands.slice(100);
 
       await rest.put(Routes.applicationCommands(cid), { body: firstBatch });
-      logger.warn(`Global komutlar 100 ile sınırlı. İlk 100 komut global olarak kaydedildi, kalan ${remainder.length} komut guild-level olarak kaydedilecek.`);
+      logger.warn(`Global komutlar 100 ile sınırlı. İlk 100 komut global olarak kaydedildi, kalan ${remainder.length} komut tüm sunuculara (guild-level) kaydedilecek.`);
 
-      const targetGuilds = [TARGET_GUILD_ID, GUILD2_ID, TMT_GUILD_ID].filter(Boolean);
+      const guildIdSet = new Set([TARGET_GUILD_ID, GUILD2_ID, TMT_GUILD_ID].filter(Boolean));
+      try {
+        const botGuilds = await rest.get(Routes.userGuilds());
+        if (Array.isArray(botGuilds)) {
+          for (const g of botGuilds) {
+            if (g && g.id) guildIdSet.add(g.id);
+          }
+        }
+      } catch (listErr) {
+        logger.warn(`Bot sunucu listesi alınamadı, yapılandırılmış guild ID'leri kullanılacak: ${listErr.message}`);
+      }
+
+      const targetGuilds = [...guildIdSet];
       if (targetGuilds.length === 0) {
-        logger.error('Kalan komutları kaydetmek için hiçbir TARGET_GUILD_ID, GUILD2_ID veya TMT_GUILD_ID bulunamadı. Lütfen config ayarlarını kontrol edin.');
+        logger.error("Kalan komutları kaydetmek için hiçbir hedef sunucu (guild) bulunamadı.");
       } else {
         for (const gid of targetGuilds) {
           try {
             await rest.put(Routes.applicationGuildCommands(cid, gid), { body: remainder });
             logger.success(`Kalan ${remainder.length} komut guild ${gid} için kaydedildi.`);
-            // If one guild accepted them, no need to try others
-            break;
           } catch (gErr) {
             logger.warn(`Guild ${gid} için komut kaydı başarısız: ${gErr.message}`);
           }

@@ -20,11 +20,11 @@ async function checkAndDeploy() {
     const remoteUrl = execSync('git config --get remote.origin.url', { encoding: 'utf8', timeout: 4000 }).trim();
     if (!remoteUrl) return;
 
-    // Uzaktaki commit'leri getir
-    execSync('git fetch origin main --quiet', { encoding: 'utf8', timeout: 15000 });
+    // Uzaktaki commit'leri getir (shallow/detached klonlarda da origin/main referansını güncelle)
+    execSync('git fetch origin +refs/heads/main:refs/remotes/origin/main --quiet', { encoding: 'utf8', timeout: 15000 });
 
     const localCommit = execSync('git rev-parse HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
-    const remoteCommit = execSync('git rev-parse origin/main', { encoding: 'utf8', timeout: 4000 }).trim();
+    const remoteCommit = execSync('git rev-parse FETCH_HEAD', { encoding: 'utf8', timeout: 4000 }).trim();
 
     if (localCommit && remoteCommit && localCommit !== remoteCommit) {
       isDeploying = true;
@@ -49,8 +49,8 @@ async function checkAndDeploy() {
       }
 
       // 2. Kodları origin/main seviyesine sıfırla (merge conflict oluşmasını engeller)
-      execSync('git fetch origin main', { encoding: 'utf8', timeout: 30000 });
-      const resetOutput = execSync('git reset --hard origin/main', { encoding: 'utf8', timeout: 30000 });
+      execSync('git fetch origin +refs/heads/main:refs/remotes/origin/main', { encoding: 'utf8', timeout: 30000 });
+      const resetOutput = execSync('git reset --hard FETCH_HEAD', { encoding: 'utf8', timeout: 30000 });
       logger.success(`[GitAutoDeploy] Güncelleme tamamlandı:\n${resetOutput}`);
 
       // 3. Çalışma zamanı verilerini geri yükle
@@ -67,7 +67,7 @@ async function checkAndDeploy() {
 
       // 4. Eğer package.json değiştiyse hızlı npm install
       try {
-        const gitDiff = execSync(`git diff --name-only ${localCommit} origin/main`, { encoding: 'utf8', timeout: 10000 });
+        const gitDiff = execSync(`git diff --name-only ${localCommit} FETCH_HEAD`, { encoding: 'utf8', timeout: 10000 });
         if (gitDiff.includes('package.json')) {
           logger.info('[GitAutoDeploy] Paket bağımlılıkları güncelleniyor (npm install)...');
           execSync('npm install --production --prefer-offline', { encoding: 'utf8', timeout: 60000 });

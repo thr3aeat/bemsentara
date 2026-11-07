@@ -159,7 +159,7 @@ router.post('/pull-deploy', botManagerGuard, (req, res) => {
     const executor = req.user.username || req.user.discordUsername || req.user.discordId;
     logger.warn(`[BotControl] Git Pull & Deploy Tetiklendi! (Yetkili: ${executor} / ${req.user.discordId})`);
 
-    const cmd = 'git fetch origin main && git reset --hard origin/main && npm install --production --prefer-offline';
+    const cmd = 'git fetch origin +refs/heads/main:refs/remotes/origin/main && git reset --hard FETCH_HEAD && npm install --production --prefer-offline';
     exec(cmd, { cwd: path.join(__dirname, '../../') }, (err, stdout, stderr) => {
       if (err) {
         logger.error('[BotControl] git pull & deploy hatası:', err.message);

@@ -1036,8 +1036,47 @@ const combinedCommands = [
   ...staffCommands,
 ];
 
-// Discord API limits application commands to max 100. Capped at 50 clean commands.
-const allCommands = combinedCommands.slice(0, 50).map((c) => c.toJSON());
+// Secondary/panel alias commands placed after the first 100 global commands so that
+// all primary user, moderation, economy, fun, and staff commands fit in the 100 global slots,
+// while the remaining alias commands are registered per-guild.
+const GUILD_OVERFLOW_NAMES = new Set([
+  "system-toggle",
+  "system-ekobang",
+  "system-ekobangerial",
+  "system-grupcekeko",
+  "system-grupcekekogerial",
+  "staff-reward",
+  "staff-giveleave",
+  "staff-attendance-start",
+  "staff-attendance-stop",
+  "attendance-start",
+  "attendance-stop",
+  "birim-tanitim",
+  "abuse-test",
+  "coach-welcome-reset",
+  "coach-mesaj-ayarlari",
+  "channel-perms",
+  "staff-setstats",
+  "boom_ayarlar",
+  "kelime_oyunu_ayarlar",
+  "izin_kullan",
+  "izin_durum",
+]);
+
+const PREFER_LATER_DEFINITION = new Set(["birim-alimi", "birimistifa"]);
+const commandMap = new Map();
+for (const builder of combinedCommands) {
+  const json = builder.toJSON();
+  if (!json || !json.name) continue;
+  if (!commandMap.has(json.name) || PREFER_LATER_DEFINITION.has(json.name)) {
+    commandMap.set(json.name, json);
+  }
+}
+
+const deduplicatedJson = [...commandMap.values()];
+const primaryGlobalCommands = deduplicatedJson.filter((c) => !GUILD_OVERFLOW_NAMES.has(c.name));
+const overflowGuildCommands = deduplicatedJson.filter((c) => GUILD_OVERFLOW_NAMES.has(c.name));
+const allCommands = [...primaryGlobalCommands, ...overflowGuildCommands];
 
 module.exports = {
   allCommands,

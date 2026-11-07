@@ -225,18 +225,50 @@ function createSupervisor(options = {}) {
    * Discord bağlantısı: hazır değilse (ve en az bir kez hazır olduysa) aynı süreçte
    * client.destroy() + client.login() ile yeniden bağlanır. İlk bağlanma döngüsüne karışmaz.
    */
-  function registerDiscord(client, { token, name = 'Discord Bağlantısı' }) {
+  function registerDiscord(client, { token, name = 'Discord Bağlantısı', maxIdleGatewayMs = 180000 }) {
     discordClient = client;
+    let lastGatewayAt = Date.now();
+    if (client && typeof client.on === 'function') {
+      const markGatewayAlive = () => { lastGatewayAt = Date.now(); };
+      for (const evt of ['raw', 'messageCreate', 'interactionCreate', 'presenceUpdate', 'voiceStateUpdate', 'typingStart']) {
+        client.on(evt, markGatewayAlive);
+      }
+    }
+
     register(name, {
       failThreshold: 6, // ~90 sn: discord.js'in kendi yeniden bağlanmasına süre tanı
       check: async () => {
         if (!client.readyTimestamp) return { ok: true, detail: 'ilk bağlantı bekleniyor' };
-        const ok = client.isReady() && client.ws.status === 0;
-        return { ok, detail: ok ? null : `ws durumu=${client.ws && client.ws.status}, hazır=${client.isReady()}` };
+        const ok = client.isReady() && client.ws && client.ws.status === 0 && !Number.isNaN(client.ws.ping) && client.ws.ping !== -1;
+        if (!ok) {
+          return { ok: false, detail: `ws durumu=${client.ws && client.ws.status}, hazır=${client.isReady()}` };
+        }
+        // Zombie Gateway tespiti: uzun süredir hiçbir Gateway paketi gelmediyse Opcode 8 ile canlılık yoklaması yap
+        if (
+          typeof client.on === 'function' &&
+          client.user &&
+          client.user.id &&
+          client.guilds &&
+          client.guilds.cache &&
+          client.guilds.cache.size > 0 &&
+          Date.now() - lastGatewayAt > maxIdleGatewayMs
+        ) {
+          const probeGuild = client.guilds.cache.first();
+          if (probeGuild && probeGuild.members && typeof probeGuild.members.fetch === 'function') {
+            try {
+              await probeGuild.members.fetch({ user: [client.user.id], time: 6000 });
+              lastGatewayAt = Date.now();
+            } catch (probeErr) {
+              return { ok: false, detail: `gateway event akışı durdu (${probeErr.message})` };
+            }
+          }
+        }
+        return { ok: true, detail: null };
       },
       heal: async () => {
         try { await client.destroy(); } catch (_) { /* zaten kopuk olabilir */ }
         await client.login(token);
+        lastGatewayAt = Date.now();
       }
     });
   }
