@@ -103,33 +103,45 @@ function v2Reply(container, ephemeral = true) {
  * Yetkilendirme butonuna basınca açılan Components V2 yöntem seçim paneli.
  */
 function buildVerifyMethodPanel(linkedUser) {
+  const quickUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/baglan/tmt`;
   const container = new ContainerBuilder().setAccentColor(0x4169e1);
 
   if (linkedUser) {
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
       `## ✅ Hesabın Zaten Bağlı\nRoblox: **${linkedUser.robloxUsername || "Bilinmiyor"}** (\`${linkedUser.robloxId}\`)\n\n` +
-      "Rollerini güncellemek için **Rollerimi Senkronize Et** butonunu kullan. Farklı bir hesap bağlamak istersen aşağıdan yeni yöntem seçebilirsin."
+      "Rollerini güncellemek için **Rollerimi Senkronize Et** veya **⚡ HIZLI DOĞRULA** butonunu kullan. Farklı bir hesap bağlamak istersen aşağıdan yeni yöntem seçebilirsin."
     ));
   } else {
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-      "## 🔐 Roblox Hesap Bağlama\nAşağıdaki menüden sana uygun **doğrulama yöntemini** seç."
+      "## 🔐 Roblox Hesap Bağlama\nEn hızlı işlem için **⚡ HIZLI DOĞRULA** butonuna tıklayarak web üzerinden tek ekranda bağlanabilir veya aşağıdaki menüden yöntem seçebilirsin."
     ));
   }
 
   container
     .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
     .addActionRowComponents(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel("⚡ HIZLI DOĞRULA (Web)")
+        .setStyle(ButtonStyle.Link)
+        .setURL(quickUrl),
+      new ButtonBuilder()
+        .setCustomId("verify_button")
+        .setLabel("Rollerimi Senkronize Et")
+        .setEmoji("✅")
+        .setStyle(ButtonStyle.Success)
+    ))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("rbx_sel_verify_method")
         .setPlaceholder("Doğrulama yöntemi seç...")
         .addOptions(
           { label: "Roblox OAuth2", value: "oauth", emoji: "🌐", description: "Resmi Roblox girişi ile bağla (önerilen)" },
-          { label: "Roblox Arkadaşlık", value: "friend", emoji: "🤝", description: "Botun arkadaşlık isteğini kabul et" },
+          { label: "Roblox Arkadaşlık (yildiznqt)", value: "friend", emoji: "🤝", description: "Botun arkadaşlık isteğini kabul et" },
           { label: "Roblox Açıklama", value: "bio", emoji: "📝", description: "Profil açıklamana doğrulama kodu yaz" },
           { label: "Discord DM", value: "dm", emoji: "✉️", description: "Doğrulama bağlantısı DM ile gelsin" }
         )
     ))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# TMT Yetkilendirme Sistemi"));
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent("-# TMT Yetkilendirme Sistemi • Components V2"));
 
   return v2Reply(container);
 }
@@ -328,56 +340,40 @@ async function handleRobloxInteractions(interaction) {
         return interaction.editReply({ content: "❌ Roblox kullanıcı adı bulunamadı. Lütfen doğru yazdığınızdan emin olun." });
       }
 
-      // Arkadaşlık isteği gönder
+      // Bot Roblox ID'sini al (yildiznqt = 11940372682)
       const { getFriendJar, getOrFetchFriendBotId } = require("../services/robloxGroupManager");
       const friendJar = getFriendJar();
-      
+      const botRobloxId = (await getOrFetchFriendBotId()) || 11940372682;
+      const botProfileUrl = `https://www.roblox.com/users/${botRobloxId}/profile`;
+
       let requestSent = false;
       try {
         await noblox.sendFriendRequest({ userId: robloxId, jar: friendJar });
         requestSent = true;
       } catch (err) {
-        const errMsg = typeof err === "string" ? err : (err?.message || JSON.stringify(err || ""));
-        const lowerMsg = errMsg.toLowerCase();
-        const isAlreadyFriend =
-          lowerMsg.includes("already a friend") ||
-          lowerMsg.includes("already friends") ||
-          lowerMsg.includes("are already friends") ||
-          lowerMsg.includes("cannot send friend request") ||
-          lowerMsg.includes("already pending") ||
-          lowerMsg.includes("zaten var") ||
-          lowerMsg.includes('"code":5') ||
-          lowerMsg.includes('"code": 5') ||
-          err?.errors?.[0]?.code === 5;
-
-        if (isAlreadyFriend) {
-          requestSent = true;
-        } else {
-          console.error("sendFriendRequest error:", err);
-          return interaction.editReply({ 
-            content: `❌ Arkadaşlık isteği gönderilemedi.\n**Neden:** Roblox profilinizin arkadaşlık isteklerine açık olduğundan veya botun arkadaşlık isteği limitlerinin dolmadığından emin olun.\n*Hata detayı:* \`${errMsg}\`` 
-          });
-        }
+        // Outgoing request may hit Roblox captcha; user can send friend request to bot instead
+        requestSent = false;
       }
-
-      // Bot Roblox ID'sini al
-      const botRobloxId = await getOrFetchFriendBotId();
-      const botProfileUrl = botRobloxId ? `https://www.roblox.com/users/${botRobloxId}/profile` : "https://www.roblox.com";
 
       const embed = new EmbedBuilder()
         .setColor(0x3498DB)
-        .setTitle("🤖 Roblox Arkadaşlık Doğrulaması")
+        .setTitle("🤝 Roblox Arkadaşlık Doğrulaması (yildiznqt)")
         .setDescription(
-          `**${username}** (ID: \`${robloxId}\`) hesabına arkadaşlık isteği gönderildi.\n\n` +
+          `Hesap: **${username}** (ID: \`${robloxId}\`)\n\n` +
           `**Yapılması Gerekenler:**\n` +
-          `1. Roblox hesabınıza giriş yapın.\n` +
-          `2. **[Botun Roblox Profiline Gitmek İçin Tıklayın](${botProfileUrl})** ve gelen arkadaşlık isteğini kabul edin.\n` +
-          `3. İsteği kabul ettikten sonra aşağıdaki **Doğrulamayı Tamamla** butonuna tıklayın.\n\n` +
-          `*Not: Doğrulama tamamlandıktan sonra bot sizi otomatik olarak arkadaşlıktan çıkaracaktır.*`
+          `1. **[yildiznqt Bot Profilini Açmak İçin Tıklayın](${botProfileUrl})**\n` +
+          `2. Bot profiline **Arkadaşlık İsteği Gönder (Add Friend)** butonuna basın${requestSent ? " *(veya botun gönderdiği isteği kabul edin)*" : ""}.\n` +
+          `3. İsteği gönderdikten sonra aşağıdaki **✅ Doğrulamayı Tamamla** butonuna tıklayın.\n\n` +
+          `*Not: Doğrulama tamamlandıktan sonra bot isteği otomatik kabul edip doğrulamayı bitirecektir.*`
         )
         .setTimestamp();
 
       const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("yildiznqt Profilini Aç")
+          .setEmoji("🔗")
+          .setStyle(ButtonStyle.Link)
+          .setURL(botProfileUrl),
         new ButtonBuilder()
           .setCustomId(`rbx_btn_verify_friend_confirm_${robloxId}_${username}`)
           .setLabel("✅ Doğrulamayı Tamamla")
@@ -398,19 +394,20 @@ async function handleRobloxInteractions(interaction) {
     const username = parts.slice(6).join("_");
 
     try {
-      const { getFriendJar, getOrFetchFriendBotId, isFriendWithBot } = require("../services/robloxGroupManager");
-      const botRobloxId = await getOrFetchFriendBotId();
+      const { getFriendJar, getOrFetchFriendBotId, isFriendWithBot, verifyViaFriendRequest } = require("../services/robloxGroupManager");
+      const botRobloxId = (await getOrFetchFriendBotId()) || 11940372682;
       const friendJar = getFriendJar();
       if (!botRobloxId || !friendJar) {
         return interaction.editReply({ content: "❌ Botun Roblox bağlantısı şu an aktif değil. Lütfen daha sonra tekrar deneyin." });
       }
 
-      // Arkadaşlık durumunu kontrol et
-      const isFriend = await isFriendWithBot(robloxId);
+      // Hem gelen arkadaşlık isteğini kabul etmeyi dene, hem de mevcut arkadaşlığı kontrol et
+      const viaReq = await verifyViaFriendRequest(robloxId);
+      const isFriend = viaReq?.verified || (await isFriendWithBot(robloxId));
 
       if (!isFriend) {
         return interaction.editReply({ 
-          content: "❌ **Arkadaşlık isteği kabul edilmemiş.** Lütfen botun gönderdiği arkadaşlık isteğini kabul ettiğinizden emin olun ve tekrar deneyin." 
+          content: `❌ **Arkadaşlık isteği bulunamadı.** Lütfen **[yildiznqt profiline](https://www.roblox.com/users/${botRobloxId}/profile)** arkadaşlık isteği gönderdiğinizden (veya gelen isteği kabul ettiğinizden) emin olun ve tekrar deneyin.` 
         });
       }
 

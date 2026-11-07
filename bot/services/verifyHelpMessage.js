@@ -3,6 +3,11 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  MessageFlags,
 } = require("discord.js");
 const {
   TARGET_GUILD_ID,
@@ -14,50 +19,75 @@ const { MAIN_GROUP_URL } = require("../config/roleSync");
 /** Mevcut mesajı tanımak için footer işareti */
 const VERIFY_HELP_MARKER = "Sentara-Verify-Help-v1";
 
+function buildVerifyHelpContainer() {
+  const quickUrl = `${BASE_URL || "https://ekoyildiz.duckdns.org"}/baglan/bem`;
+  return new ContainerBuilder()
+    .setAccentColor(0x5865f2)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        "# 🔐 Doğrulama ve Rol Güncelleme\n" +
+        "Roblox **BEM** grubundaki rütbenize göre Discord rolleriniz otomatik verilir."
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        "### ⚡ HIZLI DOĞRULA (Tek Tıkla Web Doğrulama)\n" +
+        "Aşağıdaki **⚡ HIZLI DOĞRULA** butonuna tıklayarak web üzerinden **Discord Doğrula ➔ Roblox Doğrula ➔ 🎉 ARTIK HAZIRSIN!** adımlarını anında tamamlayabilirsiniz."
+      )
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        "### 📋 Doğrulama & Güncelleme Yöntemleri\n" +
+        `> ⚡ **Hızlı Doğrula:** [Buraya Tıkla](${quickUrl}) — Discord + Roblox bağla ve rollerini otomatik al\n` +
+        "> 🤝 **Roblox Arkadaşlık:** `/authorize` veya **Yetkilendir** butonu ile `yildiznqt` botuna istek gönder\n" +
+        "> 🔄 **Rol Güncelleme:** Rütbe değiştirdiyseniz `/dogrula` (`/update`) yazın veya **Rollerimi Senkronize Et** butonuna basın\n" +
+        `> ⚠️ **Not:** Ana **[BEM grubunun](${MAIN_GROUP_URL})** üyesi olmalısınız`
+      )
+    )
+    .addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("⚡ HIZLI DOĞRULA")
+          .setStyle(ButtonStyle.Link)
+          .setURL(quickUrl),
+        new ButtonBuilder()
+          .setCustomId("authorize_button")
+          .setLabel("Yetkilendirmek İçin Tıkla")
+          .setEmoji("🔐")
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId("verify_button")
+          .setLabel("Rollerimi Senkronize Et")
+          .setEmoji("✅")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId("verify_help_refresh")
+          .setLabel("ℹ️ Komut Özeti")
+          .setStyle(ButtonStyle.Secondary)
+      )
+    )
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${VERIFY_HELP_MARKER} • Sentara Components V2`));
+}
+
 function getVerifyHelpEmbed() {
   return new EmbedBuilder()
     .setColor(0x5865f2)
     .setTitle("🔐 Doğrulama ve Rol Güncelleme")
     .setDescription(
       "Roblox **BEM** grubundaki rütbenize göre Discord rolleriniz otomatik verilir.\n\n" +
-      "Aşağıdaki adımları sırayla uygulayın."
+      "Aşağıdaki **⚡ HIZLI DOĞRULA** butonuna tıklayarak hesabınızı saniyeler içinde bağlayabilirsiniz."
     )
     .addFields(
       {
-        name: "1️⃣ Roblox hesabını bağla",
-        value:
-          "• Sunucuda `/authorize` yazın ve çıkan bağlantıya tıklayın\n" +
-          `• Veya siteye girip Discord + Roblox ile giriş yapın: [Dashboard](${BASE_URL}/dashboard)`,
+        name: "⚡ HIZLI DOĞRULA",
+        value: `[Hızlı Doğrulama Sayfası](${BASE_URL}/baglan/bem) üzerinden **Discord Doğrula ➔ Roblox Doğrula ➔ ARTIK HAZIRSIN!** adımlarını tamamlayın.`,
         inline: false,
       },
       {
-        name: "2️⃣ İlk doğrulama — `/verify`",
-        value:
-          "Hesabınız bağlıysa Roblox rütbenize göre rolleriniz **ilk kez** atanır.\n" +
-          "Yanıt yalnızca size görünür.",
-        inline: false,
-      },
-      {
-        name: "3️⃣ Rol güncelleme — `/update`",
-        value:
-          "Grupta rütbe değiştirdiyseniz veya rolleriniz eksikse `/update` kullanın.\n" +
-          "Ana grup + branş grupları kontrol edilir; eklenen/kaldırılan roller listelenir.",
-        inline: false,
-      },
-      {
-        name: "🌐 Web üzerinden güncelleme",
-        value:
-          `[Dashboard](${BASE_URL}/dashboard) → **Rolleri Güncelle** butonuna tıklayın.\n` +
-          "Roblox bağlı değilse önce bağlantı yapmanız istenir.",
-        inline: false,
-      },
-      {
-        name: "⚠️ Bilmeniz gerekenler",
-        value:
-          `• Ana **[BEM grubunun](${MAIN_GROUP_URL})** üyesi olmalısınız\n` +
-          "• Discord rol adları, Roblox rütbe adlarıyla aynı olmalıdır\n" +
-          "• Branş daireniz varsa ilgili branş grubuna da üye olun\n" +
-          "• Sorun yaşarsanız ticket açınız veya yetkililere yazın",
+        name: "🔄 Rol güncelleme — `/dogrula`",
+        value: "Grupta rütbe değiştirdiyseniz `/dogrula` veya `/update` kullanın.",
         inline: false,
       }
     )
@@ -69,9 +99,17 @@ function getVerifyHelpComponents() {
   return [
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setLabel("Roblox Bağla / Dashboard")
+        .setLabel("⚡ HIZLI DOĞRULA")
         .setStyle(ButtonStyle.Link)
-        .setURL(`${BASE_URL}/dashboard`),
+        .setURL(`${BASE_URL}/baglan/bem`),
+      new ButtonBuilder()
+        .setCustomId("authorize_button")
+        .setLabel("🔐 Yetkilendir")
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId("verify_button")
+        .setLabel("✅ Rollerimi Senkronize Et")
+        .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId("verify_help_refresh")
         .setLabel("ℹ️ Komut Özeti")
@@ -83,17 +121,20 @@ function getVerifyHelpComponents() {
 function isVerifyHelpMessage(message, botId) {
   if (message.author?.id !== botId) return false;
   const embed = message.embeds?.[0];
-  if (!embed) return false;
-  const footer = embed.footer?.text || "";
-  const title = embed.title || "";
-  return (
-    footer.includes(VERIFY_HELP_MARKER) ||
-    title.includes("Doğrulama ve Rol Güncelleme")
-  );
+  if (embed) {
+    const footer = embed.footer?.text || "";
+    const title = embed.title || "";
+    if (footer.includes(VERIFY_HELP_MARKER) || title.includes("Doğrulama ve Rol Güncelleme")) return true;
+  }
+  if (message.components?.length > 0) {
+    const raw = JSON.stringify(message.components);
+    if (raw.includes(VERIFY_HELP_MARKER) || raw.includes("verify_help_refresh") || raw.includes("/baglan/bem")) return true;
+  }
+  return false;
 }
 
 /**
- * Doğrulama kanalına yardım mesajını gönderir (yoksa).
+ * Doğrulama kanalına Components V2 yardım mesajını gönderir veya günceller.
  */
 async function ensureVerifyHelpMessage(client) {
   const logger = require("../../utils/logger");
@@ -115,28 +156,39 @@ async function ensureVerifyHelpMessage(client) {
     let existing = null;
     let lastId = undefined;
 
-    for (let i = 0; i < 5; i++) {
-      const batch = await channel.messages.fetch({ limit: 100, before: lastId });
+    for (let i = 0; i < 3; i++) {
+      const batch = await channel.messages.fetch({ limit: 50, before: lastId });
       if (batch.size === 0) break;
 
       existing = batch.find((m) => isVerifyHelpMessage(m, client.user.id));
       if (existing) break;
 
       lastId = batch.last()?.id;
-      if (batch.size < 100) break;
+      if (batch.size < 50) break;
     }
 
+    const container = buildVerifyHelpContainer();
+
     if (existing) {
-      logger.info(`Doğrulama yardım mesajı zaten var (${existing.id}), atlanıyor.`);
-      return { posted: false, reason: "already_exists", messageId: existing.id };
+      await existing.edit({
+        content: null,
+        embeds: [],
+        components: [container],
+        flags: MessageFlags.IsComponentsV2,
+      }).catch(async () => {
+        await existing.delete().catch(() => {});
+        await channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      });
+      logger.info(`Doğrulama yardım mesajı Components V2 olarak güncellendi (${existing.id}).`);
+      return { posted: false, updated: true, reason: "updated", messageId: existing.id };
     }
 
     const sent = await channel.send({
-      embeds: [getVerifyHelpEmbed()],
-      components: getVerifyHelpComponents(),
+      components: [container],
+      flags: MessageFlags.IsComponentsV2,
     });
 
-    logger.success(`Doğrulama yardım mesajı gönderildi: #${channel.name} (${sent.id})`);
+    logger.success(`Doğrulama yardım mesajı (Components V2) gönderildi: #${channel.name} (${sent.id})`);
     return { posted: true, messageId: sent.id };
   } catch (err) {
     logger.error("Doğrulama yardım mesajı gönderilemedi:", err.message);
@@ -146,6 +198,7 @@ async function ensureVerifyHelpMessage(client) {
 
 module.exports = {
   VERIFY_HELP_MARKER,
+  buildVerifyHelpContainer,
   getVerifyHelpEmbed,
   getVerifyHelpComponents,
   ensureVerifyHelpMessage,
