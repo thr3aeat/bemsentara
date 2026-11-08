@@ -82,30 +82,34 @@ function cancelPendingNightBan(guildId, userId) {
 const BAN_LOG_CHANNEL_ID = "1504201531551907941";
 
 // ─── Tespit eşikleri ──────────────────────────────────────────────────────────
+const MIN_2  = 2 * 60_000;
+const MIN_5  = 5 * 60_000;
 const MIN_10 = 10 * 60_000;
 const MIN_15 = 15 * 60_000;
 const DAY_1  = 24 * 60 * 60_000;
 // Tek mesajda bu sayıdan fazla kullanıcı etiketlenirse ihlal sayılır
-const MENTION_LIMIT = 3;
+const MENTION_LIMIT = 10;
 // Bu kadar (veya sunucunun %10'u kadar) üyesi olan rol "kalabalık rol" sayılır; pingi @everyone gibi işlenir
 const BIG_ROLE_MIN_MEMBERS = 25;
 const BIG_ROLE_GUILD_RATIO = 0.10;
 const MASS_PING_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+// Eşikler bilinçli olarak yüksek: tek tük / küçük işlemler (birkaç ban, birkaç rol silme vb.)
+// abuse sayılmaz. Sadece kısa sürede yapılan BÜYÜK / toplu işlemler abuse sayılır ve anında engellenir.
 const THRESHOLDS = {
-  BAN:             { count: 5, windowMs: MIN_10, label: "🔨 Ban Limiti (5 / 10 Dakika)",           color: 0xFF0000 },
-  KICK:            { count: 5, windowMs: MIN_10, label: "👢 Kick Limiti (5 / 10 Dakika)",          color: 0xFF4500 },
-  CHANNEL_DELETE:  { enabled: false, count: 3, windowMs: MIN_15, label: "🗑️ Kanal Silme Limiti", color: 0xFF6600 },
-  ROLE_DELETE:     { count: 3, windowMs: MIN_15, label: "🗑️ Rol Silme Limiti (3 / 15 Dakika)",    color: 0xFF8800 },
-  ROLE_CREATE:     { count: 10, windowMs: MIN_15, label: "➕ Rol Oluşturma Limiti (10 / 15 Dakika)", color: 0x3498DB },
-  CHANNEL_CREATE:  { count: 10, windowMs: MIN_15, label: "➕ Kanal Oluşturma Limiti (10 / 15 Dakika)", color: 0x3498DB },
-  WEBHOOK_CREATE:  { count: 3, windowMs: MIN_15, label: "🪝 Webhook Oluşturma Limiti (3 / 15 Dakika)", color: 0xFFAA00 },
-  EMOJI_DELETE:    { count: 5, windowMs: MIN_15, label: "😶 Emoji Silme Limiti (5 / 15 Dakika)",  color: 0xFFAA00 },
-  ROLE_PERMISSION: { count: 1, windowMs: 0,      label: "🔑 Role Tehlikeli İzin Verme Koruması",   color: 0xFF0000 },
-  ROLE_GIVE:       { count: 1, windowMs: 0,      label: "🏷️ Tehlikeli Rol Verme Koruması",        color: 0xFF0000 },
-  BOT_ADD:         { count: 1, windowMs: 0,      label: "🤖 Tehlikeli Bot Ekleme Koruması",        color: 0xFF0000 },
-  MASS_MENTION:    { count: 1, windowMs: 0,      label: `📣 Etiket Limiti (${MENTION_LIMIT})`,     color: 0xFF2200 },
-  EVERYONE_PING:   { count: 3, windowMs: MIN_10, label: "📣 Toplu Ping Spamı (@everyone/@here/kalabalık rol, 3 / 10 Dakika)", color: 0xFF2200 },
-  REKLAM:          { count: 3, windowMs: 20_000, label: "📢 Reklam / Davet Spami",                 color: 0xFF5500 },
+  BAN:             { count: 10, windowMs: MIN_2,  label: "🔨 Toplu Ban (10 / 2 Dakika)",                 color: 0xFF0000 },
+  KICK:            { count: 10, windowMs: MIN_2,  label: "👢 Toplu Kick (10 / 2 Dakika)",                color: 0xFF4500 },
+  CHANNEL_DELETE:  { count: 5,  windowMs: MIN_5,  label: "🗑️ Toplu Kanal Silme (5 / 5 Dakika)",          color: 0xFF6600 },
+  ROLE_DELETE:     { count: 5,  windowMs: MIN_5,  label: "🗑️ Toplu Rol Silme (5 / 5 Dakika)",            color: 0xFF8800 },
+  ROLE_CREATE:     { count: 25, windowMs: MIN_10, label: "➕ Toplu Rol Oluşturma (25 / 10 Dakika)",       color: 0x3498DB },
+  CHANNEL_CREATE:  { count: 25, windowMs: MIN_10, label: "➕ Toplu Kanal Oluşturma (25 / 10 Dakika)",     color: 0x3498DB },
+  WEBHOOK_CREATE:  { count: 6,  windowMs: MIN_5,  label: "🪝 Toplu Webhook Oluşturma (6 / 5 Dakika)",     color: 0xFFAA00 },
+  EMOJI_DELETE:    { count: 10, windowMs: MIN_5,  label: "😶 Toplu Emoji Silme (10 / 5 Dakika)",          color: 0xFFAA00 },
+  ROLE_PERMISSION: { count: 1,  windowMs: 0,      label: "🔑 Role Tehlikeli İzin Verme Koruması",        color: 0xFF0000 },
+  ROLE_GIVE:       { count: 1,  windowMs: 0,      label: "🏷️ Tehlikeli Rol Verme Koruması",             color: 0xFF0000 },
+  BOT_ADD:         { count: 1,  windowMs: 0,      label: "🤖 Tehlikeli Bot Ekleme Koruması",             color: 0xFF0000 },
+  MASS_MENTION:    { count: 1,  windowMs: 0,      label: `📣 Toplu Etiket (${MENTION_LIMIT}+ kişi)`,     color: 0xFF2200 },
+  EVERYONE_PING:   { count: 4,  windowMs: MIN_5,  label: "📣 Toplu Ping Spamı (@everyone/@here/kalabalık rol, 4 / 5 Dakika)", color: 0xFF2200 },
+  REKLAM:          { count: 3,  windowMs: MIN_10, label: "📢 Reklam / Davet Spamı (3 / 10 Dakika)",      color: 0xFF5500 },
 };
 
 // Bir role/bota verilmesi koruma tetikleyen izinler
@@ -158,6 +162,14 @@ function trackAction(guildId, userId, type) {
   return filtered.length >= cfg.count;
 }
 
+/** Güvenilir değilse eylemi sayar; eşik aşıldıysa true döner. */
+async function trackUntrusted(client, guild, executor, type) {
+  if (!executor) return false;
+  const member = await guild.members.fetch(executor.id).catch(() => null);
+  if (isTrustedExecutor(client, guild, executor, member)) return false;
+  return trackAction(guild.id, executor.id, type);
+}
+
 function recentCount(guildId, userId, type) {
   const cfg = THRESHOLDS[type];
   if (!cfg) return 0;
@@ -189,7 +201,8 @@ async function fetchExecutor(guild, auditLogEvent, targetId = null, maxAgeSec = 
       const age = (now - entry.createdAt.getTime()) / 1000;
       if (age > maxAgeSec) continue;
       if (targetId && entry.target?.id !== targetId) continue;
-      if (entry.executor?.bot) continue; // Botların kendi aksiyonlarını yoksay
+      // İşlemi bir bot yaptıysa kimse suçlanmaz (eskiden bir sonraki insan girdisine yanlış yükleniyordu)
+      if (entry.executor?.bot) return null;
       return entry.executor;
     }
   } catch (_) {}
@@ -210,10 +223,15 @@ async function fetchExecutor(guild, auditLogEvent, targetId = null, maxAgeSec = 
 // etiket) yalnızca moderatörlere uyarı olarak gider.
 const SEVERE_TYPES = new Set(["BAN", "KICK", "CHANNEL_DELETE", "ROLE_DELETE", "EMOJI_DELETE", "WEBHOOK_CREATE"]);
 
-/** Sunucu sahibi, bot, ADMIN_IDS, Yönetici izni olanlar ve korumalı kullanıcılar abuse sayılmaz. */
+/**
+ * Üst yetkililer abuse sistemlerinden tamamen muaf:
+ * sunucu sahibi, botlar (bizim bot dahil), ADMIN_IDS (synx 1240705453584023753 dahil),
+ * korumalı kullanıcılar ve Yönetici izni olanlar.
+ */
 function isTrustedExecutor(client, guild, executor, member) {
   if (!executor) return true;
-  if (executor.id === guild.ownerId || executor.id === client.user?.id) return true;
+  if (executor.bot) return true;
+  if (executor.id === guild?.ownerId || executor.id === client?.user?.id) return true;
   if (ADMIN_IDS.includes(executor.id)) return true;
   try {
     if (require("./profanityAutomodService").isProtectedUser(executor.id)) return true;
@@ -288,7 +306,7 @@ async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLine
     .setDescription(
       `**${gName}** sunucusunda şüpheli bir aktivite tespit edildi!\n\n` +
       `> **${cfg.label}**\n` +
-      (count > 1 ? `> ⚡ Son 20 saniyede **${count} kez** gerçekleşti\n` : "") +
+      (count > 1 ? `> ⚡ Kısa sürede **${count} kez** gerçekleşti\n` : "") +
       (isNight 
         ? `\n⚠️ **GECE MODU AKTİF:** 1 dakika içerisinde yanıt gelmezse kullanıcı otomatik olarak banlanacak ve gruptan atılacaktır!\n🕒 **Kalan Süre:** <t:${unix + 60}:R>` 
         : `\n⚠️ Aşağıdaki butonlarla müdahale edebilirsiniz.`)
@@ -397,7 +415,7 @@ async function sendDiscordAbuseAlert(client, { guild, executor, type, detailLine
           .setDescription(
             `**${gName}** sunucusunda şüpheli bir aktivite tespit edildi!\n\n` +
             `> **${cfg.label}**\n` +
-            (count > 1 ? `> ⚡ Son 20 saniyede **${count} kez** gerçekleşti\n` : "")
+            (count > 1 ? `> ⚡ Kısa sürede **${count} kez** gerçekleşti\n` : "")
           )
           .setColor(cfg.color)
           .addFields(
@@ -774,7 +792,7 @@ async function handleBanAdd(client, ban) {
   const executor = await fetchExecutor(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
   if (!executor) return;
 
-  const exceeded = trackAction(ban.guild.id, executor.id, "BAN");
+  const exceeded = await trackUntrusted(client, ban.guild, executor, "BAN");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -790,7 +808,7 @@ async function handleChannelDelete(client, channel) {
   const executor = await fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
   if (!executor) return;
 
-  const exceeded = trackAction(channel.guild.id, executor.id, "CHANNEL_DELETE");
+  const exceeded = await trackUntrusted(client, channel.guild, executor, "CHANNEL_DELETE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -806,7 +824,7 @@ async function handleRoleDelete(client, role) {
   const executor = await fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
   if (!executor) return;
 
-  const exceeded = trackAction(role.guild.id, executor.id, "ROLE_DELETE");
+  const exceeded = await trackUntrusted(client, role.guild, executor, "ROLE_DELETE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -823,7 +841,7 @@ async function handleMemberRemove(client, member) {
   const executor = await fetchExecutor(member.guild, AuditLogEvent.MemberKick, member.id, 5);
   if (!executor) return; // Sadece ayrılma — atılma değil
 
-  const exceeded = trackAction(member.guild.id, executor.id, "KICK");
+  const exceeded = await trackUntrusted(client, member.guild, executor, "KICK");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -884,7 +902,7 @@ async function checkMassPingSpam(client, message, member) {
     executor: message.author,
     type: "EVERYONE_PING",
     detailLines: [
-      `• Son 10 dakikada **${count}** toplu ping`,
+      `• Son 5 dakikada **${count}** toplu ping`,
       `• Etiketlenen: ${targets.join(", ").slice(0, 300)}`,
       `• Uygulanan: ${action}`,
       `• Kanal: <#${message.channel.id}>`,
@@ -902,6 +920,9 @@ async function handleMessageCreateAbuse(client, message) {
   if (require("./profanityAutomodService").isProtectedUser(message.author.id)) return;
 
   const member = message.member;
+
+  // Sunucu sahibi, ADMIN_IDS (synx dahil) ve Yöneticiler mesaj otomodundan tamamen muaf
+  if (isTrustedExecutor(client, message.guild, message.author, member)) return;
 
   // 0. Toplu Ping Spamı: aynı kişi kısa sürede birkaç kez @everyone / @here / kalabalık rol
   // pinglerse hemen müdahale. Sadece sunucu sahibi, Yönetici ve ADMIN_IDS muaf
@@ -935,18 +956,20 @@ async function handleMessageCreateAbuse(client, message) {
   const isTargetCategory = message.channel.parentId === "1521539351031578684" || message.channel.parent?.parentId === "1521539351031578684";
   const hasInviteLink = /(discord\.(gg|io|me|li)\/.+|discord(app)?\.com\/invite\/.+)/i.test(message.content);
   if (hasInviteLink && !isForumChannel && !isTargetCategory) {
-    try {
-      await message.delete().catch(() => {});
-      if (message.member && message.member.moderatable) {
-        await message.member.timeout(24 * 60 * 60 * 1000, "Otomod: Reklam linki paylaşıldı.").catch(() => {});
-        await message.author.send("⚠️ **UYARI:** Sunucuda reklam / davet linki paylaşmak yasaktır. Mesajınız silindi ve 24 saat susturuldunuz.").catch(() => {});
-      }
-      isAbuse = true;
-      type = "REKLAM";
-      detailLines.push("• Reklam/Davet linki tespit edildi. Mesaj silindi ve kullanıcıya 24 saat timeout uygulandı.");
-    } catch (err) {
-      console.error("[discordAbuseDetector] Reklam timeout error:", err.message);
+    // Tek bir link küçük bir ihlal: sadece silinir ve uyarılır. Kısa sürede tekrar eden reklam spamı cezalanır.
+    await message.delete().catch(() => {});
+    const spam = trackAction(message.guild.id, message.author.id, "REKLAM");
+    if (!spam) {
+      await message.author.send("⚠️ Sunucuda reklam / davet linki paylaşmak yasaktır, mesajın silindi. Tekrarlarsan susturulursun.").catch(() => {});
+      return;
     }
+    if (member && member.moderatable) {
+      await member.timeout(24 * 60 * 60 * 1000, "Otomod: Reklam / davet spamı").catch(() => {});
+      await message.author.send("⚠️ **UYARI:** Kısa sürede tekrar tekrar reklam / davet linki paylaştığın için 24 saat susturuldun.").catch(() => {});
+    }
+    isAbuse = true;
+    type = "REKLAM";
+    detailLines.push("• Kısa sürede tekrarlanan reklam/davet linki. Mesaj silindi ve kullanıcıya 24 saat timeout uygulandı.");
   } else if (hasInviteLink && (isForumChannel || isTargetCategory)) {
     console.log(`[discordAbuseDetector] Forum kanalında veya izinli kategoride link paylaşımı izin verildi: ${message.author.tag}`);
   }
@@ -969,7 +992,7 @@ async function handleRoleCreate(client, role) {
   const executor = await fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
   if (!executor) return;
 
-  const exceeded = trackAction(role.guild.id, executor.id, "ROLE_CREATE");
+  const exceeded = await trackUntrusted(client, role.guild, executor, "ROLE_CREATE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -985,7 +1008,7 @@ async function handleChannelCreate(client, channel) {
   const executor = await fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
   if (!executor) return;
 
-  const exceeded = trackAction(channel.guild.id, executor.id, "CHANNEL_CREATE");
+  const exceeded = await trackUntrusted(client, channel.guild, executor, "CHANNEL_CREATE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -1001,7 +1024,7 @@ async function handleWebhookUpdate(client, channel) {
   const executor = await fetchExecutor(channel.guild, AuditLogEvent.WebhookCreate, null, 10);
   if (!executor) return;
 
-  const exceeded = trackAction(channel.guild.id, executor.id, "WEBHOOK_CREATE");
+  const exceeded = await trackUntrusted(client, channel.guild, executor, "WEBHOOK_CREATE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -1017,7 +1040,7 @@ async function handleEmojiDelete(client, emoji) {
   const executor = await fetchExecutor(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
   if (!executor) return;
 
-  const exceeded = trackAction(emoji.guild.id, executor.id, "EMOJI_DELETE");
+  const exceeded = await trackUntrusted(client, emoji.guild, executor, "EMOJI_DELETE");
   if (!exceeded) return;
 
   await sendDiscordAbuseAlert(client, {
@@ -1322,43 +1345,8 @@ async function handleAbuseDismissButton(interaction) {
 async function executeImmediateAbuseAction(client, guild, member, type, detailLines) {
   console.log(`[AbuseDetector] ⚡ Sunucu Yetkili/Üye Otomatik Müdahalesi: ${member.user.tag} (Type: ${type})`);
 
-  try {
-    const { notifyAdmins } = require("../../utils/notification");
-    await notifyAdmins({
-      title: "⚡ OTOMATİK ABUSE ENGELLEME",
-      message: `${member.user.tag} kullanıcısına otomatik abuse engelleme işlemi uygulandı. İhlal Türü: ${type}`,
-      icon: "⚡"
-    });
-  } catch (err) {
-    console.error("[AbuseDetector] Web panel immediate action notification error:", err.message);
-  }
-
-  const details = detailLines.join(" | ");
-  
-  // 1. AI Yorumu Üret
-  let aiComment = "Yaptığınız kural dışı eylemler sebebiyle sunucudan uzaklaştırıldınız.";
-  try {
-    const { chatWithAI } = require("./aiService");
-    const aiPrompt = "Sen bir Discord moderasyon yapay zekasısın. Bir sunucu yetkilisi/üyesi sunucuda kural ihlali (spam/reklam, herkesi etiketleme veya kanalları/rolleri silme gibi sabotajlar) yaptı ve sistem tarafından otomatik cezalandırıldı. Ona neden yaptığının çok kötü olduğunu, sunucu düzenini bozduğunu anlatan resmi, sert ve iğneleyici bir uyarı mesajı yaz (Türkçe, maksimum 250 karakter, doğrudan kullanıcıya hitap et).";
-    aiComment = await chatWithAI(`Kullanıcı eylemi: ${type} (${details})`, aiPrompt).catch(() => aiComment);
-  } catch (err) {
-    console.error("[AbuseDetector] AI yorum hatası:", err.message);
-  }
-
-  // 2. DM Gönder
-  try {
-    await member.send(
-      `⚠️ **Sunucuda Kural İhlali Tespit Edildi!**\n\n` +
-      `**Uygulanan İşlem:** Hesap askıya alındı / uzaklaştırıldı.\n` +
-      `**Yapay Zeka Yorumu:**\n> *${aiComment}*\n\n` +
-      `Lütfen kurallara riayet ediniz.`
-    ).catch(() => {});
-  } catch (err) {
-    console.warn(`[AbuseDetector] Cezalı kullanıcıya DM gönderilemedi:`, err.message);
-  }
-
-  // 3. Eyleme Karar Ver ve Uygula
-  const isSevere = ["BAN", "KICK", "CHANNEL_DELETE", "ROLE_DELETE"].includes(type);
+  // 1. Önce anında engelle (AI yorumunu beklemeden)
+  const isSevere = ["BAN", "KICK", "CHANNEL_DELETE", "ROLE_DELETE", "WEBHOOK_CREATE"].includes(type);
 
   if (isSevere) {
     // BANLA
@@ -1387,6 +1375,41 @@ async function executeImmediateAbuseAction(client, guild, member, type, detailLi
     } catch (err) {
       console.error(`[AbuseDetector] Timeout/Role Strip hatası:`, err.message);
     }
+  }
+
+  try {
+    const { notifyAdmins } = require("../../utils/notification");
+    await notifyAdmins({
+      title: "⚡ OTOMATİK ABUSE ENGELLEME",
+      message: `${member.user.tag} kullanıcısına otomatik abuse engelleme işlemi uygulandı. İhlal Türü: ${type}`,
+      icon: "⚡"
+    });
+  } catch (err) {
+    console.error("[AbuseDetector] Web panel immediate action notification error:", err.message);
+  }
+
+  const details = detailLines.join(" | ");
+  
+  // 2. AI Yorumu Üret
+  let aiComment = "Yaptığınız kural dışı eylemler sebebiyle sunucudan uzaklaştırıldınız.";
+  try {
+    const { chatWithAI } = require("./aiService");
+    const aiPrompt = "Sen bir Discord moderasyon yapay zekasısın. Bir sunucu yetkilisi/üyesi sunucuda kural ihlali (spam/reklam, herkesi etiketleme veya kanalları/rolleri silme gibi sabotajlar) yaptı ve sistem tarafından otomatik cezalandırıldı. Ona neden yaptığının çok kötü olduğunu, sunucu düzenini bozduğunu anlatan resmi, sert ve iğneleyici bir uyarı mesajı yaz (Türkçe, maksimum 250 karakter, doğrudan kullanıcıya hitap et).";
+    aiComment = await chatWithAI(`Kullanıcı eylemi: ${type} (${details})`, aiPrompt).catch(() => aiComment);
+  } catch (err) {
+    console.error("[AbuseDetector] AI yorum hatası:", err.message);
+  }
+
+  // 3. DM Gönder
+  try {
+    await member.send(
+      `⚠️ **Sunucuda Kural İhlali Tespit Edildi!**\n\n` +
+      `**Uygulanan İşlem:** Hesap askıya alındı / uzaklaştırıldı.\n` +
+      `**Yapay Zeka Yorumu:**\n> *${aiComment}*\n\n` +
+      `Lütfen kurallara riayet ediniz.`
+    ).catch(() => {});
+  } catch (err) {
+    console.warn(`[AbuseDetector] Cezalı kullanıcıya DM gönderilemedi:`, err.message);
   }
 
   // 4. Log Kanalına Gönder

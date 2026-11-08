@@ -10,8 +10,8 @@ const AUDIT_LOG_GUILD_ID     = "1483482948320891074"; // Müttefik Orduları sun
 // ─── Ayarlar ─────────────────────────────────────────────────────────────────
 const POLL_INTERVAL_MS   = 3 * 60 * 1000; // Her 3 dakikada bir kontrol
 const FETCH_LIMIT        = 25;            // Grup başına çekilecek maksimum kayıt
-const ABUSE_WINDOW_MS    = 10 * 60 * 1000; // 10 dakika içinde 3+ değişim = şüpheli
-const ABUSE_RAPID_COUNT  = 3;             // 10 dk içinde kaç değişiklik şüpheli sayılır
+const ABUSE_WINDOW_MS    = 10 * 60 * 1000; // 10 dakika içinde 5+ değişim = şüpheli
+const ABUSE_RAPID_COUNT  = 5;             // 10 dk içinde kaç değişiklik şüpheli sayılır (normal terfi zincirleri abuse sayılmaz)
 const ABUSE_HIGH_RANK    = 200;           // Bu değer ve üstü atama şüpheli
 const ABUSE_OWNER_RANK   = 250;           // Bu değer ve üstü sahip seviyesi — her zaman şüpheli
 
@@ -110,6 +110,28 @@ function isNightHours() {
   const now = new Date();
   const hour = now.getHours();
   return hour >= 0 && hour < 8; // 00:00 - 08:00
+}
+
+// ─── Güvenilir aktörler ───────────────────────────────────────────────────────
+/**
+ * Botun kendi Roblox hesabı, grup sahibi (Rank 255) ve Discord hesabı ADMIN_IDS'te olan
+ * üst yetkililer (synx dahil) abuse tespitinden muaf.
+ */
+async function isTrustedRobloxActor(actorId, actorRole) {
+  if (!actorId) return false;
+  if (actorRole && Number(actorRole.rank) >= 255) return true;
+  try {
+    const { getBotRobloxId } = require("./robloxGroupManager");
+    const botId = getBotRobloxId && getBotRobloxId();
+    if (botId && String(botId) === String(actorId)) return true;
+  } catch (_) {}
+  try {
+    const { ADMIN_IDS } = require("../../config");
+    const User = require("../../models/User");
+    const dbUser = await User.findOne({ robloxId: String(actorId) }).lean();
+    if (dbUser && dbUser.discordId && ADMIN_IDS.includes(String(dbUser.discordId))) return true;
+  } catch (_) {}
+  return false;
 }
 
 // ─── Abuse tespit ─────────────────────────────────────────────────────────────
@@ -774,7 +796,7 @@ async function pollGroup(client, groupId, groupName, logChannel) {
       }
 
       // ── Abuse tespiti ──────────────────────────────────────────────────
-      const reasons = checkForAbuse(entry, groupId, actionType);
+      const reasons = (await isTrustedRobloxActor(actorId, actorRole)) ? null : checkForAbuse(entry, groupId, actionType);
       if (reasons) {
         await sendAbuseAlert(client, entry, groupId, groupName, reasons);
       }
