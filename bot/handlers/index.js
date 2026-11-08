@@ -255,6 +255,9 @@ function initializeDiscordHandlers(client) {
     startAuditLogPoller(client);
     const { startDiscordAbuseDetector } = require("../services/discordAbuseDetector");
     startDiscordAbuseDetector(client);
+    // Üst yetkililere (synx) yanlışlıkla verilen otomatik cezaları geri al
+    require("../services/trustedUserPunishmentRestore").restoreTrustedUserPunishments(client)
+      .catch(err => console.error("[TrustedRestore] Hata:", err.message));
     const { initRestrictedAdminGuard } = require("../services/restrictedAdminGuard");
     initRestrictedAdminGuard(client);
     await initTMTInvites(client);
