@@ -7,6 +7,18 @@ if (!process.env.HA_BOOTED && process.env.MONGODB_URI && process.env.HA_ENABLED 
   return;
 }
 
+// ── HA kapalıyken (tek makine) alan adını yine de bu makineye yönlendir ──
+// HA açıkken bunu lider olunca haBoot.js yapar. HA kapalıyken eskiden hiç yapılmıyordu; bu yüzden
+// Render bir kez lider olup DuckDNS'i kendine çevirdikten sonra askıya alınınca (suspend) alan adı
+// Render'da takılı kalıyor ve site 503 veriyordu. Render'da çalışmaz (orada yalnızca HA lideri yazar).
+if (!(process.env.HA_ENABLED === "1" && process.env.MONGODB_URI) && !process.env.RENDER) {
+  try {
+    require("./bot/services/domainFailoverService").startDomainFailover({ log: (m) => console.log(`[DNS] ${m}`) });
+  } catch (err) {
+    console.error("[DNS] Alan adı eşitleme başlatılamadı:", err && err.message);
+  }
+}
+
 const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
 
