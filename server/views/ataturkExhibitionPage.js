@@ -92,7 +92,8 @@ function renderAtaturkExhibitionPage(user = null) {
       year: '1915',
       location: 'Çanakkale Cephesi',
       desc: 'Çanakkale Savaşları sırasında siperde dürbünle düşman hatlarını gözleyen Mustafa Kemal.',
-      source: 'Genelkurmay ATASE Daire Başkanlığı Arşivi',
+      source: 'Genelkurmay ATASE Daire Başkanlığı Arşivi • Wikimedia Commons',
+      localUrl: '/public/ataturk/photo-1.jpg',
       aspect: 'landscape'
     },
     {
@@ -101,7 +102,8 @@ function renderAtaturkExhibitionPage(user = null) {
       year: '1928',
       location: 'Kayseri',
       desc: 'Yeni Türk harflerini halka bizzat kara tahta başında tanıtırken (20 Eylül 1928).',
-      source: 'Cumhurbaşkanlığı Millî Arşivleri',
+      source: 'Cumhurbaşkanlığı Millî Arşivleri • Wikimedia Commons',
+      localUrl: '/public/ataturk/photo-2.jpg',
       aspect: 'portrait'
     },
     {
@@ -110,34 +112,38 @@ function renderAtaturkExhibitionPage(user = null) {
       year: '1933',
       location: 'Ankara Hipodromu',
       desc: 'Cumhuriyetin 10. yılında tarihi nutkunu mikrofondan milyonlara okurken.',
-      source: 'T.C. Kültür ve Turizm Bakanlığı Arşivi',
+      source: 'T.C. Kültür ve Turizm Bakanlığı Arşivi • Wikimedia Commons',
+      localUrl: '/public/ataturk/photo-3.jpg',
       aspect: 'landscape'
     },
     {
       id: 'photo-4',
-      title: 'Dumlupınar Harabelerinde',
+      title: 'Kurtuluş Günlerinde İzmir’de',
       year: '1922',
-      location: 'Kütahya • Dumlupınar',
-      desc: 'Büyük Taarruz sonrasında kırık bir kağnı arabası üzerinde muharebe sahasını incelerken.',
-      source: 'Askerî Müze ve Kültür Sitesi Komutanlığı',
+      location: 'İzmir',
+      desc: 'Büyük Zafer’in ardından 1922 yılında İzmir’de çekilen tarihi portre.',
+      source: 'Wikimedia Commons Kamu Malı Arşivi',
+      localUrl: '/public/ataturk/photo-4.jpg',
       aspect: 'landscape'
     },
     {
       id: 'photo-5',
-      title: 'Köylü Vatandaşla Sohbet',
-      year: '1930',
-      location: 'Yozgat Seyahati',
-      desc: 'Yurt gezisinde bir köylünün derdini dikkatle dinlerken.',
-      source: 'Basın-Yayın Enformasyon Arşivi',
+      title: 'Cumhuriyetin 1930’lu Yılları',
+      year: '1930’lar',
+      location: 'Ankara',
+      desc: 'Devrimlerin ve çağdaşlaşma hamlelerinin olgunluk döneminde Gazi Mustafa Kemal Atatürk.',
+      source: 'Wikimedia Commons Kamu Malı Arşivi',
+      localUrl: '/public/ataturk/photo-5.jpg',
       aspect: 'portrait'
     },
     {
       id: 'photo-6',
-      title: 'Florya’da Kürek Çekerken',
+      title: 'Florya Sahilinde',
       year: '1935',
       location: 'Florya Deniz Köşkü, İstanbul',
-      desc: 'Halkın arasında, sade bir vatandaş gibi spora ve denize vakit ayırırken.',
-      source: 'Millî Saraylar Arşivi',
+      desc: 'Halkın arasında, sade bir vatandaş gibi spora ve denize vakit ayırırken (1935).',
+      source: 'Millî Saraylar Arşivi • Wikimedia Commons',
+      localUrl: '/public/ataturk/photo-6.jpg',
       aspect: 'landscape'
     }
   ];
@@ -180,6 +186,7 @@ function renderAtaturkExhibitionPage(user = null) {
             <span class="art-caption-year">${p.year}</span>
           </div>
         </div>
+        <img class="ata-photo" src="${p.localUrl}" alt="${p.title}" loading="lazy" decoding="async" />
         <div class="gallery-overlay">
           <span class="gallery-zoom-badge">
             <svg viewBox="0 0 20 20" fill="none" class="zoom-icon" aria-hidden="true">
@@ -1004,7 +1011,7 @@ function renderAtaturkExhibitionPage(user = null) {
         </div>
 
         <div class="audio-player-box">
-          <audio id="historicalAudio" preload="none"></audio>
+          <audio id="historicalAudio" preload="metadata" src="/public/ataturk/10-yil-nutku.ogg"></audio>
 
           <div class="audio-controls-row">
             <button class="btn-audio-play" id="btnAudioToggle" onclick="toggleHistoricalAudio()">
@@ -1062,11 +1069,15 @@ function renderAtaturkExhibitionPage(user = null) {
       </div>
 
       <div class="video-experience-section">
+        <div class="video-playlist-tabs" role="tablist" aria-label="Arşiv Video Seçimi" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;">
+          <button type="button" class="video-tab-btn is-active" data-video-idx="0" onclick="selectArchiveVideo(0)" style="padding:10px 18px;border-radius:999px;border:1px solid rgba(225,29,72,0.45);background:rgba(225,29,72,0.18);color:#fff;font-weight:700;font-size:0.86rem;cursor:pointer;">🎬 Atatürk ve Manevi Kızı Ülkü (Arşiv)</button>
+          <button type="button" class="video-tab-btn" data-video-idx="1" onclick="selectArchiveVideo(1)" style="padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.05);color:#cbd5e1;font-weight:700;font-size:0.86rem;cursor:pointer;">🎬 Atatürk’ün İsmet İnönü’yü Yanına Çağırması</button>
+        </div>
         <div class="video-container" id="videoBox">
           <div class="video-placeholder-cover" id="videoCover" onclick="activateVideoPlayer()">
             <div class="video-play-disc" aria-hidden="true">▶</div>
-            <div class="video-cover-title">Tarihî Arşiv Belgeseli & Konuşma Görüntüleri</div>
-            <div class="video-cover-caption">Oynatmak için dokunun (Sessiz açılır, veri tüketimi kullanıcı onaylıdır)</div>
+            <div class="video-cover-title" id="videoCoverTitle">Atatürk ve Manevi Kızı Ülkü — Tarihî Arşiv Görüntüsü</div>
+            <div class="video-cover-caption">Oynatmak için dokunun (Gerçek arşiv videosu • Wikimedia Commons Kamu Malı)</div>
           </div>
         </div>
       </div>
@@ -1178,11 +1189,47 @@ function renderAtaturkExhibitionPage(user = null) {
       if (audio) audio.volume = parseFloat(val);
     }
 
+    const ARCHIVE_VIDEOS = [
+      {
+        title: 'Atatürk ve Manevi Kızı Ülkü — Tarihî Arşiv Görüntüsü',
+        url: '/public/ataturk/ataturk-ulku.webm',
+        mime: 'video/webm',
+        poster: '/public/ataturk/photo-5.jpg'
+      },
+      {
+        title: 'Atatürk’ün İsmet İnönü’yü Yanına Çağırması — Arşiv Kaydı',
+        url: '/public/ataturk/ataturk-inonu.webm',
+        mime: 'video/webm',
+        poster: '/public/ataturk/photo-3.jpg'
+      }
+    ];
+    let currentArchiveVideoIdx = 0;
+
+    function selectArchiveVideo(idx) {
+      currentArchiveVideoIdx = idx;
+      document.querySelectorAll('.video-tab-btn').forEach((btn, i) => {
+        const active = i === idx;
+        btn.classList.toggle('is-active', active);
+        btn.style.background = active ? 'rgba(225,29,72,0.18)' : 'rgba(255,255,255,0.05)';
+        btn.style.borderColor = active ? 'rgba(225,29,72,0.45)' : 'rgba(255,255,255,0.16)';
+        btn.style.color = active ? '#fff' : '#cbd5e1';
+      });
+      const v = ARCHIVE_VIDEOS[idx] || ARCHIVE_VIDEOS[0];
+      const box = document.getElementById('videoBox');
+      if (!box) return;
+      if (box.querySelector('video')) {
+        activateVideoPlayer();
+      } else {
+        const titleEl = document.getElementById('videoCoverTitle');
+        if (titleEl) titleEl.textContent = v.title;
+      }
+    }
+
     // Video Player Aktivasyonu (User-initiated)
     function activateVideoPlayer() {
       const box = document.getElementById('videoBox');
       if (!box) return;
-      const v = window.__ataMedia && window.__ataMedia.video;
+      const v = ARCHIVE_VIDEOS[currentArchiveVideoIdx] || (window.__ataMedia && window.__ataMedia.video);
       if (!v) { box.innerHTML = '<div class="video-cover-caption" style="padding:40px;text-align:center">Video şu anda yüklenemedi. Lütfen daha sonra tekrar dene.</div>'; return; }
       const el = document.createElement('video');
       el.controls = true; el.autoplay = true; el.playsInline = true; el.preload = 'metadata';
@@ -1204,10 +1251,13 @@ function renderAtaturkExhibitionPage(user = null) {
       document.getElementById('modalDesc').textContent = photo.desc;
       document.getElementById('modalSource').textContent = 'Kaynak: ' + photo.source;
       const resolved = (window.__ataMedia && window.__ataMedia.gallery || {})[photoId];
+      const imgSrc = (resolved && resolved.full) || photo.localUrl;
       const big = document.getElementById('modalImg');
-      if (resolved) {
-        big.src = resolved.full; big.alt = photo.title; big.hidden = false;
-        document.getElementById('modalSource').textContent = 'Kaynak: Wikimedia Commons • ' + resolved.title + (resolved.license ? ' • ' + resolved.license : '');
+      if (imgSrc) {
+        big.src = imgSrc; big.alt = photo.title; big.hidden = false;
+        if (resolved) {
+          document.getElementById('modalSource').textContent = 'Kaynak: Wikimedia Commons • ' + resolved.title + (resolved.license ? ' • ' + resolved.license : '');
+        }
         const svg = document.querySelector('#modalArtArea svg'); if (svg) svg.style.display = 'none';
       } else {
         big.hidden = true; big.removeAttribute('src');
@@ -1232,31 +1282,21 @@ function renderAtaturkExhibitionPage(user = null) {
       if (e.key === 'Escape') closePhotoModal();
     });
 
-    // Galeri, ses ve video kaynaklarını sunucudan al (Wikimedia Commons)
-    window.__ataMedia = { gallery: {}, audio: null, video: null };
+    // Galeri, ses ve video kaynaklarını sunucudan da kontrol et (Wikimedia Commons yedeği; yerel dosyalar zaten yüklü)
+    window.__ataMedia = {
+      gallery: Object.fromEntries(PHOTOS_DB.map((p) => [p.id, { thumb: p.localUrl, full: p.localUrl, title: p.title, license: 'Public Domain' }])),
+      audio: { url: '/public/ataturk/10-yil-nutku.ogg', title: '10. Yıl Nutku (1933)', license: 'Public Domain' },
+      video: ARCHIVE_VIDEOS[0]
+    };
     fetch('/api/ataturk/media').then((r) => (r.ok ? r.json() : Promise.reject())).then((m) => {
-      window.__ataMedia = m;
-      Object.keys(m.gallery || {}).forEach((id) => {
-        const art = document.querySelector('.gallery-placeholder-art[data-photo-id="' + id + '"]');
-        if (!art) return;
-        const visual = art.parentNode;
-        const img = new Image();
-        img.className = 'ata-photo'; img.alt = m.gallery[id].title; img.decoding = 'async'; // lazy değil: DOM'a bağlı olmayan lazy görsel hiç yüklenmez
-        img.onload = () => visual.insertBefore(img, visual.querySelector('.gallery-overlay'));
-        img.src = m.gallery[id].thumb;
-      });
-      const au = document.getElementById('historicalAudio');
-      if (au && m.audio) {
-        au.src = m.audio.url; au.preload = 'metadata';
-        au.addEventListener('error', () => {
-          const t = document.getElementById('audioPlayText'); if (t) t.textContent = 'Ses yüklenemedi';
-          const b = document.getElementById('btnAudioToggle'); if (b) b.disabled = true;
+      if (m && m.gallery) {
+        Object.keys(m.gallery).forEach((id) => {
+          window.__ataMedia.gallery[id] = m.gallery[id];
         });
-      } else if (au) {
-        const t = document.getElementById('audioPlayText'); if (t) t.textContent = 'Ses şu anda kullanılamıyor';
-        const b = document.getElementById('btnAudioToggle'); if (b) b.disabled = true;
       }
-      if (!m.video) { const s = document.getElementById('tarihi-video'); if (s) s.hidden = true; }
+      if (m && m.video) {
+        ARCHIVE_VIDEOS.push({ title: m.video.title || 'Arşiv Videosu', url: m.video.url, mime: m.video.mime, poster: m.video.poster });
+      }
     }).catch(() => {});
   </script>
 </body>

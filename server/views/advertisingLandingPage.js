@@ -12,6 +12,10 @@ const DISCORD_URL = 'https://discord.gg/rEu5gvRBdM';
 const YOUTUBE_URL = 'https://www.youtube.com/@eko8yildiz';
 
 function renderAdvertisingLandingPage(user = null) {
+  // 1 TL = ~2.5 Robux temel değerinin 2x katı = 5 Robux / TL
+  const toRobux2x = (tl) => Math.round(Number(tl || 0) * 5);
+  const formatRobux = (tl) => toRobux2x(tl).toLocaleString('tr-TR');
+
   // Eko'nun DM'den onayladığı kullanıcılar kısa süreliğine indirimli net fiyatları görür
   const priceAccess = getPriceAccess(user?.discordId);
   const priceHtml = (price) => {
@@ -58,7 +62,7 @@ function renderAdvertisingLandingPage(user = null) {
                 <strong class="addon-title">Discord Duyurusu</strong>
               </div>
               <div class="addon-pricing">
-                <span class="addon-cost">+ ₺${addon.addonPrice}</span>
+                <span class="addon-cost">+ ₺${addon.addonPrice} <small class="addon-robux-tag">(+${formatRobux(addon.addonPrice)} R$)</small></span>
               </div>
             </div>
             <p class="addon-desc">${addon.description}</p>
@@ -88,6 +92,9 @@ function renderAdvertisingLandingPage(user = null) {
               <span class="amount" id="price-amount-${pkg.id}">${priceHtml(pkg.basePrice)}</span>
               <span class="period">/ başlangıç</span>
             </div>
+            <div class="robux-price-pill" id="robux-amount-${pkg.id}">
+              <span>🪙 veya <strong>${formatRobux(priceAccess ? applyDiscount(pkg.basePrice) : pkg.basePrice)} Robux</strong> <small>(2x değer)</small></span>
+            </div>
             <div class="price-caption" id="price-caption-${pkg.id}">Net başlangıç fiyatı</div>
           </div>
 
@@ -108,7 +115,7 @@ function renderAdvertisingLandingPage(user = null) {
               </svg>
             </a>
             <button type="button" class="btn-direct-pay" onclick="openPaymentModal('${pkg.id}', '${pkg.title.replace(/'/g, "\\'")}', ${pkg.basePrice})">
-              <span>💳 Ödeme Seçenekleri (Papara / İtemSatış)</span>
+              <span>💳 Ödeme Seçenekleri (Papara / İtemSatış / Robux)</span>
             </button>
           </div>
         </div>
@@ -2344,29 +2351,122 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
       padding: 10px 16px; text-align: center; font-weight: 700; font-size: 0.9rem;
       background: linear-gradient(135deg, #f43f5e, #a855f7); color: #fff;
     }
-` : `    /* ── Fiyatlar bulanık: net rakam yalnızca teklif/ödeme aşamasında görünür ── */
-    .price-figure-wrap, .choice-card-price, #builder-subtotal, #builder-total,
-    #builder-items-list strong, #mobile-summary-price, .addon-cost {
-      filter: blur(7px);
-      user-select: none;
-      -webkit-user-select: none;
-      pointer-events: none;
+` : ''}    .robux-price-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      color: #fcd34d;
+      font-size: 0.82rem;
+      font-weight: 600;
     }
-    .card-pricing-block { position: relative; }
-    .card-pricing-block::after {
-      content: 'Fiyat için teklif alın';
-      position: absolute;
-      left: 0; right: 0; top: 50%;
-      transform: translateY(-50%);
-      text-align: center;
-      font-size: 0.9rem;
+    .robux-price-pill strong { color: #fef3c7; font-weight: 800; }
+    .robux-price-pill small { opacity: 0.78; font-size: 0.74rem; }
+    .addon-robux-tag {
+      display: inline-block;
+      color: #fcd34d;
+      font-size: 0.76rem;
       font-weight: 700;
-      color: var(--text-primary);
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      margin-left: 3px;
     }
-    .card-pricing-block .price-figure-wrap { justify-content: center; opacity: 0.55; }
-    .price-caption { visibility: hidden; }
-`}  </style>
+    .robux-icon {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      font-weight: 900;
+    }
+    .payment-cards-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+    @media (max-width: 780px) {
+      .payment-cards-grid { grid-template-columns: 1fr !important; }
+    }
+    .suspicion-cta-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 28px;
+      padding: 26px 30px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.16) 0%, rgba(88, 101, 242, 0.18) 55%, rgba(16, 185, 129, 0.12) 100%);
+      border: 1px solid rgba(244, 63, 94, 0.42);
+      box-shadow: 0 18px 44px rgba(244, 63, 94, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      position: relative;
+      overflow: hidden;
+      transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease, box-shadow 220ms ease;
+      cursor: pointer;
+    }
+    .suspicion-cta-banner:hover {
+      transform: translateY(-4px);
+      border-color: rgba(251, 113, 133, 0.85);
+      box-shadow: 0 24px 54px rgba(244, 63, 94, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    }
+    .suspicion-cta-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 720px;
+    }
+    .suspicion-cta-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(244, 63, 94, 0.22);
+      border: 1px solid rgba(244, 63, 94, 0.45);
+      color: #fda4af;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .suspicion-cta-title {
+      font-size: 1.24rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+    .suspicion-cta-desc {
+      font-size: 0.94rem;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+    .suspicion-cta-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      box-shadow: 0 10px 28px rgba(225, 29, 72, 0.35);
+      transition: transform 180ms ease;
+    }
+    .suspicion-cta-banner:hover .suspicion-cta-btn {
+      transform: scale(1.04);
+    }
+    @media (max-width: 820px) {
+      .suspicion-cta-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 22px 20px;
+      }
+      .suspicion-cta-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
   ${priceAccess ? `<div class="price-access-banner">🔓 Sana özel fiyatlar açık — indirim <span id="price-access-left"></span> içinde sona eriyor</div>` : ''}
@@ -2853,6 +2953,20 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
           </a>
         </article>
       </div>
+
+      <a class="suspicion-cta-banner" href="/reklam/analizler" id="reklam-analiz-cta">
+        <div class="suspicion-cta-left">
+          <span class="suspicion-cta-kicker">📊 CANLI İNTERAKTİF ANALİZ & GRAFİK MERKEZİ</span>
+          <div class="suspicion-cta-title">REKLAM VERMEKTEN ŞÜPHELİ MİSİN? BANA TIKLA NEREDEN NEREYE TOPLULUKLARIN ÇIKTIĞINI GÖR!</div>
+          <div class="suspicion-cta-desc">
+            Üye sıçrama eğrileri, önce/sonra aktiflik kıyaslamaları, haftalık büyüme grafikleri ve etkileşim dönüşüm analizlerini interaktif grafiklerle ayrı sayfada incele.
+          </div>
+        </div>
+        <div class="suspicion-cta-btn">
+          <span>Grafikleri & Analizleri Aç</span>
+          <span aria-hidden="true">→</span>
+        </div>
+      </a>
     </section>
 
     <!-- Başvuru Koşulları & İttifak Orduları -->
@@ -3129,6 +3243,23 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
               <li>✓ Şeffaf +5 TL işlem ücreti dökümü</li>
             </ul>
           </div>
+
+          <!-- ROBUX (2X) CARD -->
+          <div class="pay-method-card" id="pay-card-robux" onclick="selectPaymentMethod('robux')" tabindex="0" role="radio" aria-checked="false">
+            <div class="pay-card-head">
+              <div class="pay-card-title-row">
+                <span class="pay-icon robux-icon">R$</span>
+                <strong>Robux (2x Değer)</strong>
+              </div>
+              <span class="fee-badge" style="background:rgba(245,158,11,0.18);color:#fcd34d;border:1px solid rgba(245,158,11,0.4);">2x Robux</span>
+            </div>
+            <p class="pay-card-desc">TL tutarının Robux değerinin 2 katı (x2) üzerinden Gamepass veya Roblox Grup fonu ile ödeme yapabilirsiniz.</p>
+            <ul class="pay-perks">
+              <li>✓ Nakit yerine Robux ile ödeme</li>
+              <li>✓ TL karşılığının 2x Robux değeri</li>
+              <li>✓ Bilet üzerinden anında Gamepass</li>
+            </ul>
+          </div>
         </div>
 
         <!-- Papara Details Section (Shown when Papara is active) -->
@@ -3156,6 +3287,14 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
           <div class="itemsatis-trust-callout">
             <svg viewBox="0 0 20 20" fill="currentColor" class="shield-svg"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
             <span>Ödeme İtemSatış güvencesiyle platform üzerinden gerçekleştirilebilir. Sipariş bağlantınız biletinizde güvenle tanımlanacaktır.</span>
+          </div>
+        </div>
+
+        <!-- Robux Details Section (Shown when Robux is active) -->
+        <div id="robux-details-block" class="pay-details-block" style="display:none;">
+          <div class="itemsatis-trust-callout" style="border-color:rgba(245,158,11,0.35);background:rgba(245,158,11,0.08);">
+            <span style="font-size:1.3rem;">🪙</span>
+            <span>Robux ödemelerinde TL paket tutarının Robux karşılığının <strong>2 katı (x2)</strong> uygulanır (1 TL = 5 Robux). Ödemeyi onayladığınızda biletinizde özel Gamepass linki iletilir.</span>
           </div>
         </div>
 
@@ -3246,12 +3385,15 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
 
       const isActive = !cardAddonStates[pkgId];
       cardAddonStates[pkgId] = isActive;
+      const robuxEl = document.getElementById('robux-amount-' + pkgId);
+      const fmtRbx = (tl) => Math.round(adDisc(tl) * 5).toLocaleString('tr-TR');
 
       if (isActive) {
         box.classList.add('is-active');
         check.setAttribute('aria-checked', 'true');
         const total = basePrice + addonPrice;
         amountEl.innerHTML = adPriceHtml(total);
+        if (robuxEl) robuxEl.innerHTML = '<span>🪙 veya <strong>' + fmtRbx(total) + ' Robux</strong> <small>(2x değer)</small></span>';
         captionEl.textContent = 'Paket (₺' + basePrice + ') + Discord Duyurusu (+₺' + addonPrice + ')';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId + '&withDiscord=true';
         ctaLabel.textContent = 'Paket + Discord Duyurusu ile Devam Et';
@@ -3260,6 +3402,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         box.classList.remove('is-active');
         check.setAttribute('aria-checked', 'false');
         amountEl.innerHTML = adPriceHtml(basePrice);
+        if (robuxEl) robuxEl.innerHTML = '<span>🪙 veya <strong>' + fmtRbx(basePrice) + ' Robux</strong> <small>(2x değer)</small></span>';
         captionEl.textContent = 'Net başlangıç fiyatı';
         ctaBtn.href = '/tickets/new?category=reklam&package=' + pkgId;
         ctaLabel.textContent = 'Bu Paketi Konuşalım';
@@ -3443,7 +3586,9 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
       }
 
       const total = Math.max(0, subtotal - discount);
-      totalEl.textContent = '₺' + adDisc(total);
+      const finalTl = adDisc(total);
+      const finalRobux = Math.round(finalTl * 5).toLocaleString('tr-TR');
+      totalEl.innerHTML = '₺' + finalTl + ' <small style="display:block;font-size:0.78rem;color:#fcd34d;font-weight:700;">veya ' + finalRobux + ' Robux (2x)</small>';
       submitBtn.disabled = false;
 
       updateMobileBar('Özel Paket (' + items.length + ' Hizmet)', total, '#kendi-paketini-olustur');
@@ -3684,51 +3829,61 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
     }
 
     function selectPaymentMethod(method) {
-      selectedPaymentMethod = method === 'itemsatis' ? 'itemsatis' : 'papara';
+      selectedPaymentMethod = (method === 'itemsatis' || method === 'robux') ? method : 'papara';
 
       const cardPapara = document.getElementById('pay-card-papara');
       const cardItemsatis = document.getElementById('pay-card-itemsatis');
+      const cardRobux = document.getElementById('pay-card-robux');
       const paparaBlock = document.getElementById('papara-details-block');
       const itemsatisBlock = document.getElementById('itemsatis-details-block');
+      const robuxBlock = document.getElementById('robux-details-block');
       const bdFeeLabel = document.getElementById('bd-fee-label');
       const bdFeePrice = document.getElementById('bd-fee-price');
       const bdBasePrice = document.getElementById('bd-base-price');
       const bdTotalPrice = document.getElementById('bd-total-price');
+      const modalItemPrice = document.getElementById('modal-item-price');
 
       const base = adDisc(currentModalPkg.basePrice);
-      const fee = selectedPaymentMethod === 'itemsatis' ? 5 : 0;
-      const total = base + fee;
+      const robuxTotal = Math.round(base * 5);
+      const robuxText = robuxTotal.toLocaleString('tr-TR') + ' Robux';
 
-      if (bdBasePrice) bdBasePrice.textContent = '₺' + base;
-      if (bdTotalPrice) bdTotalPrice.textContent = '₺' + total;
+      [cardPapara, cardItemsatis, cardRobux].forEach(c => {
+        if (c) { c.classList.remove('is-selected'); c.setAttribute('aria-checked', 'false'); }
+      });
+      if (paparaBlock) paparaBlock.style.display = 'none';
+      if (itemsatisBlock) itemsatisBlock.style.display = 'none';
+      if (robuxBlock) robuxBlock.style.display = 'none';
 
-      if (selectedPaymentMethod === 'papara') {
-        if (cardPapara) {
-          cardPapara.classList.add('is-selected');
-          cardPapara.setAttribute('aria-checked', 'true');
+      if (selectedPaymentMethod === 'robux') {
+        if (cardRobux) { cardRobux.classList.add('is-selected'); cardRobux.setAttribute('aria-checked', 'true'); }
+        if (robuxBlock) robuxBlock.style.display = 'flex';
+        if (modalItemPrice) modalItemPrice.textContent = robuxText;
+        if (bdBasePrice) bdBasePrice.textContent = '₺' + base + ' (' + Math.round(base * 2.5).toLocaleString('tr-TR') + ' R$ baz)';
+        if (bdFeeLabel) bdFeeLabel.textContent = 'Robux Çarpanı (x2)';
+        if (bdFeePrice) {
+          bdFeePrice.textContent = 'x2 Değer';
+          bdFeePrice.style.color = '#fcd34d';
         }
-        if (cardItemsatis) {
-          cardItemsatis.classList.remove('is-selected');
-          cardItemsatis.setAttribute('aria-checked', 'false');
-        }
+        if (bdTotalPrice) bdTotalPrice.textContent = robuxText;
+      } else if (selectedPaymentMethod === 'papara') {
+        const total = base;
+        if (modalItemPrice) modalItemPrice.textContent = '₺' + base;
+        if (bdBasePrice) bdBasePrice.textContent = '₺' + base;
+        if (bdTotalPrice) bdTotalPrice.textContent = '₺' + total;
+        if (cardPapara) { cardPapara.classList.add('is-selected'); cardPapara.setAttribute('aria-checked', 'true'); }
         if (paparaBlock) paparaBlock.style.display = 'flex';
-        if (itemsatisBlock) itemsatisBlock.style.display = 'none';
         if (bdFeeLabel) bdFeeLabel.textContent = 'İşlem Komisyonu (Papara)';
         if (bdFeePrice) {
           bdFeePrice.textContent = '0 TL';
           bdFeePrice.style.color = '#34d399';
         }
       } else {
-        if (cardItemsatis) {
-          cardItemsatis.classList.add('is-selected');
-          cardItemsatis.setAttribute('aria-checked', 'true');
-        }
-        if (cardPapara) {
-          cardPapara.classList.remove('is-selected');
-          cardPapara.setAttribute('aria-checked', 'false');
-        }
+        const total = base + 5;
+        if (modalItemPrice) modalItemPrice.textContent = '₺' + base;
+        if (bdBasePrice) bdBasePrice.textContent = '₺' + base;
+        if (bdTotalPrice) bdTotalPrice.textContent = '₺' + total;
+        if (cardItemsatis) { cardItemsatis.classList.add('is-selected'); cardItemsatis.setAttribute('aria-checked', 'true'); }
         if (itemsatisBlock) itemsatisBlock.style.display = 'flex';
-        if (paparaBlock) paparaBlock.style.display = 'none';
         if (bdFeeLabel) bdFeeLabel.textContent = 'İtemSatış Platform İşlem Ücreti';
         if (bdFeePrice) {
           bdFeePrice.textContent = '+₺5';
