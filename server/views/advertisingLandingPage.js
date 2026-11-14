@@ -3631,11 +3631,11 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
               </div>
               <span class="fee-badge zero-fee">0 TL Komisyon</span>
             </div>
-            <p class="pay-card-desc">Papara numarasına doğrudan ödeme yaparak ek işlem ücreti ödemeden işleminizi tamamlayabilirsiniz.</p>
+            <p class="pay-card-desc">Papara üzerinden ek işlem ücreti ödemeden işleminizi tamamlayabilirsiniz.</p>
             <ul class="pay-perks">
               <li>✓ Ek komisyon yok (0 TL)</li>
               <li>✓ Doğrudan ve hızlı işlem</li>
-              <li>✓ 1 Tıkla hesap no kopyalama</li>
+              <li>✓ Bilet üzerinden güvenli bilgilendirme</li>
             </ul>
           </div>
 
@@ -3676,20 +3676,13 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
 
         <!-- Papara Details Section (Shown when Papara is active) -->
         <div id="papara-details-block" class="pay-details-block">
-          <div class="papara-account-box">
-            <div class="account-meta">
-              <span class="acc-label">Papara Hesap Numarası:</span>
-              <span class="acc-number" id="papara-acc-number">1947291842</span>
-            </div>
-            <button type="button" class="btn-copy-acc" id="btn-copy-papara" onclick="copyPaparaNumber()">
-              <span id="copy-btn-text">Kopyala</span>
-              <svg viewBox="0 0 16 16" fill="none" class="copy-svg"><path d="M4 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6 2V1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1" stroke="currentColor" stroke-width="1.5"/></svg>
-            </button>
+          <div class="itemsatis-trust-callout">
+            <svg viewBox="0 0 20 20" fill="currentColor" class="shield-svg"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
+            <span>Papara ile ödeme bilgileri, reklam talebinizi onayladığınızda biletiniz üzerinden yetkili tarafından güvenle paylaşılır.</span>
           </div>
-          <div id="copy-feedback-toast" class="copy-toast" style="display:none;">✓ Papara Numarası Panoya Kopyalandı!</div>
           <div class="upload-proof-box">
             <label class="proof-label" for="payment-proof-ref">Ödeme Dekont / İşlem Kodu (İsteğe Bağlı):</label>
-            <input type="text" id="payment-proof-ref" class="proof-input" placeholder="Dekont takip no veya Papara gönderici adı...">
+            <input type="text" id="payment-proof-ref" class="proof-input" placeholder="Varsa dekont takip no veya gönderici adı...">
             <small class="proof-hint">Ödemeyi yaptıktan sonra biletinizde yetkili anında eşleştirir.</small>
           </div>
         </div>
@@ -4302,26 +4295,6 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
           bdFeePrice.style.color = '#fbbf24';
         }
       }
-    }
-
-    function copyPaparaNumber() {
-      const numEl = document.getElementById('papara-acc-number');
-      const toast = document.getElementById('copy-feedback-toast');
-      const btnText = document.getElementById('copy-btn-text');
-      const text = numEl ? numEl.textContent.trim() : '1947291842';
-
-      navigator.clipboard.writeText(text).then(() => {
-        if (toast) {
-          toast.style.display = 'block';
-          setTimeout(() => { toast.style.display = 'none'; }, 2500);
-        }
-        if (btnText) {
-          btnText.textContent = 'Kopyalandı!';
-          setTimeout(() => { btnText.textContent = 'Kopyala'; }, 2000);
-        }
-      }).catch(() => {
-        if (btnText) btnText.textContent = '1947291842';
-      });
     }
 
     function processPaymentSelection() {
