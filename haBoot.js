@@ -87,6 +87,8 @@ async function runHa() {
         finish();
       })();
     };
+    process.once('SIGTERM', () => process.exit(0));
+    process.once('SIGINT', () => process.exit(0));
   };
 
   const fence = (reason) => {
@@ -113,14 +115,47 @@ async function runHa() {
   // 1) Yedek modda sağlık ucu YALNIZCA Render'da: Render bir port dinlenmesini bekler. Aynı makinede
   //    (VDS) portu tutarsa lider süreç siteyi açamaz, bu yüzden orada port tutulmaz.
   const bindStandbyPort = !!process.env.RENDER || process.env.HA_STANDBY_HTTP === '1';
+  const primaryBaseUrl = (() => {
+    try {
+      const raw = String(process.env.BASE_URL || '').trim().replace(/\/+$/, '');
+      return raw && /^https?:\/\//i.test(raw) ? new URL(raw) : null;
+    } catch (_) { return null; }
+  })();
   const standby = !bindStandbyPort ? null : http.createServer((req, res) => {
-    const isHealth = req.url && req.url.startsWith('/api/health');
-    res.statusCode = isHealth ? 200 : 503;
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    if (!isHealth) res.setHeader('Retry-After', '30');
-    res.end(JSON.stringify(isHealth
-      ? { status: 'standby', mode: 'standby', node }
-      : { error: 'Bu düğüm yedek modda; aktif düğüm başka makinede çalışıyor.' }));
+    const reqUrl = req.url || '/';
+    const isHealth = reqUrl.startsWith('/api/health');
+    if (isHealth) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.end(JSON.stringify({ status: 'standby', mode: 'standby', node }));
+    }
+
+    const reqHost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase();
+    const isApi = reqUrl.startsWith('/api/') || String(req.headers.accept || '').includes('application/json');
+
+    // Kullanıcı yedek Render adresine (*.onrender.com) girdiyse ve BASE_URL farklı bir alan adıysa
+    // (ör. ekoyildiz.duckdns.org), aktif düğüme yönlendir.
+    if (!isApi && primaryBaseUrl && reqHost && reqHost !== primaryBaseUrl.hostname.toLowerCase()) {
+      res.statusCode = 302;
+      res.setHeader('Location', `${primaryBaseUrl.origin}${reqUrl}`);
+      res.setHeader('Cache-Control', 'no-store');
+      return res.end();
+    }
+
+    res.statusCode = 503;
+    res.setHeader('Retry-After', '5');
+    res.setHeader('Cache-Control', 'no-store');
+    if (isApi) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.end(JSON.stringify({
+        error: 'Bu düğüm yedek modda; aktif düğüm başka makinede çalışıyor.',
+        activeUrl: primaryBaseUrl ? primaryBaseUrl.origin : null,
+      }));
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    const targetHref = primaryBaseUrl ? `${primaryBaseUrl.origin}${reqUrl}` : reqUrl;
+    res.end(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="5"><title>EkoYıldız · Bağlanılıyor</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#000;color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;text-align:center;padding:24px}.card{max-width:460px;padding:32px;border-radius:24px;background:rgba(28,28,30,.9);border:1px solid rgba(255,255,255,.12)}h1{font-size:22px;margin:0 0 10px}p{font-size:15px;color:#a1a1a6;line-height:1.5;margin:0 0 20px}.btn{display:inline-block;padding:12px 22px;border-radius:999px;background:#0a84ff;color:#fff;text-decoration:none;font-weight:600;font-size:14px}</style></head><body><div class="card"><h1>Aktif Sunucuya Geçiliyor</h1><p>Bu düğüm şu anda yedek modda bekliyor. Sayfa 5 saniye içinde otomatik olarak yenilenecek.</p><a class="btn" href="${targetHref.replace(/"/g, '&quot;')}">Aktif Siteye Git</a></div></body></html>`);
   });
   if (standby) {
     await new Promise((resolve) => {
