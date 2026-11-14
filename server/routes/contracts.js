@@ -2,7 +2,7 @@
 
 const express = require('express');
 const crypto = require('crypto');
-const { contracts, saveStoreNow } = require('../../models/Store');
+const { contracts } = require('../../models/Store');
 const { isSiteAdmin } = require('../../utils/adminCheck');
 const { chatWithAI } = require('../../bot/services/aiService');
 const {
@@ -204,7 +204,6 @@ router.post('/api/question-contracts/:id/answer-step', async (req, res) => {
     contract.nextRequestedAt = new Date().toISOString();
 
     await contract.save();
-    await saveStoreNow();
 
     return res.json({
       success: true,
@@ -228,7 +227,6 @@ router.post('/api/question-contracts/:id/request-next', async (req, res) => {
     contract.nextRequestedAt = new Date().toISOString();
     contract.waitingForAdmin = true;
     await contract.save();
-    await saveStoreNow();
 
     return res.json({ success: true, nextRequestedAt: contract.nextRequestedAt });
   } catch (err) {
@@ -288,7 +286,6 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
       existing.signatureHash = signatureHash;
       existing.waitingForAdmin = false;
       await existing.save();
-      await saveStoreNow();
 
       return res.json({
         success: true,
@@ -318,7 +315,6 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
       signatureHash,
     });
 
-    await saveStoreNow();
 
     return res.json({
       success: true,
@@ -370,7 +366,6 @@ router.post('/api/contracts/:id/sign', async (req, res) => {
     contract.signatureHash = signatureHash;
 
     await contract.save();
-    await saveStoreNow();
 
     return res.json({
       success: true,
@@ -447,7 +442,6 @@ router.post('/api/admin/contracts', requireAdmin, async (req, res) => {
         signatureHash: null,
       });
 
-      await saveStoreNow();
       return res.json({ success: true, contract: record });
     }
 
@@ -473,7 +467,6 @@ router.post('/api/admin/contracts', requireAdmin, async (req, res) => {
       signatureHash: null,
     });
 
-    await saveStoreNow();
     return res.json({ success: true, contract: record });
   } catch (err) {
     console.error('[admin/contracts create] error:', err);
@@ -511,7 +504,6 @@ router.post('/api/admin/contracts/:id/kahoot-next', requireAdmin, async (req, re
     }
 
     await contract.save();
-    await saveStoreNow();
     return res.json({ success: true, contract });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -543,7 +535,6 @@ router.post('/api/admin/contracts/:id/kahoot-append', requireAdmin, async (req, 
     }
 
     await contract.save();
-    await saveStoreNow();
     return res.json({ success: true, contract });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -557,7 +548,6 @@ router.delete('/api/admin/contracts/:id', requireAdmin, async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ success: false, error: 'Sözleşme bulunamadı.' });
     }
-    await saveStoreNow();
     return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
