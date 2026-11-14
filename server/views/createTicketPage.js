@@ -3,12 +3,12 @@
 const { _esc, _layout } = require('../views');
 
 const REKLAM_PRESET_PACKAGES = [
-  { id: 'shorts', name: 'Shorts & Hızlı Tanıtım', price: '30 TL', icon: '📱', desc: 'Dikey formatta hızlı ve dinamik marka görünürlüğü.' },
-  { id: 'standart', name: 'Standart Video Sponsorluğu', price: '50 TL', icon: '🎬', desc: 'Kalıcı video alt bant, açıklama ve sabit yorum.' },
-  { id: 'midroll', name: 'Sesli Mid-Roll (Önerilen)', price: '100 TL', icon: '🎙️', desc: 'Video akışına uyarlanan 20-30 saniyelik doğal sesli anlatım.', featured: true },
-  { id: 'gold', name: 'Gold Kombin', price: '350 TL', icon: '🌟', desc: 'Uzun video, Shorts ve topluluk paylaşımı bir arada.' },
-  { id: 'mega', name: 'Mega Etkileşim', price: '500 TL', icon: '🚀', desc: 'Video, Shorts, topluluk ve özel Discord duyurusu.' },
-  { id: 'vip', name: 'Çekilişli VIP Kapsam', price: '670 TL', icon: '💎', desc: 'Mega paket ve topluluk odaklı özel çekiliş kurgusu.' },
+  { id: 'shorts', name: 'Shorts & Hızlı Tanıtım', price: '30 TL • 3.000 R$', icon: '📱', desc: 'Dikey formatta hızlı ve dinamik marka görünürlüğü.' },
+  { id: 'standart', name: 'Standart Video Sponsorluğu', price: '50 TL • 5.000 R$', icon: '🎬', desc: 'Kalıcı video alt bant, açıklama ve sabit yorum.' },
+  { id: 'midroll', name: 'Sesli Mid-Roll (Önerilen)', price: '100 TL • 10.000 R$', icon: '🎙️', desc: 'Video akışına uyarlanan 20-30 saniyelik doğal sesli anlatım.', featured: true },
+  { id: 'gold', name: 'Gold Kombin', price: '350 TL • 35.000 R$', icon: '🌟', desc: 'Uzun video, Shorts ve topluluk paylaşımı bir arada.' },
+  { id: 'mega', name: 'Mega Etkileşim', price: '500 TL • 50.000 R$', icon: '🚀', desc: 'Video, Shorts, topluluk ve özel Discord duyurusu.' },
+  { id: 'vip', name: 'Çekilişli VIP Kapsam', price: '670 TL • 67.000 R$', icon: '💎', desc: 'Mega paket ve topluluk odaklı özel çekiliş kurgusu.' },
   { id: 'allied', name: 'İttifak Orduları Başvurusu', price: 'Şartlı', icon: '🤝', desc: 'YGS/GS kampları için ücretli veya 5K+ kamplar için değerlendirme.' },
   { id: 'custom', name: 'Özel Bütçe & Proje', price: 'Teklif', icon: '💡', desc: 'Belirlediğiniz bütçe ve hedefe özel kampanya tasarımı.' }
 ];
@@ -55,29 +55,30 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
   const content = `
     <style>
       :root {
-        --tc-primary: #8b5cf6;
-        --tc-primary-hover: #7c3aed;
-        --tc-accent: #ec4899;
-        --tc-gold: #f59e0b;
-        --tc-card-bg: rgba(18, 20, 29, 0.75);
-        --tc-border: rgba(255, 255, 255, 0.08);
-        --tc-border-active: rgba(139, 92, 246, 0.5);
+        --tc-primary: #0071e3;
+        --tc-primary-hover: #0077ed;
+        --tc-accent: #2997ff;
+        --tc-gold: #ff9f0a;
+        --tc-card-bg: #161617;
+        --tc-border: rgba(255, 255, 255, 0.1);
+        --tc-border-active: rgba(0, 113, 227, 0.65);
       }
+      body { background: #000000 !important; }
       .ticket-container {
-        max-width: 960px;
-        margin: 2rem auto;
-        padding: 0 1rem;
+        max-width: 920px;
+        margin: 2.2rem auto 4rem;
+        padding: 0 1.25rem;
       }
       .ticket-hero {
         text-align: center;
         margin-bottom: 2.2rem;
       }
       .ticket-hero h1 {
-        font-size: clamp(2rem, 4vw, 2.75rem);
-        font-weight: 900;
-        letter-spacing: -0.04em;
-        margin: 0 0 0.5rem 0;
-        background: linear-gradient(135deg, #fff 30%, #c4b5fd 70%, #f472b6 100%);
+        font-size: clamp(2rem, 4.2vw, 2.9rem);
+        font-weight: 700;
+        letter-spacing: -0.032em;
+        margin: 0 0 0.6rem 0;
+        background: linear-gradient(135deg, #f5f5f7 30%, #a1a1a6 70%, #2997ff 100%);
         -webkit-background-clip: text;
         color: transparent;
       }
@@ -351,12 +352,20 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
       .btn-ghost-cancel {
         color: var(--muted);
         text-decoration: none;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 0.92rem;
-        padding: 0.85rem 1.4rem;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.85rem 1.5rem;
+        border-radius: 980px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
         transition: all 0.2s ease;
+      }
+      .btn-submit {
+        border-radius: 980px !important;
+        background: #0071e3 !important;
+        box-shadow: 0 8px 24px rgba(0, 113, 227, 0.32) !important;
+      }
+      .btn-submit:hover {
+        background: #0077ed !important;
       }
       .btn-ghost-cancel:hover {
         color: #fff;
@@ -398,10 +407,10 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
       }
       .ticket-pay-cards {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.75rem;
       }
-      @media (max-width: 520px) {
+      @media (max-width: 680px) {
         .ticket-pay-cards { grid-template-columns: 1fr; }
       }
       .ticket-pay-card {
@@ -625,6 +634,13 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
                   </div>
                   <div class="ticket-pay-desc">Ödeme İtemSatış üzerinden gerçekleştirilebilir. Şeffaf komisyon eklenir.</div>
                 </div>
+                <div class="ticket-pay-card" id="ticket-pay-robux" onclick="selectTicketPayment('robux')">
+                  <div class="ticket-pay-card-head">
+                    <span class="ticket-pay-card-title">Robux (2x Değer)</span>
+                    <span class="ticket-pay-badge" style="background:rgba(255,159,10,0.16);color:#ff9f0a;">2x Robux</span>
+                  </div>
+                  <div class="ticket-pay-desc">TL tutarının 2x Robux karşılığı (min. 3.000 Robux) üzerinden ödeme.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -690,18 +706,14 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
       let lastAIGeneratedText = '';
 
       function selectTicketPayment(method) {
-        selectedTicketPayment = method === 'itemsatis' ? 'itemsatis' : 'papara';
+        selectedTicketPayment = (method === 'itemsatis' || method === 'robux') ? method : 'papara';
         const cardP = document.getElementById('ticket-pay-papara');
         const cardI = document.getElementById('ticket-pay-itemsatis');
-        if (cardP && cardI) {
-          if (selectedTicketPayment === 'papara') {
-            cardP.classList.add('active');
-            cardI.classList.remove('active');
-          } else {
-            cardI.classList.add('active');
-            cardP.classList.remove('active');
-          }
-        }
+        const cardR = document.getElementById('ticket-pay-robux');
+        [cardP, cardI, cardR].forEach(c => c && c.classList.remove('active'));
+        if (selectedTicketPayment === 'papara' && cardP) cardP.classList.add('active');
+        if (selectedTicketPayment === 'itemsatis' && cardI) cardI.classList.add('active');
+        if (selectedTicketPayment === 'robux' && cardR) cardR.classList.add('active');
       }
 
       async function requestEkoAITicketHelp() {
@@ -844,7 +856,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           }
         }
 
-        const pkgParam = params.get('package');
+        const pkgParam = (params.get('package') || '').replace(/^pkg_/, '');
         const withDiscordParam = params.get('withDiscord') === 'true';
         const summaryParam = params.get('summary');
         const priceParam = params.get('price');
@@ -867,7 +879,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
 
         if (pkgParam === 'custom' && summaryParam) {
           const decodedSummary = decodeURIComponent(summaryParam);
-          if (subjectEl) subjectEl.value = 'Özel Reklam Paketi · ' + decodedSummary;
+          if (subjectEl) subjectEl.value = ('Özel Reklam Paketi · ' + decodedSummary).slice(0, 100);
           if (descEl && !descEl.value) {
             descEl.value = 'Seçilen Özel Paket Bileşenleri:\n• ' + decodedSummary.replace(/ \+ /g, '\n• ');
           }
@@ -900,7 +912,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
         alertEl.className = 'status-alert';
 
         const category = document.getElementById('ticket-category').value;
-        const subject = document.getElementById('ticket-subject').value.trim();
+        const subject = document.getElementById('ticket-subject').value.trim().slice(0, 100);
         const baseDescription = document.getElementById('ticket-description').value.trim();
 
         if (!category) {
@@ -916,38 +928,27 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
 
         // If reklam category, format structured description
         if (category === 'reklam') {
-          const community = document.getElementById('rek-community').value.trim();
-          const link = document.getElementById('rek-link').value.trim();
+          const community = document.getElementById('rek-community').value.trim() || 'Bilet sohbetinde paylaşılacak';
+          const link = document.getElementById('rek-link').value.trim() || 'Bilet sohbetinde paylaşılacak';
           const budget = document.getElementById('rek-budget').value.trim();
           const goal = document.getElementById('rek-goal').value.trim();
+          const finalNote = baseDescription || 'Merhaba, seçtiğim reklam paketi hakkında bilgi almak ve işleme başlamak istiyorum.';
 
-          if (!community) {
-            showAlert('Lütfen topluluk / proje adınızı girin.', 'error');
-            document.getElementById('rek-community').focus();
-            return;
-          }
-          if (!link) {
-            showAlert('Lütfen tanıtılacak sunucu veya oyun bağlantısını girin.', 'error');
-            document.getElementById('rek-link').focus();
-            return;
-          }
-          if (!baseDescription) {
-            showAlert('Lütfen kampanya notlarınızı veya açıklamanızı yazın.', 'error');
-            document.getElementById('ticket-description').focus();
-            return;
-          }
+          const payLabel = selectedTicketPayment === 'robux'
+            ? 'Robux (2x Değer, min. 3.000 Robux)'
+            : (selectedTicketPayment === 'itemsatis' ? 'İtemSatış (+5 TL Platform Hizmet Bedeli)' : 'Papara (0 TL Komisyon)');
 
           fullDescription = 
             '📋 REKLAM & SPONSORLUK DETAYLARI\n' +
             '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
             '• Seçilen Paket: ' + selectedPackageName + ' (' + selectedPackagePrice + ')\n' +
-            '• Ödeme Yöntemi Tercihi: ' + (selectedTicketPayment === 'papara' ? 'Papara (0 TL Komisyon, Doğrudan Ödeme)' : 'İtemSatış (+5 TL Platform Hizmet Bedeli)') + '\n' +
+            '• Ödeme Yöntemi Tercihi: ' + payLabel + '\n' +
             '• Topluluk / Proje: ' + community + '\n' +
             '• Tanıtım Bağlantısı: ' + link + '\n' +
             (budget ? ('• Bütçe Tercihi: ' + budget + '\n') : '') +
             (goal ? ('• Kampanya Hedefi: ' + goal + '\n') : '') +
             '\n📝 KAMPANYA NOTLARI / AÇIKLAMA:\n' +
-            baseDescription;
+            finalNote;
         } else {
           if (!baseDescription) {
             showAlert('Lütfen açıklama kısmını doldurun.', 'error');
