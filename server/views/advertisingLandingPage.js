@@ -2550,22 +2550,92 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
     }
     /* Apple-style Floating Price & Buy Pill (from iPhone overview) */
     .apple-buy-pill-wrap {
-      display: flex;
-      justify-content: center;
-      margin: 8px auto 34px;
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 75;
+      pointer-events: none;
       padding: 0 16px;
+      width: max-content;
+      max-width: calc(100vw - 24px);
     }
     .apple-buy-pill {
+      pointer-events: auto;
       display: inline-flex;
       align-items: center;
       gap: 20px;
       padding: 8px 8px 8px 24px;
       border-radius: 980px;
-      background: rgba(29, 29, 31, 0.82);
-      backdrop-filter: saturate(180%) blur(20px);
-      -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      background: rgba(29, 29, 31, 0.78);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    /* Daha derin Apple.com iPhone Pro görsel dili */
+    .hero {
+      padding-top: 76px !important;
+      padding-bottom: 56px !important;
+    }
+    .hero-eyebrow, .section-kicker {
+      color: #f56300 !important;
+      background: transparent !important;
+      border: none !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      font-size: 0.85rem !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.01em !important;
+      text-transform: none !important;
+    }
+    .dot-status { background: #f56300 !important; box-shadow: 0 0 10px rgba(245, 99, 0, 0.7) !important; }
+    .case-link, .quiet-link {
+      color: #2997ff !important;
+      font-weight: 500 !important;
+    }
+    .case-link:hover, .quiet-link:hover {
+      text-decoration: underline !important;
+    }
+    .modal-dialog, .ekoai-shell, .faq-item {
+      background: #161617 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 26px !important;
+    }
+    .pay-method-card {
+      background: #1d1d1f !important;
+      border-radius: 20px !important;
+      border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    }
+    .pay-method-card.is-selected {
+      border-color: #0071e3 !important;
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25) !important;
+    }
+    .btn-confirm-pay, .ekoai-send-btn {
+      background: #0071e3 !important;
+      border-radius: 980px !important;
+    }
+    .btn-confirm-pay:hover, .ekoai-send-btn:hover {
+      background: #0077ed !important;
+    }
+    .suspicion-cta-banner {
+      background: linear-gradient(135deg, rgba(29, 29, 31, 0.94) 0%, rgba(16, 24, 48, 0.9) 100%) !important;
+      border: 1px solid rgba(41, 151, 255, 0.35) !important;
+      border-radius: 28px !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6) !important;
+    }
+    .suspicion-cta-btn {
+      background: #0071e3 !important;
+      border-radius: 980px !important;
+      box-shadow: 0 8px 24px rgba(0, 113, 227, 0.35) !important;
+    }
+    .suspicion-cta-kicker {
+      background: rgba(41, 151, 255, 0.14) !important;
+      border-color: rgba(41, 151, 255, 0.32) !important;
+      color: #2997ff !important;
+    }
+    @media (max-width: 820px) {
+      .apple-buy-pill-wrap { display: none; }
     }
     .apple-buy-pill-price {
       color: #f5f5f7;
