@@ -785,6 +785,7 @@ function renderPublicQuestionContractPage(contract) {
 
   <main class="wizard-shell">
     <div class="wizard-card">
+      <div id="q-sync-banner" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.38);color:#fde68a;border-radius:12px;padding:0.65rem 0.9rem;font-size:0.82rem;font-weight:700;margin-bottom:1rem;"></div>
       <!-- Aktif Soru Ekranı (Sayısız / Numarasız) -->
       <div id="wizard-active-view">
         <div class="eyebrow">${esc(subtitle)}</div>
@@ -845,6 +846,55 @@ function renderPublicQuestionContractPage(contract) {
       let waitingForAdmin = ${JSON.stringify(!!contract.waitingForAdmin)};
       let initialStatus = ${JSON.stringify(contract.status || 'PENDING').replace(/</g, '\\u003c')};
 
+      const DRAFT_KEY = 'eko_qcontract_draft_' + CONTRACT_ID;
+      const syncBannerEl = document.getElementById('q-sync-banner');
+
+      function setSyncBanner(msg, isWarning) {
+        if (!syncBannerEl) return;
+        if (!msg) {
+          syncBannerEl.style.display = 'none';
+          syncBannerEl.textContent = '';
+          return;
+        }
+        syncBannerEl.style.display = 'block';
+        syncBannerEl.style.background = isWarning ? 'rgba(251,191,36,0.12)' : 'rgba(16,185,129,0.12)';
+        syncBannerEl.style.borderColor = isWarning ? 'rgba(251,191,36,0.38)' : 'rgba(16,185,129,0.38)';
+        syncBannerEl.style.color = isWarning ? '#fde68a' : '#6ee7b7';
+        syncBannerEl.textContent = msg;
+      }
+
+      function saveDraft() {
+        try {
+          localStorage.setItem(DRAFT_KEY, JSON.stringify({
+            currentIdx,
+            answers,
+            updatedAt: Date.now()
+          }));
+        } catch (_) {}
+      }
+
+      function loadDraft() {
+        try {
+          const raw = localStorage.getItem(DRAFT_KEY);
+          if (!raw) return;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed.answers)) {
+            parsed.answers.forEach((val, idx) => {
+              if (typeof val === 'string' && val.trim() !== '') {
+                answers[idx] = val;
+              }
+            });
+          }
+          if (!KAHOOT_MODE && typeof parsed.currentIdx === 'number' && parsed.currentIdx >= 0 && parsed.currentIdx < QUESTIONS.length) {
+            currentIdx = parsed.currentIdx;
+          }
+        } catch (_) {}
+      }
+
+      function clearDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+      }
+
       async function safeReadJson(res) {
         const ct = (res.headers && res.headers.get('content-type')) || '';
         if (!ct.includes('application/json')) {
@@ -852,6 +902,32 @@ function renderPublicQuestionContractPage(contract) {
         }
         return await res.json();
       }
+
+      async function fetchWithRetry(url, options, maxRetries) {
+        const tries = maxRetries || 5;
+        let lastErr = null;
+        for (let i = 0; i < tries; i++) {
+          try {
+            const res = await fetch(url, options);
+            if ([502, 503, 504].includes(res.status) && i < tries - 1) {
+              setSyncBanner('⏳ Sunucu yeniden başlatılıyor, yazdığınız cevaplar güvende — tekrar bağlanılıyor...', true);
+              await new Promise(r => setTimeout(r, 2000));
+              continue;
+            }
+            setSyncBanner('', false);
+            return res;
+          } catch (err) {
+            lastErr = err;
+            if (i < tries - 1) {
+              setSyncBanner('⏳ Bağlantı bekleniyor, yazdığınız cevaplar tarayıcıda korunuyor...', true);
+              await new Promise(r => setTimeout(r, 2000));
+            }
+          }
+        }
+        throw lastErr || new Error('Sunucuya ulaşılamadı.');
+      }
+
+      loadDraft();
 
       const progressFillEl = document.getElementById('progress-fill-bar');
       const qTitleEl = document.getElementById('q-title-text');
@@ -877,6 +953,8 @@ function renderPublicQuestionContractPage(contract) {
       }
 
       function showSuccessScreen(ansList) {
+        clearDraft();
+        setSyncBanner('', false);
         activeView.style.display = 'none';
         waitingView.style.display = 'none';
         successView.style.display = 'block';
@@ -941,11 +1019,19 @@ function renderPublicQuestionContractPage(contract) {
         setTimeout(() => qInputEl.focus(), 40);
       }
 
+      if (qInputEl) {
+        qInputEl.addEventListener('input', () => {
+          answers[currentIdx] = qInputEl.value || '';
+          saveDraft();
+        });
+      }
+
       window.prevQuestion = function() {
         if (KAHOOT_MODE) return;
         answers[currentIdx] = (qInputEl.value || '').trim();
         if (currentIdx > 0) {
           currentIdx--;
+          saveDraft();
           renderCurrentQuestion();
         }
       };
@@ -959,16 +1045,17 @@ function renderPublicQuestionContractPage(contract) {
           return;
         }
         answers[currentIdx] = val;
+        saveDraft();
 
         if (KAHOOT_MODE) {
           btnNext.disabled = true;
           btnNext.textContent = '⏳ Cevap Gönderiliyor...';
           try {
-            const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/answer-step', {
+            const res = await fetchWithRetry('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/answer-step', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ answer: val, question: QUESTIONS[currentIdx] })
-            });
+            }, 5);
             const data = await safeReadJson(res);
             if (res.ok && data.success) {
               waitingForAdmin = true;
@@ -980,7 +1067,7 @@ function renderPublicQuestionContractPage(contract) {
               qErrorEl.style.display = 'block';
             }
           } catch (err) {
-            qErrorEl.textContent = 'Bağlantı hatası: ' + err.message;
+            qErrorEl.textContent = 'Bağlantı hatası (cevabınız tarayıcıda korundu): ' + err.message;
             qErrorEl.style.display = 'block';
           } finally {
             btnNext.disabled = false;
@@ -991,6 +1078,7 @@ function renderPublicQuestionContractPage(contract) {
 
         if (currentIdx < QUESTIONS.length - 1) {
           currentIdx++;
+          saveDraft();
           renderCurrentQuestion();
           return;
         }
@@ -1000,11 +1088,11 @@ function renderPublicQuestionContractPage(contract) {
         btnNext.textContent = '⏳ Gönderiliyor...';
         const payloadAnswers = QUESTIONS.map((q, idx) => ({ question: q, answer: answers[idx] || '' }));
         try {
-          const res = await fetch('/api/question-contracts/submit', {
+          const res = await fetchWithRetry('/api/question-contracts/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contractId: CONTRACT_ID, answers: payloadAnswers })
-          });
+          }, 5);
           const data = await safeReadJson(res);
           if (res.ok && data.success) {
             showSuccessScreen(payloadAnswers);
@@ -1015,15 +1103,16 @@ function renderPublicQuestionContractPage(contract) {
             btnPrev.disabled = currentIdx === 0;
           }
         } catch (err) {
-          qErrorEl.textContent = 'Bağlantı hatası: ' + err.message;
+          qErrorEl.textContent = 'Bağlantı hatası (tüm cevaplarınız korundu, tekrar deneyin): ' + err.message;
           qErrorEl.style.display = 'block';
           btnNext.disabled = false;
+          btnPrev.disabled = currentIdx === 0;
         }
       };
 
       window.sendNextRequest = async function() {
         try {
-          const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/request-next', { method: 'POST' });
+          const res = await fetchWithRetry('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/request-next', { method: 'POST' }, 3);
           if (res.ok) {
             document.getElementById('request-feedback').textContent = '🔔 İstek tekrar gönderildi! Yönetici onayladığında yeni soru açılacaktır.';
           }
@@ -1046,8 +1135,13 @@ function renderPublicQuestionContractPage(contract) {
           if (document.hidden) return;
           try {
             const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/state');
+            if ([502, 503, 504].includes(res.status)) {
+              setSyncBanner('⏳ Sunucu yeniden başlatılıyor, oturumunuz ve cevaplarınız korunuyor...', true);
+              return;
+            }
             const st = await safeReadJson(res);
             if (!res.ok || !st.success) return;
+            setSyncBanner('', false);
 
             if (st.status === 'SIGNED') {
               showSuccessScreen(st.answers || []);
@@ -1060,13 +1154,16 @@ function renderPublicQuestionContractPage(contract) {
                 currentIdx = Number(st.currentStep);
                 QUESTIONS[currentIdx] = st.currentQuestion;
                 waitingForAdmin = false;
+                saveDraft();
                 waitingView.style.display = 'none';
                 successView.style.display = 'none';
                 activeView.style.display = 'block';
                 renderCurrentQuestion();
               }
             }
-          } catch (_) {}
+          } catch (_) {
+            setSyncBanner('⏳ Bağlantı bekleniyor, yazdığınız cevaplar tarayıcıda korunuyor...', true);
+          }
         }, 3500);
       } else {
         renderCurrentQuestion();
