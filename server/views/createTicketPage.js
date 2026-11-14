@@ -758,12 +758,12 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
         const content = document.getElementById('ekoai-assist-content');
         let text = '';
         if (cat === 'reklam') {
-          text = 'Merhaba EkoYıldız Ekibi,\n' +
+          text = 'Merhaba EkoYıldız Ekibi,\\n' +
             'Belirttiğim topluluk için ' + selectedPackageName + ' paketiniz kapsamında sponsorluk görüşmesi yapmak istiyorum. ' +
             'Ödememi ' + (selectedTicketPayment === 'papara' ? 'Papara (0 TL komisyon)' : 'İtemSatış (+5 TL işlem ücreti)') + ' yöntemiyle tamamlamayı planlıyorum. ' +
             'Yayın takvimi ve detaylar için kanal onayınızı rica ederim.';
         } else {
-          text = 'Merhaba Destek Ekibi,\n' +
+          text = 'Merhaba Destek Ekibi,\\n' +
             'Konuyla ilgili detaylı bilgi ve yardım talep ediyorum. İnceleyip dönüş yapabilirseniz sevinirim.';
         }
         lastAIGeneratedText = text;
@@ -881,7 +881,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           const decodedSummary = decodeURIComponent(summaryParam);
           if (subjectEl) subjectEl.value = ('Özel Reklam Paketi · ' + decodedSummary).slice(0, 100);
           if (descEl && !descEl.value) {
-            descEl.value = 'Seçilen Özel Paket Bileşenleri:\n• ' + decodedSummary.replace(/ \+ /g, '\n• ');
+            descEl.value = 'Seçilen Özel Paket Bileşenleri:\\n• ' + decodedSummary.replace(/ \\+ /g, '\\n• ');
           }
           if (budgetEl && priceParam) {
             budgetEl.value = priceParam + ' TL (Tahmini Paket Tutarı)';
@@ -890,7 +890,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
           descEl.value = decodeURIComponent(summaryParam);
         } else if (withDiscordParam && subjectEl && subjectEl.value) {
           if (!subjectEl.value.includes('Discord')) {
-            subjectEl.value = subjectEl.value.replace(/\)$/, ' + Discord Duyurusu)');
+            subjectEl.value = subjectEl.value.replace(/\\)$/, ' + Discord Duyurusu)');
           }
           if (descEl && !descEl.value) {
             descEl.value = 'Seçilen Ek Hizmet: EkoYıldız Discord Topluluk Duyurusu dahil.';
@@ -939,15 +939,15 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             : (selectedTicketPayment === 'itemsatis' ? 'İtemSatış (+5 TL Platform Hizmet Bedeli)' : 'Papara (0 TL Komisyon)');
 
           fullDescription = 
-            '📋 REKLAM & SPONSORLUK DETAYLARI\n' +
-            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-            '• Seçilen Paket: ' + selectedPackageName + ' (' + selectedPackagePrice + ')\n' +
-            '• Ödeme Yöntemi Tercihi: ' + payLabel + '\n' +
-            '• Topluluk / Proje: ' + community + '\n' +
-            '• Tanıtım Bağlantısı: ' + link + '\n' +
-            (budget ? ('• Bütçe Tercihi: ' + budget + '\n') : '') +
-            (goal ? ('• Kampanya Hedefi: ' + goal + '\n') : '') +
-            '\n📝 KAMPANYA NOTLARI / AÇIKLAMA:\n' +
+            '📋 REKLAM & SPONSORLUK DETAYLARI\\n' +
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n' +
+            '• Seçilen Paket: ' + selectedPackageName + ' (' + selectedPackagePrice + ')\\n' +
+            '• Ödeme Yöntemi Tercihi: ' + payLabel + '\\n' +
+            '• Topluluk / Proje: ' + community + '\\n' +
+            '• Tanıtım Bağlantısı: ' + link + '\\n' +
+            (budget ? ('• Bütçe Tercihi: ' + budget + '\\n') : '') +
+            (goal ? ('• Kampanya Hedefi: ' + goal + '\\n') : '') +
+            '\\n📝 KAMPANYA NOTLARI / AÇIKLAMA:\\n' +
             finalNote;
         } else {
           if (!baseDescription) {
