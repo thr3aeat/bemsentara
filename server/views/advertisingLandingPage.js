@@ -164,6 +164,26 @@ function renderAdvertisingLandingPage(user = null) {
       avatarText: 'YK',
       avatarGradient: 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)',
       highlights: ['Sadık Dayanışma', 'Pozitif Topluluk Ruhu', 'Birlik ve Beraberlik']
+    },
+    {
+      id: 'enovcluse',
+      name: 'EnovCluse',
+      role: 'Topluluk Katkısı',
+      badge: 'Özel Teşekkür',
+      description: 'Topluluğa verdiği destek, emek ve katkıları için içtenlikle teşekkür ederiz.',
+      avatarText: 'E',
+      avatarGradient: 'linear-gradient(135deg, #0ea5e9 0%, #22d3ee 100%)',
+      highlights: ['Değerli Katkı', 'Topluluk Desteği', 'Samimi Emek']
+    },
+    {
+      id: 'frcanbey',
+      name: 'FRCanBey',
+      role: 'Topluluk Katkısı',
+      badge: 'Özel Teşekkür',
+      description: 'Topluluğa verdiği destek, emek ve katkıları için içtenlikle teşekkür ederiz.',
+      avatarText: 'F',
+      avatarGradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+      highlights: ['Değerli Katkı', 'Topluluk Desteği', 'Samimi Emek']
     }
   ];
 
