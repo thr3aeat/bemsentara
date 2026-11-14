@@ -10,6 +10,7 @@ const {
   renderPublicContractPage,
   renderPublicQuestionContractPage,
 } = require('../views/contractsView');
+const { renderPromoVideoPage } = require('../views/promoVideoView');
 const { renderErrorPage } = require('../views');
 
 const router = express.Router();
@@ -75,6 +76,12 @@ function requireAdmin(req, res, next) {
   }
   next();
 }
+
+// ── PUBLIC ROUTES: EKO YILDIZ TANITIM VİDEOSU & REKLAM ŞARTLARI ─────────────
+
+router.get(['/tanitim-videosu', '/reklam-sartlari', '/eko-yildiz-tanitim'], (req, res) => {
+  return res.send(renderPromoVideoPage());
+});
 
 // ── PUBLIC ROUTES: Soru Sözleşmesi & Kahoot Modu ────────────────────────────
 
@@ -153,6 +160,10 @@ router.get('/api/question-contracts/:id/state', (req, res) => {
       currentQuestion,
       hasMoreQuestions: step < questions.length,
       waitingForAdmin: !!contract.waitingForAdmin,
+      paused: !!contract.paused,
+      hostNotice: contract.hostNotice || null,
+      questionDurationSec: Number(contract.questionDurationSec || 0),
+      questionStartedAt: contract.questionStartedAt || null,
       nextRequestedAt: contract.nextRequestedAt || null,
       answers,
     });

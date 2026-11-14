@@ -38,6 +38,7 @@ function renderAdminQuestionContractsWorkspace() {
     </div>
     <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
       <button type="button" onclick="if(window.admTab){window.admTab('contracts');}else{const nb=document.querySelector('[data-admin-nav=contracts]');if(nb){nb.click();}else{location.hash='#adm-contracts';}}" class="acc-btn" style="cursor:pointer;">📜 Normal Sözleşmelere Dön</button>
+      <a href="/tanitim-videosu" target="_blank" class="acc-btn" style="background:linear-gradient(135deg,#7c3aed,#ec4899);border:none;color:#fff;text-decoration:none;font-weight:800;">🎬 EKO YILDIZ TANITIM VİDEOSU</a>
       <a href="/soru-sozlesmesi" target="_blank" class="acc-btn" style="background:rgba(16,185,129,0.16);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;text-decoration:none;font-weight:800;">↗ Hazır Kamp Linkini Aç</a>
       <button type="button" class="acc-btn" onclick="window.loadAdminQuestionContracts && window.loadAdminQuestionContracts()">🔄 Yenile</button>
     </div>
