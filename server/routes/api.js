@@ -416,110 +416,116 @@ router.post("/api/tickets", async (req, res) => {
     await ticket.save();
     saveStoreNow();
 
-    // ── Discord kanalı aç ──────────────────────────────────────────────────
+    // ── Discord kanalı aç (en fazla 2.5s bekle, arka planda tamamla) ─────────
     let channelId = null;
     let guildId = null;
     let discordChannelMention = null;
-    let discordTicketChannel = null;
 
-    const client = getDiscordClient();
-    if (client?.isReady()) {
-      // Web ticketlar sadece GUILD2 (EkoYıldız) sunucusunda açılır
-      const targets = [
-        { id: GUILD2_ID, categoryId: GUILD2_TICKET_CATEGORY_ID },
-      ];
+    const provisionDiscordChannel = (async () => {
+      let discordTicketChannel = null;
+      const client = getDiscordClient();
+      if (client?.isReady()) {
+        // Web ticketlar sadece GUILD2 (EkoYıldız) sunucusunda açılır
+        const targets = [
+          { id: GUILD2_ID, categoryId: GUILD2_TICKET_CATEGORY_ID },
+        ];
 
-      for (const target of targets) {
-        try {
-          const guild = await client.guilds.fetch(target.id).catch(() => null);
-          if (!guild) continue;
+        for (const target of targets) {
+          try {
+            const guild = await client.guilds.fetch(target.id).catch(() => null);
+            if (!guild) continue;
 
-          const permissionOverwrites = [
-            { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-            {
-              id: req.user.discordId,
-              allow: [
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.AttachFiles,
-                PermissionFlagsBits.EmbedLinks,
-              ],
-            },
-          ];
+            const permissionOverwrites = [
+              { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+              {
+                id: req.user.discordId,
+                allow: [
+                  PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.SendMessages,
+                  PermissionFlagsBits.ReadMessageHistory,
+                  PermissionFlagsBits.AttachFiles,
+                  PermissionFlagsBits.EmbedLinks,
+                ],
+              },
+            ];
 
-          // Kategoriyi belirle
-          let parentId = null;
-          if (target.categoryId) {
-            const ch = await guild.channels.fetch(target.categoryId).catch(() => null);
-            if (ch?.type === ChannelType.GuildCategory) parentId = ch.id;
-            else if (ch?.type === ChannelType.GuildText) parentId = ch.parentId;
-          }
-          if (!parentId) {
-            // "destek talepleri" kategorisini bul veya oluştur
-            let cat = guild.channels.cache.find(
-              ch => ch.name.toLowerCase() === "destek talepleri" && ch.type === ChannelType.GuildCategory
-            );
-            if (!cat) {
-              cat = await guild.channels.create({ name: "DESTEK TALEPLERİ", type: ChannelType.GuildCategory });
+            let parentId = null;
+            if (target.categoryId) {
+              const ch = await guild.channels.fetch(target.categoryId).catch(() => null);
+              if (ch?.type === ChannelType.GuildCategory) parentId = ch.id;
+              else if (ch?.type === ChannelType.GuildText) parentId = ch.parentId;
             }
-            parentId = cat.id;
-          }
+            if (!parentId) {
+              let cat = guild.channels.cache.find(
+                ch => ch.name.toLowerCase() === "destek talepleri" && ch.type === ChannelType.GuildCategory
+              );
+              if (!cat) {
+                cat = await guild.channels.create({ name: "DESTEK TALEPLERİ", type: ChannelType.GuildCategory });
+              }
+              parentId = cat.id;
+            }
 
-          const ticketChannel = await guild.channels.create({
-            name: `ticket-${ticketId.toLowerCase()}`,
-            type: ChannelType.GuildText,
-            parent: parentId,
-            permissionOverwrites,
-          });
+            const ticketChannel = await guild.channels.create({
+              name: `ticket-${ticketId.toLowerCase()}`,
+              type: ChannelType.GuildText,
+              parent: parentId,
+              permissionOverwrites,
+            });
 
-          // İlk sunucunun kanalını kaydet
-          if (!channelId) {
-            channelId = ticketChannel.id;
-            guildId = guild.id;
-            discordChannelMention = `<#${ticketChannel.id}>`;
-            discordTicketChannel = ticketChannel;
+            if (!channelId) {
+              channelId = ticketChannel.id;
+              guildId = guild.id;
+              discordChannelMention = `<#${ticketChannel.id}>`;
+              discordTicketChannel = ticketChannel;
+            }
+          } catch (chErr) {
+            console.warn(`[webTicket] ${target.id} kanalı açılamadı:`, chErr.message);
           }
-        } catch (chErr) {
-          console.warn(`[webTicket] ${target.id} kanalı açılamadı:`, chErr.message);
         }
       }
-    }
 
-    ticket.channelId = channelId;
-    ticket.guildId = guildId;
-    await ticket.save();
-    saveStoreNow();
-    if (discordTicketChannel) {
-      try {
-        await sendTicketPanels(ticket, discordTicketChannel);
-        await discordTicketChannel.send(`💬 **EkoYıldız Yetkili:** ${initialGreeting}`).catch(() => {});
-      } catch (panelError) {
+      ticket.channelId = channelId;
+      ticket.guildId = guildId;
+      await ticket.save();
+      saveStoreNow();
+
+      if (discordTicketChannel) {
+        try {
+          await sendTicketPanels(ticket, discordTicketChannel);
+          await discordTicketChannel.send(`💬 **EkoYıldız Yetkili:** ${initialGreeting}`).catch(() => {});
+        } catch (panelError) {
+          ticket.deliveryState = "pending_retry";
+          ticket.deliveryError = panelError.message;
+          ticket.deliveryErrorAt = new Date();
+          await ticket.save();
+          console.error(formatPanelError(ticket, panelError));
+        }
+      } else {
         ticket.deliveryState = "pending_retry";
-        ticket.deliveryError = panelError.message;
+        ticket.deliveryError = "Discord ticket channel could not be created.";
         ticket.deliveryErrorAt = new Date();
         await ticket.save();
-        console.error(formatPanelError(ticket, panelError));
       }
-    } else {
-      ticket.deliveryState = "pending_retry";
-      ticket.deliveryError = "Discord ticket channel could not be created.";
-      ticket.deliveryErrorAt = new Date();
-      await ticket.save();
-    }
+
+      try {
+        const { logTicketCreated } = require("../../bot/services/ticketLog");
+        logTicketCreated(ticket, { source: "Web Panel", ticketChannelId: channelId, guildId });
+      } catch (_) { }
+
+      try {
+        const member = await client?.users.fetch(req.user.discordId).catch(() => null);
+        await member?.send(`📬 **Biletin alındı!**\n\n**#${ticketId}** numaralı destek talebin ekibe iletildi. Bir yetkili cevap verdiğinde seninle iletişime geçilecek.\n\nKonu: **${s}**`);
+      } catch (_) { }
+    })().catch((bgErr) => {
+      console.error("[webTicket] Background Discord provisioning error:", bgErr);
+    });
+
+    await Promise.race([
+      provisionDiscordChannel,
+      new Promise((resolve) => setTimeout(resolve, 2500)),
+    ]);
+
     const delivery = buildTicketDeliveryResult(ticket);
-
-    try {
-      const { logTicketCreated } = require("../../bot/services/ticketLog");
-      logTicketCreated(ticket, { source: "Web Panel", ticketChannelId: channelId, guildId });
-    } catch (_) { }
-
-    // Sentara önce gönderir; DM kanalı kullanıldığı için yapılandırılmış Phibi
-    // yalnızca gönderim başarısız olduğunda otomatik devreye girer.
-    try {
-      const member = await client?.users.fetch(req.user.discordId).catch(() => null);
-      await member?.send(`📬 **Biletin alındı!**\n\n**#${ticketId}** numaralı destek talebin ekibe iletildi. Bir yetkili cevap verdiğinde seninle iletişime geçilecek.\n\nKonu: **${s}**`);
-    } catch (_) { }
 
     res.json({
       success: true,

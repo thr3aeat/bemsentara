@@ -962,9 +962,12 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
         submitText.textContent = 'Bilet oluşturuluyor & kanal açılıyor...';
 
         try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 12000);
           const res = await fetch('/api/tickets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               category,
               subject,
@@ -972,6 +975,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
               priority: category === 'reklam' ? 'medium' : 'normal'
             })
           });
+          clearTimeout(timer);
 
           const data = await res.json().catch(() => ({}));
 
