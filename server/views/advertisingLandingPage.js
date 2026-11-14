@@ -12,8 +12,8 @@ const DISCORD_URL = 'https://discord.gg/rEu5gvRBdM';
 const YOUTUBE_URL = 'https://www.youtube.com/@eko8yildiz';
 
 function renderAdvertisingLandingPage(user = null) {
-  // 1 TL = ~2.5 Robux temel değerinin 2x katı = 5 Robux / TL
-  const toRobux2x = (tl) => Math.round(Number(tl || 0) * 5);
+  // 1 TL = 50 Robux baz değerinin 2x katı = 100 Robux / TL (Shorts 30 TL -> 3.000 Robux)
+  const toRobux2x = (tl) => Math.round(Number(tl || 0) * 100);
   const formatRobux = (tl) => toRobux2x(tl).toLocaleString('tr-TR');
 
   // Eko'nun DM'den onayladığı kullanıcılar kısa süreliğine indirimli net fiyatları görür
@@ -3294,7 +3294,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         <div id="robux-details-block" class="pay-details-block" style="display:none;">
           <div class="itemsatis-trust-callout" style="border-color:rgba(245,158,11,0.35);background:rgba(245,158,11,0.08);">
             <span style="font-size:1.3rem;">🪙</span>
-            <span>Robux ödemelerinde TL paket tutarının Robux karşılığının <strong>2 katı (x2)</strong> uygulanır (1 TL = 5 Robux). Ödemeyi onayladığınızda biletinizde özel Gamepass linki iletilir.</span>
+            <span>Robux ödemelerinde TL paket tutarının Robux karşılığının <strong>2 katı (x2)</strong> uygulanır (1 TL = 100 Robux • Shorts min. 3.000 Robux). Ödemeyi onayladığınızda biletinizde özel Gamepass linki iletilir.</span>
           </div>
         </div>
 
@@ -3386,7 +3386,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
       const isActive = !cardAddonStates[pkgId];
       cardAddonStates[pkgId] = isActive;
       const robuxEl = document.getElementById('robux-amount-' + pkgId);
-      const fmtRbx = (tl) => Math.round(adDisc(tl) * 5).toLocaleString('tr-TR');
+      const fmtRbx = (tl) => Math.round(adDisc(tl) * 100).toLocaleString('tr-TR');
 
       if (isActive) {
         box.classList.add('is-active');
@@ -3587,7 +3587,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
 
       const total = Math.max(0, subtotal - discount);
       const finalTl = adDisc(total);
-      const finalRobux = Math.round(finalTl * 5).toLocaleString('tr-TR');
+      const finalRobux = Math.round(finalTl * 100).toLocaleString('tr-TR');
       totalEl.innerHTML = '₺' + finalTl + ' <small style="display:block;font-size:0.78rem;color:#fcd34d;font-weight:700;">veya ' + finalRobux + ' Robux (2x)</small>';
       submitBtn.disabled = false;
 
@@ -3844,7 +3844,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
       const modalItemPrice = document.getElementById('modal-item-price');
 
       const base = adDisc(currentModalPkg.basePrice);
-      const robuxTotal = Math.round(base * 5);
+      const robuxTotal = Math.round(base * 100);
       const robuxText = robuxTotal.toLocaleString('tr-TR') + ' Robux';
 
       [cardPapara, cardItemsatis, cardRobux].forEach(c => {
@@ -3858,7 +3858,7 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         if (cardRobux) { cardRobux.classList.add('is-selected'); cardRobux.setAttribute('aria-checked', 'true'); }
         if (robuxBlock) robuxBlock.style.display = 'flex';
         if (modalItemPrice) modalItemPrice.textContent = robuxText;
-        if (bdBasePrice) bdBasePrice.textContent = '₺' + base + ' (' + Math.round(base * 2.5).toLocaleString('tr-TR') + ' R$ baz)';
+        if (bdBasePrice) bdBasePrice.textContent = '₺' + base + ' (' + Math.round(base * 50).toLocaleString('tr-TR') + ' R$ baz)';
         if (bdFeeLabel) bdFeeLabel.textContent = 'Robux Çarpanı (x2)';
         if (bdFeePrice) {
           bdFeePrice.textContent = 'x2 Değer';
