@@ -2466,6 +2466,143 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         justify-content: center;
       }
     }
+
+    /* ── Apple iPhone Pro / Apple.com Tarzı Tasarım Sistemi (Bozmadan) ── */
+    :root {
+      --bg: #000000;
+      --bg-surface: rgba(29, 29, 31, 0.78);
+      --bg-surface-elevated: rgba(38, 38, 41, 0.9);
+      --bg-subtle: rgba(255, 255, 255, 0.045);
+      --border-subtle: rgba(255, 255, 255, 0.09);
+      --border-medium: rgba(255, 255, 255, 0.14);
+      --border-active: rgba(0, 113, 227, 0.65);
+      --text-primary: #f5f5f7;
+      --text-secondary: #a1a1a6;
+      --text-tertiary: #86868b;
+      --accent-green: #0071e3;
+      --accent-green-subtle: rgba(0, 113, 227, 0.14);
+    }
+    body {
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 113, 227, 0.16), transparent 65%), #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Outfit", "Inter", "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: -0.011em;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .btn-top-cta, .btn-primary, .btn-select-package {
+      background: #0071e3 !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-radius: 980px !important;
+      box-shadow: 0 4px 18px rgba(0, 113, 227, 0.28) !important;
+      font-weight: 600 !important;
+      letter-spacing: -0.01em;
+      transition: background 180ms ease, transform 180ms ease !important;
+    }
+    .btn-top-cta:hover, .btn-primary:hover, .btn-select-package:hover {
+      background: #0077ed !important;
+      transform: translateY(-1px);
+    }
+    .btn-secondary, .btn-direct-pay {
+      border-radius: 980px !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      color: #f5f5f7 !important;
+    }
+    .btn-secondary:hover, .btn-direct-pay:hover {
+      background: rgba(255, 255, 255, 0.14) !important;
+    }
+    .hero-title {
+      font-weight: 700 !important;
+      letter-spacing: -0.032em !important;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #f5f5f7 0%, #c7c7cc 48%, #60a5fa 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+    .section-title {
+      font-weight: 700 !important;
+      letter-spacing: -0.028em !important;
+      color: #f5f5f7 !important;
+    }
+    .pricing-card, .hero-summary-card, .case-card, .credit-card, .custom-choice-card, .builder-summary-card {
+      background: #161617 !important;
+      border: 1px solid rgba(255, 255, 255, 0.09) !important;
+      border-radius: 28px !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    }
+    .pricing-card.is-recommended {
+      border-color: rgba(0, 113, 227, 0.65) !important;
+      box-shadow: 0 24px 60px rgba(0, 113, 227, 0.18) !important;
+    }
+    .trust-strip {
+      background: #161617 !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 24px !important;
+    }
+    /* Apple-style Floating Price & Buy Pill (from iPhone overview) */
+    .apple-buy-pill-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 8px auto 34px;
+      padding: 0 16px;
+    }
+    .apple-buy-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 20px;
+      padding: 8px 8px 8px 24px;
+      border-radius: 980px;
+      background: rgba(29, 29, 31, 0.82);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    }
+    .apple-buy-pill-price {
+      color: #f5f5f7;
+      font-size: 0.96rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+    .apple-buy-pill-price strong {
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .apple-buy-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 22px;
+      border-radius: 980px;
+      background: #0071e3;
+      color: #ffffff;
+      font-size: 0.94rem;
+      font-weight: 600;
+      transition: background 180ms ease, transform 180ms ease;
+      white-space: nowrap;
+    }
+    .apple-buy-pill-btn:hover {
+      background: #0077ed;
+      transform: scale(1.03);
+    }
+    @media (max-width: 600px) {
+      .apple-buy-pill {
+        width: 100%;
+        justify-content: space-between;
+        padding: 8px 8px 8px 16px;
+        gap: 10px;
+      }
+      .apple-buy-pill-price { font-size: 0.84rem; }
+    }
   </style>
 </head>
 <body>
@@ -2545,6 +2682,14 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         </div>
       </aside>
     </section>
+
+    <!-- Apple iPhone Tarzı Yüzen Başlangıç Fiyatı & Satın Alın Kapsülü -->
+    <div class="apple-buy-pill-wrap shell">
+      <div class="apple-buy-pill">
+        <span class="apple-buy-pill-price">Başlangıç fiyatı: <strong>30 TL</strong> <span style="color:#a1a1a6;">•</span> <strong style="color:#fcd34d;">3.000 Robux</strong></span>
+        <a class="apple-buy-pill-btn" href="#paketler">Satın Alın</a>
+      </div>
+    </div>
 
     <!-- Trust Strip -->
     <div class="trust-strip shell">
