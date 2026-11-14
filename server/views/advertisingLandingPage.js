@@ -2673,6 +2673,155 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
       }
       .apple-buy-pill-price { font-size: 0.84rem; }
     }
+
+    /* ── Apple Scrollytelling & Akışkan Tipografi (dbswebsite Apple Rehberi) ── */
+    .hero-title {
+      font-size: clamp(2.3rem, 5.2vw, 3.85rem) !important;
+      line-height: 1.06 !important;
+    }
+    .section-title {
+      font-size: clamp(1.85rem, 3.8vw, 2.85rem) !important;
+      line-height: 1.1 !important;
+    }
+    .apple-story-band {
+      padding: 72px 0 48px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin: 24px auto 40px;
+    }
+    .apple-story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .apple-story-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .apple-story-step {
+      padding: 28px 30px;
+      border-radius: 24px;
+      background: rgba(29, 29, 31, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      opacity: 0.45;
+      transform: translateY(10px);
+      transition: opacity 420ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms cubic-bezier(0.22, 1, 0.36, 1), border-color 420ms ease, background 420ms ease;
+      cursor: pointer;
+    }
+    .apple-story-step.is-active {
+      opacity: 1;
+      transform: translateY(0);
+      background: #161617;
+      border-color: rgba(0, 113, 227, 0.55);
+      box-shadow: 0 24px 54px rgba(0, 0, 0, 0.55);
+    }
+    .apple-step-num {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #2997ff;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .apple-story-step h3 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #f5f5f7;
+      margin-bottom: 8px;
+    }
+    .apple-story-step p {
+      color: #a1a1a6;
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+    .apple-sticky-stage {
+      position: sticky;
+      top: 100px;
+      border-radius: 36px;
+      padding: 32px;
+      background: radial-gradient(circle at 25% 20%, rgba(0, 113, 227, 0.22), transparent 55%), #161617;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background 480ms ease;
+    }
+    .apple-stage-island {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 auto 24px;
+      padding: 7px 16px;
+      border-radius: 980px;
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #f5f5f7;
+    }
+    .apple-stage-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #30d158;
+      box-shadow: 0 0 8px #30d158;
+    }
+    .apple-stage-metric {
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 0%, #a1a1a6 55%, #2997ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .apple-stage-caption {
+      text-align: center;
+      color: #a1a1a6;
+      font-size: 0.96rem;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+    .apple-stage-pills {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .apple-stage-pill {
+      padding: 6px 13px;
+      border-radius: 980px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f5f5f7;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Scroll Reveal Motion */
+    .apple-reveal {
+      opacity: 0;
+      transform: translateY(24px) scale(0.985);
+      transition: opacity 720ms cubic-bezier(0.22, 1, 0.36, 1), transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .apple-reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    @media (max-width: 880px) {
+      .apple-story-grid { grid-template-columns: 1fr; }
+      .apple-sticky-stage { position: relative; top: 0; min-height: 280px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .apple-reveal, .apple-story-step { opacity: 1 !important; transform: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -2780,6 +2929,54 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
         <span>Yalnızca resmî İtemSatış süreci (Kişisel IBAN/DM yok)</span>
       </div>
     </div>
+
+    <!-- Apple Scrollytelling Bölümü (Yapışkan Sahne + Adım Adım Hikaye) -->
+    <section class="apple-story-band shell" id="apple-story">
+      <div class="section-head" style="text-align:center;max-width:740px;margin:0 auto 44px;">
+        <span class="section-kicker">EkoYıldız Deneyimi</span>
+        <h2 class="section-title">Her kaydırmada büyüyen bir etki.</h2>
+        <p class="section-desc" style="margin:12px auto 0;">
+          Topluluğunuzu doğru kitleyle buluşturan üç aşamalı Apple sadeliğinde kampanya mimarisi.
+        </p>
+      </div>
+      <div class="apple-story-grid">
+        <div class="apple-story-steps">
+          <div class="apple-story-step is-active" data-stage="0" onclick="activateAppleStage(0)">
+            <span class="apple-step-num">Bölüm 01 · Bağlam</span>
+            <h3>Reklam değil, içeriğin kalbi.</h3>
+            <p>İzleyici atlanabilir banner’ları unutur. EkoYıldız’da markanız videonun en yüksek dikkat anında doğal bir hikaye olarak sunulur.</p>
+          </div>
+          <div class="apple-story-step" data-stage="1" onclick="activateAppleStage(1)">
+            <span class="apple-step-num">Bölüm 02 · Çoklu Ekosistem</span>
+            <h3>YouTube + Shorts + Discord tek anda.</h3>
+            <p>Aynı anda hem dikey keşfet akışında hem uzun videoda hem de aktif Discord topluluğunda senkronize görünürlük.</p>
+          </div>
+          <div class="apple-story-step" data-stage="2" onclick="activateAppleStage(2)">
+            <span class="apple-step-num">Bölüm 03 · Kanıtlanmış Çıktı</span>
+            <h3>150’den 980’e gerçek sıçrama.</h3>
+            <p>Yayın sonrası sohbet hızı, yeni üye akışı ve sipariş dönüşümü şeffaf grafiklerle belgelenir.</p>
+          </div>
+        </div>
+
+        <div class="apple-sticky-stage" id="appleStickyStage">
+          <div class="apple-stage-island">
+            <span class="apple-stage-dot"></span>
+            <span id="appleStageIslandText">EkoYıldız Pro · Aktif Sahne 01</span>
+          </div>
+          <div>
+            <div class="apple-stage-metric" id="appleStageMetric">150 ➔ 980</div>
+            <p class="apple-stage-caption" id="appleStageCaption">
+              Doğru topluluk bağlamıyla tek kampanyada organik üye ve sohbet sıçraması.
+            </p>
+          </div>
+          <div class="apple-stage-pills" id="appleStagePills">
+            <span class="apple-stage-pill">⚡ Sesli Mid-Roll</span>
+            <span class="apple-stage-pill">💬 Discord Duyurusu</span>
+            <span class="apple-stage-pill">🪙 3.000+ Robux Seçeneği</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Neden EkoYıldız -->
     <section class="section-wrap shell">
@@ -4180,7 +4377,70 @@ ${priceAccess ? `    .price-old { opacity: 0.5; font-size: 1rem; margin-right: 4
     document.addEventListener('DOMContentLoaded', function() {
       // Başlangıçta Mid-Roll seçili olsun
       selectBuilderFormat('fmt_video_midroll', 100, 'Uzun Video Sesli Mid-Roll');
+
+      // Apple Scroll-Driven Reveal (IntersectionObserver)
+      const revealTargets = document.querySelectorAll('.section-wrap, .pricing-card, .case-card, .trust-strip, .suspicion-cta-banner, .custom-builder-section');
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        revealTargets.forEach((el) => {
+          el.classList.add('apple-reveal');
+          io.observe(el);
+        });
+
+        const storySteps = document.querySelectorAll('.apple-story-step');
+        const stepIo = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              activateAppleStage(Number(entry.target.dataset.stage || 0));
+            }
+          });
+        }, { threshold: 0.65 });
+        storySteps.forEach((s) => stepIo.observe(s));
+      }
     });
+
+    const APPLE_STAGES = [
+      {
+        island: 'EkoYıldız Pro · Aktif Sahne 01',
+        metric: '150 ➔ 980',
+        caption: 'Doğru topluluk bağlamıyla tek kampanyada organik üye ve sohbet sıçraması.',
+        pills: ['⚡ Sesli Mid-Roll', '💬 Discord Duyurusu', '🪙 3.000+ Robux Seçeneği']
+      },
+      {
+        island: 'EkoYıldız Pro · Aktif Sahne 02',
+        metric: '3 Kanal Tek Etki',
+        caption: 'YouTube uzun video, Shorts dikey akış ve Discord duyurusu ile kesintisiz erişim.',
+        pills: ['🎬 YouTube Ana Video', '📱 Shorts Keşfet', '🔔 @everyone / Etkinlik']
+      },
+      {
+        island: 'EkoYıldız Pro · Aktif Sahne 03',
+        metric: '+%553 Büyüme',
+        caption: 'İnteraktif grafiklerle doğrulanan gerçek topluluk yükselişi ve 45 Mesaj/Dk aktiflik.',
+        pills: ['📈 Canlı Analizler', '🛡️ Önce Onay', '💳 Papara • İtemSatış • Robux']
+      }
+    ];
+
+    function activateAppleStage(idx) {
+      const data = APPLE_STAGES[idx] || APPLE_STAGES[0];
+      document.querySelectorAll('.apple-story-step').forEach((el, i) => {
+        el.classList.toggle('is-active', i === idx);
+      });
+      const island = document.getElementById('appleStageIslandText');
+      const metric = document.getElementById('appleStageMetric');
+      const caption = document.getElementById('appleStageCaption');
+      const pills = document.getElementById('appleStagePills');
+      if (island) island.textContent = data.island;
+      if (metric) metric.textContent = data.metric;
+      if (caption) caption.textContent = data.caption;
+      if (pills) pills.innerHTML = data.pills.map((p) => '<span class="apple-stage-pill">' + p + '</span>').join('');
+    }
   </script>
 </body>
 </html>`;
