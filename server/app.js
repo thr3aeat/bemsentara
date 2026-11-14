@@ -1,4 +1,5 @@
 const express = require("express");
+const zlib = require("zlib");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
@@ -66,23 +67,52 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
+// ── ⚡ Hızlı Gzip Sıkıştırma (sıfır bağımlılık, büyük HTML/JSON yanıtlarını %75-85 küçültür) ──
+app.use((req, res, next) => {
+  const acceptEnc = String(req.headers["accept-encoding"] || "");
+  if (!acceptEnc.includes("gzip") || req.method === "HEAD") return next();
+  const origSend = res.send.bind(res);
+  res.send = function (body) {
+    if (res.headersSent || res.getHeader("Content-Encoding")) return origSend(body);
+    const ct = String(res.getHeader("Content-Type") || (typeof body === "string" ? "text/html" : "application/json"));
+    const compressible = /text\/|application\/json|application\/javascript|image\/svg\+xml/i.test(ct);
+    const buf = Buffer.isBuffer(body) ? body : (typeof body === "string" ? Buffer.from(body, "utf8") : null);
+    if (!compressible || !buf || buf.length < 1024) return origSend(body);
+    zlib.gzip(buf, { level: 6 }, (err, zipped) => {
+      if (err || res.headersSent) return origSend(body);
+      res.setHeader("Content-Encoding", "gzip");
+      res.setHeader("Vary", "Accept-Encoding");
+      res.removeHeader("Content-Length");
+      return origSend(zipped);
+    });
+    return res;
+  };
+  next();
+});
+
 // ── 🛡️ GÜVENLİK KALKANI: NoSQL Enjeksiyonu & Hassas Veri Sızdırmazlık ─────────
 app.use(noSqlSanitizerMiddleware);
 app.use(responseDataRedactorMiddleware);
 app.use(csrfOriginGuardMiddleware);
 app.use(pinBruteForceGuardMiddleware);
 
+let cachedApiSpeedLimit = { value: 120, expiresAt: 0 };
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: async (req, res) => {
+  max: async () => {
+    const now = Date.now();
+    if (now < cachedApiSpeedLimit.expiresAt) return cachedApiSpeedLimit.value;
+    let limit = 120;
     try {
-      const ServerConfig = require('../models/ServerConfig');
-      const sConf = await ServerConfig.findOne({});
-      if (sConf && sConf.apiSpeedLimitActive) {
-        return 60; // %50 Daha yavaş limit (120 yerine 60)
+      const mongoose = require("mongoose");
+      if (mongoose.connection && mongoose.connection.readyState === 1) {
+        const ServerConfig = require("../models/ServerConfig");
+        const sConf = await ServerConfig.findOne({}).select("apiSpeedLimitActive").lean().maxTimeMS(400);
+        if (sConf && sConf.apiSpeedLimitActive) limit = 60;
       }
     } catch (_) {}
-    return 120;
+    cachedApiSpeedLimit = { value: limit, expiresAt: now + 30000 };
+    return limit;
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -137,7 +167,7 @@ app.use(ogMiddleware);
 app.use("/public", express.static(path.join(__dirname, "public"), {
   dotfiles: "ignore",
   index: false,
-  maxAge: "1d"
+  maxAge: "7d"
 }));
 
 app.use("/api/", apiLimiter);

@@ -963,7 +963,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
 
         try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 12000);
+          const timer = setTimeout(() => controller.abort(), 30000);
           const res = await fetch('/api/tickets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -995,14 +995,20 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             }, 1200);
           } else {
             isSubmittingTicket = false;
-            showAlert(data.error || 'Bilet oluşturulurken bir hata meydana geldi.', 'error');
+            showAlert(data.error || ('Bilet oluşturulamadı (HTTP ' + res.status + ').'), 'error');
             submitBtn.disabled = false;
             submitIcon.textContent = '📨';
             submitText.textContent = 'Talebi Gönder & Kanal Aç';
           }
         } catch (err) {
           isSubmittingTicket = false;
-          showAlert('Bağlantı hatası oluştu. Lütfen internetinizi kontrol edip tekrar deneyin.', 'error');
+          const isTimeout = err && err.name === 'AbortError';
+          showAlert(
+            isTimeout
+              ? 'Sunucu yanıt vermekte gecikti (zaman aşımı). Talebiniz kaydedilmiş olabilir, lütfen Biletlerim sayfasını kontrol edin.'
+              : 'Bağlantı hatası oluştu. Lütfen internetinizi kontrol edip tekrar deneyin.',
+            'error'
+          );
           submitBtn.disabled = false;
           submitIcon.textContent = '📨';
           submitText.textContent = 'Talebi Gönder & Kanal Aç';

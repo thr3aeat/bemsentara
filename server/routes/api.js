@@ -414,7 +414,6 @@ router.post("/api/tickets", async (req, res) => {
       deliveryState: "pending_delivery",
     });
     await ticket.save();
-    saveStoreNow();
 
     // ── Discord kanalı aç (en fazla 2.5s bekle, arka planda tamamla) ─────────
     let channelId = null;
@@ -522,7 +521,7 @@ router.post("/api/tickets", async (req, res) => {
 
     await Promise.race([
       provisionDiscordChannel,
-      new Promise((resolve) => setTimeout(resolve, 2500)),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
     ]);
 
     const delivery = buildTicketDeliveryResult(ticket);
@@ -621,7 +620,6 @@ router.post("/api/tickets/:ticketId/messages", async (req, res) => {
     }
 
     await ticket.save();
-    saveStoreNow();
     res.json({ success: true, messages: ticket.messages, staffJoined: !!ticket.staffJoined });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -654,7 +652,6 @@ router.post("/api/tickets/:ticketId/call-eko", async (req, res) => {
       createdAt: new Date()
     });
     await ticket.save();
-    saveStoreNow();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
