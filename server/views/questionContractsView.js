@@ -146,11 +146,11 @@ function renderAdminQuestionContractsWorkspace() {
     <!-- Kahoot Canlı Geçiş Kontrolleri -->
     <div id="qmodal-kahoot-controls" style="display:none;background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(16,185,129,0.12));border:1px solid rgba(167,139,250,0.4);border-radius:14px;padding:1.1rem;margin-bottom:1.25rem;">
       <div id="qmodal-kahoot-status-bar" style="font-weight:800;font-size:0.95rem;color:#fff;margin-bottom:0.8rem;"></div>
-      <div id="kahoot-admin-loader" style="display:none;align-items:center;gap:0.75rem;background:rgba(15,23,42,0.85);border:1px solid rgba(52,211,153,0.45);border-radius:12px;padding:0.75rem 1rem;margin-bottom:0.85rem;">
-        <span style="display:inline-block;width:20px;height:20px;border:3px solid rgba(52,211,153,0.25);border-top-color:#34d399;border-radius:50%;animation:kahootSpin 0.65s linear infinite;"></span>
+      <div id="kahoot-admin-loader" style="display:none;align-items:center;gap:0.9rem;background:linear-gradient(135deg,rgba(124,58,237,0.28),rgba(16,185,129,0.22));border:1px solid rgba(52,211,153,0.55);border-radius:14px;padding:0.85rem 1.15rem;margin-bottom:0.85rem;">
+        <div id="kahoot-admin-countdown" style="min-width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#10b981);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.35rem;color:#fff;box-shadow:0 6px 18px rgba(124,58,237,0.45);">3</div>
         <div>
-          <div id="kahoot-admin-meme-text" style="font-weight:800;color:#6ee7b7;font-size:0.88rem;">🚀 Sonraki soruya ışınlanılıyor...</div>
-          <div style="font-size:0.74rem;color:#94a3b8;">Katılımcı ekranı da aynı anda güncelleniyor</div>
+          <div id="kahoot-admin-meme-text" style="font-weight:900;color:#6ee7b7;font-size:0.95rem;">📤 Soru gönderiliyor...</div>
+          <div style="font-size:0.76rem;color:#cbd5e1;">Kahoot canlı senkronizasyonu: 3-2-1 ile katılımcıya iletiliyor</div>
         </div>
       </div>
       <style>@keyframes kahootSpin{to{transform:rotate(360deg);}}</style>
@@ -363,9 +363,9 @@ function renderAdminQuestionContractsWorkspace() {
           if (item.status === 'SIGNED') {
             statusBar.innerHTML = '🏁 <span style="color:#34d399;">Oturum tamamlandı.</span> Aşağıdan yeni soru ekleyerek devam ettirebilirsiniz.';
           } else if (item.waitingForAdmin) {
-            statusBar.innerHTML = '🔔 <span style="color:#fbbf24;">KATILIMCI CEVABINI GÖNDERDİ VE SONRAKİ SORU İSTEĞİ YOLLADI!</span><br><span style="font-size:0.82rem;color:#cbd5e1;font-weight:600;">Son sorulan: ' + escapeHtml(currentQ) + '</span>';
+            statusBar.innerHTML = '🔔 <span style="color:#fbbf24;">KATILIMCI CEVABINI GÖNDERDİ VE SONRAKİ SORUYU BEKLİYOR!</span><br><span style="font-size:0.82rem;color:#cbd5e1;font-weight:600;">Son sorulan: ' + escapeHtml(currentQ) + '</span>';
           } else {
-            statusBar.innerHTML = '⏳ <span style="color:#a5b4fc;">Katılımcı şu soruyu yanıtlıyor:</span> ' + escapeHtml(currentQ);
+            statusBar.innerHTML = '🟢 <span style="color:#34d399;">SORU KATILIMCIDA!</span> <span style="color:#e2e8f0;font-weight:700;">Şu an yanıtlıyor:</span> <span style="color:#c4b5fd;">' + escapeHtml(currentQ) + '</span>';
           }
         } else {
           kahootBox.style.display = 'none';
@@ -395,11 +395,11 @@ function renderAdminQuestionContractsWorkspace() {
       };
 
       const ADMIN_MEMES = [
-        '🚀🐸 Sonraki soruya ışık hızında ışınlanıyoruz!',
-        '🧠💨 Beyinler 3000 RPM çalışıyor, yeni soru yolda!',
-        '😎⚡ "Sıradaki!" butonuna basıldı, katılımcı hazırlanıyor...',
-        '🎮🔥 Kahoot turbo motoru ateşlendi!',
-        '🐱💻 Kedi klavyeye bastı, sonraki soru yükleniyor!'
+        '📤 Soru gönderiliyor... 🚀🐸 Işık hızında gidiyor!',
+        '📤 Soru gönderiliyor... 🧠💨 Beyinler 3000 RPM!',
+        '📤 Soru gönderiliyor... 😎⚡ Kahoot turbo devrede!',
+        '📤 Soru gönderiliyor... 🎮🔥 Hazır olun!',
+        '📤 Soru gönderiliyor... 🐱💻 Kedi onayladı!'
       ];
 
       window.triggerKahootNext = async function(finish) {
@@ -408,6 +408,7 @@ function renderAdminQuestionContractsWorkspace() {
         const btnFin = document.getElementById('btn-kahoot-finish');
         const loader = document.getElementById('kahoot-admin-loader');
         const memeEl = document.getElementById('kahoot-admin-meme-text');
+        const cdEl = document.getElementById('kahoot-admin-countdown');
         if (btnNext) btnNext.disabled = true;
         if (btnFin) btnFin.disabled = true;
         if (memeEl) {
@@ -415,13 +416,39 @@ function renderAdminQuestionContractsWorkspace() {
             ? '🏁 Oturum tamamlanıyor, cevaplar mühürleniyor...'
             : ADMIN_MEMES[Math.floor(Math.random() * ADMIN_MEMES.length)];
         }
+        if (cdEl) {
+          cdEl.textContent = finish ? '🏁' : '3';
+          cdEl.style.background = 'linear-gradient(135deg,#7c3aed,#6366f1)';
+        }
         if (loader) loader.style.display = 'flex';
+
+        let animTimer = null;
+        if (!finish && cdEl) {
+          let stepNum = 3;
+          animTimer = setInterval(() => {
+            stepNum--;
+            if (stepNum === 2) {
+              cdEl.textContent = '2';
+              cdEl.style.background = 'linear-gradient(135deg,#2563eb,#06b6d4)';
+            } else if (stepNum === 1) {
+              cdEl.textContent = '1';
+              cdEl.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+            } else {
+              cdEl.textContent = '🎯';
+              clearInterval(animTimer);
+              animTimer = null;
+            }
+          }, 190);
+        }
+
         try {
-          const res = await fetch('/api/admin/contracts/' + encodeURIComponent(currentQModalId) + '/kahoot-next', {
+          const fetchPromise = fetch('/api/admin/contracts/' + encodeURIComponent(currentQModalId) + '/kahoot-next', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ finish: !!finish })
           });
+          const minAnimDelay = finish ? Promise.resolve() : new Promise(r => setTimeout(r, 560));
+          const [res] = await Promise.all([fetchPromise, minAnimDelay]);
           const data = await safeReadJson(res);
           if (res.ok && data.success) {
             await window.loadAdminQuestionContracts();
@@ -432,6 +459,7 @@ function renderAdminQuestionContractsWorkspace() {
         } catch (err) {
           alert('Hata: ' + err.message);
         } finally {
+          if (animTimer) clearInterval(animTimer);
           if (loader) loader.style.display = 'none';
           if (btnNext) btnNext.disabled = false;
           if (btnFin) btnFin.disabled = false;
@@ -566,13 +594,15 @@ function renderAdminQuestionContractsWorkspace() {
         window.loadAdminQuestionContracts();
       }, 150);
 
-      setInterval(() => {
-        if (document.hidden) return;
+      let isAdminQFetching = false;
+      setInterval(async () => {
+        if (document.hidden || isAdminQFetching) return;
         const panel = document.getElementById('adm-question-contracts');
         if (panel && !panel.hidden && panel.style.display !== 'none') {
-          window.loadAdminQuestionContracts();
+          isAdminQFetching = true;
+          try { await window.loadAdminQuestionContracts(); } finally { isAdminQFetching = false; }
         }
-      }, 2500);
+      }, 1200);
 
       document.addEventListener('admin:workspace-activated', (e) => {
         if (e.detail && e.detail.workspace === 'question-contracts') {
@@ -820,8 +850,11 @@ function renderPublicQuestionContractPage(contract) {
           <div class="progress-fill" id="progress-fill-bar"></div>
         </div>
 
-        <div class="question-box">
-          <span class="q-badge">${kahootMode ? '🎮 CANLI SORU' : '💬 SORU'}</span>
+        <div class="question-box" id="q-active-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.85rem;">
+            <span class="q-badge" style="margin-bottom:0;">${kahootMode ? '🎮 CANLI SORU' : '💬 SORU'}</span>
+            ${kahootMode ? '<span style="font-size:0.74rem;font-weight:800;color:#34d399;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.38);padding:0.25rem 0.65rem;border-radius:999px;">🟢 CANLI OTURUM AKTİF</span>' : ''}
+          </div>
           <h2 class="q-text" id="q-title-text"></h2>
           <div class="quick-choices" id="q-quick-choices" style="display:none;"></div>
           <textarea id="q-answer-input" class="q-input" placeholder="Cevabınızı buraya yazınız..."></textarea>
@@ -852,13 +885,18 @@ function renderPublicQuestionContractPage(contract) {
         <div id="request-feedback" style="font-size:0.82rem;color:#34d399;margin-top:0.75rem;font-weight:700;"></div>
       </div>
 
-      <!-- Hızlı Meme'li Geçiş Ekranı -->
-      <div id="wizard-transition-view" class="waiting-box">
-        <div style="display:inline-flex;align-items:center;justify-content:center;width:58px;height:58px;border:4px solid rgba(52,211,153,0.25);border-top-color:#34d399;border-radius:50%;animation:kSpin 0.55s linear infinite;margin-bottom:0.9rem;"></div>
-        <h2 style="font-size:1.45rem;font-weight:900;margin:0 0 0.45rem;color:#34d399;">🚀 Sonraki Soru Geliyor!</h2>
-        <div id="transition-meme-text" style="font-size:1rem;font-weight:800;color:#e2e8f0;">🐸⚡ Işık hızında yükleniyor...</div>
+      <!-- Hızlı Kahoot 3-2-1 Meme'li Geçiş Ekranı -->
+      <div id="wizard-transition-view" class="waiting-box" style="padding:2rem 1rem;">
+        <div id="transition-countdown-num" style="display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:24px;background:linear-gradient(135deg,#7c3aed,#6366f1);font-size:2.6rem;font-weight:900;color:#fff;box-shadow:0 14px 36px rgba(124,58,237,0.5);margin-bottom:1rem;animation:kCountdownPop 0.25s ease;">3</div>
+        <h2 style="font-size:1.5rem;font-weight:900;margin:0 0 0.45rem;color:#34d399;">📤 Yeni Soru Gönderiliyor...</h2>
+        <div id="transition-meme-text" style="display:inline-block;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);padding:0.5rem 1rem;border-radius:999px;font-size:0.95rem;font-weight:800;color:#e2e8f0;">🐸⚡ Işık hızında yükleniyor...</div>
       </div>
-      <style>@keyframes kSpin{to{transform:rotate(360deg);}}</style>
+      <style>
+        @keyframes kSpin{to{transform:rotate(360deg);}}
+        @keyframes kCountdownPop{0%{transform:scale(0.65);opacity:0.4;}70%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
+        @keyframes qPopIn{0%{opacity:0;transform:translateY(14px) scale(0.98);}100%{opacity:1;transform:translateY(0) scale(1);}}
+        .q-pop-animate{animation:qPopIn 0.28s cubic-bezier(0.22,1,0.36,1);}
+      </style>
 
       <!-- Tamamlandı Ekranı -->
       <div id="wizard-success-view" class="success-screen">
@@ -1073,6 +1111,12 @@ function renderPublicQuestionContractPage(contract) {
         }
 
         setTimeout(() => qInputEl.focus(), 40);
+        const activeBox = document.getElementById('q-active-box');
+        if (activeBox) {
+          activeBox.classList.remove('q-pop-animate');
+          void activeBox.offsetWidth;
+          activeBox.classList.add('q-pop-animate');
+        }
       }
 
       if (qInputEl) {
@@ -1194,11 +1238,13 @@ function renderPublicQuestionContractPage(contract) {
           }
         }, 3000);
 
-        // Canlı Kahoot Polling (1.2sn): Yönetici sonraki soruya geçirdiğinde meme'li hızlı geçişle aç
+        // Ultra Hızlı Canlı Kahoot Polling (650ms): Yönetici sonraki soruya geçirdiğinde 3-2-1 meme'li geçişle aç
         let kahootPollTimer = null;
         let isTransitioning = false;
+        let isClientPolling = false;
         kahootPollTimer = setInterval(async () => {
-          if (document.hidden || isTransitioning) return;
+          if (document.hidden || isTransitioning || isClientPolling) return;
+          isClientPolling = true;
           try {
             const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/state');
             if ([502, 503, 504].includes(res.status)) {
@@ -1226,20 +1272,42 @@ function renderPublicQuestionContractPage(contract) {
                 successView.style.display = 'none';
                 activeView.style.display = 'none';
                 const tMeme = document.getElementById('transition-meme-text');
+                const cdBox = document.getElementById('transition-countdown-num');
                 if (tMeme) tMeme.textContent = pickRandomMeme();
+                if (cdBox) {
+                  cdBox.textContent = '3';
+                  cdBox.style.background = 'linear-gradient(135deg,#7c3aed,#6366f1)';
+                }
                 if (transitionView) transitionView.style.display = 'block';
+
+                setTimeout(() => {
+                  if (cdBox) {
+                    cdBox.textContent = '2';
+                    cdBox.style.background = 'linear-gradient(135deg,#2563eb,#06b6d4)';
+                    cdBox.style.animation = 'none'; void cdBox.offsetWidth; cdBox.style.animation = 'kCountdownPop 0.22s ease';
+                  }
+                }, 200);
+                setTimeout(() => {
+                  if (cdBox) {
+                    cdBox.textContent = '1';
+                    cdBox.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+                    cdBox.style.animation = 'none'; void cdBox.offsetWidth; cdBox.style.animation = 'kCountdownPop 0.22s ease';
+                  }
+                }, 400);
                 setTimeout(() => {
                   if (transitionView) transitionView.style.display = 'none';
                   activeView.style.display = 'block';
                   renderCurrentQuestion();
                   isTransitioning = false;
-                }, 450);
+                }, 620);
               }
             }
           } catch (_) {
             setSyncBanner('⏳ Bağlantı bekleniyor, yazdığınız cevaplar tarayıcıda korunuyor...', true);
+          } finally {
+            isClientPolling = false;
           }
-        }, 1200);
+        }, 650);
       } else {
         renderCurrentQuestion();
       }
