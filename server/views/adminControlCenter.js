@@ -1,7 +1,7 @@
 'use strict';
 
 const { renderAdminApplicationsWorkspace, adminApplicationsAssets } = require('./adminApplications');
-const { renderAdminContractsWorkspace } = require('./contractsView');
+const { renderAdminContractsWorkspace, renderAdminQuestionContractsWorkspace } = require('./contractsView');
 
 function esc(value) {
   return String(value ?? '')
@@ -15,7 +15,7 @@ function esc(value) {
 const groups = [
   ['Genel', [['overview', 'Genel Bakış'], ['operations', 'Canlı Operasyon']]],
   ['İnsanlar', [['users', 'Kullanıcılar'], ['staff', 'Personel'], ['bans', 'Banlar ve Güvenlik'], ['coins', 'Ekonomi']]],
-  ['Operasyon', [['tickets', 'Ticket’lar'], ['submissions', 'Başvurular'], ['contracts', 'Sözleşmeler'], ['forms', 'Panel Formları'], ['automation', 'Otomasyonlar'], ['group-logs', 'Grup Değişiklikleri']]],
+  ['Operasyon', [['tickets', 'Ticket’lar'], ['submissions', 'Başvurular'], ['contracts', 'Sözleşmeler'], ['question-contracts', 'SORU SÖZLEŞMESİ'], ['forms', 'Panel Formları'], ['automation', 'Otomasyonlar'], ['group-logs', 'Grup Değişiklikleri']]],
   ['İçerik ve Sistem', [['content', 'İçerik ve Topluluk'], ['system', 'Sistem ve Audit']]],
 ];
 
@@ -328,6 +328,7 @@ function renderAdminControlCenterShell({ user, legacyContent }) {
         ${renderSystemHubWorkspace()}
         ${renderAdminApplicationsWorkspace()}
         ${renderAdminContractsWorkspace()}
+        ${renderAdminQuestionContractsWorkspace()}
         ${legacyContent}
       </div>
     </section>

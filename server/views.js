@@ -3703,6 +3703,7 @@ function renderAdminPage(user) {
         📥 Doldurulan Formlar
       </button>
       <button class="adm-tab" onclick="admTab('contracts',this)" style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">📜 Sözleşmeler</button>
+      <button class="adm-tab" onclick="admTab('question-contracts',this)" style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">📋 SORU SÖZLEŞMESİ</button>
       <button class="adm-tab" onclick="admTab('group-logs',this)"
         style="padding:.75rem 1.5rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:inherit;font-weight:700;font-size:1rem;cursor:pointer;">
         🔄 Grup Değişiklikleri & Geri Al
@@ -4057,6 +4058,7 @@ function renderAdminPage(user) {
         document.getElementById('adm-submissions').style.display = name === 'submissions' ? '' : 'none';
         document.getElementById('adm-group-logs').style.display  = name === 'group-logs'  ? '' : 'none';
         const cEl = document.getElementById('adm-contracts'); if (cEl) { cEl.hidden = name !== 'contracts'; cEl.style.display = name === 'contracts' ? '' : 'none'; }
+        const qcEl = document.getElementById('adm-question-contracts'); if (qcEl) { qcEl.hidden = name !== 'question-contracts'; qcEl.style.display = name === 'question-contracts' ? '' : 'none'; }
         document.querySelectorAll('.adm-tab').forEach(t => {
           t.style.borderBottomColor = 'transparent';
           t.style.color = 'var(--muted)';
@@ -4070,6 +4072,7 @@ function renderAdminPage(user) {
         if (name === 'submissions') loadSubmissions();
         if (name === 'group-logs') loadGroupAuditLogs();
         if (name === 'contracts' && window.loadAdminContracts) window.loadAdminContracts();
+        if (name === 'question-contracts' && window.loadAdminQuestionContracts) window.loadAdminQuestionContracts();
       }
 
       // ── Grup Yönetimi Değişiklik Geçmişi & Geri Alma JS ────────────────────

@@ -963,7 +963,7 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
 
         try {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 30000);
+          const timer = setTimeout(() => controller.abort(), 60000);
           const res = await fetch('/api/tickets', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1001,8 +1001,24 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             submitText.textContent = 'Talebi Gönder & Kanal Aç';
           }
         } catch (err) {
-          isSubmittingTicket = false;
           const isTimeout = err && err.name === 'AbortError';
+          if (isTimeout) {
+            try {
+              const checkRes = await fetch('/api/tickets');
+              const checkData = await checkRes.json().catch(() => ({}));
+              const latest = Array.isArray(checkData.tickets) ? checkData.tickets[0] : null;
+              if (latest && latest.subject === subject && (Date.now() - new Date(latest.createdAt).getTime() < 120000)) {
+                showAlert('Talebiniz kaydedildi! #' + latest.ticketId + ' Yönlendiriliyorsunuz...', 'success');
+                submitIcon.textContent = '✅';
+                submitText.textContent = 'Yönlendiriliyorsunuz...';
+                setTimeout(() => {
+                  window.location.href = '/tickets/' + encodeURIComponent(latest.ticketId);
+                }, 900);
+                return;
+              }
+            } catch (_) {}
+          }
+          isSubmittingTicket = false;
           showAlert(
             isTimeout
               ? 'Sunucu yanıt vermekte gecikti (zaman aşımı). Talebiniz kaydedilmiş olabilir, lütfen Biletlerim sayfasını kontrol edin.'

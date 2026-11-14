@@ -46,6 +46,7 @@ function renderAdminContractsWorkspace() {
       <p>Times New Roman resmi protokol formatında sözleşmeler oluşturun, <strong>EkoAI</strong> ile maddeleri geliştirip uzunlaştırın, paylaşım linki üretin ve mouse ile atılan e-imzaları takip edin.</p>
     </div>
     <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+      <button type="button" onclick="if(window.admTab){window.admTab('question-contracts');}else{const nb=document.querySelector('[data-admin-nav=question-contracts]');if(nb){nb.click();}else{location.hash='#adm-question-contracts';}}" class="acc-btn" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;font-weight:800;box-shadow:0 6px 18px rgba(16,185,129,0.28);cursor:pointer;">📋 SORU SÖZLEŞMESİ HAZIRLA &amp; CEVAPLAR →</button>
       <button type="button" class="acc-btn" onclick="window.loadAdminContracts && window.loadAdminContracts()">🔄 Listeyi Yenile</button>
     </div>
   </header>
@@ -539,7 +540,7 @@ MADDE 3 — HUKUKİ SORUMLULUK VE KESİN DELİL
         const listEl = document.getElementById('adm-contracts-list');
         if (!listEl) return;
         try {
-          const res = await fetch('/api/admin/contracts');
+          const res = await fetch('/api/admin/contracts?type=STANDARD');
           const data = await res.json();
           if (!res.ok || !data.success) {
             listEl.innerHTML = '<div style="color:#fb7185;padding:1rem;">Sözleşmeler alınamadı.</div>';
@@ -1312,8 +1313,1115 @@ function renderPublicContractPage(contract, currentUser = null) {
 </html>`;
 }
 
+const DEFAULT_CAMP_QUESTIONS = [
+  'Kampınızın kurucusunun Roblox kullanıcı adı nedir?',
+  'Kampınızın kurucusunun Discord kullanıcı adı nedir?',
+  'Kampınıza ait bir Discord sunucusu var mı? Varsa davet bağlantısını paylaşır mısınız?',
+  'Kampınıza ait bir Roblox grubu var mı? Varsa grup bağlantısını paylaşır mısınız?',
+  'Kampınız yaklaşık ne zaman kuruldu?',
+  'Kampınızın şu anda toplam kaç üyesi bulunmaktadır?',
+  'Kampınızın temel amacı ve faaliyet alanı nedir?',
+  'Kampınız açık mı?',
+  'Kampınızın mevcut yönetim kadrosunda kimler bulunmaktadır?',
+  'Kampınızda kullanılan rütbe sistemi hakkında kısaca bilgi verebilir misiniz?',
+  'Kampınızın mapı hazır mıdır? / sonradan yenilenecek mi?',
+  'Kampınızın Discord sunucusunda ortalama aktif üye sayısı nedir?',
+  'Kampınızın daha önce gerçekleştirdiği önemli etkinlik, iş birliği veya projeler var mı? Varsa kısaca açıklayınız.',
+  'Kampınızı diğer kamplardan ayıran en önemli özellik nedir ve neden kampınızın tanıtılmasını istiyorsunuz?',
+];
+
+function renderAdminQuestionContractsWorkspace() {
+  return `<section id="adm-question-contracts" class="acc-workspace-panel" data-admin-workspace="question-contracts" hidden>
+  <header class="acc-page-head" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <span class="acc-eyebrow">İNTERAKTİF SORU-CEVAP SÖZLEŞME SİSTEMİ</span>
+      <h1>📋 SORU SÖZLEŞMESİ HAZIRLA &amp; GELEN CEVAPLAR</h1>
+      <p>İstediğiniz kadar (sınırsız) soru ekleyin veya hazır 14 Kamp Sorusunu kullanın. Üretilen link karşı tarafa soruları <strong>teker teker</strong> sorar; tamamlandığında cevaplar doğrudan bu panele düşer.</p>
+    </div>
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+      <button type="button" onclick="if(window.admTab){window.admTab('contracts');}else{const nb=document.querySelector('[data-admin-nav=contracts]');if(nb){nb.click();}else{location.hash='#adm-contracts';}}" class="acc-btn" style="cursor:pointer;">📜 Normal Sözleşmelere Dön</button>
+      <a href="/soru-sozlesmesi" target="_blank" class="acc-btn" style="background:rgba(16,185,129,0.16);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7;text-decoration:none;font-weight:800;">↗ Hazır Kamp Linkini Aç</a>
+      <button type="button" class="acc-btn" onclick="window.loadAdminQuestionContracts && window.loadAdminQuestionContracts()">🔄 Cevapları Yenile</button>
+    </div>
+  </header>
+
+  <!-- Hazır Genel Kamp Soru Sözleşmesi Linki Bandı -->
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(16,185,129,0.12));border:1px solid rgba(99,102,241,0.38);border-radius:16px;padding:1.15rem 1.35rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-weight:800;font-size:1rem;color:#fff;display:flex;align-items:center;gap:0.5rem;">
+        <span>🏕️</span> <span>Hazır 14 Soruluk Kamp Soru Sözleşmesi Linki (Her Zaman Aktif)</span>
+      </div>
+      <div style="font-size:0.82rem;color:#cbd5e1;margin-top:0.2rem;">
+        Bu genel linki gönderdiğiniz herkes 14 kamp sorusunu tek tek cevaplar ve bitirdiğinde cevapları aşağıdaki listeye düşer. Özel sorular sormak için aşağıdan yeni link üretebilirsiniz.
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="qcontract-general-url" readonly value="/soru-sozlesmesi" style="min-width:250px;padding:0.55rem 0.8rem;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:#34d399;font-family:monospace;font-size:0.85rem;font-weight:700;" />
+      <button type="button" onclick="window.copyGeneralQContractLink()" style="background:#10b981;border:none;color:#052e16;font-weight:800;padding:0.6rem 1rem;border-radius:10px;cursor:pointer;font-size:0.82rem;">📋 Linki Kopyala</button>
+      <a href="/soru-sozlesmesi" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;text-decoration:none;font-weight:700;padding:0.6rem 0.95rem;border-radius:10px;font-size:0.82rem;">↗ Aç</a>
+    </div>
+  </div>
+
+  <!-- Özet İstatistikler -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div style="background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.22);padding:1.1rem;border-radius:14px;">
+      <div style="font-size:1.75rem;font-weight:800;color:#818cf8;" id="adm-qcontract-stat-total">0</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:0.2rem;">📋 Toplam Soru Sözleşmesi</div>
+    </div>
+    <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.22);padding:1.1rem;border-radius:14px;">
+      <div style="font-size:1.75rem;font-weight:800;color:#34d399;" id="adm-qcontract-stat-signed">0</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:0.2rem;">✅ Cevaplanan &amp; Gelen</div>
+    </div>
+    <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.22);padding:1.1rem;border-radius:14px;">
+      <div style="font-size:1.75rem;font-weight:800;color:#fbbf24;" id="adm-qcontract-stat-pending">0</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:0.2rem;">⏳ Cevap Bekleyen Link</div>
+    </div>
+  </div>
+
+  <!-- Sınırsız Soru Sözleşmesi Hazırlama + Canlı Önizleme -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:1.5rem;margin-bottom:2rem;align-items:start;">
+    <!-- Sol: Sınırsız Soru Oluşturucu -->
+    <div style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.09);border-radius:18px;padding:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <h2 style="font-size:1.2rem;font-weight:800;margin:0;color:#fff;">🎯 Yeni Soru Sözleşmesi Hazırla (Sınırsız Soru)</h2>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+          <button type="button" onclick="window.loadCampPresetQuestions()" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.38);color:#6ee7b7;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.76rem;font-weight:700;cursor:pointer;">
+            🏕️ 14 Kamp Sorusunu Yükle
+          </button>
+          <button type="button" onclick="window.clearAllQBuilderQuestions()" style="background:rgba(244,63,94,0.14);border:1px solid rgba(244,63,94,0.35);color:#fda4af;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.76rem;font-weight:700;cursor:pointer;">
+            🧹 Temizle (Sıfırdan Yaz)
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:0.85rem;">
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:700;margin-bottom:0.3rem;color:#e2e8f0;">Soru Sözleşmesi Başlığı *</label>
+          <input type="text" id="qcontract-title" value="KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ" oninput="window.renderQBuilderList()" style="width:100%;padding:0.7rem 0.85rem;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;" />
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div>
+            <label style="display:block;font-size:0.78rem;font-weight:700;margin-bottom:0.3rem;color:#cbd5e1;">Kime / Hangi Kampa Gönderilecek? (İsteğe Bağlı)</label>
+            <input type="text" id="qcontract-party-two" placeholder="Örn: X Kampı Kurucusu / @kullanici" style="width:100%;padding:0.6rem 0.75rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:0.85rem;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:0.78rem;font-weight:700;margin-bottom:0.3rem;color:#cbd5e1;">Evrak / Kayıt No</label>
+            <input type="text" id="qcontract-doc-no" value="EKO-2026/SRU-1042" style="width:100%;padding:0.6rem 0.75rem;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fbbf24;font-family:monospace;font-size:0.84rem;" />
+          </div>
+        </div>
+
+        <!-- Hızlı Yeni Soru Ekleme Çubuğu -->
+        <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:0.85rem;">
+          <label style="display:block;font-size:0.78rem;font-weight:800;color:#c7d2fe;margin-bottom:0.4rem;">➕ Yeni Soru Ekle (Sınırsız Soru Ekleyebilirsiniz)</label>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" id="qcontract-new-q-input" placeholder="Yeni soruyu buraya yazıp Enter'a veya '+ Soru Ekle' butonuna basın..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.addNewQuestionToBuilder();}" style="flex:1;padding:0.65rem 0.85rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:#fff;font-size:0.88rem;" />
+            <button type="button" onclick="window.addNewQuestionToBuilder()" style="background:#6366f1;border:none;color:#fff;font-weight:800;padding:0.65rem 1rem;border-radius:10px;cursor:pointer;font-size:0.84rem;white-space:nowrap;">+ Soru Ekle</button>
+          </div>
+        </div>
+
+        <!-- Sorular Listesi (Düzenlenebilir, Sıralanabilir, Silinebilir) -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+            <label style="font-size:0.8rem;font-weight:700;color:#e2e8f0;">Sorulacak Sorular Listesi (<span id="qbuilder-count-badge">14</span> Soru)</label>
+            <span style="font-size:0.74rem;color:var(--muted);">Soruları doğrudan kutulardan düzenleyebilir veya silebilirsiniz</span>
+          </div>
+          <div id="qbuilder-items-container" style="display:grid;gap:0.5rem;max-height:390px;overflow-y:auto;padding-right:4px;"></div>
+        </div>
+
+        <button type="button" id="btn-create-qcontract" onclick="window.submitCreateQuestionContract()" style="width:100%;padding:0.95rem 1.2rem;background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:0.98rem;cursor:pointer;box-shadow:0 8px 24px rgba(16,185,129,0.28);">
+          🚀 SORU SÖZLEŞMESİ HAZIRLA VE PAYLAŞIM LİNKİ ÜRET
+        </button>
+
+        <!-- Üretilen Özel Soru Sözleşmesi Link Kutusu -->
+        <div id="qcontract-share-banner" style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);border-radius:14px;padding:1rem;">
+          <div style="font-weight:800;color:#34d399;font-size:0.9rem;margin-bottom:0.4rem;">✅ Soru Sözleşmesi Linki Hazır! Karşı Tarafa Gönderin:</div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="qcontract-created-url" readonly style="flex:1;min-width:200px;padding:0.55rem 0.75rem;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-family:monospace;font-size:0.82rem;" />
+            <button type="button" onclick="window.copyCreatedQContractLink()" style="background:#10b981;border:none;color:#052e16;font-weight:800;padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;">🔗 Linki Kopyala</button>
+            <button type="button" onclick="window.shareCreatedQContractNative()" style="background:#6366f1;border:none;color:#fff;font-weight:800;padding:0.55rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;">📤 Paylaş</button>
+            <a id="qcontract-created-open" href="#" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;text-decoration:none;font-weight:700;padding:0.55rem 0.9rem;border-radius:8px;font-size:0.8rem;">↗ Linki Aç</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sağ: Tek Tek Soran Sihirbaz Önizlemesi -->
+    <div style="background:rgba(15,23,42,0.88);border:1px solid rgba(129,140,248,0.25);border-radius:18px;padding:1.5rem;box-shadow:0 20px 50px rgba(0,0,0,0.35);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:0.75rem;">
+        <div>
+          <span style="font-size:0.72rem;color:#818cf8;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;">KARŞI TARAFA GÖRÜNECEK ADIM ADIM SORU LİSTESİ</span>
+          <h3 id="qpreview-title" style="font-size:1.1rem;font-weight:800;margin:0.2rem 0 0;color:#fff;">KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ</h3>
+        </div>
+        <span id="qpreview-count" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.35);padding:0.3rem 0.75rem;border-radius:999px;font-size:0.78rem;font-weight:800;">14 Soru</span>
+      </div>
+      <div id="qpreview-list" style="display:grid;gap:0.55rem;max-height:520px;overflow-y:auto;padding-right:4px;"></div>
+    </div>
+  </div>
+
+  <!-- Seçili Cevap Detay Modalı -->
+  <div id="adm-qcontract-answers-modal" style="display:none;background:rgba(15,23,42,0.96);border:2px solid rgba(52,211,153,0.45);border-radius:18px;padding:1.5rem;margin-bottom:1.75rem;box-shadow:0 24px 60px rgba(0,0,0,0.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:0.9rem;margin-bottom:1.1rem;">
+      <div>
+        <span style="font-size:0.74rem;color:#34d399;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;">📥 YÖNETİM PANELİNE GELEN SORU SÖZLEŞMESİ YANITLARI</span>
+        <h3 id="qmodal-answer-title" style="margin:0.25rem 0 0;font-size:1.25rem;color:#fff;font-weight:800;">Soru Sözleşmesi Cevapları</h3>
+        <div id="qmodal-answer-meta" style="font-size:0.82rem;color:#94a3b8;margin-top:0.2rem;"></div>
+      </div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button type="button" onclick="window.copyQModalAnswersText()" style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);color:#a5b4fc;padding:0.5rem 0.9rem;border-radius:10px;font-weight:700;font-size:0.8rem;cursor:pointer;">📋 Tüm Cevapları Kopyala</button>
+        <button type="button" onclick="document.getElementById('adm-qcontract-answers-modal').style.display='none'" style="background:rgba(244,63,94,0.16);border:1px solid rgba(244,63,94,0.35);color:#fda4af;padding:0.5rem 0.9rem;border-radius:10px;font-weight:700;font-size:0.8rem;cursor:pointer;">✕ Kapat</button>
+      </div>
+    </div>
+    <div id="qmodal-answer-body" style="display:grid;gap:0.75rem;"></div>
+  </div>
+
+  <!-- Yönetim Paneline Gelen Cevaplar ve Oluşturulan Soru Linkleri Tablosu -->
+  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
+      <h2 style="font-size:1.15rem;font-weight:800;margin:0;color:#fff;">📥 Yönetim Paneline Gelen Soru Sözleşmesi Cevapları &amp; Linkler</h2>
+      <span style="font-size:0.8rem;color:var(--muted);">Karşı taraf soruları bitirdiğinde yanıtlar otomatik olarak buraya düşer.</span>
+    </div>
+    <div id="adm-qcontracts-list" style="overflow-x:auto;">
+      <div style="color:var(--muted);text-align:center;padding:2rem;">Soru sözleşmeleri yükleniyor...</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const DEFAULT_CAMP_Q = ${JSON.stringify(DEFAULT_CAMP_QUESTIONS)};
+      let builderQuestions = DEFAULT_CAMP_Q.slice();
+      let loadedQContractsCache = [];
+      let currentQModalContract = null;
+
+      function initGeneralQUrl() {
+        const inp = document.getElementById('qcontract-general-url');
+        if (inp && window.location && window.location.origin) {
+          inp.value = window.location.origin + '/soru-sozlesmesi';
+        }
+      }
+
+      window.copyGeneralQContractLink = function() {
+        const fullUrl = window.location.origin + '/soru-sozlesmesi';
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          alert('🔗 Soru Sözleşmesi linki panoya kopyalandı:\\n' + fullUrl);
+        }).catch(() => {
+          prompt('Linki kopyalayın:', fullUrl);
+        });
+      };
+
+      window.loadCampPresetQuestions = function() {
+        builderQuestions = DEFAULT_CAMP_Q.slice();
+        const titleEl = document.getElementById('qcontract-title');
+        if (titleEl) titleEl.value = 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ';
+        window.renderQBuilderList();
+      };
+
+      window.clearAllQBuilderQuestions = function() {
+        builderQuestions = [''];
+        const titleEl = document.getElementById('qcontract-title');
+        if (titleEl) titleEl.value = 'ÖZEL SORU SÖZLEŞMESİ';
+        window.renderQBuilderList();
+        const newInp = document.getElementById('qcontract-new-q-input');
+        if (newInp) newInp.focus();
+      };
+
+      window.addNewQuestionToBuilder = function() {
+        const newInp = document.getElementById('qcontract-new-q-input');
+        const val = newInp ? newInp.value.trim() : '';
+        if (val) {
+          if (builderQuestions.length === 1 && !builderQuestions[0].trim()) {
+            builderQuestions[0] = val;
+          } else {
+            builderQuestions.push(val);
+          }
+          newInp.value = '';
+        } else {
+          builderQuestions.push('');
+        }
+        window.renderQBuilderList();
+      };
+
+      window.updateBuilderQuestionAt = function(idx, value) {
+        builderQuestions[idx] = value;
+        window.renderQPreviewOnly();
+      };
+
+      window.removeBuilderQuestionAt = function(idx) {
+        builderQuestions.splice(idx, 1);
+        if (builderQuestions.length === 0) builderQuestions = [''];
+        window.renderQBuilderList();
+      };
+
+      window.moveBuilderQuestion = function(idx, dir) {
+        const target = idx + dir;
+        if (target < 0 || target >= builderQuestions.length) return;
+        const tmp = builderQuestions[idx];
+        builderQuestions[idx] = builderQuestions[target];
+        builderQuestions[target] = tmp;
+        window.renderQBuilderList();
+      };
+
+      window.renderQPreviewOnly = function() {
+        const cleanList = builderQuestions.map(q => String(q || '').trim()).filter(Boolean);
+        const title = document.getElementById('qcontract-title')?.value || 'SORU SÖZLEŞMESİ';
+        const badge = document.getElementById('qbuilder-count-badge');
+        const pTitle = document.getElementById('qpreview-title');
+        const pCount = document.getElementById('qpreview-count');
+        const pList = document.getElementById('qpreview-list');
+
+        if (badge) badge.textContent = String(cleanList.length);
+        if (pTitle) pTitle.textContent = title;
+        if (pCount) pCount.textContent = cleanList.length + ' Soru';
+
+        if (pList) {
+          pList.innerHTML = '';
+          cleanList.forEach((q, idx) => {
+            const item = document.createElement('div');
+            item.style.cssText = 'background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:0.75rem 0.9rem;display:flex;gap:0.75rem;align-items:flex-start;';
+            const b = document.createElement('span');
+            b.style.cssText = 'background:rgba(99,102,241,0.22);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4);border-radius:8px;padding:0.2rem 0.55rem;font-size:0.75rem;font-weight:800;white-space:nowrap;';
+            b.textContent = 'Soru ' + (idx + 1);
+            const t = document.createElement('div');
+            t.style.cssText = 'color:#f1f5f9;font-size:0.88rem;line-height:1.45;font-weight:600;';
+            t.textContent = q;
+            item.appendChild(b);
+            item.appendChild(t);
+            pList.appendChild(item);
+          });
+        }
+      };
+
+      window.renderQBuilderList = function() {
+        const container = document.getElementById('qbuilder-items-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        builderQuestions.forEach((q, idx) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:0.45rem;align-items:center;background:rgba(0,0,0,0.26);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.45rem 0.6rem;';
+
+          const num = document.createElement('span');
+          num.style.cssText = 'font-size:0.76rem;font-weight:800;color:#818cf8;min-width:52px;';
+          num.textContent = 'Soru ' + (idx + 1);
+
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.value = q;
+          inp.placeholder = (idx + 1) + '. soruyu yazın...';
+          inp.style.cssText = 'flex:1;background:transparent;border:none;color:#fff;font-size:0.86rem;outline:none;padding:0.25rem;';
+          inp.oninput = (e) => window.updateBuilderQuestionAt(idx, e.target.value);
+
+          const upBtn = document.createElement('button');
+          upBtn.type = 'button';
+          upBtn.textContent = '↑';
+          upBtn.title = 'Yukarı Taşı';
+          upBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;border-radius:6px;padding:0.2rem 0.45rem;cursor:pointer;font-size:0.75rem;';
+          upBtn.onclick = () => window.moveBuilderQuestion(idx, -1);
+
+          const downBtn = document.createElement('button');
+          downBtn.type = 'button';
+          downBtn.textContent = '↓';
+          downBtn.title = 'Aşağı Taşı';
+          downBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;border-radius:6px;padding:0.2rem 0.45rem;cursor:pointer;font-size:0.75rem;';
+          downBtn.onclick = () => window.moveBuilderQuestion(idx, 1);
+
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.textContent = '✕';
+          delBtn.title = 'Soruyu Sil';
+          delBtn.style.cssText = 'background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.35);color:#fda4af;border-radius:6px;padding:0.2rem 0.5rem;cursor:pointer;font-size:0.75rem;font-weight:800;';
+          delBtn.onclick = () => window.removeBuilderQuestionAt(idx);
+
+          row.appendChild(num);
+          row.appendChild(inp);
+          row.appendChild(upBtn);
+          row.appendChild(downBtn);
+          row.appendChild(delBtn);
+          container.appendChild(row);
+        });
+
+        window.renderQPreviewOnly();
+      };
+
+      window.submitCreateQuestionContract = async function() {
+        const title = document.getElementById('qcontract-title')?.value.trim() || 'SORU SÖZLEŞMESİ';
+        const documentNo = document.getElementById('qcontract-doc-no')?.value.trim() || ('EKO-' + new Date().getFullYear() + '/SRU-' + Math.floor(1000 + Math.random() * 9000));
+        const partyTwoName = document.getElementById('qcontract-party-two')?.value.trim() || '';
+        const questions = builderQuestions.map(q => String(q || '').trim()).filter(Boolean);
+        const btn = document.getElementById('btn-create-qcontract');
+
+        if (questions.length === 0) {
+          alert('Lütfen en az 1 soru ekleyin.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Soru Sözleşmesi Linki Üretiliyor...';
+
+        try {
+          const res = await fetch('/api/admin/contracts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'QUESTIONNAIRE',
+              title,
+              documentNo,
+              partyTwoName,
+              questions
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success && data.contract) {
+            const fullUrl = window.location.origin + '/soru-sozlesmesi/' + data.contract._id;
+            const banner = document.getElementById('qcontract-share-banner');
+            const urlInput = document.getElementById('qcontract-created-url');
+            const openLink = document.getElementById('qcontract-created-open');
+            if (banner) banner.style.display = 'block';
+            if (urlInput) urlInput.value = fullUrl;
+            if (openLink) openLink.href = fullUrl;
+            navigator.clipboard.writeText(fullUrl).catch(() => {});
+            window.loadAdminQuestionContracts();
+          } else {
+            alert(data.error || 'Soru sözleşmesi oluşturulamadı.');
+          }
+        } catch (err) {
+          alert('Bağlantı hatası: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '🚀 SORU SÖZLEŞMESİ HAZIRLA VE PAYLAŞIM LİNKİ ÜRET';
+        }
+      };
+
+      window.copyCreatedQContractLink = function() {
+        const urlInput = document.getElementById('qcontract-created-url');
+        if (!urlInput || !urlInput.value) return;
+        navigator.clipboard.writeText(urlInput.value).then(() => {
+          alert('🔗 Soru Sözleşmesi bağlantısı panoya kopyalandı:\\n' + urlInput.value);
+        }).catch(() => {
+          urlInput.select();
+          document.execCommand('copy');
+          alert('🔗 Bağlantı kopyalandı!');
+        });
+      };
+
+      window.shareCreatedQContractNative = function() {
+        const urlInput = document.getElementById('qcontract-created-url');
+        const title = document.getElementById('qcontract-title')?.value || 'Soru Sözleşmesi';
+        if (!urlInput || !urlInput.value) return;
+        window.shareContractUrl(urlInput.value, title);
+      };
+
+      window.viewQContractAnswers = function(id) {
+        const item = loadedQContractsCache.find(c => String(c._id) === String(id));
+        if (!item) return;
+        currentQModalContract = item;
+
+        const modal = document.getElementById('adm-qcontract-answers-modal');
+        const titleEl = document.getElementById('qmodal-answer-title');
+        const metaEl = document.getElementById('qmodal-answer-meta');
+        const bodyEl = document.getElementById('qmodal-answer-body');
+        if (!modal || !bodyEl) return;
+
+        titleEl.textContent = (item.signerName || item.partyTwoName || 'Katılımcı') + ' — Soru Sözleşmesi Cevapları';
+        metaEl.textContent = 'Kayıt No: ' + (item.documentNo || item._id) + ' • Tarih: ' + (item.signedAt ? new Date(item.signedAt).toLocaleString('tr-TR') : (item.createdAt ? new Date(item.createdAt).toLocaleString('tr-TR') : ''));
+
+        bodyEl.innerHTML = '';
+        const answers = Array.isArray(item.answers) && item.answers.length > 0 ? item.answers : [];
+
+        if (answers.length > 0) {
+          answers.forEach((ans, idx) => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.9rem 1.1rem;';
+            const qDiv = document.createElement('div');
+            qDiv.style.cssText = 'font-size:0.82rem;font-weight:800;color:#a5b4fc;margin-bottom:0.35rem;';
+            qDiv.textContent = (ans.index || (idx + 1)) + '. ' + (ans.question || '');
+            const aDiv = document.createElement('div');
+            aDiv.style.cssText = 'font-size:0.98rem;color:#fff;font-weight:600;white-space:pre-wrap;line-height:1.5;';
+            aDiv.textContent = ans.answer || '—';
+            card.appendChild(qDiv);
+            card.appendChild(aDiv);
+            bodyEl.appendChild(card);
+          });
+        } else {
+          const pre = document.createElement('pre');
+          pre.style.cssText = 'white-space:pre-wrap;color:#e2e8f0;font-family:inherit;font-size:0.92rem;line-height:1.6;margin:0;';
+          pre.textContent = item.content || 'Henüz cevaplanmamış.';
+          bodyEl.appendChild(pre);
+        }
+
+        modal.style.display = 'block';
+        modal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
+      window.copyQModalAnswersText = function() {
+        if (!currentQModalContract) return;
+        const answers = Array.isArray(currentQModalContract.answers) ? currentQModalContract.answers : [];
+        const text = answers.length > 0
+          ? answers.map((a, i) => (i + 1) + ') ' + a.question + '\\nCevap: ' + a.answer).join('\\n\\n')
+          : (currentQModalContract.content || '');
+        navigator.clipboard.writeText(text).then(() => {
+          alert('📋 Tüm sorular ve cevaplar panoya kopyalandı!');
+        });
+      };
+
+      window.deleteAdminQContract = async function(id) {
+        if (!confirm('Bu soru sözleşmesi kaydını silmek istediğinize emin misiniz?')) return;
+        try {
+          const res = await fetch('/api/admin/contracts/' + encodeURIComponent(id), { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            window.loadAdminQuestionContracts();
+          } else {
+            alert(data.error || 'Silinemedi.');
+          }
+        } catch (err) {
+          alert('Hata: ' + err.message);
+        }
+      };
+
+      window.loadAdminQuestionContracts = async function() {
+        const listEl = document.getElementById('adm-qcontracts-list');
+        if (!listEl) return;
+        try {
+          const res = await fetch('/api/admin/contracts?type=QUESTIONNAIRE');
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            listEl.innerHTML = '<div style="color:#fb7185;padding:1rem;">Kayıtlar alınamadı.</div>';
+            return;
+          }
+          const items = data.contracts || [];
+          loadedQContractsCache = items;
+
+          const totalEl = document.getElementById('adm-qcontract-stat-total');
+          const signedEl = document.getElementById('adm-qcontract-stat-signed');
+          const pendingEl = document.getElementById('adm-qcontract-stat-pending');
+
+          const signedCount = items.filter(c => c.status === 'SIGNED').length;
+          if (totalEl) totalEl.textContent = String(items.length);
+          if (signedEl) signedEl.textContent = String(signedCount);
+          if (pendingEl) pendingEl.textContent = String(items.length - signedCount);
+
+          if (items.length === 0) {
+            listEl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Henüz yanıtlanmış bir soru sözleşmesi bulunmuyor. Yukarıdan yeni bir Soru Sözleşmesi linki üretebilir veya hazır <strong>/soru-sozlesmesi</strong> linkini paylaşabilirsiniz.</div>';
+            return;
+          }
+
+          let html = '<table style="width:100%;border-collapse:collapse;font-size:0.86rem;text-align:left;">' +
+            '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:var(--muted);font-size:0.76rem;text-transform:uppercase;">' +
+            '<th style="padding:0.75rem;">Kayıt No &amp; Başlık</th>' +
+            '<th style="padding:0.75rem;">Cevaplayan / Muhatap</th>' +
+            '<th style="padding:0.75rem;">Durum &amp; Soru Sayısı</th>' +
+            '<th style="padding:0.75rem;">İlk Cevap Özeti</th>' +
+            '<th style="padding:0.75rem;text-align:right;">İşlemler</th>' +
+            '</tr></thead><tbody>';
+
+          items.forEach(c => {
+            const url = '/soru-sozlesmesi/' + c._id;
+            const isSigned = c.status === 'SIGNED';
+            const qCount = (Array.isArray(c.answers) && c.answers.length) || (Array.isArray(c.questions) && c.questions.length) || 0;
+
+            const statusBadge = isSigned
+              ? '<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.35);font-weight:800;font-size:0.74rem;">✅ Cevaplandı (' + qCount + ' Soru)</span>' +
+                '<div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">🕒 ' + (c.signedAt ? new Date(c.signedAt).toLocaleString('tr-TR') : '') + '</div>'
+              : '<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);font-weight:800;font-size:0.74rem;">⏳ Cevap Bekliyor (' + qCount + ' Soru)</span>';
+
+            const firstAns = Array.isArray(c.answers) && c.answers[0] ? c.answers[0].answer : '';
+            const secondAns = Array.isArray(c.answers) && c.answers[1] ? c.answers[1].answer : '';
+            const thirdAns = Array.isArray(c.answers) && c.answers[2] ? c.answers[2].answer : '';
+
+            const respondentHtml = isSigned
+              ? '<div style="font-weight:700;color:#fff;">👤 ' + (firstAns || c.signerName || 'Katılımcı') + '</div>' +
+                (secondAns ? '<div style="font-size:0.78rem;color:#a5b4fc;">💬 ' + secondAns + '</div>' : '')
+              : '<div style="color:var(--muted);">' + (c.partyTwoName || 'Link Gönderildi / Bekleniyor') + '</div>';
+
+            const summaryHtml = isSigned
+              ? '<div style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;font-size:0.8rem;">' + (thirdAns || firstAns || 'Tüm yanıtlar hazır') + '</div>'
+              : '<span style="color:var(--muted);font-size:0.76rem;">Henüz doldurulmadı</span>';
+
+            const safeTitle = String(c.title || '').replace(/'/g, "\\'");
+
+            html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">' +
+              '<td style="padding:0.85rem 0.75rem;">' +
+                '<div style="font-family:monospace;font-size:0.75rem;color:#fbbf24;">' + (c.documentNo || 'EKO-SRU') + '</div>' +
+                '<div style="font-weight:700;color:#fff;font-size:0.92rem;">' + (c.title || 'Soru Sözleşmesi') + '</div>' +
+              '</td>' +
+              '<td style="padding:0.85rem 0.75rem;">' + respondentHtml + '</td>' +
+              '<td style="padding:0.85rem 0.75rem;">' + statusBadge + '</td>' +
+              '<td style="padding:0.85rem 0.75rem;">' + summaryHtml + '</td>' +
+              '<td style="padding:0.85rem 0.75rem;text-align:right;white-space:nowrap;">' +
+                (isSigned
+                  ? '<button type="button" onclick="window.viewQContractAnswers(\\'' + c._id + '\\')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:0.45rem 0.85rem;border-radius:8px;font-weight:800;font-size:0.78rem;cursor:pointer;margin-right:0.35rem;">📋 Cevapları Gör</button>'
+                  : '') +
+                '<button type="button" onclick="window.shareContractUrl(\\'' + url + '\\', \\'' + safeTitle + '\\')" style="background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;padding:0.42rem 0.75rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;margin-right:0.35rem;">🔗 Linki Kopyala</button>' +
+                '<a href="' + url + '" target="_blank" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:0.42rem 0.75rem;border-radius:8px;font-weight:700;font-size:0.76rem;text-decoration:none;margin-right:0.35rem;display:inline-block;">↗ Aç</a>' +
+                '<button type="button" onclick="window.deleteAdminQContract(\\'' + c._id + '\\')" style="background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.35);color:#fda4af;padding:0.42rem 0.65rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;">🗑️</button>' +
+              '</td>' +
+            '</tr>';
+          });
+
+          html += '</tbody></table>';
+          listEl.innerHTML = html;
+        } catch (err) {
+          listEl.innerHTML = '<div style="color:#fb7185;padding:1rem;">Yükleme hatası: ' + err.message + '</div>';
+        }
+      };
+
+      setTimeout(() => {
+        initGeneralQUrl();
+        window.renderQBuilderList();
+        window.loadAdminQuestionContracts();
+      }, 150);
+
+      document.addEventListener('admin:workspace-activated', (e) => {
+        if (e.detail && e.detail.workspace === 'question-contracts') {
+          initGeneralQUrl();
+          window.loadAdminQuestionContracts();
+        }
+      });
+    })();
+  </script>
+</section>`;
+}
+
+function renderPublicQuestionContractPage(contract, currentUser = null) {
+  const questions = (Array.isArray(contract.questions) && contract.questions.length > 0)
+    ? contract.questions
+    : DEFAULT_CAMP_QUESTIONS;
+
+  const contractId = String(contract._id || 'genel');
+  const title = contract.title || 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ';
+  const subtitle = contract.headerSubtitle || 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ VE İNCELEME BİRİMİ';
+
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${esc(title)} — EkoYıldız Soru Sözleşmesi</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: #070913;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.18), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.14), transparent 45%);
+      color: #f8fafc;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      padding: 1rem 1.5rem;
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #fff;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #6366f1, #10b981);
+      color: #fff;
+      font-weight: 900;
+      padding: 0.4rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+    .wizard-shell {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+    .wizard-card {
+      width: 100%;
+      max-width: 720px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 24px;
+      padding: 2.25rem;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .eyebrow {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #818cf8;
+      margin-bottom: 0.35rem;
+    }
+    .wizard-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin: 0 0 1.25rem 0;
+      color: #fff;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 0.55rem;
+    }
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #10b981);
+      border-radius: 999px;
+      width: 7%;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .step-dots {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.6rem;
+    }
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .step-dot.active {
+      background: #6366f1;
+      border-color: #818cf8;
+      color: #fff;
+      transform: scale(1.08);
+    }
+    .step-dot.done {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+    .question-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .q-number-badge {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .q-text {
+      font-size: 1.22rem;
+      font-weight: 800;
+      line-height: 1.45;
+      color: #ffffff;
+      margin: 0 0 1.1rem 0;
+    }
+    .q-input {
+      width: 100%;
+      padding: 0.95rem 1.1rem;
+      background: rgba(0, 0, 0, 0.45);
+      border: 2px solid rgba(148, 163, 184, 0.25);
+      border-radius: 14px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      line-height: 1.55;
+      resize: vertical;
+      min-height: 110px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .q-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+    }
+    .quick-choices {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+    .quick-chip {
+      background: rgba(99, 102, 241, 0.14);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #c7d2fe;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .quick-chip:hover {
+      background: rgba(99, 102, 241, 0.28);
+      color: #fff;
+    }
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .btn-prev {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 0.85rem 1.35rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+    .btn-prev:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .btn-next {
+      flex: 1;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border: none;
+      color: #fff;
+      padding: 0.92rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.98rem;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.35);
+      transition: transform 0.15s ease;
+    }
+    .btn-submit {
+      flex: 1;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border: none;
+      color: #fff;
+      padding: 0.95rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+    }
+    .error-msg {
+      display: none;
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      border-radius: 10px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: 1rem 0;
+    }
+    @media (max-width: 600px) {
+      .wizard-card { padding: 1.5rem 1.15rem; }
+      .q-text { font-size: 1.08rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a href="/" class="brand">
+      <span class="brand-badge">E★ SORU SÖZLEŞMESİ</span>
+      <div>
+        <strong style="font-size:0.95rem;display:block;">${esc(title)}</strong>
+        <span style="font-size:0.75rem;color:#94a3b8;">${esc(subtitle)}</span>
+      </div>
+    </a>
+  </header>
+
+  <main class="wizard-shell">
+    <div class="wizard-card">
+      <div id="wizard-active-view">
+        <div class="eyebrow">${esc(subtitle)}</div>
+        <h1 class="wizard-title">${esc(title)}</h1>
+
+        <div class="progress-header">
+          <span id="step-counter-label">SORU 1 / ${questions.length}</span>
+          <span id="step-percent-label">%${Math.round((1 / questions.length) * 100)} Tamamlandı</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill-bar"></div>
+        </div>
+
+        <div class="step-dots" id="step-dots-container"></div>
+
+        <div class="question-box" id="question-box-card">
+          <span class="q-number-badge" id="q-badge">SORU 1</span>
+          <h2 class="q-text" id="q-title-text"></h2>
+          <div class="quick-choices" id="q-quick-choices" style="display:none;"></div>
+          <textarea id="q-answer-input" class="q-input" placeholder="Cevabınızı buraya yazınız..."></textarea>
+          <div style="font-size:0.75rem;color:#64748b;margin-top:0.45rem;display:flex;justify-content:space-between;">
+            <span>💡 Cevabınızı yazıp "Sonraki Soru" butonuna tıklayın.</span>
+            <span>Hızlı geçiş: <strong>Ctrl + Enter</strong></span>
+          </div>
+          <div id="q-error-box" class="error-msg">Lütfen bir sonraki soruya geçmeden önce bu soruyu cevaplayınız.</div>
+        </div>
+
+        <div class="nav-row">
+          <button type="button" class="btn-prev" id="btn-prev-q" onclick="prevQuestion()" disabled>← Önceki Soru</button>
+          <button type="button" class="btn-next" id="btn-next-q" onclick="nextQuestion()">Sonraki Soru →</button>
+        </div>
+      </div>
+
+      <div id="wizard-success-view" class="success-screen">
+        <div style="font-size:3.4rem;margin-bottom:0.5rem;">🎉</div>
+        <h2 style="font-size:1.55rem;font-weight:900;margin:0 0 0.5rem;color:#34d399;">Soru Sözleşmesi Tamamlandı!</h2>
+        <p style="color:#cbd5e1;font-size:0.98rem;max-width:520px;margin:0 auto 1.5rem;line-height:1.6;">
+          Tüm sorulara verdiğiniz yanıtlar başarıyla kaydedildi ve <strong>Yönetim Paneline</strong> iletildi. Teşekkür ederiz!
+        </p>
+        <div id="submitted-summary-list" style="text-align:left;display:grid;gap:0.65rem;max-height:420px;overflow-y:auto;padding-right:4px;margin-top:1.25rem;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      const CONTRACT_ID = ${JSON.stringify(contractId)};
+      const QUESTIONS = ${JSON.stringify(questions)};
+      const answers = new Array(QUESTIONS.length).fill('');
+      let currentIdx = 0;
+
+      const stepCounterEl = document.getElementById('step-counter-label');
+      const stepPercentEl = document.getElementById('step-percent-label');
+      const progressFillEl = document.getElementById('progress-fill-bar');
+      const dotsContainer = document.getElementById('step-dots-container');
+      const qBadgeEl = document.getElementById('q-badge');
+      const qTitleEl = document.getElementById('q-title-text');
+      const qInputEl = document.getElementById('q-answer-input');
+      const qErrorEl = document.getElementById('q-error-box');
+      const qQuickEl = document.getElementById('q-quick-choices');
+      const btnPrev = document.getElementById('btn-prev-q');
+      const btnNext = document.getElementById('btn-next-q');
+
+      function renderDots() {
+        dotsContainer.innerHTML = '';
+        QUESTIONS.forEach((_, idx) => {
+          const dot = document.createElement('div');
+          dot.className = 'step-dot' + (idx === currentIdx ? ' active' : '') + (answers[idx] && answers[idx].trim() ? ' done' : '');
+          dot.textContent = String(idx + 1);
+          dot.onclick = () => {
+            if (idx <= currentIdx || (answers[currentIdx] && answers[currentIdx].trim())) {
+              saveCurrentInput();
+              currentIdx = idx;
+              renderCurrentQuestion();
+            }
+          };
+          dotsContainer.appendChild(dot);
+        });
+      }
+
+      function getQuickChipsForQuestion(qText) {
+        const lower = qText.toLowerCase();
+        if (lower.includes('açık mı')) {
+          return ['Evet, kampımız şu an açık ve aktif', 'Hayır, yakında açılacak (Hazırlık aşamasında)', 'Geçici olarak bakımda'];
+        }
+        if (lower.includes('mapı hazır') || lower.includes('sonradan yenilenecek')) {
+          return ['Map tamamen hazır', 'Map hazır ancak ileride yenilenecek/güncellenecek', 'Map şu an yapım aşamasında'];
+        }
+        return [];
+      }
+
+      function renderCurrentQuestion() {
+        const total = QUESTIONS.length;
+        const qText = QUESTIONS[currentIdx] || '';
+        const pct = Math.round(((currentIdx + 1) / total) * 100);
+
+        stepCounterEl.textContent = 'SORU ' + (currentIdx + 1) + ' / ' + total;
+        stepPercentEl.textContent = '%' + pct + ' Tamamlandı';
+        progressFillEl.style.width = pct + '%';
+
+        qBadgeEl.textContent = 'SORU ' + (currentIdx + 1);
+        qTitleEl.textContent = qText;
+        qInputEl.value = answers[currentIdx] || '';
+        qErrorEl.style.display = 'none';
+
+        const chips = getQuickChipsForQuestion(qText);
+        if (chips.length > 0) {
+          qQuickEl.style.display = 'flex';
+          qQuickEl.innerHTML = '';
+          chips.forEach(choice => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'quick-chip';
+            chip.textContent = choice;
+            chip.onclick = () => {
+              qInputEl.value = choice;
+              answers[currentIdx] = choice;
+              qInputEl.focus();
+            };
+            qQuickEl.appendChild(chip);
+          });
+        } else {
+          qQuickEl.style.display = 'none';
+          qQuickEl.innerHTML = '';
+        }
+
+        btnPrev.disabled = currentIdx === 0;
+        if (currentIdx === total - 1) {
+          btnNext.className = 'btn-submit';
+          btnNext.textContent = '✅ Cevapları Tamamla ve Yönetim Paneline Gönder';
+        } else {
+          btnNext.className = 'btn-next';
+          btnNext.textContent = 'Sonraki Soru (' + (currentIdx + 2) + '/' + total + ') →';
+        }
+
+        renderDots();
+        setTimeout(() => qInputEl.focus(), 40);
+      }
+
+      function saveCurrentInput() {
+        answers[currentIdx] = (qInputEl.value || '').trim();
+      }
+
+      window.prevQuestion = function() {
+        saveCurrentInput();
+        if (currentIdx > 0) {
+          currentIdx--;
+          renderCurrentQuestion();
+        }
+      };
+
+      window.nextQuestion = async function() {
+        saveCurrentInput();
+        if (!answers[currentIdx]) {
+          qErrorEl.textContent = 'Lütfen devam etmeden önce bu soruyu cevaplayınız.';
+          qErrorEl.style.display = 'block';
+          qInputEl.focus();
+          return;
+        }
+
+        if (currentIdx < QUESTIONS.length - 1) {
+          currentIdx++;
+          renderCurrentQuestion();
+          return;
+        }
+
+        await submitAllAnswers();
+      };
+
+      async function submitAllAnswers() {
+        btnNext.disabled = true;
+        btnPrev.disabled = true;
+        btnNext.textContent = '⏳ Yönetim Paneline Gönderiliyor...';
+
+        const payloadAnswers = QUESTIONS.map((q, idx) => ({
+          index: idx + 1,
+          question: q,
+          answer: answers[idx] || ''
+        }));
+
+        try {
+          const res = await fetch('/api/question-contracts/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contractId: CONTRACT_ID,
+              answers: payloadAnswers
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            document.getElementById('wizard-active-view').style.display = 'none';
+            const successView = document.getElementById('wizard-success-view');
+            const summaryList = document.getElementById('submitted-summary-list');
+            successView.style.display = 'block';
+
+            summaryList.innerHTML = '';
+            payloadAnswers.forEach(item => {
+              const row = document.createElement('div');
+              row.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:0.8rem 1rem;';
+              const qEl = document.createElement('div');
+              qEl.style.cssText = 'font-size:0.78rem;color:#a5b4fc;font-weight:800;margin-bottom:0.25rem;';
+              qEl.textContent = item.index + '. ' + item.question;
+              const aEl = document.createElement('div');
+              aEl.style.cssText = 'font-size:0.92rem;color:#fff;font-weight:600;white-space:pre-wrap;';
+              aEl.textContent = item.answer;
+              row.appendChild(qEl);
+              row.appendChild(aEl);
+              summaryList.appendChild(row);
+            });
+          } else {
+            qErrorEl.textContent = data.error || 'Gönderilirken bir hata oluştu.';
+            qErrorEl.style.display = 'block';
+            btnNext.disabled = false;
+            btnPrev.disabled = currentIdx === 0;
+            btnNext.textContent = '✅ Cevapları Tamamla ve Yönetim Paneline Gönder';
+          }
+        } catch (err) {
+          qErrorEl.textContent = 'Bağlantı hatası: ' + err.message;
+          qErrorEl.style.display = 'block';
+          btnNext.disabled = false;
+          btnPrev.disabled = currentIdx === 0;
+          btnNext.textContent = '✅ Cevapları Tamamla ve Yönetim Paneline Gönder';
+        }
+      }
+
+      qInputEl.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          window.nextQuestion();
+        }
+      });
+
+      renderCurrentQuestion();
+    })();
+  </script>
+</body>
+</html>`;
+}
+
 module.exports = {
+  DEFAULT_CAMP_QUESTIONS,
   renderAdminContractsWorkspace,
+  renderAdminQuestionContractsWorkspace,
   renderPublicContractPage,
+  renderPublicQuestionContractPage,
   formatContractBodyHtml,
 };

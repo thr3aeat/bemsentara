@@ -5,7 +5,11 @@ const crypto = require('crypto');
 const { contracts, saveStoreNow } = require('../../models/Store');
 const { isSiteAdmin } = require('../../utils/adminCheck');
 const { chatWithAI } = require('../../bot/services/aiService');
-const { renderPublicContractPage } = require('../views/contractsView');
+const {
+  DEFAULT_CAMP_QUESTIONS,
+  renderPublicContractPage,
+  renderPublicQuestionContractPage,
+} = require('../views/contractsView');
 const { renderErrorPage } = require('../views');
 
 const router = express.Router();
@@ -72,16 +76,145 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── PUBLIC ROUTES: Sözleşme Görüntüleme ve E-İmza ───────────────────────────
+// ── PUBLIC ROUTES: Soru Sözleşmesi (Tek Tek Soran Sihirbaz) ─────────────────
+
+router.get(['/soru-sozlesmesi', '/kamp-sozlesmesi'], (req, res) => {
+  const templateContract = {
+    _id: 'genel',
+    type: 'QUESTIONNAIRE',
+    title: 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ',
+    headerSubtitle: 'EKOYILDIZ & SENTARA • KAMP TANITIM VE İNCELEME BİRİMİ',
+    documentNo: `EKO-${new Date().getFullYear()}/KAMP-GENEL`,
+    partyOneName: 'EkoYıldız & Sentara Yönetimi',
+    partyTwoName: '',
+    questions: DEFAULT_CAMP_QUESTIONS,
+    status: 'PENDING',
+  };
+  return res.send(renderPublicQuestionContractPage(templateContract, req.user));
+});
+
+router.get('/soru-sozlesmesi/:id', (req, res) => {
+  const rawId = String(req.params.id || '').trim();
+  if (!rawId || rawId === 'genel' || rawId === 'kamp') {
+    return res.redirect('/soru-sozlesmesi');
+  }
+  const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+  if (!contract) {
+    return res.status(404).send(renderErrorPage(404, 'Aradığınız soru sözleşmesi bağlantısı bulunamadı veya yayından kaldırıldı.'));
+  }
+  return res.send(renderPublicQuestionContractPage(contract, req.user));
+});
+
+// ── PUBLIC ROUTES: Normal Sözleşme Görüntüleme ve E-İmza ────────────────────
 
 router.get(['/sozlesme/:id', '/contracts/:id'], (req, res) => {
   const rawId = String(req.params.id || '').trim();
+  if (rawId === 'soru-sozlesmesi' || rawId === 'kamp') {
+    return res.redirect('/soru-sozlesmesi');
+  }
   const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
   if (!contract) {
     return res.status(404).send(renderErrorPage(404, 'Aradığınız resmi sözleşme bulunamadı veya yayından kaldırıldı.'));
   }
+  if (contract.type === 'QUESTIONNAIRE') {
+    return res.send(renderPublicQuestionContractPage(contract, req.user));
+  }
   return res.send(renderPublicContractPage(contract, req.user));
 });
+
+// ── PUBLIC API: Soru Sözleşmesi Cevaplarını Kaydet ve Yönetim Paneline Gönder ──
+
+router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answers'], async (req, res) => {
+  try {
+    const rawId = String(req.params.id || req.body?.contractId || 'genel').trim();
+    const rawAnswers = Array.isArray(req.body?.answers) ? req.body.answers : [];
+
+    if (rawAnswers.length === 0) {
+      return res.status(400).json({ success: false, error: 'Lütfen soruları yanıtlayınız.' });
+    }
+
+    const cleanedAnswers = rawAnswers.map((item, idx) => ({
+      index: idx + 1,
+      question: String(item?.question || `Soru ${idx + 1}`).trim(),
+      answer: String(item?.answer || '').trim(),
+    }));
+
+    const hasEmpty = cleanedAnswers.some(a => !a.answer);
+    if (hasEmpty) {
+      return res.status(400).json({ success: false, error: 'Lütfen tüm soruları eksiksiz cevaplayınız.' });
+    }
+
+    const firstAns = cleanedAnswers[0]?.answer || '';
+    const secondAns = cleanedAnswers[1]?.answer || '';
+    const autoSignerName = [firstAns, secondAns].filter(Boolean).join(' / ').slice(0, 80) || (req.user?.username || 'Katılımcı');
+
+    const formattedContent = cleanedAnswers
+      .map(a => `SORU ${a.index} — ${a.question}\nCEVAP: ${a.answer}`)
+      .join('\n\n');
+
+    const signedAt = new Date().toISOString();
+    const documentNo = `EKO-${new Date().getFullYear()}/SRU-${Math.floor(1000 + Math.random() * 9000)}`;
+    const hashPayload = `${documentNo}|${autoSignerName}|${signedAt}|${formattedContent.slice(0, 200)}`;
+    const signatureHash = crypto.createHash('sha256').update(hashPayload).digest('hex').toUpperCase();
+
+    let existing = (rawId && rawId !== 'genel' && rawId !== 'kamp')
+      ? (contracts.findById(rawId) || contracts.findOne({ documentNo: rawId }))
+      : null;
+
+    if (existing && existing.status !== 'SIGNED') {
+      existing.type = 'QUESTIONNAIRE';
+      existing.status = 'SIGNED';
+      existing.answers = cleanedAnswers;
+      existing.content = formattedContent;
+      existing.signerName = existing.partyTwoName || autoSignerName;
+      existing.signerTitle = secondAns ? `${firstAns} (${secondAns})` : firstAns;
+      existing.signerDiscordId = req.user?.discordId || null;
+      existing.signedAt = signedAt;
+      existing.signatureHash = signatureHash;
+      await existing.save();
+      await saveStoreNow();
+
+      return res.json({
+        success: true,
+        message: 'Cevaplarınız başarıyla kaydedildi ve yönetim paneline iletildi.',
+        contractId: existing._id,
+      });
+    }
+
+    const created = contracts.create({
+      type: 'QUESTIONNAIRE',
+      title: existing?.title || 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ',
+      headerSubtitle: existing?.headerSubtitle || 'EKOYILDIZ & SENTARA • KAMP TANITIM VE İNCELEME BİRİMİ',
+      documentNo,
+      partyOneName: existing?.partyOneName || 'EkoYıldız & Sentara Yönetimi',
+      partyTwoName: existing?.partyTwoName || autoSignerName,
+      questions: cleanedAnswers.map(a => a.question),
+      answers: cleanedAnswers,
+      content: formattedContent,
+      status: 'SIGNED',
+      createdBy: existing?.createdBy || 'Soru Sözleşmesi Linki',
+      signerName: autoSignerName,
+      signerTitle: secondAns ? `${firstAns} (${secondAns})` : firstAns,
+      signerDiscordId: req.user?.discordId || null,
+      signatureData: null,
+      signedAt,
+      signatureHash,
+    });
+
+    await saveStoreNow();
+
+    return res.json({
+      success: true,
+      message: 'Cevaplarınız başarıyla kaydedildi ve yönetim paneline iletildi.',
+      contractId: created._id,
+    });
+  } catch (err) {
+    console.error('[question-contracts/submit] error:', err);
+    return res.status(500).json({ success: false, error: 'Cevaplar kaydedilirken bir sunucu hatası oluştu.' });
+  }
+});
+
+// ── PUBLIC API: Klasik Sözleşme Mouse E-İmza ────────────────────────────────
 
 router.post('/api/contracts/:id/sign', async (req, res) => {
   try {
@@ -139,11 +272,17 @@ router.post('/api/contracts/:id/sign', async (req, res) => {
   }
 });
 
-// ── ADMIN API ROUTES: Sözleşme Yönetimi ve EkoAI Geliştirici ────────────────
+// ── ADMIN API ROUTES: Sözleşme & Soru Sözleşmesi Yönetimi ───────────────────
 
 router.get('/api/admin/contracts', requireAdmin, (req, res) => {
   try {
-    const all = contracts.find({}).sort({ createdAt: -1 });
+    const filterType = String(req.query.type || '').trim().toUpperCase();
+    let all = contracts.find({}).sort({ createdAt: -1 });
+    if (filterType === 'QUESTIONNAIRE') {
+      all = all.filter(c => c.type === 'QUESTIONNAIRE');
+    } else if (filterType === 'STANDARD') {
+      all = all.filter(c => c.type !== 'QUESTIONNAIRE');
+    }
     return res.json({ success: true, contracts: all });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -152,18 +291,54 @@ router.get('/api/admin/contracts', requireAdmin, (req, res) => {
 
 router.post('/api/admin/contracts', requireAdmin, async (req, res) => {
   try {
+    const type = String(req.body?.type || 'STANDARD').trim().toUpperCase();
     const title = String(req.body?.title || '').trim();
-    const headerSubtitle = String(req.body?.headerSubtitle || 'T.C. İSTANBUL • EKOYILDIZ & SENTARA YÜKSEK HUKUK VE DENETİM DAİRESİ BAŞKANLIĞI').trim();
-    const documentNo = String(req.body?.documentNo || `EKO-${new Date().getFullYear()}/SZL-${Math.floor(1000 + Math.random() * 9000)}`).trim();
+    const headerSubtitle = String(req.body?.headerSubtitle || (type === 'QUESTIONNAIRE'
+      ? 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ VE İNCELEME BİRİMİ'
+      : 'T.C. İSTANBUL • EKOYILDIZ & SENTARA YÜKSEK HUKUK VE DENETİM DAİRESİ BAŞKANLIĞI')).trim();
+    const documentNo = String(req.body?.documentNo || `EKO-${new Date().getFullYear()}/${type === 'QUESTIONNAIRE' ? 'SRU' : 'SZL'}-${Math.floor(1000 + Math.random() * 9000)}`).trim();
     const partyOneName = String(req.body?.partyOneName || 'EkoYıldız & Sentara Yönetimi').trim();
     const partyTwoName = String(req.body?.partyTwoName || '').trim();
-    const content = String(req.body?.content || '').trim();
 
+    if (type === 'QUESTIONNAIRE') {
+      const questions = Array.isArray(req.body?.questions)
+        ? req.body.questions.map(q => String(q || '').trim()).filter(Boolean)
+        : [];
+
+      if (questions.length === 0) {
+        return res.status(400).json({ success: false, error: 'Lütfen en az 1 soru ekleyiniz.' });
+      }
+
+      const record = contracts.create({
+        type: 'QUESTIONNAIRE',
+        title: title || 'SORU SÖZLEŞMESİ VE BAŞVURU FORMU',
+        headerSubtitle,
+        documentNo,
+        partyOneName,
+        partyTwoName,
+        questions,
+        answers: [],
+        content: questions.map((q, i) => `${i + 1}. ${q}`).join('\n'),
+        status: 'PENDING',
+        createdBy: req.user?.discordId || req.user?.username || 'Admin',
+        signerName: null,
+        signerTitle: null,
+        signatureData: null,
+        signedAt: null,
+        signatureHash: null,
+      });
+
+      await saveStoreNow();
+      return res.json({ success: true, contract: record });
+    }
+
+    const content = String(req.body?.content || '').trim();
     if (!title || !content) {
       return res.status(400).json({ success: false, error: 'Sözleşme başlığı ve maddeleri zorunludur.' });
     }
 
     const record = contracts.create({
+      type: 'STANDARD',
       title,
       headerSubtitle,
       documentNo,
@@ -253,7 +428,6 @@ Lütfen yukarıdaki bilgileri kullanarak çok resmi, uzun ve maddelendirilmiş (
     console.warn('[contracts/ai-enhance] AI fallback devrede:', err.message);
   }
 
-  // Güvenilir Hukuki Şablon Genişletici Fallback
   const fallback = buildFallbackEnhancedContract({ title, content, partyOne, partyTwo, mode });
   return res.json({
     success: true,
