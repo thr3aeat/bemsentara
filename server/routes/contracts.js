@@ -98,15 +98,20 @@ router.get(['/soru-sozlesmesi', '/kamp-sozlesmesi'], (req, res) => {
 });
 
 router.get('/soru-sozlesmesi/:id', (req, res) => {
-  const rawId = String(req.params.id || '').trim();
-  if (!rawId || rawId === 'genel' || rawId === 'kamp') {
-    return res.redirect('/soru-sozlesmesi');
+  try {
+    const rawId = String(req.params.id || '').trim();
+    if (!rawId || rawId === 'genel' || rawId === 'kamp') {
+      return res.redirect('/soru-sozlesmesi');
+    }
+    const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+    if (!contract) {
+      return res.status(404).send(renderErrorPage(404, 'Aradığınız soru sözleşmesi bağlantısı bulunamadı veya yayından kaldırıldı.'));
+    }
+    return res.send(renderPublicQuestionContractPage(contract, req.user));
+  } catch (err) {
+    console.error('[soru-sozlesmesi/:id] error:', err);
+    return res.status(500).send(renderErrorPage(500, 'Soru sözleşmesi yüklenirken bir hata oluştu.'));
   }
-  const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
-  if (!contract) {
-    return res.status(404).send(renderErrorPage(404, 'Aradığınız soru sözleşmesi bağlantısı bulunamadı veya yayından kaldırıldı.'));
-  }
-  return res.send(renderPublicQuestionContractPage(contract, req.user));
 });
 
 // ── PUBLIC ROUTES: Normal Sözleşme Görüntüleme ve E-İmza ────────────────────
@@ -129,27 +134,32 @@ router.get(['/sozlesme/:id', '/contracts/:id'], (req, res) => {
 // ── PUBLIC API: Kahoot Modu Canlı Durum & Tek Tek Cevaplama ─────────────────
 
 router.get('/api/question-contracts/:id/state', (req, res) => {
-  const rawId = String(req.params.id || '').trim();
-  const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
-  if (!contract) {
-    return res.status(404).json({ success: false, error: 'Soru sözleşmesi bulunamadı.' });
-  }
-  const questions = Array.isArray(contract.questions) ? contract.questions : [];
-  const step = Number(contract.currentStep || 0);
-  const currentQuestion = step < questions.length ? questions[step] : null;
-  const answers = Array.isArray(contract.answers) ? contract.answers : [];
+  try {
+    const rawId = String(req.params.id || '').trim();
+    const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+    if (!contract) {
+      return res.status(404).json({ success: false, error: 'Soru sözleşmesi bulunamadı.' });
+    }
+    const questions = Array.isArray(contract.questions) ? contract.questions : [];
+    const step = Number(contract.currentStep || 0);
+    const currentQuestion = step < questions.length ? questions[step] : null;
+    const answers = Array.isArray(contract.answers) ? contract.answers : [];
 
-  return res.json({
-    success: true,
-    status: contract.status,
-    kahootMode: !!contract.kahootMode,
-    currentStep: step,
-    currentQuestion,
-    hasMoreQuestions: step < questions.length,
-    waitingForAdmin: !!contract.waitingForAdmin,
-    nextRequestedAt: contract.nextRequestedAt || null,
-    answers,
-  });
+    return res.json({
+      success: true,
+      status: contract.status,
+      kahootMode: !!contract.kahootMode,
+      currentStep: step,
+      currentQuestion,
+      hasMoreQuestions: step < questions.length,
+      waitingForAdmin: !!contract.waitingForAdmin,
+      nextRequestedAt: contract.nextRequestedAt || null,
+      answers,
+    });
+  } catch (err) {
+    console.error('[kahoot/state] error:', err);
+    return res.status(500).json({ success: false, error: 'Durum alınamadı.' });
+  }
 });
 
 router.post('/api/question-contracts/:id/answer-step', async (req, res) => {

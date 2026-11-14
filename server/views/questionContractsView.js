@@ -180,9 +180,27 @@ function renderAdminQuestionContractsWorkspace() {
 
   <script>
     (function() {
-      const DEFAULT_CAMP_Q = ${JSON.stringify(DEFAULT_CAMP_QUESTIONS)};
+      const DEFAULT_CAMP_Q = ${JSON.stringify(DEFAULT_CAMP_QUESTIONS).replace(/</g, '\\u003c')};
       let loadedQContractsCache = [];
       let currentQModalId = null;
+
+      function escapeHtml(val) {
+        return String(val ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      async function safeReadJson(res) {
+        const ct = (res.headers && res.headers.get('content-type')) || '';
+        if (!ct.includes('application/json')) {
+          const text = await res.text().catch(() => '');
+          return { success: false, error: res.status === 429 ? 'Çok fazla istek gönderildi, birkaç saniye bekleyin.' : ('Sunucu yanıtı geçersiz (' + res.status + ')'), _raw: text };
+        }
+        return await res.json();
+      }
 
       function parseListText(raw) {
         return String(raw || '')
@@ -337,9 +355,9 @@ function renderAdminQuestionContractsWorkspace() {
           if (item.status === 'SIGNED') {
             statusBar.innerHTML = '🏁 <span style="color:#34d399;">Oturum tamamlandı.</span> Aşağıdan yeni soru ekleyerek devam ettirebilirsiniz.';
           } else if (item.waitingForAdmin) {
-            statusBar.innerHTML = '🔔 <span style="color:#fbbf24;">KATILIMCI CEVABINI GÖNDERDİ VE SONRAKİ SORU İSTEĞİ YOLLADI!</span><br><span style="font-size:0.82rem;color:#cbd5e1;font-weight:600;">Son sorulan: ' + currentQ + '</span>';
+            statusBar.innerHTML = '🔔 <span style="color:#fbbf24;">KATILIMCI CEVABINI GÖNDERDİ VE SONRAKİ SORU İSTEĞİ YOLLADI!</span><br><span style="font-size:0.82rem;color:#cbd5e1;font-weight:600;">Son sorulan: ' + escapeHtml(currentQ) + '</span>';
           } else {
-            statusBar.innerHTML = '⏳ <span style="color:#a5b4fc;">Katılımcı şu soruyu yanıtlıyor:</span> ' + currentQ;
+            statusBar.innerHTML = '⏳ <span style="color:#a5b4fc;">Katılımcı şu soruyu yanıtlıyor:</span> ' + escapeHtml(currentQ);
           }
         } else {
           kahootBox.style.display = 'none';
@@ -370,13 +388,17 @@ function renderAdminQuestionContractsWorkspace() {
 
       window.triggerKahootNext = async function(finish) {
         if (!currentQModalId) return;
+        const btnNext = document.getElementById('btn-kahoot-next');
+        const btnFin = document.getElementById('btn-kahoot-finish');
+        if (btnNext) btnNext.disabled = true;
+        if (btnFin) btnFin.disabled = true;
         try {
           const res = await fetch('/api/admin/contracts/' + encodeURIComponent(currentQModalId) + '/kahoot-next', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ finish: !!finish })
           });
-          const data = await res.json();
+          const data = await safeReadJson(res);
           if (res.ok && data.success) {
             await window.loadAdminQuestionContracts();
             window.viewQContractAnswers(currentQModalId);
@@ -385,6 +407,9 @@ function renderAdminQuestionContractsWorkspace() {
           }
         } catch (err) {
           alert('Hata: ' + err.message);
+        } finally {
+          if (btnNext) btnNext.disabled = false;
+          if (btnFin) btnFin.disabled = false;
         }
       };
 
@@ -402,7 +427,7 @@ function renderAdminQuestionContractsWorkspace() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questions })
           });
-          const data = await res.json();
+          const data = await safeReadJson(res);
           if (res.ok && data.success) {
             if (ta) ta.value = '';
             await window.loadAdminQuestionContracts();
@@ -492,15 +517,15 @@ function renderAdminQuestionContractsWorkspace() {
             html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">' +
               '<td style="padding:0.85rem 0.75rem;">' +
                 '<div style="margin-bottom:4px;">' + modeTag + '</div>' +
-                '<div style="font-weight:700;color:#fff;">' + (c.title || 'Soru Sözleşmesi') + '</div>' +
+                '<div style="font-weight:700;color:#fff;">' + escapeHtml(c.title || 'Soru Sözleşmesi') + '</div>' +
               '</td>' +
-              '<td style="padding:0.85rem 0.75rem;color:#e2e8f0;">' + (c.signerName || c.partyTwoName || 'Bekleniyor') + '</td>' +
+              '<td style="padding:0.85rem 0.75rem;color:#e2e8f0;">' + escapeHtml(c.signerName || c.partyTwoName || 'Bekleniyor') + '</td>' +
               '<td style="padding:0.85rem 0.75rem;">' + statusHtml + '</td>' +
-              '<td style="padding:0.85rem 0.75rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;">' + (lastAns ? lastAns.answer : '—') + '</td>' +
+              '<td style="padding:0.85rem 0.75rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1;">' + escapeHtml(lastAns ? lastAns.answer : '—') + '</td>' +
               '<td style="padding:0.85rem 0.75rem;text-align:right;white-space:nowrap;">' +
-                '<button type="button" onclick="window.viewQContractAnswers(\\'' + c._id + '\\')" style="background:linear-gradient(135deg,#7c3aed,#10b981);border:none;color:#fff;padding:0.45rem 0.85rem;border-radius:8px;font-weight:800;font-size:0.78rem;cursor:pointer;margin-right:0.35rem;">' + (c.kahootMode ? '🎮 Canlı Kontrol / Cevaplar' : '📋 Cevapları Gör') + '</button>' +
-                '<button type="button" onclick="window.shareContractUrl(\\'' + url + '\\', \\'' + safeTitle + '\\')" style="background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;padding:0.42rem 0.75rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;margin-right:0.35rem;">🔗 Link</button>' +
-                '<button type="button" onclick="window.deleteAdminQContract(\\'' + c._id + '\\')" style="background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.35);color:#fda4af;padding:0.42rem 0.65rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;">🗑️</button>' +
+                '<button type="button" onclick="window.viewQContractAnswers(\\'' + escapeHtml(c._id) + '\\')" style="background:linear-gradient(135deg,#7c3aed,#10b981);border:none;color:#fff;padding:0.45rem 0.85rem;border-radius:8px;font-weight:800;font-size:0.78rem;cursor:pointer;margin-right:0.35rem;">' + (c.kahootMode ? '🎮 Canlı Kontrol / Cevaplar' : '📋 Cevapları Gör') + '</button>' +
+                '<button type="button" onclick="window.shareContractUrl(\\'' + escapeHtml(url) + '\\', \\'' + escapeHtml(safeTitle) + '\\')" style="background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;padding:0.42rem 0.75rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;margin-right:0.35rem;">🔗 Link</button>' +
+                '<button type="button" onclick="window.deleteAdminQContract(\\'' + escapeHtml(c._id) + '\\')" style="background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.35);color:#fda4af;padding:0.42rem 0.65rem;border-radius:8px;font-weight:700;font-size:0.76rem;cursor:pointer;">🗑️</button>' +
               '</td>' +
             '</tr>';
           });
@@ -517,11 +542,12 @@ function renderAdminQuestionContractsWorkspace() {
       }, 150);
 
       setInterval(() => {
+        if (document.hidden) return;
         const panel = document.getElementById('adm-question-contracts');
         if (panel && !panel.hidden && panel.style.display !== 'none') {
           window.loadAdminQuestionContracts();
         }
-      }, 5000);
+      }, 6000);
 
       document.addEventListener('admin:workspace-activated', (e) => {
         if (e.detail && e.detail.workspace === 'question-contracts') {
@@ -811,13 +837,21 @@ function renderPublicQuestionContractPage(contract) {
 
   <script>
     (function() {
-      const CONTRACT_ID = ${JSON.stringify(contractId)};
+      const CONTRACT_ID = ${JSON.stringify(contractId).replace(/</g, '\\u003c')};
       const KAHOOT_MODE = ${JSON.stringify(kahootMode)};
-      let QUESTIONS = ${JSON.stringify(questions)};
+      let QUESTIONS = ${JSON.stringify(questions).replace(/</g, '\\u003c')};
       const answers = new Array(QUESTIONS.length).fill('');
       let currentIdx = ${Number(contract.currentStep || 0)};
       let waitingForAdmin = ${JSON.stringify(!!contract.waitingForAdmin)};
-      let initialStatus = ${JSON.stringify(contract.status || 'PENDING')};
+      let initialStatus = ${JSON.stringify(contract.status || 'PENDING').replace(/</g, '\\u003c')};
+
+      async function safeReadJson(res) {
+        const ct = (res.headers && res.headers.get('content-type')) || '';
+        if (!ct.includes('application/json')) {
+          return { success: false, error: res.status === 429 ? 'Çok fazla istek gönderildi, lütfen birkaç saniye bekleyin.' : ('Sunucu yanıtı geçersiz (' + res.status + ')') };
+        }
+        return await res.json();
+      }
 
       const progressFillEl = document.getElementById('progress-fill-bar');
       const qTitleEl = document.getElementById('q-title-text');
@@ -935,7 +969,7 @@ function renderPublicQuestionContractPage(contract) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ answer: val, question: QUESTIONS[currentIdx] })
             });
-            const data = await res.json();
+            const data = await safeReadJson(res);
             if (res.ok && data.success) {
               waitingForAdmin = true;
               activeView.style.display = 'none';
@@ -971,7 +1005,7 @@ function renderPublicQuestionContractPage(contract) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contractId: CONTRACT_ID, answers: payloadAnswers })
           });
-          const data = await res.json();
+          const data = await safeReadJson(res);
           if (res.ok && data.success) {
             showSuccessScreen(payloadAnswers);
           } else {
@@ -998,7 +1032,7 @@ function renderPublicQuestionContractPage(contract) {
 
       if (KAHOOT_MODE) {
         if (initialStatus === 'SIGNED') {
-          showSuccessScreen(${JSON.stringify(contract.answers || [])});
+          showSuccessScreen(${JSON.stringify(contract.answers || []).replace(/</g, '\\u003c')});
         } else if (waitingForAdmin) {
           activeView.style.display = 'none';
           waitingView.style.display = 'block';
@@ -1007,14 +1041,17 @@ function renderPublicQuestionContractPage(contract) {
         }
 
         // Canlı Kahoot Polling: Yönetici sonraki soruya geçirdiğinde anında yeni soruyu aç
-        setInterval(async () => {
+        let kahootPollTimer = null;
+        kahootPollTimer = setInterval(async () => {
+          if (document.hidden) return;
           try {
             const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/state');
-            const st = await res.json();
+            const st = await safeReadJson(res);
             if (!res.ok || !st.success) return;
 
             if (st.status === 'SIGNED') {
               showSuccessScreen(st.answers || []);
+              if (kahootPollTimer) { clearInterval(kahootPollTimer); kahootPollTimer = null; }
               return;
             }
             if (!st.waitingForAdmin && st.currentQuestion) {
@@ -1030,7 +1067,7 @@ function renderPublicQuestionContractPage(contract) {
               }
             }
           } catch (_) {}
-        }, 2000);
+        }, 3500);
       } else {
         renderCurrentQuestion();
       }
