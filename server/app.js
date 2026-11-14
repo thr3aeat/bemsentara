@@ -107,6 +107,7 @@ app.use(pinBruteForceGuardMiddleware);
 let cachedApiSpeedLimit = { value: 120, expiresAt: 0 };
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
+  skip: (req) => req.path.startsWith('/question-contracts/') || req.path.startsWith('/admin/contracts'),
   max: async () => {
     const now = Date.now();
     if (now < cachedApiSpeedLimit.expiresAt) return cachedApiSpeedLimit.value;

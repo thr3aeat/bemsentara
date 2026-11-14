@@ -146,6 +146,14 @@ function renderAdminQuestionContractsWorkspace() {
     <!-- Kahoot Canlı Geçiş Kontrolleri -->
     <div id="qmodal-kahoot-controls" style="display:none;background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(16,185,129,0.12));border:1px solid rgba(167,139,250,0.4);border-radius:14px;padding:1.1rem;margin-bottom:1.25rem;">
       <div id="qmodal-kahoot-status-bar" style="font-weight:800;font-size:0.95rem;color:#fff;margin-bottom:0.8rem;"></div>
+      <div id="kahoot-admin-loader" style="display:none;align-items:center;gap:0.75rem;background:rgba(15,23,42,0.85);border:1px solid rgba(52,211,153,0.45);border-radius:12px;padding:0.75rem 1rem;margin-bottom:0.85rem;">
+        <span style="display:inline-block;width:20px;height:20px;border:3px solid rgba(52,211,153,0.25);border-top-color:#34d399;border-radius:50%;animation:kahootSpin 0.65s linear infinite;"></span>
+        <div>
+          <div id="kahoot-admin-meme-text" style="font-weight:800;color:#6ee7b7;font-size:0.88rem;">🚀 Sonraki soruya ışınlanılıyor...</div>
+          <div style="font-size:0.74rem;color:#94a3b8;">Katılımcı ekranı da aynı anda güncelleniyor</div>
+        </div>
+      </div>
+      <style>@keyframes kahootSpin{to{transform:rotate(360deg);}}</style>
       <div style="display:flex;gap:0.65rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;">
         <button type="button" id="btn-kahoot-next" onclick="window.triggerKahootNext(false)" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:0.72rem 1.25rem;border-radius:10px;font-weight:800;font-size:0.88rem;cursor:pointer;">
           ⏭️ Sonraki Soruya Geçir
@@ -386,12 +394,28 @@ function renderAdminQuestionContractsWorkspace() {
         modal.style.display = 'block';
       };
 
+      const ADMIN_MEMES = [
+        '🚀🐸 Sonraki soruya ışık hızında ışınlanıyoruz!',
+        '🧠💨 Beyinler 3000 RPM çalışıyor, yeni soru yolda!',
+        '😎⚡ "Sıradaki!" butonuna basıldı, katılımcı hazırlanıyor...',
+        '🎮🔥 Kahoot turbo motoru ateşlendi!',
+        '🐱💻 Kedi klavyeye bastı, sonraki soru yükleniyor!'
+      ];
+
       window.triggerKahootNext = async function(finish) {
         if (!currentQModalId) return;
         const btnNext = document.getElementById('btn-kahoot-next');
         const btnFin = document.getElementById('btn-kahoot-finish');
+        const loader = document.getElementById('kahoot-admin-loader');
+        const memeEl = document.getElementById('kahoot-admin-meme-text');
         if (btnNext) btnNext.disabled = true;
         if (btnFin) btnFin.disabled = true;
+        if (memeEl) {
+          memeEl.textContent = finish
+            ? '🏁 Oturum tamamlanıyor, cevaplar mühürleniyor...'
+            : ADMIN_MEMES[Math.floor(Math.random() * ADMIN_MEMES.length)];
+        }
+        if (loader) loader.style.display = 'flex';
         try {
           const res = await fetch('/api/admin/contracts/' + encodeURIComponent(currentQModalId) + '/kahoot-next', {
             method: 'POST',
@@ -408,6 +432,7 @@ function renderAdminQuestionContractsWorkspace() {
         } catch (err) {
           alert('Hata: ' + err.message);
         } finally {
+          if (loader) loader.style.display = 'none';
           if (btnNext) btnNext.disabled = false;
           if (btnFin) btnFin.disabled = false;
         }
@@ -547,7 +572,7 @@ function renderAdminQuestionContractsWorkspace() {
         if (panel && !panel.hidden && panel.style.display !== 'none') {
           window.loadAdminQuestionContracts();
         }
-      }, 6000);
+      }, 2500);
 
       document.addEventListener('admin:workspace-activated', (e) => {
         if (e.detail && e.detail.workspace === 'question-contracts') {
@@ -813,16 +838,27 @@ function renderPublicQuestionContractPage(contract) {
 
       <!-- Kahoot Bekleme Ekranı (Yönetici Onayı Bekleniyor) -->
       <div id="wizard-waiting-view" class="waiting-box">
-        <div style="font-size:3rem;margin-bottom:0.6rem;">⏳</div>
-        <h2 style="font-size:1.4rem;font-weight:900;margin:0 0 0.5rem;color:#fbbf24;">Cevabınız İletildi!</h2>
-        <p style="color:#cbd5e1;font-size:0.96rem;max-width:480px;margin:0 auto 1.35rem;line-height:1.6;">
-          Cevabınız yönetim paneline ulaştı. Bir sonraki soruya geçmek için yöneticinin onayı bekleniyor...
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border:4px solid rgba(251,191,36,0.22);border-top-color:#fbbf24;border-radius:50%;animation:kSpin 0.8s linear infinite;margin-bottom:0.85rem;"></div>
+        <h2 style="font-size:1.4rem;font-weight:900;margin:0 0 0.45rem;color:#fbbf24;">Cevabınız İletildi!</h2>
+        <div id="waiting-meme-box" style="display:inline-block;background:rgba(124,58,237,0.18);border:1px solid rgba(167,139,250,0.4);color:#e9d5ff;padding:0.5rem 1rem;border-radius:999px;font-size:0.86rem;font-weight:800;margin-bottom:0.9rem;">
+          🧠💨 Beyinler ısınıyor, yönetici onayı bekleniyor...
+        </div>
+        <p style="color:#cbd5e1;font-size:0.95rem;max-width:480px;margin:0 auto 1.35rem;line-height:1.6;">
+          Cevabınız yönetim paneline ulaştı. Yönetici <strong>"Sonraki Soruya Geçir"</strong> dediğinde yeni soru otomatik açılacak!
         </p>
         <button type="button" id="btn-request-next" onclick="sendNextRequest()" style="background:linear-gradient(135deg,#7c3aed,#6366f1);border:none;color:#fff;padding:0.85rem 1.4rem;border-radius:12px;font-weight:800;font-size:0.92rem;cursor:pointer;">
           🔔 Sonraki Soruya Geçmek İçin İstek Yolla
         </button>
         <div id="request-feedback" style="font-size:0.82rem;color:#34d399;margin-top:0.75rem;font-weight:700;"></div>
       </div>
+
+      <!-- Hızlı Meme'li Geçiş Ekranı -->
+      <div id="wizard-transition-view" class="waiting-box">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:58px;height:58px;border:4px solid rgba(52,211,153,0.25);border-top-color:#34d399;border-radius:50%;animation:kSpin 0.55s linear infinite;margin-bottom:0.9rem;"></div>
+        <h2 style="font-size:1.45rem;font-weight:900;margin:0 0 0.45rem;color:#34d399;">🚀 Sonraki Soru Geliyor!</h2>
+        <div id="transition-meme-text" style="font-size:1rem;font-weight:800;color:#e2e8f0;">🐸⚡ Işık hızında yükleniyor...</div>
+      </div>
+      <style>@keyframes kSpin{to{transform:rotate(360deg);}}</style>
 
       <!-- Tamamlandı Ekranı -->
       <div id="wizard-success-view" class="success-screen">
@@ -939,7 +975,26 @@ function renderPublicQuestionContractPage(contract) {
 
       const activeView = document.getElementById('wizard-active-view');
       const waitingView = document.getElementById('wizard-waiting-view');
+      const transitionView = document.getElementById('wizard-transition-view');
       const successView = document.getElementById('wizard-success-view');
+
+      const CLIENT_MEMES = [
+        '🧠💨 Beyinler 3000 RPM çalışıyor...',
+        '🚀🐸 Işık hızında sonraki soruya geçiliyor!',
+        '😎☕ Yönetici "Sıradaki!" butonuna bastı basacak...',
+        '🎮⚡ Kahoot turbo motoru devrede!',
+        '👀🔥 Cevap radarları döndü, yeni soru hazırlanıyor!',
+        '🐱💻 Kedi klavyeye bastı, soru iniyor!'
+      ];
+
+      function pickRandomMeme() {
+        return CLIENT_MEMES[Math.floor(Math.random() * CLIENT_MEMES.length)];
+      }
+
+      function updateWaitingMeme() {
+        const el = document.getElementById('waiting-meme-box');
+        if (el) el.textContent = pickRandomMeme();
+      }
 
       function getQuickChipsForQuestion(qText) {
         const lower = String(qText || '').toLowerCase();
@@ -957,6 +1012,7 @@ function renderPublicQuestionContractPage(contract) {
         setSyncBanner('', false);
         activeView.style.display = 'none';
         waitingView.style.display = 'none';
+        if (transitionView) transitionView.style.display = 'none';
         successView.style.display = 'block';
         const summaryList = document.getElementById('submitted-summary-list');
         if (!summaryList) return;
@@ -1059,6 +1115,7 @@ function renderPublicQuestionContractPage(contract) {
             const data = await safeReadJson(res);
             if (res.ok && data.success) {
               waitingForAdmin = true;
+              updateWaitingMeme();
               activeView.style.display = 'none';
               waitingView.style.display = 'block';
               document.getElementById('request-feedback').textContent = '🔔 Sonraki soru isteği yöneticiye iletildi.';
@@ -1123,16 +1180,25 @@ function renderPublicQuestionContractPage(contract) {
         if (initialStatus === 'SIGNED') {
           showSuccessScreen(${JSON.stringify(contract.answers || []).replace(/</g, '\\u003c')});
         } else if (waitingForAdmin) {
+          updateWaitingMeme();
           activeView.style.display = 'none';
           waitingView.style.display = 'block';
         } else {
           renderCurrentQuestion();
         }
 
-        // Canlı Kahoot Polling: Yönetici sonraki soruya geçirdiğinde anında yeni soruyu aç
+        // Beklerken her 3 saniyede bir eğlenceli meme metnini döndür
+        setInterval(() => {
+          if (waitingView && waitingView.style.display === 'block') {
+            updateWaitingMeme();
+          }
+        }, 3000);
+
+        // Canlı Kahoot Polling (1.2sn): Yönetici sonraki soruya geçirdiğinde meme'li hızlı geçişle aç
         let kahootPollTimer = null;
+        let isTransitioning = false;
         kahootPollTimer = setInterval(async () => {
-          if (document.hidden) return;
+          if (document.hidden || isTransitioning) return;
           try {
             const res = await fetch('/api/question-contracts/' + encodeURIComponent(CONTRACT_ID) + '/state');
             if ([502, 503, 504].includes(res.status)) {
@@ -1151,20 +1217,29 @@ function renderPublicQuestionContractPage(contract) {
             if (!st.waitingForAdmin && st.currentQuestion) {
               const stepChanged = Number(st.currentStep) !== Number(currentIdx) || waitingForAdmin;
               if (stepChanged) {
+                isTransitioning = true;
                 currentIdx = Number(st.currentStep);
                 QUESTIONS[currentIdx] = st.currentQuestion;
                 waitingForAdmin = false;
                 saveDraft();
                 waitingView.style.display = 'none';
                 successView.style.display = 'none';
-                activeView.style.display = 'block';
-                renderCurrentQuestion();
+                activeView.style.display = 'none';
+                const tMeme = document.getElementById('transition-meme-text');
+                if (tMeme) tMeme.textContent = pickRandomMeme();
+                if (transitionView) transitionView.style.display = 'block';
+                setTimeout(() => {
+                  if (transitionView) transitionView.style.display = 'none';
+                  activeView.style.display = 'block';
+                  renderCurrentQuestion();
+                  isTransitioning = false;
+                }, 450);
               }
             }
           } catch (_) {
             setSyncBanner('⏳ Bağlantı bekleniyor, yazdığınız cevaplar tarayıcıda korunuyor...', true);
           }
-        }, 3500);
+        }, 1200);
       } else {
         renderCurrentQuestion();
       }
