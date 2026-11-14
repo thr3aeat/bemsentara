@@ -252,6 +252,23 @@ router.get("/tickets/new", (req, res) => {
   res.send(renderCreateTicketPage(req.user, cats, req.query));
 });
 
+router.get("/tickets/:ticketId", async (req, res) => {
+  if (!req.user) return res.redirect("/login?redirect=" + encodeURIComponent(req.originalUrl));
+  try {
+    const Ticket = require("../../models/Ticket");
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) return res.status(404).send("Bilet bulunamadı.");
+    if (ticket.userId !== req.user.discordId && !req.user.isStaff && !isSiteAdmin(req.user)) {
+      return res.status(403).send("Bu bileti görüntüleme yetkiniz yok.");
+    }
+    const { renderTicketChatPage } = require("../views/ticketChatPage");
+    res.send(renderTicketChatPage(req.user, ticket));
+  } catch (err) {
+    console.error("[Pages] Ticket chat error:", err.message);
+    res.status(500).send("Bilet sohbeti yüklenemedi.");
+  }
+});
+
 router.get("/staff", (req, res) => {
   const { isSiteStaff } = require("../../utils/adminCheck");
   if (!req.user || !isSiteStaff(req.user)) return res.redirect("/");

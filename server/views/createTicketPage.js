@@ -986,8 +986,8 @@ function renderCreateTicketPage(user, categories = [], initialQuery = {}) {
             submitText.textContent = 'Yönlendiriliyorsunuz...';
 
             setTimeout(() => {
-              window.location.href = '/tickets';
-            }, 1800);
+              window.location.href = ticketId ? ('/tickets/' + encodeURIComponent(ticketId)) : '/tickets';
+            }, 1200);
           } else {
             isSubmittingTicket = false;
             showAlert(data.error || 'Bilet oluşturulurken bir hata meydana geldi.', 'error');

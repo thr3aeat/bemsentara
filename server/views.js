@@ -11134,6 +11134,7 @@ async function renderTicketsPage(user) {
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:0.75rem;">
+              <a href="/tickets/${_esc(t.ticketId)}" class="btn btn-sm" style="background:#0071e3;color:#fff;font-weight:700;border-radius:980px;padding:0.45rem 1rem;text-decoration:none;">💬 Canlı Sohbet</a>
               ${rateAction}
             </div>
           </div>

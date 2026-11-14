@@ -3347,14 +3347,40 @@ function initializeDiscordHandlers(client) {
     // ── Ticket AI devre dışı ────────────────────────────────────────────────
     // (Ticket kanallarında AI konuşması kaldırıldı)
 
-    // ── Ticket inaktivite uyarısını iptal et (kullanıcı yazdı) ───────────────
+    // ── Ticket inaktivite uyarısını iptal et & Web bilet sohbetini senkronize et ─
     try {
       if (message.channel.name?.startsWith('ticket-')) {
         const Ticket = require('../../models/Ticket');
         const { cancelInactivityWarning } = require('../services/ticketCleanup');
         const ticket = await Ticket.findOne({ channelId: message.channel.id, status: 'open' });
-        if (ticket && !message.author.bot) {
+        if (ticket && !message.author.bot && message.content?.trim()) {
           cancelInactivityWarning(ticket.ticketId);
+          if (!Array.isArray(ticket.messages)) ticket.messages = [];
+          const isTicketOwner = message.author.id === ticket.userId;
+          ticket.messages.push({
+            id: `dc-${message.id}`,
+            sender: isTicketOwner ? 'user' : 'staff',
+            senderName: message.member?.displayName || message.author.username,
+            content: message.content.trim().slice(0, 1500),
+            createdAt: new Date()
+          });
+          if (!isTicketOwner) {
+            ticket.staffJoined = true;
+            ticket.staffJoinedBy = message.author.username;
+          } else if (!ticket.staffJoined) {
+            const { answerAsTicketStaff } = require('../../server/services/ticketStaffAIService');
+            const aiReply = await answerAsTicketStaff({ ticket, userMessage: message.content.trim() });
+            ticket.messages.push({
+              id: `ai-${Date.now()}`,
+              sender: 'ekoai',
+              senderName: 'EkoYıldız Yetkili',
+              content: aiReply,
+              createdAt: new Date()
+            });
+            await message.channel.send(`💬 **EkoYıldız Yetkili:** ${aiReply}`).catch(() => {});
+          }
+          await ticket.save();
+          try { require('../../models/Store').saveStoreNow(); } catch (_) {}
         }
       }
     } catch (_) { }

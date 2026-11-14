@@ -394,6 +394,8 @@ router.post("/api/tickets", async (req, res) => {
     const { ChannelType, PermissionFlagsBits } = require("discord.js");
     const { getDiscordClient } = require("../../bot/discordClient");
     const { sendTicketPanels, formatPanelError } = require("../../bot/services/ticketLifecycleService");
+    const { buildInitialTicketGreeting } = require("../services/ticketStaffAIService");
+    const initialGreeting = buildInitialTicketGreeting({ category: c, subject: s, description: d });
     const ticketId = generateTicketId();
     const ticket = new Ticket({
       ticketId,
@@ -404,6 +406,11 @@ router.post("/api/tickets", async (req, res) => {
       description: d,
       priority: prio,
       source: "web",
+      staffJoined: false,
+      messages: [
+        { id: `u-${Date.now()}`, sender: "user", senderName: req.user.discordUsername, content: d, createdAt: new Date() },
+        { id: `ai-${Date.now() + 1}`, sender: "ekoai", senderName: "EkoYıldız Yetkili", content: initialGreeting, createdAt: new Date() }
+      ],
       deliveryState: "pending_delivery",
     });
     await ticket.save();
@@ -486,6 +493,7 @@ router.post("/api/tickets", async (req, res) => {
     if (discordTicketChannel) {
       try {
         await sendTicketPanels(ticket, discordTicketChannel);
+        await discordTicketChannel.send(`💬 **EkoYıldız Yetkili:** ${initialGreeting}`).catch(() => {});
       } catch (panelError) {
         ticket.deliveryState = "pending_retry";
         ticket.deliveryError = panelError.message;
@@ -521,6 +529,128 @@ router.post("/api/tickets", async (req, res) => {
     });
   } catch (err) {
     console.error("Web ticket create error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Web Ticket Canlı Mesajlaşma & EkoAI Yetkili Desteği ────────────────────
+router.get("/api/tickets/:ticketId/messages", async (req, res) => {
+  if (!requireLogin(req, res)) return;
+  try {
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) return res.status(404).json({ error: "Ticket bulunamadı." });
+    if (ticket.userId !== req.user.discordId && !req.user.isStaff && !isSiteAdmin(req.user)) {
+      return res.status(403).json({ error: "Yetkiniz yok." });
+    }
+    res.json({
+      success: true,
+      ticketId: ticket.ticketId,
+      status: ticket.status,
+      staffJoined: !!ticket.staffJoined,
+      messages: Array.isArray(ticket.messages) ? ticket.messages : []
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/tickets/:ticketId/messages", async (req, res) => {
+  if (!requireLogin(req, res)) return;
+  const content = String(req.body?.content || "").trim();
+  if (!content) return res.status(400).json({ error: "Mesaj boş olamaz." });
+  if (content.length > 1500) return res.status(400).json({ error: "Mesaj en fazla 1500 karakter olabilir." });
+
+  try {
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) return res.status(404).json({ error: "Ticket bulunamadı." });
+    if (ticket.userId !== req.user.discordId && !req.user.isStaff && !isSiteAdmin(req.user)) {
+      return res.status(403).json({ error: "Yetkiniz yok." });
+    }
+    if (ticket.status === "closed") {
+      return res.status(400).json({ error: "Kapalı bilete mesaj gönderilemez." });
+    }
+
+    if (!Array.isArray(ticket.messages)) ticket.messages = [];
+    const isStaffReply = (req.user.isStaff || isSiteAdmin(req.user)) && req.user.discordId !== ticket.userId;
+
+    const msgObj = {
+      id: `m-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      sender: isStaffReply ? "staff" : "user",
+      senderName: req.user.discordUsername || (isStaffReply ? "Yetkili" : "Kullanıcı"),
+      content,
+      createdAt: new Date()
+    };
+    ticket.messages.push(msgObj);
+    if (isStaffReply) {
+      ticket.staffJoined = true;
+      ticket.staffJoinedBy = req.user.discordUsername;
+    }
+
+    // Discord kanalına da ilet
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient ? getDiscordClient() : null;
+    let dcChannel = null;
+    if (client?.isReady() && ticket.channelId) {
+      dcChannel = await client.channels.fetch(ticket.channelId).catch(() => null);
+      if (dcChannel) {
+        const prefix = isStaffReply ? `🛡️ **${msgObj.senderName} (Web):**` : `👤 **${msgObj.senderName} (Web):**`;
+        await dcChannel.send(`${prefix} ${content}`).catch(() => {});
+      }
+    }
+
+    // Eko/yetkili henüz gelmediyse EkoAI gerçek yetkili gibi yanıt versin
+    if (!isStaffReply && !ticket.staffJoined) {
+      const { answerAsTicketStaff } = require("../services/ticketStaffAIService");
+      const aiReply = await answerAsTicketStaff({ ticket, userMessage: content });
+      ticket.messages.push({
+        id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        sender: "ekoai",
+        senderName: "EkoYıldız Yetkili",
+        content: aiReply,
+        createdAt: new Date()
+      });
+      if (dcChannel) {
+        await dcChannel.send(`💬 **EkoYıldız Yetkili:** ${aiReply}`).catch(() => {});
+      }
+    }
+
+    await ticket.save();
+    saveStoreNow();
+    res.json({ success: true, messages: ticket.messages, staffJoined: !!ticket.staffJoined });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/api/tickets/:ticketId/call-eko", async (req, res) => {
+  if (!requireLogin(req, res)) return;
+  try {
+    const ticket = await Ticket.findOne({ ticketId: req.params.ticketId });
+    if (!ticket) return res.status(404).json({ error: "Ticket bulunamadı." });
+    if (ticket.userId !== req.user.discordId && !req.user.isStaff && !isSiteAdmin(req.user)) {
+      return res.status(403).json({ error: "Yetkiniz yok." });
+    }
+
+    const { getDiscordClient } = require("../../bot/discordClient");
+    const client = getDiscordClient ? getDiscordClient() : null;
+    if (client?.isReady() && ticket.channelId) {
+      const dcChannel = await client.channels.fetch(ticket.channelId).catch(() => null);
+      if (dcChannel) {
+        await dcChannel.send(`🔔 @here **${req.user.discordUsername}** web bilet sohbetinde Eko / yetkili bekliyor!`).catch(() => {});
+      }
+    }
+    if (!Array.isArray(ticket.messages)) ticket.messages = [];
+    ticket.messages.push({
+      id: `sys-${Date.now()}`,
+      sender: "ekoai",
+      senderName: "EkoYıldız Yetkili",
+      content: "Eko'ya bildirim gönderildi! Geldiğinde doğrudan buradan yazacaktır, o zamana kadar benimle devam edebilirsiniz.",
+      createdAt: new Date()
+    });
+    await ticket.save();
+    saveStoreNow();
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
