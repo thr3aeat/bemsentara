@@ -25,6 +25,18 @@ Kesin Kurallar:
 3. Cevabının ilk satırında eğer uygun bir resmi başlık öneriyorsan "BAŞLIK: [BÜYÜK HARFLERLE RESMİ BAŞLIK]" formatında yaz, hemen alt satırdan itibaren doğrudan "MADDE 1 — ..." ile sözleşme metnine başla.
 4. Asla sohbet cümlesi, selamlama, açıklama veya markdown kod bloğu ekleme; doğrudan resmi sözleşme maddelerini üret.`;
 
+function parseQuestionList(input) {
+  if (Array.isArray(input)) {
+    return input
+      .map(q => String(q || '').replace(/^\s*[-•*]\s*/, '').trim())
+      .filter(Boolean);
+  }
+  return String(input || '')
+    .split(/\r?\n/)
+    .map(line => line.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
+}
+
 function buildFallbackEnhancedContract({ title, content, partyOne, partyTwo, mode }) {
   const cleanTitle = (title && title.trim())
     ? title.trim().toUpperCase()
@@ -37,34 +49,22 @@ function buildFallbackEnhancedContract({ title, content, partyOne, partyTwo, mod
 
   const expanded = `MADDE 1 — TARAFLAR, TANIMLAR VE SÖZLEŞMENİN AMACI
 1.1. İşbu ${cleanTitle} ("Sözleşme"), bir tarafta ${p1} ("Kurum" veya "1. Taraf") ile diğer tarafta elektronik ortamda fare (mouse) vasıtasıyla ıslak görünümlü elektronik imzası bulunan ${p2} ("Muhatap" veya "2. Taraf") arasında tam bir irade mutabakatı ile akdedilmiştir.
-1.2. İşbu Sözleşmenin temel amacı; Taraflar arasındaki idari, teknik, hukuki ve operasyonel ilişkilerin sınırlarını tayin etmek, kurumsal disiplini tesis etmek ve aşağıda belirtilen özel hükümler çerçevesinde karşılıklı hak ve yükümlülükleri bağlayıcı hüküm altına almaktır.
 
 MADDE 2 — SÖZLEŞMENİN KONUSU VE ÖZEL KAPSAMI
 2.1. İşbu Sözleşmenin esas konusu ve dayanağı olan özel hükümler şunlardır:
 ${seedText}
-2.2. Yukarıda zikredilen hususlar, işbu Sözleşmenin ayrılmaz bir cüzü olup, Muhatap bu maddelerin tamamını kayıtsız ve şartsız olarak gayrikabili rücu kabul, beyan ve taahhüt etmiştir.
 
 MADDE 3 — TARAFLARIN HAK, YETKİ VE YÜKÜMLÜLÜKLERİ
 3.1. Muhatap, ${p1} tarafından belirlenen tüm kurumsal yönergelere, iç tüzük hükümlerine, çalışma etiğine ve güvenlik protokollerine tam bir sadakatle riayet edeceğini taahhüt eder.
-3.2. Muhatap, kendisine tevdi edilen hiçbir yetkiyi, erişim anahtarını, yönetim panelini veya kurumsal imtiyazı şahsi menfaati yahut üçüncü kişilerin çıkarı doğrultusunda kullanamaz; yetki sınırlarını aşacak her türlü eylemden münhasıran sorumludur.
 
 MADDE 4 — MUTLAK GİZLİLİK, SIR SAKLAMA VE VERİ GÜVENLİĞİ YÜKÜMLÜLÜĞÜ
 4.1. Kurum bünyesinde edinilen her türlü iç yazışma, yönetim kararı, yazılım mimarisi, kaynak kodu, veritabanı yapısı, moderasyon kayıtları ve stratejik planlamalar 6698 sayılı KVKK ve ilgili mevzuat uyarınca "Mutlak Gizli Bilgi" statüsündedir.
-4.2. Muhatap, sözleşme yürürlükte olduğu sürece ve sözleşme herhangi bir sebeple sona erdikten sonra dahi süresiz olarak bu bilgileri üçüncü şahıs, kurum veya platformlarla paylaşmayacağını, ifşa etmeyeceğini ve kopyalamayacağını taahhüt eder.
 
-MADDE 5 — 5846 SAYILI FSEK KAPSAMINDA FİKRİ MÜLKİYET HAKLARI
-5.1. ${p1} çatısı altında üretilen tüm dijital içerikler, bot sistemleri, tasarımlar, dokümanlar ve projeler üzerindeki her türlü mali ve manevi telif hakkı münhasıran Kurum'a aittir.
+MADDE 5 — SÖZLEŞMENİN İHLALİ, CEZAİ ŞARTLAR VE DERHAL FESİH
+5.1.${mode === 'strict_penalty' ? ' Ağır ihlal ve sır ifşası hallerinde Muhatap, Kurum\'un uğradığı tüm maddi, manevi ve itibar kaybı zararlarını ilk talepte nakden ve defaten tazmin etmeyi kabul eder.' : ' İhlal sebebiyle doğacak her türlü idari ve hukuki sorumluluk doğrudan doğruya Muhatap\'a aittir.'}
 
-MADDE 6 — SÖZLEŞMENİN İHLALİ, CEZAİ ŞARTLAR VE DERHAL FESİH
-6.1. Muhatap'ın işbu Sözleşme maddelerinden herhangi birine kısmen veya tamamen aykırı hareket etmesi halinde, Kurum hiçbir ihtar veya ihbara gerek kalmaksızın sözleşmeyi tek taraflı ve derhal feshetme, tüm yetki ve hakları geri alma ve Muhatap'ı kalıcı yasaklı (blacklist) listesine alma hakkına sahiptir.
-6.2.${mode === 'strict_penalty' ? ' Ağır ihlal ve sır ifşası hallerinde Muhatap, Kurum\'un uğradığı tüm maddi, manevi ve itibar kaybı zararlarını ilk talepte nakden ve defaten tazmin etmeyi kabul eder.' : ' İhlal sebebiyle doğacak her türlü idari ve hukuki sorumluluk doğrudan doğruya Muhatap\'a aittir.'}
-
-MADDE 7 — ELEKTRONİK İMZA GEÇERLİLİĞİ VE DELİL SÖZLEŞMESİ (HMK MADDE 193)
-7.1. Taraflar, işbu sözleşmenin elektronik ortamda görüntülenerek fare (mouse) veya dokunmatik ekran vasıtasıyla atılan elektronik imza ile imzalanmasının, ıslak imzalı belge ile aynı hukuki bağlayıcılığa sahip olduğunu kabul eder.
-7.2. İşbu sözleşmeden doğabilecek her türlü uyuşmazlıkta, 6100 sayılı Hukuk Muhakemeleri Kanunu'nun (HMK) 193. maddesi uyarınca ${p1} sunucu kayıtları, veritabanı logları, zaman damgaları ve SHA-256 kriptografik imza özetleri kesin ve münhasır delil teşkil eder.
-
-MADDE 8 — YÜRÜRLÜK VE İMZA
-8.1. Sekiz (8) ana maddeden ibaret olan işbu Resmi Sözleşme, Taraflarca okunup müzakere edilerek elektronik ortamda imzalandığı anda yürürlüğe girmiştir.`;
+MADDE 6 — ELEKTRONİK İMZA GEÇERLİLİĞİ VE DELİL SÖZLEŞMESİ (HMK MADDE 193)
+6.1. İşbu sözleşmeden doğabilecek her türlü uyuşmazlıkta, 6100 sayılı HMK 193. maddesi uyarınca ${p1} sunucu kayıtları ve zaman damgaları kesin delil teşkil eder.`;
 
   return { title: cleanTitle, content: expanded };
 }
@@ -76,18 +76,22 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── PUBLIC ROUTES: Soru Sözleşmesi (Tek Tek Soran Sihirbaz) ─────────────────
+// ── PUBLIC ROUTES: Soru Sözleşmesi & Kahoot Modu ────────────────────────────
 
 router.get(['/soru-sozlesmesi', '/kamp-sozlesmesi'], (req, res) => {
   const templateContract = {
     _id: 'genel',
     type: 'QUESTIONNAIRE',
+    kahootMode: false,
     title: 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ',
-    headerSubtitle: 'EKOYILDIZ & SENTARA • KAMP TANITIM VE İNCELEME BİRİMİ',
+    headerSubtitle: 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ',
     documentNo: `EKO-${new Date().getFullYear()}/KAMP-GENEL`,
     partyOneName: 'EkoYıldız & Sentara Yönetimi',
     partyTwoName: '',
     questions: DEFAULT_CAMP_QUESTIONS,
+    answers: [],
+    currentStep: 0,
+    waitingForAdmin: false,
     status: 'PENDING',
   };
   return res.send(renderPublicQuestionContractPage(templateContract, req.user));
@@ -122,7 +126,107 @@ router.get(['/sozlesme/:id', '/contracts/:id'], (req, res) => {
   return res.send(renderPublicContractPage(contract, req.user));
 });
 
-// ── PUBLIC API: Soru Sözleşmesi Cevaplarını Kaydet ve Yönetim Paneline Gönder ──
+// ── PUBLIC API: Kahoot Modu Canlı Durum & Tek Tek Cevaplama ─────────────────
+
+router.get('/api/question-contracts/:id/state', (req, res) => {
+  const rawId = String(req.params.id || '').trim();
+  const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+  if (!contract) {
+    return res.status(404).json({ success: false, error: 'Soru sözleşmesi bulunamadı.' });
+  }
+  const questions = Array.isArray(contract.questions) ? contract.questions : [];
+  const step = Number(contract.currentStep || 0);
+  const currentQuestion = step < questions.length ? questions[step] : null;
+  const answers = Array.isArray(contract.answers) ? contract.answers : [];
+
+  return res.json({
+    success: true,
+    status: contract.status,
+    kahootMode: !!contract.kahootMode,
+    currentStep: step,
+    currentQuestion,
+    hasMoreQuestions: step < questions.length,
+    waitingForAdmin: !!contract.waitingForAdmin,
+    nextRequestedAt: contract.nextRequestedAt || null,
+    answers,
+  });
+});
+
+router.post('/api/question-contracts/:id/answer-step', async (req, res) => {
+  try {
+    const rawId = String(req.params.id || '').trim();
+    const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+    if (!contract) {
+      return res.status(404).json({ success: false, error: 'Soru sözleşmesi bulunamadı.' });
+    }
+    if (contract.status === 'SIGNED') {
+      return res.status(400).json({ success: false, error: 'Bu soru sözleşmesi tamamlanmış.' });
+    }
+
+    const answer = String(req.body?.answer || '').trim();
+    if (!answer) {
+      return res.status(400).json({ success: false, error: 'Lütfen cevabınızı yazınız.' });
+    }
+
+    const questions = Array.isArray(contract.questions) ? contract.questions : [];
+    const step = Number(contract.currentStep || 0);
+    const questionText = questions[step] || String(req.body?.question || 'Soru').trim();
+
+    if (!Array.isArray(contract.answers)) contract.answers = [];
+    const existingIdx = contract.answers.findIndex(a => Number(a.stepIndex) === step);
+    const entry = {
+      stepIndex: step,
+      question: questionText,
+      answer,
+      answeredAt: new Date().toISOString(),
+    };
+    if (existingIdx >= 0) {
+      contract.answers[existingIdx] = entry;
+    } else {
+      contract.answers.push(entry);
+    }
+
+    if (!contract.signerName) {
+      contract.signerName = answer.slice(0, 80);
+    }
+    contract.content = contract.answers.map(a => `SORU: ${a.question}\nCEVAP: ${a.answer}`).join('\n\n');
+    contract.waitingForAdmin = true;
+    contract.nextRequestedAt = new Date().toISOString();
+
+    await contract.save();
+    await saveStoreNow();
+
+    return res.json({
+      success: true,
+      waitingForAdmin: true,
+      currentStep: step,
+      answers: contract.answers,
+    });
+  } catch (err) {
+    console.error('[kahoot/answer-step] error:', err);
+    return res.status(500).json({ success: false, error: 'Cevap kaydedilemedi.' });
+  }
+});
+
+router.post('/api/question-contracts/:id/request-next', async (req, res) => {
+  try {
+    const rawId = String(req.params.id || '').trim();
+    const contract = contracts.findById(rawId) || contracts.findOne({ documentNo: rawId });
+    if (!contract) {
+      return res.status(404).json({ success: false, error: 'Soru sözleşmesi bulunamadı.' });
+    }
+    contract.nextRequestedAt = new Date().toISOString();
+    contract.waitingForAdmin = true;
+    await contract.save();
+    await saveStoreNow();
+
+    return res.json({ success: true, nextRequestedAt: contract.nextRequestedAt });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── PUBLIC API: Normal Soru Sözleşmesi Cevaplarını Kaydet ────────────────────
 
 router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answers'], async (req, res) => {
   try {
@@ -134,9 +238,10 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
     }
 
     const cleanedAnswers = rawAnswers.map((item, idx) => ({
-      index: idx + 1,
-      question: String(item?.question || `Soru ${idx + 1}`).trim(),
+      stepIndex: idx,
+      question: String(item?.question || '').trim(),
       answer: String(item?.answer || '').trim(),
+      answeredAt: new Date().toISOString(),
     }));
 
     const hasEmpty = cleanedAnswers.some(a => !a.answer);
@@ -149,7 +254,7 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
     const autoSignerName = [firstAns, secondAns].filter(Boolean).join(' / ').slice(0, 80) || (req.user?.username || 'Katılımcı');
 
     const formattedContent = cleanedAnswers
-      .map(a => `SORU ${a.index} — ${a.question}\nCEVAP: ${a.answer}`)
+      .map(a => `SORU: ${a.question}\nCEVAP: ${a.answer}`)
       .join('\n\n');
 
     const signedAt = new Date().toISOString();
@@ -171,6 +276,7 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
       existing.signerDiscordId = req.user?.discordId || null;
       existing.signedAt = signedAt;
       existing.signatureHash = signatureHash;
+      existing.waitingForAdmin = false;
       await existing.save();
       await saveStoreNow();
 
@@ -183,8 +289,9 @@ router.post(['/api/question-contracts/submit', '/api/contracts/:id/submit-answer
 
     const created = contracts.create({
       type: 'QUESTIONNAIRE',
+      kahootMode: false,
       title: existing?.title || 'KAMP TANITIM VE BAŞVURU SORU SÖZLEŞMESİ',
-      headerSubtitle: existing?.headerSubtitle || 'EKOYILDIZ & SENTARA • KAMP TANITIM VE İNCELEME BİRİMİ',
+      headerSubtitle: existing?.headerSubtitle || 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ',
       documentNo,
       partyOneName: existing?.partyOneName || 'EkoYıldız & Sentara Yönetimi',
       partyTwoName: existing?.partyTwoName || autoSignerName,
@@ -272,7 +379,7 @@ router.post('/api/contracts/:id/sign', async (req, res) => {
   }
 });
 
-// ── ADMIN API ROUTES: Sözleşme & Soru Sözleşmesi Yönetimi ───────────────────
+// ── ADMIN API ROUTES: Sözleşme & Soru Kahoot Yönetimi ───────────────────────
 
 router.get('/api/admin/contracts', requireAdmin, (req, res) => {
   try {
@@ -293,32 +400,34 @@ router.post('/api/admin/contracts', requireAdmin, async (req, res) => {
   try {
     const type = String(req.body?.type || 'STANDARD').trim().toUpperCase();
     const title = String(req.body?.title || '').trim();
+    const kahootMode = !!req.body?.kahootMode;
     const headerSubtitle = String(req.body?.headerSubtitle || (type === 'QUESTIONNAIRE'
-      ? 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ VE İNCELEME BİRİMİ'
+      ? (kahootMode ? 'EKOYILDIZ & SENTARA • SORU KAHOOT MODU' : 'EKOYILDIZ & SENTARA • SORU SÖZLEŞMESİ')
       : 'T.C. İSTANBUL • EKOYILDIZ & SENTARA YÜKSEK HUKUK VE DENETİM DAİRESİ BAŞKANLIĞI')).trim();
-    const documentNo = String(req.body?.documentNo || `EKO-${new Date().getFullYear()}/${type === 'QUESTIONNAIRE' ? 'SRU' : 'SZL'}-${Math.floor(1000 + Math.random() * 9000)}`).trim();
+    const documentNo = String(req.body?.documentNo || `EKO-${new Date().getFullYear()}/${type === 'QUESTIONNAIRE' ? (kahootMode ? 'KHT' : 'SRU') : 'SZL'}-${Math.floor(1000 + Math.random() * 9000)}`).trim();
     const partyOneName = String(req.body?.partyOneName || 'EkoYıldız & Sentara Yönetimi').trim();
     const partyTwoName = String(req.body?.partyTwoName || '').trim();
 
     if (type === 'QUESTIONNAIRE') {
-      const questions = Array.isArray(req.body?.questions)
-        ? req.body.questions.map(q => String(q || '').trim()).filter(Boolean)
-        : [];
-
+      const questions = parseQuestionList(req.body?.questions);
       if (questions.length === 0) {
         return res.status(400).json({ success: false, error: 'Lütfen en az 1 soru ekleyiniz.' });
       }
 
       const record = contracts.create({
         type: 'QUESTIONNAIRE',
-        title: title || 'SORU SÖZLEŞMESİ VE BAŞVURU FORMU',
+        kahootMode,
+        title: title || (kahootMode ? 'SORU KAHOOT CANLI OTURUMU' : 'SORU SÖZLEŞMESİ'),
         headerSubtitle,
         documentNo,
         partyOneName,
         partyTwoName,
         questions,
         answers: [],
-        content: questions.map((q, i) => `${i + 1}. ${q}`).join('\n'),
+        currentStep: 0,
+        waitingForAdmin: false,
+        nextRequestedAt: null,
+        content: questions.map(q => `- ${q}`).join('\n'),
         status: 'PENDING',
         createdBy: req.user?.discordId || req.user?.username || 'Admin',
         signerName: null,
@@ -359,6 +468,75 @@ router.post('/api/admin/contracts', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('[admin/contracts create] error:', err);
     return res.status(500).json({ success: false, error: 'Sözleşme oluşturulamadı.' });
+  }
+});
+
+// Admin: Kahoot modunda bir sonraki soruya geçir veya oturumu bitir
+router.post('/api/admin/contracts/:id/kahoot-next', requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const contract = contracts.findById(id);
+    if (!contract) return res.status(404).json({ success: false, error: 'Kayıt bulunamadı.' });
+
+    const finish = !!req.body?.finish;
+    const extraQuestions = parseQuestionList(req.body?.extraQuestions);
+    if (extraQuestions.length > 0) {
+      if (!Array.isArray(contract.questions)) contract.questions = [];
+      contract.questions.push(...extraQuestions);
+    }
+
+    const total = Array.isArray(contract.questions) ? contract.questions.length : 0;
+    const nextStep = Number(contract.currentStep || 0) + 1;
+
+    if (finish || nextStep >= total) {
+      contract.currentStep = total;
+      contract.status = 'SIGNED';
+      contract.waitingForAdmin = false;
+      contract.nextRequestedAt = null;
+      contract.signedAt = contract.signedAt || new Date().toISOString();
+    } else {
+      contract.currentStep = nextStep;
+      contract.waitingForAdmin = false;
+      contract.nextRequestedAt = null;
+    }
+
+    await contract.save();
+    await saveStoreNow();
+    return res.json({ success: true, contract });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Admin: Kahoot oturumu devam ederken sınırsız yeni soru (- soru) ekle
+router.post('/api/admin/contracts/:id/kahoot-append', requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    const contract = contracts.findById(id);
+    if (!contract) return res.status(404).json({ success: false, error: 'Kayıt bulunamadı.' });
+
+    const added = parseQuestionList(req.body?.questions);
+    if (added.length === 0) {
+      return res.status(400).json({ success: false, error: 'Eklenecek soru bulunamadı.' });
+    }
+    if (!Array.isArray(contract.questions)) contract.questions = [];
+    contract.questions.push(...added);
+
+    // Eğer tamamlanmışsa yeni sorularla tekrar aktif et
+    if (contract.status === 'SIGNED') {
+      contract.status = 'PENDING';
+      contract.waitingForAdmin = false;
+    } else if (contract.waitingForAdmin && contract.currentStep >= contract.questions.length - added.length) {
+      contract.currentStep = contract.questions.length - added.length;
+      contract.waitingForAdmin = false;
+      contract.nextRequestedAt = null;
+    }
+
+    await contract.save();
+    await saveStoreNow();
+    return res.json({ success: true, contract });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
