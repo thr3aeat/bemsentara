@@ -74,12 +74,20 @@ app.use((req, res, next) => {
   const origSend = res.send.bind(res);
   res.send = function (body) {
     if (res.headersSent || res.getHeader("Content-Encoding")) return origSend(body);
-    const ct = String(res.getHeader("Content-Type") || (typeof body === "string" ? "text/html" : "application/json"));
+    // Sadece string veya Content-Type'ı belli Buffer'ları sıkıştır. Buffer'ı
+    // Content-Type olmadan gönderirsek Express "application/octet-stream" koyar
+    // ve tarayıcı sayfayı göstermek yerine dosya olarak indirir.
+    const existingCt = res.getHeader("Content-Type");
+    let buf = null;
+    if (typeof body === "string") buf = Buffer.from(body, "utf8");
+    else if (Buffer.isBuffer(body) && existingCt) buf = body;
+    if (!buf || buf.length < 1024) return origSend(body);
+    const ct = String(existingCt || "text/html; charset=utf-8");
     const compressible = /text\/|application\/json|application\/javascript|image\/svg\+xml/i.test(ct);
-    const buf = Buffer.isBuffer(body) ? body : (typeof body === "string" ? Buffer.from(body, "utf8") : null);
-    if (!compressible || !buf || buf.length < 1024) return origSend(body);
+    if (!compressible) return origSend(body);
     zlib.gzip(buf, { level: 6 }, (err, zipped) => {
       if (err || res.headersSent) return origSend(body);
+      if (!existingCt) res.setHeader("Content-Type", ct);
       res.setHeader("Content-Encoding", "gzip");
       res.setHeader("Vary", "Accept-Encoding");
       res.removeHeader("Content-Length");
