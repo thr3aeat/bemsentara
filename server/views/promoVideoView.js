@@ -314,77 +314,147 @@ function renderPromoVideoPage() {
     (function() {
       const SCENES = [
         {
-          kicker: 'EKO YILDIZ TANITIM VİDEOSU',
-          title: 'SUNUCU BİLGİLERİNİZİ ALDIK!',
-          duration: 4200,
+          kicker: 'EKO YILDIZ TANITIM VİDEOSU • BÖLÜM 1',
+          title: 'SUNUCU BİLGİLERİNİZİ ALDIK! 🎉',
+          duration: 5500,
           cards: [
-            { icon: '🎬', text: 'Grafik reklam ve tanıtım süreciniz başlıyor.', style: 'purple' },
-            { icon: '⚡', text: 'Şimdi sırada mutlaka sağlanması gereken Reklam Şartları var.', style: '' }
+            { icon: '🎬', text: 'EkoYıldız & Sentara grafik reklam stüdyosuna hoş geldiniz!', style: 'purple' },
+            { icon: '😎', text: 'Soruları cevapladınız, şimdi sıra asıl aksiyona geçmekte...', style: '' }
           ]
         },
         {
-          kicker: 'BÖLÜM 1 • AÇIKLIK ŞARTLARI',
-          title: 'KAMP VE OYUN AKTİF OLMALI',
-          duration: 4800,
+          kicker: 'EKO YILDIZ TANITIM VİDEOSU • BÖLÜM 2',
+          title: 'BAŞLAMADAN ÖNCE KÜÇÜK BİR KURAL ⚡',
+          duration: 5500,
           cards: [
-            { icon: '🏕️', text: 'Kampınızın açık olması gerekir.', style: '' },
-            { icon: '🎮', text: 'Kampınızın oyununun açık olması gerekir.', style: '' }
+            { icon: '📋', text: 'Kampınızın reklamını patlatmak için aşağıdaki şartları eksiksiz hazırlamanız gerekiyor.', style: '' },
+            { icon: '🍿', text: 'Arkanıza yaslanın, eğlenceli ve net bir şekilde hepsini tek tek anlatıyoruz!', style: 'purple' }
           ]
         },
         {
-          kicker: 'BÖLÜM 2 • GÖRSEL VE TANITIM METNİ',
-          title: 'GÖRSEL & 10 SATIR MESAJ',
-          duration: 5600,
+          kicker: 'ŞART 1 • KAMP DURUMU',
+          title: 'KAMPINIZIN AÇIK OLMASI GEREKİR 🏕️',
+          duration: 5500,
           cards: [
-            { icon: '📸', text: 'Kampınızın oyunundan 25 adet görsel zorunludur.', style: 'purple' },
-            { icon: '🛡️', text: 'Kampınızın yönetimi hakkında en az 5, en çok 10 adet görsel gereklidir.', style: '' },
-            { icon: '📝', text: 'Kampınızı tanıtan 10 satırlık bir mesaj gerekmektedir.', style: '' }
+            { icon: '✅', text: 'Kampınızın aktif ve açık durumda olması zorunludur.', style: '' },
+            { icon: '🚪', text: 'Kapalı kapılar ardındaki kampa ziyaretçi çekemeyiz, değil mi? 😄', style: 'purple' }
           ]
         },
         {
-          kicker: 'BÖLÜM 3 • TRANSFER, EMAİL VE LİNKLER',
-          title: 'İLETİŞİM VE BAĞLANTI BİLGİLERİ',
-          duration: 5600,
+          kicker: 'ŞART 2 • OYUN DURUMU',
+          title: 'KAMPINIZIN OYUNUNUN AÇIK OLMASI GEREKİR 🎮',
+          duration: 5500,
           cards: [
-            { icon: '🔄', text: 'Bizden gelenlere kaç daha fazla x transfer vereceğinizi belirtmeniz gerekmektedir.', style: 'purple' },
-            { icon: '📧', text: 'Bir kamp emaili ve bir de kişisel email gerekmektedir.', style: '' },
-            { icon: '🔗', text: 'Discord, Roblox ve Transfer sunucusu linkleri lazımdır.', style: '' }
+            { icon: '✅', text: 'Roblox oyununuzun herkese açık ve girilebilir olması şarttır.', style: '' },
+            { icon: '🚀', text: 'Videoyu izleyenler hemen oyuna akın edecek, kapılar açık olsun!', style: 'purple' }
           ]
         },
         {
-          kicker: 'BÖLÜM 4 • EKİP, ROL VE FREECAM ÇEKİM',
-          title: 'GÖNÜLLÜ EKİP & 5 DK FREECAM',
-          duration: 5800,
-          cards: [
-            { icon: '👥', text: 'Kampınızdan gönüllü 3 kişinin bir gruba eklenmesi gerekir (Oyuncu / üst rütbeli fark etmez).', style: '' },
-            { icon: '🎭', text: 'Kampınızın sunucusunda "İçerik Üreticisi" adlı rol olması gerekmektedir.', style: 'purple' },
-            { icon: '🎥', text: 'Oyununuzdan veya sunucunuzdan en az 5 dakikalık freecamli çekim gereklidir.', style: 'warn' }
-          ]
-        },
-        {
-          kicker: 'BÖLÜM 5 • TESLİMAT VE ONAY KURALI',
-          title: 'TEK SEFERDE VE DÜZENLİ İLETİM',
+          kicker: 'ŞART 3 • OYUN GÖRSELLERİ',
+          title: 'OYUNDAN 25 ADET GÖRSEL ZORUNLUDUR 📸',
           duration: 6000,
           cards: [
-            { icon: '📦', text: 'YUKARIDAKİ ŞARTLARI TAMAMLADIKTAN SONRA TEK SEFERDE İLETMENİZ GEREKMEKTEDİR (Yazılar ve fotoğraflar düzenli şekilde).', style: 'warn' },
-            { icon: '⚡️', text: 'Şartlar sağlandıktan sonra mesaj olarak "Tüm şartlar sağlandı. Bir sonraki aşamaya geçebiliriz" yazılmazsa devam edilmez.', style: 'purple' }
+            { icon: '📸', text: 'Kampınızın oyunundan tam 25 adet net ve kaliteli görsel zorunludur.', style: 'purple' },
+            { icon: '🧐', text: 'Evet tek tek sayıyoruz: 24 olursa olmaz, 25/25 tam kadro!', style: 'warn' }
           ]
         },
         {
-          kicker: 'BÖLÜM 6 • AKTİFLİK VE YAYIN SIRASI',
-          title: 'BİLDİRİMLER & YAYIN TAKVİMİ',
+          kicker: 'ŞART 4 • YÖNETİM GÖRSELLERİ',
+          title: 'YÖNETİM HAKKINDA 5 İLA 10 GÖRSEL 🛡️',
+          duration: 6000,
+          cards: [
+            { icon: '🛡️', text: 'Kampınızın yönetimi hakkında en az 5, en çok 10 adet görsel gereklidir.', style: '' },
+            { icon: '👑', text: 'Yönetim kadronuzu, düzeninizi ve profesyonelliğinizi gösterin!', style: 'purple' }
+          ]
+        },
+        {
+          kicker: 'ŞART 5 • TANITIM MESAJI',
+          title: 'KAMPINIZI TANITAN 10 SATIRLIK MESAJ 📝',
+          duration: 6000,
+          cards: [
+            { icon: '📝', text: 'Kampınızı en iyi anlatan tam 10 satırlık bir tanıtım metni gerekmektedir.', style: 'purple' },
+            { icon: '✨', text: 'Kısa kesmeyin, kampınızın ruhunu ve farkını 10 satırda konuşturun!', style: '' }
+          ]
+        },
+        {
+          kicker: 'ŞART 6 • TRANSFER AVANTAJI',
+          title: 'KAÇ DAHA FAZLA X TRANSFER VERECEKSİNİZ? 🔄',
+          duration: 6000,
+          cards: [
+            { icon: '🔄', text: 'Kampınızda bizden gelenlere kaç daha fazla x transfer vereceğinizi belirtmeniz gerekmektedir.', style: 'purple' },
+            { icon: '💎', text: 'Özel ayrıcalık ne kadar iyiyse, gelen kitle de o kadar coşar!', style: '' }
+          ]
+        },
+        {
+          kicker: 'ŞART 7 • RESMİ İLETİŞİM',
+          title: '1 KAMP EMAİLİ + 1 KİŞİSEL EMAİL 📧',
+          duration: 5800,
+          cards: [
+            { icon: '📧', text: 'Bir kamp emaili ve bir de kişisel email adresiniz gerekmektedir.', style: '' },
+            { icon: '🔒', text: 'İletişim kopmasın, resmi bilgilendirmeler doğrudan size ulaşsın.', style: 'purple' }
+          ]
+        },
+        {
+          kicker: 'ŞART 8 • TÜM BAĞLANTILAR',
+          title: 'DİSCORD, ROBLOX VE TRANSFER LİNKLERİ 🔗',
+          duration: 5800,
+          cards: [
+            { icon: '🔗', text: 'Discord sunucu daveti, Roblox grup linki ve Transfer sunucusu linkleri lazımdır.', style: 'purple' },
+            { icon: '🧭', text: 'Linkler güncel ve sınırsız/aktif olsun ki kimse yolda kaybolmasın!', style: '' }
+          ]
+        },
+        {
+          kicker: 'ŞART 9 • GÖNÜLLÜ EKİP',
+          title: 'KAMPINIZDAN GÖNÜLLÜ 3 KİŞİ GRUBA EKLENECEK 👥',
+          duration: 6000,
+          cards: [
+            { icon: '👥', text: 'Kampınızdan gönüllü 3 kişinin bir gruba eklenmesi gerekmektedir.', style: '' },
+            { icon: '🤝', text: 'Oyuncu veya üst rütbeli olması fark etmez, koordinasyon için 3 gönüllü şart!', style: 'purple' }
+          ]
+        },
+        {
+          kicker: 'ŞART 10 • ÖZEL SUNUCU ROLÜ',
+          title: '"İÇERİK ÜRETİCİSİ" ROLÜ ŞART 🎭',
+          duration: 5800,
+          cards: [
+            { icon: '🎭', text: 'Kampınızın Discord sunucusunda "İçerik Üreticisi" adlı rol olması gerekmektedir.', style: 'purple' },
+            { icon: '🎬', text: 'Ekibimiz sunucuya geldiğinde rütbesiz kalmasın, rol hazır beklesin! 😄', style: '' }
+          ]
+        },
+        {
+          kicker: 'ŞART 11 • YÖNETMEN KOLTUĞU',
+          title: 'EN AZ 5 DAKİKALIK FREECAM ÇEKİM 🎥',
           duration: 6200,
           cards: [
-            { icon: '🔔', text: 'Video yapımı sırasında gelişmeler durumunda aktif olmanız ve grubun bildirimlerini açık tutmanız gerekir.', style: '' },
-            { icon: '📅', text: 'Şartlar tamamlandıktan sonra 1 video atılacak; bunda reklamınız yayınlanmayacak, ondan bir sonraki videoda yayınlanacak (çünkü sıradaki videoda başka bir familynin reklamı gelecek).', style: 'warn' }
+            { icon: '🎥', text: 'Oyununuzdan veya sunucunuzdan en az 5 dakikalık freecamli çekim gereklidir.', style: 'warn' },
+            { icon: '🍿', text: 'Kamera açıları aksın, haritanız sinema filmi gibi parlasın!', style: 'purple' }
           ]
         },
         {
-          kicker: 'EKO YILDIZ & SENTARA',
-          title: 'HAZIRSANIZ BAŞLAYALIM! ⚡️',
-          duration: 4500,
+          kicker: 'KRİTİK KURAL • TESLİMAT ŞEKLİ',
+          title: 'HEPSİNİ TEK SEFERDE VE DÜZENLİ ATIN 📦',
+          duration: 6500,
           cards: [
-            { icon: '✅', text: 'Tüm şartları tek seferde ilettikten sonra: "Tüm şartlar sağlandı. Bir sonraki aşamaya geçebiliriz" yazmayı unutmayın.', style: 'purple' }
+            { icon: '📦', text: 'YUKARIDAKİ ŞARTLARI TAMAMLADIKTAN SONRA TEK SEFERDE İLETMENİZ GEREKMEKTEDİR (Yazılar ve fotoğraflar düzenli şekilde).', style: 'warn' },
+            { icon: '⚡️', text: 'Şartlar sağlandıktan sonra mesaj olarak "Tüm şartlar sağlandı. Bir sonraki aşamaya geçebiliriz" yazılmazsa devam edilmez. ⚡️', style: 'purple' }
+          ]
+        },
+        {
+          kicker: 'SON ADIM • AKTİFLİK VE YAYIN SIRASI',
+          title: 'BİLDİRİMLER AÇIK & SIRADAKİ YAYIN 📅',
+          duration: 7000,
+          cards: [
+            { icon: '🔔', text: 'Video yapımı sırasında gelişmeler durumunda aktif olmanız ve grubun bildirimlerini açık tutmanız gerekir.', style: '' },
+            { icon: '📅', text: 'Şartlar tamamlandıktan sonra 1 video atılacak; bunda reklamınız yayınlanmayacak, ondan bir sonraki videoda yayınlanacak (çünkü bundan bir sonrakinde başka bir familynin reklamı gelecek).', style: 'warn' }
+          ]
+        },
+        {
+          kicker: 'EKO YILDIZ & SENTARA • FİNAL',
+          title: 'ŞİMDİ SIRA SİZDE! 🚀⚡️',
+          duration: 5500,
+          cards: [
+            { icon: '✅', text: 'Tüm dosyaları tek seferde düzenli iletin ve sihirli cümleyi yazın: "Tüm şartlar sağlandı. Bir sonraki aşamaya geçebiliriz"', style: 'purple' },
+            { icon: '🎬', text: 'Aşağıdaki butondan onay mesajını tek tıkla kopyalayabilirsiniz!', style: '' }
           ]
         }
       ];

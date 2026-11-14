@@ -44,20 +44,37 @@ function renderAdminQuestionContractsWorkspace() {
     </div>
   </header>
 
-  <!-- Hazır Genel Kamp Soru Sözleşmesi Linki Bandı -->
-  <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(16,185,129,0.12));border:1px solid rgba(99,102,241,0.38);border-radius:16px;padding:1.1rem 1.35rem;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-    <div>
-      <div style="font-weight:800;font-size:1rem;color:#fff;display:flex;align-items:center;gap:0.5rem;">
-        <span>🏕️</span> <span>Hazır Kamp Soru Sözleşmesi Linki (Her Zaman Aktif)</span>
+  <!-- Hazır Genel Kamp Soru Sözleşmesi & Ayrı Tanıtım Videosu Linki Bandı -->
+  <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(16,185,129,0.12));border:1px solid rgba(99,102,241,0.38);border-radius:16px;padding:1.1rem 1.35rem;margin-bottom:1.5rem;display:grid;gap:0.9rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-weight:800;font-size:1rem;color:#fff;display:flex;align-items:center;gap:0.5rem;">
+          <span>🏕️</span> <span>Hazır Kamp Soru Sözleşmesi Linki (Her Zaman Aktif)</span>
+        </div>
+        <div style="font-size:0.82rem;color:#cbd5e1;margin-top:0.2rem;">
+          Bu genel linki paylaşabilirsiniz veya aşağıdan <strong>Soru Kahoot Modu</strong> ile kendi <code>- soru</code> listenizi oluşturabilirsiniz.
+        </div>
       </div>
-      <div style="font-size:0.82rem;color:#cbd5e1;margin-top:0.2rem;">
-        Bu genel linki paylaşabilirsiniz veya aşağıdan <strong>Soru Kahoot Modu</strong> ile kendi <code>- soru</code> listenizi oluşturabilirsiniz.
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="qcontract-general-url" readonly value="/soru-sozlesmesi" style="min-width:250px;padding:0.55rem 0.8rem;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:#34d399;font-family:monospace;font-size:0.85rem;font-weight:700;" />
+        <button type="button" onclick="window.copyGeneralQContractLink()" style="background:#10b981;border:none;color:#052e16;font-weight:800;padding:0.6rem 1rem;border-radius:10px;cursor:pointer;font-size:0.82rem;">📋 Linki Kopyala</button>
+        <a href="/soru-sozlesmesi" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;text-decoration:none;font-weight:700;padding:0.6rem 0.95rem;border-radius:10px;font-size:0.82rem;">↗ Aç</a>
       </div>
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-      <input type="text" id="qcontract-general-url" readonly value="/soru-sozlesmesi" style="min-width:250px;padding:0.55rem 0.8rem;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.18);border-radius:10px;color:#34d399;font-family:monospace;font-size:0.85rem;font-weight:700;" />
-      <button type="button" onclick="window.copyGeneralQContractLink()" style="background:#10b981;border:none;color:#052e16;font-weight:800;padding:0.6rem 1rem;border-radius:10px;cursor:pointer;font-size:0.82rem;">📋 Linki Kopyala</button>
-      <a href="/soru-sozlesmesi" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;text-decoration:none;font-weight:700;padding:0.6rem 0.95rem;border-radius:10px;font-size:0.82rem;">↗ Aç</a>
+    <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:0.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div style="font-weight:800;font-size:0.98rem;color:#f5d0fe;display:flex;align-items:center;gap:0.5rem;">
+          <span>🎬</span> <span>EKO YILDIZ TANITIM VİDEOSU (Ayrı Reklam Şartları Video Linki)</span>
+        </div>
+        <div style="font-size:0.8rem;color:#cbd5e1;margin-top:0.18rem;">
+          Sunucu bilgilerini aldıktan sonra reklam şartlarını uzun ve eğlenceli şekilde anlatan ayrı grafik video sayfası.
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="promo-video-url" readonly value="/tanitim-videosu" style="min-width:250px;padding:0.55rem 0.8rem;background:rgba(0,0,0,0.45);border:1px solid rgba(167,139,250,0.35);border-radius:10px;color:#e879f9;font-family:monospace;font-size:0.85rem;font-weight:700;" />
+        <button type="button" onclick="window.copyPromoVideoLink()" style="background:linear-gradient(135deg,#7c3aed,#ec4899);border:none;color:#fff;font-weight:800;padding:0.6rem 1rem;border-radius:10px;cursor:pointer;font-size:0.82rem;">🎬 Video Linkini Kopyala</button>
+        <a href="/tanitim-videosu" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;text-decoration:none;font-weight:700;padding:0.6rem 0.95rem;border-radius:10px;font-size:0.82rem;">↗ Aç</a>
+      </div>
     </div>
   </div>
 
@@ -223,7 +240,18 @@ function renderAdminQuestionContractsWorkspace() {
         if (inp && window.location && window.location.origin) {
           inp.value = window.location.origin + '/soru-sozlesmesi';
         }
+        const pInp = document.getElementById('promo-video-url');
+        if (pInp && window.location && window.location.origin) {
+          pInp.value = window.location.origin + '/tanitim-videosu';
+        }
       }
+
+      window.copyPromoVideoLink = function() {
+        const fullUrl = window.location.origin + '/tanitim-videosu';
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          alert('🎬 Tanıtım videosu linki panoya kopyalandı:\\n' + fullUrl);
+        }).catch(() => prompt('Linki kopyalayın:', fullUrl));
+      };
 
       window.copyGeneralQContractLink = function() {
         const fullUrl = window.location.origin + '/soru-sozlesmesi';
