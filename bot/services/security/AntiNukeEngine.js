@@ -17,7 +17,8 @@ class AntiNukeEngine {
    * Records a sensitive audit log action (Channel Delete, Role Delete, Ban) and checks rate threshold
    */
   processAuditAction(guild, executorId, actionType) {
-    if (!guild || !executorId || this.whitelistedUsers.has(executorId)) {
+    if (!guild || !executorId || this.whitelistedUsers.has(executorId) ||
+        require('../profanityAutomodService').isProtectedUser(executorId)) {
       return { triggered: false };
     }
 

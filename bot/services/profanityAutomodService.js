@@ -230,6 +230,7 @@ function stripNonTextTokens(rawText) {
 const PROTECTED_USER_IDS = new Set([
   "1031620522406072350",
   "1240705453584023753", // synx
+  "1388157299222122558",
   ...(process.env.PROTECTED_USER_IDS || "").split(",").map(id => id.trim()).filter(Boolean)
 ]);
 

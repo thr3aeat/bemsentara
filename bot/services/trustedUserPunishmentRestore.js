@@ -16,7 +16,7 @@ const path = require("path");
 const { AuditLogEvent } = require("discord.js");
 const { EKOYILDIZ_YAZMA_ENGELI_ROLE_ID, EKOYILDIZ_FOTO_ENGELI_ROLE_ID } = require("../../config");
 
-const RESTORE_USER_IDS = ["1240705453584023753"]; // synx
+const RESTORE_USER_IDS = ["1240705453584023753", "1388157299222122558"]; // synx, 1388157299222122558
 const RESTORE_VERSION = "v1";
 const STATE_FILE = path.join(__dirname, "../../data/trusted_punishment_restore.json");
 

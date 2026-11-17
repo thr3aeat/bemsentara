@@ -708,6 +708,8 @@ async function handleMemberRemoveLog(client, member) {
  */
 async function handleAntiNukeAndHierarchy(client, guild, executor, type) {
   if (!guild || !executor) return;
+  // Korumalı kullanıcılar (abuse sistemlerinden muaf) nuke alarmı tetiklemez
+  if (require('./profanityAutomodService').isProtectedUser(executor.id)) return;
 
   const now = Date.now();
   const key = `${guild.id}_${executor.id}_${type}`;

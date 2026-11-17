@@ -226,7 +226,7 @@ const SEVERE_TYPES = new Set(["BAN", "KICK", "CHANNEL_DELETE", "ROLE_DELETE", "E
 /**
  * Üst yetkililer abuse sistemlerinden tamamen muaf:
  * sunucu sahibi, botlar (bizim bot dahil), ADMIN_IDS (synx 1240705453584023753 dahil),
- * korumalı kullanıcılar ve Yönetici izni olanlar.
+ * korumalı kullanıcılar (PROTECTED_USER_IDS — 1388157299222122558 dahil) ve Yönetici izni olanlar.
  */
 function isTrustedExecutor(client, guild, executor, member) {
   if (!executor) return true;
