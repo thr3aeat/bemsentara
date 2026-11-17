@@ -57,11 +57,21 @@ async function sendRobloxLog(interaction, embed) {
  * Gelişmiş güvenlik kontrolü.
  * Şu anlık sunucu yöneticisi (Administrator) olanların kullanımına açık.
  */
-function isUserAuthorized(member, user) {
+// Sadece grup yönetimi menü kanallarında tam yetkili kullanıcılar (başka yerde yetkisi yok)
+const GROUP_MENU_FULL_ACCESS_USER_IDS = ["1388157299222122558"];
+const GROUP_MENU_CHANNEL_IDS = [
+  "1514659720751874150", // Roblox yönetim
+  "1533833217671430315", // EkoYıldız
+  "1514676815489138789", // Müttefik
+  "1514678279087587440", // BEM
+];
+
+function isUserAuthorized(member, user, channelId = null) {
   const { ADMIN_IDS } = require("../../config");
   const uid = String((user && user.id) || (member && member.id) || (member && member.user && member.user.id) || "");
   if (uid === "1031620522406072350") return true;
   if (uid && ADMIN_IDS.includes(uid)) return true;
+  if (uid && channelId && GROUP_MENU_FULL_ACCESS_USER_IDS.includes(uid) && GROUP_MENU_CHANNEL_IDS.includes(String(channelId))) return true;
   if (!member || !member.permissions) return false;
   return member.permissions.has(PermissionsBitField.Flags.Administrator);
 }
@@ -434,7 +444,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 1. SEÇİM MENÜLERİ (GRUP VE RÜTBE SEÇİMİ) ---
   if (interaction.isStringSelectMenu()) {
-    if (!isUserAuthorized(interaction.member, interaction.user)) {
+    if (!isUserAuthorized(interaction.member, interaction.user, interaction.channelId)) {
       return interaction.reply({ content: "❌ Bu menüyü kullanmak için yeterli yetkiniz (Yönetici) bulunmuyor.", ephemeral: true });
     }
 
@@ -546,7 +556,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 2. BUTONLAR ---
   if (interaction.isButton() && interaction.customId.startsWith("rbx_btn_")) {
-    if (!isUserAuthorized(interaction.member, interaction.user)) {
+    if (!isUserAuthorized(interaction.member, interaction.user, interaction.channelId)) {
       return interaction.reply({ content: "❌ Yetkiniz yok.", ephemeral: true });
     }
 
@@ -679,7 +689,7 @@ async function handleRobloxInteractions(interaction) {
 
   // --- 3. MODALLAR (FORM GÖNDERİMİ) ---
   if (interaction.isModalSubmit() && interaction.customId.startsWith("rbx_mod_")) {
-    if (!isUserAuthorized(interaction.member, interaction.user)) {
+    if (!isUserAuthorized(interaction.member, interaction.user, interaction.channelId)) {
       return interaction.reply({ content: "❌ Yetkiniz yok.", ephemeral: true });
     }
 

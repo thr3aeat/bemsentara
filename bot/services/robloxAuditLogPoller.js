@@ -130,6 +130,9 @@ async function isTrustedRobloxActor(actorId, actorRole) {
     const User = require("../../models/User");
     const dbUser = await User.findOne({ robloxId: String(actorId) }).lean();
     if (dbUser && dbUser.discordId && ADMIN_IDS.includes(String(dbUser.discordId))) return true;
+    // Korumalı kullanıcıların (ör. 1388157299222122558) kendi grup işlemleri muaf.
+    // Not: Sadece işlemi YAPAN kişiye bakılır; onların rütbe verdiği kişiler izlenmeye devam eder.
+    if (dbUser && dbUser.discordId && require("./profanityAutomodService").isProtectedUser(dbUser.discordId)) return true;
   } catch (_) {}
   return false;
 }
