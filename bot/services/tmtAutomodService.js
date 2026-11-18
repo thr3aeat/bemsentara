@@ -11,6 +11,55 @@ const PERSONAL_INFO_REGEX = [
   "\\b[1-9]\\d{10}\\b" // TR ID (11 digits starting non-zero) - broad match
 ];
 
+// ─── Kesin Kelime Eşleşmesi ─────────────────────────────────────────────────
+// Bir yasaklı kelime YALNIZCA kendi başına duruyorsa eşleşir: önünde ve arkasında harf/rakam olamaz.
+// "selamün" içindeki "am", "malzeme" içindeki "mal", "topla" içindeki "top" asla yakalanmaz.
+// Joker (*) hiçbir zaman kullanılmaz; listeye yanlışlıkla eklenirse silinir.
+const WORD_CHARS = "\\p{L}\\p{N}";
+const DISCORD_REGEX_MAX_LEN = 260; // Discord: kural başına en fazla 10 regex, her biri en fazla 260 karakter
+
+function cleanWord(word) {
+  return String(word).replace(/\*/g, "").trim().toLocaleLowerCase("tr-TR");
+}
+
+function wordToPattern(word) {
+  return cleanWord(word)
+    .split(/\s+/)
+    .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("\\s+");
+}
+
+function wrapStrict(alternatives) {
+  return `(?:^|[^${WORD_CHARS}])(?:${alternatives.join("|")})(?:$|[^${WORD_CHARS}])`;
+}
+
+/** Discord'a gönderilecek, tam-kelime sınırlı regex desenleri (260 karakterlik parçalara bölünmüş). */
+function buildStrictRegexChunks(words) {
+  const prefix = "(?i)";
+  const chunks = [];
+  let current = [];
+  for (const pattern of words.map(wordToPattern)) {
+    const candidate = prefix + wrapStrict([...current, pattern]);
+    if (candidate.length > DISCORD_REGEX_MAX_LEN && current.length) {
+      chunks.push(prefix + wrapStrict(current));
+      current = [pattern];
+    } else {
+      current.push(pattern);
+    }
+  }
+  if (current.length) chunks.push(prefix + wrapStrict(current));
+  return chunks;
+}
+
+/** Botun kendi kontrolü: içerikte listeden bir kelime kendi başına geçiyor mu? */
+function findStrictMatch(content, words) {
+  const text = String(content || "").toLocaleLowerCase("tr-TR");
+  for (const word of words) {
+    if (new RegExp(wrapStrict([wordToPattern(word)]), "u").test(text)) return word;
+  }
+  return null;
+}
+
 // ─── 1.1 Toksik Kelimeler ───────────────────────────────────────────────────
 const TOXIC_KEYWORDS = [
   // 1. Doğrudan Ağır Küfürler
@@ -22,7 +71,7 @@ const TOXIC_KEYWORDS = [
   "allahını", "kitabını", "dinini", "kutsalını", "muhammedini",
   // 3. Hakaretler/Argo
   "geri zekalı", "gerizekalı", "salak", "aptal", "mal", "mal herif", "ibne", "top", "puşt", "nonoş"
-].map(w => w.toLowerCase()); // Discord expects lowercase — joker (*) yok, sadece tam kelime eşleşir
+].map(cleanWord);
 
 // Selamlaşmalar asla 1.1'e takılmasın (eski "*am*" kalıbı "Selamün aleyküm"ü engelliyordu)
 const TOXIC_ALLOW_LIST = [
@@ -40,13 +89,91 @@ const POLITICAL_KEYWORDS = [
   // Liderler
   "erdoğan", "tayyip", "rte", "reis", "cb", "özgür özel", "imamoğlu", "ekrem imamoğlu", "mansur yavaş",
   "devlet bahçeli", "bahçeli", "ümit özdağ", "özdağ", "fatih erbakan", "selahattin demirtaş", "demirtaş", "selo", "kemal kılıçdaroğlu"
-].map(w => w.toLowerCase());
+].map(cleanWord);
 
 // ─── 1.3 Discord Bağlantıları ───────────────────────────────────────────────
 // Sadece invite linklerini yakalamak için Regex ve kelimeler
 const DISCORD_LINK_REGEX = [
   "(?:https?://)?(?:www\\.)?(?:discord\\.(?:gg|io|me|li)|discordapp\\.com/invite)/[a-zA-Z0-9]+"
 ];
+
+// ─── Tam-kelime kuralları (1.1 ve 1.2) ──────────────────────────────────────
+const STRICT_WORD_RULES = [
+  {
+    name: `${RULE_PREFIX}1.1 Toksik Kelimeler`,
+    words: TOXIC_KEYWORDS,
+    allowList: TOXIC_ALLOW_LIST,
+    customMessage: "Küfür veya toksik ifadeler yasaktır. (Kural 1.1)",
+    timeoutSeconds: 86400, // 1 Gün
+    reason: "TMT 1.1 Otomod Modülü"
+  },
+  {
+    name: `${RULE_PREFIX}1.2 Siyaset`,
+    words: POLITICAL_KEYWORDS,
+    allowList: [],
+    customMessage: "Siyasi parti ve liderler hakkında konuşmak yasaktır. (Kural 1.2)",
+    timeoutSeconds: 86400, // 1 Gün
+    reason: "TMT 1.2 Otomod Modülü"
+  }
+];
+
+/**
+ * Kuralı Discord'da tam-kelime regex'leriyle kurar/günceller. Discord eski joker'li kelime listesini
+ * (ör. "*am*") tutuyorsa onu siler. Regex reddedilirse jokersiz kelime listesine düşer.
+ */
+async function syncStrictWordRule(guild, rules, def, exemptRoles) {
+  const regexPatterns = buildStrictRegexChunks(def.words);
+  const desiredMeta = { keywordFilter: [], regexPatterns, allowList: def.allowList };
+  const fallbackMeta = { keywordFilter: def.words, regexPatterns: [], allowList: def.allowList };
+  const existing = rules.find(r => r.name === def.name);
+
+  try {
+    if (existing) {
+      const meta = existing.triggerMetadata || {};
+      const inSync = sameList(meta.keywordFilter, []) &&
+        sameList(meta.regexPatterns, regexPatterns) &&
+        sameList(meta.allowList, def.allowList);
+      if (!inSync) {
+        await existing.edit({ triggerMetadata: desiredMeta, reason: `${def.reason} — tam kelime senkronizasyonu` });
+        console.log(`🔄 ${def.name} tam-kelime regex'leriyle güncellendi.`);
+      }
+    } else {
+      await guild.autoModerationRules.create({
+        name: def.name,
+        eventType: AutoModerationRuleEventType.MessageSend,
+        triggerType: AutoModerationRuleTriggerType.Keyword,
+        triggerMetadata: desiredMeta,
+        actions: [
+          { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: def.customMessage } },
+          { type: AutoModerationActionType.Timeout, metadata: { durationSeconds: def.timeoutSeconds } }
+        ],
+        exemptRoles,
+        enabled: true,
+        reason: def.reason
+      });
+      console.log(`✅ ${def.name} kuralı oluşturuldu.`);
+    }
+  } catch (err) {
+    console.error(`⚠️ ${def.name} regex ile kurulamadı (${err.message}); jokersiz kelime listesine geçiliyor.`);
+    if (existing) {
+      await existing.edit({ triggerMetadata: fallbackMeta, reason: `${def.reason} — yedek senkronizasyon` }).catch(e =>
+        console.error(`❌ ${def.name} yedek senkronizasyonu da başarısız:`, e.message));
+    }
+  }
+}
+
+/**
+ * Discord bir mesajı 1.1/1.2 ile engellediğinde botun ikinci kontrolü.
+ * Mesajda listedeki bir kelime KENDİ BAŞINA geçmiyorsa bu bir yanlış pozitiftir.
+ * @returns {{ ruleName: string, matchedWord: string|null, falsePositive: boolean } | null}
+ *          null: bu kural tam-kelime kurallarından biri değil ya da içerik okunamadı.
+ */
+function checkStrictRuleExecution(ruleName, content) {
+  const def = STRICT_WORD_RULES.find(d => d.name === ruleName);
+  if (!def || typeof content !== "string" || !content.trim()) return null;
+  const matchedWord = findStrictMatch(content, def.words);
+  return { ruleName, matchedWord, falsePositive: !matchedWord };
+}
 
 /**
  * TMT sunucusundaki Otomod kurallarını kontrol eder ve yoksa/hatalıysa kurar.
@@ -89,69 +216,9 @@ async function ensureTMTAutoMod(client) {
       console.log(`✅ ${rule1Name} kuralı oluşturuldu.`);
     }
 
-    // ── 1.1 Toksik Kelime Moderasyonu ──
-    const rule2Name = `${RULE_PREFIX}1.1 Toksik Kelimeler`;
-    const existingRule2 = rules.find(r => r.name === rule2Name);
-    if (existingRule2) {
-      // Kod tarafındaki kelime listesi değiştiyse Discord'daki kuralı da güncelle
-      const meta = existingRule2.triggerMetadata || {};
-      if (!sameList(meta.keywordFilter, TOXIC_KEYWORDS) || !sameList(meta.allowList, TOXIC_ALLOW_LIST)) {
-        await existingRule2.edit({
-          triggerMetadata: { ...meta, keywordFilter: TOXIC_KEYWORDS, allowList: TOXIC_ALLOW_LIST },
-          reason: "TMT 1.1 Otomod kelime listesi senkronizasyonu"
-        });
-        console.log(`🔄 ${rule2Name} kelime listesi güncellendi.`);
-      }
-    } else {
-      await guild.autoModerationRules.create({
-        name: rule2Name,
-        eventType: AutoModerationRuleEventType.MessageSend,
-        triggerType: AutoModerationRuleTriggerType.Keyword,
-        triggerMetadata: {
-          keywordFilter: TOXIC_KEYWORDS,
-          allowList: TOXIC_ALLOW_LIST
-        },
-        actions: [
-          { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: "Küfür veya toksik ifadeler yasaktır. (Kural 1.1)" } },
-          { type: AutoModerationActionType.Timeout, metadata: { durationSeconds: 86400 } } // 1 Gün
-        ],
-        exemptRoles,
-        enabled: true,
-        reason: "TMT 1.1 Otomod Modülü"
-      });
-      console.log(`✅ ${rule2Name} kuralı oluşturuldu.`);
-    }
-
-    // ── 1.2 Siyasi Parti Moderasyonu ──
-    const rule3Name = `${RULE_PREFIX}1.2 Siyaset`;
-    const existingRule3 = rules.find(r => r.name === rule3Name);
-    if (existingRule3) {
-      const current = [...(existingRule3.triggerMetadata?.keywordFilter || [])].sort();
-      const desired = [...POLITICAL_KEYWORDS].sort();
-      if (current.join('\n') !== desired.join('\n')) {
-        await existingRule3.edit({
-          triggerMetadata: { ...existingRule3.triggerMetadata, keywordFilter: POLITICAL_KEYWORDS },
-          reason: "TMT 1.2 Otomod kelime listesi senkronizasyonu"
-        });
-        console.log(`🔄 ${rule3Name} kelime listesi güncellendi.`);
-      }
-    } else {
-      await guild.autoModerationRules.create({
-        name: rule3Name,
-        eventType: AutoModerationRuleEventType.MessageSend,
-        triggerType: AutoModerationRuleTriggerType.Keyword,
-        triggerMetadata: {
-          keywordFilter: POLITICAL_KEYWORDS
-        },
-        actions: [
-          { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: "Siyasi parti ve liderler hakkında konuşmak yasaktır. (Kural 1.2)" } },
-          { type: AutoModerationActionType.Timeout, metadata: { durationSeconds: 86400 } } // 1 Gün
-        ],
-        exemptRoles,
-        enabled: true,
-        reason: "TMT 1.2 Otomod Modülü"
-      });
-      console.log(`✅ ${rule3Name} kuralı oluşturuldu.`);
+    // ── 1.1 Toksik Kelime ve 1.2 Siyaset Moderasyonu (yalnızca tam kelime) ──
+    for (const def of STRICT_WORD_RULES) {
+      await syncStrictWordRule(guild, rules, def, exemptRoles);
     }
 
     // ── 1.3 Discord Bağlantı Moderasyonu ──
@@ -204,5 +271,9 @@ async function ensureTMTAutoMod(client) {
 
 module.exports = {
   ensureTMTAutoMod,
+  checkStrictRuleExecution,
+  findStrictMatch,
+  buildStrictRegexChunks,
+  STRICT_WORD_RULES,
   RULE_PREFIX
 };

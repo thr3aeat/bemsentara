@@ -111,4 +111,54 @@ async function handleTMTAutoModViolation(execution, client) {
   }
 }
 
-module.exports = { handleTMTAutoModViolation };
+/**
+ * Discord AutoMod'un yanlış pozitifini geri alır: susturmayı kaldırır, uyarı yazmaz,
+ * kullanıcıya bildirir ve engellenen mesajı kanala geri koyar.
+ * Discord engelle ve sustur için ayrı olay gönderir; susturma her ikisinde de kaldırılır
+ * (hangisinin önce geldiği belli değil), bildirim yalnızca engelleme olayında gönderilir.
+ */
+async function undoTMTFalsePositive(execution, verdict) {
+  const { AutoModerationActionType } = require("discord.js");
+  const { guild, userId, channelId, content } = execution;
+
+  try {
+    const member = await guild.members.fetch({ user: userId, force: true }).catch(() => null);
+    if (member) {
+      await member.timeout(null, `TMT AutoMod yanlış pozitif — otomatik geri alındı (${verdict.ruleName})`).catch(err =>
+        console.error("[TMT AutoMod] Yanlış pozitif susturması kaldırılamadı:", err.message));
+    }
+
+    if (execution.action?.type !== AutoModerationActionType.BlockMessage) return;
+    console.log(`[TMT AutoMod] Yanlış pozitif geri alındı: ${userId} — "${String(content).slice(0, 100)}"`);
+
+    const quoted = String(content).slice(0, 1700).split("\n").map(line => `> ${line}`).join("\n");
+    const channel = channelId ? await guild.channels.fetch(channelId).catch(() => null) : null;
+    if (channel?.isSendable?.()) {
+      await channel.send({
+        content: `🤖 <@${userId}>, mesajın AutoMod tarafından **yanlışlıkla** engellendi; susturman kaldırıldı ve uyarı yazılmadı. Mesajın:\n${quoted}`,
+        allowedMentions: { users: [userId] }
+      }).catch(() => {});
+    }
+
+    const warnChannel = await guild.channels.fetch(TMT_WARN_LOG_CHANNEL_ID).catch(() => null);
+    if (warnChannel?.isSendable?.()) {
+      await warnChannel.send({
+        embeds: [new EmbedBuilder()
+          .setTitle("✅ TMT AutoMod Yanlış Pozitif — Otomatik Geri Alındı")
+          .setColor(0x2ecc71)
+          .addFields(
+            { name: "Kullanıcı", value: `<@${userId}>\n\`${userId}\``, inline: true },
+            { name: "Kural", value: verdict.ruleName, inline: true },
+            { name: "Discord'un Yakaladığı", value: execution.matchedKeyword || execution.matchedContent || "?", inline: true },
+            { name: "Mesaj İçeriği", value: `\`\`\`${String(content).slice(0, 1000)}\`\`\``, inline: false }
+          )
+          .setFooter({ text: "Yasaklı kelime mesajda tek başına geçmiyordu; susturma kaldırıldı, uyarı sayılmadı." })
+          .setTimestamp()]
+      }).catch(() => {});
+    }
+  } catch (error) {
+    console.error("[TMT AutoMod] Yanlış pozitif geri alma hatası:", error);
+  }
+}
+
+module.exports = { handleTMTAutoModViolation, undoTMTFalsePositive };

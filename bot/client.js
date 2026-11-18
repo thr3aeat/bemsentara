@@ -13,6 +13,7 @@ function createDiscordClient() {
       GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildEmojisAndStickers, // emojiDelete koruması
       GatewayIntentBits.GuildWebhooks,          // webhook oluşturma koruması
+      GatewayIntentBits.AutoModerationExecution, // autoModerationActionExecution olayı (yanlış pozitif geri alma)
     ],
     // DM mesajları için partials zorunlu
     partials: [

@@ -723,20 +723,27 @@ function initializeDiscordHandlers(client) {
     try {
       const { TMT_GUILD_ID } = require("../../config");
       if (execution.guild.id === TMT_GUILD_ID) {
-        const { handleTMTAutoModViolation } = require("../services/tmtWarningSystem");
-        await handleTMTAutoModViolation(execution, client);
+        const { AutoModerationActionType } = require("discord.js");
+        const { handleTMTAutoModViolation, undoTMTFalsePositive } = require("../services/tmtWarningSystem");
+        const { checkStrictRuleExecution } = require("../services/tmtAutomodService");
 
-        const { RULE_PREFIX } = require("../services/tmtAutomodService");
-        if (execution.ruleTriggerType === 1) { // 1 = Keyword
-          const rule = await execution.guild.autoModerationRules.fetch(execution.ruleId).catch(() => null);
-          if (rule && rule.name === `${RULE_PREFIX}1.0 Kişisel Bilgiler`) {
-            const member = await execution.guild.members.fetch(execution.userId).catch(() => null);
-            if (member && member.bannable) {
-              await member.ban({ reason: "Otomod: 1.0 Kişisel Bilgilerin Koruması İhlali (Sistem Banı)" });
-              console.log(`[TMT AutoMod] ${member.user.tag} (ID: ${member.id}) Kişisel Bilgi paylaştığı için yasaklandı.`);
-            }
-          }
+        // Discord bir mesajı engellediğinde bot kendisi de kontrol eder: yasaklı kelime mesajda
+        // KENDİ BAŞINA geçmiyorsa (başka bir kelimenin içindeyse) susturma otomatik kaldırılır, uyarı yazılmaz.
+        const rule = await execution.guild.autoModerationRules.fetch(execution.ruleId).catch(() => null);
+        const verdict = rule ? checkStrictRuleExecution(rule.name, execution.content) : null;
+        if (verdict?.falsePositive) {
+          await undoTMTFalsePositive(execution, verdict);
+          return;
         }
+
+        // Discord her eylem (engelle + sustur) için ayrı olay gönderir; uyarı yalnızca bir kez sayılsın.
+        if (execution.action?.type === AutoModerationActionType.BlockMessage) {
+          await handleTMTAutoModViolation(execution, client);
+        }
+
+        // Not: 1.0 Kişisel Bilgiler için otomatik ban kapalı. Telefon regex'i herhangi bir 10 haneli
+        // sayıyı (ör. yapıştırılan Discord ID'leri) yakalayabildiği için masum kişileri banlayabilirdi;
+        // Discord mesajı zaten engelliyor.
       }
 
       // ── Gizli Başarım: İsyankar (AutoMod'a Yakalananlar) ──
