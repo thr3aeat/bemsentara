@@ -69,8 +69,8 @@ const TOXIC_KEYWORDS = [
   // 2. Ailevi/Kutsal Değerlere
   "ananı", "anancı", "ana bacı", "babanı", "bacını", "kız kardeşini", "ceddin", "gelmişini", "geçmişini",
   "allahını", "kitabını", "dinini", "kutsalını", "muhammedini",
-  // 3. Hakaretler/Argo
-  "geri zekalı", "gerizekalı", "salak", "aptal", "mal", "mal herif", "ibne", "top", "puşt", "nonoş"
+  // 3. Hakaretler/Argo — hafif atışmalara ("mal", "salak") izin veriliyor
+  "geri zekalı", "gerizekalı", "aptal", "ibne", "top", "puşt", "nonoş"
 ].map(cleanWord);
 
 // Selamlaşmalar asla 1.1'e takılmasın (eski "*am*" kalıbı "Selamün aleyküm"ü engelliyordu)
