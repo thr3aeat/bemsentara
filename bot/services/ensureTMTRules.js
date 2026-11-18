@@ -6,6 +6,7 @@ const {
   TMT_HONEYPOT_CHANNEL_ID 
 } = require("../../config");
 const { postTMTRules } = require("./tmtRulesService");
+const { ensureTMTAutoMod } = require("./tmtAutomodService");
 
 /**
  * Checks if TMT rule channels have the required rules, and if not, posts them.
@@ -15,6 +16,7 @@ async function ensureTMTRules(client) {
   try {
     const guild = await client.guilds.fetch(TMT_GUILD_ID).catch(() => null);
     if (!guild) return; // TMT guild bulunamadıysa çık
+    let autoModSynced = false;
 
     // 1. Kurallar ve Otomod Kuralları
     if (TMT_RULES_CHANNEL_ID && TMT_AUTOMOD_RULES_CHANNEL_ID) {
@@ -35,10 +37,16 @@ async function ensureTMTRules(client) {
         if (rulesCount !== -1 && automodCount !== -1 &&
             (rulesCount !== RULES_MESSAGE_COUNTS.rules || automodCount !== RULES_MESSAGE_COUNTS.automod)) {
           console.log(`[TMT Rules] Kanal içeriği beklenenden farklı (${rulesCount}/${automodCount}), V2 kurallar yeniden gönderiliyor...`);
-          await postTMTRules(client, { clear: true });
+          await postTMTRules(client, { clear: true }); // ensureTMTAutoMod'u da çalıştırır
+          autoModSynced = true;
         }
       }
     }
+
+    // Discord'daki AutoMod kurallarını her açılışta koddaki listelerle senkronize et.
+    // Önceden yalnızca kural kanalları bozulunca çalışıyordu; bu yüzden kaldırılan "*am*" kalıbı
+    // canlı kuralda kalıp "Selamün aleyküm" gibi mesajları engellemeye devam ediyordu.
+    if (!autoModSynced) await ensureTMTAutoMod(client);
 
     // 2. Honeypot Uyarı Mesajı
     if (TMT_HONEYPOT_CHANNEL_ID) {

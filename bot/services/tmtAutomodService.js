@@ -24,6 +24,14 @@ const TOXIC_KEYWORDS = [
   "geri zekalı", "gerizekalı", "salak", "aptal", "mal", "mal herif", "ibne", "top", "puşt", "nonoş"
 ].map(w => w.toLowerCase()); // Discord expects lowercase — joker (*) yok, sadece tam kelime eşleşir
 
+// Selamlaşmalar asla 1.1'e takılmasın (eski "*am*" kalıbı "Selamün aleyküm"ü engelliyordu)
+const TOXIC_ALLOW_LIST = [
+  "selam*", "selamün", "selamun", "aleyküm", "aleykum",
+  "selamünaleyküm", "selamunaleykum", "aleykümselam", "aleykumselam"
+];
+
+const sameList = (a = [], b = []) => [...a].sort().join('\n') === [...b].sort().join('\n');
+
 // ─── 1.2 Siyasi Parti ve Liderler ───────────────────────────────────────────
 const POLITICAL_KEYWORDS = [
   // Partiler
@@ -86,11 +94,10 @@ async function ensureTMTAutoMod(client) {
     const existingRule2 = rules.find(r => r.name === rule2Name);
     if (existingRule2) {
       // Kod tarafındaki kelime listesi değiştiyse Discord'daki kuralı da güncelle
-      const current = [...(existingRule2.triggerMetadata?.keywordFilter || [])].sort();
-      const desired = [...TOXIC_KEYWORDS].sort();
-      if (current.join('\n') !== desired.join('\n')) {
+      const meta = existingRule2.triggerMetadata || {};
+      if (!sameList(meta.keywordFilter, TOXIC_KEYWORDS) || !sameList(meta.allowList, TOXIC_ALLOW_LIST)) {
         await existingRule2.edit({
-          triggerMetadata: { ...existingRule2.triggerMetadata, keywordFilter: TOXIC_KEYWORDS },
+          triggerMetadata: { ...meta, keywordFilter: TOXIC_KEYWORDS, allowList: TOXIC_ALLOW_LIST },
           reason: "TMT 1.1 Otomod kelime listesi senkronizasyonu"
         });
         console.log(`🔄 ${rule2Name} kelime listesi güncellendi.`);
@@ -101,7 +108,8 @@ async function ensureTMTAutoMod(client) {
         eventType: AutoModerationRuleEventType.MessageSend,
         triggerType: AutoModerationRuleTriggerType.Keyword,
         triggerMetadata: {
-          keywordFilter: TOXIC_KEYWORDS
+          keywordFilter: TOXIC_KEYWORDS,
+          allowList: TOXIC_ALLOW_LIST
         },
         actions: [
           { type: AutoModerationActionType.BlockMessage, metadata: { customMessage: "Küfür veya toksik ifadeler yasaktır. (Kural 1.1)" } },
